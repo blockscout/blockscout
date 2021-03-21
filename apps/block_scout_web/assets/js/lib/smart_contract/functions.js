@@ -201,27 +201,26 @@ function getMethodInputs (contractAbi, functionName) {
 
 function prepareMethodArgs ($functionInputs, inputs) {
   return $.map($functionInputs, (element, ind) => {
-    const val = $(element).val()
+    const inputValue = $(element).val()
     const inputType = inputs[ind] && inputs[ind].type
-    let preparedVal
-    if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
-    if (isAddressInputType(inputType)) {
-      if (typeof preparedVal.replaceAll === 'function') {
-        preparedVal = preparedVal.replaceAll('"', '')
-      } else {
-        preparedVal = preparedVal.replace(/"/g, '')
-      }
-    }
+    let sanitizedInputValue
+    sanitizedInputValue = replaceSpaces(inputValue, inputType)
+    sanitizedInputValue = replaceDoubleQuotes(sanitizedInputValue, inputType)
     if (isArrayInputType(inputType)) {
-      if (preparedVal === '') {
+      if (sanitizedInputValue === '') {
         return [[]]
       } else {
-        if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
-          preparedVal = preparedVal.substring(1, preparedVal.length - 1)
+        if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
+          sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
         }
-        return [preparedVal.split(',')]
+        const inputValueElements = sanitizedInputValue.split(',')
+        const sanitizedInputValueElements = inputValueElements.map(elementValue => {
+          const elementInputType = inputType.split('[')[0]
+          return replaceDoubleQuotes(elementValue, elementInputType)
+        })
+        return [sanitizedInputValueElements]
       }
-    } else { return preparedVal }
+    } else { return sanitizedInputValue }
   })
 }
 
@@ -231,6 +230,14 @@ function isArrayInputType (inputType) {
 
 function isAddressInputType (inputType) {
   return inputType.includes('address')
+}
+
+function isUintInputType (inputType) {
+  return inputType.includes('int') && !inputType.includes('[')
+}
+
+function isStringInputType (inputType) {
+  return inputType.includes('string') && !inputType.includes('[')
 }
 
 function isNonSpaceInputType (inputType) {
@@ -281,6 +288,26 @@ function onTransactionHash (txHash, $element, functionName) {
       })
   }
   const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
+}
+
+function replaceSpaces (value, type) {
+  if (isNonSpaceInputType(type)) {
+    return value.replace(/\s/g, '')
+  } else {
+    return value
+  }
+}
+
+function replaceDoubleQuotes (value, type) {
+  if (isAddressInputType(type) || isUintInputType(type) || isStringInputType(type)) {
+    if (typeof value.replaceAll === 'function') {
+      return value.replaceAll('"', '')
+    } else {
+      return value.replace(/"/g, '')
+    }
+  } else {
+    return value
+  }
 }
 
 const formatError = (error) => {

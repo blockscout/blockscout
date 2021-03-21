@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3722](https://github.com/poanetwork/blockscout/pull/3722) - Allow double quotes for (u)int arrays inputs during contract interaction
 - [#3694](https://github.com/poanetwork/blockscout/pull/3694) - LP tokens total liquidity
 - [#3676](https://github.com/poanetwork/blockscout/pull/3676) - Bridged tokens TLV in USD
 - [#3674](https://github.com/poanetwork/blockscout/pull/3674) - Display Sushiswap pools data
@@ -13,6 +14,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3723](https://github.com/poanetwork/blockscout/pull/3723) - Fix losing digits at value conversion back from WEI
 - [#3715](https://github.com/poanetwork/blockscout/pull/3715) - Pending transactions sanitizer process
 - [#3710](https://github.com/poanetwork/blockscout/pull/3710) - Missing @destination in bridged-tokens template
 - [#3707](https://github.com/poanetwork/blockscout/pull/3707) - Fetch bridged token price by address of foreign token, not by symbol
@@ -31,6 +33,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3719](https://github.com/poanetwork/blockscout/pull/3719) - Rename ethprice API endpoint
 - [#3717](https://github.com/poanetwork/blockscout/pull/3717) - Update alpine-elixir-phoenix 1.11.3
 - [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp
 - [#3712](https://github.com/poanetwork/blockscout/pull/3712) - POSDAO refactoring: use pool ID instead of staking address
