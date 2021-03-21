@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3722](https://github.com/poanetwork/blockscout/pull/3722) - Allow double quotes for (u)int arrays inputs during contract interaction
 - [#3694](https://github.com/poanetwork/blockscout/pull/3694) - LP tokens total liquidity
 - [#3676](https://github.com/poanetwork/blockscout/pull/3676) - Bridged tokens TLV in USD
 - [#3674](https://github.com/poanetwork/blockscout/pull/3674) - Display Sushiswap pools data
