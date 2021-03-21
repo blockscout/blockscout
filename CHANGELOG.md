@@ -14,6 +14,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3728](https://github.com/poanetwork/blockscout/pull/3728) - Coinprice api endpoint: handle nil rates
 - [#3723](https://github.com/poanetwork/blockscout/pull/3723) - Fix losing digits at value conversion back from WEI
 - [#3715](https://github.com/poanetwork/blockscout/pull/3715) - Pending transactions sanitizer process
 - [#3710](https://github.com/poanetwork/blockscout/pull/3710) - Missing @destination in bridged-tokens template
