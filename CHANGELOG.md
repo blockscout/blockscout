@@ -14,6 +14,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3732](https://github.com/poanetwork/blockscout/pull/3732) - POSDAO: fix snapshotting and remove temporary code
 - [#3731](https://github.com/poanetwork/blockscout/pull/3731) - Handle bad gateway at pending transactions fetcher
 - [#3730](https://github.com/poanetwork/blockscout/pull/3730) - Set default period for average block time counter refresh interval
 - [#3729](https://github.com/poanetwork/blockscout/pull/3729) - Token on-demand balance fetcher: handle nil balance

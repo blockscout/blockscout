@@ -21,12 +21,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
         mining_address_to_id,
         block_number
       ) do
-    # temporary code (should be removed after staking epoch #48 on xDai is finished).
-    # this is a block number from which POSDAO on xDai chain started to use other signatures
-    # in the StakingAuRa contract
-    {:ok, net_version} = EthereumJSONRPC.fetch_net_version(Application.get_env(:explorer, :json_rpc_named_arguments))
-    new_signatures = (net_version == 100 and block_number > 14_994_040) or net_version != 100
-
     # get pool ids and staking addresses for the pending validators
     pool_ids =
       pools_mining_addresses
@@ -46,8 +40,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(pool_staking_addresses)
       |> Map.new()
 
-    abi = abi_clarify_signatures(abi, new_signatures)
-
     # get snapshotted amounts and active delegator list for the pool for each
     # pending validator by their pool id.
     # use `cached_pool_staking_responses` when possible
@@ -59,7 +51,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
             Map.merge(
               resp,
               ContractReader.perform_requests(
-                snapshotted_pool_amounts_requests(pool_id, resp.staking_address_hash, block_number, new_signatures),
+                snapshotted_pool_amounts_requests(pool_id, resp.staking_address_hash, block_number),
                 contracts,
                 abi
               )
@@ -73,8 +65,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
                 staking_address_hash: pool_staking_address
               },
               ContractReader.perform_requests(
-                ContractReader.active_delegators_request(pool_id, block_number, new_signatures) ++
-                  snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number, new_signatures),
+                ContractReader.active_delegators_request(pool_id, block_number) ++
+                  snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number),
                 contracts,
                 abi
               )
@@ -101,8 +93,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
             pool_id,
             pool_staking_address,
             staker_address,
-            block_number,
-            new_signatures
+            block_number
           ),
           contracts,
           abi
@@ -231,42 +222,23 @@ defmodule Explorer.Staking.StakeSnapshotting do
     Publisher.broadcast(:stake_snapshotting_finished)
   end
 
-  defp abi_clarify_signatures(abi, new_signatures) do
-    if new_signatures do
-      abi
-    else
-      Jason.decode!(
-        ~s([{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"stakeAmountTotal","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"stakeAmount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"poolDelegators","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"name":"validatorShare","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"name":"delegatorShare","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}])
-      )
-    end
-  end
-
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
-  defp snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number, new_signatures) do
-    stake_amount_total_signature =
-      if new_signatures do
-        # keccak256(stakeAmountTotal(uint256))
-        "2a8f6ecd"
-      else
-        # keccak256(stakeAmountTotal(address))
-        "5267e1d6"
-      end
-
+  defp snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number) do
     [
-      snapshotted_total_staked_amount: {:staking, stake_amount_total_signature, [pool_id], block_number},
+      # 2a8f6ecd = keccak256(stakeAmountTotal(uint256))
+      snapshotted_total_staked_amount: {:staking, "2a8f6ecd", [pool_id], block_number},
       snapshotted_self_staked_amount:
         snapshotted_staker_amount_request(
           pool_id,
           pool_staking_address,
           pool_staking_address,
-          block_number,
-          new_signatures
+          block_number
         )[:snapshotted_stake_amount]
     ]
   end
 
-  defp snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number, new_signatures) do
+  defp snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number) do
     delegator_or_zero =
       if staker_address == pool_staking_address do
         "0x0000000000000000000000000000000000000000"
@@ -274,17 +246,9 @@ defmodule Explorer.Staking.StakeSnapshotting do
         staker_address
       end
 
-    stake_amount_signature =
-      if new_signatures do
-        # keccak256(stakeAmount(uint256,address))
-        "3fb1a1e4"
-      else
-        # keccak256(stakeAmount(address,address))
-        "a697ecff"
-      end
-
     [
-      snapshotted_stake_amount: {:staking, stake_amount_signature, [pool_id, delegator_or_zero], block_number}
+      # 3fb1a1e4 = keccak256(stakeAmount(uint256,address))
+      snapshotted_stake_amount: {:staking, "3fb1a1e4", [pool_id, delegator_or_zero], block_number}
     ]
   end
 
