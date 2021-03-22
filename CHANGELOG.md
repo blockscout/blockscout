@@ -14,6 +14,9 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3731](https://github.com/poanetwork/blockscout/pull/3731) - Handle bad gateway at pending transactions fetcher
+- [#3730](https://github.com/poanetwork/blockscout/pull/3730) - Set default period for average block time counter refresh interval
+- [#3729](https://github.com/poanetwork/blockscout/pull/3729) - Token on-demand balance fetcher: handle nil balance
 - [#3728](https://github.com/poanetwork/blockscout/pull/3728) - Coinprice api endpoint: handle nil rates
 - [#3723](https://github.com/poanetwork/blockscout/pull/3723) - Fix losing digits at value conversion back from WEI
 - [#3715](https://github.com/poanetwork/blockscout/pull/3715) - Pending transactions sanitizer process

@@ -87,12 +87,19 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
         updated_balance = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)[:ok]
 
-        %{}
-        |> Map.put(:address_hash, stale_current_token_balance.address_hash)
-        |> Map.put(:token_contract_address_hash, stale_current_token_balance.token_contract_address_hash)
-        |> Map.put(:block_number, block_number)
-        |> Map.put(:value, Decimal.new(updated_balance))
-        |> Map.put(:value_fetched_at, DateTime.utc_now())
+        token_balance =
+          %{}
+          |> Map.put(:address_hash, stale_current_token_balance.address_hash)
+          |> Map.put(:token_contract_address_hash, stale_current_token_balance.token_contract_address_hash)
+          |> Map.put(:block_number, block_number)
+
+        if updated_balance do
+          token_balance
+          |> Map.put(:value, Decimal.new(updated_balance))
+          |> Map.put(:value_fetched_at, DateTime.utc_now())
+        else
+          token_balance
+        end
       end)
 
     Chain.import(%{

@@ -23,7 +23,9 @@ config :explorer,
       else: Explorer.Chain.Events.DBSender
     )
 
-config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
+config :explorer, Explorer.Counters.AverageBlockTime,
+  enabled: true,
+  period: :timer.minutes(10)
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
