@@ -11,7 +11,7 @@ defmodule Indexer.Supervisor do
     Block,
     CalcLpTokensTotalLiqudity,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer,
+    # PendingTransactionsSanitizer,
     SetAmbBridgedMetadataForTokens,
     SetOmniBridgedMetadataForTokens
   }
