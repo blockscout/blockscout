@@ -11,7 +11,7 @@ defmodule Indexer.Supervisor do
     Block,
     CalcLpTokensTotalLiqudity,
     PendingOpsCleaner,
-    # PendingTransactionsSanitizer,
+    PendingTransactionsSanitizer,
     SetAmbBridgedMetadataForTokens,
     SetOmniBridgedMetadataForTokens
   }
@@ -129,7 +129,7 @@ defmodule Indexer.Supervisor do
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      # {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+      {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers
       {UncatalogedTokenTransfers.Supervisor, [[]]},
