@@ -233,14 +233,14 @@ defmodule Explorer.Staking.ContractState do
 
     epoch_very_beginning = global_responses.epoch_start_block == block_number + 1
 
-    start_snapshotting = start_snapshotting?(global_responses, state, block_number)
-
     # determine if something changed in contracts state since the previous seen block.
     # if something changed or the `fetch_state` function is called for the first time
     # or we are at the beginning of staking epoch or snapshotting recently finished
     # then we should update database
     last_change_block =
       max(global_responses.staking_last_change_block, global_responses.validator_set_last_change_block)
+
+    start_snapshotting = start_snapshotting?(global_responses, state, block_number, last_change_block)
 
     first_fetch = get(:epoch_end_block, 0) == 0
 
@@ -350,7 +350,7 @@ defmodule Explorer.Staking.ContractState do
     end
   end
 
-  defp start_snapshotting?(global_responses, state, block_number) do
+  defp start_snapshotting?(global_responses, state, block_number, last_change_block) do
     if global_responses.epoch_number == 0 do
       # we never snapshot at initial staking epoch
       false
@@ -365,30 +365,34 @@ defmodule Explorer.Staking.ContractState do
         :ets.insert(@table_name, snapshotting_scheduled: false)
         true
       else
-        # check for ChangedMiningAddress and ChangedStakingAddress events
-        # from the ValidatorSetAuRa contract: if one of these events
-        # emitted, we need to do snapshotting
-        seen_block = get(:seen_block, 0)
-
-        from_block =
-          if seen_block > 0 do
-            seen_block + 1
-          else
-            block_number
-          end
-
         change_pool_address_events =
-          ContractReader.get_contract_events(
-            state.contracts.validator_set,
-            from_block,
-            block_number,
-            [
-              # keccak-256 of `ChangedMiningAddress(uint256,address,address)`
-              "0xad4c947995a3daa512a7371d31325a21227249f8dc1c52c1a4c6fe8475a3ebb1",
-              # keccak-256 of `ChangedStakingAddress(uint256,address,address)`
-              "0x5c44164828293bba0353472e907f7ee26a8659f916e6311fe826a7c70510e352"
-            ]
-          )
+          if last_change_block > get(:last_change_block) do
+            # check for ChangedMiningAddress and ChangedStakingAddress events
+            # from the ValidatorSetAuRa contract: if one of these events
+            # emitted, we need to do snapshotting
+            seen_block = get(:seen_block, 0)
+
+            from_block =
+              if seen_block > 0 do
+                seen_block + 1
+              else
+                block_number
+              end
+
+            ContractReader.get_contract_events(
+              state.contracts.validator_set,
+              from_block,
+              block_number,
+              [
+                # keccak-256 of `ChangedMiningAddress(uint256,address,address)`
+                "0xad4c947995a3daa512a7371d31325a21227249f8dc1c52c1a4c6fe8475a3ebb1",
+                # keccak-256 of `ChangedStakingAddress(uint256,address,address)`
+                "0x5c44164828293bba0353472e907f7ee26a8659f916e6311fe826a7c70510e352"
+              ]
+            )
+          else
+            []
+          end
 
         if Enum.count(change_pool_address_events) > 0 do
           # we see at least one of the events, so start snapshotting
