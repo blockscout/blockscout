@@ -15,7 +15,7 @@ defmodule Indexer.Memory.Monitor do
 
   alias Indexer.Memory.Shrinkable
 
-  defstruct limit: 1 <<< 30,
+  defstruct limit: 7 <<< 30,
             timer_interval: :timer.minutes(1),
             timer_reference: nil,
             shrinkable_set: MapSet.new()
