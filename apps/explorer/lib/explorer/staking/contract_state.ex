@@ -31,6 +31,7 @@ defmodule Explorer.Staking.ContractState do
     :pool_rewards,
     :seen_block,
     :snapshotted_epoch_number,
+    :snapshotting_scheduled,
     :staking_allowed,
     :staking_contract,
     :token_contract,
@@ -136,6 +137,7 @@ defmodule Explorer.Staking.ContractState do
       pool_rewards: %{},
       seen_block: 0,
       snapshotted_epoch_number: -1,
+      snapshotting_scheduled: false,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
       token_contract: %{abi: token_abi, address: token_contract_address},
       token: get_token(token_contract_address),
@@ -231,7 +233,7 @@ defmodule Explorer.Staking.ContractState do
 
     epoch_very_beginning = global_responses.epoch_start_block == block_number + 1
 
-    start_snapshotting = start_snapshotting?(global_responses)
+    start_snapshotting = start_snapshotting?(global_responses, state, block_number)
 
     # determine if something changed in contracts state since the previous seen block.
     # if something changed or the `fetch_state` function is called for the first time
@@ -348,9 +350,62 @@ defmodule Explorer.Staking.ContractState do
     end
   end
 
-  defp start_snapshotting?(global_responses) do
-    global_responses.epoch_number > get(:snapshotted_epoch_number) && global_responses.epoch_number > 0 &&
-      not get(:is_snapshotting)
+  defp start_snapshotting?(global_responses, state, block_number) do
+    if global_responses.epoch_number == 0 do
+      # we never snapshot at initial staking epoch
+      false
+    else
+      already_snapshotting = get(:is_snapshotting)
+
+      start =
+        (global_responses.epoch_number > get(:snapshotted_epoch_number) or get(:snapshotting_scheduled)) and
+          not already_snapshotting
+
+      if start do
+        :ets.insert(@table_name, snapshotting_scheduled: false)
+        true
+      else
+        # check for ChangedMiningAddress and ChangedStakingAddress events
+        # from the ValidatorSetAuRa contract: if one of these events
+        # emitted, we need to do snapshotting
+        seen_block = get(:seen_block, 0)
+
+        from_block =
+          if seen_block > 0 do
+            seen_block + 1
+          else
+            block_number
+          end
+
+        change_pool_address_events =
+          ContractReader.get_contract_events(
+            state.contracts.validator_set,
+            from_block,
+            block_number,
+            [
+              # keccak-256 of `ChangedMiningAddress(uint256,address,address)`
+              "0xad4c947995a3daa512a7371d31325a21227249f8dc1c52c1a4c6fe8475a3ebb1",
+              # keccak-256 of `ChangedStakingAddress(uint256,address,address)`
+              "0x5c44164828293bba0353472e907f7ee26a8659f916e6311fe826a7c70510e352"
+            ]
+          )
+
+        if Enum.count(change_pool_address_events) > 0 do
+          # we see at least one of the events, so start snapshotting
+          if already_snapshotting do
+            # since the snapshotting procedure is already in progress,
+            # we schedule snapshotting restart after the current
+            # procedure is finished
+            :ets.insert(@table_name, snapshotting_scheduled: true)
+            false
+          else
+            true
+          end
+        else
+          false
+        end
+      end
+    end
   end
 
   defp update_database(
