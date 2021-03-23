@@ -33,24 +33,24 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   ## Callbacks
 
-  def child_spec([json_rpc_named_arguments, server_opts]) do
+  def child_spec(start_link_arguments) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [json_rpc_named_arguments, server_opts]},
+      start: {__MODULE__, :start_link, start_link_arguments},
       type: :worker
     }
   end
 
-  def start_link(json_rpc_named_arguments, server_opts) do
-    GenServer.start_link(__MODULE__, json_rpc_named_arguments, server_opts)
+  def start_link(init_opts, server_opts) do
+    GenServer.start_link(__MODULE__, init_opts, server_opts)
   end
 
-  def init(json_rpc_named_arguments) do
-    {:ok, %{json_rpc_named_arguments: json_rpc_named_arguments}}
+  def init(_opts) do
+    {:ok, %{}}
   end
 
   def handle_cast({:fetch_and_update, block_number, address_hash, current_token_balances}, state) do
-    fetch_and_update(block_number, address_hash, current_token_balances, state.json_rpc_named_arguments)
+    fetch_and_update(block_number, address_hash, current_token_balances)
 
     {:noreply, state}
   end
@@ -72,7 +72,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     :ok
   end
 
-  defp fetch_and_update(block_number, address_hash, stale_current_token_balances, _json_rpc_named_arguments) do
+  defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
     current_token_balances_update_params =
       stale_current_token_balances
       |> Enum.map(fn stale_current_token_balance ->
@@ -85,26 +85,28 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           }
         ]
 
-        updated_balance = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)[:ok]
+        balance_response = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)
+        updated_balance = balance_response[:ok]
 
-        token_balance =
+        if updated_balance do
           %{}
           |> Map.put(:address_hash, stale_current_token_balance.address_hash)
           |> Map.put(:token_contract_address_hash, stale_current_token_balance.token_contract_address_hash)
           |> Map.put(:block_number, block_number)
-
-        if updated_balance do
-          token_balance
           |> Map.put(:value, Decimal.new(updated_balance))
           |> Map.put(:value_fetched_at, DateTime.utc_now())
         else
-          token_balance
+          nil
         end
       end)
 
+    filtered_current_token_balances_update_params =
+      current_token_balances_update_params
+      |> Enum.filter(&(!is_nil(&1)))
+
     Chain.import(%{
       address_current_token_balances: %{
-        params: current_token_balances_update_params
+        params: filtered_current_token_balances_update_params
       },
       broadcast: :on_demand
     })

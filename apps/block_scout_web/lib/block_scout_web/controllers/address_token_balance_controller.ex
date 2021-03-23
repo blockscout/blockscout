@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
   alias BlockScoutWeb.AccessHelpers
   alias Explorer.{Chain, CustomContractsHelpers, Market}
+  alias Explorer.Chain.Address
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -57,7 +58,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
           |> put_status(200)
           |> put_layout(false)
           |> render("_token_balances.html",
-            address_hash: address_hash,
+            address_hash: Address.checksum(address_hash),
             token_balances: token_balances_with_price,
             circles_total_balance: circles_total_balance
           )
@@ -67,7 +68,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
           |> put_status(200)
           |> put_layout(false)
           |> render("_token_balances.html",
-            address_hash: address_hash,
+            address_hash: Address.checksum(address_hash),
             token_balances: [],
             circles_total_balance: Decimal.new(0)
           )

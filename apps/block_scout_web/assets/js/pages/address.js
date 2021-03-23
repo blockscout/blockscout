@@ -94,7 +94,7 @@ const elements = {
       return { balanceCard: $el.html(), balance: parseFloat($el.find('.current-balance-in-wei').attr('data-wei-value')) }
     },
     render ($el, state, oldState) {
-      if (oldState.balance === state.balance) return
+      if (oldState.balance === state.balance || isNaN(state.balance)) return
       $el.empty().append(state.balanceCard)
       loadTokenBalance(state.fetchedCoinBalanceBlockNumber)
       updateAllCalculatedUsdValues()

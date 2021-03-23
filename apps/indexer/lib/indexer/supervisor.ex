@@ -128,7 +128,7 @@ defmodule Indexer.Supervisor do
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {TokenBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenBalanceOnDemand.Supervisor, []},
       {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers
