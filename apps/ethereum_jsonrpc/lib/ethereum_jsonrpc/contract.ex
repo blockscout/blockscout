@@ -80,7 +80,7 @@ defmodule EthereumJSONRPC.Contract do
     request(%{
       id: id,
       method: "eth_call",
-      params: [%{to: contract_address, data: data, gasPrice: "0x1000000000000000000"}, block]
+      params: [%{to: contract_address, data: data}, block]
     })
   end
 
