@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   alias BlockScoutWeb.CurrencyHelpers
   alias Explorer.Chain.{Address, SmartContract, Token}
+  alias Explorer.SmartContract.Helper
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
 
@@ -68,7 +69,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def smart_contract_with_read_only_functions?(
         %Token{contract_address: %Address{smart_contract: %SmartContract{}}} = token
       ) do
-    Enum.any?(token.contract_address.smart_contract.abi, &(&1["constant"] || &1["stateMutability"] == "view"))
+    Enum.any?(token.contract_address.smart_contract.abi, &Helper.queriable_method?(&1))
   end
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false

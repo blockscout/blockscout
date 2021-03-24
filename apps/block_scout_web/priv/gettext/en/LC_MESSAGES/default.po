@@ -555,8 +555,8 @@ msgid "ERC-721 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:85
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:120
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:73
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:108
 msgid "ETH"
 msgstr ""
 
@@ -868,7 +868,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:15
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:9
-#: lib/block_scout_web/views/tokens/overview_view.ex:41
+#: lib/block_scout_web/views/tokens/overview_view.ex:42
 msgid "Token Holders"
 msgstr ""
 
@@ -894,8 +894,8 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:346
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:124
-#: lib/block_scout_web/views/tokens/overview_view.ex:40
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:125
+#: lib/block_scout_web/views/tokens/overview_view.ex:41
 #: lib/block_scout_web/views/transaction_view.ex:405
 msgid "Token Transfers"
 msgstr ""
@@ -944,7 +944,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:15
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:17
-#: lib/block_scout_web/views/tokens/overview_view.ex:43
+#: lib/block_scout_web/views/tokens/overview_view.ex:44
 msgid "Inventory"
 msgstr ""
 
@@ -1187,7 +1187,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:77
 msgid "Query"
 msgstr ""
 
@@ -1640,7 +1640,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:119
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:107
 msgid "WEI"
 msgstr ""
 
@@ -1775,7 +1775,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:125
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:126
 msgid "Metadata"
 msgstr ""
 
@@ -1852,7 +1852,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:81
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:25
 #: lib/block_scout_web/views/address_view.ex:349
-#: lib/block_scout_web/views/tokens/overview_view.ex:42
+#: lib/block_scout_web/views/tokens/overview_view.ex:43
 msgid "Read Contract"
 msgstr ""
 
@@ -1931,7 +1931,7 @@ msgid "Waiting for transaction's confirmation..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:77
 msgid "Write"
 msgstr ""
 
@@ -2700,11 +2700,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:38
 msgid "Swap STAKE on Honeyswap"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:34
-msgid "Bridge to Ethereum"
 msgstr ""
 
 #, elixir-format
