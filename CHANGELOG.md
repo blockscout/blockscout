@@ -14,6 +14,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3735](https://github.com/blockscout/blockscout/pull/3735) - Token balance on demand fetcher memory leak fix
 - [#3732](https://github.com/poanetwork/blockscout/pull/3732) - POSDAO: fix snapshotting and remove temporary code
 - [#3731](https://github.com/poanetwork/blockscout/pull/3731) - Handle bad gateway at pending transactions fetcher
 - [#3730](https://github.com/poanetwork/blockscout/pull/3730) - Set default period for average block time counter refresh interval
@@ -38,6 +39,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3736](https://github.com/blockscout/blockscout/pull/3736) - Contract writer: Fix sending a transaction with tuple input type
 - [#3719](https://github.com/poanetwork/blockscout/pull/3719) - Rename ethprice API endpoint
 - [#3717](https://github.com/poanetwork/blockscout/pull/3717) - Update alpine-elixir-phoenix 1.11.3
 - [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp
