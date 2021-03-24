@@ -6,7 +6,6 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   @latest_balance_stale_threshold :timer.hours(24)
 
-  use GenServer
   use Indexer.Fetcher
 
   alias Explorer.Chain
@@ -31,30 +30,6 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     end
   end
 
-  ## Callbacks
-
-  def child_spec(start_link_arguments) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, start_link_arguments},
-      type: :worker
-    }
-  end
-
-  def start_link(init_opts, server_opts) do
-    GenServer.start_link(__MODULE__, init_opts, server_opts)
-  end
-
-  def init(_opts) do
-    {:ok, %{}}
-  end
-
-  def handle_cast({:fetch_and_update, block_number, address_hash, current_token_balances}, state) do
-    fetch_and_update(block_number, address_hash, current_token_balances)
-
-    {:noreply, state}
-  end
-
   ## Implementation
 
   defp do_trigger_fetch(address_hash, current_token_balances, latest_block_number, stale_balance_window)
@@ -64,7 +39,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
 
     if Enum.count(stale_current_token_balances) > 0 do
-      GenServer.cast(__MODULE__, {:fetch_and_update, latest_block_number, address_hash, stale_current_token_balances})
+      fetch_and_update(latest_block_number, address_hash, stale_current_token_balances)
     else
       :current
     end
