@@ -9,6 +9,7 @@ defmodule Explorer.SmartContract.Reader do
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.SmartContract.Helper
 
   @typedoc """
   Map of functions to call with the values for the function to be called with.
@@ -203,7 +204,7 @@ defmodule Explorer.SmartContract.Reader do
         abi_with_method_id = get_abi_with_method_id(abi)
 
         abi_with_method_id
-        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
+        |> Enum.filter(&Helper.queriable_method?(&1))
         |> Enum.map(&fetch_current_value_from_blockchain(&1, abi_with_method_id, contract_address_hash))
     end
   end
@@ -219,7 +220,7 @@ defmodule Explorer.SmartContract.Reader do
         implementation_abi_with_method_id = get_abi_with_method_id(implementation_abi)
 
         implementation_abi_with_method_id
-        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
+        |> Enum.filter(&Helper.queriable_method?(&1))
         |> Enum.map(&fetch_current_value_from_blockchain(&1, implementation_abi_with_method_id, contract_address_hash))
     end
   end
