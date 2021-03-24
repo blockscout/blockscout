@@ -20,9 +20,10 @@ export function prepareMethodArgs ($functionInputs, inputs) {
   return $.map($functionInputs, (element, ind) => {
     const inputValue = $(element).val()
     const inputType = inputs[ind] && inputs[ind].type
+    const inputComponents = inputs[ind] && inputs[ind].components
     let sanitizedInputValue
-    sanitizedInputValue = replaceSpaces(inputValue, inputType)
-    sanitizedInputValue = replaceDoubleQuotes(sanitizedInputValue, inputType)
+    sanitizedInputValue = replaceSpaces(inputValue, inputType, inputComponents)
+    sanitizedInputValue = replaceDoubleQuotes(sanitizedInputValue, inputType, inputComponents)
 
     if (isArrayInputType(inputType) || isTupleInputType(inputType)) {
       if (sanitizedInputValue === '') {
@@ -47,40 +48,58 @@ function isArrayInputType (inputType) {
 }
 
 function isTupleInputType (inputType) {
-  return inputType.includes('tuple') && !isArrayInputType(inputType)
+  return inputType && inputType.includes('tuple') && !isArrayInputType(inputType)
 }
 
 function isAddressInputType (inputType) {
-  return inputType.includes('address') && !isArrayInputType(inputType)
+  return inputType && inputType.includes('address') && !isArrayInputType(inputType)
 }
 
 function isUintInputType (inputType) {
-  return inputType.includes('int') && !isArrayInputType(inputType)
+  return inputType && inputType.includes('int') && !isArrayInputType(inputType)
 }
 
 function isStringInputType (inputType) {
-  return inputType.includes('string') && !isArrayInputType(inputType)
+  return inputType && inputType.includes('string') && !isArrayInputType(inputType)
 }
 
 function isNonSpaceInputType (inputType) {
   return isAddressInputType(inputType) || inputType.includes('int') || inputType.includes('bool')
 }
 
-function replaceSpaces (value, type) {
+function replaceSpaces (value, type, components) {
   if (isNonSpaceInputType(type)) {
     return value.replace(/\s/g, '')
+  } else if (isTupleInputType(type)) {
+    return value
+      .split(',')
+      .map((itemValue, itemIndex) => {
+        const itemType = components && components[itemIndex] && components[itemIndex].type
+
+        return replaceSpaces(itemValue, itemType)
+      })
+      .join(',')
   } else {
     return value
   }
 }
 
-function replaceDoubleQuotes (value, type) {
+function replaceDoubleQuotes (value, type, components) {
   if (isAddressInputType(type) || isUintInputType(type) || isStringInputType(type)) {
     if (typeof value.replaceAll === 'function') {
       return value.replaceAll('"', '')
     } else {
       return value.replace(/"/g, '')
     }
+  } else if (isTupleInputType(type)) {
+    return value
+      .split(',')
+      .map((itemValue, itemIndex) => {
+        const itemType = components && components[itemIndex] && components[itemIndex].type
+
+        return replaceDoubleQuotes(itemValue, itemType)
+      })
+      .join(',')
   } else {
     return value
   }
