@@ -14,6 +14,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3742](https://github.com/blockscout/blockscout/pull/3742) - Fix Sushiswap LP tokens custom metadata fetcher: bytes(n) symbol and name support
 - [#3741](https://github.com/blockscout/blockscout/pull/3741) - Contract reader fix when there are multiple input params including an array type
 - [#3735](https://github.com/blockscout/blockscout/pull/3735) - Token balance on demand fetcher memory leak fix
 - [#3732](https://github.com/poanetwork/blockscout/pull/3732) - POSDAO: fix snapshotting and remove temporary code

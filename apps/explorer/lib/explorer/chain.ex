@@ -82,6 +82,7 @@ defmodule Explorer.Chain do
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Reader
+  alias Explorer.Staking.ContractState
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -4232,10 +4233,10 @@ defmodule Explorer.Chain do
                symbol_signature
                |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
                |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-          token0_name = parse_contract_response(token0_name_encoded, :string)
-          token1_name = parse_contract_response(token1_name_encoded, :string)
-          token0_symbol = parse_contract_response(token0_symbol_encoded, :string)
-          token1_symbol = parse_contract_response(token1_symbol_encoded, :string)
+          token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
+          token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
+          token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
+          token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
 
           "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
         else
@@ -4415,17 +4416,45 @@ defmodule Explorer.Chain do
     values
   end
 
-  defp parse_contract_response(abi_encoded_value, type) do
+  defp parse_contract_response(abi_encoded_value, type, emergency_type \\ nil) do
     [value] =
       try do
-        abi_encoded_value
-        |> Base.decode16!(case: :mixed)
-        |> TypeDecoder.decode_raw([type])
+        [res] = decode_contract_response(abi_encoded_value, type)
+
+        [convert_binary_to_string(res, type)]
       rescue
-        _ -> [nil]
+        _ ->
+          if emergency_type do
+            try do
+              [res] = decode_contract_response(abi_encoded_value, emergency_type)
+
+              [convert_binary_to_string(res, emergency_type)]
+            rescue
+              _ ->
+                [nil]
+            end
+          else
+            [nil]
+          end
       end
 
     value
+  end
+
+  defp decode_contract_response(abi_encoded_value, type) do
+    abi_encoded_value
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw([type])
+  end
+
+  defp convert_binary_to_string(binary, type) do
+    case type do
+      {:bytes, _} ->
+        ContractState.binary_to_string(binary)
+
+      _ ->
+        binary
+    end
   end
 
   defp compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)
