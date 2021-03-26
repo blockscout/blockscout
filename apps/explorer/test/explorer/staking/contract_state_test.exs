@@ -25,7 +25,9 @@ defmodule Explorer.Staking.ContractStateTest do
 
     Application.put_env(:explorer, ContractState,
       enabled: true,
-      staking_contract_address: "0x1100000000000000000000000000000000000001"
+      staking_contract_address: "0x1100000000000000000000000000000000000001",
+      eth_blocknumber_pull_interval: "500",
+      eth_subscribe_max_delay: "60"
     )
 
     start_supervised!(ContractState)
@@ -99,7 +101,7 @@ defmodule Explorer.Staking.ContractStateTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 15
+        assert length(requests) == 18
 
         {:ok,
          format_responses([
@@ -114,26 +116,52 @@ defmodule Explorer.Staking.ContractStateTest do
            # 5 StakingAuRa.getPoolsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
            # 6 StakingAuRa.MAX_CANDIDATES
-           "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000bb8",
-           # 7 StakingAuRa.candidateMinStake
+           "0x0000000000000000000000000000000000000000000000000000000000000bb8",
+           # 7 StakingAuRa.MAX_VALIDATORS
+           "0x0000000000000000000000000000000000000000000000000000000000000013",
+           # 8 StakingAuRa.candidateMinStake
            "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-           # 8 StakingAuRa.delegatorMinStake
+           # 9 StakingAuRa.delegatorMinStake
            "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-           # 9 StakingAuRa.getPoolsLikelihood
+           # 10 StakingAuRa.getPoolsLikelihood
            "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000001bc16d674ec8000000000000000000000000000000000000000000000000000098a7d9b8314c000000000000000000000000000000000000000000000000000029a2241af62c0000",
-           # 10 StakingAuRa.getPoolsToBeElected
+           # 11 StakingAuRa.getPoolsToBeElected
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000b916e7e1f4bcb13549602ed042d36746fd0d96c9000000000000000000000000db9cb2478d917719c53862008672166808258577000000000000000000000000b6695f5c2e3f5eff8036b5f5f3a9d83a5310e51e",
-           # 11 StakingAuRa.areStakeAndWithdrawAllowed
+           # 12 StakingAuRa.areStakeAndWithdrawAllowed
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 12 StakingAuRa.erc677TokenContract
+           # 13 StakingAuRa.lastChangeBlock
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
+           # 14 StakingAuRa.erc677TokenContract
            "0x0000000000000000000000006f7a73c96bd56f8b0debc795511eda135e105ea3",
-           # 13 ValidatorSetAuRa.unremovableValidator
+           # 15 ValidatorSetAuRa.unremovableValidator
            "0x0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6",
-           # 14 ValidatorSetAuRa.getValidators
+           # 16 ValidatorSetAuRa.getValidators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000bbcaa8d48289bb1ffcf9808d9aa4b1d215054c7800000000000000000000000075df42383afe6bf5194aa8fa0e9b3d5f9e869441000000000000000000000000522df396ae70a058bd69778408630fdb023389b2",
-           # 15 ValidatorSetAuRa.validatorSetApplyBlock
+           # 17 ValidatorSetAuRa.validatorSetApplyBlock
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
+           # 18 ValidatorSetAuRa.lastChangeBlock
            "0x0000000000000000000000000000000000000000000000000000000000000000"
          ])}
+      end
+    )
+
+    # ContractReader.call_current_token_reward_to_distribute
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _request, _opts ->
+        {:ok,
+         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}
+      end
+    )
+
+    # ContractReader.call_current_pool_rewards
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _request, _opts ->
+        {:ok,
+         "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"}
       end
     )
 
@@ -148,6 +176,44 @@ defmodule Explorer.Staking.ContractStateTest do
          format_responses([
            # BlockRewardAuRa.validatorMinRewardPercent
            "0x000000000000000000000000000000000000000000000000000000000000001e"
+         ])}
+      end
+    )
+
+    # invoke update_block_reward_balance()
+
+    ## BalanceReader.get_balances_of
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn requests, _opts ->
+        assert length(requests) == 1
+
+        {:ok,
+         format_responses([
+           # ERC677BridgeTokenRewardable.balanceOf(BlockRewardAuRa)
+           "0x0000000000000000000000000000000000000000000000000000000000000000"
+         ])}
+      end
+    )
+
+    ## MetadataRetriever.get_functions_of
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn requests, _opts ->
+        assert length(requests) == 4
+
+        {:ok,
+         format_responses([
+           # ERC677BridgeTokenRewardable.decimals
+           "0x0000000000000000000000000000000000000000000000000000000000000012",
+           # ERC677BridgeTokenRewardable.name
+           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
+           # ERC677BridgeTokenRewardable.symbol
+           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
+           # ERC677BridgeTokenRewardable.totalSupply
+           "0x000000000000000000000000000000000000000000000001f399b1438a100000"
          ])}
       end
     )
@@ -640,44 +706,6 @@ defmodule Explorer.Staking.ContractStateTest do
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # 10 BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1"
-         ])}
-      end
-    )
-
-    # invoke at_start_snapshotting()
-
-    ## BalanceReader.get_balances_of
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # ERC677BridgeTokenRewardable.balanceOf(BlockRewardAuRa)
-           "0x0000000000000000000000000000000000000000000000000000000000000000"
-         ])}
-      end
-    )
-
-    ## MetadataRetriever.get_functions_of
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 4
-
-        {:ok,
-         format_responses([
-           # ERC677BridgeTokenRewardable.decimals
-           "0x0000000000000000000000000000000000000000000000000000000000000012",
-           # ERC677BridgeTokenRewardable.name
-           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
-           # ERC677BridgeTokenRewardable.symbol
-           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
-           # ERC677BridgeTokenRewardable.totalSupply
-           "0x000000000000000000000000000000000000000000000001f399b1438a100000"
          ])}
       end
     )

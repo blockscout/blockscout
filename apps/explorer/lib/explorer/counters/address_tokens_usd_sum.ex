@@ -8,7 +8,6 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
 
   @cache_name :address_tokens_usd_value
   @last_update_key "last_update"
-  @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
 
   @ets_opts [
     :set,
@@ -61,12 +60,13 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash) do
+    cache_period = address_tokens_usd_sum_cache_period()
     address_hash_string = get_address_hash_string(address_hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
-      current_time() - updated_at > @cache_period -> true
+      current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
@@ -109,4 +109,11 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   end
 
   def enable_consolidation?, do: @enable_consolidation
+
+  defp address_tokens_usd_sum_cache_period do
+    case Integer.parse(System.get_env("ADDRESS_TOKENS_USD_SUM_CACHE_PERIOD", "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.hours(1)
+    end
+  end
 end

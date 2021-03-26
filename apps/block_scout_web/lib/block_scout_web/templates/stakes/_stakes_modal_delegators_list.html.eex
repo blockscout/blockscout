@@ -2,14 +2,14 @@
   <div class="modal-dialog modal-dialog-centered modal-delegators-info" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><%= gettext("Delegators") %></h5>
+        <h5 class="modal-title"><%= gettext("Delegators of ") %><%= @pool.staking_address_hash %></h5>
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body">
         <div class="stakes-table-container">
           <div class="stakes-table-head">
             <div class="col-1"></div>
-            <div class="col-4">
+            <div class="<%= if @pool.is_validator, do: "col-2", else: "col-4" %>">
               <%=
                 pool_type = cond do
                   @pool.is_validator -> gettext("validator")
@@ -25,7 +25,7 @@
                 )
               %>
             </div>
-            <div class="col-4">
+            <div class="<%= if @pool.is_validator, do: "col-3", else: "col-4" %>">
               <%=
                 title =
                   if @show_snapshotted_data do
@@ -49,15 +49,15 @@
               <%=
                 title =
                   if @show_snapshotted_data do
-                    gettext("Potential Reward Percent") <> "<br />(" <> gettext("Current Reward Percent")  <> ")"
+                    gettext("Potential Reward Share") <> "<br />(" <> gettext("Current Reward Share")  <> ")"
                   else
-                    gettext("Potential Reward Percent")
+                    gettext("Potential Reward Share")
                   end
 
                 tooltip =
-                  gettext("Reward distribution is based on stake amount. Validator receives a minimum of %{min}%.", min: @validator_min_reward_percent) <>
+                  gettext("Reward distribution is based on stake amount. Validator receives at least %{min}% of the pool reward.", min: @validator_min_reward_percent) <>
                     if @show_snapshotted_data do
-                      " " <> gettext("Current Reward Percent is calculated based on the Working Stake Amount.")
+                      " " <> gettext("Current Reward Share is calculated based on the Working Stake Amount.")
                     else
                       ""
                     end
@@ -68,12 +68,22 @@
                   tooltip: tooltip
               %>
             </div>
+            <%= if @pool.is_validator do %>
+              <div class="col-3">
+                <%=
+                  render BlockScoutWeb.StakesView,
+                    "_stakes_th.html",
+                    title: gettext("APY & Predicted Reward"),
+                    tooltip: gettext("Approximate Current Annual Percentage Yield. If you see N/A, please reopen the popup in a few blocks (APY cannot be calculated at the very beginning of a staking epoch). Predicted Reward is the amount of %{symbol} a participant will receive for staking and can claim once the current epoch ends.", symbol: @token.symbol)
+                %>
+              </div>
+            <% end %>
           </div>
           <div class="stakes-table-body">
             <%= for {staker, index} <- Enum.with_index(@stakers, 1) do %>
               <div class="row">
                 <div class="col-1 stakes-td stakes-cell"><div class="stakes-td-order"><%= index %></div></div>
-                <div class="col-4 stakes-td stakes-cell">
+                <div class="<%= if @pool.is_validator, do: "col-2", else: "col-4" %> stakes-td stakes-cell">
                   <div class="stakes-address-container">
                     <span class="stakes-address">
                       <%=
@@ -116,7 +126,7 @@
                     <% end %>
                   </div>
                 </div>
-                <div class="col-4 stakes-td stakes-cell">
+                <div class="<%= if @pool.is_validator, do: "col-3", else: "col-4" %> stakes-td stakes-cell">
                   <%= format_token_amount(staker.stake_amount, @token, symbol: false) %>
                   <%= if @show_snapshotted_data do %>
                     (
@@ -162,6 +172,18 @@
                     -
                   <% end %>
                 </div>
+                <%= if @pool.is_validator do %>
+                  <div class="col-3 stakes-td stakes-cell">
+                    <%= cond do %>
+                    <% staker.apy -> %>
+                      <%= staker.apy.apy %> (<%= format_token_amount(staker.apy.predicted_reward, @token, symbol: false, digits: 2) %>)
+                    <% @show_snapshotted_data and staker.snapshotted_stake_amount == nil -> %>
+                      <%= gettext("Pending") %>
+                    <% true -> %>
+                      <%= gettext("N/A") %>
+                    <% end %>
+                  </div>
+                <% end %>
               </div>
             <% end %>
           </div>

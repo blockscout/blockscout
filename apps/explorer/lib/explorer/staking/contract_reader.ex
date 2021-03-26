@@ -19,6 +19,8 @@ defmodule Explorer.Staking.ContractReader do
       inactive_pools: {:staking, "df6f55f5", [], block_number},
       # f0786096 = keccak256(MAX_CANDIDATES())
       max_candidates: {:staking, "f0786096", [], block_number},
+      # 714897df = keccak256(MAX_VALIDATORS())
+      max_validators: {:validator_set, "714897df", [], block_number},
       # 5fef7643 = keccak256(candidateMinStake())
       min_candidate_stake: {:staking, "5fef7643", [], block_number},
       # da7a9b6a = keccak256(delegatorMinStake())
@@ -29,6 +31,8 @@ defmodule Explorer.Staking.ContractReader do
       pools_to_be_elected: {:staking, "a5d54f65", [], block_number},
       # f4942501 = keccak256(areStakeAndWithdrawAllowed())
       staking_allowed: {:staking, "f4942501", [], block_number},
+      # 74bdb372 = keccak256(lastChangeBlock())
+      staking_last_change_block: {:staking, "74bdb372", [], block_number},
       # 2d21d217 = keccak256(erc677TokenContract())
       token_contract_address: {:staking, "2d21d217", [], block_number},
       # 704189ca = keccak256(unremovableValidator())
@@ -36,7 +40,9 @@ defmodule Explorer.Staking.ContractReader do
       # b7ab4db5 = keccak256(getValidators())
       validators: {:validator_set, "b7ab4db5", [], block_number},
       # b927ef43 = keccak256(validatorSetApplyBlock())
-      validator_set_apply_block: {:validator_set, "b927ef43", [], block_number}
+      validator_set_apply_block: {:validator_set, "b927ef43", [], block_number},
+      # 74bdb372 = keccak256(lastChangeBlock())
+      validator_set_last_change_block: {:validator_set, "74bdb372", [], block_number}
     ]
   end
 
@@ -45,6 +51,129 @@ defmodule Explorer.Staking.ContractReader do
       # 9ea8082b = keccak256(poolDelegators(address))
       active_delegators: {:staking, "9ea8082b", [staking_address], block_number}
     ]
+  end
+
+  # makes a raw `eth_call` for the `currentPoolRewards` function of the BlockReward contract:
+  # function currentPoolRewards(
+  #     uint256 _rewardToDistribute,
+  #     uint256[] memory _blocksCreatedShareNum,
+  #     uint256 _blocksCreatedShareDenom,
+  #     uint256 _stakingEpoch
+  # ) public view returns(uint256[] memory poolRewards);
+  def call_current_pool_rewards(block_reward_address, reward_to_distribute, staking_epoch, block_number) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    reward_to_distribute =
+      reward_to_distribute
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    staking_epoch =
+      staking_epoch
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    function_signature = "0x212329f3"
+
+    data =
+      function_signature <>
+        reward_to_distribute <>
+        "00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000" <>
+        staking_epoch <> "0000000000000000000000000000000000000000000000000000000000000000"
+
+    request = %{
+      id: 0,
+      method: "eth_call",
+      params: [
+        %{
+          to: block_reward_address,
+          data: data
+        },
+        "0x" <> Integer.to_string(block_number, 16)
+      ]
+    }
+
+    result =
+      request
+      |> EthereumJSONRPC.request()
+      |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, response} ->
+        response =
+          response
+          |> String.replace_leading("0x", "")
+          |> Base.decode16!(case: :lower)
+
+        decoded = ABI.decode("res(uint256[])", response)
+        Enum.at(decoded, 0)
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  # makes a raw `eth_call` for the `currentTokenRewardToDistribute` function of the BlockReward contract:
+  # function currentTokenRewardToDistribute(
+  #     address _stakingContract,
+  #     uint256 _stakingEpoch,
+  #     uint256 _totalRewardShareNum,
+  #     uint256 _totalRewardShareDenom,
+  #     address[] memory _validators
+  # ) public view returns(uint256 rewardToDistribute, uint256 totalReward);
+  def call_current_token_reward_to_distribute(
+        block_reward_address,
+        staking_contract_address,
+        staking_epoch,
+        block_number
+      ) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    staking_contract_address = address_pad_to_64(staking_contract_address)
+
+    staking_epoch =
+      staking_epoch
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    function_signature = "0x46955281"
+    mandatory_params = staking_contract_address <> staking_epoch
+
+    optional_params =
+      "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000"
+
+    data = function_signature <> mandatory_params <> optional_params
+
+    request = %{
+      id: 0,
+      method: "eth_call",
+      params: [
+        %{
+          to: block_reward_address,
+          data: data
+        },
+        "0x" <> Integer.to_string(block_number, 16)
+      ]
+    }
+
+    result =
+      request
+      |> EthereumJSONRPC.request()
+      |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, response} ->
+        response =
+          response
+          |> String.replace_leading("0x", "")
+          |> Base.decode16!(case: :lower)
+
+        decoded = ABI.decode("res(uint256,uint256)", response)
+        Enum.at(decoded, 0)
+
+      {:error, _} ->
+        0
+    end
   end
 
   # makes a raw `eth_call` for the `getRewardAmount` function of the Staking contract:

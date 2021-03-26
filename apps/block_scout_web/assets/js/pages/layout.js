@@ -7,3 +7,19 @@ $(document).click(function (event) {
     $('.navbar-toggler').click()
   }
 })
+
+$(document).on('keyup', function (event) {
+  if (event.key === '/') {
+    $('#q').trigger('focus')
+  }
+})
+
+$('#q').on('focus', function (_event) {
+  $('#slash-icon').hide()
+  $(this).addClass('focused-field')
+})
+
+$('#q').on('focusout', function (_event) {
+  $('#slash-icon').show()
+  $(this).removeClass('focused-field')
+})

@@ -157,40 +157,4 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
              end)
     end
   end
-
-  describe "GET token-transfers-csv/2" do
-    test "exports token transfers to csv", %{conn: conn} do
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: address)
-        |> with_block()
-
-      insert(:token_transfer, transaction: transaction, from_address: address)
-      insert(:token_transfer, transaction: transaction, to_address: address)
-
-      conn = get(conn, "/token-transfers-csv", %{"address_id" => Address.checksum(address.hash)})
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
-    end
-  end
-
-  describe "GET transactions_csv/2" do
-    test "download csv file with transactions", %{conn: conn} do
-      address = insert(:address)
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block()
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block()
-
-      conn = get(conn, "/transactions_csv", %{"address_id" => Address.checksum(address.hash)})
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
-    end
-  end
 end

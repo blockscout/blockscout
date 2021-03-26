@@ -22,6 +22,18 @@ import constants from './stakes/constants'
 
 const stakesPageSelector = '[data-page="stakes"]'
 
+if (localStorage.getItem('stakes-alert-read') === 'true') {
+  $('.js-stakes-welcome-alert').hide()
+} else {
+  $('.js-stakes-welcome-alert').show()
+}
+
+if (localStorage.getItem('stakes-warning-read') === 'true') {
+  $('.js-stakes-warning-alert').hide()
+} else {
+  $('.js-stakes-warning-alert').show()
+}
+
 export const initialState = {
   account: null,
   blockRewardContract: null,
@@ -29,6 +41,7 @@ export const initialState = {
   currentBlockNumber: 0, // current block number
   finishRequestResolve: null,
   lastEpochNumber: 0,
+  loading: true,
   network: null,
   refreshBlockNumber: 0, // last page refresh block number
   refreshInterval: null,
@@ -41,7 +54,8 @@ export const initialState = {
   tokenSymbol: '',
   validatorSetApplyBlock: 0,
   validatorSetContract: null,
-  web3: null
+  web3: null,
+  stakingErrorShown: false
 }
 
 // 100 - id of xDai network, 101 - id of xDai test network
@@ -122,6 +136,11 @@ export function reducer (state = initialState, action) {
       }
       return state
     }
+    case 'UNHEALTHY_APP_ERROR_SHOWN': {
+      return Object.assign({}, state, {
+        stakingErrorShown: true
+      })
+    }
     default:
       return state
   }
@@ -144,6 +163,7 @@ const elements = {
 const $stakesPage = $(stakesPageSelector)
 const $stakesTop = $('[data-selector="stakes-top"]')
 const $refreshInformer = $('.refresh-informer', $stakesPage)
+
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
   connectElements({ store, elements })
@@ -205,6 +225,11 @@ if ($stakesPage.length) {
         await reloadPoolList(msg, store)
       }
     })
+
+    if (msg.epoch_end_block === 0 && !state.stakingErrorShown) {
+      openErrorModal('Staking DApp is currently unavailable', 'Not all functions are active at the moment. Please try again later.')
+      store.dispatch({ type: 'UNHEALTHY_APP_ERROR_SHOWN' })
+    }
 
     updating = false
   }
@@ -295,6 +320,14 @@ if ($stakesPage.length) {
         openClaimWithdrawalModal(event, store)
       }
     })
+    .on('click', '.js-stakes-btn-close-welcome-alert', event => {
+      $(event.target).closest('section.container').hide()
+      localStorage.setItem('stakes-alert-read', 'true')
+    })
+    .on('click', '.js-stakes-btn-close-warning', event => {
+      $(event.target).closest('section.container').hide()
+      localStorage.setItem('stakes-warning-read', 'true')
+    })
 
   $stakesPage
     .on('change', '[pool-filter-banned]', () => updateFilters(store, 'banned'))
@@ -319,12 +352,14 @@ async function getAccounts () {
 }
 
 async function getNetId (web3) {
-  let netId = null
-  if (!window.ethereum.chainId) {
+  let netId = window.ethereum.chainId
+  if (!netId) {
+    netId = await window.ethereum.request({ method: 'eth_chainId' })
+  }
+  if (!netId) {
     console.error(`Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`)
   } else {
-    const { chainId } = window.ethereum
-    netId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
+    netId = web3.utils.isHex(netId) ? web3.utils.hexToNumber(netId) : netId
   }
   return netId
 }

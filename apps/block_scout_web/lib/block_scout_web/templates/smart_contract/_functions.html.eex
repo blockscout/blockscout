@@ -2,7 +2,7 @@
 <%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
   <%= if metadata_for_verification do %>
     <div class="mb-4">
-      <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in our DB") %> <%= link(
+      <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
 metadata_for_verification.address_hash,
 to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All functions displayed below are from ABI of that contract. In order to verify current contract, proceed with") %> <%= link(
       gettext("Verify & Publish"),
@@ -58,14 +58,30 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
 
           <%= if queryable?(function["inputs"]) do %>
             <%= for input <- function["inputs"] do %>
-              <div class="form-group pr-2">
-                <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+              <div class="form-group pr-3">
+                <%= if int?(input["type"]) do %>
+                  <input type="number" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+                  <span data-dropdown-toggle="" data-toggle="dropdown">
+                    <span class="button btn-line button-xs contract-plus-btn-container ml-1 mt-2">
+                      <i class="fa fa-plus contract-plus-btn"></i>
+                    </span>
+                    <div class="dropdown-menu exponention-dropdown">  
+                      <div class="dropdown-item contract-exponentiation-btn" data-power=6>10<sup>6</sup></div>
+                      <div class="dropdown-item contract-exponentiation-btn" data-power=8>10<sup>8</sup></div>
+                      <div class="dropdown-item contract-exponentiation-btn" data-power=18>10<sup>18</sup></div>
+                      <div class="dropdown-item contract-exponentiation-btn" data-power>10<input type="number" name="custom_power" class="form-control form-control-sm address-input-sm ml-1 custom-power-input" /></div> 
+                    </div>
+                  </span>
+
+                <% else %>
+                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+                <% end %>
               </div>
             <% end %>
           <% end %>
 
           <%= if payable?(function) do %>
-            <div class="form-group pr-2">
+            <div class="form-group pr-3">
               <input type="text" name="function_input" tx-value class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)'  />
             </div>
           <% end %>
@@ -78,7 +94,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             <%= if (queryable?(function["inputs"])), do: raw "&#8627;" %>
 
             <%= for output <- function["outputs"] do %>
-              <%= output["type"] %>
+              <%= if output["name"] && output["name"] !== "", do: "#{output["name"]}(#{output["type"]})", else: output["type"] %>
             <% end %>
           </div>
         <% end %>
@@ -105,7 +121,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
                     </span>
                   </div>
                 <% else %>
-                  <%= values(output["value"], output["type"]) %>
+                  <%= raw(values_only(output["value"], output["type"], output["components"])) %>
                 <% end %>
             <% end %>
           <% end %>

@@ -4,6 +4,9 @@ import humps from 'humps'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import '../lib/async_listing_load'
 import '../app'
+import {
+  openQrModal
+} from '../lib/modals'
 
 export const initialState = {
   channelDisconnected: false,
@@ -87,3 +90,7 @@ if ($tokenPage.length) {
   connectElements({ store, elements })
   loadCounters(store)
 }
+
+$('.btn-qr-icon').click(_event => {
+  openQrModal()
+})

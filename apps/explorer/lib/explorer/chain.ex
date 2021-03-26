@@ -1954,7 +1954,13 @@ defmodule Explorer.Chain do
   end
 
   def check_if_tokens_at_address(address_hash) do
-    Repo.exists?(from(tb in CurrentTokenBalance, where: tb.address_hash == ^address_hash))
+    Repo.exists?(
+      from(
+        tb in CurrentTokenBalance,
+        where: tb.address_hash == ^address_hash,
+        where: tb.value > 0
+      )
+    )
   end
 
   @doc """
@@ -4595,7 +4601,7 @@ defmodule Explorer.Chain do
   end
 
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
-  def fetch_token_holders_from_token_hash(contract_address_hash, options) do
+  def fetch_token_holders_from_token_hash(contract_address_hash, options \\ []) do
     contract_address_hash
     |> CurrentTokenBalance.token_holders_ordered_by_value(options)
     |> Repo.all()
@@ -4905,7 +4911,7 @@ defmodule Explorer.Chain do
     paging_query =
       base_query
       |> limit(^paging_options.page_size)
-      |> order_by(desc: :stakes_ratio, desc: :is_active)
+      |> order_by(desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash)
 
     case paging_options.key do
       {value, address_hash} ->
@@ -4928,6 +4934,24 @@ defmodule Explorer.Chain do
     |> where(is_deleted: false)
     |> staking_pool_filter(filter)
     |> Repo.aggregate(:count, :staking_address_hash)
+  end
+
+  @doc "Get sum of delegators count from the DB"
+  @spec delegators_count_sum(filter :: :validator | :active | :inactive) :: integer
+  def delegators_count_sum(filter) do
+    StakingPool
+    |> where(is_deleted: false)
+    |> staking_pool_filter(filter)
+    |> Repo.aggregate(:sum, :delegators_count)
+  end
+
+  @doc "Get sum of total staked amount from the DB"
+  @spec total_staked_amount_sum(filter :: :validator | :active | :inactive) :: integer
+  def total_staked_amount_sum(filter) do
+    StakingPool
+    |> where(is_deleted: false)
+    |> staking_pool_filter(filter)
+    |> Repo.aggregate(:sum, :total_staked_amount)
   end
 
   defp staking_pool_filter(query, :validator) do
@@ -4954,6 +4978,22 @@ defmodule Explorer.Chain do
           d.staking_address_hash == ^staking_address_hash and
             (d.is_active == true or (^show_snapshotted_data and d.snapshotted_stake_amount > 0 and d.is_active != true)),
         order_by: [desc: d.stake_amount]
+      )
+
+    query
+    |> Repo.all()
+  end
+
+  def staking_pool_snapshotted_delegator_data_for_apy do
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        select: %{
+          :staking_address_hash => fragment("DISTINCT ON (?) ?", d.staking_address_hash, d.staking_address_hash),
+          :snapshotted_reward_ratio => d.snapshotted_reward_ratio,
+          :snapshotted_stake_amount => d.snapshotted_stake_amount
+        },
+        where: d.staking_address_hash != d.address_hash and d.snapshotted_stake_amount > 0
       )
 
     query

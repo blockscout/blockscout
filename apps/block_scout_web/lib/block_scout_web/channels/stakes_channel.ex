@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.StakesChannel do
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.{ContractReader, ContractState}
   alias Phoenix.View
+  alias Timex.Duration
 
   import BlockScoutWeb.Gettext
 
@@ -72,6 +73,7 @@ defmodule BlockScoutWeb.StakesChannel do
           %{
             block_number: BlockNumber.get_max(),
             epoch_number: ContractState.get(:epoch_number, 0),
+            epoch_end_block: ContractState.get(:epoch_end_block, 0),
             staking_allowed: ContractState.get(:staking_allowed, false),
             staking_token_defined: ContractState.get(:token, nil) != nil,
             validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
@@ -101,10 +103,27 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("render_delegators_list", %{"address" => pool_staking_address}, socket) do
+    pool_staking_address_downcased = String.downcase(pool_staking_address)
     pool = Chain.staking_pool(pool_staking_address)
+    pool_rewards = ContractState.get(:pool_rewards, %{})
+    calc_apy_enabled = ContractState.calc_apy_enabled?()
     token = ContractState.get(:token)
     validator_min_reward_percent = ContractState.get(:validator_min_reward_percent)
     show_snapshotted_data = ContractState.show_snapshotted_data(pool.is_validator)
+    staking_epoch_duration = ContractState.staking_epoch_duration()
+
+    average_block_time =
+      try do
+        Duration.to_seconds(AverageBlockTime.average_block_time())
+      rescue
+        _ -> nil
+      end
+
+    pool_reward =
+      case Map.fetch(pool_rewards, String.downcase(to_string(pool.mining_address_hash))) do
+        {:ok, pool_reward} -> pool_reward
+        :error -> nil
+      end
 
     stakers =
       pool_staking_address
@@ -117,6 +136,21 @@ defmodule BlockScoutWeb.StakesChannel do
           staker_address == socket.assigns[:account] -> 1
           true -> 2
         end
+      end)
+      |> Enum.map(fn staker ->
+        apy =
+          if calc_apy_enabled do
+            calc_apy(
+              pool,
+              staker,
+              pool_staking_address_downcased,
+              pool_reward,
+              average_block_time,
+              staking_epoch_duration
+            )
+          end
+
+        Map.put(staker, :apy, apy)
       end)
 
     html =
@@ -423,11 +457,14 @@ defmodule BlockScoutWeb.StakesChannel do
         assign(socket, :staking_update_data, data)
       end
 
+    epoch_end_block = if Map.has_key?(data, :epoch_end_block), do: data.epoch_end_block, else: 0
+
     push(socket, "staking_update", %{
       account: socket.assigns[:account],
       block_number: data.block_number,
       by_set_account: by_set_account,
       epoch_number: data.epoch_number,
+      epoch_end_block: epoch_end_block,
       staking_allowed: data.staking_allowed,
       staking_token_defined: data.staking_token_defined,
       validator_set_apply_block: data.validator_set_apply_block,
@@ -652,6 +689,25 @@ defmodule BlockScoutWeb.StakesChannel do
     after
       :ets.delete(ContractState, claim_reward_long_op_key(staker))
     end
+  end
+
+  defp calc_apy(pool, staker, pool_staking_address_downcased, pool_reward, average_block_time, staking_epoch_duration) do
+    staker_address = String.downcase(to_string(staker.address_hash))
+
+    {reward_ratio, stake_amount} =
+      if staker_address == pool_staking_address_downcased do
+        {pool.snapshotted_validator_reward_ratio, pool.snapshotted_self_staked_amount}
+      else
+        {staker.snapshotted_reward_ratio, staker.snapshotted_stake_amount}
+      end
+
+    ContractState.calc_apy(
+      reward_ratio,
+      pool_reward,
+      stake_amount,
+      average_block_time,
+      staking_epoch_duration
+    )
   end
 
   defp claim_reward_long_op_active(socket) do
