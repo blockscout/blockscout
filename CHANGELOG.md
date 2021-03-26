@@ -42,6 +42,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3745](https://github.com/blockscout/blockscout/pull/3745) - Refactor and optimize Staking DApp
 - [#3744](https://github.com/blockscout/blockscout/pull/3744) - Update Mix packages: timex, hackney, tzdata certifi
 - [#3736](https://github.com/blockscout/blockscout/pull/3736), [#3739](https://github.com/blockscout/blockscout/pull/3739) - Contract writer: Fix sending a transaction with tuple input type
 - [#3719](https://github.com/poanetwork/blockscout/pull/3719) - Rename ethprice API endpoint
