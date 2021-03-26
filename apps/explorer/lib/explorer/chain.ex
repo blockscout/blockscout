@@ -3473,7 +3473,7 @@ defmodule Explorer.Chain do
 
             verified_contract_twin =
               verified_contract_twin_query
-              |> Repo.one()
+              |> Repo.one(timeout: 10_000)
 
             %{
               :verified_contract => verified_contract_twin
