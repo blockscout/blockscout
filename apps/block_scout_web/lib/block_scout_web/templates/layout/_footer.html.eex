@@ -14,6 +14,7 @@
 
     <% other_explorers = other_explorers() %>
     <% bridges = bridges_list() %>
+    <% other_bridges = other_bridges_list() %>
     <% bridges_alm = bridges_alm_list() %>
     <% col_size = if Enum.empty?(other_explorers), do: 2, else: 1 %>
 
@@ -106,6 +107,9 @@
           <h3><%= gettext("Bridges") %></h3>
           <ul>
             <%= for %{title: name, url: url} <- bridges do %>
+              <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= name %> </a></li>
+            <% end %>
+            <%= for %{title: name, url: url} <- other_bridges do %>
               <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= name %> </a></li>
             <% end %>
             <%= for %{title: name, url: url} <- bridges_alm do %>

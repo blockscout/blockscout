@@ -151,9 +151,14 @@
 
                 <div class="col-xs-12 col-md-4 col-lg-4">
                   <% bridges = bridges_list() %>
+                  <% other_bridges = other_bridges_list() %>
                   <%= unless Enum.empty?(bridges) do %>
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("Bridges") %></b></h3>
                     <%= for %{url: url, title: title} <- bridges do %> 
+                      <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <% end %>
+                    <hr class="menu-hr" />
+                    <%= for %{url: url, title: title} <- other_bridges do %> 
                       <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                     <% end %>
                   <% end %>

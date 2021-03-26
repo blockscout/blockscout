@@ -218,6 +218,21 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
+  def other_bridges_list do
+    if Application.get_env(:block_scout_web, :other_bridges) do
+      try do
+        :block_scout_web
+        |> Application.get_env(:other_bridges)
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
   def bridges_alm_list do
     if Application.get_env(:block_scout_web, :bridges_alm) do
       try do
