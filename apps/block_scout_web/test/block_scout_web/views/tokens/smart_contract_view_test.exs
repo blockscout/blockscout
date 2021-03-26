@@ -15,6 +15,11 @@ defmodule BlockScoutWeb.SmartContractViewTest do
 
       refute SmartContractView.queryable?(inputs)
     end
+
+    test "returns true if list of inputs is not empty" do
+      assert SmartContractView.queryable?([%{"name" => "argument_name", "type" => "uint256"}]) == true
+      assert SmartContractView.queryable?([]) == false
+    end
   end
 
   describe "writable?" do
@@ -73,128 +78,12 @@ defmodule BlockScoutWeb.SmartContractViewTest do
     end
   end
 
-  describe "payable?" do
-    test "returns true when there is payable function" do
-      function = %{
-        "type" => "function",
-        "stateMutability" => "payable",
-        "payable" => true,
-        "outputs" => [],
-        "name" => "upgradeToAndCall",
-        "inputs" => [
-          %{"type" => "uint256", "name" => "version"},
-          %{"type" => "address", "name" => "implementation"},
-          %{"type" => "bytes", "name" => "data"}
-        ],
-        "constant" => false
-      }
-
-      assert SmartContractView.payable?(function)
-    end
-
-    test "returns true when there is old-style payable function" do
-      function = %{
-        "type" => "function",
-        "payable" => true,
-        "outputs" => [],
-        "name" => "upgradeToAndCall",
-        "inputs" => [
-          %{"type" => "uint256", "name" => "version"},
-          %{"type" => "address", "name" => "implementation"},
-          %{"type" => "bytes", "name" => "data"}
-        ],
-        "constant" => false
-      }
-
-      assert SmartContractView.payable?(function)
-    end
-
-    test "returns false when it is nonpayable function" do
-      function = %{
-        "type" => "function",
-        "stateMutability" => "nonpayable",
-        "payable" => false,
-        "outputs" => [],
-        "name" => "transferProxyOwnership",
-        "inputs" => [%{"type" => "address", "name" => "newOwner"}],
-        "constant" => false
-      }
-
-      refute SmartContractView.payable?(function)
-    end
-
-    test "returns false when there is no function" do
-      function = %{}
-
-      refute SmartContractView.payable?(function)
-    end
-
-    test "returns false when function is nil" do
-      function = nil
-
-      refute SmartContractView.payable?(function)
-    end
-  end
-
-  describe "nonpayable?" do
-    test "returns true when there is nonpayable function" do
-      function = %{
-        "type" => "function",
-        "stateMutability" => "nonpayable",
-        "payable" => false,
-        "outputs" => [],
-        "name" => "transferProxyOwnership",
-        "inputs" => [%{"type" => "address", "name" => "newOwner"}],
-        "constant" => false
-      }
-
-      assert SmartContractView.nonpayable?(function)
-    end
-
-    test "returns true when there is old-style nonpayable function" do
-      function = %{
-        "type" => "function",
-        "outputs" => [],
-        "name" => "test",
-        "inputs" => [%{"type" => "address", "name" => "newOwner"}],
-        "constant" => false
-      }
-
-      assert SmartContractView.nonpayable?(function)
-    end
-
-    test "returns false when it is payable function" do
-      function = %{
-        "type" => "function",
-        "stateMutability" => "payable",
-        "payable" => true,
-        "outputs" => [],
-        "name" => "upgradeToAndCall",
-        "inputs" => [
-          %{"type" => "uint256", "name" => "version"},
-          %{"type" => "address", "name" => "implementation"},
-          %{"type" => "bytes", "name" => "data"}
-        ],
-        "constant" => false
-      }
-
-      refute SmartContractView.nonpayable?(function)
-    end
-
-    test "returns true when there is no function" do
-      function = %{}
-
-      refute SmartContractView.nonpayable?(function)
-    end
-
-    test "returns false when function is nil" do
-      function = nil
-
-      refute SmartContractView.nonpayable?(function)
-    end
-  end
-
   describe "address?" do
+    test "returns true if type equals `address`" do
+      assert SmartContractView.address?("address") == true
+      assert SmartContractView.address?("uint256") == false
+    end
+
     test "returns true when the type is equal to the string 'address'" do
       type = "address"
 
@@ -286,6 +175,14 @@ defmodule BlockScoutWeb.SmartContractViewTest do
       assert SmartContractView.values_only(value, :string, nil) == "POA"
     end
 
+    test "returns the value when the type is :bytes" do
+      value =
+        "0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe700000000000019f2f6a78083ca3e2a662d6dd1703c939c8ace2e268d88ad09518695c6c3712ac10a214be5109a65567100061a800101806401125e4cfb0000000000000000000000000ae055097c6d159879521c384f1d2123d1f195e60000000000000000000000004c26ca0dc82a6e7bb00b8815a65985b67c0d30d3000000000000000000000000000000000000000000000002b5598f488fb733c9"
+
+      assert SmartContractView.values_only(value, :bytes, nil) ==
+               "0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe700000000000019f2f6a78083ca3e2a662d6dd1703c939c8ace2e268d88ad09518695c6c3712ac10a214be5109a65567100061a800101806401125e4cfb0000000000000000000000000ae055097c6d159879521c384f1d2123d1f195e60000000000000000000000004c26ca0dc82a6e7bb00b8815a65985b67c0d30d3000000000000000000000000000000000000000000000002b5598f488fb733c9"
+    end
+
     test "returns the value when the type is boolean" do
       value = "true"
 
@@ -317,6 +214,12 @@ defmodule BlockScoutWeb.SmartContractViewTest do
       value = "0"
 
       assert SmartContractView.values_only(value, "uint64", nil) == "0"
+    end
+
+    test "returns the value when the type is int(n) and value is 0" do
+      value = "0"
+
+      assert SmartContractView.values_only(value, "int64", nil) == "0"
     end
   end
 end

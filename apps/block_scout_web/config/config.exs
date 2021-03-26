@@ -24,6 +24,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: true,
   staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
+  staking_enabled_in_menu: System.get_env("ENABLE_POS_STAKING_IN_MENU", "false") == "true",
+  show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
+  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
   # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
   staking_pool_list_refresh_interval: 5
 
@@ -35,7 +38,8 @@ config :block_scout_web,
   api_url: System.get_env("API_URL"),
   apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
   external_apps: System.get_env("EXTERNAL_APPS"),
-  omni_bridge_mediator: System.get_env("OMNI_BRIDGE_MEDIATOR"),
+  eth_omni_bridge_mediator: System.get_env("ETH_OMNI_BRIDGE_MEDIATOR"),
+  bsc_omni_bridge_mediator: System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"),
   amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
   foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
   gas_price: System.get_env("GAS_PRICE", nil),
@@ -43,7 +47,8 @@ config :block_scout_web,
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
   dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
-  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES")
+  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
+  test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 

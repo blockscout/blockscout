@@ -1,18 +1,78 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.6.0-beta
+
+### Features
+- [#3743](https://github.com/blockscout/blockscout/pull/3743) - Minimal proxy pattern support (EIP-1167)
+- [#3722](https://github.com/poanetwork/blockscout/pull/3722) - Allow double quotes for (u)int arrays inputs during contract interaction
+- [#3694](https://github.com/poanetwork/blockscout/pull/3694) - LP tokens total liquidity
+- [#3676](https://github.com/poanetwork/blockscout/pull/3676) - Bridged tokens TLV in USD
+- [#3674](https://github.com/poanetwork/blockscout/pull/3674) - Display Sushiswap pools data
+- [#3637](https://github.com/poanetwork/blockscout/pull/3637) - getsourcecode API endpoint: show data for unverified contract from verified contract with the same bytecode
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - Tokens search
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - BSC OMNI bridge support
 - [#3603](https://github.com/poanetwork/blockscout/pull/3603) - Display method output parameter name at contract read page
 - [#3597](https://github.com/poanetwork/blockscout/pull/3597) - Show APY for delegators in Staking DApp
 - [#3584](https://github.com/poanetwork/blockscout/pull/3584) - Token holders API endpoint
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3742](https://github.com/blockscout/blockscout/pull/3742) - Fix Sushiswap LP tokens custom metadata fetcher: bytes(n) symbol and name support
+- [#3741](https://github.com/blockscout/blockscout/pull/3741) - Contract reader fix when there are multiple input params including an array type
+- [#3735](https://github.com/blockscout/blockscout/pull/3735) - Token balance on demand fetcher memory leak fix
+- [#3732](https://github.com/poanetwork/blockscout/pull/3732) - POSDAO: fix snapshotting and remove temporary code
+- [#3731](https://github.com/poanetwork/blockscout/pull/3731) - Handle bad gateway at pending transactions fetcher
+- [#3730](https://github.com/poanetwork/blockscout/pull/3730) - Set default period for average block time counter refresh interval
+- [#3729](https://github.com/poanetwork/blockscout/pull/3729) - Token on-demand balance fetcher: handle nil balance
+- [#3728](https://github.com/poanetwork/blockscout/pull/3728) - Coinprice api endpoint: handle nil rates
+- [#3723](https://github.com/poanetwork/blockscout/pull/3723) - Fix losing digits at value conversion back from WEI
+- [#3715](https://github.com/poanetwork/blockscout/pull/3715) - Pending transactions sanitizer process
+- [#3710](https://github.com/poanetwork/blockscout/pull/3710) - Missing @destination in bridged-tokens template
+- [#3707](https://github.com/poanetwork/blockscout/pull/3707) - Fetch bridged token price by address of foreign token, not by symbol
+- [#3686](https://github.com/poanetwork/blockscout/pull/3686) - BSC bridged tokens detection fix
+- [#3683](https://github.com/poanetwork/blockscout/pull/3683) - Token instance image IPFS link display fix
+- [#3655](https://github.com/poanetwork/blockscout/pull/3655) - Handle absence of readAll function in some old/legacy browsers
+- [#3634](https://github.com/poanetwork/blockscout/pull/3634) - Fix transaction decoding view: support tuple types
+- [#3623](https://github.com/poanetwork/blockscout/pull/3623) - Ignore unrecognized messages in bridge counter processes
+- [#3622](https://github.com/poanetwork/blockscout/pull/3622) - Contract reader: fix int type output Ignore unrecognized messages in bridge counter processes
+- [#3621](https://github.com/poanetwork/blockscout/pull/3621) - Contract reader: :binary input/output fix
+- [#3620](https://github.com/poanetwork/blockscout/pull/3620) - Ignore unfamiliar messages by Explorer.Staking.ContractState module
+- [#3611](https://github.com/poanetwork/blockscout/pull/3611) - Fix logo size
 - [#3600](https://github.com/poanetwork/blockscout/pull/3600) - Prevent update validator metadata with empty name from contract
 - [#3592](https://github.com/poanetwork/blockscout/pull/3592), [#3601](https://github.com/poanetwork/blockscout/pull/3601), [#3607](https://github.com/poanetwork/blockscout/pull/3607) - Contract interaction: fix nested tuples in the output view, add formatting
 - [#3583](https://github.com/poanetwork/blockscout/pull/3583) - Reduce RPC requests and DB changes by Staking DApp
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3744](https://github.com/blockscout/blockscout/pull/3744) - Update Mix packages: timex, hackney, tzdata certifi
+- [#3736](https://github.com/blockscout/blockscout/pull/3736), [#3739](https://github.com/blockscout/blockscout/pull/3739) - Contract writer: Fix sending a transaction with tuple input type
+- [#3719](https://github.com/poanetwork/blockscout/pull/3719) - Rename ethprice API endpoint
+- [#3717](https://github.com/poanetwork/blockscout/pull/3717) - Update alpine-elixir-phoenix 1.11.3
+- [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp
+- [#3712](https://github.com/poanetwork/blockscout/pull/3712) - POSDAO refactoring: use pool ID instead of staking address
+- [#3709](https://github.com/poanetwork/blockscout/pull/3709) - Fix 413 Request Entity Too Large returned from single request batch
+- [#3708](https://github.com/poanetwork/blockscout/pull/3708) - NPM 6 -> 7
+- [#3701](https://github.com/poanetwork/blockscout/pull/3701) - Increase LP tokens calc process re-check interval
+- [#3700](https://github.com/poanetwork/blockscout/pull/3700) - Update tool versions
+- [#3697](https://github.com/poanetwork/blockscout/pull/3697) - Update hackney dependency
+- [#3696](https://github.com/poanetwork/blockscout/pull/3696) - Table loader fix
+- [#3688](https://github.com/poanetwork/blockscout/pull/3688) - Reorganize staking buttons
+- [#3687](https://github.com/poanetwork/blockscout/pull/3687) - Miscellaneous minor fixes
+- [#3667](https://github.com/poanetwork/blockscout/pull/3667) - Store bridged token price in the DB
+- [#3662](https://github.com/poanetwork/blockscout/pull/3662) - Order bridged tokens in descending order by tokens holder for Omni bridge cap calculation
+- [#3659](https://github.com/poanetwork/blockscout/pull/3659) - Staking Dapp new buttons: swap, bridge
+- [#3645](https://github.com/poanetwork/blockscout/pull/3645) - Change Twitter handle
+- [#3644](https://github.com/poanetwork/blockscout/pull/3644) - Correct exchange rate for SURF.finance token
+- [#3618](https://github.com/poanetwork/blockscout/pull/3618) - Contracts verification up to 10 libraries
+- [#3616](https://github.com/poanetwork/blockscout/pull/3616) - POSDAO refactoring: use zero address instead of staker address for certain cases
+- [#3612](https://github.com/poanetwork/blockscout/pull/3612) - POSDAO refactoring: use 'getDelegatorPools' getter instead of 'getStakerPools' in Staking DApp
 - [#3585](https://github.com/poanetwork/blockscout/pull/3585) - Add autoswitching from eth_subscribe to eth_blockNumber in Staking DApp
 - [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
 - [#3569](https://github.com/poanetwork/blockscout/pull/3569) - Allow re-define cache period vars at runtime

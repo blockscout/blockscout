@@ -46,22 +46,20 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
     {:noreply, state}
   end
 
-  def fetch(address_hash, token_balances) do
-    if cache_expired?(address_hash) do
+  def fetch(address_hash_string, token_balances) do
+    if cache_expired?(address_hash_string) do
       Task.start_link(fn ->
-        update_cache(address_hash, token_balances)
+        update_cache(address_hash_string, token_balances)
       end)
     end
 
-    address_hash_string = get_address_hash_string(address_hash)
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(address_hash) do
+  defp cache_expired?(address_hash_string) do
     cache_period = address_tokens_usd_sum_cache_period()
-    address_hash_string = get_address_hash_string(address_hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -71,8 +69,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
     end
   end
 
-  defp update_cache(address_hash, token_balances) do
-    address_hash_string = get_address_hash_string(address_hash)
+  defp update_cache(address_hash_string, token_balances) do
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
     new_data = Chain.address_tokens_usd_sum(token_balances)
     put_into_cache("hash_#{address_hash_string}", new_data)
@@ -90,10 +87,6 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
 
   defp put_into_cache(key, value) do
     :ets.insert(@cache_name, {key, value})
-  end
-
-  defp get_address_hash_string(address_hash) do
-    Base.encode16(address_hash.bytes, case: :lower)
   end
 
   defp current_time do

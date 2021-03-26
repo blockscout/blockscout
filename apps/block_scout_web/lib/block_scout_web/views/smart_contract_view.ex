@@ -2,7 +2,9 @@ defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.Hash.Address
+  alias Explorer.Chain.Address
+  alias Explorer.Chain.Hash.Address, as: HashAddress
+  alias Explorer.SmartContract.Helper
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
@@ -10,29 +12,14 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def writable?(function) when not is_nil(function),
     do:
-      !constructor?(function) && !event?(function) &&
-        (payable?(function) || nonpayable?(function))
+      !Helper.constructor?(function) && !Helper.event?(function) &&
+        (Helper.payable?(function) || Helper.nonpayable?(function))
 
   def writable?(function) when is_nil(function), do: false
 
   def outputs?(outputs) when not is_nil(outputs), do: Enum.any?(outputs)
 
   def outputs?(outputs) when is_nil(outputs), do: false
-
-  defp event?(function), do: function["type"] == "event"
-
-  defp constructor?(function), do: function["type"] == "constructor"
-
-  def payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
-
-  def nonpayable?(function) do
-    if function["type"] do
-      function["stateMutability"] == "nonpayable" ||
-        (!function["payable"] && !function["constant"] && !function["stateMutability"])
-    else
-      false
-    end
-  end
 
   def address?(type), do: type in ["address", "address payable"]
   def int?(type), do: String.contains?(type, "int") && !String.contains?(type, "[")
@@ -94,24 +81,27 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = Address.cast(value)
-    render_type_value("address", to_string(address))
+    case HashAddress.cast(value) do
+      {:ok, address} ->
+        render_type_value("address", to_string(address))
+
+      _ ->
+        ""
+    end
   end
 
   def values_with_type(value, "string", _components), do: render_type_value("string", value)
 
   def values_with_type(value, :string, _components), do: render_type_value("string", value)
 
+  def values_with_type(value, :bytes, _components), do: render_type_value("bytes", value)
+
   def values_with_type(value, "bool", _components), do: render_type_value("bool", to_string(value))
 
   def values_with_type(value, :bool, _components), do: render_type_value("bool", to_string(value))
 
   def values_with_type(value, type, _components) do
-    if String.starts_with?(type, "uint") do
-      render_type_value(type, to_string(value))
-    else
-      render_type_value(type, binary_to_utf_string(value))
-    end
+    render_type_value(type, binary_to_utf_string(value))
   end
 
   def values_only(value, type, components) when is_list(value) do
@@ -164,7 +154,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_only(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = Address.cast(value)
+    {:ok, address} = HashAddress.cast(value)
     to_string(address)
   end
 
@@ -172,16 +162,14 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_only(value, :string, _components), do: value
 
+  def values_only(value, :bytes, _components), do: value
+
   def values_only(value, "bool", _components), do: to_string(value)
 
   def values_only(value, :bool, _components), do: to_string(value)
 
-  def values_only(value, type, _components) do
-    if String.starts_with?(type, "uint") do
-      to_string(value)
-    else
-      binary_to_utf_string(value)
-    end
+  def values_only(value, _type, _components) do
+    binary_to_utf_string(value)
   end
 
   defp tuple_array_to_array(value, type) do
@@ -261,14 +249,20 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp binary_to_utf_string(item) do
-    if is_binary(item) do
-      if String.starts_with?(item, "0x") do
-        item
-      else
-        "0x" <> Base.encode16(item, case: :lower)
-      end
-    else
-      item
+    case Integer.parse(to_string(item)) do
+      {item_integer, ""} ->
+        to_string(item_integer)
+
+      _ ->
+        if is_binary(item) do
+          if String.starts_with?(item, "0x") do
+            item
+          else
+            "0x" <> Base.encode16(item, case: :lower)
+          end
+        else
+          to_string(item)
+        end
     end
   end
 

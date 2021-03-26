@@ -89,6 +89,20 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     ~E|<%= spacing %>[<%= "\n" %><%= delimited %><%= "\n" %><%= spacing %>]|
   end
 
+  defp do_value_html({:tuple, types}, values, _) do
+    values_list =
+      values
+      |> Tuple.to_list()
+      |> Enum.with_index()
+      |> Enum.map(fn {value, i} ->
+        type = Enum.at(types, i)
+        [_, {:safe, val}] = do_value_html(type, value)
+        val
+      end)
+
+    "(" <> Enum.join(values_list, ",") <> ")"
+  end
+
   defp do_value_html(type, value, depth) do
     spacing = String.duplicate(" ", depth * 2)
     ~E|<%= spacing %><%=base_value_html(type, value)%>|
