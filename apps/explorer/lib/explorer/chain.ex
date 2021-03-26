@@ -6275,8 +6275,6 @@ defmodule Explorer.Chain do
     end)
   end
 
-<<<<<<< HEAD
-=======
   defp from_block(options) do
     Keyword.get(options, :from_block) || nil
   end
@@ -6311,7 +6309,6 @@ defmodule Explorer.Chain do
     |> Repo.one()
   end
 
->>>>>>> fb934dbf1c5c851f22164bfef4b017f3fb01e3dc
   def bridged_tokens_enabled? do
     eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
     bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
