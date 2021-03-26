@@ -1,21 +1,26 @@
-<% metadata_for_verification = Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
+<% minimal_proxy_template = Chain.get_minimal_proxy_template(@address.hash) %>
+<% metadata_for_verification = minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
 <%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
   <%= if metadata_for_verification do %>
-    <% path = 
-      if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-        address_verify_contract_path(@conn, :new, @address.hash)
-      else
-        address_verify_contract_via_flattened_code_path(@conn, :new, @address.hash)
-      end
-    %>
-    <div class="mb-4">
-      <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
-metadata_for_verification.address_hash,
-to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All functions displayed below are from ABI of that contract. In order to verify current contract, proceed with") %> <%= link(
-      gettext("Verify & Publish"),
-      to: path
-    ) %> <%= gettext("page") %></span>
-    </div>
+    <%= if minimal_proxy_template do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: metadata_for_verification.address_hash, conn: @conn %>
+    <% else %>
+      <% path = 
+        if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+          address_verify_contract_path(@conn, :new, @address.hash)
+        else
+          address_verify_contract_via_flattened_code_path(@conn, :new, @address.hash)
+        end
+      %>
+      <div class="mb-4">
+        <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
+  metadata_for_verification.address_hash,
+  to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All functions displayed below are from ABI of that contract. In order to verify current contract, proceed with") %> <%= link(
+        gettext("Verify & Publish"),
+        to: path
+      ) %> <%= gettext("page") %></span>
+      </div>
+    <% end %>
   <% end %>
 <% end %>
 <%= if @action== "write" do %>

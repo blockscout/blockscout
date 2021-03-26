@@ -83,6 +83,7 @@ defmodule Explorer.Chain do
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Reader
+  alias Explorer.Staking.ContractState
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -1070,7 +1071,9 @@ defmodule Explorer.Chain do
           if smart_contract do
             address_result
           else
-            address_verified_twin_contract = Chain.get_address_verified_twin_contract(hash).verified_contract
+            address_verified_twin_contract =
+              Chain.get_minimal_proxy_template(hash) ||
+                Chain.get_address_verified_twin_contract(hash).verified_contract
 
             if address_verified_twin_contract do
               address_verified_twin_contract_updated =
@@ -1413,7 +1416,9 @@ defmodule Explorer.Chain do
           if smart_contract do
             address_result
           else
-            address_verified_twin_contract = Chain.get_address_verified_twin_contract(hash).verified_contract
+            address_verified_twin_contract =
+              Chain.get_minimal_proxy_template(hash) ||
+                Chain.get_address_verified_twin_contract(hash).verified_contract
 
             if address_verified_twin_contract do
               address_verified_twin_contract_updated =
@@ -3575,15 +3580,17 @@ defmodule Explorer.Chain do
             | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
           }
         else
-          address_verified_twin_contract = Chain.get_address_verified_twin_contract(address_hash)
+          address_verified_twin_contract =
+            Chain.get_minimal_proxy_template(address_hash) ||
+              Chain.get_address_verified_twin_contract(address_hash).verified_contract
 
-          if address_verified_twin_contract.verified_contract do
-            formatted_code = format_source_code_output(address_verified_twin_contract.verified_contract)
+          if address_verified_twin_contract do
+            formatted_code = format_source_code_output(address_verified_twin_contract)
 
             %{
               address_with_smart_contract
               | smart_contract: %{
-                  address_verified_twin_contract.verified_contract
+                  address_verified_twin_contract
                   | contract_source_code: formatted_code
                 }
             }
@@ -3634,7 +3641,7 @@ defmodule Explorer.Chain do
 
             verified_contract_twin =
               verified_contract_twin_query
-              |> Repo.one()
+              |> Repo.one(timeout: 10_000)
 
             verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
 
@@ -3664,6 +3671,52 @@ defmodule Explorer.Chain do
     end
   end
 
+  def get_minimal_proxy_template(address_hash) do
+    minimal_proxy_template =
+      case Repo.get(Address, address_hash) do
+        nil ->
+          nil
+
+        target_address ->
+          contract_code = target_address.contract_code
+
+          case contract_code do
+            %Chain.Data{bytes: contract_code_bytes} ->
+              contract_bytecode = Base.encode16(contract_code_bytes, case: :lower)
+
+              get_minimal_proxy_from_template_code(contract_bytecode)
+
+            _ ->
+              nil
+          end
+      end
+
+    minimal_proxy_template
+  end
+
+  defp get_minimal_proxy_from_template_code(contract_bytecode) do
+    case contract_bytecode do
+      "363d3d373d3d3d363d73" <> <<template_address::binary-size(40)>> <> _ ->
+        template_address = "0x" <> template_address
+
+        query =
+          from(
+            smart_contract in SmartContract,
+            where: smart_contract.address_hash == ^template_address,
+            select: smart_contract
+          )
+
+        template =
+          query
+          |> Repo.one(timeout: 10_000)
+
+        template
+
+      _ ->
+        nil
+    end
+  end
+
   @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
   def address_hash_to_smart_contract(address_hash) do
     query =
@@ -3677,7 +3730,9 @@ defmodule Explorer.Chain do
     if current_smart_contract do
       current_smart_contract
     else
-      address_verified_twin_contract = Chain.get_address_verified_twin_contract(address_hash).verified_contract
+      address_verified_twin_contract =
+        Chain.get_minimal_proxy_template(address_hash) ||
+          Chain.get_address_verified_twin_contract(address_hash).verified_contract
 
       if address_verified_twin_contract do
         Map.put(address_verified_twin_contract, :address_hash, address_hash)
@@ -4436,10 +4491,10 @@ defmodule Explorer.Chain do
                symbol_signature
                |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
                |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-          token0_name = parse_contract_response(token0_name_encoded, :string)
-          token1_name = parse_contract_response(token1_name_encoded, :string)
-          token0_symbol = parse_contract_response(token0_symbol_encoded, :string)
-          token1_symbol = parse_contract_response(token1_symbol_encoded, :string)
+          token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
+          token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
+          token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
+          token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
 
           "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
         else
@@ -4619,17 +4674,45 @@ defmodule Explorer.Chain do
     values
   end
 
-  defp parse_contract_response(abi_encoded_value, type) do
+  defp parse_contract_response(abi_encoded_value, type, emergency_type \\ nil) do
     [value] =
       try do
-        abi_encoded_value
-        |> Base.decode16!(case: :mixed)
-        |> TypeDecoder.decode_raw([type])
+        [res] = decode_contract_response(abi_encoded_value, type)
+
+        [convert_binary_to_string(res, type)]
       rescue
-        _ -> [nil]
+        _ ->
+          if emergency_type do
+            try do
+              [res] = decode_contract_response(abi_encoded_value, emergency_type)
+
+              [convert_binary_to_string(res, emergency_type)]
+            rescue
+              _ ->
+                [nil]
+            end
+          else
+            [nil]
+          end
       end
 
     value
+  end
+
+  defp decode_contract_response(abi_encoded_value, type) do
+    abi_encoded_value
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw([type])
+  end
+
+  defp convert_binary_to_string(binary, type) do
+    case type do
+      {:bytes, _} ->
+        ContractState.binary_to_string(binary)
+
+      _ ->
+        binary
+    end
   end
 
   defp compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)

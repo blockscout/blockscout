@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3743](https://github.com/blockscout/blockscout/pull/3743) - Minimal proxy pattern support (EIP-1167)
 - [#3722](https://github.com/poanetwork/blockscout/pull/3722) - Allow double quotes for (u)int arrays inputs during contract interaction
 - [#3694](https://github.com/poanetwork/blockscout/pull/3694) - LP tokens total liquidity
 - [#3676](https://github.com/poanetwork/blockscout/pull/3676) - Bridged tokens TLV in USD
@@ -14,6 +15,8 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3742](https://github.com/blockscout/blockscout/pull/3742) - Fix Sushiswap LP tokens custom metadata fetcher: bytes(n) symbol and name support
+- [#3741](https://github.com/blockscout/blockscout/pull/3741) - Contract reader fix when there are multiple input params including an array type
 - [#3735](https://github.com/blockscout/blockscout/pull/3735) - Token balance on demand fetcher memory leak fix
 - [#3732](https://github.com/poanetwork/blockscout/pull/3732) - POSDAO: fix snapshotting and remove temporary code
 - [#3731](https://github.com/poanetwork/blockscout/pull/3731) - Handle bad gateway at pending transactions fetcher
@@ -39,7 +42,8 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
-- [#3736](https://github.com/blockscout/blockscout/pull/3736) - Contract writer: Fix sending a transaction with tuple input type
+- [#3744](https://github.com/blockscout/blockscout/pull/3744) - Update Mix packages: timex, hackney, tzdata certifi
+- [#3736](https://github.com/blockscout/blockscout/pull/3736), [#3739](https://github.com/blockscout/blockscout/pull/3739) - Contract writer: Fix sending a transaction with tuple input type
 - [#3719](https://github.com/poanetwork/blockscout/pull/3719) - Rename ethprice API endpoint
 - [#3717](https://github.com/poanetwork/blockscout/pull/3717) - Update alpine-elixir-phoenix 1.11.3
 - [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp

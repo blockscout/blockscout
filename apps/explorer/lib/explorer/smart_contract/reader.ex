@@ -403,11 +403,33 @@ defmodule Explorer.SmartContract.Reader do
   but we always get strings from the front, so it is necessary to normalize it.
   """
   def normalize_args(args) do
-    Enum.map(args, &parse_item/1)
+    if is_map(args) do
+      [res] = Enum.map(args, &parse_item/1)
+      res
+    else
+      Enum.map(args, &parse_item/1)
+    end
   end
 
   defp parse_item("true"), do: true
   defp parse_item("false"), do: false
+
+  defp parse_item(item) when is_tuple(item) do
+    item
+    |> Tuple.to_list()
+    |> Enum.map(fn value ->
+      if is_list(value) do
+        value
+        |> Enum.join("")
+      else
+        hex =
+          value
+          |> Base.encode16(case: :lower)
+
+        "0x" <> hex
+      end
+    end)
+  end
 
   defp parse_item(item) do
     response = Integer.parse(item)

@@ -1086,7 +1086,7 @@ defmodule Explorer.Staking.ContractState do
     |> Jason.decode!()
   end
 
-  defp binary_to_string(binary) do
+  def binary_to_string(binary) do
     binary
     |> :binary.bin_to_list()
     |> Enum.filter(fn x -> x != 0 end)
