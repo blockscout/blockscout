@@ -1,57 +1,15 @@
-<section class="container">
-  	<div class="card">
-		<div class="card-body">
-			<h1 class="card-title"><%= gettext "Gas Tracker" %></h1>
+<%= render BlockScoutWeb.GasTrackerView, "_header.html",
+	total_gas_usage: @total_gas_usage,
+	transaction_stats: @transaction_stats,
+	conn: @conn,
+	chart_data_paths: @chart_data_paths,
+	chart_config_json: @chart_config_json
+%>
 
-			<div style="display: table; width: 100%;">
-				<%= render BlockScoutWeb.GasTrackerView, "_chart.html", transaction_stats: @transaction_stats, conn: @conn, chart_data_paths: @chart_data_paths, chart_config_json: @chart_config_json %>
-				<div style="display: table-cell; vertical-align: middle; text-align: center;">
-					<span style="font-size: 3em; font-weight: 500;"><%= BlockScoutWeb.Cldr.Number.to_string!(@total_gas_usage, format: "#,###") %></span>
-					<div style="font-size: 1.5em;">Gas used in total</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</section>
-
-<section class="container">
-	<div class="card">
-		<div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
-			<%= render BlockScoutWeb.GasTrackerView, "_tabs.html", assigns %>
-			<div class="mt-4 table-title">
-				<p class="card-subtitle list-title-description">List of the top gas consumers for the last 24 hrs</p>
-			</div>
-			<div class="list-top-pagination-container-wrapper mt-4">
-				<%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
-			</div>
-			<div class="stakes-table-container">
-				<table style="width: 100%;">
-					<thead>
-						<tr>
-						<th class="stakes-table-th">
-							<div class="stakes-table-th-content">&nbsp;</div>
-						</th>
-						<th class="stakes-table-th">
-							<div class="stakes-table-th-content">Address</div>
-						</th>
-						<th class="stakes-table-th">
-							<div class="stakes-table-th-content">
-							Gas used Last 24 hrs (gas units)
-							</div>
-						</th>
-						<th class="stakes-table-th">
-							<div class="stakes-table-th-content">
-							% Gas used last 24 hrs
-							</div>
-						</th>
-						</tr>
-					</thead>
-					<tbody data-items data-selector="top-gas-consumers-list"></tbody>
-				</table>
-			</div>
-
-			<%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
-		</div>
-  	</div>
-	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/async-listing-load.js") %>"></script>
-</section>
+<%= render BlockScoutWeb.GasTrackerView, "_table.html",
+	table_description: "List of the top gas consumers for the last 24 hrs",
+	table_column_1_header: "Gas used Last 24 hrs (gas units)",
+	table_column_2_header: "% Gas used last 24 hrs",
+	current_path: @current_path,
+	conn: @conn
+%>

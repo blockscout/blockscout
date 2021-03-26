@@ -27,12 +27,32 @@
         background: #e7b941;
         color: #fff;
     }
-    &.bridged {
+    &.bridge {
         background: #70aee3;
         color: #fff;
     }
     &.validator {
         background: $primary;
+        color: #fff;
+    }
+    &.faucet {
+        background: #2555da;
+        color: #fff;
+    }
+    &.contract {
+        background: $dark-purple;
+        color: #fff;
+    }
+    &.eoa {
+        background: #007bff;
+        color: #fff;
+    }
+    &.proxy {
+        background: #2a9e51;
+        color: #fff;
+    }
+    &.token {
+        background: #5d26c4;
         color: #fff;
     }
     &.secondary {

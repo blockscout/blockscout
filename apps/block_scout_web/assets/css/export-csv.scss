@@ -1,0 +1,12 @@
+@import "components/datepicker";
+
+.js-datepicker {
+    width: 150px !important;
+    display: inline-block !important;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.dates-container {
+    margin-bottom: 20px;
+}

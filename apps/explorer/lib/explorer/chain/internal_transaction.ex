@@ -575,6 +575,38 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
+  def where_block_number_in_period(query, from_number, to_number) when is_nil(from_number) and not is_nil(to_number) do
+    where(
+      query,
+      [it],
+      it.block_number <= ^to_number
+    )
+  end
+
+  def where_block_number_in_period(query, from_number, to_number) when not is_nil(from_number) and is_nil(to_number) do
+    where(
+      query,
+      [it],
+      it.block_number > ^from_number
+    )
+  end
+
+  def where_block_number_in_period(query, from_number, to_number) when is_nil(from_number) and is_nil(to_number) do
+    where(
+      query,
+      [it],
+      1
+    )
+  end
+
+  def where_block_number_in_period(query, from_number, to_number) do
+    where(
+      query,
+      [it],
+      it.block_number > ^from_number and it.block_number <= ^to_number
+    )
+  end
+
   def where_block_number_is_not_null(query) do
     where(query, [t], not is_nil(t.block_number))
   end

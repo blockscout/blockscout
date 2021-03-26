@@ -428,6 +428,13 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
+  def is_faucet?(nil), do: false
+
+  def is_faucet?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    address_hash_str == String.downcase(System.get_env("FAUCET_ADDRESS", ""))
+  end
+
   def is_omni_bridge?(nil), do: false
 
   def is_omni_bridge?(address_hash) do
