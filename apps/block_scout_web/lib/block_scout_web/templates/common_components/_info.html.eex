@@ -1,0 +1,1 @@
+<i style="color: #f7b32b;" class="fa fa-info-circle <%= if assigns[:extra_class] do @extra_class end %>"></i>

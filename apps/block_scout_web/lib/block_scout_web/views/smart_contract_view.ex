@@ -2,7 +2,9 @@ defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.Hash.Address
+  alias Explorer.Chain.Address
+  alias Explorer.Chain.Hash.Address, as: HashAddress
+  alias Explorer.SmartContract.Helper
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
@@ -10,29 +12,14 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def writable?(function) when not is_nil(function),
     do:
-      !constructor?(function) && !event?(function) &&
-        (payable?(function) || nonpayable?(function))
+      !Helper.constructor?(function) && !Helper.event?(function) &&
+        (Helper.payable?(function) || Helper.nonpayable?(function))
 
   def writable?(function) when is_nil(function), do: false
 
   def outputs?(outputs) when not is_nil(outputs), do: Enum.any?(outputs)
 
   def outputs?(outputs) when is_nil(outputs), do: false
-
-  defp event?(function), do: function["type"] == "event"
-
-  defp constructor?(function), do: function["type"] == "constructor"
-
-  def payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
-
-  def nonpayable?(function) do
-    if function["type"] do
-      function["stateMutability"] == "nonpayable" ||
-        (!function["payable"] && !function["constant"] && !function["stateMutability"])
-    else
-      false
-    end
-  end
 
   def address?(type), do: type in ["address", "address payable"]
   def int?(type), do: String.contains?(type, "int") && !String.contains?(type, "[")
@@ -94,8 +81,13 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = Address.cast(value)
-    render_type_value("address", to_string(address))
+    case HashAddress.cast(value) do
+      {:ok, address} ->
+        render_type_value("address", to_string(address))
+
+      _ ->
+        ""
+    end
   end
 
   def values_with_type(value, "string", _components), do: render_type_value("string", value)
@@ -162,7 +154,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_only(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = Address.cast(value)
+    {:ok, address} = HashAddress.cast(value)
     to_string(address)
   end
 

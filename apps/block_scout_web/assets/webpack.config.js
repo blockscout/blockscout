@@ -91,7 +91,7 @@ const appJs =
       'admin-tasks': './js/pages/admin/tasks.js',
       'read-token-contract': './js/pages/read_token_contract.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
-      'write_contract': './js/pages/write_contract.js',
+      'write-contract': './js/pages/write_contract.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',

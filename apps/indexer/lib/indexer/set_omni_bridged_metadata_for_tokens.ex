@@ -41,6 +41,11 @@ defmodule Indexer.SetOmniBridgedMetadataForTokens do
     {:noreply, state}
   end
 
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   defp fetch_omni_bridged_tokens_metadata(token_addresses) do
     :ok = Chain.fetch_omni_bridged_tokens_metadata(token_addresses)
 

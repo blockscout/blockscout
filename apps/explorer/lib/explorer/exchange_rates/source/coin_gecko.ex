@@ -3,6 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
+  alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -100,17 +101,26 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
-  def source_url(symbol) do
-    id =
-      case coin_id(symbol) do
-        {:ok, id} ->
-          id
+  def source_url(input) do
+    case Chain.Hash.Address.cast(input) do
+      {:ok, _} ->
+        address_hash_str = input
+        "#{base_url()}/coins/ethereum/contract/#{address_hash_str}"
 
-        _ ->
-          nil
-      end
+      _ ->
+        symbol = input
 
-    if id, do: "#{base_url()}/coins/#{id}", else: nil
+        id =
+          case coin_id(symbol) do
+            {:ok, id} ->
+              id
+
+            _ ->
+              nil
+          end
+
+        if id, do: "#{base_url()}/coins/#{id}", else: nil
+    end
   end
 
   defp base_url do

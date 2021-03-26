@@ -20,6 +20,12 @@ defmodule Explorer.ExchangeRates.Source do
     fetch_exchange_rates_request(Source.CoinGecko, source_url)
   end
 
+  @spec fetch_exchange_rates_for_token_address(String.t()) :: {:ok, [Token.t()]} | {:error, any}
+  def fetch_exchange_rates_for_token_address(address_hash) do
+    source_url = Source.CoinGecko.source_url(address_hash)
+    fetch_exchange_rates_request(Source.CoinGecko, source_url)
+  end
+
   defp fetch_exchange_rates_request(_source, source_url) when is_nil(source_url), do: {:error, "Source URL is nil"}
 
   defp fetch_exchange_rates_request(source, source_url) do
