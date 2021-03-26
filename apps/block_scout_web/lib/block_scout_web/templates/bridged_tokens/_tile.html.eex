@@ -20,7 +20,7 @@
               data-placement="top"
               data-html="true"
               title="<%= owl_token_amb_info() %>">
-              <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+              <%= render BlockScoutWeb.CommonComponentsView, "_info.html", extra_class: "ml-1" %>
             </span>
           <% end %>
           <%= if owl_token_omni?(@token.contract_address.hash) do %>
@@ -29,7 +29,7 @@
               data-placement="top"
               data-html="true"
               title="<%= owl_token_omni_info() %>">
-              <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+              <%= render BlockScoutWeb.CommonComponentsView, "_info.html", extra_class: "ml-1" %>
             </span>
           <% end %>
           <%= if @bridged_token.custom_metadata do %>

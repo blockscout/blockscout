@@ -1023,7 +1023,9 @@ defmodule Explorer.Chain do
           if smart_contract do
             address_result
           else
-            address_verified_twin_contract = Chain.address_verified_twin_contract(hash)
+            address_verified_twin_contract =
+              Chain.get_minimal_proxy_template(hash) ||
+                Chain.get_address_verified_twin_contract(hash).verified_contract
 
             if address_verified_twin_contract do
               address_verified_twin_contract_updated =
@@ -1333,7 +1335,9 @@ defmodule Explorer.Chain do
           if smart_contract do
             address_result
           else
-            address_verified_twin_contract = Chain.address_verified_twin_contract(hash)
+            address_verified_twin_contract =
+              Chain.get_minimal_proxy_template(hash) ||
+                Chain.get_address_verified_twin_contract(hash).verified_contract
 
             if address_verified_twin_contract do
               address_verified_twin_contract_updated =
@@ -3411,7 +3415,9 @@ defmodule Explorer.Chain do
             | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
           }
         else
-          address_verified_twin_contract = Chain.address_verified_twin_contract(address_hash)
+          address_verified_twin_contract =
+            Chain.get_minimal_proxy_template(address_hash) ||
+              Chain.get_address_verified_twin_contract(address_hash).verified_contract
 
           if address_verified_twin_contract do
             formatted_code = format_source_code_output(address_verified_twin_contract)
@@ -3438,45 +3444,90 @@ defmodule Explorer.Chain do
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
   which were verified previously, returns a single t:SmartContract.t/0
   """
-  def address_verified_twin_contract(address_hash) do
-    address_verified_twins =
+  def get_address_verified_twin_contract(address_hash) do
+    case Repo.get(Address, address_hash) do
+      nil ->
+        %{:verified_contract => nil}
+
+      target_address ->
+        target_address_hash = target_address.hash
+        contract_code = target_address.contract_code
+
+        case contract_code do
+          %Chain.Data{bytes: contract_code_bytes} ->
+            contract_code_md5 =
+              Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
+                case: :lower
+              )
+
+            verified_contract_twin_query =
+              from(
+                address in Address,
+                inner_join: smart_contract in SmartContract,
+                on: address.hash == smart_contract.address_hash,
+                where: fragment("md5(contract_code::text)") == ^contract_code_md5,
+                where: address.hash != ^target_address_hash,
+                select: smart_contract,
+                limit: 1
+              )
+
+            verified_contract_twin =
+              verified_contract_twin_query
+              |> Repo.one()
+
+            %{
+              :verified_contract => verified_contract_twin
+            }
+
+          _ ->
+            %{:verified_contract => nil}
+        end
+    end
+  end
+
+  def get_minimal_proxy_template(address_hash) do
+    minimal_proxy_template =
       case Repo.get(Address, address_hash) do
         nil ->
-          []
+          nil
 
         target_address ->
-          target_address_hash = target_address.hash
           contract_code = target_address.contract_code
 
           case contract_code do
             %Chain.Data{bytes: contract_code_bytes} ->
-              contract_code_md5 =
-                Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
-                  case: :lower
-                )
+              contract_bytecode = Base.encode16(contract_code_bytes, case: :lower)
 
-              query =
-                from(
-                  address in Address,
-                  inner_join: smart_contract in SmartContract,
-                  on: address.hash == smart_contract.address_hash,
-                  where: fragment("md5(contract_code::text)") == ^contract_code_md5,
-                  where: address.hash != ^target_address_hash,
-                  select: smart_contract
-                )
-
-              query
-              |> Repo.all()
+              get_minimal_proxy_from_template_code(contract_bytecode)
 
             _ ->
-              []
+              nil
           end
       end
 
-    if Enum.count(address_verified_twins) > 0 do
-      Enum.at(address_verified_twins, 0)
-    else
-      nil
+    minimal_proxy_template
+  end
+
+  defp get_minimal_proxy_from_template_code(contract_bytecode) do
+    case contract_bytecode do
+      "363d3d373d3d3d363d73" <> <<template_address::binary-size(40)>> <> _ ->
+        template_address = "0x" <> template_address
+
+        query =
+          from(
+            smart_contract in SmartContract,
+            where: smart_contract.address_hash == ^template_address,
+            select: smart_contract
+          )
+
+        template =
+          query
+          |> Repo.one(timeout: 10_000)
+
+        template
+
+      _ ->
+        nil
     end
   end
 
@@ -3493,7 +3544,9 @@ defmodule Explorer.Chain do
     if current_smart_contract do
       current_smart_contract
     else
-      address_verified_twin_contract = Chain.address_verified_twin_contract(address_hash)
+      address_verified_twin_contract =
+        Chain.get_minimal_proxy_template(address_hash) ||
+          Chain.get_address_verified_twin_contract(address_hash).verified_contract
 
       if address_verified_twin_contract do
         Map.put(address_verified_twin_contract, :address_hash, address_hash)
