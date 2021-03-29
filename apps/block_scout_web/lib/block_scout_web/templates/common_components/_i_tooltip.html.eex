@@ -1,5 +1,5 @@
 <div
-    class="i-tooltip"
+    class="i-tooltip <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>"
     data-boundary="window"
     data-container="body"
     data-html="true"
@@ -7,7 +7,7 @@
     data-toggle="tooltip"
     title="<%= @text %>"
 >
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="<%= if assigns[:width] do @width else "16" end %>" height="<%= if assigns[:height] do @height else "16" end %>">
         <path class="i-tooltip-circle" fill-rule="evenodd" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0z"/>
         <path class="i-tooltip-info" fill-rule="evenodd" d="M8 13a1 1 0 0 1-1-1V8a1 1 0 0 1 2 0v4a1 1 0 0 1-1 1zm0-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
     </svg>
