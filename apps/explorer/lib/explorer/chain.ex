@@ -2640,6 +2640,53 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec timestamp_to_block_number(DateTime.t(), :before | :after) :: {:ok, Block.block_number()} | {:error, :not_found}
+  def timestamp_to_block_number(given_timestamp, closest) do
+    {:ok, t} = Timex.format(given_timestamp, "%Y-%m-%d %H:%M:%S", :strftime)
+
+    query =
+      from(
+        block in Block,
+        where: block.consensus == true,
+        select: block,
+        order_by:
+          fragment("abs(extract(epoch from (? - TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))))", block.timestamp, ^t),
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      %{:number => number, :timestamp => timestamp} ->
+        block_number = get_block_number_based_on_closest(closest, timestamp, given_timestamp, number)
+
+        {:ok, block_number}
+    end
+  end
+
+  defp get_block_number_based_on_closest(closest, timestamp, given_timestamp, number) do
+    case closest do
+      :before ->
+        if DateTime.compare(timestamp, given_timestamp) == :lt ||
+             DateTime.compare(timestamp, given_timestamp) == :eq do
+          number
+        else
+          number - 1
+        end
+
+      :after ->
+        if DateTime.compare(timestamp, given_timestamp) == :lt ||
+             DateTime.compare(timestamp, given_timestamp) == :eq do
+          number + 1
+        else
+          number
+        end
+    end
+  end
+
   @doc """
   Count of pending `t:Explorer.Chain.Transaction.t/0`.
 
