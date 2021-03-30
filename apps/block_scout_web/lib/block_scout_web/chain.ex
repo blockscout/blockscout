@@ -209,6 +209,28 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def param_to_block_timestamp(timestamp_string) when is_binary(timestamp_string) do
+    case Integer.parse(timestamp_string) do
+      {temstamp_int, ""} ->
+        timestamp =
+          temstamp_int
+          |> DateTime.from_unix!(:second)
+
+        {:ok, timestamp}
+
+      _ ->
+        {:error, :invalid_timestamp}
+    end
+  end
+
+  def param_to_block_closest(closest) when is_binary(closest) do
+    case closest do
+      "before" -> {:ok, :before}
+      "after" -> {:ok, :after}
+      _ -> {:error, :invalid_closest}
+    end
+  end
+
   def split_list_by_page(list_plus_one), do: Enum.split(list_plus_one, @page_size)
 
   defp address_from_param(param) do
