@@ -2644,10 +2644,19 @@ defmodule Explorer.Chain do
   def timestamp_to_block_number(given_timestamp, closest) do
     {:ok, t} = Timex.format(given_timestamp, "%Y-%m-%d %H:%M:%S", :strftime)
 
-    query =
+    inner_query =
       from(
         block in Block,
         where: block.consensus == true,
+        where:
+          fragment("? <= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS') + (1 * interval '1 minute')", block.timestamp, ^t),
+        where:
+          fragment("? >= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS') - (1 * interval '1 minute')", block.timestamp, ^t)
+      )
+
+    query =
+      from(
+        block in subquery(inner_query),
         select: block,
         order_by:
           fragment("abs(extract(epoch from (? - TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))))", block.timestamp, ^t),
