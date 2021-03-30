@@ -260,7 +260,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    # get_responses, ContractReader.pool_staking_requests
+    # get_pool_staking_responses
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -374,7 +374,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    # get_responses, ContractReader.pool_mining_requests
+    # get_pool_mining_responses
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -476,7 +476,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    # get_responses, ContractReader.staker_requests
+    # get_staker_responses
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -722,7 +722,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    # invoke do_start_snapshotting()
+    # start_snapshotting
 
     ## get_mining_to_staking_address
     expect(
@@ -745,285 +745,67 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    ## 1 snapshotted_pool_amounts_requests
+    ## snapshotted_pool_amounts_requests
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 2
+        assert length(requests) == 4 * 2
 
         {:ok,
          format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 1.1 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000000000000000000"
-         ])}
-      end
-    )
+           # 1.2 StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
 
-    ## 2 snapshotted_pool_amounts_requests
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 2
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 2.1 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
+           # 2.2 StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
 
-    ## 3 snapshotted_pool_amounts_requests
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 2
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 3.1 StakingAuRa.stakeAmountTotal
            "0x00000000000000000000000000000000000000000000000098a7d9b8314c0000",
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
+           # 3.2 StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
 
-    ## 4 snapshotted_pool_amounts_requests
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 2
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 4.1 StakingAuRa.stakeAmountTotal
            "0x00000000000000000000000000000000000000000000000029a2241af62c0000",
-           # StakingAuRa.stakeAmount
+           # 4.2 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
          ])}
       end
     )
 
-    ## 1 snapshotted_staker_amount_request
+    ## get_staker_responses, snapshotted_staker_amount_request
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 1
+        assert length(requests) == 14
 
         {:ok,
          format_responses([
            # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000000000000000000"
-         ])}
-      end
-    )
-
-    ## 2 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
-
-    ## 3 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
            "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
          ])}
       end
     )
 
-    ## 4 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
-
-    ## 5 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
-
-    ## 6 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 7 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 8 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 9 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 10 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 11 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 12 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 13 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 14 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## ContractReader.validator_reward_request
+    ## get_validator_reward_responses, validator_reward_request
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -1044,7 +826,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    ## ContractReader.delegator_reward_request
+    ## get_delegator_reward_responses, delegator_reward_request
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
