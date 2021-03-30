@@ -343,6 +343,20 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @block_getblocknobytime_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "blockNumber" => "2165403"
+    }
+  }
+
+  @block_getblocknobytime_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid params",
+    "result" => nil
+  }
+
   @block_eth_block_number_example_value %{
     "jsonrpc" => "2.0",
     "result" => "0xb33bf1",
@@ -933,6 +947,13 @@ defmodule BlockScoutWeb.Etherscan do
       },
       uncles: %{type: "null"},
       uncleInclusionReward: %{type: "null"}
+    }
+  }
+
+  @block_no_model %{
+    name: "BlockNo",
+    fields: %{
+      blockNumber: @block_number_type
     }
   }
 
@@ -2112,6 +2133,49 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @block_getblocknobytime_action %{
+    name: "getblocknobytime",
+    description: "Get Block Number by Timestamp.",
+    required_params: [
+      %{
+        key: "timestamp",
+        placeholder: "blockTimestamp",
+        type: "integer",
+        description: "A nonnegative integer that represents the block timestamp (Unix timestamp in seconds)."
+      },
+      %{
+        key: "closest",
+        placeholder: "before/after",
+        type: "string",
+        description: "Direction to find the closest block number to given timestamp. Available values: before/after."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@block_getblocknobytime_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "model",
+              model: @block_no_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@block_getblocknobytime_example_value_error)
+      }
+    ]
+  }
+
   @contract_listcontracts_action %{
     name: "listcontracts",
     description: """
@@ -2544,7 +2608,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_module %{
     name: "block",
-    actions: [@block_getblockreward_action, @block_eth_block_number_action]
+    actions: [@block_getblockreward_action, @block_getblocknobytime_action, @block_eth_block_number_action]
   }
 
   @contract_module %{
