@@ -3,4 +3,33 @@ $btn-copy-dimensions: 31px !default;
 
 .btn-copy-icon {
   @include square-icon-button($btn-copy-color, $btn-copy-dimensions);
+  &.btn-copy-icon-no-borders {
+    &:hover {
+      background-color: transparent;
+      path {
+        fill: $btn-copy-color;
+      }
+    }
+    border: none;
+  }
+  svg {
+    width: $btn-copy-dimensions;
+    height: $btn-copy-dimensions;
+  }
+}
+
+.btn-copy-height {
+  line-height: $btn-copy-dimensions;
+}
+
+.btn-copy-mobile-container {
+  @include media-breakpoint-up(md) {
+    display: flex;
+  }
+}
+
+.btn-copy-mobile {
+  @include media-breakpoint-up(md) {
+    margin-left: 0.5rem;
+  }
 }

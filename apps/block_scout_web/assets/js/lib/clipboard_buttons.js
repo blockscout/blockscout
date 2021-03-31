@@ -6,12 +6,15 @@ const clipboard = new ClipboardJS('[data-clipboard-text]')
 clipboard.on('success', ({ trigger }) => {
   const copyButton = $(trigger)
   copyButton.tooltip('dispose')
+  copyButton.children().tooltip('dispose')
 
-  copyButton.tooltip({
-    title: copyButton.data('token-hash') ? `${copyButton.data('token-address')} copied!` : 'Copied!',
-    trigger: 'click',
-    placement: 'top'
-  }).tooltip('show')
+  const originalTitle = copyButton.attr('data-original-title')
+
+  copyButton
+    .attr('data-original-title', copyButton.data('token-hash') ? `${copyButton.data('token-address')} copied!` : 'Copied!')
+    .tooltip('show')
+
+  copyButton.attr('data-original-title', originalTitle)
 
   setTimeout(() => {
     copyButton.tooltip('dispose')

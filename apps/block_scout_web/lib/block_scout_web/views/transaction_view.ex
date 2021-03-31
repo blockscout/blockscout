@@ -79,6 +79,14 @@ defmodule BlockScoutWeb.TransactionView do
     final_transfers ++ nft_transfers
   end
 
+  def get_token_transfers(token_transfers) do
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.to_address_hash != @burn_address_hash &&
+        token_transfer.from_address_hash != @burn_address_hash
+    end)
+  end
+
   def aggregate_token_mintings(token_transfers) do
     {transfers, nft_transfers} =
       token_transfers
@@ -95,6 +103,13 @@ defmodule BlockScoutWeb.TransactionView do
     final_transfers ++ nft_transfers
   end
 
+  def get_token_mintings(token_transfers) do
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.from_address_hash == @burn_address_hash
+    end)
+  end
+
   def aggregate_token_burnings(token_transfers) do
     {transfers, nft_transfers} =
       token_transfers
@@ -109,6 +124,13 @@ defmodule BlockScoutWeb.TransactionView do
     final_transfers = Map.values(transfers)
 
     final_transfers ++ nft_transfers
+  end
+
+  def get_token_burnings(token_transfers) do
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.to_address_hash == @burn_address_hash
+    end)
   end
 
   defp aggregate_reducer(%{amount: amount} = token_transfer, {acc1, acc2}) when is_nil(amount) do
@@ -296,6 +318,20 @@ defmodule BlockScoutWeb.TransactionView do
 
   def gas_used(%Transaction{gas_used: gas_used}) do
     Number.to_string!(gas_used)
+  end
+
+  def gas_used_perc(%Transaction{gas_used: nil}), do: gettext("Pending")
+
+  def gas_used_perc(%Transaction{gas_used: gas_used, gas: gas}) do
+    if Decimal.cmp(gas, 0) == :gt do
+      gas_used
+      |> Decimal.div(gas)
+      |> Decimal.mult(100)
+      |> Decimal.round(2)
+      |> Number.to_string!()
+    else
+      nil
+    end
   end
 
   def hash(%Transaction{hash: hash}) do

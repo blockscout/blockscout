@@ -70,36 +70,13 @@
             <% end %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
-              <span class="overview-title-item" data-clipboard-text="<%= @address %>">
-                <span
-                  aria-label='<%= gettext("Copy Address") %>'
-                  class="btn-copy-icon"
-                  data-placement="top"
-                  data-toggle="tooltip"
-                  title='<%= gettext("Copy Address") %>'
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                    <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-                  </svg>
-                </span>
-              </span>
-              <span
-                class="overview-title-item"
-                data-target="#qrModal"
-                data-toggle="modal"
-              >
-                <span
-                  class="btn-qr-icon"
-                  data-toggle="tooltip"
-                  data-placement="top"
-                  title='<%= gettext("QR Code") %>'
-                  aria-label='<%= gettext("Show QR Code") %>'
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                    <path fill-rule="evenodd" d="M22.5 24.5v-2h2v2h-2zm-1-4v-1h1v1h-1zm1-3h2v2h-2v-2zm1-2h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm-8 14h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm1-4h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm6 9h-2v-2h2v2zm1 1h-1v-1h1v1zm0 1v1h-1v-1h1zm-1 3h-2v-2h2v2z"/>
-                  </svg>
-                </span>
-              </span>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                      id: "tx-raw-input",
+                      additional_classes: ["overview-title-item"],
+                      clipboard_text: @address,
+                      aria_label: gettext("Copy Address"),
+                      title: gettext("Copy Address") %>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_qr_code.html" %>
               <%= if validator_metadata do %>
                 <span
                   class="overview-title-item"
@@ -199,24 +176,7 @@
 </section>
 
 <!-- Modal QR -->
-<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-sm" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title" id="qrModalLabel"><%= gettext "QR Code" %></h2>
-        <button type="button" class="close" data-dismiss="modal" aria-label="<%= gettext("Close") %>">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <img src="data:image/png;base64, <%= qr_code(@address.hash) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>
-      </div>
-    </div>
-  </div>
-</div>
+<%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@address), title: @address %>
 
 <!-- Modal Validator -->
 <%= if validator_metadata do %>
