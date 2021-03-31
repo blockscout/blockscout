@@ -2399,6 +2399,21 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec number_to_any_block(Block.block_number(), [necessity_by_association_option]) ::
+          {:ok, Block.t()} | {:error, :not_found}
+  def number_to_any_block(number, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    Block
+    |> where(number: ^number)
+    |> join_associations(necessity_by_association)
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      block -> {:ok, block}
+    end
+  end
+
   @doc """
   Count of pending `t:Explorer.Chain.Transaction.t/0`.
 
