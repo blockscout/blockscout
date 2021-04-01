@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3758](https://github.com/blockscout/blockscout/pull/3758) - Add pool name and description display to Staking DApp
 - [#3750](https://github.com/blockscout/blockscout/pull/3750) - getblocknobytime block module API endpoint
 
 ### Fixes
