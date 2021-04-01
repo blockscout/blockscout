@@ -261,7 +261,7 @@
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
             <%= if !empty_exchange_rate?(@exchange_rate) do %>
-              (<span class="address-current-balance"
+              (<span class="address-current-balance large"
                 data-wei-value=<%= @transaction.value.value %>
                 data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
               </span>)
