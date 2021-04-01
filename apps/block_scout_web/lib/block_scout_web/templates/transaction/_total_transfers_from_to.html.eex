@@ -1,9 +1,11 @@
 <%= with {:ok, from_address} <- Chain.hash_to_address(@transfer.from_address_hash),
         {:ok, to_address} <- Chain.hash_to_address(@transfer.to_address_hash) do %>
 <dl class="row mb-2" style="margin-left: 0px;">
-<dt style="width: 30px;"><b>From</b></dt><dd class="col-sm-1 col-md-4 address-mobile" style="padding-right: 0px; min-width: 80px;"><%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false %></dd>
-<dt style="width: 20px;"><b>To</b></dt><dd class="col-sm-1 col-md-4 address-mobile" style="padding-right: 0px; min-width: 80px;"><%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false %></dd>
-<dt style="width: 30px;"><b>For</b></dt>
+<dt style="width: auto;"><b>From</b></dt><dd class="col-sm-1 col-md-4 address-mobile" style="padding-right: 0px; min-width: 80px; max-width: 335px;"><%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false %></dd>
+<dt style="width: auto;"><b>To</b></dt><dd class="col-sm-1 col-md-4 address-mobile" style="padding-right: 0px; min-width: 80px; max-width: 335px;"><%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false %></dd>
+<dt style="width: auto;"><b>For</b></dt>
 <% end %>
+<dd class="col-sm-4 col-md-3 address-mobile" style="width: auto;">
 <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", transfer: @transfer %>
+</dd>
 </dl>
