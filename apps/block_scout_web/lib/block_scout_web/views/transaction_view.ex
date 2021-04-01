@@ -280,6 +280,13 @@ defmodule BlockScoutWeb.TransactionView do
 
   def formatted_status(status) do
     case status do
+      :pending -> gettext("Unconfirmed")
+      _ -> gettext("Confirmed")
+    end
+  end
+
+  def formatted_result(status) do
+    case status do
       :pending -> gettext("Pending")
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")
@@ -320,7 +327,7 @@ defmodule BlockScoutWeb.TransactionView do
     Number.to_string!(gas_used)
   end
 
-  def gas_used_perc(%Transaction{gas_used: nil}), do: gettext("Pending")
+  def gas_used_perc(%Transaction{gas_used: nil}), do: nil
 
   def gas_used_perc(%Transaction{gas_used: gas_used, gas: gas}) do
     if Decimal.cmp(gas, 0) == :gt do

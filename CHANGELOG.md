@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3757](https://github.com/blockscout/blockscout/pull/3757) - tx page facelifting
 - [#3750](https://github.com/blockscout/blockscout/pull/3750) - getblocknobytime block module API endpoint
 
 ### Fixes

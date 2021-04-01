@@ -263,6 +263,11 @@ $dark-primary-alternate: $dark-primary;
 
 	.btn-copy-icon {
 		content: url(/images/custom-themes/dark-forest/copy.svg);
+		margin-left: 0.5rem;
+	}
+
+	.btn-copy-icon-ml-0 {
+		margin-left: 0;
 	}
 
 	.btn-qr-icon {
@@ -731,10 +736,6 @@ $dark-primary-alternate: $dark-primary;
 				}
 			}
 		}
-		mark {
-			background: $dark-primary;
-			color: #fff;
-		}
 	}
 
 	// Decoded data
@@ -1008,6 +1009,26 @@ $dark-primary-alternate: $dark-primary;
 
 	.csv-icon {
 		visibility: hidden;
+	}
+
+	.i-tooltip {
+		.i-tooltip-circle {
+			fill: #fff;
+		}
+
+		.i-tooltip-info {
+			fill: $body-dark;
+		}
+
+		&:hover {
+			.i-tooltip-circle {
+			  fill: $dark-primary;
+			}
+
+			.i-tooltip-info {
+				fill: #fff;
+			}
+		}
 	}
 }
 
