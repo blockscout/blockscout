@@ -3,7 +3,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <div>
-          <h5 class="modal-title"><%= to_string(@validator.staking_address_hash) %></h5>
+          <h5 class="modal-title"><%= if not is_nil(@validator.name), do: @validator.name, else: BlockScoutWeb.AddressView.trimmed_hash(@validator.staking_address_hash) %></h5>
+          <%= if not is_nil(@validator.description) do %>
+            <p><%= @validator.description %></p>
+          <% end %>
+          <div>
+            <span class="modal-validator-info-item-title"><%= gettext("Staking Address:") %></span>
+            <span class="modal-validator-info-item-value"><%= to_string(@validator.staking_address_hash) %></span>
+          </div>
           <div>
             <span class="modal-validator-info-item-title"><%= gettext("Mining Address:") %></span>
             <span class="modal-validator-info-item-value"><%= to_string(@validator.mining_address_hash) %></span>

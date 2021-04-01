@@ -5453,6 +5453,13 @@ defmodule Explorer.Chain do
     Repo.get_by(StakingPool, staking_address_hash: staking_address_hash)
   end
 
+  def staking_pool_names(staking_addresses) do
+    StakingPool
+    |> where([p], p.staking_address_hash in ^staking_addresses and p.is_deleted == false)
+    |> select([:staking_address_hash, :name])
+    |> Repo.all()
+  end
+
   def staking_pool_delegators(staking_address_hash, show_snapshotted_data) do
     query =
       from(
