@@ -2082,7 +2082,7 @@ msgid "Candidate and Validator Pool Addresses. Current validator pools are speci
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:38
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:47
 msgid "Candidate’s Staked Amount"
 msgstr ""
 
@@ -2146,7 +2146,7 @@ msgid "Delegators"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:44
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:53
 msgid "Delegators’ Staked Amount"
 msgstr ""
 
@@ -2162,12 +2162,12 @@ msgid "Epochs range(s) or enum, e.g.:   5-9,23-27,47,50"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:68
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:77
 msgid "How Many Times this Address has been Banned"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:62
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:71
 msgid "How Many Times this Address has been a Validator"
 msgstr ""
 
@@ -2188,7 +2188,7 @@ msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:74
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:83
 msgid "Likelihood of Becoming a Validator on the Next Epoch"
 msgstr ""
 
@@ -2215,7 +2215,7 @@ msgid "Minimum Stake:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:15
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:24
 msgid "Mining Address:"
 msgstr ""
 
@@ -2263,7 +2263,7 @@ msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:23
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:32
 msgid "Reason for Ban: %{ban_reason}"
 msgstr ""
 
@@ -2294,7 +2294,7 @@ msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:56
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:65
 msgid "Share of Pool’s Reward"
 msgstr ""
 
@@ -2351,7 +2351,7 @@ msgid "Staker's Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:50
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:59
 #: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:25
 #: lib/block_scout_web/templates/stakes/_table.html.eex:34
 msgid "Stakes Ratio"
@@ -2368,7 +2368,7 @@ msgid "Target Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:80
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:89
 msgid "The Number of Delegators in the Pool"
 msgstr ""
 
@@ -2436,7 +2436,7 @@ msgid "This is a validator"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:22
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:31
 msgid "This pool is banned until block #%{banned_until} (%{estimated_unban_day})"
 msgstr ""
 
@@ -2534,7 +2534,7 @@ msgid "You can withdraw this amount right now."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:29
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:38
 msgid "You will be able to withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})"
 msgstr ""
 
@@ -2725,7 +2725,27 @@ msgstr ""
 msgid "Minimal Proxy Contract for"
 msgstr ""
 
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:11
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:20
 msgid "Staking Address:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:11
+msgid "Please, sign transaction and wait for its mining..."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:9
+msgid "Pool description"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:8
+msgid "Pool name"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:10
+msgid "Save changes"
 msgstr ""
