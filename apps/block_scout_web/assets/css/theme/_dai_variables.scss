@@ -48,16 +48,28 @@ $btn-contract-color: $secondary;
 $tile-body-a-color: $secondary;
 $tile-type-block-color: $secondary;
 $tile-type-progress-bar-color: $secondary;
+
+a {
+  color: $secondary;
+}
+
+a:hover, a:focus {
+  color: $secondary;
+}
+
+.tile .tile-body a,
 .tile a:hover,
+.tile span[data-address-hash],
+.tile a[data-test=token_link]
 a.tile-title { color: $secondary !important; }
 .card-body {  
-	a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
-		color: $secondary;
+  a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
+    color: $secondary;
 
-		&:hover {
-			color: $secondary;
-		}
-	}
+    &:hover {
+      color: $secondary;
+    }
+  }
 }
 
 // card
@@ -65,13 +77,13 @@ $card-background-1: $secondary;
 $card-tab-active: $secondary;
 
 .layout-container {
-	.dashboard-banner-container {
-	  background-image: linear-gradient(
-	    to bottom,
-	    $dashboard-banner-gradient-start,
-	    $dashboard-banner-gradient-end
-	  );
-	}
+  .dashboard-banner-container {
+    background-image: linear-gradient(
+      to bottom,
+      $dashboard-banner-gradient-start,
+      $dashboard-banner-gradient-end
+    );
+  }
 }
 
 // Badges
@@ -102,26 +114,34 @@ $dark-tertiary: #5a77ff;
 .dark-theme-applied .tile a:hover,
 .dark-theme-applied .tile span[data-address-hash],
 .dark-theme-applied .tile a[data-test=token_link] {
-    color: $dark-tertiary!important;
+    color: $dark-tertiary !important;
+}
+
+.dark-theme-applied a {
+  color: $dark-tertiary;
+}
+
+.dark-theme-applied a:hover, a:focus {
+  color: $dark-tertiary;
 }
 
 .dark-theme-applied .btn-line {
-    background-color: transparent!important;
-    border-color: $dark-tertiary!important;
-    color: $dark-tertiary!important;
+    background-color: transparent !important;
+    border-color: $dark-tertiary !important;
+    color: $dark-tertiary !important;
 
     &[disabled] {
         &,
         &:hover {
-            background-color: transparent!important;
-            border-color: $dark-tertiary!important;
-            color: $dark-tertiary!important;
+            background-color: transparent !important;
+            border-color: $dark-tertiary !important;
+            color: $dark-tertiary !important;
         }
     }
 }
 
 .dark-theme-applied .btn-line:hover {
-    color: $additional-font!important;
+    color: $additional-font !important;
 }
 
 .dark-theme-applied .card-body {  
