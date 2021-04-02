@@ -135,7 +135,6 @@
                   "_link.html",
                   address: @block.miner,
                   contract: false,
-                  data_test: "address_hash_link",
                   class: "",
                   use_custom_tooltip: true %>
               </h3>

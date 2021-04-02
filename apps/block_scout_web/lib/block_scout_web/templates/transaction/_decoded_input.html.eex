@@ -15,7 +15,7 @@
               address_verify_contract_via_flattened_code_path(@conn, :new, hash)
             end
           %>
-          <%= gettext "Verify the contract " %><a class="alert-info-a-cusom-color" href="<%= path %>"><%= gettext "here" %></a>
+          <%= gettext "Verify the contract " %><a class="alert-info-a-custom-color" href="<%= path %>"><%= gettext "here" %></a>
         <% _ -> %>
           <%= nil %>
       <% end %>

@@ -268,7 +268,7 @@
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
             <%= if !empty_exchange_rate?(@exchange_rate) do %>
-              (<span class="address-current-balance"
+              (<span class="address-current-balance large"
                 data-wei-value=<%= @transaction.value.value %>
                 data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
               </span>)
@@ -339,14 +339,14 @@
                 <div class="d-flex mb-3 justify-content-between">
                   <!-- Dropdown -->
                   <div class="dropdown">
-                    <button class="btn-dropdown-line dropdown-toggle" type="button" id="tx-input-decoding-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn-dropdown-line large dropdown-toggle" type="button" id="tx-input-decoding-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                       <%= gettext("Hex (Default)") %>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="transaction-input-decoding-button">
-                      <a href class="dropdown-item tx-input-dropdown" data-target=".tx-raw-input" data-target-to-hide=".tx-utf8-input" id="tx-dropdown-raw">
+                      <a href class="dropdown-item large tx-input-dropdown" data-target=".tx-raw-input" data-target-to-hide=".tx-utf8-input" id="tx-dropdown-raw">
                         <%= gettext("Hex (Default)") %>
                       </a>
-                      <a href class="dropdown-item tx-input-dropdown" data-target=".tx-utf8-input" data-target-to-hide=".tx-raw-input" id="tx-dropdown-utf8">
+                      <a href class="dropdown-item large tx-input-dropdown" data-target=".tx-utf8-input" data-target-to-hide=".tx-raw-input" id="tx-dropdown-utf8">
                         <%= gettext("UTF-8") %>
                       </a>
                     </div>
