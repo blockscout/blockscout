@@ -340,6 +340,12 @@ $dark-primary-alternate: $dark-primary;
 		border-color: #fff;
 		color: #fff;
 		height: 32px;
+
+		&:hover {
+			background-color: $dark-light;
+			border-color: #fff;
+			color: #fff;
+		}
 	}
 
 	// table
@@ -731,7 +737,7 @@ $dark-primary-alternate: $dark-primary;
 					color: #fff;
 					mark {
 						background: darken($dark-primary, 10);
-						color: #fff;
+						color: $dark-light-bg;
 					}
 				}
 			}
