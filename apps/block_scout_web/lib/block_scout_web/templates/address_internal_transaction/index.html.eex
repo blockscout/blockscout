@@ -19,7 +19,7 @@
           <h2 class="card-title float-left"><%= gettext "Internal Transactions" %></h2>
           <div class="top-pagination-outer-container float-right">
             <div class="dropdown u-push-sm">
-              <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+              <button data-test="filter_dropdown" class="btn-dropdown-line basic dropdown-toggle" type="button"
                 id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Filter: <%= format_current_filter(@filter) %>
               </button>

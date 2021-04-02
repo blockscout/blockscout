@@ -4,18 +4,31 @@ $btn-dropdown-line-color-hover: #f5f6fa !default;
 $btn-dropdown-line-font: #333;
 
 .btn-dropdown-line {
-  @include btn-line($btn-dropdown-line-bg, $btn-dropdown-line-color);
-  border-color: $btn-dropdown-line-color;
-  color: $btn-dropdown-line-font;
+  &.basic {
+    @include btn-line($btn-dropdown-line-bg, $btn-dropdown-line-color);
+    border-color: $btn-dropdown-line-color;
+    color: $btn-dropdown-line-font;
+
+    &:hover {
+      background-color: $btn-dropdown-line-color-hover;
+      border-color: $btn-dropdown-line-color;
+      color: $btn-dropdown-line-font;
+    }
+  }
+  &.large {
+    @include btn-line($btn-dropdown-line-bg, $btn-dropdown-line-color, 14px);
+    border-color: $btn-dropdown-line-color;
+    color: $btn-dropdown-line-font;
+
+    &:hover {
+      background-color: $btn-dropdown-line-color-hover;
+      border-color: $btn-dropdown-line-color;
+      color: $btn-dropdown-line-font;
+    }
+  }
   outline: none !important;
   margin-right: 20px;
   &.no-rm {
     margin-right: 0;
-  }
-
-  &:hover {
-    background-color: $btn-dropdown-line-color-hover;
-    border-color: $btn-dropdown-line-color;
-    color: $btn-dropdown-line-font;
   }
 }
