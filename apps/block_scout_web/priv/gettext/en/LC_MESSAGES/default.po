@@ -430,7 +430,6 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:50
 msgid "ETH"
 msgstr "POA"
-msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:20
