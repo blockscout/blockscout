@@ -6541,6 +6541,24 @@ defmodule Explorer.Chain do
     end
   end
 
+  def chain_id_full_display_name(nil), do: ""
+
+  def chain_id_full_display_name(chain_id) do
+    chain_id_int =
+      if is_integer(chain_id) do
+        chain_id
+      else
+        chain_id
+        |> Decimal.to_integer()
+      end
+
+    case chain_id_int do
+      1 -> "Ethereum"
+      56 -> "Binance Smart Chain"
+      _ -> ""
+    end
+  end
+
   @spec is_active_validator?(Address.t()) :: boolean()
   def is_active_validator?(address_hash) do
     now = Timex.now()
