@@ -51,3 +51,25 @@
 		width: 60%;
 	}
 }
+
+.address-mobile {
+	@include media-breakpoint-down(sm) {
+		width: 80px;
+	}
+}
+
+.transfers-list-mobile-container {
+	@include media-breakpoint-down(sm) {
+		margin-top: 0.5rem;
+	}
+	font-size: 12px;
+}
+
+.transaction-details {
+	font-size: 14px;
+}
+.transaction-gas-used {
+	@media (min-width: 1200px) {
+		white-space: nowrap;
+	}
+}

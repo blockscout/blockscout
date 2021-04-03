@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
     end
   end
 
-  describe "formatted_status/1" do
+  describe "formatted_result/1" do
     test "without block" do
       transaction =
         :transaction
@@ -157,7 +157,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> Repo.preload(:block)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Pending"
+      assert TransactionView.formatted_result(status) == "Pending"
     end
 
     test "with block without status (pre-Byzantium/Ethereum Class)" do
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> with_block(block, status: nil)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "(Awaiting internal transactions for status)"
+      assert TransactionView.formatted_result(status) == "(Awaiting internal transactions for status)"
     end
 
     test "with receipt with status :ok" do
@@ -181,7 +181,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> with_block(gas_used: gas - 1, status: :ok)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Success"
+      assert TransactionView.formatted_result(status) == "Success"
     end
 
     test "with block with status :error without internal transactions indexed" do
@@ -195,7 +195,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
       insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Error: (Awaiting internal transactions for reason)"
+      assert TransactionView.formatted_result(status) == "Error: (Awaiting internal transactions for reason)"
     end
 
     test "with block with status :error with internal transactions indexed uses `error`" do
@@ -205,7 +205,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> with_block(status: :error, error: "Out of Gas")
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Error: Out of Gas"
+      assert TransactionView.formatted_result(status) == "Error: Out of Gas"
     end
   end
 
