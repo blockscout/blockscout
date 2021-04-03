@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.StakesChannel do
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.{ContractReader, ContractState}
   alias Phoenix.View
+  alias Timex.Duration
 
   import BlockScoutWeb.Gettext
 
@@ -35,32 +36,32 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("set_account", account, socket) do
-    # fetch mining address by staking address to show `Make stake` modal
+    # fetch pool id by staking address to show `Make stake` modal
     # instead of `Become a candidate` for the staking address which
     # has ever been a pool
-    pool_mining_address =
+    pool_id_raw =
       try do
         validator_set_contract = ContractState.get(:validator_set_contract)
 
         ContractReader.perform_requests(
-          ContractReader.mining_by_staking_request(account),
+          ContractReader.id_by_staking_request(account),
           %{validator_set: validator_set_contract.address},
           validator_set_contract.abi
-        ).mining_address
+        ).pool_id
       rescue
         _ -> nil
       end
 
-    # convert zero address to nil
-    mining_address =
-      if pool_mining_address != "0x0000000000000000000000000000000000000000" do
-        pool_mining_address
+    # convert 0 to nil
+    pool_id =
+      if pool_id_raw != 0 do
+        pool_id_raw
       end
 
     socket =
       socket
       |> assign(:account, account)
-      |> assign(:mining_address, mining_address)
+      |> assign(:pool_id, pool_id)
       |> push_contracts()
 
     data =
@@ -102,10 +103,27 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("render_delegators_list", %{"address" => pool_staking_address}, socket) do
+    pool_staking_address_downcased = String.downcase(pool_staking_address)
     pool = Chain.staking_pool(pool_staking_address)
+    pool_rewards = ContractState.get(:pool_rewards, %{})
+    calc_apy_enabled = ContractState.calc_apy_enabled?()
     token = ContractState.get(:token)
     validator_min_reward_percent = ContractState.get(:validator_min_reward_percent)
     show_snapshotted_data = ContractState.show_snapshotted_data(pool.is_validator)
+    staking_epoch_duration = ContractState.staking_epoch_duration()
+
+    average_block_time =
+      try do
+        Duration.to_seconds(AverageBlockTime.average_block_time())
+      rescue
+        _ -> nil
+      end
+
+    pool_reward =
+      case Map.fetch(pool_rewards, String.downcase(to_string(pool.mining_address_hash))) do
+        {:ok, pool_reward} -> pool_reward
+        :error -> nil
+      end
 
     stakers =
       pool_staking_address
@@ -118,6 +136,21 @@ defmodule BlockScoutWeb.StakesChannel do
           staker_address == socket.assigns[:account] -> 1
           true -> 2
         end
+      end)
+      |> Enum.map(fn staker ->
+        apy =
+          if calc_apy_enabled do
+            calc_apy(
+              pool,
+              staker,
+              pool_staking_address_downcased,
+              pool_reward,
+              average_block_time,
+              staking_epoch_duration
+            )
+          end
+
+        Map.put(staker, :apy, apy)
       end)
 
     html =
@@ -447,33 +480,50 @@ defmodule BlockScoutWeb.StakesChannel do
     try do
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
       staking_contract = ContractState.get(:staking_contract)
+      validator_set_contract = ContractState.get(:validator_set_contract)
 
       responses =
         staker
-        |> ContractReader.get_staker_pools_length_request()
+        |> ContractReader.get_delegator_pools_length_request()
         |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
 
-      staker_pools_length = responses[:length]
+      delegator_pools_length = responses[:length]
 
       chunk_size = 100
 
       pools =
-        if staker_pools_length > 0 do
-          chunks = 0..trunc(ceil(staker_pools_length / chunk_size) - 1)
+        if delegator_pools_length > 0 do
+          chunks = 0..trunc(ceil(delegator_pools_length / chunk_size) - 1)
 
           Enum.reduce(chunks, [], fn i, acc ->
             responses =
               staker
-              |> ContractReader.get_staker_pools_request(i * chunk_size, chunk_size)
+              |> ContractReader.get_delegator_pools_request(i * chunk_size, chunk_size)
               |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
 
-            acc ++
-              Enum.map(responses[:pools], fn pool_staking_address ->
-                address_bytes_to_string(pool_staking_address)
-              end)
+            acc ++ responses[:pools]
           end)
         else
           []
+        end
+
+      # convert pool ids to staking addresses
+      pools =
+        pools
+        |> Enum.map(&ContractReader.staking_by_id_request(&1))
+        |> ContractReader.perform_grouped_requests(
+          pools,
+          %{validator_set: validator_set_contract.address},
+          validator_set_contract.abi
+        )
+        |> Enum.map(fn {_, resp} -> resp.staking_address end)
+
+      # if `staker` is a pool, prepend its address to the `pools` array
+      pools =
+        if socket.assigns[:pool_id] !== nil do
+          [staker | pools]
+        else
+          pools
         end
 
       pools_amounts =
@@ -658,6 +708,25 @@ defmodule BlockScoutWeb.StakesChannel do
     end
   end
 
+  defp calc_apy(pool, staker, pool_staking_address_downcased, pool_reward, average_block_time, staking_epoch_duration) do
+    staker_address = String.downcase(to_string(staker.address_hash))
+
+    {reward_ratio, stake_amount} =
+      if staker_address == pool_staking_address_downcased do
+        {pool.snapshotted_validator_reward_ratio, pool.snapshotted_self_staked_amount}
+      else
+        {staker.snapshotted_reward_ratio, staker.snapshotted_stake_amount}
+      end
+
+    ContractState.calc_apy(
+      reward_ratio,
+      pool_reward,
+      stake_amount,
+      average_block_time,
+      staking_epoch_duration
+    )
+  end
+
   defp claim_reward_long_op_active(socket) do
     if socket.assigns[@claim_reward_long_op] do
       true
@@ -669,8 +738,6 @@ defmodule BlockScoutWeb.StakesChannel do
       end
     end
   end
-
-  defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp array_to_ranges(numbers, prev_ranges \\ []) do
     length = Enum.count(numbers)

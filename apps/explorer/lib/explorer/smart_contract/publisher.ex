@@ -104,7 +104,7 @@ defmodule Explorer.SmartContract.Publisher do
 
   defp add_external_libraries(params, external_libraries) do
     clean_external_libraries =
-      Enum.reduce(1..5, %{}, fn number, acc ->
+      Enum.reduce(1..10, %{}, fn number, acc ->
         address_key = "library#{number}_address"
         name_key = "library#{number}_name"
 

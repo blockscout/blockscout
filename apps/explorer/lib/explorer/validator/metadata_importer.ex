@@ -9,7 +9,12 @@ defmodule Explorer.Validator.MetadataImporter do
 
   def import_metadata(metadata_maps) do
     # Enforce Name ShareLocks order (see docs: sharelocks.md)
-    ordered_metadata_maps = Enum.sort_by(metadata_maps, &{&1.address_hash, &1.name})
+    ordered_metadata_maps =
+      metadata_maps
+      |> Enum.filter(fn metadata ->
+        String.trim(metadata.name) !== ""
+      end)
+      |> Enum.sort_by(&{&1.address_hash, &1.name})
 
     Repo.transaction(fn -> Enum.each(ordered_metadata_maps, &upsert_validator_metadata(&1)) end)
   end

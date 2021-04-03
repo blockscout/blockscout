@@ -1,30 +1,23 @@
-<% metadata_for_verification = Chain.address_verified_twin_contract(@address.hash) %>
+<% minimal_proxy_template = Chain.get_minimal_proxy_template(@address.hash) %>
+<% metadata_for_verification = minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
 <%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
   <%= if metadata_for_verification do %>
-    <div class="mb-4">
-      <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
-metadata_for_verification.address_hash,
-to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All functions displayed below are from ABI of that contract. In order to verify current contract, proceed with") %> <%= link(
-      gettext("Verify & Publish"),
-      to: address_verify_contract_path(@conn, :new, @address.hash)
-    ) %> <%= gettext("page") %></span>
-    </div>
+    <%= if minimal_proxy_template do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: metadata_for_verification.address_hash, conn: @conn %>
+    <% else %>
+      <div class="mb-4">
+        <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
+  metadata_for_verification.address_hash,
+  to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All functions displayed below are from ABI of that contract. In order to verify current contract, proceed with") %> <%= link(
+        gettext("Verify & Publish"),
+        to: address_verify_contract_path(@conn, :new, @address.hash)
+      ) %> <%= gettext("page") %></span>
+      </div>
+    <% end %>
   <% end %>
 <% end %>
 <%= if @action== "write" do %>
-  <div connect-to class="connect-container">
-    <span style="margin-top: -2px;" class="mr-2">
-      <%= render BlockScoutWeb.IconsView, "_inactive_icon.html" %>
-    </span>
-     <h2 style="margin-top: -2px;">Disconnected</h2>
-    <button connect-metamask class="button btn-line ml-4">Connect to Metamask</button>
-  </div>
-  <div connected-to class="connect-container hidden">
-    <span style="margin-top: -2px;" class="mr-2">
-      <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
-    </span>
-    <h2 style="margin-top: -2px;">Connected to</h2><h3 connected-to-address class="ml-2"></h3>
-  </div>
+  <%= render BlockScoutWeb.SmartContractView, "_connect_container.html" %>
 <% end %>
 <%= if @contract_type == "proxy" do %>
 <div class="implementation-container">
@@ -52,7 +45,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if writable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+        <form class="form-inline" data-function-form data-action="<%= if writable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
@@ -80,7 +73,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             <% end %>
           <% end %>
 
-          <%= if payable?(function) do %>
+          <%= if Helper.payable?(function) do %>
             <div class="form-group pr-3">
               <input type="text" name="function_input" tx-value class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)'  />
             </div>
@@ -94,7 +87,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             <%= if (queryable?(function["inputs"])), do: raw "&#8627;" %>
 
             <%= for output <- function["outputs"] do %>
-              <%= output["type"] %>
+              <%= if output["name"] && output["name"] !== "", do: "#{output["name"]}(#{output["type"]})", else: output["type"] %>
             <% end %>
           </div>
         <% end %>
@@ -113,7 +106,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             <% else %>
                 <%= if output["type"] == "uint256" do %>
                   <div data-wei-ether-converter>
-                    <span data-conversion-unit><%= output["value"] %></span>
+                    <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
                     <span class="py-2 px-2">
                       <input class="wei-ether" type="checkbox" autocomplete="off">
                       <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
@@ -121,7 +114,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
                     </span>
                   </div>
                 <% else %>
-                  <%= values(output["value"], output["type"]) %>
+                  <%= raw(values_only(output["value"], output["type"], output["components"])) %>
                 <% end %>
             <% end %>
           <% end %>
