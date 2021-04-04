@@ -3,8 +3,15 @@ defmodule BlockScoutWeb.TransactionController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, TransactionView}
-  alias Explorer.Chain
+  alias BlockScoutWeb.{
+    AccessHelpers,
+    InternalTransactionView,
+    TransactionInternalTransactionController,
+    TransactionView
+  }
+
+  alias Explorer.{Chain, Market}
+  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
@@ -65,13 +72,43 @@ defmodule BlockScoutWeb.TransactionController do
     )
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
+    TransactionInternalTransactionController.index(conn, %{
+      "transaction_id" => transaction_hash_string,
+      "type" => "JSON"
+    })
+  end
+
+  def show(conn, %{"id" => id} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         redirect(conn, to: AccessHelpers.get_path(conn, :transaction_token_transfer_path, :index, id))
       else
-        redirect(conn, to: AccessHelpers.get_path(conn, :transaction_internal_transaction_path, :index, id))
+        with {:ok, transaction} <-
+               Chain.hash_to_transaction(
+                 transaction_hash,
+                 necessity_by_association: %{
+                   :block => :optional,
+                   [created_contract_address: :names] => :optional,
+                   [from_address: :names] => :optional,
+                   [to_address: :names] => :optional,
+                   [to_address: :smart_contract] => :optional,
+                   :token_transfers => :optional
+                 }
+               ),
+             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
+             {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+          render(
+            conn,
+            "show.html",
+            exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+            current_path: current_path(conn),
+            block_height: Chain.block_height(),
+            show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
+            transaction: transaction
+          )
+        end
       end
     else
       :error ->
