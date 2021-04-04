@@ -19,15 +19,10 @@ defmodule EthereumJsonrpc.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
         credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls],
       version: "0.1.0"
     ]
   end
@@ -67,8 +62,6 @@ defmodule EthereumJsonrpc.MixProject do
       {:credo, "~> 1.1", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      # Code coverage
-      {:excoveralls, "~> 0.13.3"},
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 1.6"},
       # Decode/Encode JSON for JSONRPC
