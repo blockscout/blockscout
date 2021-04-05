@@ -263,6 +263,21 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
+  def nft_list do
+    if Application.get_env(:block_scout_web, :nft) do
+      try do
+        :block_scout_web
+        |> Application.get_env(:nft)
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
   def apps_list do
     if Application.get_env(:block_scout_web, :external_apps) do
       try do

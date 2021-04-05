@@ -19,7 +19,7 @@ $dropdown-menu-item-hover-background: rgba($secondary, 0.1) !default;
   }
 
   &.large {
-    width: 550px;
+    width: 600px;
     @include media-breakpoint-down(sm) {
       width: 100%;
     }

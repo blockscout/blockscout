@@ -127,7 +127,7 @@
             </a>
             <div class="dropdown-menu large" aria-labeledby="navbarAppsDropdown">
               <div class="row" style="padding: 10px;">
-                <div class="col-xs-12 col-md-4 col-lg-4">
+                <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Apps") %></b></h3>
                   <%= if staking_enabled_in_menu do %>
                     <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
@@ -149,7 +149,7 @@
                   <% end %>
                 </div>
 
-                <div class="col-xs-12 col-md-4 col-lg-4">
+                <div class="col-xs-12 col-md-3 col-lg-3">
                   <% bridges = bridges_list() %>
                   <% other_bridges = other_bridges_list() %>
                   <%= unless Enum.empty?(bridges) do %>
@@ -163,13 +163,21 @@
                     <% end %>
                   <% end %>
                 </div>
-                <div class="col-xs-12 col-md-4 col-lg-4">
+                <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Ecosystem") %></b></h3>
                   <%= for %{url: url, title: title} <- defi_list() do %> 
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
                   <hr class="menu-hr" />
                   <a href="https://airtable.com/shr7veBkE77k5p86b" class="dropdown-item" target="_blank"><%= gettext("Add Your App") %></a>
+                </div>
+                <div class="col-xs-12 col-md-3 col-lg-3">
+                  <h3 class="apps-menu-header pl-2"><b><%= gettext("NFT") %></b></h3>
+                  <%= for %{url: url, title: title} <- nft_list() do %> 
+                        <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <% end %>
+                  <hr class="menu-hr" />
+                  <a href="https://www.xdaichain.com/about-xdai/project-spotlights#nft-based-projects" class="dropdown-item" target="_blank"><%= gettext("More") %></a>
                 </div>
               </div>
             </div>

@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias BlockScoutWeb.{
     AccessHelpers,
-    InternalTransactionView,
     TransactionInternalTransactionController,
     TransactionView
   }
