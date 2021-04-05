@@ -25,14 +25,17 @@ $dropdown-menu-item-hover-background: rgba($secondary, 0.1) !default;
     }
   }
 
-  .nav-item & {
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
-    top: 45px;
+  &.dropdown-menu-apps {
     left: -240px;
     @include media-breakpoint-down(lg) {
       left: -360px;
     }
+  }
+
+  .nav-item & {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    top: 45px;
 
     .dropdown-item:first-child {
       border-top-left-radius: 0;

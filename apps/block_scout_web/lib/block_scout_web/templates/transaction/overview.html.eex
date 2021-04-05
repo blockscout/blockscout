@@ -89,13 +89,13 @@
               <span class="mr-4">
                 <span data-transaction-status="<%= formatted_status %>">
                   <%= if status == :pending do %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status %></span>
+                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
                   <% else %>
-                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success"] %></span>
+                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
                 
                 <%= if confirmations > 0 do %>
-                  <span class="bs-label ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= gettext(" blocks") %></span>
+                  <span class="bs-label large ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= gettext(" blocks") %></span>
                 <% end %>
               </span>
             </dd>
