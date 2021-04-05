@@ -6554,7 +6554,7 @@ defmodule Explorer.Chain do
 
     case chain_id_int do
       1 -> "Ethereum"
-      56 -> "Binance Smart Chain"
+      56 -> "BSC"
       _ -> ""
     end
   end
