@@ -95,7 +95,7 @@
                   <% end %>
                 
                 <%= if confirmations > 0 do %>
-                  (<%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= gettext(" blocks") %>)
+                  <span class="bs-label ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= gettext(" blocks") %></span>
                 <% end %>
               </span>
             </dd>
@@ -139,6 +139,7 @@
                 <%= gettext "Timestamp" %>
               </dt>
               <dd class="col-sm-9 col-lg-10" data-selector="block-timestamp">
+                <i class="far fa-clock"></i>
                 <span>
                   <span data-from-now="<%= block.timestamp %>"></span>
                 </span>
@@ -148,7 +149,7 @@
                   <% :unknown -> %>
                     <% nil %>
                   <% {:ok, interval_string} -> %>
-                    (<%= gettext("Confirmed within") %> <%= interval_string %>)
+                    | <%= gettext("Confirmed within") %> <%= interval_string %>
                 <% end %>
               </dd>
             </dl>
