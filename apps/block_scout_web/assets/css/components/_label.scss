@@ -4,6 +4,9 @@
     background: #f5f6fa;
     color: #77838f;
     border-radius: 5px;
+    &.large {
+        font-size: 14px;
+    }
     font-size: 12px;
     height: 25px;
     line-height: 25px;
