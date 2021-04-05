@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.TabHelpers do
       "active"
     else
       case request_path do
-        "/tx/" <> "0x" <> <<tx_hash::binary-size(64)>> ->
+        "/tx/" <> "0x" <> <<_tx_hash::binary-size(64)>> ->
           if tab_name == "internal-transactions" do
             "active"
           end
