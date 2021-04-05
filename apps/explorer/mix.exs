@@ -20,15 +20,10 @@ defmodule Explorer.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
         credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls],
       version: "0.0.1"
     ]
   end
@@ -83,8 +78,6 @@ defmodule Explorer.Mixfile do
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
-      # Code coverage
-      {:excoveralls, "~> 0.13.3"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
