@@ -50,11 +50,11 @@ if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
 
-  console.log(window.location.pathname)
-  const pathParts = window.location.pathname.split('/')
-  if (pathParts.length > 3 && pathParts[3] !== '') {
-    document.getElementById('transaction-tabs').scrollIntoView()
-  }
+  // temporarily disable because redirect happens from the main page
+  // const pathParts = window.location.pathname.split('/')
+  // if (pathParts.length > 3 && pathParts[3] !== '') {
+  //   document.getElementById('transaction-tabs').scrollIntoView()
+  // }
 
   const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()
