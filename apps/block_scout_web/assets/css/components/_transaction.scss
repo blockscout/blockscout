@@ -52,6 +52,12 @@
 	}
 }
 
+.text-nowrap-small-screen {
+	@include media-breakpoint-up(sm) {
+		white-space: nowrap !important;
+	}
+}
+
 .address-mobile {
 	@include media-breakpoint-down(sm) {
 		width: 80px;
