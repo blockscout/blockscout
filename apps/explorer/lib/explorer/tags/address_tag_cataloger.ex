@@ -51,6 +51,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set test tag
     AddressTag.set_tag("test")
 
+    # set gtgs tag
+    AddressTag.set_tag("gtgs")
+
     send(self(), :bind_addresses)
 
     {:noreply, state}
@@ -83,6 +86,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set test tag
     set_test_tag()
+
+    # set gtgs tag
+    set_gtgs_tag()
 
     {:noreply, state}
   end
@@ -160,5 +166,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_test_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN", "test")
+  end
+
+  defp set_gtgs_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN", "gtgs")
   end
 end

@@ -505,4 +505,11 @@ defmodule BlockScoutWeb.AddressView do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN", "")) =~ address_hash_str
   end
+
+  def is_gtgs?(nil), do: false
+
+  def is_gtgs?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN", "")) =~ address_hash_str
+  end
 end

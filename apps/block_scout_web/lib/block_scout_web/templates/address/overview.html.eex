@@ -65,6 +65,9 @@
             <%= if is_hopr?(@address.hash) do %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "HOPR Multisig", additional_classes: ["hopr", "ml-1"] %>
             <% end %>
+            <%= if is_gtgs?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "GTGS", additional_classes: ["gtgs", "ml-1"] %>
+            <% end %>
             <%= if is_test?(@address.hash) do %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-1"] %>
             <% end %>

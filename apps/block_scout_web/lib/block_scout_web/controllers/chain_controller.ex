@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.ChainController do
         |> String.trim()
         |> Chain.search_label()
 
-      result = result_tokens ++ result_contracts ++ result_labels
+      result = result_labels ++ result_tokens ++ result_contracts
 
       json(conn, result)
     end
