@@ -6,6 +6,7 @@
 - [#3750](https://github.com/blockscout/blockscout/pull/3750) - getblocknobytime block module API endpoint
 
 ### Fixes
+- [#3773](https://github.com/blockscout/blockscout/pull/3773) - Inventory pagination query performance improvement
 - [#3767](https://github.com/blockscout/blockscout/pull/3767) - Decoded contract method input tuple reader fix
 - [#3748](https://github.com/blockscout/blockscout/pull/3748) - Skip null topics in eth_getLogs API endpoint
 
