@@ -1167,3 +1167,7 @@ $dark-stakes-banned-background: #3e314c;
 		color: $dark-primary;
 	}
 }
+
+.dark-theme-applied .confirmations-label:after {
+    background: .7rem solid $dark-light-bg;
+}
