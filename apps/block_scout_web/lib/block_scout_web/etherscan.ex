@@ -313,14 +313,14 @@ defmodule BlockScoutWeb.Etherscan do
 
   @stats_coinsupply_example_value 101_959_776.3115
 
-  @stats_ethprice_example_value %{
+  @stats_coinprice_example_value %{
     "status" => "1",
     "message" => "OK",
     "result" => %{
-      "ethbtc" => "0.03246",
-      "ethbtc_timestamp" => "1537212510",
-      "ethusd" => "204",
-      "ethusd_timestamp" => "1537212513"
+      "coin_btc" => "0.03246",
+      "coin_btc_timestamp" => "1537212510",
+      "coin_usd" => "204",
+      "coin_usd_timestamp" => "1537212513"
     }
   }
 
@@ -340,6 +340,20 @@ defmodule BlockScoutWeb.Etherscan do
   @block_getblockreward_example_value_error %{
     "status" => "0",
     "message" => "Invalid block number",
+    "result" => nil
+  }
+
+  @block_getblocknobytime_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "blockNumber" => "2165403"
+    }
+  }
+
+  @block_getblocknobytime_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid params",
     "result" => nil
   }
 
@@ -936,6 +950,13 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @block_no_model %{
+    name: "BlockNo",
+    fields: %{
+      blockNumber: @block_number_type
+    }
+  }
+
   @account_model %{
     name: "Account",
     fields: %{
@@ -1087,25 +1108,25 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
-  @eth_price_model %{
-    name: "EthPrice",
+  @coin_price_model %{
+    name: "CoinPrice",
     fields: %{
-      ethbtc: %{
-        type: "ethbtc",
-        definition: &__MODULE__.ethbtc_type_definition/1,
+      coin_btc: %{
+        type: "coin_btc",
+        definition: &__MODULE__.coin_btc_type_definition/1,
         example: ~s("0.03161")
       },
-      ethbtc_timestamp: %{
+      coin_btc_timestamp: %{
         type: "timestamp",
         definition: "Last updated timestamp.",
         example: ~s("1537234460")
       },
-      ethusd: %{
-        type: "ethusd",
-        definition: &__MODULE__.ethusd_type_definition/1,
+      coin_usd: %{
+        type: "coin_usd",
+        definition: &__MODULE__.coin_usd_type_definition/1,
         example: ~s("197.57")
       },
-      ethusd_timestamp: %{
+      coin_usd_timestamp: %{
         type: "timestamp",
         definition: "Last updated timestamp.",
         example: ~s("1537234460")
@@ -2021,16 +2042,16 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  @stats_ethprice_action %{
-    name: "ethprice",
-    description: "Get latest price in USD and BTC.",
+  @stats_coinprice_action %{
+    name: "coinprice",
+    description: "Get latest price of native coin in USD and BTC.",
     required_params: [],
     optional_params: [],
     responses: [
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@stats_ethprice_example_value),
+        example_value: Jason.encode!(@stats_coinprice_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2038,7 +2059,7 @@ defmodule BlockScoutWeb.Etherscan do
             message: @message_type,
             result: %{
               type: "model",
-              model: @eth_price_model
+              model: @coin_price_model
             }
           }
         }
@@ -2108,6 +2129,49 @@ defmodule BlockScoutWeb.Etherscan do
         code: "200",
         description: "error",
         example_value: Jason.encode!(@block_getblockreward_example_value_error)
+      }
+    ]
+  }
+
+  @block_getblocknobytime_action %{
+    name: "getblocknobytime",
+    description: "Get Block Number by Timestamp.",
+    required_params: [
+      %{
+        key: "timestamp",
+        placeholder: "blockTimestamp",
+        type: "integer",
+        description: "A nonnegative integer that represents the block timestamp (Unix timestamp in seconds)."
+      },
+      %{
+        key: "closest",
+        placeholder: "before/after",
+        type: "string",
+        description: "Direction to find the closest block number to given timestamp. Available values: before/after."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@block_getblocknobytime_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "model",
+              model: @block_no_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@block_getblocknobytime_example_value_error)
       }
     ]
   }
@@ -2538,13 +2602,13 @@ defmodule BlockScoutWeb.Etherscan do
       @stats_ethsupplyexchange_action,
       @stats_ethsupply_action,
       @stats_coinsupply_action,
-      @stats_ethprice_action
+      @stats_coinprice_action
     ]
   }
 
   @block_module %{
     name: "block",
-    actions: [@block_getblockreward_action, @block_eth_block_number_action]
+    actions: [@block_getblockreward_action, @block_getblocknobytime_action, @block_eth_block_number_action]
   }
 
   @contract_module %{
@@ -2586,11 +2650,11 @@ defmodule BlockScoutWeb.Etherscan do
       "One #{coin} is defined as being 10<sup>18</sup> Wei."
   end
 
-  def ethbtc_type_definition(coin) do
+  def coin_btc_type_definition(coin) do
     "#{coin} price in Bitcoin."
   end
 
-  def ethusd_type_definition(coin) do
+  def coin_usd_type_definition(coin) do
     "#{coin} price in US dollars."
   end
 end

@@ -1,4 +1,4 @@
-<% metadata_for_verification = Chain.address_verified_twin_contract(@address_hash) %>
+<% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
 <% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "" %>
 <% optimization_runs_value = if metadata_for_verification, do: metadata_for_verification.optimization_runs, else: "200" %>
 <% optimization = if metadata_for_verification, do: metadata_for_verification.optimization, else: true %>

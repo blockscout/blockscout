@@ -36,32 +36,32 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("set_account", account, socket) do
-    # fetch mining address by staking address to show `Make stake` modal
+    # fetch pool id by staking address to show `Make stake` modal
     # instead of `Become a candidate` for the staking address which
     # has ever been a pool
-    pool_mining_address =
+    pool_id_raw =
       try do
         validator_set_contract = ContractState.get(:validator_set_contract)
 
         ContractReader.perform_requests(
-          ContractReader.mining_by_staking_request(account),
+          ContractReader.id_by_staking_request(account),
           %{validator_set: validator_set_contract.address},
           validator_set_contract.abi
-        ).mining_address
+        ).pool_id
       rescue
         _ -> nil
       end
 
-    # convert zero address to nil
-    mining_address =
-      if pool_mining_address != "0x0000000000000000000000000000000000000000" do
-        pool_mining_address
+    # convert 0 to nil
+    pool_id =
+      if pool_id_raw != 0 do
+        pool_id_raw
       end
 
     socket =
       socket
       |> assign(:account, account)
-      |> assign(:mining_address, mining_address)
+      |> assign(:pool_id, pool_id)
       |> push_contracts()
 
     data =
@@ -216,6 +216,7 @@ defmodule BlockScoutWeb.StakesChannel do
           is_deleted: true,
           self_staked_amount: 0,
           mining_address_hash: nil,
+          name: nil,
           staking_address_hash: staking_address,
           total_staked_amount: 0
         }
@@ -480,6 +481,7 @@ defmodule BlockScoutWeb.StakesChannel do
     try do
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
       staking_contract = ContractState.get(:staking_contract)
+      validator_set_contract = ContractState.get(:validator_set_contract)
 
       responses =
         staker
@@ -490,7 +492,7 @@ defmodule BlockScoutWeb.StakesChannel do
 
       chunk_size = 100
 
-      pools =
+      pool_ids =
         if delegator_pools_length > 0 do
           chunks = 0..trunc(ceil(delegator_pools_length / chunk_size) - 1)
 
@@ -500,21 +502,39 @@ defmodule BlockScoutWeb.StakesChannel do
               |> ContractReader.get_delegator_pools_request(i * chunk_size, chunk_size)
               |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
 
-            acc ++
-              Enum.map(responses[:pools], fn pool_staking_address ->
-                address_bytes_to_string(pool_staking_address)
-              end)
+            acc ++ responses[:pools]
           end)
         else
           []
         end
 
+      staker_pool_id = socket.assigns[:pool_id]
+
+      # convert pool ids to staking addresses
+      pools =
+        pool_ids
+        |> Enum.map(&ContractReader.staking_by_id_request(&1))
+        |> ContractReader.perform_grouped_requests(
+          pool_ids,
+          %{validator_set: validator_set_contract.address},
+          validator_set_contract.abi
+        )
+        |> Enum.map(fn {_, resp} -> resp.staking_address end)
+
       # if `staker` is a pool, prepend its address to the `pools` array
       pools =
-        if socket.assigns[:mining_address] != nil do
-          [staker | pools]
-        else
+        if is_nil(staker_pool_id) do
           pools
+        else
+          [staker | pools]
+        end
+
+      # if `staker` is a pool, prepend its pool ID to the `pool_ids` array
+      pool_ids =
+        if is_nil(staker_pool_id) do
+          pool_ids
+        else
+          [staker_pool_id | pool_ids]
         end
 
       pools_amounts =
@@ -537,7 +557,7 @@ defmodule BlockScoutWeb.StakesChannel do
         end)
 
       {error, pools} =
-        get_pools(pools_amounts, pools, staking_contract_address, staker, json_rpc_named_arguments, error)
+        get_pools(pools_amounts, pools, pool_ids, staking_contract_address, staker, json_rpc_named_arguments, error)
 
       html =
         View.render_to_string(
@@ -557,11 +577,16 @@ defmodule BlockScoutWeb.StakesChannel do
     end
   end
 
-  def get_pools(pools_amounts, pools, staking_contract_address, staker, json_rpc_named_arguments, error) do
-    if error != nil do
-      {error, %{}}
-    else
+  def get_pools(pools_amounts, pools, pool_ids, staking_contract_address, staker, json_rpc_named_arguments, error) do
+    if is_nil(error) do
       block_reward_contract = ContractState.get(:block_reward_contract)
+      validator_set_contract = ContractState.get(:validator_set_contract)
+
+      staking_address_to_id =
+        pools
+        |> Enum.map(fn staking_address -> String.downcase(to_string(staking_address)) end)
+        |> Enum.zip(pool_ids)
+        |> Map.new()
 
       pools =
         pools_amounts
@@ -613,12 +638,53 @@ defmodule BlockScoutWeb.StakesChannel do
         end)
 
       pools =
-        if error == nil do
+        if is_nil(error) do
           pools_gas_estimates = Map.new(pools_gas_estimates)
+
+          staking_addresses =
+            Enum.map(pools, fn {_, staking_address} -> String.downcase(to_string(staking_address)) end)
+
+          # first, try to retrieve pool name from database
+          pool_name_by_staking_address_from_db =
+            staking_addresses
+            |> Chain.staking_pool_names()
+            |> Map.new(fn row -> {String.downcase(to_string(row.staking_address_hash)), row.name} end)
+
+          # if the staking address is not found in database,
+          # call the `poolName` getter from the contract
+          unknown_staking_addresses =
+            staking_addresses
+            |> Enum.reduce([], fn staking_address, acc ->
+              case Map.fetch(pool_name_by_staking_address_from_db, staking_address) do
+                {:ok, _name} ->
+                  acc
+
+                :error ->
+                  [staking_address | acc]
+              end
+            end)
+
+          pool_name_by_staking_address_from_chain =
+            unknown_staking_addresses
+            |> Enum.map(fn staking_address ->
+              pool_id = staking_address_to_id[staking_address]
+              ContractReader.pool_name_request(pool_id, nil)
+            end)
+            |> ContractReader.perform_grouped_requests(
+              unknown_staking_addresses,
+              %{validator_set: validator_set_contract.address},
+              validator_set_contract.abi
+            )
+            |> Map.new(fn {staking_address, resp} -> {staking_address, resp.name} end)
+
+          pool_name_by_staking_address =
+            Map.merge(pool_name_by_staking_address_from_db, pool_name_by_staking_address_from_chain)
 
           Map.new(pools, fn {data, pool_staking_address} ->
             {:ok, estimate} = pools_gas_estimates[pool_staking_address]
             data = Map.put(data, :gas_estimate, estimate)
+            name = pool_name_by_staking_address[String.downcase(to_string(pool_staking_address))]
+            data = Map.put(data, :name, name)
             {pool_staking_address, data}
           end)
         else
@@ -626,6 +692,8 @@ defmodule BlockScoutWeb.StakesChannel do
         end
 
       {error, pools}
+    else
+      {error, %{}}
     end
   end
 
@@ -729,8 +797,6 @@ defmodule BlockScoutWeb.StakesChannel do
       end
     end
   end
-
-  defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp array_to_ranges(numbers, prev_ranges \\ []) do
     length = Enum.count(numbers)

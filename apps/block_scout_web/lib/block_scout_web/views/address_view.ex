@@ -3,12 +3,12 @@ defmodule BlockScoutWeb.AddressView do
 
   require Logger
 
-  alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers, LayoutView}
-  alias Explorer.Chain
+  alias BlockScoutWeb.{AccessHelpers, LayoutView}
+  alias Explorer.{Chain, CustomContractsHelpers}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
-  alias Explorer.SmartContract.Writer
+  alias Explorer.SmartContract.{Helper, Writer}
 
   @dialyzer :no_match
 
@@ -229,7 +229,7 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(address.smart_contract.abi, &(&1["constant"] || &1["stateMutability"] == "view"))
+    Enum.any?(address.smart_contract.abi, &Helper.queriable_method?(&1))
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
