@@ -8,7 +8,7 @@
       <%= gettext "To see accurate decoded input data, the contract must be verified." %>
       <%= case @transaction do %>
         <% %{to_address: %{hash: hash}} -> %>
-          <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
+          <%= gettext "Verify the contract " %><a class="alert-info-a-custom-color" href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
         <% _ -> %>
           <%= nil %>
       <% end %>

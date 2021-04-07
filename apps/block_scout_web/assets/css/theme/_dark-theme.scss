@@ -295,6 +295,12 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: $dark-light;
 		border-color: $dark-light;
 		color: $labels-dark;
+
+		&:hover {
+			background-color: $dark-light;
+			border-color: $dark-light;
+			color: $labels-dark;
+		  }
 	}
 
 	// table

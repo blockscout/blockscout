@@ -1,0 +1,11 @@
+<span
+    class="i-tooltip-2 <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>"
+    data-boundary="window"
+    data-container="body"
+    data-html="true"
+    data-placement="top"
+    data-toggle="tooltip"
+    title="<%= @text %>"
+>
+    <i class="fas fa-info-circle"></i>
+</span>

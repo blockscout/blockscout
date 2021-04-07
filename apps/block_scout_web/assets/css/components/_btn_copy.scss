@@ -1,6 +1,62 @@
 $btn-copy-color: $primary !default;
 $btn-copy-dimensions: 31px !default;
+$btn-copy-small-dimensions: 22px !default;
 
 .btn-copy-icon {
   @include square-icon-button($btn-copy-color, $btn-copy-dimensions);
+  &.btn-copy-icon-no-borders {
+    &:hover {
+      background-color: transparent;
+      path {
+        fill: $btn-copy-color;
+      }
+    }
+    border: none;
+  }
+  svg {
+    width: $btn-copy-dimensions;
+    height: $btn-copy-dimensions;
+  }
+  &.btn-copy-icon-small {
+    &.btn-copy-icon-custom {
+      position: absolute;
+      top: -1.2px;
+    }
+    @include square-icon-button($btn-copy-color, $btn-copy-small-dimensions);
+    &.btn-copy-icon-no-borders {
+      &:hover {
+        background-color: transparent;
+        path {
+          fill: $btn-copy-color;
+        }
+      }
+      border: none;
+    }
+    svg {
+      width: $btn-copy-small-dimensions;
+      height: $btn-copy-small-dimensions;
+    }
+  }
+}
+
+.btn-copy-mobile-container {
+  @include media-breakpoint-up(md) {
+    display: flex;
+  }
+}
+
+.btn-copy-mobile {
+  @include media-breakpoint-up(md) {
+    margin-left: 0.5rem;
+  }
+}
+
+.btn-copy-tx-raw-input-container {
+  position: relative;
+  width: 19px;
+}
+
+.btn-copy-tx-raw-input {
+  position: absolute;
+  bottom: 0;
 }

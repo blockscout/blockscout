@@ -263,6 +263,11 @@ $dark-primary-alternate: $dark-primary;
 
 	.btn-copy-icon {
 		content: url(/images/custom-themes/dark-forest/copy.svg);
+		margin-left: 0.5rem;
+	}
+
+	.btn-copy-icon-ml-0 {
+		margin-left: 0;
 	}
 
 	.btn-qr-icon {
@@ -335,6 +340,12 @@ $dark-primary-alternate: $dark-primary;
 		border-color: #fff;
 		color: #fff;
 		height: 32px;
+
+		&:hover {
+			background-color: $dark-light;
+			border-color: #fff;
+			color: #fff;
+		}
 	}
 
 	// table
@@ -726,14 +737,10 @@ $dark-primary-alternate: $dark-primary;
 					color: #fff;
 					mark {
 						background: darken($dark-primary, 10);
-						color: #fff;
+						color: $dark-light-bg;
 					}
 				}
 			}
-		}
-		mark {
-			background: $dark-primary;
-			color: #fff;
 		}
 	}
 
@@ -1008,6 +1015,26 @@ $dark-primary-alternate: $dark-primary;
 
 	.csv-icon {
 		visibility: hidden;
+	}
+
+	.i-tooltip {
+		.i-tooltip-circle {
+			fill: #fff;
+		}
+
+		.i-tooltip-info {
+			fill: $body-dark;
+		}
+
+		&:hover {
+			.i-tooltip-circle {
+			  fill: $dark-primary;
+			}
+
+			.i-tooltip-info {
+				fill: #fff;
+			}
+		}
 	}
 }
 

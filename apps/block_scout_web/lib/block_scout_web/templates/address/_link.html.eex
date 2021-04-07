@@ -1,5 +1,5 @@
 <%= if @address do %>
-  <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @address), "data-test": "address_hash_link", class: assigns[:class] do %>
+  <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @address), class: assigns[:class], "data-test": "address_hash_link" do %>
     <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address: @address, contract: @contract, truncate: assigns[:truncate], use_custom_tooltip: @use_custom_tooltip %>
   <% end %>
 <% end %>

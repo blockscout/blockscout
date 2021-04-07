@@ -2,9 +2,12 @@
     display: inline-block;
     padding: 0 5px;
     background: #f5f6fa;
-    color: #a3a9b5;
+    color: #77838f;
     border-radius: 5px;
-    font-size: 10px;
+    &.large {
+        font-size: 14px;
+    }
+    font-size: 12px;
     height: 25px;
     line-height: 25px;
     &.right {
@@ -42,4 +45,27 @@
     &.from-dropdown {
         margin-top: -3px;
     }
+    &.success {
+        background: rgba(40, 167, 69, 0.2);
+        color: rgb(40, 167, 69);
+    }
 }
+
+.confirmations-label {
+    position: relative;
+    padding-left: 1.15rem;
+    border-top-right-radius: .25rem;
+    border-bottom-right-radius: .25rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.confirmations-label:after {
+    position: absolute;
+    left: 0;
+    top: 0;
+    content: "";
+    border-top: .7rem solid transparent;
+    border-bottom: .7rem solid transparent;
+    border-left: .7rem solid #fff;
+ }
