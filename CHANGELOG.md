@@ -6,6 +6,7 @@
 - [#3750](https://github.com/blockscout/blockscout/pull/3750) - getblocknobytime block module API endpoint
 
 ### Fixes
+- [#3787](https://github.com/blockscout/blockscout/pull/3787) - Improve tokens list elements display
 - [#3785](https://github.com/blockscout/blockscout/pull/3785) - Fix for write contract functionality: false and 0 boolean inputs are parsed as true
 - [#3783](https://github.com/blockscout/blockscout/pull/3783) - Fix number of block confirmations
 - [#3773](https://github.com/blockscout/blockscout/pull/3773) - Inventory pagination query performance improvement
