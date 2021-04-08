@@ -14,6 +14,7 @@
 - [#3748](https://github.com/blockscout/blockscout/pull/3748) - Skip null topics in eth_getLogs API endpoint
 
 ### Chore
+- [#3788](https://github.com/blockscout/blockscout/pull/3788) - Update fontawesome NPM package
 
 
 ## 3.6.0-beta

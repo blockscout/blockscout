@@ -19,7 +19,7 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "5.1.0-4",
+    "@fortawesome/fontawesome-free": "^5.15.3",
     "assert": "^2.0.0",
     "awesomplete": "^1.1.5",
     "bignumber.js": "^9.0.0",
