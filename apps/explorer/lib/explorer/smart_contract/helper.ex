@@ -4,7 +4,7 @@ defmodule Explorer.SmartContract.Helper do
   """
 
   def queriable_method?(method) do
-    method["constant"] || method["stateMutability"] == "view"
+    method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"
   end
 
   def constructor?(function), do: function["type"] == "constructor"
