@@ -586,7 +586,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:124
 #: lib/block_scout_web/templates/chain/_block.html.eex:15
 msgid "Miner"
-msgstr ""
+msgstr "Collator"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:35
