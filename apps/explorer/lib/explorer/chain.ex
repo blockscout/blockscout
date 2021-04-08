@@ -755,17 +755,17 @@ defmodule Explorer.Chain do
   @doc """
   How many blocks have confirmed `block` based on the current `max_block_number`
 
-  A consensus block's number of confirmations is the difference between its number and the current block height.
+  A consensus block's number of confirmations is the difference between its number and the current block height + 1.
 
       iex> block = insert(:block, number: 1)
       iex> Explorer.Chain.confirmations(block, block_height: 2)
-      {:ok, 1}
+      {:ok, 2}
 
-  The newest block at the block height has no confirmations.
+  The newest block at the block height has 1 confirmation.
 
       iex> block = insert(:block, number: 1)
       iex> Explorer.Chain.confirmations(block, block_height: 1)
-      {:ok, 0}
+      {:ok, 1}
 
   A non-consensus block has no confirmations and is orphaned even if there are child blocks of it on an orphaned chain.
 
@@ -783,7 +783,7 @@ defmodule Explorer.Chain do
 
       iex> block = insert(:block, number: 1)
       iex> Explorer.Chain.confirmations(block, block_height: 0)
-      {:ok, 0}
+      {:ok, 1}
   """
   @spec confirmations(Block.t(), [{:block_height, block_height()}]) ::
           {:ok, non_neg_integer()} | {:error, :non_consensus}
@@ -791,7 +791,7 @@ defmodule Explorer.Chain do
   def confirmations(%Block{consensus: true, number: number}, named_arguments) when is_list(named_arguments) do
     max_consensus_block_number = Keyword.fetch!(named_arguments, :block_height)
 
-    {:ok, max(max_consensus_block_number - number, 0)}
+    {:ok, max(1 + max_consensus_block_number - number, 1)}
   end
 
   def confirmations(%Block{consensus: false}, _), do: {:error, :non_consensus}

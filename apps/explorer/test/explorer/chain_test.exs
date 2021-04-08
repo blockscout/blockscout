@@ -987,7 +987,7 @@ defmodule Explorer.ChainTest do
       block_height = Chain.block_height()
 
       assert block.number == block_height
-      assert {:ok, 0} = Chain.confirmations(block, block_height: block_height)
+      assert {:ok, 1} = Chain.confirmations(block, block_height: block_height)
     end
 
     test "with block.number < block_height" do
@@ -996,7 +996,7 @@ defmodule Explorer.ChainTest do
 
       assert block.number < block_height
       assert {:ok, confirmations} = Chain.confirmations(block, block_height: block_height)
-      assert confirmations == block_height - block.number
+      assert confirmations == block_height - block.number + 1
     end
   end
 
