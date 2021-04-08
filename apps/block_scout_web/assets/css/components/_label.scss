@@ -58,6 +58,7 @@
     border-bottom-right-radius: .25rem;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    padding-right: 10px;
 }
 
 .confirmations-label:after {
@@ -65,7 +66,7 @@
     left: 0;
     top: 0;
     content: "";
-    border-top: .7rem solid transparent;
-    border-bottom: .7rem solid transparent;
-    border-left: .7rem solid #fff;
+    border-top: .8rem solid transparent;
+    border-bottom: .8rem solid transparent;
+    border-left: .8rem solid #fff;
  }
