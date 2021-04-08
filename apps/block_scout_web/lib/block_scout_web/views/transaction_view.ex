@@ -240,6 +240,20 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def confirmations_ds_name(blocks_amount_str) do
+    case Integer.parse(blocks_amount_str) do
+      {blocks_amount, ""} ->
+        if rem(blocks_amount, 10) == 1 do
+          "block"
+        else
+          "blocks"
+        end
+
+      _ ->
+        ""
+    end
+  end
+
   def contract_creation?(%Transaction{to_address: nil}), do: true
 
   def contract_creation?(_), do: false

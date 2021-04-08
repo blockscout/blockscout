@@ -839,7 +839,7 @@ defmodule Explorer.Chain do
   def confirmations(%Block{consensus: true, number: number}, named_arguments) when is_list(named_arguments) do
     max_consensus_block_number = Keyword.fetch!(named_arguments, :block_height)
 
-    {:ok, max(max_consensus_block_number - number, 0)}
+    {:ok, max(1 + max_consensus_block_number - number, 1)}
   end
 
   def confirmations(%Block{consensus: false}, _), do: {:error, :non_consensus}
