@@ -35,12 +35,26 @@ export function prepareMethodArgs ($functionInputs, inputs) {
         const inputValueElements = sanitizedInputValue.split(',')
         const sanitizedInputValueElements = inputValueElements.map(elementValue => {
           const elementInputType = inputType.split('[')[0]
-          return replaceDoubleQuotes(elementValue, elementInputType)
+
+          var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+
+          if (isBoolInputType(elementInputType)) {
+            sanitizedElementValue = convertToBool(elementValue)
+          }
+          return sanitizedElementValue
         })
         return [sanitizedInputValueElements]
       }
+    } else if (isBoolInputType(inputType)) {
+      return convertToBool(sanitizedInputValue)
     } else { return sanitizedInputValue }
   })
+}
+
+function convertToBool (value) {
+  const boolVal = (value === 'true' || value === '1' || value === 1)
+
+  return boolVal
 }
 
 function isArrayInputType (inputType) {
@@ -61,6 +75,10 @@ function isUintInputType (inputType) {
 
 function isStringInputType (inputType) {
   return inputType && inputType.includes('string') && !isArrayInputType(inputType)
+}
+
+function isBoolInputType (inputType) {
+  return inputType && inputType.includes('bool') && !isArrayInputType(inputType)
 }
 
 function isNonSpaceInputType (inputType) {

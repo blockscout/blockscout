@@ -5,7 +5,7 @@
         <%= @index %>
       </span>
   </td>
-  <td class="stakes-td" style="min-width: 400px;">
+  <td class="stakes-td token-name">
     <% token = token_display_name(@token, @bridged_token) %>
     <div class="centered-container">
       <div>
@@ -79,7 +79,7 @@
       </span>
     </div>
   </td>
-  <td class="stakes-td">
+  <td class="stakes-td token-total-supply">
     <%= if decimals?(@token) do %>
       <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>
     <% else %>
