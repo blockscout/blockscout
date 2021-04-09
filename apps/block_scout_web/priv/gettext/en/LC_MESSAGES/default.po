@@ -1155,6 +1155,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:5
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:83
 msgid "QR Code"
 msgstr ""
 
@@ -1709,6 +1710,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:6
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:14
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:84
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:92
 msgid "Close"
 msgstr ""
 
@@ -2983,12 +2986,12 @@ msgstr ""
 msgid "Please, sign transaction and wait for its mining..."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:9
 msgid "Pool description"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:8
 msgid "Pool name"
 msgstr ""
