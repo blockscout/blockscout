@@ -38,7 +38,7 @@
         </div>
       </div>
       <%= if @bridged_token && @bridged_token.type do %>
-        <div class="bs-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
+        <div class="bs-label right <%= type_tag_class_name(@bridged_token.type) %>"><%= type_tag_display_name(@bridged_token.type) %></div>
       <% end %>
       <%= if @bridged_token && @bridged_token.foreign_chain_id do %>
         <% tag = Chain.chain_id_display_name(@bridged_token.foreign_chain_id) %>

@@ -475,7 +475,16 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_amb_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
+    String.downcase(System.get_env("AMB_BRIDGE_ADDRESSES", "")) =~ address_hash_str
+  end
+
+  def is_amb_bridge_mediators?(nil), do: false
+
+  def is_amb_bridge_mediators?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+
+    String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str ||
+      String.downcase(System.get_env("CUSTOM_AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
   end
 
   def is_perp_fi?(nil), do: false

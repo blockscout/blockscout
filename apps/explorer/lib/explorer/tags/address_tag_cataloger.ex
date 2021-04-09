@@ -31,10 +31,13 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     AddressTag.set_tag("random")
 
     # set :omni_bridge tag
-    AddressTag.set_tag("omni-bridge")
+    AddressTag.set_tag("omni bridge")
 
     # set :amb_bridge tag
-    AddressTag.set_tag("amb-bridge")
+    AddressTag.set_tag("amb bridge")
+
+    # set :amb_bridge_mediators tag
+    AddressTag.set_tag("amb bridge mediators")
 
     # set :random tag
     AddressTag.set_tag("random")
@@ -68,6 +71,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set amb bridge tag
     set_amb_tag()
+
+    # set amb bridge mediators tag
+    set_amb_mediators_tag()
 
     # set random aura tag
     set_random_aura_tag()
@@ -116,6 +122,26 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     AddressToTag.set_tag_to_addresses(tag_id, addresses)
   end
 
+  defp set_tag_for_multiple_env_var_array_addresses(env_vars, tag) do
+    addresses =
+      env_vars
+      |> Enum.reduce([], fn env_var, acc ->
+        env_var
+        |> System.get_env("")
+        |> String.split(",")
+        |> Enum.reduce(acc, fn env_var, acc_inner ->
+          addr =
+            env_var
+            |> String.downcase()
+
+          [addr | acc_inner]
+        end)
+      end)
+
+    tag_id = AddressTag.get_tag_id(tag)
+    AddressToTag.set_tag_to_addresses(tag_id, addresses)
+  end
+
   defp set_tag_for_env_var_multiple_addresses(env_var, tag) do
     addresses =
       env_var
@@ -135,11 +161,18 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
   end
 
   defp set_omni_tag do
-    set_tag_for_multiple_env_var_addresses(["ETH_OMNI_BRIDGE_MEDIATOR", "BSC_OMNI_BRIDGE_MEDIATOR"], "omni-bridge")
+    set_tag_for_multiple_env_var_addresses(["ETH_OMNI_BRIDGE_MEDIATOR", "BSC_OMNI_BRIDGE_MEDIATOR"], "omni bridge")
   end
 
   defp set_amb_tag do
-    set_tag_for_env_var_multiple_addresses("AMB_BRIDGE_MEDIATORS", "amb-bridge")
+    set_tag_for_env_var_multiple_addresses("AMB_BRIDGE_ADDRESSES", "amb bridge")
+  end
+
+  defp set_amb_mediators_tag do
+    set_tag_for_multiple_env_var_array_addresses(
+      ["AMB_BRIDGE_MEDIATORS", "CUSTOM_AMB_BRIDGE_MEDIATORS"],
+      "amb bridge mediators"
+    )
   end
 
   defp set_random_aura_tag do

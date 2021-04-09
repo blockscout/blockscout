@@ -25,6 +25,20 @@ defmodule BlockScoutWeb.BridgedTokensView do
     end
   end
 
+  def type_tag_display_name(type) do
+    case type do
+      "omni" -> "OMNI"
+      "amb" -> "AMB-EXT"
+    end
+  end
+
+  def type_tag_class_name(type) do
+    case type do
+      "omni" -> "omni"
+      "amb" -> "amb-ext"
+    end
+  end
+
   def owl_token_amb?(address_hash) do
     to_string(address_hash) == String.downcase(@owl_token_amb)
   end
