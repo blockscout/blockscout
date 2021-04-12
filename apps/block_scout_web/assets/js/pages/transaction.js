@@ -7,6 +7,8 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
 import '../lib/transaction_input_dropdown'
 import '../lib/async_listing_load'
 import '../app'
+import Swal from 'sweetalert2'
+import { compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
 
 export const initialState = {
   blockNumber: null,
@@ -71,4 +73,51 @@ if ($transactionDetailsPage.length) {
   const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
   transactionChannel.join()
   transactionChannel.on('collated', () => window.location.reload())
+
+  $('.js-cancel-transaction').on('click', (event) => {
+    const { chainId: walletChainIdHex } = window.ethereum
+    const btn = $(event.target)
+    compareChainIDs(btn.data('chainId'), walletChainIdHex)
+      .then(() => {
+        const txParams = {
+          from: btn.data('from'),
+          to: btn.data('from'),
+          value: 0,
+          nonce: btn.data('nonce').toString()
+        }
+        window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [txParams]
+        })
+          .then(function (txHash) {
+            const successMsg = `<a href="/tx/${txHash}">Canceling transaction</a> successfully sent to the network. The current one will change the status once canceling transaction will be confirmed.`
+            Swal.fire({
+              title: 'Success',
+              html: successMsg,
+              icon: 'success'
+            })
+              .then(() => {
+                window.location.reload()
+              })
+          })
+          .catch(_error => {
+            btn
+              .attr('data-original-title', `Please unlock ${btn.data('from')} account in Metamask`)
+              .tooltip('show')
+
+            setTimeout(() => {
+              btn
+                .attr('data-original-title', null)
+                .tooltip('dispose')
+            }, 3000)
+          })
+      })
+      .catch((error) => {
+        Swal.fire({
+          title: 'Warning',
+          html: formatError(error),
+          icon: 'warning'
+        })
+      })
+  })
 }

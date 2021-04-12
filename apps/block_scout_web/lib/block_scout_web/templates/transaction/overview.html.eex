@@ -28,6 +28,15 @@
           <% end %>
           <h1 class="card-title <%= if show_alm_link?(@transaction.hash), do: "alm", else: "" %>">
             <%= gettext "Transaction Details" %>
+            <%= if status == :pending do %>
+              <span class="btn btn-danger btn-full-primary ml-2 js-cancel-transaction"
+                style="display: inline-flex;"
+                data-from="<%= from_address_hash %>"
+                data-nonce="<%= @transaction.nonce %>"
+                data-chain-id="<%= Chain.Cache.NetVersion.get_version() %>"
+                data-placement="top"
+                data-toggle="tooltip">Cancel transaction</span>
+            <% end %>
           </h1>
           <%= if show_alm_link?(@transaction.hash) do %>
             <div class="mr-4 mb-2">

@@ -1,10 +1,14 @@
 defmodule BlockScoutWeb.ViewingTransactionsTest do
   @moduledoc false
 
+  import Mox
+
   use BlockScoutWeb.FeatureCase, async: false
 
   alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
   alias Explorer.Chain.Wei
+
+  setup :set_mox_global
 
   setup do
     block =
@@ -112,6 +116,11 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
 
   describe "viewing a pending transaction page" do
     test "can see a pending transaction's details", %{session: session, pending: pending} do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
+        {:ok, "100"}
+      end)
+
       session
       |> TransactionPage.visit_page(pending)
       |> assert_has(TransactionPage.detail_hash(pending))
