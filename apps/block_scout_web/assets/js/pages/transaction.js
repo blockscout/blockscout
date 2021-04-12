@@ -75,8 +75,20 @@ if ($transactionDetailsPage.length) {
   transactionChannel.on('collated', () => window.location.reload())
 
   $('.js-cancel-transaction').on('click', (event) => {
-    const { chainId: walletChainIdHex } = window.ethereum
     const btn = $(event.target)
+    if (!window.ethereum) {
+      btn
+        .attr('data-original-title', `Please unlock ${btn.data('from')} account in Metamask`)
+        .tooltip('show')
+
+      setTimeout(() => {
+        btn
+          .attr('data-original-title', null)
+          .tooltip('dispose')
+      }, 3000)
+      return
+    }
+    const { chainId: walletChainIdHex } = window.ethereum
     compareChainIDs(btn.data('chainId'), walletChainIdHex)
       .then(() => {
         const txParams = {
