@@ -15,6 +15,7 @@
 - [#3748](https://github.com/blockscout/blockscout/pull/3748) - Skip null topics in eth_getLogs API endpoint
 
 ### Chore
+- [#3802](https://github.com/blockscout/blockscout/pull/3802) - Extend Become a Candidate popup in Staking DApp
 - [#3801](https://github.com/blockscout/blockscout/pull/3801) - Poison package update
 - [#3799](https://github.com/blockscout/blockscout/pull/3799) - Update credo, dialyxir mix packages
 - [#3789](https://github.com/blockscout/blockscout/pull/3789) - Update repo organization
