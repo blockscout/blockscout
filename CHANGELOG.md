@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3792](https://github.com/blockscout/blockscout/pull/3792) - Cancel pending transaction
 - [#3786](https://github.com/blockscout/blockscout/pull/3786) - Read contract: enable methods with StateMutability: pure
 - [#3758](https://github.com/blockscout/blockscout/pull/3758) - Add pool metadata display/change to Staking DApp
 - [#3750](https://github.com/blockscout/blockscout/pull/3750) - getblocknobytime block module API endpoint

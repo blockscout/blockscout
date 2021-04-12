@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import { props } from 'eth-net-props'
 
 export function getContractABI ($form) {
   const implementationAbi = $form.data('implementation-abi')
@@ -48,6 +49,36 @@ export function prepareMethodArgs ($functionInputs, inputs) {
     } else if (isBoolInputType(inputType)) {
       return convertToBool(sanitizedInputValue)
     } else { return sanitizedInputValue }
+  })
+}
+
+export function compareChainIDs (explorerChainId, walletChainIdHex) {
+  if (explorerChainId !== parseInt(walletChainIdHex)) {
+    const networkDisplayNameFromWallet = props.getNetworkDisplayName(walletChainIdHex)
+    const networkDisplayName = props.getNetworkDisplayName(explorerChainId)
+    const errorMsg = `You connected to ${networkDisplayNameFromWallet} chain in the wallet, but the current instance of Blockscout is for ${networkDisplayName} chain`
+    return Promise.reject(new Error(errorMsg))
+  } else {
+    return Promise.resolve()
+  }
+}
+
+export const formatError = (error) => {
+  let { message } = error
+  message = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
+  return message
+}
+
+export const getCurrentAccount = () => {
+  return new Promise((resolve, reject) => {
+    window.ethereum.request({ method: 'eth_accounts' })
+      .then(accounts => {
+        const account = accounts[0] ? accounts[0].toLowerCase() : null
+        resolve(account)
+      })
+      .catch(err => {
+        reject(err)
+      })
   })
 }
 
