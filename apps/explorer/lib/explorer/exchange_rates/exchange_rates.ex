@@ -77,9 +77,9 @@ defmodule Explorer.ExchangeRates do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-#  defp schedule_next_consolidation do
-#    Process.send_after(self(), :update, :timer.minutes(1))
-#  end
+  #  defp schedule_next_consolidation do
+  #    Process.send_after(self(), :update, :timer.minutes(1))
+  #  end
 
   @doc """
   Lists exchange rates for the tracked tickers.

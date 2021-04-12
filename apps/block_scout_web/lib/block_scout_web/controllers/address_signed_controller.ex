@@ -57,11 +57,12 @@ defmodule BlockScoutWeb.AddressSignedController do
             block_type: BlockView.block_type(block)
           )
         end)
-        # IO.inspect({:got_items, Enum.size(items)})
+
       json(conn, %{items: items, next_page_path: next_page_path})
     else
       {:restricted_access, _} ->
         not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
     end
