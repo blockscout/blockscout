@@ -1,10 +1,10 @@
 defmodule Indexer.Fetcher.TokenBalance do
   @moduledoc """
-  Fetches token balances and send the ones that were fetched to be imported in `Address.CurrentTokenBalance` and
+  Fetches token balances and sends the ones that were fetched to be imported in `Address.CurrentTokenBalance` and
   `Address.TokenBalance`.
 
-  The module responsible for fetching token balances in the Smart Contract is the `Indexer.TokenBalances`. this module
-  only prepare the params, send they to `Indexer.TokenBalances` and relies on its return.
+  The module responsible for fetching token balances in the Smart Contract is the `Indexer.TokenBalances`. This module
+  only prepares the params, sends them to `Indexer.TokenBalances` and relies on its return.
 
   It behaves as a `BufferedTask`, so we can configure the `max_batch_size` and the `max_concurrency` to control how many
   token balances will be fetched at the same time.
