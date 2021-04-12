@@ -70,7 +70,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   end
 
   @doc """
-  Fetches the given entries (token_balances) from the Smart Contract and import they in our database.
+  Fetches the given entries (token_balances) from the Smart Contract and import them in our database.
 
   It also increments the `retries_count` to avoid fetching token balances that always raise errors
   when reading their balance in the Smart Contract.
