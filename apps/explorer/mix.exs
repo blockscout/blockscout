@@ -85,7 +85,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 4.0"},
       {:nimble_csv, "~> 0.6.0"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
