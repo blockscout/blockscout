@@ -53,6 +53,10 @@
             <% else %>
               <%= gettext("Token Details") %>
             <% end %>
+            <%= if BlockScoutWeb.AddressView.is_xmoon_token?(@token.contract_address.hash) || BlockScoutWeb.AddressView.is_xbrick_token?(@token.contract_address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridge", "ml-1"] %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "Rinkeby", additional_classes: ["destination-rinkeby", "ml-1"] %>
+            <% end %>
             <%= render BlockScoutWeb.FormView, "_tag.html", text: @token.type, additional_classes: ["token-type", "ml-1"] %>
             <!-- buttons -->
             <span class="overview-title-buttons token float-right <%= if @token.bridged, do: "bridged-tokens-buttons-mobile", else: "" %>">

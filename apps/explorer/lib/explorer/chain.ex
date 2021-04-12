@@ -4298,16 +4298,22 @@ defmodule Explorer.Chain do
       foreign_json_rpc = Application.get_env(:block_scout_web, :foreign_json_rpc)
 
       custom_metadata =
-        get_bridged_token_custom_metadata(foreign_token_address_hash, json_rpc_named_arguments, foreign_json_rpc)
+        if foreign_json_rpc == 1 do
+          get_bridged_token_custom_metadata(foreign_token_address_hash, json_rpc_named_arguments, foreign_json_rpc)
+        else
+          nil
+        end
 
-      insert_bridged_token_metadata(token_address_hash, %{
+      bridged_token_metadata = %{
         foreign_chain_id: foreign_chain_id,
         foreign_token_address_hash: foreign_token_address_hash,
         custom_metadata: custom_metadata,
         custom_cap: nil,
         lp_token: nil,
         type: "omni"
-      })
+      }
+
+      insert_bridged_token_metadata(token_address_hash, bridged_token_metadata)
 
       set_token_bridged_status(token_address_hash, true)
     end
