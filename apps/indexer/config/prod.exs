@@ -23,6 +23,11 @@ config :logger, :addresses_without_code,
   path: Path.absname("logs/prod/indexer/addresses_without_code.log"),
   metadata_filter: [fetcher: :addresses_without_code]
 
+config :logger, :pending_transactions_to_refetch,
+  level: :debug,
+  path: Path.absname("logs/prod/indexer/pending_transactions_to_refetch.log"),
+  metadata_filter: [fetcher: :pending_transactions_to_refetch]
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"
