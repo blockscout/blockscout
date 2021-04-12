@@ -1,4 +1,4 @@
-<div class="btn-add-to-mm ml-1"
+<span class="btn-add-to-mm ml-1"
     aria-label='<%= gettext "Add Token to MetaMask" %>'
     data-token-address="<%= @contract_address %>"
     data-token-decimals="<%= @decimals %>"
@@ -6,4 +6,4 @@
     data-placement="top"
     data-toggle="tooltip"
 >
-</div>
+</span>

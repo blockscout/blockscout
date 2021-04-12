@@ -98,7 +98,7 @@
             <% end %>
           </h1>
 
-          <h3 class="token-address-mobile"><%= Address.checksum(@token.contract_address_hash) %>
+          <h3 class="token-address-mobile"><span><%= Address.checksum(@token.contract_address_hash) %></span>
             <%= render BlockScoutWeb.CommonComponentsView,
               "_btn_add_to_mm.html",
               contract_address: @token.contract_address,
