@@ -67,6 +67,7 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:dialyxir, "~> 1.1"},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},

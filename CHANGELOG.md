@@ -14,6 +14,7 @@
 - [#3748](https://github.com/blockscout/blockscout/pull/3748) - Skip null topics in eth_getLogs API endpoint
 
 ### Chore
+- [#3799](https://github.com/blockscout/blockscout/pull/3799) - Update credo, dialyxir mix packages
 - [#3789](https://github.com/blockscout/blockscout/pull/3789) - Update repo organization
 - [#3788](https://github.com/blockscout/blockscout/pull/3788) - Update fontawesome NPM package
 
