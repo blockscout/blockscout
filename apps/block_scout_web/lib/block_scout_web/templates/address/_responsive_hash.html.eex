@@ -13,7 +13,7 @@
     <%= if assigns[:truncate] do %>
       <%= BlockScoutWeb.AddressView.trimmed_hash(@address.hash) %>
     <% else %>
-      <span class="d-none d-md-none d-xl-inline"><%= @address %></span>
+      <span class="d-none d-md-none d-xl-inline"><%= if assigns[:trimmed], do: BlockScoutWeb.AddressView.trimmed_hash(@address.hash), else: @address %></span>
       <span class="d-md-inline-block d-xl-none"><%= BlockScoutWeb.AddressView.trimmed_hash(@address.hash) %></span>
     <% end %>
   <% end %>
