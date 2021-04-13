@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     total_market_cap_from_token_bridge = token_bridge_market_cap(%{usd_value: usd_value})
     total_market_cap_from_omni = total_market_cap_from_omni_bridge()
 
-    if total_market_cap_from_omni do
+    if Decimal.cmp(total_market_cap_from_omni, 0) == :gt do
       Decimal.add(total_market_cap_from_token_bridge, total_market_cap_from_omni)
     else
       total_market_cap_from_token_bridge
@@ -70,20 +70,14 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   end
 
   def market_cap(_) do
-    total_market_cap_from_omni = total_market_cap_from_omni_bridge()
-
-    if total_market_cap_from_omni do
-      total_market_cap_from_omni
-    else
-      Decimal.new(0)
-    end
+    Decimal.new(0)
   end
 
   def token_bridge_market_cap(%{usd_value: usd_value}) when not is_nil(usd_value) do
-    total_coins_from_token_b = total_coins_from_token_bridge()
+    total_coins_from_token_bridge = get_total_coins_from_token_bridge()
 
-    if total_coins_from_token_b do
-      Decimal.mult(total_coins_from_token_b, usd_value)
+    if total_coins_from_token_bridge do
+      Decimal.mult(total_coins_from_token_bridge, usd_value)
     else
       Decimal.new(0)
     end
@@ -95,7 +89,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
 
   def total, do: total_chain_supply()
 
-  def total_coins_from_token_bridge, do: Bridge.fetch_token_bridge_total_supply()
+  def get_total_coins_from_token_bridge, do: Bridge.fetch_token_bridge_total_supply()
 
   def total_market_cap_from_omni_bridge, do: Bridge.fetch_omni_bridge_market_cap()
 
@@ -109,14 +103,14 @@ defmodule Explorer.Chain.Supply.TokenBridge do
           Decimal.new(1)
       end
 
-    total_coins_from_token_b = total_coins_from_token_bridge()
+    total_coins_from_token_bridge = get_total_coins_from_token_bridge()
     total_market_cap_from_omni = total_market_cap_from_omni_bridge()
 
-    if total_coins_from_token_b && total_market_cap_from_omni do
+    if Decimal.cmp(total_coins_from_token_bridge, 0) == :gt && Decimal.cmp(total_market_cap_from_omni, 0) == :gt do
       total_coins_from_omni_bridge = Decimal.div(total_market_cap_from_omni, usd_value)
-      Decimal.add(total_coins_from_token_b, total_coins_from_omni_bridge)
+      Decimal.add(total_coins_from_token_bridge, total_coins_from_omni_bridge)
     else
-      total_coins_from_token_b
+      total_coins_from_token_bridge
     end
   end
 
