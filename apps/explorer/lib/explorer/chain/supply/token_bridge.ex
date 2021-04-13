@@ -62,10 +62,11 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     total_market_cap_from_token_bridge = token_bridge_market_cap(%{usd_value: usd_value})
     total_market_cap_from_omni = total_market_cap_from_omni_bridge()
 
-    if Decimal.cmp(total_market_cap_from_omni, 0) == :gt do
+    if Decimal.cmp(total_market_cap_from_token_bridge, 0) == :gt &&
+         Decimal.cmp(total_market_cap_from_omni, 0) == :gt do
       Decimal.add(total_market_cap_from_token_bridge, total_market_cap_from_omni)
     else
-      total_market_cap_from_token_bridge
+      Decimal.new(0)
     end
   end
 
@@ -110,7 +111,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
       total_coins_from_omni_bridge = Decimal.div(total_market_cap_from_omni, usd_value)
       Decimal.add(total_coins_from_token_bridge, total_coins_from_omni_bridge)
     else
-      total_coins_from_token_bridge
+      Decimal.new(0)
     end
   end
 
