@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -193,6 +194,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     if Enum.empty?(block_hashes) do
       {:ok, []}
     else
+      Logger.info(fn -> ["Removing consensus from ", inspect(block_hashes)] end)
+
       query =
         from(
           block in Block,

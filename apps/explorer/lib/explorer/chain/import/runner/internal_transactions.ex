@@ -37,6 +37,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   @impl Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) when is_map(options) do
+    Logger.debug(fn -> ["Internal txs ", inspect(Enum.count(changes_list))] end)
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -75,6 +77,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         internal_transactions_params,
         invalid_block_numbers
       )
+    end)
+    |> Multi.run(:valid_internal_transactions_without_first_traces_of_trivial_transactions, fn _,
+                                                                                               %{
+                                                                                                 valid_internal_transactions:
+                                                                                                   valid_internal_transactions
+                                                                                               } ->
+      valid_internal_transactions_without_first_trace(valid_internal_transactions)
     end)
     |> Multi.run(:valid_internal_transactions_without_first_traces_of_trivial_transactions, fn _,
                                                                                                %{
@@ -220,7 +229,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp acquire_blocks(repo, changes_list) do
-    block_numbers = Enum.map(changes_list, & &1.block_number)
+    block_numbers = Enum.dedup(Enum.map(changes_list, & &1.block_number))
 
     query =
       from(
@@ -231,7 +240,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         order_by: [asc: b.hash],
         lock: "FOR UPDATE"
       )
-    
+
     res = repo.all(query)
 
     {:ok, res}
@@ -334,6 +343,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   defp valid_internal_transactions_without_first_trace(valid_internal_transactions) do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+    # json_rpc_named_arguments = Application.fetch_env!(:explorer, :json_rpc_named_arguments)
     variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
     # we exclude first traces from storing in the DB only in case of Parity variant (Parity/Nethermind). Todo: implement the same for Geth
@@ -479,13 +489,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       try do
         {_num, result} = repo.update_all(update_query, [])
 
-        Logger.debug(fn ->
-          [
-            "consensus removed from blocks with numbers: ",
-            inspect(invalid_block_numbers),
-            " because of mismatching transactions"
-          ]
-        end)
+        if Enum.count(invalid_block_numbers) > 0 do
+          Logger.debug(fn ->
+            [
+              "consensus removed from blocks with numbers: ",
+              inspect(invalid_block_numbers),
+              " because of mismatching transactions"
+            ]
+          end)
+        end
 
         {:ok, result}
       rescue

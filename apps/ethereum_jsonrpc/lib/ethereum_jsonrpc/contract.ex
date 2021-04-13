@@ -233,7 +233,7 @@ defmodule EthereumJSONRPC.Contract do
     end)
   end
 
-  def eth_call_request(data, contract_address, id, block_number, from) do
+  def eth_call_request(data, contract_address, id, block_number, _from) do
     block =
       case block_number do
         nil -> "latest"
@@ -243,7 +243,7 @@ defmodule EthereumJSONRPC.Contract do
     full_params = %{
       id: id,
       method: "eth_call",
-      params: [%{to: contract_address, data: data, gasPrice: "0x1000000000000000000", from: from}, block]
+      params: [%{to: contract_address, data: data}, block]
     }
 
     request(full_params)

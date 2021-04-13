@@ -6,7 +6,15 @@ defmodule Indexer.Supervisor do
   use Supervisor
 
   alias Explorer.Chain
-  alias Indexer.{Block, PendingOpsCleaner, SetAmbBridgedMetadataForTokens, SetOmniBridgedMetadataForTokens}
+
+  alias Indexer.{
+    Block,
+    PendingOpsCleaner,
+    PendingTransactionsSanitizer,
+    SetAmbBridgedMetadataForTokens,
+    SetOmniBridgedMetadataForTokens
+  }
+
   alias Indexer.Block.{Catchup, Realtime}
 
   alias Indexer.Fetcher.{
@@ -143,6 +151,7 @@ defmodule Indexer.Supervisor do
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {BlocksTransactionsMismatch.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
       {PendingOpsCleaner, [[], []]}
     ]
 

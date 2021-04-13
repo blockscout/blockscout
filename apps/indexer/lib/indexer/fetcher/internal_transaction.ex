@@ -124,23 +124,18 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:ok, internal_transactions_params} ->
         import_internal_transaction(internal_transactions_params, unique_numbers)
 
+      {:error, :block_not_indexed_properly = reason} ->
+        Logger.debug(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
+          error_count: unique_numbers_count
+        )
+
+        :ok
+
       {:error, reason} ->
         Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
           error_count: unique_numbers_count
         )
 
-        errored =
-          reason
-          |> Enum.map(fn
-            %{data: %{block_number: num}} -> num
-            %{data: %{"blockNumber" => num}} -> num
-          end)
-
-        result = Chain.bump_pending_blocks(errored)
-
-        Logger.error(fn -> ["Bumping", inspect(result)] end)
-        # re-queue the de-duped entries
-        # {:retry, unique_numbers}
         :ok
 
       :ignore ->
@@ -169,29 +164,59 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
+  defp check_db(num, used_gas, res) do
+    if num != 0 || Decimal.to_integer(used_gas) == 0 do
+      {:ok, res}
+    else
+      {:error, :block_not_indexed_properly}
+    end
+  end
+
+  defp add_block_hash(block_hash, internal_transactions) do
+    Enum.map(internal_transactions, fn a -> Map.put(a, :block_hash, block_hash) end)
+  end
+
   defp fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments) do
     Enum.reduce(unique_numbers, {:ok, []}, fn
       block_number, {:ok, acc_list} ->
+        block = Chain.number_to_any_block(block_number)
+
         block_number
         |> Chain.get_transactions_of_block_number()
         |> Enum.map(&params(&1))
         |> case do
           [] ->
-            {nil, {:ok, []}}
+            {{:ok, []}, 0, block}
 
-          [%{block_hash: block_hash} | _] = transactions ->
+          transactions ->
             try do
-              {block_hash, EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)}
+              res = EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+              {res, Enum.count(transactions), block}
             catch
               :exit, error ->
-                {:error, error}
+                {:error, error, block}
             end
         end
         |> case do
-          {block_hash, {:ok, internal_transactions}} ->
-            {:ok, Enum.map(internal_transactions, fn a -> Map.put(a, :block_hash, block_hash) end) ++ acc_list}
+          {{:ok, internal_transactions}, num, {:ok, %{gas_used: used_gas, hash: block_hash}}} ->
+            Logger.debug(fn ->
+              [
+                "Found ",
+                inspect(Enum.count(internal_transactions)),
+                " internal tx for block ",
+                inspect(block_number),
+                " had txs: ",
+                inspect(num),
+                " used gas ",
+                inspect(used_gas)
+              ]
+            end)
 
-          {_, error_or_ignore} ->
+            res = add_block_hash(block_hash, internal_transactions) ++ acc_list
+
+            check_db(num, Decimal.new(used_gas), res)
+
+          {error_or_ignore, _, _} ->
             error_or_ignore
         end
 

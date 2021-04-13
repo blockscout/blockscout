@@ -46,8 +46,7 @@ defmodule Explorer.Token.BalanceReader do
       contract_address: token_contract_address_hash,
       method_id: "70a08231",
       args: [address_hash],
-      block_number: block_number,
-      gasprice: "1000000000000000000"
+      block_number: block_number
     }
   end
 
