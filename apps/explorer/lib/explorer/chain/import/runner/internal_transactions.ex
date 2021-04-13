@@ -85,13 +85,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                                                                                } ->
       valid_internal_transactions_without_first_trace(valid_internal_transactions)
     end)
-    |> Multi.run(:valid_internal_transactions_without_first_traces_of_trivial_transactions, fn _,
-                                                                                               %{
-                                                                                                 valid_internal_transactions:
-                                                                                                   valid_internal_transactions
-                                                                                               } ->
-      valid_internal_transactions_without_first_trace(valid_internal_transactions)
-    end)
     |> Multi.run(:remove_left_over_internal_transactions, fn repo,
                                                              %{valid_internal_transactions: valid_internal_transactions} ->
       remove_left_over_internal_transactions(repo, valid_internal_transactions)
