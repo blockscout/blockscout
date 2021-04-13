@@ -84,7 +84,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           timer: timer
         } = state
       ) do
-
     if number > 0 do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
     end

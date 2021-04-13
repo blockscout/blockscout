@@ -206,6 +206,8 @@
       @view_module != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
       @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
       @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
+      @view_module != Elixir.BlockScoutWeb.AddressSignedView &&
+      @view_module != Elixir.BlockScoutWeb.AddressCeloView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&

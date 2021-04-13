@@ -14,9 +14,9 @@ defmodule BlockScoutWeb.AddressSignedController do
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
-    # IO.inspect("Trying to get downtime")
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false) do
+         {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       full_options =
         Keyword.merge(
           [
@@ -57,9 +57,12 @@ defmodule BlockScoutWeb.AddressSignedController do
             block_type: BlockView.block_type(block)
           )
         end)
-        # IO.inspect({:got_items, Enum.size(items)})
+
       json(conn, %{items: items, next_page_path: next_page_path})
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
     end
