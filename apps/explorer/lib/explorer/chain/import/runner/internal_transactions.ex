@@ -231,8 +231,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         order_by: [asc: b.hash],
         lock: "FOR UPDATE"
       )
+    
+    res = repo.all(query)
 
-    {:ok, repo.all(query)}
+    {:ok, res}
   end
 
   defp acquire_pending_internal_txs(repo, block_hashes) do
@@ -247,7 +249,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         lock: "FOR UPDATE"
       )
 
-    {:ok, repo.all(query)}
+    res = repo.all(query)
+
+    {:ok, res}
   end
 
   defp acquire_transactions(repo, pending_block_hashes) do

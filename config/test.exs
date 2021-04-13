@@ -19,7 +19,7 @@ config :explorer, Explorer.KnownTokens, store: :none
 config :explorer, Explorer.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
-  password: "postgres",
+  password: "1234",
   database: "explorer_test",
   hostname: "localhost",
   poolsize: 10,
