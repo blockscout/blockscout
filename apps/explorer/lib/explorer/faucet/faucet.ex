@@ -21,10 +21,105 @@ defmodule Explorer.Faucet do
     |> Repo.one()
   end
 
-  def insert_faucet_request_record(address_hash) do
+  def get_last_faucet_request_for_phone(phone_hash) do
+    last_requested_query =
+      from(faucet in FaucetRequest,
+        where: faucet.phone_hash == ^phone_hash,
+        where: faucet.coins_sent == true,
+        select: max(faucet.inserted_at)
+      )
+
+    last_requested_query
+    |> Repo.one()
+  end
+
+  def get_faucet_request_data(address_hash, phone_hash, session_key_hash) do
+    code_validation_attempts_query =
+      from(faucet in FaucetRequest,
+        where: faucet.receiver_hash == ^address_hash,
+        where: faucet.phone_hash == ^phone_hash,
+        where: faucet.session_key_hash == ^session_key_hash,
+        select: %{
+          verification_code_validation_attempts: faucet.verification_code_validation_attempts,
+          verification_code: faucet.verification_code_hash
+        }
+      )
+
+    code_validation_attempts_query
+    |> Repo.one()
+  end
+
+  def count_sent_sms_today(phone_hash) do
+    count_sent_sms_query =
+      from(faucet in FaucetRequest,
+        where: faucet.phone_hash == ^phone_hash,
+        where: fragment("DATE(?) = CURRENT_DATE", faucet.inserted_at),
+        select: count(faucet)
+      )
+
+    count_sent_sms_query
+    |> Repo.one()
+  end
+
+  def insert_faucet_request_record(address_hash, phone_hash, session_key_hash, verification_code_hash) do
     with {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false) do
-      changeset = FaucetRequest.changeset(%FaucetRequest{}, %{receiver_hash: address_hash})
+      changeset =
+        FaucetRequest.changeset(%FaucetRequest{}, %{
+          receiver_hash: address_hash,
+          phone_hash: phone_hash,
+          session_key_hash: session_key_hash,
+          verification_code_hash: verification_code_hash,
+          verification_code_validation_attempts: 0
+        })
+
       Repo.insert(changeset)
+    end
+  end
+
+  def update_faucet_request_code_validation_attempts(address_hash, phone_hash, session_key_hash) do
+    faucet_request =
+      Repo.get_by(FaucetRequest,
+        receiver_hash: address_hash,
+        phone_hash: phone_hash,
+        session_key_hash: session_key_hash
+      )
+
+    if faucet_request do
+      verification_code_validation_attempts =
+        if faucet_request.verification_code_validation_attempts do
+          faucet_request.verification_code_validation_attempts + 1
+        else
+          1
+        end
+
+      changeset =
+        FaucetRequest.changeset(faucet_request, %{
+          verification_code_validation_attempts: verification_code_validation_attempts
+        })
+
+      Repo.update(changeset)
+    else
+      :error
+    end
+  end
+
+  def finalize_faucet_request(address_hash, phone_hash, session_key_hash) do
+    faucet_request =
+      Repo.get_by(FaucetRequest,
+        receiver_hash: address_hash,
+        phone_hash: phone_hash,
+        session_key_hash: session_key_hash
+      )
+
+    if faucet_request do
+      changeset =
+        FaucetRequest.changeset(faucet_request, %{
+          coins_sent: true
+        })
+
+      Repo.update(changeset)
+    else
+      :error
     end
   end
 
