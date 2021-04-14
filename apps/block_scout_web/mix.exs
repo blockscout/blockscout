@@ -46,7 +46,8 @@ defmodule BlockScoutWeb.Mixfile do
   defp extra_applications,
     do: [
       :logger,
-      :runtime_tools
+      :runtime_tools,
+      :ex_twilio
     ]
 
   # Specifies your project dependencies.

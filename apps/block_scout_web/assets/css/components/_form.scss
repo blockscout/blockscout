@@ -157,8 +157,12 @@ $form-control-border-color-active: $primary !default;
   outline: none;
 }
 
-.faucet-receiver-input {
+.faucet-input {
   @include media-breakpoint-up(md) {
     width: 400px;
+  }
+
+  &.invalid {
+    border: 1px solid #dc3545;
   }
 }

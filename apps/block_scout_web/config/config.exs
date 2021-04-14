@@ -149,6 +149,10 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
+config :ex_twilio,
+  account_sid: {:system, "TWILIO_ACCOUNT_SID"},
+  auth_token: {:system, "TWILIO_AUTH_TOKEN"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
