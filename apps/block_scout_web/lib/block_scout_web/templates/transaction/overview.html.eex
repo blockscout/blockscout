@@ -42,7 +42,7 @@
             <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash %>
           </h1>
           <%= if show_alm_link?(@transaction.hash) do %>
-            <div class="mr-4 mb-2">
+            <div class="mr-4 mb-4">
               <a data-test="external_url" href=<%= "https://#{get_alm_app_link(@transaction.hash)}/100/#{@transaction.hash}" %> target="_blank">
               View In ALM App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
               </a>
