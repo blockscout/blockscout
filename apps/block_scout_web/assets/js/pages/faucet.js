@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import Swal from 'sweetalert2'
-import { walletEnabled, connectToWallet, getCurrentAccount, shouldHideConnectButton } from '../lib/smart_contract/write.js'
+import { walletEnabled, connectToWallet, shouldHideConnectButton } from '../lib/smart_contract/write.js'
+import { getCurrentAccount } from '../lib/smart_contract/common_helpers'
 
 const $csrfToken = $('[name=_csrf_token]')
 const $requestCoinsBtn = $('#requestCoins')
