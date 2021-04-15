@@ -3016,8 +3016,3 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:10
 msgid "Save changes"
 msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
-msgid "Faucet"
-msgstr ""
