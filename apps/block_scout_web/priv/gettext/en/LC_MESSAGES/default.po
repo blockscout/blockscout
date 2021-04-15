@@ -1241,13 +1241,13 @@ msgstr "Validator Reward"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:215
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:259
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:260
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:209
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1940,7 +1940,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:213
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:214
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2603,7 +2603,7 @@ msgid "Staking"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:252
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:253
 msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
@@ -2668,7 +2668,7 @@ msgid "Current Reward Share is calculated based on the Working Stake Amount."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:6
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:5
 msgid "Delegators of "
 msgstr ""
 
@@ -3006,4 +3006,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:10
 msgid "Save changes"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
+msgid "Faucet"
 msgstr ""

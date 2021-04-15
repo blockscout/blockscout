@@ -63,6 +63,16 @@ config :block_scout_web, :faucet,
   h_captcha_secret_key: System.get_env("FAUCET_H_CAPTCHA_SECRET_KEY"),
   h_captcha_client_key: System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY")
 
+config :block_scout_web, :faucet,
+  enabled: if(System.get_env("ENABLE_FAUCET", "false") == "true", do: true, else: false),
+  value: System.get_env("FAUCET_VALUE", "0"),
+  address: System.get_env("FAUCET_ADDRESS"),
+  gas_limit: System.get_env("FAUCET_GAS_LIMIT", "21000"),
+  gas_price: System.get_env("FAUCET_GAS_PRICE", "1"),
+  address_pk: System.get_env("FAUCET_ADDRESS_PK"),
+  h_captcha_secret_key: System.get_env("FAUCET_H_CAPTCHA_SECRET_KEY"),
+  h_captcha_client_key: System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY")
+
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint
@@ -165,6 +175,10 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
   wobserver_enabled: System.get_env("WOBSERVER_ENABLED") == "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
+
+config :ex_twilio,
+  account_sid: {:system, "TWILIO_ACCOUNT_SID"},
+  auth_token: {:system, "TWILIO_AUTH_TOKEN"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

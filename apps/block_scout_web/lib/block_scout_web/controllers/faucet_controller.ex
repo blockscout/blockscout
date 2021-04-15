@@ -4,11 +4,15 @@ defmodule BlockScoutWeb.FaucetController do
   require Logger
 
   alias Explorer.{Chain, Faucet}
+  alias ExTwilio.Message
 
   @internal_server_err_msg "Internal server error. Please try again later."
   @send_coins_failed_msg "Sending coins failed. Please try again later."
   @wrong_recipinet_msg "Wrong recipient address"
   @wrond_captcha_response "Wrong captcha response"
+
+  @max_code_validation_attempts 3
+  @max_sms_sent_per_number_per_day 3
 
   def index(conn, params) do
     []
@@ -21,35 +25,118 @@ defmodule BlockScoutWeb.FaucetController do
 
   def request(conn, %{
         "receiver" => receiver,
+        "phoneNumber" => phone_number,
+        "sessionKeyHash" => session_key_hash,
+        "verificationCodeHash" => verification_code_hash,
         "captchaResponse" => captcha_response
       }) do
-    case Chain.string_to_address_hash(receiver) do
-      {:ok, address_hash} ->
-        res = validate_captcha_response(captcha_response)
+    with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
+           validate_address_and_captcha(conn, receiver, captcha_response),
+         {:ok, phone_hash} <- generate_phone_hash(conn, phone_number),
+         :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
+         :ok <- parse_verify_code_response(conn, verification_code_hash, address_hash, phone_hash, session_key_hash) do
+      try_num = 0
+      send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
+    else
+      res -> res
+    end
+  end
 
-        case res do
-          {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
-            check_request_interval_and_send(conn, status_code, body, address_hash)
+  def request(conn, %{
+        "receiver" => receiver,
+        "phoneNumber" => phone_number,
+        "sessionKeyHash" => session_key_hash,
+        "captchaResponse" => captcha_response
+      }) do
+    with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
+           validate_address_and_captcha(conn, receiver, captcha_response),
+         {:ok, phone_hash} <- generate_phone_hash(conn, phone_number),
+         :ok <- parse_check_number_of_sms_per_phone_number(conn, phone_hash),
+         :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
+         {:ok, verification_code_hash} <-
+           parse_send_sms_response(conn, phone_number) do
+      case Faucet.insert_faucet_request_record(
+             address_hash,
+             phone_hash,
+             session_key_hash,
+             verification_code_hash
+           ) do
+        {:ok, _} ->
+          json(conn, %{success: true, message: "Success"})
 
-          _ ->
-            json(conn, %{
-              success: false,
-              message: @wrond_captcha_response
-            })
-        end
-
-      _ ->
-        json(conn, %{
-          success: false,
-          message: @wrong_recipinet_msg
-        })
+        {:error, err} ->
+          Logger.error(fn -> ["failed to insert faucet request history item: ", inspect(err)] end)
+          json(conn, %{success: false, message: @internal_server_err_msg})
+      end
+    else
+      res -> res
     end
   end
 
   def request(conn, _), do: not_found(conn)
 
-  defp check_request_interval_and_send(conn, status_code, body, address_hash) do
-    last_requested = Faucet.get_last_faucet_request_for_address(address_hash)
+  defp generate_phone_hash(conn, phone_number) when is_nil(phone_number) do
+    json(conn, %{
+      success: false,
+      message: "Phone number is empty."
+    })
+  end
+
+  defp generate_phone_hash(_conn, phone_number) do
+    salted_phone_number = phone_number <> System.get_env("FAUCET_PHONE_NUMBER_SALT")
+    ExKeccak.hash_256(to_string(salted_phone_number))
+  end
+
+  defp parse_request_interval_response(conn, status_code, body, address_hash, phone_hash) do
+    case check_request_interval(status_code, body, address_hash, phone_hash) do
+      :already_requested ->
+        json(conn, %{
+          success: false,
+          message: "This account already requested coins before but didn't spend them"
+        })
+
+      {:already_requested, dur_to_next_available_request} ->
+        json(conn, %{
+          success: false,
+          message:
+            "You requested #{System.get_env("FAUCET_VALUE")} #{System.get_env("FAUCET_COIN")} within the last 24 hours. Next claim is in #{
+              dur_to_next_available_request
+            }"
+        })
+
+      :wrong_captcha_response ->
+        json(conn, %{
+          success: false,
+          message: @wrond_captcha_response
+        })
+
+      res ->
+        res
+    end
+  end
+
+  defp validate_address_and_captcha(conn, receiver, captcha_response) do
+    with {:validate_address, {:ok, address_hash}} <- {:validate_address, Chain.string_to_address_hash(receiver)},
+         {:validate_captcha, {:ok, %HTTPoison.Response{status_code: status_code, body: body}}} <-
+           {:validate_captcha, validate_captcha_response(captcha_response)} do
+      {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}}
+    else
+      {:validate_address, _} ->
+        json(conn, %{
+          success: false,
+          message: @wrong_recipinet_msg
+        })
+
+      {:validate_captcha, _} ->
+        json(conn, %{
+          success: false,
+          message: @wrond_captcha_response
+        })
+    end
+  end
+
+  defp check_request_interval(status_code, body, address_hash, phone_hash) do
+    last_requested = Faucet.get_last_faucet_request_for_phone(phone_hash)
 
     body_json = Jason.decode!(body)
 
@@ -58,36 +145,45 @@ defmodule BlockScoutWeb.FaucetController do
       yesterday = Timex.shift(today, days: -1)
 
       if !last_requested || DateTime.diff(last_requested, yesterday, :second) <= 0 do
-        try_num = 0
-
         if last_requested do
           if Faucet.address_contains_outgoing_transactions_after_time(address_hash, last_requested) do
-            send_coins(address_hash, conn, try_num)
+            :ok
           else
-            json(conn, %{
-              success: false,
-              message: "This account already requested coins before but didn't spend them"
-            })
+            :already_requested
           end
         else
-          send_coins(address_hash, conn, try_num)
+          :ok
         end
       else
         dur_to_next_available_request = calc_dur_to_next_available_request(last_requested, yesterday)
 
-        json(conn, %{
-          success: false,
-          message:
-            "You requested #{System.get_env("FAUCET_VALUE")} #{System.get_env("FAUCET_COIN")} within the last 24 hours. Next claim is in #{
-              dur_to_next_available_request
-            }"
-        })
+        {:already_requested, dur_to_next_available_request}
       end
     else
-      json(conn, %{
-        success: false,
-        message: @wrond_captcha_response
-      })
+      :wrong_captcha_response
+    end
+  end
+
+  defp check_number_of_sms_per_phone_number(phone_hash) do
+    sent_sms = Faucet.count_sent_sms_today(phone_hash)
+
+    if sent_sms >= @max_sms_sent_per_number_per_day do
+      :sms_limit_per_day_reached
+    else
+      :ok
+    end
+  end
+
+  defp parse_check_number_of_sms_per_phone_number(conn, phone_hash) do
+    case check_number_of_sms_per_phone_number(phone_hash) do
+      :sms_limit_per_day_reached ->
+        json(conn, %{
+          success: false,
+          message: "You reached the maximum SMS delivery per day. Please try again tomorrow."
+        })
+
+      res ->
+        res
     end
   end
 
@@ -100,11 +196,98 @@ defmodule BlockScoutWeb.FaucetController do
     "#{dur_hrs}:#{dur_min}"
   end
 
-  defp send_coins(address_hash, conn, try_num) do
+  defp verify_code(verification_code_hash, address_hash, phone_hash, session_key_hash) do
+    %{verification_code_validation_attempts: number_of_attempts, verification_code: saved_verification_code} =
+      Faucet.get_faucet_request_data(address_hash, phone_hash, session_key_hash)
+
+    number_of_left_attempts_raw = @max_code_validation_attempts - number_of_attempts
+
+    number_of_left_attempts =
+      max(
+        number_of_left_attempts_raw,
+        0
+      )
+
+    if number_of_left_attempts == 0 do
+      {:error, :max_attempts_achieved}
+    else
+      saved_verification_code_hash = "0x" <> Base.encode16(saved_verification_code.bytes, case: :lower)
+
+      code_verification =
+        if saved_verification_code_hash !== verification_code_hash do
+          :invalid_code
+        else
+          :valid_code
+        end
+
+      Faucet.update_faucet_request_code_validation_attempts(address_hash, phone_hash, session_key_hash)
+      number_of_left_attempts = max(number_of_left_attempts - 1, 0)
+
+      cond do
+        code_verification == :invalid_code && number_of_left_attempts > 0 ->
+          {:error, :invalid_code, number_of_left_attempts}
+
+        code_verification == :invalid_code && number_of_left_attempts == 0 ->
+          {:error, :invalid_code, :max_attempts_achieved}
+
+        code_verification == :valid_code ->
+          :ok
+      end
+    end
+  end
+
+  defp parse_verify_code_response(conn, verification_code_hash, address_hash, phone_hash, session_key_hash) do
+    case verify_code(verification_code_hash, address_hash, phone_hash, session_key_hash) do
+      :ok ->
+        :ok
+
+      {:error, :max_attempts_achieved} ->
+        json(conn, %{
+          success: false,
+          message: "You reached the maximum of code validation attempts. Try from the beginning."
+        })
+
+      {:error, :invalid_code, :max_attempts_achieved} ->
+        json(conn, %{
+          success: false,
+          message:
+            "Verification code is invalid. You reached the maximum of code validation attempts. The next try will be available in ..."
+        })
+
+      {:error, :invalid_code, number_of_left_attempts} ->
+        json(conn, %{
+          success: false,
+          message: "Verification code is invalid. The number of left attempts is #{number_of_left_attempts}"
+        })
+    end
+  end
+
+  defp send_sms(phone_number) do
+    verification_code = :rand.uniform(999_999)
+    {:ok, verification_code_hash} = ExKeccak.hash_256(to_string(verification_code))
+    body = "Blockscout faucet verification code: " <> to_string(verification_code)
+    Message.create(to: "+" <> to_string(phone_number), from: System.get_env("TWILIO_FROM"), body: body)
+    {:ok, verification_code_hash}
+  end
+
+  defp parse_send_sms_response(conn, phone_number) do
+    case send_sms(phone_number) do
+      :error ->
+        json(conn, %{
+          success: false,
+          message: "Failed to send SMS. Please try again later"
+        })
+
+      res ->
+        res
+    end
+  end
+
+  defp send_coins(address_hash, phone_hash, session_key_hash, conn, try_num) do
     if try_num < 5 do
       case Faucet.send_coins_from_faucet(address_hash) do
         {:ok, transaction_hash} ->
-          case Faucet.insert_faucet_request_record(address_hash) do
+          case Faucet.finalize_faucet_request(address_hash, phone_hash, session_key_hash) do
             {:ok, _} ->
               json(conn, %{success: true, transactionHash: transaction_hash, message: "Success"})
 
@@ -120,7 +303,7 @@ defmodule BlockScoutWeb.FaucetController do
 
           try_num = try_num + 1
           Process.sleep(500)
-          send_coins(address_hash, conn, try_num)
+          send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
       end
     else
       json(conn, %{success: false, message: @send_coins_failed_msg})
@@ -136,4 +319,3 @@ defmodule BlockScoutWeb.FaucetController do
     HTTPoison.post("https://hcaptcha.com/siteverify", body, headers, [])
   end
 end
-
