@@ -18,7 +18,7 @@ config :logger, :block_scout_web,
   path: Path.absname("logs/test/block_scout_web.log")
 
 # Configure wallaby
-config :wallaby, screenshot_on_failure: true, driver: Wallaby.Chrome
+config :wallaby, screenshot_on_failure: true, driver: Wallaby.Chrome, js_errors: false
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 
