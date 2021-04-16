@@ -131,6 +131,7 @@ function onSMSButtonClick (event) {
       } else {
         $receiverInput.hide()
         $phoneNumberInput.hide()
+        $('.iti--allow-dropdown').hide()
         $verificationCodeInput.removeClass('d-none')
 
         $btn.hide()
