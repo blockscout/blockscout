@@ -204,7 +204,8 @@ const appJs =
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
         'process.env.COIN': JSON.stringify(process.env.COIN),
         'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE),
-        'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN)
+        'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN),
+        'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
