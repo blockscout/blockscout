@@ -66,7 +66,7 @@ async function getFaucetBalance () {
     method: 'eth_getBalance',
     params: [faucetAddress, 'latest']
   })
-  const faucetBalance = (parseInt(Number(balance, 10)) / Math.pow(10, 18)).toString()
+  const faucetBalance = (parseInt(balance, 16) / Math.pow(10, 18)).toString()
   $('#faucetBalance').text(faucetBalance)
 }
 
