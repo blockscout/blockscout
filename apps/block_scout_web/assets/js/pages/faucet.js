@@ -5,6 +5,11 @@ import { getCurrentAccount, compareChainIDs, formatError } from '../lib/smart_co
 import { uuidv4 } from '../lib/keys_helpers'
 import { getCookie, setCookie } from '../lib/cookies_helpers'
 import Web3 from 'web3'
+import intlTelInput from 'intl-tel-input'
+
+const input = document.querySelector('#phoneNumber')
+const iti = intlTelInput(input, {
+})
 
 const $csrfToken = $('[name=_csrf_token]')
 const $sendSMSBtn = $('#sendSMS')
@@ -88,6 +93,8 @@ function onSMSButtonClick (event) {
     $phoneNumberInput.addClass('invalid')
     return
   }
+  var countryData = iti.getSelectedCountryData()
+  phoneNumber = countryData.dialCode + phoneNumber
   const saltedSessionKey = deviceKey.concat(sessionKey)
   const sessionKeyHash = Web3.utils.keccak256(saltedSessionKey)
 
@@ -156,6 +163,8 @@ $('#faucetForm').submit(function (event) {
     $phoneNumberInput.addClass('invalid')
     return
   }
+  var countryData = iti.getSelectedCountryData()
+  phoneNumber = countryData.dialCode + phoneNumber
   var verificationCode = $verificationCodeInput.val()
   if (!verificationCode) {
     $verificationCodeInput.addClass('invalid')
@@ -163,9 +172,9 @@ $('#faucetForm').submit(function (event) {
   }
 
   const saltedSessionKey = deviceKey.concat(sessionKey)
-  const sessionKeyHash = utils.keccak256(saltedSessionKey)
+  const sessionKeyHash = Web3.utils.keccak256(saltedSessionKey)
 
-  const verificationCodeHash = utils.keccak256(verificationCode)
+  const verificationCodeHash = Web3.utils.keccak256(verificationCode)
 
   // eslint-disable-next-line
   const captchaResp = hcaptcha.getResponse()
