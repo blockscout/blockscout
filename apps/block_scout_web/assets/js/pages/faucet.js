@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import Swal from 'sweetalert2'
 import { walletEnabled, connectToWallet, shouldHideConnectButton } from '../lib/smart_contract/write.js'
-import { getCurrentAccount } from '../lib/smart_contract/common_helpers'
+import { getCurrentAccount, compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
 import { uuidv4 } from '../lib/keys_helpers'
 import { getCookie, setCookie } from '../lib/cookies_helpers'
 import { utils } from 'web3'
@@ -258,27 +258,39 @@ function hideConnectButton ($connect, $connectTo, $connectedTo) {
   $connectedTo.addClass('hidden')
 }
 
-async function donateCoins () {
+async function donateCoins (event) {
+  const btn = $(event.target)
   await walletEnabled()
-  const currentAccount = await getCurrentAccount()
-  const faucetDonateValue = $('#faucetDonateValue').val() || '100'
-  const txParams = {
-    from: currentAccount,
-    to: faucetAddress,
-    value: (parseFloat(faucetDonateValue) * Math.pow(10, 18)).toString(16)
-  }
-  window.ethereum.request({
-    method: 'eth_sendTransaction',
-    params: [txParams]
-  })
-    .then(function (txHash) {
-      onTransactionHash(txHash)
+  const { chainId: walletChainIdHex } = window.ethereum
+  compareChainIDs(btn.data('chainId'), walletChainIdHex)
+    .then(async () => {
+      const currentAccount = await getCurrentAccount()
+      const faucetDonateValue = $('#faucetDonateValue').val() || '100'
+      const txParams = {
+        from: currentAccount,
+        to: faucetAddress,
+        value: (parseFloat(faucetDonateValue) * Math.pow(10, 18)).toString(16)
+      }
+      window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [txParams]
+      })
+        .then(function (txHash) {
+          onTransactionHash(txHash)
+        })
+        .catch(function (error) {
+          Swal.fire({
+            title: 'Error in sending coins to faucet',
+            text: formatError(error),
+            icon: 'error'
+          })
+        })
     })
-    .catch(function (error) {
+    .catch((error) => {
       Swal.fire({
-        title: 'Error in sending coins to faucet',
-        text: formatError(error),
-        icon: 'error'
+        title: 'Warning',
+        html: formatError(error),
+        icon: 'warning'
       })
     })
 }
@@ -302,10 +314,4 @@ function onTransactionHash (txHash) {
       })
   }
   const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
-}
-
-const formatError = (error) => {
-  let { message } = error
-  message = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
-  return message
 }
