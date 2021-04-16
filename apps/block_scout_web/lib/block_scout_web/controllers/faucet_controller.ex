@@ -265,6 +265,7 @@ defmodule BlockScoutWeb.FaucetController do
   defp send_sms(phone_number) do
     verification_code = :rand.uniform(999_999)
     body = "Blockscout faucet verification code: " <> to_string(verification_code)
+
     case Message.create(to: "+" <> to_string(phone_number), from: System.get_env("TWILIO_FROM"), body: body) do
       {:ok, _} -> ExKeccak.hash_256(to_string(verification_code))
       res -> res
