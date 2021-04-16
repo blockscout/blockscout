@@ -1,11 +1,20 @@
 import $ from 'jquery'
 import Swal from 'sweetalert2'
 import * as Sentry from '@sentry/browser'
-import { walletEnabled, connectToWallet, getCurrentAccount, shouldHideConnectButton } from '../lib/smart_contract/write.js'
+import { walletEnabled, connectToWallet, shouldHideConnectButton } from '../lib/smart_contract/write.js'
+import { getCurrentAccount, compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
+import { uuidv4 } from '../lib/keys_helpers'
+import { getCookie, setCookie } from '../lib/cookies_helpers'
+import { utils } from 'web3'
 
 const $csrfToken = $('[name=_csrf_token]')
+const $sendSMSBtn = $('#sendSMS')
 const $requestCoinsBtn = $('#requestCoins')
 const $donateBtn = $('#donate')
+
+const $receiverInput = $('#receiver')
+const $phoneNumberInput = $('#phoneNumber')
+const $verificationCodeInput = $('#verificationCode')
 
 const $connect = $('[connect-metamask]')
 const $connectTo = $('[connect-to]')
@@ -15,6 +24,14 @@ const $reconnect = $('[re-connect-metamask]')
 const faucetAddress = $('#faucetAddress').val()
 
 getFaucetBalance()
+
+var deviceKey = getCookie('faucet-device-key')
+const sessionKey = uuidv4()
+setCookie('faucet-session-key', sessionKey)
+if (!deviceKey) {
+  deviceKey = uuidv4()
+  setCookie('faucet-device-key', deviceKey)
+}
 
 window.ethereum && window.ethereum.on('accountsChanged', function (accounts) {
   if (accounts.length === 0) {
@@ -35,13 +52,14 @@ shouldHideConnectButton()
     }
   })
 
-$connect.on('click', () => {
-  connectToWallet()
-})
+$connect.on('click', connectToWallet)
+$reconnect.on('click', connectToWallet)
 
-$reconnect.on('click', () => {
-  connectToWallet()
-})
+$receiverInput.on('keyup', validateInput)
+$phoneNumberInput.on('keyup', validateInput)
+$verificationCodeInput.on('keyup', validateInput)
+
+$sendSMSBtn.on('click', onSMSButtonClick)
 
 async function getFaucetBalance () {
   const balance = await window.ethereum.request({
@@ -52,13 +70,38 @@ async function getFaucetBalance () {
   $('#faucetBalance').text(faucetBalance)
 }
 
-$('#faucetForm').submit(function (e) {
-  $requestCoinsBtn.attr('disabled', true)
-  e.preventDefault()
+function validateInput (event) {
+  const btn = $(event.target)
+  if (!btn.val()) {
+    btn.addClass('invalid')
+  } else {
+    btn.removeClass('invalid')
+  }
+}
+
+function onSMSButtonClick (event) {
+  var receiver = $receiverInput.val()
+  if (!receiver) {
+    $receiverInput.addClass('invalid')
+    return
+  }
+  var phoneNumber = $phoneNumberInput.val()
+  if (!phoneNumber) {
+    $phoneNumberInput.addClass('invalid')
+    return
+  }
+  const saltedSessionKey = deviceKey.concat(sessionKey)
+  const sessionKeyHash = utils.keccak256(saltedSessionKey)
+
   // eslint-disable-next-line
-  const resp = hcaptcha.getResponse()
-  if (resp) {
-    var receiver = $('#receiver').val()
+  const captchaResp = hcaptcha.getResponse()
+  if (!captchaResp) return
+
+  const $btn = $(event.target)
+
+  $btn.attr('disabled', true)
+
+  if (receiver && phoneNumber && captchaResp) {
     $.ajax({
       url: './faucet',
       type: 'POST',
@@ -67,21 +110,103 @@ $('#faucetForm').submit(function (e) {
       },
       data: {
         receiver: receiver,
-        captchaResponse: resp
+        phoneNumber: phoneNumber,
+        sessionKeyHash: sessionKeyHash,
+        captchaResponse: captchaResp
       }
     }).done(function (data) {
       // eslint-disable-next-line
       hcaptcha.reset()
-      console.error(data)
       if (!data.success) {
         Swal.fire({
           title: 'Error',
           text: data.message,
           icon: 'error'
         })
+      } else {
+        $receiverInput.hide()
+        $phoneNumberInput.hide()
+        $verificationCodeInput.removeClass('d-none')
+
+        $btn.hide()
+        $requestCoinsBtn.removeClass('d-none')
+      }
+      $btn.attr('disabled', false)
+    }).fail(function (err) {
+      // eslint-disable-next-line
+      hcaptcha.reset()
+      console.error(err)
+      Swal.fire({
+        title: 'Error',
+        text: 'Sending SMS for verification failed. Please try again later.',
+        icon: 'error'
+      })
+      $btn.attr('disabled', false)
+    })
+  }
+}
+
+$('#faucetForm').submit(function (event) {
+  event.preventDefault()
+  var receiver = $receiverInput.val()
+  if (!receiver) {
+    $receiverInput.addClass('invalid')
+    return
+  }
+  var phoneNumber = $phoneNumberInput.val()
+  if (!phoneNumber) {
+    $phoneNumberInput.addClass('invalid')
+    return
+  }
+  var verificationCode = $verificationCodeInput.val()
+  if (!verificationCode) {
+    $verificationCodeInput.addClass('invalid')
+    return
+  }
+
+  const saltedSessionKey = deviceKey.concat(sessionKey)
+  const sessionKeyHash = utils.keccak256(saltedSessionKey)
+
+  const verificationCodeHash = utils.keccak256(verificationCode)
+
+  // eslint-disable-next-line
+  const captchaResp = hcaptcha.getResponse()
+  if (!captchaResp) return
+
+  const $btn = $(event.target)
+
+  $btn.attr('disabled', true)
+
+  if (receiver && phoneNumber && verificationCode && captchaResp) {
+    $.ajax({
+      url: './faucet',
+      type: 'POST',
+      headers: {
+        'x-csrf-token': $csrfToken.val()
+      },
+      data: {
+        receiver: receiver,
+        phoneNumber: phoneNumber,
+        sessionKeyHash: sessionKeyHash,
+        verificationCodeHash: verificationCodeHash,
+        captchaResponse: captchaResp
+      }
+    }).done(function (data) {
+      // eslint-disable-next-line
+      hcaptcha.reset()
+      if (!data.success) {
+        $verificationCodeInput.val('')
+        Swal.fire({
+          title: 'Error',
+          text: data.message,
+          icon: 'error'
+        })
+
         Sentry.captureException(data)
       } else {
-        $('#receiver').val('')
+        $receiverInput.val('')
+        $phoneNumberInput.val('')
+        $verificationCodeInput.val('')
         const faucetValue = $('#faucetValue').val()
         const faucetCoin = $('#faucetCoin').val()
         Swal.fire({
@@ -89,8 +214,11 @@ $('#faucetForm').submit(function (e) {
           html: `${faucetValue} ${faucetCoin} have been successfully transferred to <a href="./tx/${data.transactionHash}" target="blank">${receiver}</a>`,
           icon: 'success'
         })
+          .then(() => {
+            window.location.reload()
+          })
       }
-      $requestCoinsBtn.attr('disabled', false)
+      $btn.attr('disabled', false)
     }).fail(function (err) {
       // eslint-disable-next-line
       hcaptcha.reset()
@@ -100,17 +228,15 @@ $('#faucetForm').submit(function (e) {
         text: 'Sending coins failed. Please try again later.',
         icon: 'error'
       })
-      $requestCoinsBtn.attr('disabled', false)
       Sentry.captureException(err)
+      $btn.attr('disabled', false)
     })
   } else {
-    $requestCoinsBtn.attr('disabled', false)
+    $btn.attr('disabled', false)
   }
 })
 
-$donateBtn.on('click', function (e) {
-  donateCoins()
-})
+$donateBtn.on('click', donateCoins)
 
 function showConnectedToElements ($connect, $connectTo, $connectedTo, account) {
   $connectTo.addClass('hidden')
@@ -136,27 +262,39 @@ function hideConnectButton ($connect, $connectTo, $connectedTo) {
   $connectedTo.addClass('hidden')
 }
 
-async function donateCoins () {
+async function donateCoins (event) {
+  const btn = $(event.target)
   await walletEnabled()
-  const currentAccount = await getCurrentAccount()
-  const faucetDonateValue = $('#faucetDonateValue').val() || '100'
-  const txParams = {
-    from: currentAccount,
-    to: faucetAddress,
-    value: (parseFloat(faucetDonateValue) * Math.pow(10, 18)).toString(16)
-  }
-  window.ethereum.request({
-    method: 'eth_sendTransaction',
-    params: [txParams]
-  })
-    .then(function (txHash) {
-      onTransactionHash(txHash)
+  const { chainId: walletChainIdHex } = window.ethereum
+  compareChainIDs(btn.data('chainId'), walletChainIdHex)
+    .then(async () => {
+      const currentAccount = await getCurrentAccount()
+      const faucetDonateValue = $('#faucetDonateValue').val() || '100'
+      const txParams = {
+        from: currentAccount,
+        to: faucetAddress,
+        value: (parseFloat(faucetDonateValue) * Math.pow(10, 18)).toString(16)
+      }
+      window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [txParams]
+      })
+        .then(function (txHash) {
+          onTransactionHash(txHash)
+        })
+        .catch(function (error) {
+          Swal.fire({
+            title: 'Error in sending coins to faucet',
+            text: formatError(error),
+            icon: 'error'
+          })
+        })
     })
-    .catch(function (error) {
+    .catch((error) => {
       Swal.fire({
-        title: 'Error in sending coins to faucet',
-        text: formatError(error),
-        icon: 'error'
+        title: 'Warning',
+        html: formatError(error),
+        icon: 'warning'
       })
     })
 }
@@ -180,10 +318,4 @@ function onTransactionHash (txHash) {
       })
   }
   const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
-}
-
-const formatError = (error) => {
-  let { message } = error
-  message = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
-  return message
 }

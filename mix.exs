@@ -68,6 +68,7 @@ defmodule BlockScout.Mixfile do
   defp deps do
     [
       {:tesla, "~> 1.3.3"},
+      {:ex_twilio, "~> 0.9.0"},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
