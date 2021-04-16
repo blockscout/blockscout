@@ -19,7 +19,13 @@
                         <input type="hidden" id="faucetAddress" value="<%= System.get_env("FAUCET_ADDRESS") %>"/>
                         <input type="hidden" id="faucetDonateValue" value="<%= System.get_env("FAUCET_DONATE_VALUE") %>"/>
                         <button class="button button-primary" id="sendSMS" class="phone-verify-coins-button">Send SMS</button>
-                        <button type="submit" class="button button-primary d-none" id="requestCoins" class="request-coins-button">Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %></button>
+                        <button
+                            type="submit"
+                            class="button button-primary d-none"
+                            id="requestCoins"
+                            class="request-coins-button">
+                            Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %>
+                        </button>
                     </form>
                 </div>
                 <div class="col-sm-12 col-md-6 col-lg-6">
@@ -38,7 +44,13 @@
                         </span>
                         <h3>Connected to</h2><h3 connected-to-address class="ml-2"></h3>
                     </div>
-                    <button class="button button-primary" id="donate" class="donate-button">Donate</button>
+                    <button
+                        class="button button-primary"
+                        id="donate"
+                        class="donate-button"
+                        data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+                        Donate
+                    </button>
                     </div>
                 </div>
             </div>
