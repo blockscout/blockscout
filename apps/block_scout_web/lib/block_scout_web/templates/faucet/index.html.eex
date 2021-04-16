@@ -3,7 +3,8 @@
         <div class="card-body">
             <h2 class="card-title mb-2">Faucet
             </h2>
-            <p class="card-subtitle">Coins are distributed in increments of <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %>. You can request once per day per phone number.</p>
+            <div class="card-subtitle">Coins are distributed in increments of <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %>. You can request once per day per phone number.
+            <div class="mt-2"><%= render BlockScoutWeb.CommonComponentsView, "_info.html" %> We don’t store raw phone numbers in the DB.</div></div>
             <div class="row">
                 <div class="col-sm-12 col-md-6 col-lg-6">
                     <form action="/faucet" method="POST" id="faucetForm">
@@ -48,6 +49,7 @@
                         class="button button-primary"
                         id="donate"
                         class="donate-button"
+                        data-rpc-endpoint="<%= System.get_env("FAUCET_JSONRPC_HTTP_URL") %>"
                         data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
                         Donate
                     </button>
