@@ -3001,12 +3001,6 @@ msgstr ""
 msgid "Save changes"
 msgstr ""
 
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:20
-msgid "Staking Address:"
-msgstr ""
-
-#, elixir-format, fuzzy
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:14
