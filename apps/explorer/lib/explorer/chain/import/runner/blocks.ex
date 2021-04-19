@@ -273,10 +273,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.map(& &1.number)
   end
 
-  defp lose_consensus(repo, hashes, consensus_block_numbers, changes_list, %{
-         timeout: timeout,
-         timestamps: %{updated_at: updated_at}
-       }) do
+  def lose_consensus(repo, hashes, consensus_block_numbers, changes_list, %{
+        timeout: timeout,
+        timestamps: %{updated_at: updated_at}
+      }) do
     acquire_query =
       from(
         block in where_invalid_neighbour(changes_list),

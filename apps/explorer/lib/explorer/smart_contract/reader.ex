@@ -9,6 +9,7 @@ defmodule Explorer.SmartContract.Reader do
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.SmartContract.Helper
 
   @typedoc """
   Map of functions to call with the values for the function to be called with.
@@ -203,7 +204,7 @@ defmodule Explorer.SmartContract.Reader do
         abi_with_method_id = get_abi_with_method_id(abi)
 
         abi_with_method_id
-        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
+        |> Enum.filter(&Helper.queriable_method?(&1))
         |> Enum.map(&fetch_current_value_from_blockchain(&1, abi_with_method_id, contract_address_hash))
     end
   end
@@ -219,7 +220,7 @@ defmodule Explorer.SmartContract.Reader do
         implementation_abi_with_method_id = get_abi_with_method_id(implementation_abi)
 
         implementation_abi_with_method_id
-        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
+        |> Enum.filter(&Helper.queriable_method?(&1))
         |> Enum.map(&fetch_current_value_from_blockchain(&1, implementation_abi_with_method_id, contract_address_hash))
     end
   end
@@ -402,11 +403,33 @@ defmodule Explorer.SmartContract.Reader do
   but we always get strings from the front, so it is necessary to normalize it.
   """
   def normalize_args(args) do
-    Enum.map(args, &parse_item/1)
+    if is_map(args) do
+      [res] = Enum.map(args, &parse_item/1)
+      res
+    else
+      Enum.map(args, &parse_item/1)
+    end
   end
 
   defp parse_item("true"), do: true
   defp parse_item("false"), do: false
+
+  defp parse_item(item) when is_tuple(item) do
+    item
+    |> Tuple.to_list()
+    |> Enum.map(fn value ->
+      if is_list(value) do
+        value
+        |> Enum.join("")
+      else
+        hex =
+          value
+          |> Base.encode16(case: :lower)
+
+        "0x" <> hex
+      end
+    end)
+  end
 
   defp parse_item(item) do
     response = Integer.parse(item)

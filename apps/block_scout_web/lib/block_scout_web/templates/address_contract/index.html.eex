@@ -1,5 +1,6 @@
 <% contract_creation_code = contract_creation_code(@address) %>
-<% metadata_for_verification = Chain.address_verified_twin_contract(@address.hash) %>
+<% minimal_proxy_template = Chain.get_minimal_proxy_template(@address.hash) %>
+<% metadata_for_verification = minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
 <% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
 
 <section class="container">
@@ -9,12 +10,16 @@
     <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
       <%= unless smart_contract_verified do %>
-        <%= if metadata_for_verification do %>
-          <div class="mb-4">
-            <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
-      metadata_for_verification.address_hash,
-      to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%=  gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
-          </div>
+        <%= if minimal_proxy_template do %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: metadata_for_verification.address_hash, conn: @conn %>
+        <% else %>
+          <%= if metadata_for_verification do %>
+            <div class="mb-4">
+              <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
+        metadata_for_verification.address_hash,
+        to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%=  gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
+            </div>
+          <% end %>
         <% end %>
       <% end %>
       <%= if smart_contract_verified || (!smart_contract_verified && metadata_for_verification) do %>

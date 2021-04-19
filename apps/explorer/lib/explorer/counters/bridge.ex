@@ -96,6 +96,11 @@ defmodule Explorer.Counters.Bridge do
     {:noreply, state}
   end
 
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   def fetch_token_bridge_total_supply do
     if bridges_table_exists?() do
       do_fetch_token_bridge_total_supply(:ets.lookup(@bridges_table, @current_total_supply_from_token_bridge_cache_key))
@@ -161,9 +166,11 @@ defmodule Explorer.Counters.Bridge do
     bridged_mainnet_tokens_list = TokenBridge.get_bridged_mainnet_tokens_list()
 
     bridged_mainnet_tokens_list
-    |> Enum.each(fn {_bridged_token_hash, bridged_token_symbol} ->
-      bridged_token_price = TokenBridge.get_current_price_for_bridged_token(bridged_token_symbol)
-      cache_key = TokenExchangeRate.cache_key(bridged_token_symbol)
+    |> Enum.each(fn {bridged_token_hash, _bridged_token_symbol, _custom_cap, foreign_token_contract_address_hash} ->
+      bridged_token_price =
+        TokenBridge.get_current_price_for_bridged_token(bridged_token_hash, foreign_token_contract_address_hash)
+
+      cache_key = TokenExchangeRate.cache_key(foreign_token_contract_address_hash)
       TokenExchangeRate.put_into_cache(cache_key, bridged_token_price)
     end)
 

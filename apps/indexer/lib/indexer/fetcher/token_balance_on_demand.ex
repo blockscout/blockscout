@@ -6,7 +6,6 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   @latest_balance_stale_threshold :timer.hours(24)
 
-  use GenServer
   use Indexer.Fetcher
 
   alias Explorer.Chain
@@ -31,30 +30,6 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     end
   end
 
-  ## Callbacks
-
-  def child_spec([json_rpc_named_arguments, server_opts]) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [json_rpc_named_arguments, server_opts]},
-      type: :worker
-    }
-  end
-
-  def start_link(json_rpc_named_arguments, server_opts) do
-    GenServer.start_link(__MODULE__, json_rpc_named_arguments, server_opts)
-  end
-
-  def init(json_rpc_named_arguments) do
-    {:ok, %{json_rpc_named_arguments: json_rpc_named_arguments}}
-  end
-
-  def handle_cast({:fetch_and_update, block_number, address_hash, current_token_balances}, state) do
-    fetch_and_update(block_number, address_hash, current_token_balances, state.json_rpc_named_arguments)
-
-    {:noreply, state}
-  end
-
   ## Implementation
 
   defp do_trigger_fetch(address_hash, current_token_balances, latest_block_number, stale_balance_window)
@@ -64,7 +39,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
 
     if Enum.count(stale_current_token_balances) > 0 do
-      GenServer.cast(__MODULE__, {:fetch_and_update, latest_block_number, address_hash, stale_current_token_balances})
+      fetch_and_update(latest_block_number, address_hash, stale_current_token_balances)
     else
       :current
     end
@@ -72,7 +47,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     :ok
   end
 
-  defp fetch_and_update(block_number, address_hash, stale_current_token_balances, _json_rpc_named_arguments) do
+  defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
     current_token_balances_update_params =
       stale_current_token_balances
       |> Enum.map(fn stale_current_token_balance ->
@@ -85,19 +60,28 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           }
         ]
 
-        updated_balance = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)[:ok]
+        balance_response = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)
+        updated_balance = balance_response[:ok]
 
-        %{}
-        |> Map.put(:address_hash, stale_current_token_balance.address_hash)
-        |> Map.put(:token_contract_address_hash, stale_current_token_balance.token_contract_address_hash)
-        |> Map.put(:block_number, block_number)
-        |> Map.put(:value, Decimal.new(updated_balance))
-        |> Map.put(:value_fetched_at, DateTime.utc_now())
+        if updated_balance do
+          %{}
+          |> Map.put(:address_hash, stale_current_token_balance.address_hash)
+          |> Map.put(:token_contract_address_hash, stale_current_token_balance.token_contract_address_hash)
+          |> Map.put(:block_number, block_number)
+          |> Map.put(:value, Decimal.new(updated_balance))
+          |> Map.put(:value_fetched_at, DateTime.utc_now())
+        else
+          nil
+        end
       end)
+
+    filtered_current_token_balances_update_params =
+      current_token_balances_update_params
+      |> Enum.filter(&(!is_nil(&1)))
 
     Chain.import(%{
       address_current_token_balances: %{
-        params: current_token_balances_update_params
+        params: filtered_current_token_balances_update_params
       },
       broadcast: :on_demand
     })

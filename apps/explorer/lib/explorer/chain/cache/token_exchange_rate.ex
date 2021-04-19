@@ -4,7 +4,12 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   """
   use GenServer
 
+  import Ecto.Query, only: [from: 2]
+
+  alias Ecto.Changeset
+  alias Explorer.Chain.BridgedToken
   alias Explorer.ExchangeRates.Source
+  alias Explorer.Repo
 
   @cache_name :token_exchange_rate
   @last_update_key "last_update"
@@ -46,25 +51,49 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     {:noreply, state}
   end
 
-  def cache_key(symbol) do
-    "token_symbol_exchange_rate_#{symbol}"
+  def cache_key(symbol_or_address_hash_str) do
+    "token_symbol_exchange_rate_#{symbol_or_address_hash_str}"
   end
 
-  def fetch(symbol) do
-    if cache_expired?(symbol) || value_is_empty?(symbol) do
+  def fetch(token_hash, address_hash_str) do
+    if cache_expired?(address_hash_str) || value_is_empty?(address_hash_str) do
       Task.start_link(fn ->
-        update_cache(symbol)
+        update_cache_by_address_hash_str(token_hash, address_hash_str)
       end)
     end
 
-    fetch_from_cache(cache_key(symbol))
+    cached_value = fetch_from_cache(cache_key(address_hash_str))
+
+    if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
+      fetch_from_db(token_hash)
+    else
+      cached_value
+    end
+  end
+
+  # fetching by symbol is not recommended to use because of possible collisions
+  # fetch() should be used instead
+  def fetch_by_symbol(token_hash, symbol) do
+    if cache_expired?(symbol) || value_is_empty?(symbol) do
+      Task.start_link(fn ->
+        update_cache_by_symbol(token_hash, symbol)
+      end)
+    end
+
+    cached_value = fetch_from_cache(cache_key(symbol))
+
+    if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
+      fetch_from_db(token_hash)
+    else
+      cached_value
+    end
   end
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(symbol) do
+  defp cache_expired?(symbol_or_address_hash_str) do
     cache_period = token_exchange_rate_cache_period()
-    updated_at = fetch_from_cache("#{cache_key(symbol)}_#{@last_update_key}")
+    updated_at = fetch_from_cache("#{cache_key(symbol_or_address_hash_str)}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
@@ -73,21 +102,41 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     end
   end
 
-  defp value_is_empty?(symbol) do
-    value = fetch_from_cache(cache_key(symbol))
+  defp value_is_empty?(symbol_or_address_hash_str) do
+    value = fetch_from_cache(cache_key(symbol_or_address_hash_str))
     is_nil(value) || value == 0
   end
 
-  defp update_cache(symbol) do
+  defp update_cache_by_symbol(token_hash, symbol) do
     put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", current_time())
 
     exchange_rate = fetch_token_exchange_rate(symbol)
 
+    put_into_db(token_hash, exchange_rate)
     put_into_cache(cache_key(symbol), exchange_rate)
+  end
+
+  defp update_cache_by_address_hash_str(token_hash, address_hash_str) do
+    put_into_cache("#{cache_key(address_hash_str)}_#{@last_update_key}", current_time())
+
+    exchange_rate = fetch_token_exchange_rate_by_address(address_hash_str)
+
+    put_into_db(token_hash, exchange_rate)
+    put_into_cache(cache_key(address_hash_str), exchange_rate)
   end
 
   def fetch_token_exchange_rate(symbol) do
     case Source.fetch_exchange_rates_for_token(symbol) do
+      {:ok, [rates]} ->
+        rates.usd_value
+
+      _ ->
+        nil
+    end
+  end
+
+  def fetch_token_exchange_rate_by_address(address_hash_str) do
+    case Source.fetch_exchange_rates_for_token_address(address_hash_str) do
       {:ok, [rates]} ->
         rates.usd_value
 
@@ -106,10 +155,42 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     end
   end
 
+  defp fetch_from_db(nil), do: nil
+
+  defp fetch_from_db(token_hash) do
+    token = get_token(token_hash)
+
+    if token do
+      token.exchange_rate
+    else
+      nil
+    end
+  end
+
   def put_into_cache(key, value) do
     if cache_table_exists?() do
       :ets.insert(@cache_name, {key, value})
     end
+  end
+
+  def put_into_db(token_hash, exchange_rate) do
+    token = get_token(token_hash)
+
+    if token && !is_nil(exchange_rate) do
+      token
+      |> Changeset.change(%{exchange_rate: exchange_rate})
+      |> Repo.update()
+    end
+  end
+
+  defp get_token(token_hash) do
+    query =
+      from(bt in BridgedToken,
+        where: bt.home_token_contract_address_hash == ^token_hash
+      )
+
+    query
+    |> Repo.one()
   end
 
   defp current_time do

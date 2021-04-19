@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.ChainView do
     if System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false
   end
 
-  defp format_usd_value(value) do
+  def format_usd_value(value) do
     "#{format_currency_value(value)} USD"
   end
 
