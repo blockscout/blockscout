@@ -92,7 +92,7 @@ After all deployed instances get all needed data, these fetchers should be depre
 
 - `uncataloged_token_transfers`: extracts token transfers from logs, which previously weren't parsed due to unknown format
 - `uncles_without_index`: adds previously unfetched `index` field for unfetched blocks in `block_second_degree_relations`
-- `blocks_transactions_mismatch`: refetches each block once and revokes consensus to those whose transaction number mismatches with the number currently stored. This is meant to force the correction of a race condition that caused successfully fetched transactions to be overwritten by a following non-consensus block: [#1911](https://github.com/poanetwork/blockscout/issues/1911).
+- `blocks_transactions_mismatch`: refetches each block once and revokes consensus to those whose transaction number mismatches with the number currently stored. This is meant to force the correction of a race condition that caused successfully fetched transactions to be overwritten by a following non-consensus block: [#1911](https://github.com/blockscout/blockscout/issues/1911).
 
 ## Memory Usage
 

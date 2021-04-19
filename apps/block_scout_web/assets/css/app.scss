@@ -10,9 +10,9 @@
 // Font Awesome
 $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "fontawesome";
-@import "fa-brands";
-@import "fa-regular";
-@import "fa-solid";
+@import "~@fortawesome/fontawesome-free/scss/brands";
+@import "~@fortawesome/fontawesome-free/scss/regular";
+@import "~@fortawesome/fontawesome-free/scss/solid";
 
 // Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
@@ -118,6 +118,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/_inventory_token_instance_image_container";
 @import "components/_external_link";
 @import "components/_label";
+@import "components/_token";
 
 @import "theme/dark-theme";
 
