@@ -1,0 +1,63 @@
+<section class="container">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title mb-2">Faucet
+            </h2>
+            <div class="card-subtitle">Coins are distributed in increments of <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %>. You can request once per day per phone number.
+            <div class="mt-2"><%= render BlockScoutWeb.CommonComponentsView, "_info.html" %> We don’t store raw phone numbers in the DB.</div></div>
+            <div class="row">
+                <div class="col-sm-12 col-md-6 col-lg-6">
+                    <form action="/faucet" method="POST" id="faucetForm">
+                        <div class="mb-4">
+                            <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
+                            <input type="text" id="receiver" class="form-control form-control-sm address-input-sm faucet-input mb-3" name="receiver" placeholder="Coins receiver wallet address" />
+                            <input type="number" id="phoneNumber" class="form-control form-control-sm address-input-sm faucet-input" name="phoneNumber" placeholder="Phone number for verification" />
+                            <input type="number" id="verificationCode" class="form-control form-control-sm address-input-sm faucet-input mt-3 d-none" name="verificationCode" placeholder="Verification code from SMS" />
+                        </div>
+                        <div class="h-captcha mb-4" data-sitekey="<%= System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY") %>"></div>
+                        <input type="hidden" id="faucetValue" value="<%= System.get_env("FAUCET_VALUE") %>"/>
+                        <input type="hidden" id="faucetCoin" value="<%= System.get_env("FAUCET_COIN") %>"</>
+                        <input type="hidden" id="faucetAddress" value="<%= System.get_env("FAUCET_ADDRESS") %>"/>
+                        <input type="hidden" id="faucetDonateValue" value="<%= System.get_env("FAUCET_DONATE_VALUE") %>"/>
+                        <button class="button button-primary" id="sendSMS" class="phone-verify-coins-button">Send SMS</button>
+                        <button
+                            type="submit"
+                            class="button button-primary d-none"
+                            id="requestCoins"
+                            class="request-coins-button">
+                            Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %>
+                        </button>
+                    </form>
+                </div>
+                <div class="col-sm-12 col-md-6 col-lg-6">
+                    <div>
+                    <h3>Current Faucet Balance </h3><h1 id="faucetBalance" style="margin-bottom: 35px;">N/A</h1>
+                    <div connect-to class="connect-container mb-2">
+                        <span style="margin-top: -2px;" class="mr-2">
+                        <%= render BlockScoutWeb.IconsView, "_inactive_icon.html" %>
+                        </span>
+                        <h3>Disconnected</h3>
+                        <button connect-metamask class="button btn-line ml-4">Connect to Metamask</button>
+                    </div>
+                    <div connected-to class="connect-container hidden mb-2">
+                        <span style="margin-top: -2px;" class="mr-2">
+                        <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
+                        </span>
+                        <h3>Connected to</h2><h3 connected-to-address class="ml-2"></h3>
+                    </div>
+                    <button
+                        class="button button-primary"
+                        id="donate"
+                        class="donate-button"
+                        data-rpc-endpoint="<%= System.get_env("FAUCET_JSONRPC_HTTP_URL") %>"
+                        data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+                        Donate
+                    </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/faucet.js") %>"></script>
+    <script src="https://hcaptcha.com/1/api.js" async defer></script>
+</section>

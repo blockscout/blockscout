@@ -163,6 +163,12 @@
                   <span class="bs-label secondary right from-dropdown">New</span>
                 </a>
               <% end %>
+              <%= if Application.get_env(:block_scout_web, :faucet)[:enabled] do %>
+                <a class="dropdown-item <%= #{tab_status("faucet", @conn.request_path)} %>" href="<%= faucet_path(@conn, :index) %>">
+                  <%= gettext("Faucet") %>
+                  <span class="bs-label secondary right from-dropdown">New</span>
+                </a>
+              <% end %>
               <%= if apps_menu == true do %>
                 <%= for %{url: url, title: title} <- external_apps_list() do %> 
                     <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
