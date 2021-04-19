@@ -5,7 +5,12 @@ import { walletEnabled, connectToWallet, shouldHideConnectButton } from '../lib/
 import { getCurrentAccount, compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
 import { uuidv4 } from '../lib/keys_helpers'
 import { getCookie, setCookie } from '../lib/cookies_helpers'
-import { utils } from 'web3'
+import Web3 from 'web3'
+import intlTelInput from 'intl-tel-input'
+
+const input = document.querySelector('#phoneNumber')
+const iti = intlTelInput(input, {
+})
 
 const $csrfToken = $('[name=_csrf_token]')
 const $sendSMSBtn = $('#sendSMS')
@@ -62,11 +67,10 @@ $verificationCodeInput.on('keyup', validateInput)
 $sendSMSBtn.on('click', onSMSButtonClick)
 
 async function getFaucetBalance () {
-  const balance = await window.ethereum.request({
-    method: 'eth_getBalance',
-    params: [faucetAddress, 'latest']
-  })
-  const faucetBalance = (parseInt(balance, 16) / Math.pow(10, 18)).toString()
+  const provider = $donateBtn.data('rpcEndpoint')
+  const web3 = new Web3(provider)
+  const balance = await web3.eth.getBalance(faucetAddress)
+  const faucetBalance = (parseInt(balance, 10) / Math.pow(10, 18)).toString()
   $('#faucetBalance').text(faucetBalance)
 }
 
@@ -90,8 +94,10 @@ function onSMSButtonClick (event) {
     $phoneNumberInput.addClass('invalid')
     return
   }
+  var countryData = iti.getSelectedCountryData()
+  phoneNumber = countryData.dialCode + phoneNumber
   const saltedSessionKey = deviceKey.concat(sessionKey)
-  const sessionKeyHash = utils.keccak256(saltedSessionKey)
+  const sessionKeyHash = Web3.utils.keccak256(saltedSessionKey)
 
   // eslint-disable-next-line
   const captchaResp = hcaptcha.getResponse()
@@ -126,6 +132,7 @@ function onSMSButtonClick (event) {
       } else {
         $receiverInput.hide()
         $phoneNumberInput.hide()
+        $('.iti--allow-dropdown').hide()
         $verificationCodeInput.removeClass('d-none')
 
         $btn.hide()
@@ -158,6 +165,8 @@ $('#faucetForm').submit(function (event) {
     $phoneNumberInput.addClass('invalid')
     return
   }
+  var countryData = iti.getSelectedCountryData()
+  phoneNumber = countryData.dialCode + phoneNumber
   var verificationCode = $verificationCodeInput.val()
   if (!verificationCode) {
     $verificationCodeInput.addClass('invalid')
@@ -165,9 +174,9 @@ $('#faucetForm').submit(function (event) {
   }
 
   const saltedSessionKey = deviceKey.concat(sessionKey)
-  const sessionKeyHash = utils.keccak256(saltedSessionKey)
+  const sessionKeyHash = Web3.utils.keccak256(saltedSessionKey)
 
-  const verificationCodeHash = utils.keccak256(verificationCode)
+  const verificationCodeHash = Web3.utils.keccak256(verificationCode)
 
   // eslint-disable-next-line
   const captchaResp = hcaptcha.getResponse()
