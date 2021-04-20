@@ -165,16 +165,7 @@ defmodule Explorer.Faucet do
     res = eth_get_transaction_count_request(id)
 
     with {:ok, nonce_hex} <- res do
-      value_to_send_str = Application.get_env(:block_scout_web, :faucet)[:value]
-
-      value_to_send_dec =
-        1_000_000_000_000_000_000
-        |> Decimal.new()
-        |> Decimal.mult(Decimal.new(value_to_send_str))
-
-      value_to_send_int =
-        value_to_send_dec
-        |> Decimal.to_integer()
+      value_to_send_int = faucet_value_to_send_int()
 
       value_to_send =
         value_to_send_int
@@ -225,6 +216,18 @@ defmodule Explorer.Faucet do
 
       {:ok, signed_tx}
     end
+  end
+
+  def faucet_value_to_send_int do
+    value_to_send_str = Application.get_env(:block_scout_web, :faucet)[:value]
+
+    value_to_send_dec =
+      1_000_000_000_000_000_000
+      |> Decimal.new()
+      |> Decimal.mult(Decimal.new(value_to_send_str))
+
+    value_to_send_dec
+    |> Decimal.to_integer()
   end
 
   defp eth_send_raw_transaction_request(id, data) do
