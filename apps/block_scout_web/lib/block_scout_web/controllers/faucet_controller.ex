@@ -53,6 +53,7 @@ defmodule BlockScoutWeb.FaucetController do
          {:ok, phone_hash} <- generate_phone_hash(conn, phone_number),
          :ok <- parse_check_number_of_sms_per_phone_number(conn, phone_hash),
          :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
+         :ok <- parse_enough_coins(conn),
          {:ok, verification_code_hash} <-
            parse_send_sms_response(conn, phone_number) do
       case Faucet.insert_faucet_request_record(
@@ -112,6 +113,22 @@ defmodule BlockScoutWeb.FaucetController do
 
       res ->
         res
+    end
+  end
+
+  defp parse_enough_coins(conn) do
+    faucet_address_hash_str = Application.get_env(:block_scout_web, :faucet)[:address]
+    faucet_balance = ETH.get_balance!(faucet_address_hash_str, :wei)
+
+    faucet_value_to_send = Faucet.faucet_value_to_send_int()
+
+    if faucet_balance > faucet_value_to_send do
+      :ok
+    else
+      json(conn, %{
+        success: false,
+        message: "Not enough coins on the faucet balance to send."
+      })
     end
   end
 
