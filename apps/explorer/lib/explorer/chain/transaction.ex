@@ -490,14 +490,14 @@ defmodule Explorer.Chain.Transaction do
         parse_method_name(decoded_func)
 
       {:error, :contract_not_verified, []} ->
-        "Transfer"
+        "0x" <> Base.encode16(method_id, case: :lower)
 
       _ ->
-        "0x" <> Base.encode16(method_id)
+        "Transfer"
     end
   end
 
-  def get_method_name(_), do: nil
+  def get_method_name(_), do: "Transfer"
 
   defp parse_method_name(method_desc) do
     method_desc
