@@ -2006,7 +2006,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:32
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
 msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
 msgstr ""
 
@@ -2054,7 +2054,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:13
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:29
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:33
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:24
 msgid "Become a Candidate"
 msgstr ""
@@ -2198,7 +2198,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:13
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:17
 msgid "Minimum Stake:"
 msgstr ""
 
@@ -2534,7 +2534,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:18
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:22
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:28
 msgid "Your Balance:"
 msgstr ""
@@ -3006,4 +3006,16 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:10
 msgid "Save changes"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:14
+msgid "Your Pool Name"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:16
+msgid "Your Pool Short Description (optional)"
 msgstr ""
