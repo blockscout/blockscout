@@ -476,6 +476,50 @@ defmodule Explorer.Chain.Transaction do
          do: {:ok, identifier, text, mapping}
   end
 
+  def get_method_name(
+        %__MODULE__{
+          input: %{bytes: <<method_id::binary-size(4), _::binary>>}
+        } = transaction
+      ) do
+    case Transaction.decoded_input_data(%__MODULE__{
+           to_address: %{smart_contract: nil},
+           input: transaction.input,
+           hash: transaction.hash
+         }) do
+      {:error, :contract_not_verified, [{:ok, _method_id, decoded_func, _}]} ->
+        parse_method_name(decoded_func)
+
+      {:error, :contract_not_verified, []} ->
+        "0x" <> Base.encode16(method_id, case: :lower)
+
+      _ ->
+        "Transfer"
+    end
+  end
+
+  def get_method_name(_), do: "Transfer"
+
+  defp parse_method_name(method_desc) do
+    method_desc
+    |> String.split("(")
+    |> Enum.at(0)
+    |> upcase_first
+    |> String.split(~r/(?<=[A-Z])|(?=[A-Z])/)
+    |> Enum.reduce("", fn string, acc ->
+      if acc == "" do
+        string
+      else
+        if string =~ ~r/^\p{Lu}$/u do
+          acc <> " " <> string
+        else
+          acc <> string
+        end
+      end
+    end)
+  end
+
+  defp upcase_first(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
+
   defp function_call(name, mapping) do
     text =
       mapping
