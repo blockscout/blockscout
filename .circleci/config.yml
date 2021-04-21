@@ -312,6 +312,9 @@ jobs:
       - attach_workspace:
           at: .
 
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $BASH_ENV
+      - run: mix local.hex --force
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
@@ -340,7 +343,7 @@ jobs:
       - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test_3
+          POSTGRES_DB: explorer_test
           # match PGPASSWORD for elixir image above
           POSTGRES_PASSWORD: postgres
           # match PGUSER for elixir image above
@@ -381,7 +384,7 @@ jobs:
       - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test_2
+          POSTGRES_DB: explorer_test
           # match PGPASSWORD for elixir image above
           POSTGRES_PASSWORD: postgres
           # match PGUSER for elixir image above
@@ -422,7 +425,7 @@ jobs:
       - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test_1
+          POSTGRES_DB: explorer_test
           # match PGPASSWORD for elixir image above
           POSTGRES_PASSWORD: postgres
           # match PGUSER for elixir image above
@@ -454,12 +457,6 @@ jobs:
       - image: circleci/elixir:1.10.3-node-browsers
         environment:
           MIX_ENV: test
-          # match POSTGRES_PASSWORD for postgres image below
-          PGPASSWORD: postgres
-          # match POSTGRES_USER for postgres image below
-          PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
-          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
 
     working_directory: ~/app
 
