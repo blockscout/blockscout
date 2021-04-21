@@ -305,6 +305,8 @@ jobs:
     docker:
       # Ensure .tool-versions matches
       - image: circleci/elixir:1.10.3
+        environment:
+          MIX_ENV: test
 
     working_directory: ~/app
 
@@ -314,19 +316,13 @@ jobs:
 
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $BASH_ENV
-      - run: mix local.hex --force
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
+#      - run: mix local.hex --force
+#      - run: mix local.rebar --force
 
       - run:
           name: Scan explorer for vulnerabilities
           command: mix sobelow --config
           working_directory: "apps/explorer"
-
-      - run:
-          name: Scan block_scout_web for vulnerabilities
-          command: mix compile
-          working_directory: "apps/block_scout_web"
 
       - run:
           name: Scan block_scout_web for vulnerabilities
