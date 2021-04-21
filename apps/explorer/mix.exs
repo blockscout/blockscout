@@ -103,8 +103,6 @@ defmodule Explorer.Mixfile do
       {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
       {:que, "~> 0.10.1"},
       {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false},
-      # {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false, path: "/home/sami/sobelow"},
-      # {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false, github: "mrsmkl/sobelow"},
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
