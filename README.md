@@ -128,7 +128,7 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
     NETWORK=Celo
     ETHEREUM_JSONRPC_VARIANT=geth
     ETHEREUM_JSONRPC_HTTP_URL=http://104.198.100.15:8545
-    ETHEREUM_JSONRPC_WS_URL=ws://104.198.100.15:8546 COIN=cGLD
+    ETHEREUM_JSONRPC_WS_URL=ws://104.198.100.15:8546 COIN=CELO
     make start
     ```
 
@@ -146,7 +146,9 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 
 ## Troubleshooting
 
-Delete the `build` and `deps` folders and reinstall.
+* Start over? Delete the `_build` and `deps` folders and reinstall. There are a number of helper scripts under the `/rel/commands` folder. View the `run_build.sh` example and edit as needed.
+* Node version issues? Blockscout is targeted for specific Node and Elixir versions and there may be issues compiling if your host environment do not match the expectation of this application. Use `nvm` for the correct Node target and potentially reinstall Elixir plugins from `asdf`.
+* Connecting to postgreSQL? Does your postgreSQL database and password match the configration either in a `config.exs` file or environment variable you have passed to the process? The format for providing the database URL is: `DATABASE_URL=postgresql://postgres:1234@localhost:5432/blockscout`, where the user/pass is `postgres`/`1234` and database name is `blockscout`. Some of the existing config files for various staging environments have `explorer` as the database name as default, so check this if you're not providing an environment variable override.
 
 ## Acknowledgements
 

@@ -328,7 +328,7 @@ defmodule Explorer.GraphQL do
       left_join: wf in CeloWalletAccounts,
       on: tt.from_address_hash == wf.wallet_address_hash,
       left_join: wt in CeloWalletAccounts,
-      on: tt.to_address_hash == wf.wallet_address_hash,
+      on: tt.to_address_hash == wt.wallet_address_hash,
       select: %{
         gas_used: tx.gas_used,
         gas_price: tx.gas_price,

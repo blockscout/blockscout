@@ -10,9 +10,10 @@ ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
-BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
-															 -e 'DATABASE_URL=$(DB_URL)'
+DB_URL = postgresql://postgres:1234@$(HOST):5432/blockscout?ssl=false
+
+BLOCKSCOUT_CONTAINNER_PARAMS = -e 'MIX_ENV=prod' \
+							-e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -263,6 +264,7 @@ ifdef DISABLE_BRIDGE_MARKET_CAP_UPDATER
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_BRIDGE_MARKET_CAP_UPDATER=$(DISABLE_BRIDGE_MARKET_CAP_UPDATER)'
 endif
 
+<<<<<<< HEAD
 ifdef ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD=$(ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD)'
 endif
@@ -274,6 +276,12 @@ ifdef DISABLE_KNOWN_TOKENS
 endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
+=======
+BLOCKSCOUT_CONTAINNER_PARAMS += -e 'ECTO_USE_SSL=false'
+
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
+
+>>>>>>> 0362f9f4d1d4842f27adb634d628f969f53c046d
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
@@ -295,6 +303,7 @@ migrate: build postgres
 
 PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
+
 postgres:
 ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"
@@ -318,17 +327,26 @@ else
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
 
-start: build postgres 
+blockscout: build
 	@echo "==> Starting blockscout"
+	@echo "DB_URL=$(DB_URL)"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
+<<<<<<< HEAD
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
 					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
+=======
+					$(BLOCKSCOUT_CONTAINNER_PARAMS) \
+					-p 6000:6000 \
+					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server" 
+
+start: build postgres blockscout
+>>>>>>> 0362f9f4d1d4842f27adb634d628f969f53c046d
 
 run: start
 
 .PHONY: build \
-				migrate \
-				start \
-				postgres \
-				run 
+		migrate \
+		start \
+		postgres \
+		run 
