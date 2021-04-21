@@ -325,6 +325,11 @@ jobs:
 
       - run:
           name: Scan block_scout_web for vulnerabilities
+          command: mix compile
+          working_directory: "apps/block_scout_web"
+
+      - run:
+          name: Scan block_scout_web for vulnerabilities
           command: mix sobelow --config
           working_directory: "apps/block_scout_web"
 
