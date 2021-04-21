@@ -1,7 +1,6 @@
 <div class="card-title-container">
   <div class="card-title">
     <%= @title %>
-    <!--
     <%= if @is_validator do %>
       <div class="stake-stats-container">
         <span><b><%= Chain.staking_pools_count(:validator) %></b> validator pools</span>
@@ -28,6 +27,5 @@
       <div class="check-icon"></div>
       <div class="check-text"><%= gettext("Show only those I have stake in") %></div>
     </div>
-    --->
   </div>
 </div>
