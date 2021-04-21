@@ -122,9 +122,7 @@ defmodule BlockScoutWeb.Mixfile do
       # OS process metrics for Prometheus
       {:prometheus_process_collector, "~> 1.3"},
       {:qrcode, "~> 0.1.0"},
-      # {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false},
-      # {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false, github: "/home/sami/sobelow"},
-      {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false, github: "mrsmkl/sobelow"},
+      {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false},
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
