@@ -225,18 +225,17 @@
                 <% end %>
               </div>
             <% end %>
-            <% token_transfers = aggregate_token_transfers(transaction_with_transfers.token_transfers) %>
-            <%= if Enum.count(token_transfers) > 0 do %>
+            <% %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations} = aggregate_token_transfers(transaction_with_transfers.token_transfers) %>
+            <%= if Enum.count(transfers) > 0 do %>
               <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
               <div class="text-right">
-              <%= for transfer  <- token_transfers do %>
+              <%= for transfer  <- transfers do %>
                 <h3 class="address-balance-text">
                   <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
                 </h3>
               <% end %>
               </div>
             <% end %>
-            <% mintings = aggregate_token_mintings(transaction_with_transfers.token_transfers) %>
             <%= if Enum.count(mintings) > 0 do %>
               <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Minting" %></h2>
               <div class="text-right">
@@ -247,13 +246,25 @@
               <% end %>
               </div>
             <% end %>
-            <% burnings = aggregate_token_burnings(transaction_with_transfers.token_transfers) %>
             <%= if Enum.count(burnings) > 0 do %>
               <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Burning" %></h2>
               <div class="text-right">
               <%= for transfer  <- burnings do %>
                 <h3 class="address-balance-text">
                   <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
+                </h3>
+              <% end %>
+              </div>
+            <% end %>
+            <%# ERC-1155 token creations %>
+            <%= if Enum.count(creations) > 0 do %>
+              <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Creation" %></h2>
+              <div class="text-right">
+              <%= for transfer  <- creations do %>
+                <h3 class="address-balance-text">
+                  <%= "TokenID ["%><%= link(short_token_id(transfer.token_id, 30), to: token_instance_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash, to_string(transfer.token_id)), "data-test": "token_link") %><%= "]" %>
+                  <%= " "%>
+                  <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash), "data-test": "token_link") %>
                 </h3>
               <% end %>
               </div>

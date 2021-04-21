@@ -45,6 +45,13 @@ defmodule Explorer.Token.BalanceReader do
   def get_balances_of(token_balance_requests) do
     regular_balances =
       token_balance_requests
+      |> Enum.filter(fn request ->
+        if Map.has_key?(request, :token_type) do
+          request.token_type !== "ERC-1155"
+        else
+          true
+        end
+      end)
       |> Enum.map(&format_balance_request/1)
       |> Reader.query_contracts(@balance_function_abi)
       |> Enum.map(&format_balance_result/1)
@@ -52,21 +59,13 @@ defmodule Explorer.Token.BalanceReader do
     erc1155_balances =
       token_balance_requests
       |> Enum.filter(fn request ->
-        request.token_type == "ERC-1155"
+        if Map.has_key?(request, :token_type) do
+          request.token_type == "ERC-1155"
+        else
+          false
+        end
       end)
-      |> Enum.map(fn %{
-                       address_hash: address_hash,
-                       block_number: block_number,
-                       token_contract_address_hash: token_contract_address_hash,
-                       token_id: token_id
-                     } ->
-        %{
-          contract_address: token_contract_address_hash,
-          function_name: "balanceOf",
-          args: [address_hash, token_id],
-          block_number: block_number
-        }
-      end)
+      |> Enum.map(&format_erc_1155_balance_request/1)
       |> Reader.query_contracts(@erc1155_balance_function_abi)
       |> Enum.map(&format_balance_result/1)
 
@@ -82,6 +81,20 @@ defmodule Explorer.Token.BalanceReader do
       contract_address: token_contract_address_hash,
       method_id: "70a08231",
       args: [address_hash],
+      block_number: block_number
+    }
+  end
+
+  defp format_erc_1155_balance_request(%{
+         address_hash: address_hash,
+         block_number: block_number,
+         token_contract_address_hash: token_contract_address_hash,
+         token_id: token_id
+       }) do
+    %{
+      contract_address: token_contract_address_hash,
+      method_id: "00fdd58e",
+      args: [address_hash, token_id],
       block_number: block_number
     }
   end

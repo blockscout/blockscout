@@ -98,6 +98,8 @@ defmodule Explorer.Chain do
   # keccak256("Error(string)")
   @revert_error_method_id "08c379a0"
 
+  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -1635,7 +1637,7 @@ defmodule Explorer.Chain do
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
   def fetch_sum_coin_total_supply_minus_burnt do
-    {:ok, burn_address_hash} = string_to_address_hash("0x0000000000000000000000000000000000000000")
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
 
     query =
       from(
@@ -5187,7 +5189,7 @@ defmodule Explorer.Chain do
   end
 
   @spec transaction_token_transfer_type(Transaction.t()) ::
-          :erc20 | :erc721 | :token_transfer | nil
+          :erc20 | :erc721 | :erc1155 | :token_transfer | nil
   def transaction_token_transfer_type(
         %Transaction{
           status: :ok,
@@ -5234,10 +5236,24 @@ defmodule Explorer.Chain do
 
         find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
 
+      # safeTransferFrom(address,address,uint256,uint256,bytes)
+      {"0xf242432a" <> params, ^zero_wei} ->
+        types = [:address, :address, {:uint, 256}, {:uint, 256}, :bytes]
+        [from_address, to_address, _id, _value, _data] = decode_params(params, types)
+
+        find_erc1155_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      # safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)
+      {"0x2eb2c2d6" <> params, ^zero_wei} ->
+        types = [:address, :address, [{:uint, 256}], [{:uint, 256}], :bytes]
+        [from_address, to_address, _ids, _values, _data] = decode_params(params, types)
+
+        find_erc1155_token_transfer(transaction.token_transfers, {from_address, to_address})
+
       {"0xf907fc5b" <> _params, ^zero_wei} ->
         :erc20
 
-      # check for ERC 20 or for old ERC 721 token versions
+      # check for ERC-20 or for old ERC-721, ERC-1155 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
@@ -5245,7 +5261,7 @@ defmodule Explorer.Chain do
 
         decimal_value = Decimal.new(value)
 
-        find_erc721_or_erc20_token_transfer(transaction.token_transfers, {address, decimal_value})
+        find_erc721_or_erc20_or_erc1155_token_transfer(transaction.token_transfers, {address, decimal_value})
 
       _ ->
         nil
@@ -5261,7 +5277,16 @@ defmodule Explorer.Chain do
     if token_transfer, do: :erc721
   end
 
-  defp find_erc721_or_erc20_token_transfer(token_transfers, {address, decimal_value}) do
+  defp find_erc1155_token_transfer(token_transfers, {from_address, to_address}) do
+    token_transfer =
+      Enum.find(token_transfers, fn token_transfer ->
+        token_transfer.from_address_hash.bytes == from_address && token_transfer.to_address_hash.bytes == to_address
+      end)
+
+    if token_transfer, do: :erc1155
+  end
+
+  defp find_erc721_or_erc20_or_erc1155_token_transfer(token_transfers, {address, decimal_value}) do
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
         token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
@@ -5271,6 +5296,7 @@ defmodule Explorer.Chain do
       case token_transfer.token do
         %Token{type: "ERC-20"} -> :erc20
         %Token{type: "ERC-721"} -> :erc721
+        %Token{type: "ERC-1155"} -> :erc1155
         _ -> nil
       end
     else
@@ -6315,6 +6341,26 @@ defmodule Explorer.Chain do
       1 -> "eth"
       56 -> "bsc"
       _ -> ""
+    end
+  end
+
+  @spec get_token_transfer_type(TokenTransfer.t()) ::
+          :token_burning | :token_minting | :token_spawning | :token_transfer
+  def get_token_transfer_type(transfer) do
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
+
+    cond do
+      transfer.to_address_hash == burn_address_hash && transfer.from_address_hash !== burn_address_hash ->
+        :token_burning
+
+      transfer.to_address_hash !== burn_address_hash && transfer.from_address_hash == burn_address_hash ->
+        :token_minting
+
+      transfer.to_address_hash == burn_address_hash && transfer.from_address_hash == burn_address_hash ->
+        :token_spawning
+
+      true ->
+        :token_transfer
     end
   end
 end

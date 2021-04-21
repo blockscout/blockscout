@@ -264,8 +264,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 
-      assert Enum.count(result) == 1
-      assert List.first(result).amount == Decimal.new(3)
+      assert Enum.count(result.transfers) == 1
+      assert List.first(result.transfers).amount == Decimal.new(3)
     end
 
     test "does not aggregate NFT tokens" do
@@ -278,8 +278,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 
-      assert Enum.count(result) == 3
-      assert List.first(result).amount == nil
+      assert Enum.count(result.transfers) == 3
+      assert List.first(result.transfers).amount == nil
     end
   end
 end

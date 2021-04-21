@@ -1,14 +1,7 @@
 <div class="tile tile-type-token-transfer fade-in">
   <div class="row justify-content-end">
     <div class="col-12 col-md-4 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
-      <%= cond do %>
-        <% @token_transfer.to_address.hash == @burn_address_hash -> %>
-          <%= gettext("Token Burning") %>
-        <% @token_transfer.from_address.hash == @burn_address_hash -> %>
-          <%= gettext("Token Minting") %>
-        <% true -> %>
-          <%= gettext("Token Transfer") %>
-      <% end %>
+      <%= render(BlockScoutWeb.CommonComponentsView, "_token_transfer_type_display_name.html", type: Chain.get_token_transfer_type(@token_transfer)) %>
     </div>
 
     <div class="col-12 col-md-8 col-lg-10 d-flex flex-column text-nowrap">

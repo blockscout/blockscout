@@ -76,22 +76,6 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       token_balance_a = insert(:token_balance, value_fetched_at: nil, value: nil)
       token_balance_b = insert(:token_balance, value_fetched_at: nil, value: nil)
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        1,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               error: %{code: -32015, data: "Reverted 0x", message: "VM execution error."},
-               id: id,
-               jsonrpc: "2.0"
-             }
-           ]}
-        end
-      )
-
       token_balances = [
         {
           token_balance_a.address_hash.bytes,

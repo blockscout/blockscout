@@ -300,6 +300,7 @@ defmodule Explorer.Chain.TokenTransfer do
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
       where: tt.token_contract_address_hash == ^contract_address_hash,
+      where: tt.to_address_hash != ^"0x0000000000000000000000000000000000000000",
       order_by: [desc: tt.block_number],
       distinct: [desc: tt.token_id],
       preload: [:to_address],
