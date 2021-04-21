@@ -748,7 +748,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:38
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:72
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:78
 msgid "IN"
 msgstr ""
 
@@ -766,7 +766,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:32
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:38
+#: lib/block_scout_web/templates/transaction/overview.html.eex:118
 msgid "TX Fee"
 msgstr ""
 
@@ -1079,7 +1080,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:36
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:68
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:74
 msgid "OUT"
 msgstr ""
 
@@ -1583,12 +1584,12 @@ msgid "View Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:53
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:59
 msgid "View Less Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:52
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:58
 msgid "View More Transfers"
 msgstr ""
 
