@@ -363,6 +363,8 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
+      - run: mix ecto.create --quiet
+      - run: mix ecto.migrate
       - run: 
           command: mix test --exclude no_parity
           working_directory: "apps/indexer"
@@ -404,6 +406,8 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
+      - run: mix ecto.create --quiet
+      - run: mix ecto.migrate
       - run: 
           command: mix test --exclude no_parity
           working_directory: "apps/explorer"
@@ -445,6 +449,8 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
+      - run: mix ecto.create --quiet
+      - run: mix ecto.migrate
       - run: 
           command: mix test --exclude no_parity
           working_directory: "apps/block_scout_web"
