@@ -313,6 +313,7 @@ jobs:
           at: .
 
       - run: mix local.hex --force
+      - run: mix local.rebar --force
 
       - run:
           name: Scan explorer for vulnerabilities
@@ -339,7 +340,7 @@ jobs:
       - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test
+          POSTGRES_DB: explorer_test_3
           # match PGPASSWORD for elixir image above
           POSTGRES_PASSWORD: postgres
           # match PGUSER for elixir image above
@@ -380,7 +381,7 @@ jobs:
       - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test
+          POSTGRES_DB: explorer_test_2
           # match PGPASSWORD for elixir image above
           POSTGRES_PASSWORD: postgres
           # match PGUSER for elixir image above
@@ -421,7 +422,7 @@ jobs:
       - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test
+          POSTGRES_DB: explorer_test_1
           # match PGPASSWORD for elixir image above
           POSTGRES_PASSWORD: postgres
           # match PGUSER for elixir image above
