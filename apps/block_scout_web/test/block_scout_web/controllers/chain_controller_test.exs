@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     test "returns a welcome message", %{conn: conn} do
       conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show))
 
-      assert(html_response(conn, 200) =~ "POA")
+      assert(html_response(conn, 200) =~ "Celo")
     end
 
     test "returns a block" do

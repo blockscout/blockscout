@@ -304,6 +304,7 @@ jobs:
       - attach_workspace:
           at: .
 
+      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $BASH_ENV
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: MIX_ENV=prod mix release
