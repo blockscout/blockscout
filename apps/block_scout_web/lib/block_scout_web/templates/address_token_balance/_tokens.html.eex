@@ -35,8 +35,11 @@
         </div>
         <div class="row">
           <% col_md = if token_balance.token.usd_value, do: "col-md-6", else: "col-md-12" %>
-          <p class="mb-0 <%= col_md %> ">
-            <%= format_according_to_decimals(token_balance.value, token.decimals) %> <%= token_symbol(token) %>
+          <p class="mb-0 <%= col_md%> ">
+            <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
+            <%= if token_balance.token_type == "ERC-1155" do %>
+              <%= " TokenID " <> to_string(token_balance.token_id) %>
+            <% end %>
           </p>
           <%= if token_balance.token.usd_value do %>
             <p class="mb-0 col-md-6 text-right text-muted">

@@ -32,12 +32,12 @@ defmodule BlockScoutWeb.Tokens.Helpers do
     {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals)}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-1155", decimals: decimals}, amount, _token_id) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals)}
-  end
-
   defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, _token_id) do
     {:ok, :erc721_instance}
+  end
+
+  defp do_token_transfer_amount(%Token{type: "ERC-1155", decimals: decimals}, amount, _token_id) do
+    {:ok, :erc1155_instance, CurrencyHelpers.format_according_to_decimals(amount, decimals)}
   end
 
   defp do_token_transfer_amount(_token, _amount, _token_id) do

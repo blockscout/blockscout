@@ -123,30 +123,19 @@ defmodule BlockScoutWeb.TransactionView do
         end
       )
 
-    transfers = ft_transfers ++ nft_transfers
+    final_ft_transfers = Map.values(ft_transfers)
+    transfers = final_ft_transfers ++ nft_transfers
 
-    mintings = ft_mintings ++ nft_mintings
+    final_ft_mintings = Map.values(ft_mintings)
+    mintings = final_ft_mintings ++ nft_mintings
 
-    burnings = ft_burnings ++ nft_burnings
+    final_ft_burnings = Map.values(ft_burnings)
+    burnings = final_ft_burnings ++ nft_burnings
 
-    creations = ft_creations ++ nft_creations
+    final_ft_creations = Map.values(ft_creations)
+    creations = final_ft_creations ++ nft_creations
 
     %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations}
-  end
-
-  defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
-       when is_nil(amount) and is_nil(amounts) do
-    new_entry = %{
-      token: token_transfer.token,
-      amount: nil,
-      amounts: [],
-      token_id: token_transfer.token_id,
-      token_ids: [],
-      to_address_hash: token_transfer.to_address_hash,
-      from_address_hash: token_transfer.from_address_hash
-    }
-
-    {acc1, [new_entry | acc2]}
   end
 
   defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
@@ -220,6 +209,7 @@ defmodule BlockScoutWeb.TransactionView do
     case type do
       :erc20 -> gettext("ERC-20 ")
       :erc721 -> gettext("ERC-721 ")
+      :erc1155 -> gettext("ERC-1155 ")
       _ -> ""
     end
   end
@@ -531,6 +521,7 @@ defmodule BlockScoutWeb.TransactionView do
 
     creations_count =
       Enum.count(token_transfers_types, fn token_transfers_type -> token_transfers_type == @token_creation_type end)
+<<<<<<< HEAD
 
     cond do
       Enum.count(token_transfers_types) == burnings_count -> @token_burning_type
@@ -554,6 +545,14 @@ defmodule BlockScoutWeb.TransactionView do
     case Integer.parse(string_value) do
       {integer, ""} -> integer
       _ -> 0
+=======
+
+    cond do
+      Enum.count(token_transfers_types) == burnings_count -> @token_burning_type
+      Enum.count(token_transfers_types) == mintings_count -> @token_minting_type
+      Enum.count(token_transfers_types) == creations_count -> @token_creation_type
+      true -> @token_transfer_type
+>>>>>>> d8b6f073c (ERC-1155 transfers support in UI)
     end
   end
 
