@@ -25,6 +25,7 @@ defmodule Explorer.Chain.Address do
     InternalTransaction,
     ProxyContract,
     SmartContract,
+    SmartContractAdditionalSource,
     Token,
     Transaction,
     Wei
@@ -122,6 +123,7 @@ defmodule Explorer.Chain.Address do
 
     has_many(:names, Address.Name, foreign_key: :address_hash)
     has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
+    has_many(:smart_contract_additional_sources, SmartContractAdditionalSource, foreign_key: :address_hash)
 
     timestamps()
   end

@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.ContractVerifyPage do
   import Wallaby.Query
 
   def visit_page(session, address_hash) do
-    visit(session, "/address/#{address_hash}/contract_verifications/new")
+    visit(session, "/address/#{address_hash}/verify-via-flattened-code/new")
   end
 
   def fill_form(session, %{

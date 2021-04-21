@@ -10,7 +10,7 @@ config :explorer, Explorer.Repo,
   password: "1234",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
-  ownership_timeout: :timer.minutes(1)
+  ownership_timeout: :timer.minutes(3)
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
 

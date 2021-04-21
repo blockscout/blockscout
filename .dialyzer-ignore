@@ -4,7 +4,7 @@
 apps/ethereum_jsonrpc/lib/ethereum_jsonrpc.ex:400: Function timestamp_to_datetime/1 has no local return
 lib/explorer/repo/prometheus_logger.ex:8
 lib/explorer/smart_contract/publisher_worker.ex:6
-lib/block_scout_web/views/layout_view.ex:133
+lib/block_scout_web/views/layout_view.ex:135
 apps/block_scout_web/lib/block_scout_web/views/layout_view.ex:133
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: Function microseconds_time/1 has no local return
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: The call 'Elixir.System':convert_time_unit(__@1::any(),'native','microseconds') breaks the contract (integer(),time_unit() | 'native',time_unit() | 'native') -> integer()
@@ -12,5 +12,8 @@ apps/explorer/lib/explorer/smart_contract/publisher_worker.ex:6: The pattern 'fa
 apps/explorer/lib/explorer/smart_contract/publisher_worker.ex:6: The test 5 == 'infinity' can never evaluate to 'true'
 lib/block_scout_web/router.ex:1
 lib/phoenix/router.ex:324
-lib/block_scout_web/views/layout_view.ex:146
-lib/block_scout_web/views/layout_view.ex:135
+lib/explorer/smart_contract/reader.ex:347
+lib/explorer/smart_contract/verifier.ex:89
+lib/explorer/third_party_integrations/sourcify.ex:68
+lib/explorer/third_party_integrations/sourcify.ex:65
+lib/block_scout_web/templates/address_contract/index.html.eex:156

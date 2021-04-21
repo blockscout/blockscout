@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
 
       case Publisher.publish(hash, params, external_libraries) do
         {:ok, _} ->
-          send_resp(conn, :created, Jason.encode!(%{status: :success}))
+          send_resp(conn, :created, encode(%{status: :success}))
 
         {:error, changeset} ->
           errors =

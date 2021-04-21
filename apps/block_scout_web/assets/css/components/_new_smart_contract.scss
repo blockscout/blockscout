@@ -57,6 +57,10 @@ $new-smart-contract-center-column-margin-right: 30px;
   display: flex;
   justify-content: flex-start;
 
+  &.vertical {
+    display: block;
+  }
+
   .radio-big {
     margin-right: 20px;
 

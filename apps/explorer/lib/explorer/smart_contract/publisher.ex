@@ -38,26 +38,28 @@ defmodule Explorer.SmartContract.Publisher do
         publish_smart_contract(address_hash, params_with_external_libaries, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error)}
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, nil)}
+
+      {:error, error, error_message} ->
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, error_message)}
     end
   end
 
-  defp publish_smart_contract(address_hash, params, abi) do
-    proxy_address = Map.get(params, "proxy_address")
-
+  def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
-    Chain.create_smart_contract(attrs, attrs.external_libraries, proxy_address)
+    Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
   end
 
-  defp unverified_smart_contract(address_hash, params, error) do
+  defp unverified_smart_contract(address_hash, params, error, error_message) do
     attrs = attributes(address_hash, params)
 
     changeset =
       SmartContract.invalid_contract_changeset(
         %SmartContract{address_hash: address_hash},
         attrs,
-        error
+        error,
+        error_message
       )
 
     %{changeset | action: :insert}
@@ -86,7 +88,9 @@ defmodule Explorer.SmartContract.Publisher do
       proxy_address: params["proxy_address"],
       constructor_arguments: clean_constructor_arguments,
       external_libraries: prepared_external_libraries,
-      abi: abi
+      secondary_sources: params["secondary_sources"],
+      abi: abi,
+      verified_via_sourcify: params["verified_via_sourcify"]
     }
   end
 

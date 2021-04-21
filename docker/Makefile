@@ -10,9 +10,10 @@ ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
+DB_URL = postgresql://postgres:1234@$(HOST):5432/blockscout?ssl=false
+
 BLOCKSCOUT_CONTAINNER_PARAMS = -e 'MIX_ENV=prod' \
-															 -e 'DATABASE_URL=$(DB_URL)'
+							-e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINNER_PARAMS += --network=host
 endif
@@ -47,7 +48,10 @@ ifdef NETWORK_PATH
 	BLOCKSCOUT_CONTAINNER_PARAMS += -e 'NETWORK_PATH=$(NETWORK_PATH)'
 endif
 
+BLOCKSCOUT_CONTAINNER_PARAMS += -e 'ECTO_USE_SSL=false'
+
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
+
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
@@ -66,6 +70,7 @@ migrate: build postgres
 
 PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
+
 postgres:
 ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"
@@ -86,17 +91,20 @@ else
 	@$(MAKE) -f $(THIS_FILE) migrate
 endif
 
-start: build postgres 
+blockscout: build
 	@echo "==> Starting blockscout"
+	@echo "DB_URL=$(DB_URL)"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINNER_PARAMS) \
-					-p 4000:4000 \
-					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
+					-p 6000:6000 \
+					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server" 
+
+start: build postgres blockscout
 
 run: start
 
 .PHONY: build \
-				migrate \
-				start \
-				postgres \
-				run 
+		migrate \
+		start \
+		postgres \
+		run 

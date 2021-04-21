@@ -4,6 +4,8 @@ import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../app'
+import Dropzone from 'dropzone'
 
 export const initialState = {
   channelDisconnected: false,
@@ -26,7 +28,7 @@ export function reducer (state = initialState, action) {
     }
     case 'RECEIVED_VERIFICATION_RESULT': {
       if (action.msg.verificationResult === 'ok') {
-        return window.location.replace(window.location.href.split('/contract_verifications')[0] + '/contracts')
+        return window.location.replace(window.location.href.split('/contract_verifications')[0].split('/verify')[0] + '/contracts')
       } else {
         return Object.assign({}, state, {
           newForm: action.msg.verificationResult
@@ -87,6 +89,7 @@ const elements = {
 }
 
 const $contractVerificationPage = $('[data-page="contract-verification"]')
+const $contractVerificationChooseTypePage = $('[data-page="contract-verification-choose-type"]')
 
 if ($contractVerificationPage.length) {
   const store = createStore(reducer)
@@ -116,6 +119,39 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
+    if ($('#metadata-json-dropzone').length) {
+      var dropzone = new Dropzone('#metadata-json-dropzone', {
+        autoProcessQueue: false,
+        acceptedFiles: 'text/plain,application/json,.sol,.json',
+        parallelUploads: 100,
+        uploadMultiple: true,
+        addRemoveLinks: true,
+        params: { address_hash: $('#smart_contract_address_hash').val() },
+        init: function () {
+          this.on('addedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+            $('#file-help-block').text('')
+          })
+
+          this.on('removedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+          })
+        }
+      })
+    }
+
+    function changeVisibilityOfVerifyButton (filesLength) {
+      if (filesLength > 0) {
+        $('#verify-via-json-submit').prop('disabled', false)
+      } else {
+        $('#verify-via-json-submit').prop('disabled', true)
+      }
+    }
+
+    setTimeout(function () {
+      $('.nightly-builds-false').trigger('click')
+    }, 10)
+
     $('.js-btn-add-contract-libraries').on('click', function () {
       $('.js-smart-contract-libraries-wrapper').show()
       $(this).hide()
@@ -148,5 +184,27 @@ if ($contractVerificationPage.length) {
         $('.js-add-contract-library-wrapper').hide()
       }
     })
+
+    $('#verify-via-json-submit').on('click', function () {
+      if (dropzone.files.length > 0) {
+        dropzone.processQueue()
+      } else {
+        $('#loading').addClass('d-none')
+      }
+    })
+  })
+} else if ($contractVerificationChooseTypePage.length) {
+  $('.verify-via-flattened-code').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').show()
+      $('#verify_via_json_button').hide()
+    }
+  })
+
+  $('.verify-via-json').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').hide()
+      $('#verify_via_json_button').show()
+    }
   })
 }
