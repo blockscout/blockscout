@@ -504,18 +504,6 @@ defmodule Explorer.Chain.Transaction do
     |> String.split("(")
     |> Enum.at(0)
     |> upcase_first
-    |> String.split(~r/(?<=[A-Z])|(?=[A-Z])/)
-    |> Enum.reduce("", fn string, acc ->
-      if acc == "" do
-        string
-      else
-        if string =~ ~r/^\p{Lu}$/u do
-          acc <> " " <> string
-        else
-          acc <> string
-        end
-      end
-    end)
   end
 
   defp upcase_first(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
