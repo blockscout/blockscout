@@ -139,6 +139,21 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
+       when is_nil(amount) and is_nil(amounts) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: nil,
+      amounts: [],
+      token_id: token_transfer.token_id,
+      token_ids: [],
+      to_address_hash: token_transfer.to_address_hash,
+      from_address_hash: token_transfer.from_address_hash
+    }
+
+    {acc1, [new_entry | acc2]}
+  end
+
+  defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
        when is_nil(amount) and not is_nil(amounts) do
     new_entry = %{
       token: token_transfer.token,

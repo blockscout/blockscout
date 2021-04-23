@@ -3191,3 +3191,9 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:18
 msgid "validator"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:7
+#: lib/block_scout_web/views/transaction_view.ex:392
+msgid "Token Creation"
+msgstr ""

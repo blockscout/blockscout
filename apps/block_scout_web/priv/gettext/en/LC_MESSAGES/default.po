@@ -76,12 +76,16 @@ msgid "%{subnetwork} Explorer - BlockScout"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/stakes/_metatags.html.eex:2
 msgid "%{subnetwork} Staking DApp - BlockScout"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:356
+=======
+#: lib/block_scout_web/views/transaction_view.ex:310
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgid "(Awaiting internal transactions for status)"
 msgstr ""
 
@@ -230,8 +234,15 @@ msgid "All pool participant addresses. The top address belongs to the %{pool_typ
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/address/overview.html.eex:191
 msgid "All tokens in the account and total value."
+=======
+#: lib/block_scout_web/templates/block/_link.html.eex:2
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:28
+#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:43
+msgid "Block #%{number}"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -266,8 +277,13 @@ msgid "Anything not in this list is not supported. Click on the method to be tak
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:80
 msgid "Approximate Current Annual Percentage Yield. If you see N/A, please reopen the popup in a few blocks (APY cannot be calculated at the very beginning of a staking epoch). Predicted Reward is the amount of %{symbol} a participant will receive for staking and can claim once the current epoch ends."
+=======
+#: lib/block_scout_web/views/transaction_view.ex:33
+msgid "Block Pending"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -393,6 +409,7 @@ msgid "Block number"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/overview.html.eex:139
 msgid "Block number containing the transaction."
 msgstr ""
@@ -400,6 +417,15 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:249
 msgid "Block number in which the address was updated."
+=======
+#: lib/block_scout_web/views/transaction_view.ex:400
+msgid "Contract Call"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:397
+msgid "Contract Creation"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -580,6 +606,7 @@ msgid "Compiler version"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/views/transaction_view.ex:349
 msgid "Confirmed"
 msgstr ""
@@ -587,6 +614,15 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:118
 msgid "Confirmed by "
+=======
+#: lib/block_scout_web/views/transaction_view.ex:195
+msgid "ERC-20 "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:196
+msgid "ERC-721 "
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -648,6 +684,7 @@ msgid "Contract Address"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:16
 #: lib/block_scout_web/views/address_view.ex:42 lib/block_scout_web/views/address_view.ex:76
 msgid "Contract Address Pending"
@@ -656,6 +693,15 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:460
 msgid "Contract Call"
+=======
+#: lib/block_scout_web/views/transaction_view.ex:314
+msgid "Error: %{reason}"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:312
+msgid "Error: (Awaiting internal transactions for reason)"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -670,8 +716,20 @@ msgid "Contract Creation Code"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:170
 msgid "Contract Libraries"
+=======
+#: lib/block_scout_web/templates/address/_balance_card.html.eex:18
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
+#: lib/block_scout_web/templates/layout/app.html.eex:33
+#: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:33
+#: lib/block_scout_web/templates/transaction/overview.html.eex:215
+#: lib/block_scout_web/templates/transaction/overview.html.eex:279
+#: lib/block_scout_web/views/wei_helpers.ex:78
+msgid "Ether"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -802,8 +860,14 @@ msgid "Copy Txn Hex Input"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/overview.html.eex:466
 msgid "Copy Txn UTF-8 Input"
+=======
+#: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:8
+#: lib/block_scout_web/views/transaction_view.ex:311
+msgid "Success"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -912,6 +976,7 @@ msgid "Decompiled contract code"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:10
 msgid "Decompiler version"
 msgstr ""
@@ -919,6 +984,29 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:23
 msgid "Delegate Call"
+=======
+#:
+#: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:9
+#: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:11
+#: lib/block_scout_web/views/transaction_view.ex:393
+msgid "Token Transfer"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:13
+#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:17
+#: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:3
+#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:3
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:14
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
+#: lib/block_scout_web/views/address_view.ex:346
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:125
+#: lib/block_scout_web/views/tokens/overview_view.ex:41
+#: lib/block_scout_web/views/transaction_view.ex:454
+msgid "Token Transfers"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -933,8 +1021,14 @@ msgid "Delegators of "
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:53
 msgid "Delegators’ Staked Amount"
+=======
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:18
+#: lib/block_scout_web/views/transaction_view.ex:403
+msgid "Transaction"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1009,9 +1103,14 @@ msgid "ETH RPC API Documentation"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/address_contract/index.html.eex:68
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:82
 msgid "EVM Version"
+=======
+#: lib/block_scout_web/templates/transaction/overview.html.eex:307
+msgid "Limit"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1045,8 +1144,13 @@ msgid "Epoch number"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:44
 msgid "Epochs range(s) or enum, e.g.:   5-9,23-27,47,50"
+=======
+#: lib/block_scout_web/views/transaction_view.ex:291
+msgid "Max of"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1151,11 +1255,19 @@ msgid "Forked Blocks (Reorgs)"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:42
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:40 lib/block_scout_web/templates/address_transaction/index.html.eex:38
 #: lib/block_scout_web/templates/transaction/overview.html.eex:182 lib/block_scout_web/views/address_internal_transaction_view.ex:10
 #: lib/block_scout_web/views/address_token_transfer_view.ex:10 lib/block_scout_web/views/address_transaction_view.ex:10
 msgid "From"
+=======
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:67
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:184
+#: lib/block_scout_web/views/transaction_view.ex:309
+#: lib/block_scout_web/views/transaction_view.ex:343
+msgid "Pending"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1197,8 +1309,15 @@ msgid "Genesis Block"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/layout/_footer.html.eex:22
 msgid "Github"
+=======
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:7
+#: lib/block_scout_web/views/transaction_view.ex:457
+msgid "Raw Trace"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1519,8 +1638,13 @@ msgid "Miner Reward"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/common_components/_minimal_proxy_pattern.html.eex:3
 msgid "Minimal Proxy Contract for"
+=======
+#: lib/block_scout_web/templates/transaction/overview.html.eex:301
+msgid "Used"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1549,8 +1673,14 @@ msgid "Model"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:58
 msgid "Module"
+=======
+#: lib/block_scout_web/templates/transaction/overview.html.eex:215
+#: lib/block_scout_web/templates/transaction/overview.html.eex:279
+msgid "Value"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1723,8 +1853,13 @@ msgid "Pending Transactions"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:45
 msgid "Place stake"
+=======
+#: lib/block_scout_web/templates/transaction/overview.html.eex:297
+msgid "Gas"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1798,6 +1933,7 @@ msgid "Price per unit of gas specified by the sender. Higher gas prices can prio
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/block/overview.html.eex:219
 #: lib/block_scout_web/templates/transaction/overview.html.eex:390
 msgid "Priority Fee / Tip"
@@ -1806,6 +1942,25 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:62
 msgid "Priority Fees"
+=======
+#: lib/block_scout_web/templates/address/_tabs.html.eex:28
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:19
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
+#: lib/block_scout_web/views/address_view.ex:344
+#: lib/block_scout_web/views/transaction_view.ex:455
+msgid "Internal Transactions"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:41
+#: lib/block_scout_web/templates/address_logs/index.html.eex:8
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:8
+#: lib/block_scout_web/views/address_view.ex:355
+#: lib/block_scout_web/views/transaction_view.ex:456
+msgid "Logs"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -1825,6 +1980,7 @@ msgid "RPC"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/overview.html.eex:435
 msgid "Raw Input"
 msgstr ""
@@ -1846,6 +2002,29 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:88
 #: lib/block_scout_web/views/address_view.ex:352
 msgid "Read Proxy"
+=======
+#: lib/block_scout_web/templates/transaction/overview.html.eex:250
+msgid " Token Burning"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:3
+#: lib/block_scout_web/views/transaction_view.ex:391
+msgid "Token Burning"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:240
+msgid " Token Minting"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:5
+#: lib/block_scout_web/views/transaction_view.ex:390
+msgid "Token Minting"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -3177,9 +3356,25 @@ msgid "specified epochs only"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:59
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:70
 msgid "string"
+=======
+#: lib/block_scout_web/templates/transaction/overview.html.eex:261
+msgid " Token Creation"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/views/transaction_view.ex:197
+msgid "ERC-1155 "
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:23
+msgid "Sources and Metadata JSON"
+>>>>>>> 7148d5f99 (ERC-1155 finalization)
 msgstr ""
 
 #, elixir-format
@@ -3190,4 +3385,10 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:18
 msgid "validator"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:7
+#: lib/block_scout_web/views/transaction_view.ex:392
+msgid "Token Creation"
 msgstr ""

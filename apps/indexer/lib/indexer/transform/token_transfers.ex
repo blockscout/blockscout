@@ -183,7 +183,7 @@ defmodule Indexer.Transform.TokenTransfers do
       token_type: "ERC-1155",
       token_ids: token_ids,
       token_id: nil,
-      values: values
+      amounts: values
     }
 
     token = %{
