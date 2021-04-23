@@ -34,7 +34,9 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Decimal.t() | nil
+          value: Decimal.t() | nil,
+          token_id: non_neg_integer() | nil,
+          token_type: String.t()
         }
 
   schema "address_current_token_balances" do

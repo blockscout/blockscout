@@ -53,13 +53,17 @@ defmodule Indexer.TokenBalances do
 
   def to_address_current_token_balances(address_token_balances) when is_list(address_token_balances) do
     address_token_balances
-    |> Enum.group_by(fn %{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} ->
-      {address_hash, token_contract_address_hash}
+    |> Enum.group_by(fn %{
+                          address_hash: address_hash,
+                          token_contract_address_hash: token_contract_address_hash,
+                          token_id: token_id
+                        } ->
+      {address_hash, token_contract_address_hash, token_id}
     end)
     |> Enum.map(fn {_, grouped_address_token_balances} ->
       Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
     end)
-    |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
+    |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
   end
 
   defp set_token_balance_value({:ok, balance}, token_balance) do

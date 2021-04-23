@@ -138,11 +138,29 @@ defmodule BlockScoutWeb.TransactionView do
     %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations}
   end
 
-  defp aggregate_reducer(%{amount: amount} = token_transfer, {acc1, acc2}) when is_nil(amount) do
+  defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
+       when is_nil(amount) and is_nil(amounts) do
     new_entry = %{
       token: token_transfer.token,
       amount: nil,
+      amounts: [],
       token_id: token_transfer.token_id,
+      token_ids: [],
+      to_address_hash: token_transfer.to_address_hash,
+      from_address_hash: token_transfer.from_address_hash
+    }
+
+    {acc1, [new_entry | acc2]}
+  end
+
+  defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
+       when is_nil(amount) and not is_nil(amounts) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: nil,
+      amounts: amounts,
+      token_id: nil,
+      token_ids: token_transfer.token_ids,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -154,7 +172,9 @@ defmodule BlockScoutWeb.TransactionView do
     new_entry = %{
       token: token_transfer.token,
       amount: token_transfer.amount,
+      amounts: [],
       token_id: token_transfer.token_id,
+      token_ids: [],
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }

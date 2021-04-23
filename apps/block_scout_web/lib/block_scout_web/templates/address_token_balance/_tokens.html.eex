@@ -10,8 +10,14 @@
       data-token-name="<%= token_name(token_balance.token) %>"
       data-token-symbol="<%= token_balance.token.symbol %>"
     >
+      <% path = case token_balance.token_type do
+          "ERC-721" -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          "ERC-1155" -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          _ -> token_path(@conn, :show, to_string(token_balance.token.contract_address_hash))
+        end
+      %>
       <%= link(
-            to: token_path(@conn, :show, to_string(token_balance.token.contract_address_hash)),
+            to: path,
             class: "dropdown-item"
           ) do %>
         <div class="row">

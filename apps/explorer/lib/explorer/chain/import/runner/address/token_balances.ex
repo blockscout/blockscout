@@ -67,7 +67,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: ~w(address_hash token_contract_address_hash block_number)a,
+        conflict_target: ~w(address_hash token_contract_address_hash token_id block_number)a,
         on_conflict: on_conflict,
         for: TokenBalance,
         returning: true,
