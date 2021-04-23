@@ -72,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
         token_contract_address_hash: token_contract_address_hash,
         value: nil,
         value_fetched_at: value_fetched_at,
-        token_id: 11,
+        token_id: nil,
         token_type: "ERC-20"
       }
 
@@ -99,6 +99,58 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
 
       run_changes(new_changes, options)
     end
+  end
+
+  test "does not nillifies existing value ERC-1155" do
+    address = insert(:address)
+    token = insert(:token)
+
+    options = %{
+      timeout: :infinity,
+      timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}
+    }
+
+    value_fetched_at = DateTime.utc_now()
+
+    block_number = 1
+
+    value = Decimal.new(100)
+
+    token_contract_address_hash = token.contract_address_hash
+    address_hash = address.hash
+
+    changes = %{
+      address_hash: address_hash,
+      block_number: block_number,
+      token_contract_address_hash: token_contract_address_hash,
+      value: nil,
+      value_fetched_at: value_fetched_at,
+      token_id: 11,
+      token_type: "ERC-1155"
+    }
+
+    assert {:ok,
+            %{
+              address_token_balances: [
+                %TokenBalance{
+                  address_hash: address_hash,
+                  block_number: ^block_number,
+                  token_contract_address_hash: ^token_contract_address_hash,
+                  value: nil,
+                  value_fetched_at: ^value_fetched_at
+                }
+              ]
+            }} = run_changes(changes, options)
+
+    new_changes = %{
+      address_hash: address_hash,
+      block_number: block_number,
+      token_contract_address_hash: token_contract_address_hash,
+      value: value,
+      value_fetched_at: DateTime.utc_now()
+    }
+
+    run_changes(new_changes, options)
   end
 
   defp run_changes(changes, options) when is_map(changes) do
