@@ -202,7 +202,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
                    token_ids: [680_564_733_841_876_926_926_749_214_863_536_422_912],
                    token_type: "ERC-1155",
                    transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
-                   values: [5000]
+                   amounts: [5000]
                  }
                ],
                tokens: [%{contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb", type: "ERC-1155"}]

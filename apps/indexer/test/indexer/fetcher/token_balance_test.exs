@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       %Address.TokenBalance{
         address_hash: %Hash{bytes: address_hash_bytes},
         token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
-        block_number: block_number
+        block_number: _block_number
       } = insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
 
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
@@ -149,6 +149,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
           address_hash: nil,
           block_number: nil,
           token_contract_address_hash: to_string(token_balance.token_contract_address_hash),
+          token_id: nil,
           value: nil,
           value_fetched_at: nil
         }
