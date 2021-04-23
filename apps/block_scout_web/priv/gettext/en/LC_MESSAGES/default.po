@@ -924,7 +924,7 @@ msgid "Total Difficulty"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:18
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:25
 #: lib/block_scout_web/views/transaction_view.ex:403
 msgid "Transaction"
 msgstr ""
@@ -2792,7 +2792,7 @@ msgstr ""
 msgid " Token Creation"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:197
 msgid "ERC-1155 "
 msgstr ""
@@ -2814,6 +2814,7 @@ msgid "This contract has been verified via Sourcify."
 msgstr ""
 
 #, elixir-format
+#:
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:7
 #: lib/block_scout_web/views/transaction_view.ex:392
 msgid "Token Creation"
