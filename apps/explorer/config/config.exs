@@ -246,10 +246,10 @@ config :explorer, Explorer.Chain.Cache.Uncles,
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
-  server_url: System.get_env("SOURCIFY_SERVER_URL") || "https://verification.komputing.org/server",
+  server_url: System.get_env("SOURCIFY_SERVER_URL") || "https://sourcify.dev/server",
   enabled: System.get_env("ENABLE_SOURCIFY_INTEGRATION") == "true",
   chain_id: System.get_env("CHAIN_ID"),
-  repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://contractrepo.komputing.org/contracts/full_match/"
+  repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts/full_match/"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

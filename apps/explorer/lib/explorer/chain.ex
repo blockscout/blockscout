@@ -3773,6 +3773,21 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp get_contract_additional_sources(verified_contract_twin) do
+    if verified_contract_twin do
+      verified_contract_twin_additional_sources_query =
+        from(
+          s in SmartContractAdditionalSource,
+          where: s.address_hash == ^verified_contract_twin.address_hash
+        )
+
+      verified_contract_twin_additional_sources_query
+      |> Repo.all()
+    else
+      []
+    end
+  end
+
   @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
   def address_hash_to_smart_contract(address_hash) do
     query =
