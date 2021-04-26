@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3858](https://github.com/blockscout/blockscout/pull/3858) - Integration with Sourcify
 - [#3834](https://github.com/blockscout/blockscout/pull/3834) - Method name in tx tile
 - [#3792](https://github.com/blockscout/blockscout/pull/3792) - Cancel pending transaction
 - [#3786](https://github.com/blockscout/blockscout/pull/3786) - Read contract: enable methods with StateMutability: pure
