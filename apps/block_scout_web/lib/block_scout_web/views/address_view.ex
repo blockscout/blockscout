@@ -426,6 +426,8 @@ defmodule BlockScoutWeb.AddressView do
     short_string(token_id, max_length)
   end
 
+  def short_string(nil, _max_length), do: ""
+
   def short_string(name, max_length) do
     part_length = Kernel.trunc(max_length / 4)
 

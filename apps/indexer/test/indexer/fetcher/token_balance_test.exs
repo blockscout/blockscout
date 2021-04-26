@@ -17,13 +17,13 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       %Address.TokenBalance{
         address_hash: %Hash{bytes: address_hash_bytes},
         token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
-        block_number: block_number
+        block_number: _block_number
       } = insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
 
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
 
       assert TokenBalance.init([], &[&1 | &2], nil) == [
-               {address_hash_bytes, token_contract_address_hash_bytes, block_number, 0}
+               {address_hash_bytes, token_contract_address_hash_bytes, 1000, "ERC-20", nil, 0}
              ]
     end
   end
@@ -58,7 +58,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       )
 
       assert TokenBalance.run(
-               [{address_hash_bytes, token_contract_address_hash_bytes, block_number, 0}],
+               [{address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}],
                nil
              ) == :ok
 
@@ -76,26 +76,12 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       token_balance_a = insert(:token_balance, value_fetched_at: nil, value: nil)
       token_balance_b = insert(:token_balance, value_fetched_at: nil, value: nil)
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        1,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               error: %{code: -32015, data: "Reverted 0x", message: "VM execution error."},
-               id: id,
-               jsonrpc: "2.0"
-             }
-           ]}
-        end
-      )
-
       token_balances = [
         {
           token_balance_a.address_hash.bytes,
           token_balance_a.token_contract_address_hash.bytes,
+          "ERC-20",
+          nil,
           token_balance_a.block_number,
           # this token balance must be ignored
           max_retries
@@ -103,6 +89,8 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         {
           token_balance_b.address_hash.bytes,
           token_balance_b.token_contract_address_hash.bytes,
+          "ERC-20",
+          nil,
           token_balance_b.block_number,
           # this token balance still have to be retried
           max_retries - 2
@@ -136,8 +124,8 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       assert TokenBalance.run(
                [
-                 {address_hash_bytes, token_contract_address_hash_bytes, block_number, 0},
-                 {address_hash_bytes, token_contract_address_hash_bytes, block_number, 0}
+                 {address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0},
+                 {address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}
                ],
                nil
              ) == :ok
@@ -161,6 +149,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
           address_hash: nil,
           block_number: nil,
           token_contract_address_hash: to_string(token_balance.token_contract_address_hash),
+          token_id: nil,
           value: nil,
           value_fetched_at: nil
         }
@@ -177,7 +166,9 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         %{
           address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
           block_number: 19999,
-          token_contract_address_hash: to_string(contract.contract_address_hash)
+          token_contract_address_hash: to_string(contract.contract_address_hash),
+          token_type: "ERC-20",
+          token_id: nil
         }
       ]
 
@@ -186,7 +177,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       assert {:ok, _} = Explorer.Chain.hash_to_address(address_hash)
     end
 
-    test "import the token balances and return :ok when there are multiple balances for the same address on the batch" do
+    test "import the token balances and return :ok when there are multiple balances for the same address on the batch (ERC-20)" do
       contract = insert(:token)
       contract2 = insert(:token)
       insert(:block, number: 19999)
@@ -195,12 +186,41 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         %{
           address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
           block_number: 19999,
-          token_contract_address_hash: to_string(contract.contract_address_hash)
+          token_contract_address_hash: to_string(contract.contract_address_hash),
+          token_id: nil,
+          token_type: "ERC-20"
         },
         %{
           address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
           block_number: 19999,
-          token_contract_address_hash: to_string(contract2.contract_address_hash)
+          token_contract_address_hash: to_string(contract2.contract_address_hash),
+          token_id: nil,
+          token_type: "ERC-20"
+        }
+      ]
+
+      assert TokenBalance.import_token_balances(token_balances_params) == :ok
+    end
+
+    test "import the token balances and return :ok when there are multiple balances for the same address on the batch (ERC-1155)" do
+      contract = insert(:token)
+      contract2 = insert(:token)
+      insert(:block, number: 19999)
+
+      token_balances_params = [
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract.contract_address_hash),
+          token_id: 11,
+          token_type: "ERC-20"
+        },
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract2.contract_address_hash),
+          token_id: 11,
+          token_type: "ERC-1155"
         }
       ]
 

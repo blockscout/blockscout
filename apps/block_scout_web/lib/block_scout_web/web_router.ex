@@ -162,20 +162,6 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
-        "/verify-via-flattened-code",
-        AddressContractVerificationViaFlattenedCodeController,
-        only: [:new],
-        as: :verify_contract_via_flattened_code
-      )
-
-      resources(
-        "/verify-via-json",
-        AddressContractVerificationViaJsonController,
-        only: [:new],
-        as: :verify_contract_via_json
-      )
-
-      resources(
         "/read-contract",
         AddressReadContractController,
         only: [:index, :show],

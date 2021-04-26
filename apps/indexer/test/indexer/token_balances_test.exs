@@ -29,7 +29,9 @@ defmodule Indexer.TokenBalancesTest do
       data = %{
         token_contract_address_hash: Hash.to_string(token.contract_address_hash),
         address_hash: address_hash_string,
-        block_number: 1_000
+        block_number: 1_000,
+        token_id: 11,
+        token_type: "ERC-20"
       }
 
       get_balance_from_blockchain()
@@ -54,7 +56,9 @@ defmodule Indexer.TokenBalancesTest do
           address_hash: to_string(address.hash),
           block_number: 1_000,
           token_contract_address_hash: to_string(token.contract_address_hash),
-          retries_count: 1
+          retries_count: 1,
+          token_id: 11,
+          token_type: "ERC-20"
         }
       ]
 

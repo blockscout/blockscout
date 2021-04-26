@@ -201,18 +201,57 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.token_contract_address_hash, &1.address_hash})
+    ordered_all_changes_list =
+      changes_list
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
+      |> Enum.map(fn change ->
+        if Map.has_key?(change, :token_id) do
+          change
+        else
+          Map.put(change, :token_id, nil)
+        end
+      end)
 
-    Import.insert_changes_list(
-      repo,
-      ordered_changes_list,
-      conflict_target: ~w(address_hash token_contract_address_hash)a,
-      on_conflict: on_conflict,
-      for: CurrentTokenBalance,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+    ordered_changes_list_no_token_id =
+      ordered_all_changes_list
+      |> Enum.filter(fn change ->
+        change.token_id == nil
+      end)
+
+    ordered_changes_list_with_token_id =
+      ordered_all_changes_list
+      |> Enum.filter(fn change ->
+        change.token_id !== nil
+      end)
+
+    {:ok, inserted_changes_list_no_token_id} =
+      Import.insert_changes_list(
+        repo,
+        ordered_changes_list_no_token_id,
+        conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash) WHERE token_id IS NULL>},
+        on_conflict: on_conflict,
+        for: CurrentTokenBalance,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    {:ok, inserted_changes_list_with_token_id} =
+      Import.insert_changes_list(
+        repo,
+        ordered_changes_list_with_token_id,
+        conflict_target:
+          {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, token_id) WHERE token_id IS NOT NULL>},
+        on_conflict: on_conflict,
+        for: CurrentTokenBalance,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    inserted_changes_list = inserted_changes_list_no_token_id ++ inserted_changes_list_with_token_id
+
+    {:ok, inserted_changes_list}
   end
 
   defp default_on_conflict do

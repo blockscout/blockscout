@@ -225,22 +225,21 @@
           <%= case token_transfer_type(@transaction) do %>
             <% {_type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
               <!-- Tokens Transferred -->
-              <% token_transfers = transaction_with_transfers.token_transfers |> get_token_transfers() %>
-              <%= if Enum.count(token_transfers) > 0 do %>
+              <% %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations} = aggregate_token_transfers(transaction_with_transfers.token_transfers) %>
+              <%= if Enum.count(transfers) > 0 do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                       text: gettext("List of token transferred in the transaction.") %>
                     <%= gettext "Tokens Transferred" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
-                  <%= for transfer <- token_transfers do %>
+                  <%= for transfer <- transfers do %>
                     <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
                   <% end %>
                   </dd>
                 </dl>
               <% end %>
               <!-- Tokens Minted -->
-              <% mintings = transaction_with_transfers.token_transfers |> get_token_mintings() %>
               <%= if Enum.count(mintings) > 0 do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
@@ -256,7 +255,6 @@
                 </dl>
               <% end %>
               <!-- Tokens Burnt -->
-              <% burnings = transaction_with_transfers.token_transfers |> get_token_burnings() %>
               <%= if Enum.count(burnings) > 0 do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
@@ -266,6 +264,20 @@
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for burning  <- burnings do %>
                     <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
+                  <% end %>
+                  </dd>
+                </dl>
+              <% end %>
+
+              <%= if Enum.count(creations) > 0 do %>
+                <dl class="row">
+                  <dt class="col-sm-3 col-lg-2 text-muted">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                      text: gettext("List of ERC-1155 tokens created in the transaction.") %>
+                    <%= gettext "Tokens Created" %></dt>
+                  <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
+                  <%= for creation  <- creations do %>
+                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
                   <% end %>
                   </dd>
                 </dl>

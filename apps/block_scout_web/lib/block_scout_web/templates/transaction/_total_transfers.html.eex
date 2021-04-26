@@ -1,8 +1,24 @@
 <%= case token_transfer_amount(@transfer) do %>
     <% {:ok, :erc721_instance} -> %>
-        <%= gettext("ERC-721") <> " " <> gettext("TokenID") <> " ["%><%= link(short_token_id(@transfer.token_id, 30), to: token_instance_path(BlockScoutWeb.Endpoint, :show, @transfer.token.contract_address_hash, to_string(@transfer.token_id)), "data-test": "token_link") %><%= "]" %>
+        <%= gettext("ERC-721") %>
+        <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @transfer.token_id %>
+    <% {:ok, :erc1155_instance, value} -> %>
+        <% transfer_type = Chain.get_token_transfer_type(@transfer) %>
+        <%= if transfer_type == :token_spawning do %>
+            <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @transfer.token_id %>
+        <% else %>
+            <%= "#{value} " %>
+            <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @transfer.token_id %>
+        <% end %>
+    <% {:ok, :erc1155_instance, values, token_ids, _decimals} -> %>
+        <% values_ids = Enum.zip(values, token_ids) %>
+        <%= for {value, token_id} <- values_ids do %>
+            <div>
+            <%= "#{value} "%>
+            <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: token_id %>
+            </div>
+        <% end %>
     <% {:ok, value} -> %>
         <%= value %>
+        <%= " " %><%= render BlockScoutWeb.TransactionView, "_link_to_token_symbol.html", transfer: @transfer %>
 <% end %>
-&nbsp;
-<%= link(token_symbol(@transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @transfer.token.contract_address_hash), "data-test": "token_link") %>
