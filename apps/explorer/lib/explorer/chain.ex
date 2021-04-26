@@ -6615,14 +6615,18 @@ defmodule Explorer.Chain do
 
     eth_omni_bridge_mediator = String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", ""))
 
-    Repo.exists?(
-      from(
-        l in Log,
-        where: l.transaction_hash == ^hash,
-        where: fragment("first_topic like '0x59a9a802%'"),
-        where: l.address_hash == ^eth_omni_bridge_mediator
+    if eth_omni_bridge_mediator == "" do
+      false
+    else
+      Repo.exists?(
+        from(
+          l in Log,
+          where: l.transaction_hash == ^hash,
+          where: fragment("first_topic like '0x59a9a802%'"),
+          where: l.address_hash == ^eth_omni_bridge_mediator
+        )
       )
-    )
+    end
   end
 
   @spec amb_bsc_tx?(Address.t()) :: boolean()
@@ -6631,14 +6635,18 @@ defmodule Explorer.Chain do
 
     bsc_omni_bridge_mediator = String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
 
-    Repo.exists?(
-      from(
-        l in Log,
-        where: l.transaction_hash == ^hash,
-        where: fragment("first_topic like '0x59a9a802%'"),
-        where: l.address_hash == ^bsc_omni_bridge_mediator
+    if bsc_omni_bridge_mediator == "" do
+      false
+    else
+      Repo.exists?(
+        from(
+          l in Log,
+          where: l.transaction_hash == ^hash,
+          where: fragment("first_topic like '0x59a9a802%'"),
+          where: l.address_hash == ^bsc_omni_bridge_mediator
+        )
       )
-    )
+    end
   end
 
   def token_display_name_based_on_bridge_destination(name, foreign_chain_id) do
