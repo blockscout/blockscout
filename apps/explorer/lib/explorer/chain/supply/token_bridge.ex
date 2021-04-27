@@ -283,7 +283,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         bridged_token_hash_str = "0x" <> Base.encode16(bridged_token_hash.bytes, case: :lower)
         !Enum.member?(test_token_addresses, bridged_token_hash_str)
       end)
-      |> Enum.reduce(Decimal.new(0), fn {bridged_token_hash, bridged_token_price, bridged_token_balance,
+      |> Enum.reduce(Decimal.new(0), fn {_bridged_token_hash, bridged_token_price, bridged_token_balance,
                                          bridged_token_custom_cap},
                                         acc ->
         if !disable_lp_tokens_in_market_cap && bridged_token_custom_cap do
