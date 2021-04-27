@@ -96,8 +96,9 @@ defmodule BlockScoutWeb.FaucetController do
   end
 
   defp generate_phone_hash(_conn, phone_number) do
-    salted_phone_number = phone_number <> System.get_env("FAUCET_PHONE_NUMBER_SALT")
-    ExKeccak.hash_256(to_string(salted_phone_number))
+    sanitized_phone_number = phone_number |> String.split(~r"[^\d]", trim: true) |> Enum.join("")
+    salted_phone_number = sanitized_phone_number <> System.get_env("FAUCET_PHONE_NUMBER_SALT")
+    ExKeccak.hash_256(salted_phone_number)
   end
 
   defp parse_request_interval_response(conn, status_code, body, address_hash, phone_hash) do
