@@ -2685,11 +2685,6 @@ msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
-msgid "Faucet"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/gas_tracker/_header.html.eex:4
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:170
 msgid "Gas Tracker"
