@@ -45,9 +45,6 @@
           <li><a href="https://gitter.im/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
           <li><a href="https://forum.poa.network/c/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Support") %></a></li>
           <li><a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" class="footer-link"><%= gettext("Staking stats") %></a></li>
-          <%= if Application.get_env(:block_scout_web, :faucet)[:enabled] do %>
-          <li><a href="<%= faucet_path(@conn, :index) %>" rel="noreferrer" class="footer-link"><%= gettext("Faucet") %></a></li>
-          <% end %>
         </ul>
       </div>
       <% main_nets = main_nets(other_networks()) %>
