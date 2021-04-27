@@ -60,55 +60,78 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
-    ordered_all_changes_list =
+    %{
+      changes_list_no_token_id: changes_list_no_token_id,
+      changes_list_with_token_id: changes_list_with_token_id
+    } =
       changes_list
-      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
-      |> Enum.map(fn change ->
-        if Map.has_key?(change, :token_id) do
-          change
+      |> Enum.reduce(%{changes_list_no_token_id: [], changes_list_with_token_id: []}, fn change, acc ->
+        updated_change =
+          if Map.has_key?(change, :token_id) do
+            change
+          else
+            Map.put(change, :token_id, nil)
+          end
+
+        if updated_change.token_id do
+          changes_list_with_token_id = [updated_change | acc.changes_list_with_token_id]
+
+          %{
+            changes_list_no_token_id: acc.changes_list_no_token_id,
+            changes_list_with_token_id: changes_list_with_token_id
+          }
         else
-          Map.put(change, :token_id, nil)
+          changes_list_no_token_id = [updated_change | acc.changes_list_no_token_id]
+
+          %{
+            changes_list_no_token_id: changes_list_no_token_id,
+            changes_list_with_token_id: acc.changes_list_with_token_id
+          }
         end
       end)
 
     ordered_changes_list_no_token_id =
-      ordered_all_changes_list
-      |> Enum.filter(fn change ->
-        change.token_id == nil
-      end)
+      changes_list_no_token_id
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
 
     ordered_changes_list_with_token_id =
-      ordered_all_changes_list
-      |> Enum.filter(fn change ->
-        change.token_id !== nil
-      end)
+      changes_list_with_token_id
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
 
     {:ok, inserted_changes_list_no_token_id} =
-      Import.insert_changes_list(
-        repo,
-        ordered_changes_list_no_token_id,
-        conflict_target:
-          {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, block_number) WHERE token_id IS NULL>},
-        on_conflict: on_conflict,
-        for: TokenBalance,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
+      if Enum.count(ordered_changes_list_no_token_id) > 0 do
+        Import.insert_changes_list(
+          repo,
+          ordered_changes_list_no_token_id,
+          conflict_target:
+            {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, block_number) WHERE token_id IS NULL>},
+          on_conflict: on_conflict,
+          for: TokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
 
     {:ok, inserted_changes_list_with_token_id} =
-      Import.insert_changes_list(
-        repo,
-        ordered_changes_list_with_token_id,
-        conflict_target:
-          {:unsafe_fragment,
-           ~s<(address_hash, token_contract_address_hash, token_id, block_number) WHERE token_id IS NOT NULL>},
-        on_conflict: on_conflict,
-        for: TokenBalance,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
+      if Enum.count(ordered_changes_list_with_token_id) > 0 do
+        Import.insert_changes_list(
+          repo,
+          ordered_changes_list_with_token_id,
+          conflict_target:
+            {:unsafe_fragment,
+             ~s<(address_hash, token_contract_address_hash, token_id, block_number) WHERE token_id IS NOT NULL>},
+          on_conflict: on_conflict,
+          for: TokenBalance,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+      else
+        {:ok, []}
+      end
 
     inserted_changes_list = inserted_changes_list_no_token_id ++ inserted_changes_list_with_token_id
 
