@@ -316,25 +316,33 @@ defmodule BlockScoutWeb.FaucetController do
 
   defp send_coins(address_hash, phone_hash, session_key_hash, conn, try_num) do
     if try_num < 5 do
-      case Faucet.send_coins_from_faucet(address_hash) do
-        {:ok, transaction_hash} ->
-          case Faucet.finalize_faucet_request(address_hash, phone_hash, session_key_hash) do
-            {:ok, _} ->
+      case Faucet.process_faucet_request(address_hash, phone_hash, session_key_hash, true) do
+        {:ok, _} ->
+          case Faucet.send_coins_from_faucet(address_hash) do
+            {:ok, transaction_hash} ->
               json(conn, %{success: true, transactionHash: transaction_hash, message: "Success"})
 
-            {:error, err} ->
-              Logger.error(fn -> ["failed to insert faucet request history item: ", inspect(err)] end)
-              json(conn, %{success: false, message: @internal_server_err_msg})
+            err ->
+              Logger.error(fn ->
+                [
+                  "failed to send coins from faucet to address: ",
+                  inspect(address_hash |> to_string()),
+                  ": ",
+                  inspect(err)
+                ]
+              end)
+
+              try_num = try_num + 1
+              Process.sleep(500)
+
+              with {:ok, _} <- Faucet.process_faucet_request(address_hash, phone_hash, session_key_hash, nil) do
+                send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
+              end
           end
 
-        err ->
-          Logger.error(fn ->
-            ["failed to send coins from faucet to address: ", inspect(address_hash |> to_string()), ": ", inspect(err)]
-          end)
-
-          try_num = try_num + 1
-          Process.sleep(500)
-          send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
+        {:error, err} ->
+          Logger.error(fn -> ["failed to update faucet request history item: ", inspect(err)] end)
+          json(conn, %{success: false, message: @internal_server_err_msg})
       end
     else
       json(conn, %{success: false, message: @send_coins_failed_msg})
