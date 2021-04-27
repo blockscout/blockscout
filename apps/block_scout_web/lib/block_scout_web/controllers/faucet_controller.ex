@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.FaucetController do
   require Logger
 
   alias Explorer.{Chain, Faucet}
+  alias Explorer.Faucet.PhoneNumberLookup
   alias ExTwilio.Message
 
   @internal_server_err_msg "Internal server error. Please try again later."
@@ -37,7 +38,8 @@ defmodule BlockScoutWeb.FaucetController do
     if Application.get_env(:block_scout_web, :faucet)[:enabled] do
       with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
              validate_address_and_captcha(conn, receiver, captcha_response),
-           {:ok, phone_hash} <- generate_phone_hash(conn, phone_number),
+           {:ok, sanitized_phone_number} <- sanitize_phone_number(phone_number),
+           {:ok, phone_hash} <- generate_phone_hash(conn, sanitized_phone_number),
            :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
            :ok <- parse_verify_code_response(conn, verification_code_hash, address_hash, phone_hash, session_key_hash) do
         try_num = 0
@@ -59,12 +61,14 @@ defmodule BlockScoutWeb.FaucetController do
     if Application.get_env(:block_scout_web, :faucet)[:enabled] do
       with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
              validate_address_and_captcha(conn, receiver, captcha_response),
-           {:ok, phone_hash} <- generate_phone_hash(conn, phone_number),
+           {:ok, sanitized_phone_number} <- sanitize_phone_number(phone_number),
+           {:ok, phone_hash} <- generate_phone_hash(conn, sanitized_phone_number),
            :ok <- parse_check_number_of_sms_per_phone_number(conn, phone_hash),
            :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
            :ok <- parse_enough_coins(conn),
+           {:ok, _} <- phone_number_lookup(conn, sanitized_phone_number),
            {:ok, verification_code_hash} <-
-             parse_send_sms_response(conn, phone_number) do
+             parse_send_sms_response(conn, sanitized_phone_number) do
         case Faucet.insert_faucet_request_record(
                address_hash,
                phone_hash,
@@ -88,6 +92,13 @@ defmodule BlockScoutWeb.FaucetController do
 
   def request(conn, _), do: not_found(conn)
 
+  defp sanitize_phone_number(nil), do: nil
+
+  defp sanitize_phone_number(phone_number) do
+    sanitized_phone_number = phone_number |> String.split(~r"[^\d]", trim: true) |> Enum.join("")
+    {:ok, sanitized_phone_number}
+  end
+
   defp generate_phone_hash(conn, phone_number) when is_nil(phone_number) do
     json(conn, %{
       success: false,
@@ -95,10 +106,28 @@ defmodule BlockScoutWeb.FaucetController do
     })
   end
 
-  defp generate_phone_hash(_conn, phone_number) do
-    sanitized_phone_number = phone_number |> String.split(~r"[^\d]", trim: true) |> Enum.join("")
+  defp generate_phone_hash(_conn, sanitized_phone_number) do
     salted_phone_number = sanitized_phone_number <> System.get_env("FAUCET_PHONE_NUMBER_SALT")
     ExKeccak.hash_256(salted_phone_number)
+  end
+
+  defp phone_number_lookup(conn, sanitized_phone_number) do
+    case PhoneNumberLookup.check(sanitized_phone_number) do
+      {:error, :virtual} ->
+        json(conn, %{
+          success: false,
+          message: "VoIP phone numbers are prohibited."
+        })
+
+      {:error, :unknown} ->
+        json(conn, %{
+          success: false,
+          message: "A wrong phone number provided."
+        })
+
+      res ->
+        res
+    end
   end
 
   defp parse_request_interval_response(conn, status_code, body, address_hash, phone_hash) do

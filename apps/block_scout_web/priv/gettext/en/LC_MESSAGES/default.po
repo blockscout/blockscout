@@ -3044,3 +3044,8 @@ msgstr ""
 #: lib/block_scout_web/views/transaction_view.ex:392
 msgid "Token Creation"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
+msgid "Faucet"
+msgstr ""

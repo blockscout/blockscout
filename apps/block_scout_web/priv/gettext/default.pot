@@ -2673,11 +2673,6 @@ msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
-msgid "Faucet"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/gas_tracker/_header.html.eex:4
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:170
 msgid "Gas Tracker"
@@ -3052,4 +3047,9 @@ msgstr ""
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:7
 #: lib/block_scout_web/views/transaction_view.ex:392
 msgid "Token Creation"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
+msgid "Faucet"
 msgstr ""
