@@ -103,7 +103,7 @@ defmodule Explorer.Faucet do
     end
   end
 
-  def finalize_faucet_request(address_hash, phone_hash, session_key_hash) do
+  def process_faucet_request(address_hash, phone_hash, session_key_hash, coins_sent) do
     faucet_request =
       Repo.get_by(FaucetRequest,
         receiver_hash: address_hash,
@@ -114,12 +114,12 @@ defmodule Explorer.Faucet do
     if faucet_request do
       changeset =
         FaucetRequest.changeset(faucet_request, %{
-          coins_sent: true
+          coins_sent: coins_sent
         })
 
       Repo.update(changeset)
     else
-      :error
+      {:error, "faucet request history item is missing"}
     end
   end
 
