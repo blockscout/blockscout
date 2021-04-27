@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.FaucetController do
   require Logger
 
   alias Explorer.{Chain, Faucet}
+  alias Explorer.Faucet.PhoneNumberLookup
   alias ExTwilio.Message
 
   @internal_server_err_msg "Internal server error. Please try again later."
@@ -65,7 +66,7 @@ defmodule BlockScoutWeb.FaucetController do
            :ok <- parse_check_number_of_sms_per_phone_number(conn, phone_hash),
            :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
            :ok <- parse_enough_coins(conn),
-           :ok <- phone_number_lookup(sanitized_phone_number),
+           {:ok, _} <- phone_number_lookup(conn, sanitized_phone_number),
            {:ok, verification_code_hash} <-
              parse_send_sms_response(conn, sanitized_phone_number) do
         case Faucet.insert_faucet_request_record(
@@ -111,7 +112,22 @@ defmodule BlockScoutWeb.FaucetController do
   end
 
   defp phone_number_lookup(conn, sanitized_phone_number) do
-    :ok
+    case PhoneNumberLookup.check(sanitized_phone_number) do
+      {:error, :virtual} ->
+        json(conn, %{
+          success: false,
+          message: "VoIP phone numbers are prohibited."
+        })
+
+      {:error, :unknown} ->
+        json(conn, %{
+          success: false,
+          message: "A wrong phone number provided."
+        })
+
+      res ->
+        res
+    end
   end
 
   defp parse_request_interval_response(conn, status_code, body, address_hash, phone_hash) do
