@@ -55,9 +55,10 @@ defmodule Indexer.TokenBalances do
     address_token_balances
     |> Enum.group_by(fn %{
                           address_hash: address_hash,
-                          token_contract_address_hash: token_contract_address_hash
+                          token_contract_address_hash: token_contract_address_hash,
+                          token_id: token_id
                         } ->
-      {address_hash, token_contract_address_hash}
+      {address_hash, token_contract_address_hash, token_id}
     end)
     |> Enum.map(fn {_, grouped_address_token_balances} ->
       Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
