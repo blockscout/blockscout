@@ -18,16 +18,30 @@ defmodule Explorer.Faucet.PhoneNumberLookup do
 
     parsed_resp_body = Jason.decode!(response.body)
 
+    prohibited_carriers = get_prohibited_carriers()
+
     case parsed_resp_body do
       %{"carrier" => %{"name" => name, "type" => type}} ->
         cond do
           type == "voip" -> {:error, :virtual}
-          name == "Telefonica UK" -> {:error, :prohibited_operator}
+          Enum.member?(prohibited_carriers, name) -> {:error, :prohibited_operator}
           true -> {:ok, :mobile}
         end
 
       _ ->
         {:error, :unknown}
     end
+  end
+
+  defp get_prohibited_carriers() do
+    env_var = "TWILIO_PROHIBITED_CARRIERS"
+
+    env_var
+    |> System.get_env("")
+    |> String.split(",")
+    |> Enum.map(fn env_var ->
+      env_var
+      |> String.trim()
+    end)
   end
 end
