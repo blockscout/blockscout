@@ -19,11 +19,11 @@ defmodule Explorer.Faucet.PhoneNumberLookup do
     parsed_resp_body = Jason.decode!(response.body)
 
     case parsed_resp_body do
-      %{"carrier" => %{"type" => type}} ->
-        if type == "voip" do
-          {:error, :virtual}
-        else
-          {:ok, :mobile}
+      %{"carrier" => %{"name" => name, "type" => type}} ->
+        cond do
+          type == "voip" -> {:error, :virtual}
+          name == "Telefonica UK" -> {:error, :prohibited_operator}
+          true -> {:ok, :mobile}
         end
 
       _ ->

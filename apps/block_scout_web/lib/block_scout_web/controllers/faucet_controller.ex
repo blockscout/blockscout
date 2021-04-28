@@ -119,6 +119,12 @@ defmodule BlockScoutWeb.FaucetController do
           message: "VoIP phone numbers are prohibited."
         })
 
+      {:error, :prohibited_operator} ->
+        json(conn, %{
+          success: false,
+          message: "This carrier is prohibited."
+        })
+
       {:error, :unknown} ->
         json(conn, %{
           success: false,
