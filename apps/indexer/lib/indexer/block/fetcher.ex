@@ -145,10 +145,10 @@ defmodule Indexer.Block.Fetcher do
     with {:ok, gold_token} <- Util.get_address("GoldToken"),
          {:ok, stable_token} <- Util.get_address("StableToken"),
          {:ok, oracle_address} <- Util.get_address("SortedOracles") do
-      {:ok, gold_token, stable_token, oracle_address}
+      {:ok, gold_token, stable_token, oracle_address, true}
     else
-      err ->
-        {:error, err}
+      _err ->
+        {:ok, nil, nil, nil, false}
     end
   end
 
@@ -176,18 +176,18 @@ defmodule Indexer.Block.Fetcher do
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          blocks = TransformBlocks.transform_blocks(blocks_params),
-         {:ok, %{logs: extra_logs}} <- EthereumJSONRPC.fetch_logs(range, json_rpc_named_arguments),
+         {:logs, {:ok, %{logs: extra_logs}}} <- {:logs, EthereumJSONRPC.fetch_logs(range, json_rpc_named_arguments)},
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: tx_logs, receipts: receipts} = receipt_params,
          logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
-         gold_token_enabled = config(:enable_gold_token),
-         {:ok, gold_token, stable_token, oracle_address} <-
-           (if gold_token_enabled do
+         try_gold_token_enabled = config(:enable_gold_token),
+         {:ok, gold_token, stable_token, oracle_address, gold_token_enabled} <-
+           (if try_gold_token_enabled do
               read_addresses()
             else
-              {:ok, nil, nil, nil}
+              {:ok, nil, nil, nil, false}
             end),
          %{token_transfers: celo_token_transfers} =
            (if gold_token_enabled do
@@ -319,9 +319,14 @@ defmodule Indexer.Block.Fetcher do
       update_uncles_cache(inserted[:block_second_degree_relations])
       result
     else
-      {step, {:error, reason}} -> {:error, {step, reason}}
-      {step, :error} -> {:error, {step, "Unknown error"}}
-      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+      {step, {:error, reason}} ->
+        {:error, {step, reason}}
+
+      {step, :error} ->
+        {:error, {step, "Unknown error"}}
+
+      {:import, {:error, step, failed_value, changes_so_far}} ->
+        {:error, {step, failed_value, changes_so_far}}
     end
   end
 
