@@ -26,8 +26,10 @@ defmodule Indexer.TokenBalancesTest do
       token = insert(:token, contract_address: build(:contract_address))
       address_hash_string = Hash.to_string(address.hash)
 
+      token_contract_address_hash = Hash.to_string(token.contract_address_hash)
+
       data = %{
-        token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+        token_contract_address_hash: token_contract_address_hash,
         address_hash: address_hash_string,
         block_number: 1_000,
         token_id: 11,
@@ -40,8 +42,8 @@ defmodule Indexer.TokenBalancesTest do
 
       assert %{
                value: 1_000_000_000_000_000_000_000_000,
-               token_contract_address_hash: token_contract_address_hash,
-               address_hash: address_hash,
+               token_contract_address_hash: ^token_contract_address_hash,
+               address_hash: ^address_hash_string,
                block_number: 1_000,
                value_fetched_at: _
              } = List.first(result)
