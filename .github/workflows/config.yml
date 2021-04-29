@@ -14,7 +14,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -41,7 +41,7 @@ jobs:
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
   credo:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -56,7 +56,7 @@ jobs:
         working-directory: "deps/libsecp256k1"
       - run: mix credo
   check_formatted:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -71,7 +71,7 @@ jobs:
         working-directory: "deps/libsecp256k1"
       - run: mix format --check-formatted
   dialyzer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -98,7 +98,7 @@ jobs:
           cp ~/.mix/dialyxir*.plt plts/
       - run: mix dialyzer --halt-exit-status
   gettext:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -116,7 +116,7 @@ jobs:
           ! grep "Wrote " stdout.txt
         working-directory: "apps/block_scout_web"
   sobelow:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -137,7 +137,7 @@ jobs:
         run: mix sobelow --config
         working-directory: "apps/block_scout_web"
   eslint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -162,7 +162,7 @@ jobs:
       - run: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**
         working-directory: apps/block_scout_web/assets
   jest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
@@ -187,7 +187,7 @@ jobs:
       - run: ./node_modules/.bin/jest
         working-directory: apps/block_scout_web/assets
   test_parity_mox_ethereum_jsonrpc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     services:
       postgres:
         image: postgres
@@ -243,7 +243,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   test_parity_mox_explorer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     services:
       postgres:
         image: postgres
@@ -301,7 +301,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   test_parity_mox_indexer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     services:
       postgres:
         image: postgres
@@ -359,7 +359,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   test_parity_mox_block_scout_web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     services:
       postgres:
         image: postgres
@@ -417,7 +417,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   coveralls:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     services:
       postgres:
         image: postgres
