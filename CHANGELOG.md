@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#3870](https://github.com/blockscout/blockscout/pull/3870) - Manage token balance on-demand fetcher threshold via env var
 
 
 ## 3.7.0-beta
