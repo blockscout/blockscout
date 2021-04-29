@@ -43,33 +43,31 @@ defmodule Explorer.Token.BalanceReader do
           %{token_contract_address_hash: String.t(), address_hash: String.t(), block_number: non_neg_integer()}
         ]) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
   def get_balances_of(token_balance_requests) do
-    regular_balances =
-      token_balance_requests
-      |> Enum.filter(fn request ->
-        if Map.has_key?(request, :token_type) do
-          request.token_type !== "ERC-1155"
-        else
-          true
-        end
-      end)
-      |> Enum.map(&format_balance_request/1)
-      |> Reader.query_contracts(@balance_function_abi)
-      |> Enum.map(&format_balance_result/1)
+    token_balance_requests
+    |> Enum.map(&format_balance_request/1)
+    |> Reader.query_contracts(@balance_function_abi)
+    |> Enum.map(&format_balance_result/1)
+  end
 
-    erc1155_balances =
-      token_balance_requests
-      |> Enum.filter(fn request ->
-        if Map.has_key?(request, :token_type) do
-          request.token_type == "ERC-1155"
-        else
-          false
-        end
-      end)
-      |> Enum.map(&format_erc_1155_balance_request/1)
-      |> Reader.query_contracts(@erc1155_balance_function_abi)
-      |> Enum.map(&format_balance_result/1)
+  @spec get_balances_of_with_abi(
+          [
+            %{token_contract_address_hash: String.t(), address_hash: String.t(), block_number: non_neg_integer()}
+          ],
+          Map.t()
+        ) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
+  def get_balances_of_with_abi(token_balance_requests, abi) do
+    formatted_balances_requests =
+      if abi == @erc1155_balance_function_abi do
+        token_balance_requests
+        |> Enum.map(&format_erc_1155_balance_request/1)
+      else
+        token_balance_requests
+        |> Enum.map(&format_balance_request/1)
+      end
 
-    regular_balances ++ erc1155_balances
+    formatted_balances_requests
+    |> Reader.query_contracts(abi)
+    |> Enum.map(&format_balance_result/1)
   end
 
   defp format_balance_request(%{

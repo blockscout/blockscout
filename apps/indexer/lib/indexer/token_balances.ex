@@ -13,6 +13,18 @@ defmodule Indexer.TokenBalances do
   alias Indexer.Fetcher.TokenBalance
   alias Indexer.Tracer
 
+  @erc1155_balance_function_abi [
+    %{
+      "constant" => true,
+      "inputs" => [%{"name" => "_owner", "type" => "address"}, %{"name" => "_id", "type" => "uint256"}],
+      "name" => "balanceOf",
+      "outputs" => [%{"name" => "", "type" => "uint256"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
+
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
 
@@ -35,12 +47,39 @@ defmodule Indexer.TokenBalances do
   def fetch_token_balances_from_blockchain(token_balances) do
     Logger.debug("fetching token balances", count: Enum.count(token_balances))
 
-    requested_token_balances =
+    regular_token_balances =
       token_balances
+      |> Enum.filter(fn request ->
+        if Map.has_key?(request, :token_type) do
+          request.token_type !== "ERC-1155"
+        else
+          true
+        end
+      end)
+
+    erc1155_token_balances =
+      token_balances
+      |> Enum.filter(fn request ->
+        if Map.has_key?(request, :token_type) do
+          request.token_type == "ERC-1155"
+        else
+          false
+        end
+      end)
+
+    requested_regular_token_balances =
+      regular_token_balances
       |> BalanceReader.get_balances_of()
       |> Stream.zip(token_balances)
       |> Enum.map(fn {result, token_balance} -> set_token_balance_value(result, token_balance) end)
 
+    requested_erc1155_token_balances =
+      erc1155_token_balances
+      |> BalanceReader.get_balances_of_with_abi(@erc1155_balance_function_abi)
+      |> Stream.zip(token_balances)
+      |> Enum.map(fn {result, token_balance} -> set_token_balance_value(result, token_balance) end)
+
+    requested_token_balances = requested_regular_token_balances ++ requested_erc1155_token_balances
     fetched_token_balances = Enum.filter(requested_token_balances, &ignore_request_with_errors/1)
 
     requested_token_balances
