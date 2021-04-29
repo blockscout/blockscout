@@ -25,6 +25,7 @@ defmodule Explorer.Faucet.PhoneNumberLookup do
         cond do
           type == "voip" -> {:error, :virtual}
           Enum.member?(prohibited_carriers, name) -> {:error, :prohibited_operator}
+          is_nil(name) && is_nil(type) -> {:error, :prohibited_operator}
           true -> {:ok, :mobile}
         end
 
