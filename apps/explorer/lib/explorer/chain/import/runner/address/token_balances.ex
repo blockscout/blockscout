@@ -92,6 +92,20 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
 
     ordered_changes_list_no_token_id =
       changes_list_no_token_id
+      |> Enum.group_by(fn %{
+                            token_contract_address_hash: token_contract_address_hash,
+                            address_hash: address_hash,
+                            block_number: block_number
+                          } ->
+        {token_contract_address_hash, address_hash, block_number}
+      end)
+      |> Enum.map(fn {_, grouped_address_token_balances} ->
+        if Enum.count(grouped_address_token_balances) > 1 do
+          Enum.max_by(grouped_address_token_balances, fn %{value: value} -> value end)
+        else
+          Enum.at(grouped_address_token_balances, 0)
+        end
+      end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
 
     ordered_changes_list_with_token_id =
