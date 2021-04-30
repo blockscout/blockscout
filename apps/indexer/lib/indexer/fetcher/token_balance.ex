@@ -145,8 +145,15 @@ defmodule Indexer.Fetcher.TokenBalance do
        ) do
     retries_count = Map.get(token_balance, :retries_count, 0)
 
+    token_id_int =
+      case token_id do
+        %Decimal{} -> Decimal.to_integer(token_id)
+        id_int when is_integer(id_int) -> id_int
+        _ -> token_id
+      end
+
     {address_hash.bytes, token_contract_address_hash.bytes, block_number, token_type,
-     token_id && Decimal.to_integer(token_id), retries_count}
+     token_id_int, retries_count}
   end
 
   defp format_params(
