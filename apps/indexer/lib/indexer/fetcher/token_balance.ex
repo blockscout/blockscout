@@ -152,8 +152,7 @@ defmodule Indexer.Fetcher.TokenBalance do
         _ -> token_id
       end
 
-    {address_hash.bytes, token_contract_address_hash.bytes, block_number, token_type,
-     token_id_int, retries_count}
+    {address_hash.bytes, token_contract_address_hash.bytes, block_number, token_type, token_id_int, retries_count}
   end
 
   defp format_params(
