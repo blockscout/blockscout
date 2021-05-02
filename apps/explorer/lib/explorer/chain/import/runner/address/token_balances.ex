@@ -101,7 +101,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
         if Enum.count(grouped_address_token_balances) > 1 do
-          Enum.max_by(grouped_address_token_balances, fn %{value: value} -> value end)
+          Enum.max_by(grouped_address_token_balances, fn %{value_fetched_at: value_fetched_at} -> value_fetched_at end)
         else
           Enum.at(grouped_address_token_balances, 0)
         end
@@ -110,7 +110,22 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
 
     ordered_changes_list_with_token_id =
       changes_list_with_token_id
-      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
+      |> Enum.group_by(fn %{
+                            token_contract_address_hash: token_contract_address_hash,
+                            token_id: token_id,
+                            address_hash: address_hash,
+                            block_number: block_number
+                          } ->
+        {token_contract_address_hash, token_id, address_hash, block_number}
+      end)
+      |> Enum.map(fn {_, grouped_address_token_balances} ->
+        if Enum.count(grouped_address_token_balances) > 1 do
+          Enum.max_by(grouped_address_token_balances, fn %{value_fetched_at: value_fetched_at} -> value_fetched_at end)
+        else
+          Enum.at(grouped_address_token_balances, 0)
+        end
+      end)
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash, &1.block_number})
 
     {:ok, inserted_changes_list_no_token_id} =
       if Enum.count(ordered_changes_list_no_token_id) > 0 do
