@@ -49,6 +49,42 @@ defmodule Indexer.TokenBalancesTest do
              } = List.first(result)
     end
 
+    test "fetches balances of ERC-1155 tokens" do
+      address = insert(:address, hash: "0x609991ca0ae39bc4eaf2669976237296d40c2f31")
+
+      address_hash_string = Hash.to_string(address.hash)
+
+      token_contract_address_hash = "0xf7f79032fd395978acb7069c74d21e5a53206559"
+
+      contract_address = insert(:address, hash: token_contract_address_hash)
+
+      token = insert(:token, contract_address: contract_address)
+
+      data = [
+        %{
+          token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+          address_hash: address_hash_string,
+          block_number: 1_000,
+          token_id: 5,
+          token_type: "ERC-1155"
+        }
+      ]
+
+      get_erc1155_balance_from_blockchain()
+
+      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(data)
+
+      assert [
+               %{
+                 value: 2,
+                 token_contract_address_hash: ^token_contract_address_hash,
+                 address_hash: ^address_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               }
+             ] = result
+    end
+
     test "fetches multiple balances of tokens" do
       address_1 = insert(:address, hash: "0xecba3c9ea993b0e0594e0b0a0d361a1f9596e310")
       address_2 = insert(:address, hash: "0x609991ca0ae39bc4eaf2669976237296d40c2f31")
@@ -60,11 +96,18 @@ defmodule Indexer.TokenBalancesTest do
 
       token_1_contract_address_hash = "0x57e93bb58268de818b42e3795c97bad58afcd3fe"
       token_2_contract_address_hash = "0xe0d0b1dbbcf3dd5cac67edaf9243863fd70745da"
+      token_3_contract_address_hash = "0x22c1f6050e56d2876009903609a2cc3fef83b415"
+      token_4_contract_address_hash = "0xf7f79032fd395978acb7069c74d21e5a53206559"
+
       contract_address_1 = insert(:address, hash: token_1_contract_address_hash)
       contract_address_2 = insert(:address, hash: token_2_contract_address_hash)
+      contract_address_3 = insert(:address, hash: token_3_contract_address_hash)
+      contract_address_4 = insert(:address, hash: token_4_contract_address_hash)
 
       token_1 = insert(:token, contract_address: contract_address_1)
       token_2 = insert(:token, contract_address: contract_address_2)
+      token_3 = insert(:token, contract_address: contract_address_3)
+      token_4 = insert(:token, contract_address: contract_address_4)
 
       data = [
         %{
@@ -80,6 +123,20 @@ defmodule Indexer.TokenBalancesTest do
           block_number: 1_000,
           token_id: nil,
           token_type: "ERC-20"
+        },
+        %{
+          token_contract_address_hash: Hash.to_string(token_3.contract_address_hash),
+          address_hash: address_2_hash_string,
+          block_number: 1_000,
+          token_id: 42,
+          token_type: "ERC-721"
+        },
+        %{
+          token_contract_address_hash: Hash.to_string(token_4.contract_address_hash),
+          address_hash: address_2_hash_string,
+          block_number: 1_000,
+          token_id: 5,
+          token_type: "ERC-1155"
         },
         %{
           token_contract_address_hash: Hash.to_string(token_2.contract_address_hash),
@@ -105,6 +162,7 @@ defmodule Indexer.TokenBalancesTest do
       ]
 
       get_multiple_balances_from_blockchain()
+      get_erc1155_balance_from_blockchain()
 
       {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(data)
 
@@ -119,6 +177,13 @@ defmodule Indexer.TokenBalancesTest do
                %{
                  value: 3_000_000_000_000_000_000_000_000_000,
                  token_contract_address_hash: ^token_2_contract_address_hash,
+                 address_hash: ^address_2_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 1,
+                 token_contract_address_hash: ^token_3_contract_address_hash,
                  address_hash: ^address_2_hash_string,
                  block_number: 1_000,
                  value_fetched_at: _
@@ -141,6 +206,13 @@ defmodule Indexer.TokenBalancesTest do
                  value: 6_000_000_000_000_000_000_000_000_000,
                  token_contract_address_hash: ^token_2_contract_address_hash,
                  address_hash: ^token_2_contract_address_hash,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 2,
+                 token_contract_address_hash: ^token_4_contract_address_hash,
+                 address_hash: ^address_2_hash_string,
                  block_number: 1_000,
                  value_fetched_at: _
                }
@@ -266,6 +338,41 @@ defmodule Indexer.TokenBalancesTest do
     )
   end
 
+  defp get_erc1155_balance_from_blockchain() do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn requests, _options ->
+        {:ok,
+         requests
+         |> Enum.map(fn
+           %{
+             id: id,
+             method: "eth_call",
+             params: [
+               %{
+                 data:
+                   "0x00fdd58e000000000000000000000000609991ca0ae39bc4eaf2669976237296d40c2f310000000000000000000000000000000000000000000000000000000000000005",
+                 to: "0xf7f79032fd395978acb7069c74d21e5a53206559"
+               },
+               _
+             ]
+           } ->
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x0000000000000000000000000000000000000000000000000000000000000002"
+             }
+
+           req ->
+             IO.inspect("Gimme req")
+             IO.inspect(req)
+         end)
+         |> Enum.shuffle()}
+      end
+    )
+  end
+
   defp get_multiple_balances_from_blockchain() do
     expect(
       EthereumJSONRPC.Mox,
@@ -296,6 +403,23 @@ defmodule Indexer.TokenBalancesTest do
                id: id,
                jsonrpc: "2.0",
                result: "0x000000000000000000000000000000000000000009b18ab5df7180b6b8000000"
+             }
+
+           %{
+             id: id,
+             method: "eth_call",
+             params: [
+               %{
+                 data: "0x70a08231000000000000000000000000609991ca0ae39bc4eaf2669976237296d40c2f31",
+                 to: "0x22c1f6050e56d2876009903609a2cc3fef83b415"
+               },
+               _
+             ]
+           } ->
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x0000000000000000000000000000000000000000000000000000000000000001"
              }
 
            %{

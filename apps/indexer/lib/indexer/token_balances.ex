@@ -70,13 +70,13 @@ defmodule Indexer.TokenBalances do
     requested_regular_token_balances =
       regular_token_balances
       |> BalanceReader.get_balances_of()
-      |> Stream.zip(token_balances)
+      |> Stream.zip(regular_token_balances)
       |> Enum.map(fn {result, token_balance} -> set_token_balance_value(result, token_balance) end)
 
     requested_erc1155_token_balances =
       erc1155_token_balances
       |> BalanceReader.get_balances_of_with_abi(@erc1155_balance_function_abi)
-      |> Stream.zip(token_balances)
+      |> Stream.zip(erc1155_token_balances)
       |> Enum.map(fn {result, token_balance} -> set_token_balance_value(result, token_balance) end)
 
     requested_token_balances = requested_regular_token_balances ++ requested_erc1155_token_balances
