@@ -1,9 +1,11 @@
 <section class="container">
-  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
   <section data-page="blocks-validated">
     <div class="card">
-      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div data-async-listing="<%= @current_path %>" class="card-body">
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">

@@ -83,7 +83,7 @@
         class: "card-tab #{tab_status("read-contract", @conn.request_path)}")
         %>
   <% end %>
-  <%= if smart_contract_is_proxy?(@address) do %>
+  <%= if @is_proxy do %>
     <%= link(
         gettext("Read Proxy"),
         to: AccessHelpers.get_path(@conn, :address_read_proxy_path, :index, @address.hash),
@@ -97,7 +97,7 @@
         class: "card-tab #{tab_status("write-contract", @conn.request_path)}")
         %>
   <% end %>
-  <%= if smart_contract_with_write_functions?(@address) && smart_contract_is_proxy?(@address)  do %>
+  <%= if smart_contract_with_write_functions?(@address) && @is_proxy  do %>
     <%= link(
         gettext("Write Proxy"),
         to: AccessHelpers.get_path(@conn, :address_write_proxy_path, :index, @address.hash),
