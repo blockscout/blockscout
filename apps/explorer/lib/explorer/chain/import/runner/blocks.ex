@@ -426,9 +426,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: %{
           address_hash: tb.address_hash,
           token_contract_address_hash: tb.token_contract_address_hash,
+          token_id: tb.token_id,
           block_number: max(tb.block_number)
         },
-        group_by: [tb.address_hash, tb.token_contract_address_hash]
+        group_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]
       )
 
     final_query =
@@ -455,6 +456,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: %{
           address_hash: new_current_token_balance.address_hash,
           token_contract_address_hash: new_current_token_balance.token_contract_address_hash,
+          token_id: new_current_token_balance.token_id,
           block_number: new_current_token_balance.block_number,
           value: tb.value,
           inserted_at: over(min(tb.inserted_at), :w),
@@ -469,7 +471,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       new_current_token_balance_query
       |> repo.all()
       # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
     {_total, result} =
       repo.insert_all(
