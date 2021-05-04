@@ -102,15 +102,15 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     address_hash: ^address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value_2,
-                    token_id: ^token_id_2
+                    value: ^value_1,
+                    token_id: ^token_id_1
                   },
                   %Explorer.Chain.Address.CurrentTokenBalance{
                     address_hash: ^address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value_1,
-                    token_id: ^token_id_1
+                    value: ^value_2,
+                    token_id: ^token_id_2
                   },
                   %Explorer.Chain.Address.CurrentTokenBalance{
                     address_hash: ^address_hash,
