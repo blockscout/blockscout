@@ -3046,7 +3046,4 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:161
 msgid "Faucet"
-
-#: lib/block_scout_web/templates/address_contract/index.html.eex:33
-msgid "This contract has been verified via Sourcify."
 msgstr ""

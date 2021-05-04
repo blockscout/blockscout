@@ -30,7 +30,7 @@
             <% validator_metadata = primary_validator_metadata(@address) %>
             <%= if contract?(@address) do %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "contract", additional_classes: ["contract", "ml-1"] %>
-              <%= if smart_contract_is_proxy?(@address) do %>
+              <%= if @is_proxy do %>
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: "proxy", additional_classes: ["proxy", "ml-1"] %>
               <% end %>
               <%= if @address.token do %>
