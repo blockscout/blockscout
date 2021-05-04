@@ -43,6 +43,18 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
 
 config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 
+token_balance_on_demand_fetcher_threshold =
+  if System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES") do
+    case Integer.parse(System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")) do
+      {integer, ""} -> integer
+      _ -> 60
+    end
+  else
+    60
+  end
+
+config :indexer, Indexer.Fetcher.TokenBalanceOnDemand, threshold: token_balance_on_demand_fetcher_threshold
+
 if System.get_env("POS_STAKING_CONTRACT") do
   config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 end

@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
+  alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Publisher
 
@@ -40,6 +41,27 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
     end
+  end
+
+  def publish(conn, %{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
+    params =
+      if Map.has_key?(input, "secondarySources") do
+        params
+        |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
+      else
+        params
+      end
+
+    result =
+      case Publisher.publish_smart_contract(address_hash, params, abi) do
+        {:ok, _contract} = result ->
+          result
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+
+    EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
   end
 
   def listcontracts(conn, params) do

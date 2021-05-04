@@ -225,6 +225,8 @@
       @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadProxyView &&
       @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&

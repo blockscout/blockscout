@@ -47,7 +47,8 @@ defmodule Explorer.Mixfile do
     do: [
       :logger,
       :mix,
-      :runtime_tools
+      :runtime_tools,
+      :tesla
     ]
 
   # Specifies your project dependencies.
@@ -107,7 +108,8 @@ defmodule Explorer.Mixfile do
       {:telemetry, "~> 0.4.1"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.6"},
-      {:con_cache, "~> 0.13"}
+      {:con_cache, "~> 0.13"},
+      {:tesla, "~> 1.3.3"}
     ]
   end
 
