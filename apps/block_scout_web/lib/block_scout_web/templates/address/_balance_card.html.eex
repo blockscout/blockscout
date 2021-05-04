@@ -31,7 +31,7 @@
             </span>
             <%= gettext("Fetching tokens...") %>
           </span>
-          <span data-error-message class="mb-0" style="display: none;">
+          <span data-error-message class="mb-0 d-none">
             <%= gettext("Error trying to fetch balances.") %>
           </span>
       </p>

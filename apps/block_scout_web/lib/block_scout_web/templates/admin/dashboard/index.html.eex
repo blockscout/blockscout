@@ -20,13 +20,13 @@
             <button id="run-create-contract-methods" data-api_path="<%= BlockScoutWeb.AdminRouter.Helpers.create_contract_methods_path(@conn, :create_contract_methods) %>" class="btn btn-primary">
               <%= gettext("Run") %>
 
-              <span data-loading-message class="loading-spinner-small mr-2" style="display: none;">
+              <span data-loading-message class="loading-spinner-small mr-2 d-none">
                 <span class="loading-spinner-block-1"></span>
                 <span class="loading-spinner-block-2"></span>
               </span>
 
-              <span data-success-message style="display: none;"> - Success</span>
-              <span data-error-message style="display: none;"> - Failed</span>
+              <span data-success-message class="d-none"> - Success</span>
+              <span data-error-message class="d-none"> - Failed</span>
             </button>
           </div>
         </div>
