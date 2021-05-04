@@ -45,11 +45,11 @@
     <div class="<%= if @pools_type == :validator do %>col-2<% else %>col-3<% end %>"></div>
   </div>
   <div class="stakes-table-body">
-    <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+    <button data-error-message class="alert alert-danger col-12 text-left d-none">
       <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
     </button>
 
-    <div data-empty-response-message style="display: none;">
+    <div data-empty-response-message class="d-none">
       <%= render BlockScoutWeb.StakesView, "_stakes_empty_content.html" %>
     </div>
 

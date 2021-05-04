@@ -49,11 +49,11 @@
         </div>
         <% end %>
 
-        <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
+        <div data-empty-response-message class="tile tile-muted text-center d-none">
           <span><%= gettext "There are no token transfers for this address." %></span>
         </div>
 
-        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <button data-error-message class="alert alert-danger col-12 text-left d-none">
           <span class="alert-link">
             <%= gettext "Something went wrong, click to reload." %>
           </span>
