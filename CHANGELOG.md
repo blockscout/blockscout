@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix 
 
 ### Chore
 - [#3870](https://github.com/blockscout/blockscout/pull/3870) - Manage token balance on-demand fetcher threshold via env var
