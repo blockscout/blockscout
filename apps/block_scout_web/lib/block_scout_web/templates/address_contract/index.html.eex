@@ -2,6 +2,8 @@
 <% minimal_proxy_template = Chain.get_minimal_proxy_template(@address.hash) %>
 <% metadata_for_verification = minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
 <% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
+<% additional_sources_from_twin = Chain.get_address_verified_twin_contract(@address.hash).additional_sources %>
+<% additional_sources = if smart_contract_verified, do: @address.smart_contract_additional_sources, else: additional_sources_from_twin %>
 
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
@@ -24,6 +26,14 @@
       <% end %>
       <%= if smart_contract_verified || (!smart_contract_verified && metadata_for_verification) do %>
         <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: metadata_for_verification %>
+        <%= if @address.smart_contract.verified_via_sourcify && smart_contract_verified do %>
+          <div class="mb-4">
+            <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("This contract has been verified via Sourcify.") %>
+            <a data-test="external_url" href=<%= sourcify_repo_url(@address.hash) %> target="_blank">
+              View contract in Sourcify repository <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+            </a>
+          </div>
+        <% end %>
         <div class="mb-4">
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Contract name:" %></dt>
@@ -72,6 +82,22 @@
             <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(target_contract.contract_source_code, target_contract.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
           </div>
         </section>
+
+        <%= if target_contract.verified_via_sourcify do %>
+          <%= Enum.map(additional_sources, fn additional_source -> %>
+            <section>
+              <div class="d-flex justify-content-between align-items-baseline">
+                <h3><%= additional_source.file_name %></h3>
+                <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= additional_source.contract_source_code %>" aria-label="Copy Contract Source Code">
+                  <%= gettext "Copy Source Code" %>
+                </button>
+              </div>
+              <div class="tile tile-muted mb-4">
+                <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(additional_source.contract_source_code, additional_source.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+              </div>
+            </section>
+          <% end)%>
+        <% end %>
 
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
@@ -126,9 +152,16 @@
                     </div>
                   <% else %>
                     <%= if !smart_contract_verified do %>
+                      <% path = 
+                        if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+                          address_verify_contract_path(@conn, :new, @address.hash)
+                        else
+                          address_verify_contract_via_flattened_code_path(@conn, :new, @address.hash)
+                        end
+                      %>
                       <%= link(
                             gettext("Verify & Publish"),
-                            to: address_verify_contract_path(@conn, :new, @address.hash),
+                            to: path,
                             class: "button button-primary button-sm float-right ml-3",
                             "data-test": "verify_and_publish"
                           ) %>

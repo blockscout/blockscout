@@ -1,6 +1,18 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+- [#3870](https://github.com/blockscout/blockscout/pull/3870) - Manage token balance on-demand fetcher threshold via env var
+
+
+## 3.7.0-beta
+
+### Features
+- [#3858](https://github.com/blockscout/blockscout/pull/3858) - Integration with Sourcify
+- [#3834](https://github.com/blockscout/blockscout/pull/3834) - Method name in tx tile
 - [#3792](https://github.com/blockscout/blockscout/pull/3792) - Cancel pending transaction
 - [#3786](https://github.com/blockscout/blockscout/pull/3786) - Read contract: enable methods with StateMutability: pure
 - [#3758](https://github.com/blockscout/blockscout/pull/3758) - Add pool metadata display/change to Staking DApp
