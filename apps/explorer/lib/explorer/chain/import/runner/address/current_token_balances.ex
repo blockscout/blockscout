@@ -237,7 +237,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
     ordered_changes_list_with_token_id =
       changes_list_with_token_id
-      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
     {:ok, inserted_changes_list_no_token_id} =
       if Enum.count(ordered_changes_list_no_token_id) > 0 do
