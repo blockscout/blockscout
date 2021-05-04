@@ -12,3 +12,10 @@ config :logger, :ecto,
 config :logger, :error,
   path: Path.absname("logs/prod/error.log"),
   rotate: %{max_bytes: 52_428_800, keep: 19}
+
+# System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
+config :ethereumex, url: System.get_env("FAUCET_JSONRPC_HTTP_URL")
+
+config :ex_twilio,
+  account_sid: {:system, "TWILIO_ACCOUNT_SID"},
+  auth_token: {:system, "TWILIO_AUTH_TOKEN"}

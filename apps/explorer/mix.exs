@@ -20,15 +20,10 @@ defmodule Explorer.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
         credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls],
       version: "0.0.1"
     ]
   end
@@ -68,21 +63,20 @@ defmodule Explorer.Mixfile do
       {:bypass, "~> 1.0", only: :test},
       {:briefly, "~> 0.4", github: "CargoSense/briefly"},
       {:comeonin, "~> 4.0"},
-      {:credo, "~> 1.1", only: :test, runtime: false},
+      {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
       {:decimal, "~> 1.0"},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       # `override: true` for `ex_machina` compatibility
       {:ecto, "~> 3.3", override: true},
       # Storing blockchain data and derived data in PostgreSQL.
       {:ecto_sql, "~> 3.3"},
+      {:eth, git: "https://github.com/blockscout/eth.git", branch: "xdai"},
       # JSONRPC access to query smart contracts
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
-      # Code coverage
-      {:excoveralls, "~> 0.13.3"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
@@ -92,7 +86,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 0.6.0"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
@@ -141,7 +135,7 @@ defmodule Explorer.Mixfile do
     [
       maintainers: ["POA Networks Ltd."],
       licenses: ["GPL 3.0"],
-      links: %{"GitHub" => "https://github.com/poanetwork/blockscout"}
+      links: %{"GitHub" => "https://github.com/blockscout/blockscout"}
     ]
   end
 end

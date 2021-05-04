@@ -228,7 +228,7 @@ defmodule Explorer.Chain.Transaction do
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated
-    # in a different block. See: https://github.com/poanetwork/blockscout/issues/1911
+    # in a different block. See: https://github.com/blockscout/blockscout/issues/1911
     field(:old_block_hash, Hash.Full)
 
     timestamps()

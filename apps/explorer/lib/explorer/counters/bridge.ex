@@ -119,7 +119,7 @@ defmodule Explorer.Counters.Bridge do
     if bridges_table_exists?() do
       do_fetch_omni_bridge_market_cap(:ets.lookup(@bridges_table, @current_market_cap_from_omni_bridge_cache_key))
     else
-      0
+      Decimal.new(0)
     end
   end
 

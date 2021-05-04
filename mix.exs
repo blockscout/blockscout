@@ -16,15 +16,10 @@ defmodule BlockScout.Mixfile do
       ],
       elixir: "~> 1.10",
       preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
         credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls],
       releases: [
         blockscout: [
           applications: [
@@ -72,11 +67,10 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:ex_twilio, "~> 0.9.0"},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
-      # Code coverage
-      {:excoveralls, "~> 0.13.3"},
       {:number, "~> 1.0.3"}
     ]
   end
