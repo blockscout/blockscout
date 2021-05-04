@@ -34,7 +34,7 @@ defmodule Explorer.Faucet.PhoneNumberLookup do
     end
   end
 
-  defp get_prohibited_carriers() do
+  defp get_prohibited_carriers do
     env_var = "TWILIO_PROHIBITED_CARRIERS"
 
     env_var

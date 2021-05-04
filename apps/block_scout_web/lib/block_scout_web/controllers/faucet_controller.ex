@@ -346,7 +346,7 @@ defmodule BlockScoutWeb.FaucetController do
         })
 
       {:error, error, _} ->
-        Logger.error(inspect(err))
+        Logger.error(inspect(error))
         json(conn, %{
           success: false,
           message: "Failed to send SMS. Please try again later"
