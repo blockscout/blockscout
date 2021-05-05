@@ -20,7 +20,7 @@
 
                   data-history_chart_config = '<%= @chart_config_json %>'
 
-                  width="350" height="152" class="d-none"></canvas>
+                  width="350" height="152" style="display: none;"></canvas>
         </div>
         <!-- Legend -->
         <script>
