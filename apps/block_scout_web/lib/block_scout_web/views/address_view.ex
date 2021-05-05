@@ -286,7 +286,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def trimmed_hash(address) when is_binary(address) do
-    "#{String.slice(address, 0..5)}–#{String.slice(address, -6..-1)}"
+    "#{String.slice(address, 0..7)}–#{String.slice(address, -6..-1)}"
   end
 
   def trimmed_hash(_), do: ""
@@ -377,7 +377,7 @@ defmodule BlockScoutWeb.AddressView do
   def short_hash(%Address{hash: hash}) do
     <<
       "0x",
-      short_address::binary-size(6),
+      short_address::binary-size(8),
       _rest::binary
     >> = to_string(hash)
 
@@ -404,8 +404,8 @@ defmodule BlockScoutWeb.AddressView do
 
   defp shortify_hash_string(hash) do
     <<
-      left::binary-size(6),
-      _middle::binary-size(28),
+      left::binary-size(8),
+      _middle::binary-size(26),
       right::binary-size(6)
     >> = to_string(hash)
 
