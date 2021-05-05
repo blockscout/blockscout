@@ -266,7 +266,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def trimmed_hash(address) when is_binary(address) do
-    "#{String.slice(address, 0..5)}–#{String.slice(address, -6..-1)}"
+    "#{String.slice(address, 0..7)}–#{String.slice(address, -6..-1)}"
   end
 
   def trimmed_hash(_), do: ""
@@ -405,6 +405,8 @@ defmodule BlockScoutWeb.AddressView do
   def short_token_id(token_id, max_length) do
     short_string(token_id, max_length)
   end
+
+  def short_string(nil, _max_length), do: ""
 
   def short_string(name, max_length) do
     part_length = Kernel.trunc(max_length / 4)
