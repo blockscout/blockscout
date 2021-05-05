@@ -6174,7 +6174,7 @@ defmodule Explorer.Chain do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation"
+        Map.get(method, "name") == "implementation" && Map.get(method, "stateMutability") == "view"
       end)
 
     master_copy_method_abi =
