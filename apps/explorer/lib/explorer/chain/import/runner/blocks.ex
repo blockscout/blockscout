@@ -467,21 +467,44 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         ]
       )
 
-    ordered_current_token_balance =
+    current_token_balance =
       new_current_token_balance_query
       |> repo.all()
+
+    ordered_current_token_balance_no_token_id =
+      current_token_balance
+      |> Enum.filter(&is_nil(&1.token_id))
+      # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
+
+    {_total, result_with_token_id} =
+      repo.insert_all(
+        Address.CurrentTokenBalance,
+        ordered_current_token_balance_no_token_id,
+        # No `ON CONFLICT` because `delete_address_current_token_balances`
+        # should have removed any conflicts.
+        #
+        returning: [:address_hash, :token_contract_address_hash, :block_number, :value],
+        timeout: timeout
+      )
+
+    ordered_current_token_balance_with_token_id =
+      current_token_balance
+      |> Enum.filter(&(!is_nil(&1.token_id)))
       # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
-    {_total, result} =
+    {_total, result_no_token_id} =
       repo.insert_all(
         Address.CurrentTokenBalance,
-        ordered_current_token_balance,
+        ordered_current_token_balance_with_token_id,
         # No `ON CONFLICT` because `delete_address_current_token_balances`
         # should have removed any conflicts.
         returning: [:address_hash, :token_contract_address_hash, :block_number, :value],
         timeout: timeout
       )
+
+    result = result_with_token_id ++ result_no_token_id
 
     derived_address_current_token_balances =
       Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :block_number, :value]))
