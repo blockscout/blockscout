@@ -59,17 +59,12 @@ defmodule Indexer.Transform.TokenTransfers do
     txs
     |> Enum.filter(fn a -> a.value > 0 end)
     |> Enum.filter(fn a -> a.index > 0 end)
-    |> Enum.filter(fn a -> a.call_type != "delegatecall" end)
+    |> Enum.filter(fn a -> not Map.has_key?(a, :call_type) || a.call_type != "delegatecall" end)
     |> Enum.reduce(initial_acc, &do_parse_itx/2)
   end
 
   defp do_parse_itx(tx, %{token_transfers: token_transfers, gold_token: gold_token}) do
-    to_hash =
-      if tx.to_address_hash == nil do
-        tx.created_contract_address_hash
-      else
-        tx.to_address_hash
-      end
+    to_hash = Map.get(tx, :to_address_hash, nil) || Map.get(tx, :created_contract_address_hash, nil)
 
     token_transfer = %{
       amount: Decimal.new(tx.value),
