@@ -3886,7 +3886,7 @@ defmodule Explorer.Chain do
     nft_tokens =
       from(
         token in Token,
-        where: token.type == ^"ERC-721",
+        where: token.type == ^"ERC-721" or token.type == ^"ERC-1155",
         select: token.contract_address_hash
       )
 
