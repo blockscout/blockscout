@@ -1069,6 +1069,12 @@ $dark-stakes-banned-background: #3e314c;
 			background: $yellow !important;
 		}
 	}
+	.contract-plus-btn {
+		color: $dark-primary;
+	}
+	.custom-power-input {
+		border-color: $dark-primary;
+	}
 }
 
 .navbar-dark .navbar-toggler {

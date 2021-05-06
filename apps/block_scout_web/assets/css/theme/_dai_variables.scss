@@ -133,3 +133,15 @@ $dark-tertiary: #5a77ff;
         }
     }
 }
+
+.dark-theme-applied .dashboard-banner-chart-legend {
+    .dashboard-banner-chart-legend-item {
+      &:nth-child(1)::before {
+        background-color: $dashboard-line-color-price;
+      }
+  
+      &:nth-child(2)::before {
+        background-color: $dashboard-line-color-market;
+      }
+    }
+  }

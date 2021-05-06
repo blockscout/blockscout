@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
-      {:excoveralls, "~> 0.13.1"},
+      {:excoveralls, "~> 0.13.3"},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
       # HTML CSS selectors for Phoenix controller tests
@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.5.4"},
+      {:phoenix, "== 1.5.6"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
@@ -122,13 +122,13 @@ defmodule BlockScoutWeb.Mixfile do
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
-      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.4.0"},
+      {:spandex_datadog, "~> 1.0"},
       # `:spandex` tracing of `:phoenix`
-      {:spandex_phoenix, "~> 0.3.1"},
+      {:spandex_phoenix, "~> 1.0"},
       {:timex, "~> 3.6"},
-      {:wallaby, "~> 0.22", only: [:test], runtime: false},
+      {:wallaby, "~> 0.26", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
       {:phoenix_form_awesomplete, "~> 0.1.4"},

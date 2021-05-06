@@ -1,12 +1,12 @@
-defmodule Explorer.Counters.AddressTransactionsCounter do
+defmodule Explorer.Counters.AddressTokenUsdSum do
   @moduledoc """
-  Caches Address transactions counter.
+  Caches Address tokens USD value.
   """
   use GenServer
 
   alias Explorer.Chain
 
-  @cache_name :address_transactions_counter
+  @cache_name :address_tokens_usd_value
   @last_update_key "last_update"
   @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
 
@@ -17,7 +17,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     read_concurrency: true
   ]
 
-  config = Application.get_env(:explorer, Explorer.Counters.AddressTransactionsCounter)
+  config = Application.get_env(:explorer, Explorer.Counters.AddressTokenUsdSum)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -47,21 +47,21 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     {:noreply, state}
   end
 
-  def fetch(address) do
-    if cache_expired?(address) do
+  def fetch(address_hash, token_balances) do
+    if cache_expired?(address_hash) do
       Task.start_link(fn ->
-        update_cache(address)
+        update_cache(address_hash, token_balances)
       end)
     end
 
-    address_hash_string = get_address_hash_string(address)
+    address_hash_string = get_address_hash_string(address_hash)
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(address) do
-    address_hash_string = get_address_hash_string(address)
+  defp cache_expired?(address_hash) do
+    address_hash_string = get_address_hash_string(address_hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -71,10 +71,10 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     end
   end
 
-  defp update_cache(address) do
-    address_hash_string = get_address_hash_string(address)
+  defp update_cache(address_hash, token_balances) do
+    address_hash_string = get_address_hash_string(address_hash)
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
-    new_data = Chain.address_to_transaction_count(address)
+    new_data = Chain.address_tokens_usd_sum(token_balances)
     put_into_cache("hash_#{address_hash_string}", new_data)
   end
 
@@ -92,8 +92,8 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     :ets.insert(@cache_name, {key, value})
   end
 
-  defp get_address_hash_string(address) do
-    Base.encode16(address.hash.bytes, case: :lower)
+  defp get_address_hash_string(address_hash) do
+    Base.encode16(address_hash.bytes, case: :lower)
   end
 
   defp current_time do

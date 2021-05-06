@@ -40,7 +40,7 @@ defmodule Explorer.Application do
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
-      Supervisor.Spec.worker(SpandexDatadog.ApiServer, [datadog_opts()]),
+      Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
@@ -76,12 +76,14 @@ defmodule Explorer.Application do
       configure(Explorer.ChainSpec.GenesisData),
       configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
+      configure(Explorer.Chain.Cache.TokenExchangeRate),
       configure(Explorer.Chain.Transaction.History.Historian),
       configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AddressTransactionsCounter),
       configure(Explorer.Counters.AddressTransactionsGasUsageCounter),
+      configure(Explorer.Counters.AddressTokenUsdSum),
       configure(Explorer.Counters.TokenHoldersCounter),
       configure(Explorer.Counters.TokenTransfersCounter),
       configure(Explorer.Counters.AverageBlockTime),
