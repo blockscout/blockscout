@@ -25,8 +25,8 @@
                 <span class="loading-spinner-block-2"></span>
               </span>
 
-              <span data-success-message class="d-none"> - Success</span>
-              <span data-error-message class="d-none"> - Failed</span>
+              <span data-success-message style="display: none;"> - Success</span>
+              <span data-error-message style="display: none;"> - Failed</span>
             </button>
           </div>
         </div>
