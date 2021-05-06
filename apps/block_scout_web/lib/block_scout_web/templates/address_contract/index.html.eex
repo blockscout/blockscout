@@ -6,10 +6,12 @@
 <% additional_sources = if smart_contract_verified, do: @address.smart_contract_additional_sources, else: additional_sources_from_twin %>
 
 <section class="container">
-  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
   <div class="card">
-    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
     <div class="card-body">
       <%= unless smart_contract_verified do %>
         <%= if minimal_proxy_template do %>

@@ -232,6 +232,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       address = insert(:contract_address)
       smart_contract = insert(:smart_contract, address_hash: address.hash)
 
+      get_eip1967_implementation()
+
       blockchain_get_function_mock()
 
       path =
@@ -287,5 +289,20 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         {:ok, "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
       end
     )
+  end
+
+  def get_eip1967_implementation do
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                                id: 0,
+                                                method: "eth_getStorageAt",
+                                                params: [
+                                                  _,
+                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                                  "latest"
+                                                ]
+                                              },
+                                              _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
   end
 end

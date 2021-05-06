@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    Chain.proxy_contract?(address.smart_contract.abi)
+    Chain.proxy_contract?(address.hash, address.smart_contract.abi)
   end
 
   def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
@@ -266,7 +266,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def trimmed_hash(address) when is_binary(address) do
-    "#{String.slice(address, 0..5)}–#{String.slice(address, -6..-1)}"
+    "#{String.slice(address, 0..7)}–#{String.slice(address, -6..-1)}"
   end
 
   def trimmed_hash(_), do: ""
@@ -405,6 +405,8 @@ defmodule BlockScoutWeb.AddressView do
   def short_token_id(token_id, max_length) do
     short_string(token_id, max_length)
   end
+
+  def short_string(nil, _max_length), do: ""
 
   def short_string(name, max_length) do
     part_length = Kernel.trunc(max_length / 4)

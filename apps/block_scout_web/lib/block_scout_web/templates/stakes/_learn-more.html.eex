@@ -1,4 +1,4 @@
-<section class="container js-stakes-welcome-alert" style="display: none;">
+<section class="container js-stakes-welcome-alert d-none">
 <div class="card">
   <div class="card-body card-body-flex-column-space-between" style="padding-left: 50px;">
     <button type="button" class="stakes-btn-close-alert js-stakes-btn-close-welcome-alert">
