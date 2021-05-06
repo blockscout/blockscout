@@ -47,6 +47,8 @@ defmodule BlockScoutWeb.Endpoint do
   plug(
     Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
+    length: 20_000_000,
+    query_string_length: 1_000_000,
     pass: ["*/*"],
     json_decoder: Poison
   )

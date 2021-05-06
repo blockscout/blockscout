@@ -1,16 +1,18 @@
 <section class="container">
-  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
   <section data-page="address-internal-transactions">
     <div class="card">
-      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
-        <div data-selector="channel-batching-message" style="display: none;">
+        <div data-selector="channel-batching-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-info">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More internal transactions have come in" %></a>
           </div>
         </div>
-        <div data-selector="channel-disconnected-message" style="display: none;">
+        <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer internal transactions" %></a>
           </div>
@@ -48,10 +50,10 @@
           </div>
         </div>
 
-        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <button data-error-message class="alert alert-danger col-12 text-left d-none">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
         </button>
-        <div data-empty-response-message style="display: none;">
+        <div data-empty-response-message class="d-none">
           <div class="tile tile-muted text-center">
             <span data-selector="empty-internal-transactions-list"><%= gettext "There are no internal transactions for this address." %></span>
           </div>

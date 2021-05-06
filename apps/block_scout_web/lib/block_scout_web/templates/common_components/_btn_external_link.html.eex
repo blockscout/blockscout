@@ -1,0 +1,8 @@
+<a
+    class="btn-external-link btn-full-primary <%= if assigns[:extra_class] do @extra_class end %>"
+    href="<%= @link %>"
+    target="_blank"
+>
+    <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
+    <span class="btn-full-primary-text"><%= @text %></span>
+</a>

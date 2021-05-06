@@ -31,6 +31,11 @@ defmodule Indexer.SetAmbBridgedMetadataForTokens do
     {:noreply, state}
   end
 
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   defp fetch_amb_bridged_tokens_metadata do
     :ok = Chain.process_amb_tokens()
 

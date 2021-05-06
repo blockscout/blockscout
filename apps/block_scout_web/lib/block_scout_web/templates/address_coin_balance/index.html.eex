@@ -1,11 +1,13 @@
 <section class="container" data-page="coin-balance-history">
   <script defer src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
 
-  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
   <section>
     <div class="card">
-      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
         <div data-selector="channel-disconnected-message" style="display:none;">
           <div data-selector="reload-button" class="alert alert-danger" style="padding: 0.75rem 0rem; cursor: pointer;">
@@ -23,20 +25,20 @@
           </span>
           <%= gettext("Loading chart") %>...
         </div>
-        <button data-chart-error-message class="alert alert-danger col-12 text-left mb-4" style="display: none;">
+        <button data-chart-error-message class="alert alert-danger col-12 text-left mb-4 d-none">
           <span><%= gettext("There was a problem loading the chart.") %></span>
         </button>
-        <div data-chart-container style="display: none;" class="mb-4">
+        <div data-chart-container class="mb-4 d-none">
           <canvas data-chart="coinBalanceHistoryChart" data-coin_balance_history_data_path="<%= AccessHelpers.get_path(@conn, :address_coin_balance_by_day_path, :index, @address.hash) %>" width="350" height="152"></canvas>
         </div>
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
-        <div data-error-message class="alert alert-danger col-12 text-left" style="display: none; padding: 0.75rem 0rem; cursor: pointer;">
+        <div data-error-message class="alert alert-danger col-12 text-left d-none" style="padding: 0.75rem 0rem; cursor: pointer;">
           <span href="#" class="alert alert-danger"><%= gettext("Something went wrong, click to reload.") %></span>
         </div>
 
-        <div data-empty-response-message style="display: none;">
+        <div data-empty-response-message class="d-none">
           <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
             <%= gettext "There is no coin history for this address." %>
           </div>

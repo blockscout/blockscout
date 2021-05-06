@@ -32,7 +32,6 @@ You can also run IEx (Interactive Elixir): `$ iex -S mix phx.server` (This can b
 
   * Build the assets: `cd assets && npm run build`
   * Format the Elixir code: `mix format`
-  * Run the test suite with coverage: `mix coveralls.html`
   * Lint the Elixir code: `mix credo --strict`
   * Run the dialyzer: `mix dialyzer --halt-exit-status`
   * Check the Elixir code for vulnerabilities: `mix sobelow --config`
