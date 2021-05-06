@@ -16,10 +16,10 @@
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
-        <div data-empty-response-message class="tile tile-muted text-center d-none">
+        <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
           <span><%= gettext "There are no blocks validated by this address." %></span>
         </div>
-        <button data-error-message class="alert alert-danger col-12 text-left d-none">
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span class="alert-link">
             <%= gettext "Something went wrong, click to reload." %>
           </span>
