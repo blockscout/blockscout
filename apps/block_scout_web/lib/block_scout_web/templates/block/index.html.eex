@@ -1,7 +1,7 @@
 <section class="container" data-page="<%= String.downcase(@block_type) %>-list">
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
-      <div data-selector="channel-disconnected-message" style="display:none;">
+      <div data-selector="channel-disconnected-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-danger">
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer blocks" %></a>
         </div>
@@ -16,7 +16,7 @@
       <div data-items>
         <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
       </div>
-      <div data-empty-response-message class="d-none">
+      <div data-empty-response-message style="display: none;">
           <span><%= gettext "There are no blocks." %></span>
       </div>
 

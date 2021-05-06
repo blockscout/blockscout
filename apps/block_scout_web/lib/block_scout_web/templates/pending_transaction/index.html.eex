@@ -7,20 +7,20 @@
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
       </div>
  
-      <div data-selector="channel-batching-message" style="display:none;">
+      <div data-selector="channel-batching-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <div data-selector="channel-disconnected-message" style="display:none;">
+      <div data-selector="channel-disconnected-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-danger">
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
         </div>
       </div>
-      <button data-error-message class="alert alert-danger col-12 text-left d-none">
+      <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
         <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
       </button>
-      <div data-empty-response-message class="tile tile-muted text-center d-none">
+      <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
         <span data-selector="empty-transactions-list">
           <%= gettext "There are no pending transactions." %>
         </span>
