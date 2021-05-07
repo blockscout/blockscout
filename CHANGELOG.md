@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3946](https://github.com/blockscout/blockscout/pull/3946) - Get NFT metadata from URIs with status_code 301
 - [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix 
 
 ### Chore
