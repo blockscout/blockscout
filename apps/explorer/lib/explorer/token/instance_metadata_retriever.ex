@@ -75,10 +75,10 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       |> fetch_json()
 
     if res == {:ok, %{error: @vm_execution_error}} do
-      contract_functions_2 = %{@uri => [token_id]}
+      contract_functions_uri = %{@uri => [token_id]}
 
       contract_address_hash
-      |> query_contract(contract_functions_2, @abi_uri)
+      |> query_contract(contract_functions_uri, @abi_uri)
       |> fetch_json()
     else
       res
