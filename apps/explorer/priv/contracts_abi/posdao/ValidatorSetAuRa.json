@@ -1,734 +1,826 @@
-[
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "miningByStakingAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "initiateChangeAllowed",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "banCounter",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "stakingByMiningAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "blockRewardContract",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "banReason",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "bannedUntil",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "bannedDelegatorsUntil",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "unremovableValidator",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "MAX_VALIDATORS",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "validatorCounter",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "validatorSetApplyBlock",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "randomContract",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "changeRequestCount",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "stakingContract",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "isValidator",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "name": "parentHash",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "name": "newSet",
-        "type": "address[]"
-      }
-    ],
-    "name": "InitiateChange",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "name": "reportingValidator",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "maliciousValidator",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "blockNumber",
-        "type": "uint256"
-      }
-    ],
-    "name": "ReportedMalicious",
-    "type": "event"
-  },
-  {
-    "constant": false,
-    "inputs": [],
-    "name": "clearUnremovableValidator",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [],
-    "name": "emitInitiateChange",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [],
-    "name": "finalizeChange",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_blockRewardContract",
-        "type": "address"
-      },
-      {
-        "name": "_randomContract",
-        "type": "address"
-      },
-      {
-        "name": "_stakingContract",
-        "type": "address"
-      },
-      {
-        "name": "_initialMiningAddresses",
-        "type": "address[]"
-      },
-      {
-        "name": "_initialStakingAddresses",
-        "type": "address[]"
-      },
-      {
-        "name": "_firstValidatorIsUnremovable",
-        "type": "bool"
-      }
-    ],
-    "name": "initialize",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [],
-    "name": "newValidatorSet",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_miningAddresses",
-        "type": "address[]"
-      }
-    ],
-    "name": "removeMaliciousValidators",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_maliciousMiningAddress",
-        "type": "address"
-      },
-      {
-        "name": "_blockNumber",
-        "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "name": "reportMalicious",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "emitInitiateChangeCallable",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "getPendingValidators",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "validatorsToBeFinalized",
-    "outputs": [
-      {
-        "name": "miningAddresses",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "getValidators",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "isInitialized",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_miningAddress",
-        "type": "address"
-      }
-    ],
-    "name": "isReportValidatorValid",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_miningAddress",
-        "type": "address"
-      }
-    ],
-    "name": "isValidatorBanned",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_miningAddress",
-        "type": "address"
-      }
-    ],
-    "name": "areDelegatorsBanned",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_reportingMiningAddress",
-        "type": "address"
-      },
-      {
-        "name": "_maliciousMiningAddress",
-        "type": "address"
-      },
-      {
-        "name": "_blockNumber",
-        "type": "uint256"
-      }
-    ],
-    "name": "reportMaliciousCallable",
-    "outputs": [
-      {
-        "name": "callable",
-        "type": "bool"
-      },
-      {
-        "name": "removeReportingValidator",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "lastChangeBlock",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "hasEverBeenMiningAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "idByMiningAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "miningAddressById",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "stakingAddressById",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "idByStakingAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "poolName",
-    "outputs": [
-      {
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "poolDescription",
-    "outputs": [
-      {
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_name",
-        "type": "string"
-      },
-      {
-        "name": "_description",
-        "type": "string"
-      }
-    ],
-    "name": "changeMetadata",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-]
+[{
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address[]",
+		"name": "miningAddresses"
+	}, {
+		"type": "bool",
+		"name": "forNewEpoch"
+	}],
+	"name": "validatorsToBeFinalized",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"name": "miningByStakingAddress",
+	"inputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "removeMaliciousValidators",
+	"inputs": [{
+		"type": "address[]",
+		"name": "_miningAddresses"
+	}],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256[]",
+		"name": ""
+	}],
+	"name": "validatorsToBeFinalizedIds",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "setPoolNames",
+	"inputs": [],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"name": "stakingAddressById",
+	"inputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "initiateChangeAllowed",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "bannedDelegatorsUntil",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "banCounter",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"name": "stakingByMiningAddress",
+	"inputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "idByMiningAddress",
+	"inputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "addPool",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}, {
+		"type": "address",
+		"name": "_stakingAddress"
+	}, {
+		"type": "string",
+		"name": "_name"
+	}, {
+		"type": "string",
+		"name": "_description"
+	}],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "string",
+		"name": ""
+	}],
+	"name": "poolDescription",
+	"inputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "isInitialized",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "changeMiningAddress",
+	"inputs": [{
+		"type": "address",
+		"name": "_newMiningAddress"
+	}],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "emitInitiateChangeCallable",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "isValidatorIdBanned",
+	"inputs": [{
+		"type": "uint256",
+		"name": "_poolId"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"name": "blockRewardContract",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "bannedUntil",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "changeMetadata",
+	"inputs": [{
+		"type": "string",
+		"name": "_name"
+	}, {
+		"type": "string",
+		"name": "_description"
+	}],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "newValidatorSet",
+	"inputs": [],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256[]",
+		"name": ""
+	}],
+	"name": "getPendingValidatorsIds",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "hasEverBeenStakingAddress",
+	"inputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "unremovableValidator",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "MAX_VALIDATORS",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "clearUnremovableValidator",
+	"inputs": [],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "lastChangeBlock",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "finalizeChange",
+	"inputs": [],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "changeStakingAddress",
+	"inputs": [{
+		"type": "address",
+		"name": "_newStakingAddress"
+	}],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "hasEverBeenMiningAddress",
+	"inputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "isReportValidatorValid",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}, {
+		"type": "bool",
+		"name": "_reportingValidator"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": "poolId"
+	}, {
+		"type": "address",
+		"name": "newMiningAddress"
+	}],
+	"name": "miningAddressChangeRequest",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "emitInitiateChange",
+	"inputs": [],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "isValidatorById",
+	"inputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "initialize",
+	"inputs": [{
+		"type": "address",
+		"name": "_blockRewardContract"
+	}, {
+		"type": "address",
+		"name": "_randomContract"
+	}, {
+		"type": "address",
+		"name": "_stakingContract"
+	}, {
+		"type": "address[]",
+		"name": "_initialMiningAddresses"
+	}, {
+		"type": "address[]",
+		"name": "_initialStakingAddresses"
+	}, {
+		"type": "bool",
+		"name": "_firstValidatorIsUnremovable"
+	}],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "idByStakingAddress",
+	"inputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "isValidatorOrPending",
+	"inputs": [{
+		"type": "uint256",
+		"name": "_poolId"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "areIdDelegatorsBanned",
+	"inputs": [{
+		"type": "uint256",
+		"name": "_poolId"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "lastPoolId",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": "callable"
+	}, {
+		"type": "bool",
+		"name": "removeReportingValidator"
+	}],
+	"name": "reportMaliciousCallable",
+	"inputs": [{
+		"type": "address",
+		"name": "_reportingMiningAddress"
+	}, {
+		"type": "address",
+		"name": "_maliciousMiningAddress"
+	}, {
+		"type": "uint256",
+		"name": "_blockNumber"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "areDelegatorsBanned",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "isValidatorBanned",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "validatorCounter",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address[]",
+		"name": ""
+	}],
+	"name": "getValidators",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "validatorSetApplyBlock",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "nonpayable",
+	"payable": false,
+	"outputs": [],
+	"name": "reportMalicious",
+	"inputs": [{
+		"type": "address",
+		"name": "_maliciousMiningAddress"
+	}, {
+		"type": "uint256",
+		"name": "_blockNumber"
+	}, {
+		"type": "bytes",
+		"name": ""
+	}],
+	"constant": false
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bytes32",
+		"name": ""
+	}],
+	"name": "banReason",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "shouldValidatorReport",
+	"inputs": [{
+		"type": "address",
+		"name": "_reportingMiningAddress"
+	}, {
+		"type": "address",
+		"name": "_maliciousMiningAddress"
+	}, {
+		"type": "uint256",
+		"name": "_blockNumber"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "string",
+		"name": ""
+	}],
+	"name": "poolName",
+	"inputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"name": "randomContract",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"name": "changeRequestCount",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"name": "miningAddressById",
+	"inputs": [{
+		"type": "uint256",
+		"name": ""
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address",
+		"name": ""
+	}],
+	"name": "stakingContract",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "address[]",
+		"name": ""
+	}],
+	"name": "getPendingValidators",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "bool",
+		"name": ""
+	}],
+	"name": "isValidator",
+	"inputs": [{
+		"type": "address",
+		"name": "_miningAddress"
+	}],
+	"constant": true
+}, {
+	"type": "function",
+	"stateMutability": "view",
+	"payable": false,
+	"outputs": [{
+		"type": "uint256[]",
+		"name": ""
+	}],
+	"name": "getValidatorsIds",
+	"inputs": [],
+	"constant": true
+}, {
+	"type": "event",
+	"name": "ChangedMiningAddress",
+	"inputs": [{
+		"type": "uint256",
+		"name": "poolId",
+		"indexed": true
+	}, {
+		"type": "address",
+		"name": "oldMiningAddress",
+		"indexed": true
+	}, {
+		"type": "address",
+		"name": "newMiningAddress",
+		"indexed": true
+	}],
+	"anonymous": false
+}, {
+	"type": "event",
+	"name": "ChangedStakingAddress",
+	"inputs": [{
+		"type": "uint256",
+		"name": "poolId",
+		"indexed": true
+	}, {
+		"type": "address",
+		"name": "oldStakingAddress",
+		"indexed": true
+	}, {
+		"type": "address",
+		"name": "newStakingAddress",
+		"indexed": true
+	}],
+	"anonymous": false
+}, {
+	"type": "event",
+	"name": "InitiateChange",
+	"inputs": [{
+		"type": "bytes32",
+		"name": "parentHash",
+		"indexed": true
+	}, {
+		"type": "address[]",
+		"name": "newSet",
+		"indexed": false
+	}],
+	"anonymous": false
+}, {
+	"type": "event",
+	"name": "ReportedMalicious",
+	"inputs": [{
+		"type": "address",
+		"name": "reportingValidator",
+		"indexed": false
+	}, {
+		"type": "address",
+		"name": "maliciousValidator",
+		"indexed": false
+	}, {
+		"type": "uint256",
+		"name": "blockNumber",
+		"indexed": false
+	}, {
+		"type": "uint256",
+		"name": "reportingPoolId",
+		"indexed": false
+	}, {
+		"type": "uint256",
+		"name": "maliciousPoolId",
+		"indexed": false
+	}],
+	"anonymous": false
+}, {
+	"type": "event",
+	"name": "SetPoolMetadata",
+	"inputs": [{
+		"type": "uint256",
+		"name": "poolId",
+		"indexed": true
+	}, {
+		"type": "string",
+		"name": "name",
+		"indexed": false
+	}, {
+		"type": "string",
+		"name": "description",
+		"indexed": false
+	}],
+	"anonymous": false
+}]
