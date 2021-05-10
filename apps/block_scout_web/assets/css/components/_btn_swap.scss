@@ -1,5 +1,4 @@
 .btn-swap {
-    background-image: url("/images/icons/honeyswap.png");
     background-size: 15px 16px;
     width: 15px;
     height: 16px;
@@ -8,4 +7,11 @@
     margin-bottom: 3px;
     vertical-align: middle;
     cursor: pointer;
+
+    &.honeypot {
+        background-image: url("/images/icons/honeyswap.png");
+    }
+    &.sushi {
+        margin-top: -14px;
+    }
 }

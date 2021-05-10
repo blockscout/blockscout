@@ -147,6 +147,8 @@
                   <%= for %{url: url, title: title} <- apps_list() do %> 
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
+                  <hr class="menu-hr" />
+                  <a href="https://airtable.com/shr7veBkE77k5p86b" class="dropdown-item" target="_blank"><%= gettext("Add Your App") %></a>
                 </div>
 
                 <div class="col-xs-12 col-md-3 col-lg-3">
@@ -165,11 +167,11 @@
                 </div>
                 <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Ecosystem") %></b></h3>
+                  <a href="https://app.sushi.com/swap" class="dropdown-item" target="_blank"><%= gettext("Sushi") %> 🍣</a>
+                  <a href="https://honeyswap.org/" class="dropdown-item" target="_blank"><%= gettext("HoneySwap") %> <div class="btn-swap honeypot" style="margin-bottom: 2px"></div></a>
                   <%= for %{url: url, title: title} <- defi_list() do %> 
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
-                  <hr class="menu-hr" />
-                  <a href="https://airtable.com/shr7veBkE77k5p86b" class="dropdown-item" target="_blank"><%= gettext("Add Your App") %></a>
                 </div>
                 <div class="col-xs-12 col-md-3 col-lg-3">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("NFT") %></b></h3>

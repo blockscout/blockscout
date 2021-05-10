@@ -107,7 +107,12 @@
             %>
             <%= if @token.bridged do %>
               <%= render BlockScoutWeb.CommonComponentsView,
-                "_btn_swap_token.html",
+                "_btn_swap_token_honey.html",
+                contract_address: @token.contract_address,
+                symbol: @token.symbol
+              %>
+              <%= render BlockScoutWeb.CommonComponentsView,
+                "_btn_swap_token_sushi.html",
                 contract_address: @token.contract_address,
                 symbol: @token.symbol
               %>

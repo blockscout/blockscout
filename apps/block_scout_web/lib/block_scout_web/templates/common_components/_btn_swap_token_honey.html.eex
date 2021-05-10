@@ -2,7 +2,7 @@
     href="https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=<%= @contract_address %>&exactField=input"
     target="_blank"
 >
-<div class="btn-swap"
+<div class="btn-swap honeypot"
     aria-label='<%= gettext "Swap Token to WXDai" %>'
     data-token-symbol="<%= @symbol %>"
     data-placement="top"
