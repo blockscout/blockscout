@@ -1,18 +1,15 @@
 SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
-DOCKER_IMAGE = blockscout_prod
-BS_CONTAINER_NAME = blockscout
-PG_CONTAINER_NAME = postgres
-PG_CONTAINER_IMAGE = postgres:12.5
+DOCKER_IMAGE = blockscout_prod_core
+BS_CONTAINER_NAME = blockscout_core
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
-															 -e 'DATABASE_URL=$(DB_URL)'
+
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -49,8 +46,14 @@ endif
 ifdef NETWORK_PATH
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'NETWORK_PATH=$(NETWORK_PATH)'
 endif
+ifdef SECRET_KEY_BASE
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'SECRET_KEY_BASE=$(SECRET_KEY_BASE)'
+endif
 ifdef CHECK_ORIGIN
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CHECK_ORIGIN=$(CHECK_ORIGIN)'
+endif
+ifdef PORT
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'PORT=$(PORT)'
 endif
 ifdef COIN
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'COIN=$(COIN)'
@@ -72,6 +75,9 @@ ifdef SUPPLY_MODULE
 endif
 ifdef SOURCE_MODULE
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'SOURCE_MODULE=$(SOURCE_MODULE)'
+endif
+ifdef DATABASE_URL
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DATABASE_URL=$(DATABASE_URL)'
 endif
 ifdef POOL_SIZE
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'POOL_SIZE=$(POOL_SIZE)'
@@ -181,11 +187,11 @@ endif
 ifdef SHOW_ADDRESS_MARKETCAP_PERCENTAGE
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'SHOW_ADDRESS_MARKETCAP_PERCENTAGE=$(SHOW_ADDRESS_MARKETCAP_PERCENTAGE)'
 endif
-ifdef BLOCKSCOUT_PROTOCOL
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'BLOCKSCOUT_PROTOCOL=$(BLOCKSCOUT_PROTOCOL)'
-endif
 ifdef BLOCKSCOUT_HOST
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'BLOCKSCOUT_HOST=$(BLOCKSCOUT_HOST)'
+endif
+ifdef BLOCKSCOUT_PROTOCOL
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'BLOCKSCOUT_PROTOCOL=$(BLOCKSCOUT_PROTOCOL)'
 endif
 ifdef DECOMPILED_SMART_CONTRACT_TOKEN
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DECOMPILED_SMART_CONTRACT_TOKEN=$(DECOMPILED_SMART_CONTRACT_TOKEN)'
@@ -295,36 +301,13 @@ migrate_only:
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
-migrate: build postgres
+migrate:
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 
 
-PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
-PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
-postgres:
-ifdef PG_EXIST
-	@echo "==> Checking PostrgeSQL container"
-ifdef PG_STARTED
-	@echo "==> PostgreSQL Already started"
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-else
-	@echo "==> Starting PostgreSQL container"
-	@docker start $(PG_CONTAINER_NAME)
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-endif
-else
-	@echo "==> Creating new PostgreSQL container"
-	@docker run -d --name $(PG_CONTAINER_NAME) \
-					-e POSTGRES_PASSWORD="" \
-					-e POSTGRES_USER="postgres" \
-					-e POSTGRES_HOST_AUTH_METHOD="trust" \
-					-p 5432:5432 \
-					$(PG_CONTAINER_IMAGE)
-	@sleep 1
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-endif
-
-start: build postgres 
+start:
+	@$(MAKE) -f $(THIS_FILE) build
+	@$(MAKE) -f $(THIS_FILE) migrate
 	@echo "==> Starting blockscout"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
@@ -336,5 +319,4 @@ run: start
 .PHONY: build \
 				migrate \
 				start \
-				postgres \
 				run 
