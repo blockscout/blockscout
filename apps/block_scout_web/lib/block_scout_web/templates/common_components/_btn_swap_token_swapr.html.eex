@@ -1,0 +1,11 @@
+<a class="ml-1"
+    href="https://swapr.eth.link/#/swap?inputCurrency=<%= @contract_address %>&outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&chainId=100"
+    target="_blank"
+>
+<div class="btn-swap swapr"
+    aria-label='<%= gettext "Swap Token to WXDai through Swapr" %>'
+    data-token-symbol="<%= @symbol %>"
+    data-placement="top"
+    data-toggle="tooltip"
+></div>
+</a>

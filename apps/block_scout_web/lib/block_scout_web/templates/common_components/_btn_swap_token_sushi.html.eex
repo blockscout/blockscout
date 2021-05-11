@@ -3,7 +3,7 @@
     target="_blank"
 >
 <div class="btn-swap sushi"
-    aria-label='<%= gettext "Swap Token" %>'
+    aria-label='<%= gettext "Swap Token to WXDai through Sushi" %>'
     data-token-symbol="<%= @symbol %>"
     data-placement="top"
     data-toggle="tooltip"

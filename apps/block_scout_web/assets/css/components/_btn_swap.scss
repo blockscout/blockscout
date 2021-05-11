@@ -9,9 +9,12 @@
     cursor: pointer;
 
     &.honeypot {
-        background-image: url("/images/icons/honeyswap.png");
+        background-image: url("/images/icons/exchanges/honeyswap.png");
     }
     &.sushi {
         margin-top: -14px;
+    }
+    &.swapr {
+        background-image: url("/images/icons/exchanges/swapr.jpeg");
     }
 }

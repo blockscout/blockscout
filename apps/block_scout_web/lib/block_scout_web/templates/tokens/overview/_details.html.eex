@@ -116,6 +116,11 @@
                 contract_address: @token.contract_address,
                 symbol: @token.symbol
               %>
+              <%= render BlockScoutWeb.CommonComponentsView,
+                "_btn_swap_token_swapr.html",
+                contract_address: @token.contract_address,
+                symbol: @token.symbol
+              %>
             <% end %>
           </h3>
 

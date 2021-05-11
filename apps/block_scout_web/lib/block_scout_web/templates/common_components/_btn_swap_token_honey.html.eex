@@ -3,7 +3,7 @@
     target="_blank"
 >
 <div class="btn-swap honeypot"
-    aria-label='<%= gettext "Swap Token to WXDai" %>'
+    aria-label='<%= gettext "Swap Token to WXDai through HoneySwap" %>'
     data-token-symbol="<%= @symbol %>"
     data-placement="top"
     data-toggle="tooltip"
