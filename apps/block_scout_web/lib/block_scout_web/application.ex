@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.{RealtimeEventHandler, StakingEventHandler}
 
   def start(_type, _args) do
-    import Supervisor.Spec
+    import Supervisor
 
     Prometheus.Instrumenter.setup()
     Prometheus.Exporter.setup()
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.Application do
     children = [
       # Start the endpoint when the application starts
       {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
-      supervisor(Endpoint, []),
+      child_spec(Endpoint, []),
       {Absinthe.Subscription, Endpoint},
       {RealtimeEventHandler, name: RealtimeEventHandler},
       {StakingEventHandler, name: StakingEventHandler},

@@ -29,9 +29,7 @@ function transpileViewScript(file) {
 };
 
 const jsOptimizationParams = {
-  cache: true,
-  parallel: true,
-  sourceMap: true
+  parallel: true
 }
 
 const awesompleteJs = {
@@ -68,6 +66,34 @@ const awesompleteJs = {
   ]
 }
 
+const dropzoneJs = {
+  entry: {
+    dropzone: './js/lib/dropzone.js',
+  },
+  output: {
+    filename: '[name].min.js',
+    path: path.resolve(__dirname, '../priv/static/js')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: "css-loader",
+          }
+        ]
+      }
+    ]
+  },
+  optimization: {
+    minimizer: [
+      new TerserJSPlugin(jsOptimizationParams),
+    ]
+  }
+}
+
 const appJs =
   {
     entry: {
@@ -92,12 +118,13 @@ const appJs =
       'admin-tasks': './js/pages/admin/tasks.js',
       'read-token-contract': './js/pages/read_token_contract.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
-      'write_contract': './js/pages/write_contract.js',
+      'write-contract': './js/pages/write_contract.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
-      'non-critical': './css/non-critical.scss'
+      'non-critical': './css/non-critical.scss',
+      'tokens': './js/pages/token/search.js'
     },
     output: {
       filename: '[name].js',
@@ -149,6 +176,17 @@ const appJs =
         }
       ]
     },
+    resolve: {
+      fallback: {
+        "os": require.resolve("os-browserify/browser"),
+        "https": require.resolve("https-browserify"),
+        "http": require.resolve("stream-http"),
+        "crypto": require.resolve("crypto-browserify"),
+        "util": require.resolve("util/"),
+        "stream": require.resolve("stream-browserify"),
+        "assert": require.resolve("assert/"),
+      }
+    },
     plugins: [
       new MiniCssExtractPlugin({
         filename: '../css/[name].css'
@@ -163,10 +201,14 @@ const appJs =
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
-      })
+      }),
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+        Buffer: ['buffer', 'Buffer'],
+      }),
     ]
   }
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, awesompleteJs)
+module.exports = viewScripts.concat(appJs, awesompleteJs, dropzoneJs)

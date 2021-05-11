@@ -168,6 +168,16 @@ $stakes-stats-item-border-color: #fff !default;
     margin-bottom: 10px;
   }
 
+  .btn-external-link:hover {
+    color: #fff;
+  }
+
+  &.right {
+    @include media-breakpoint-up(sm) {
+      margin-left: 10px;
+    }
+  }
+
   @include media-breakpoint-down(md) {
     grid-column-start: 2;
     grid-row-start: 2;
@@ -188,4 +198,12 @@ $stakes-stats-item-border-color: #fff !default;
   &.at-bottom {
     padding-top: 30px;
   }
+}
+
+.stake-stats-container {
+  @include media-breakpoint-up(lg) {
+    margin-bottom: -30px;
+  }
+  margin-top: 10px;
+  font-size: 12px;
 }

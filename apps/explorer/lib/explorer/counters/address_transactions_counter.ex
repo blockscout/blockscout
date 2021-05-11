@@ -8,7 +8,6 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
 
   @cache_name :address_transactions_counter
   @last_update_key "last_update"
-  @cache_period Application.get_env(:explorer, __MODULE__)[:period]
 
   @ets_opts [
     :set,
@@ -61,12 +60,13 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
   def cache_name, do: @cache_name
 
   defp cache_expired?(address) do
+    cache_period = address_transactions_counter_cache_period()
     address_hash_string = get_address_hash_string(address)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
-      current_time() - updated_at > @cache_period -> true
+      current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
@@ -109,4 +109,11 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
   end
 
   def enable_consolidation?, do: @enable_consolidation
+
+  defp address_transactions_counter_cache_period do
+    case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_COUNTER_CACHE_PERIOD", "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.hours(1)
+    end
+  end
 end

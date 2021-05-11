@@ -23,15 +23,9 @@ config :explorer,
       else: Explorer.Chain.Events.DBSender
     )
 
-average_block_period =
-  case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.minutes(30)
-  end
-
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
-  period: average_block_period
+  period: :timer.minutes(10)
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
@@ -88,49 +82,29 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-address_transactions_counter_cache_period =
-  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
-
-address_transactions_gas_usage_counter_cache_period =
-  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
-
 config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: address_transactions_gas_usage_counter_cache_period
+  enable_consolidation: true
 
-token_holders_counter_cache_period =
-  case Integer.parse(System.get_env("TOKEN_HOLDERS_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
+config :explorer, Explorer.Counters.AddressTokenUsdSum,
+  enabled: true,
+  enable_consolidation: true
+
+config :explorer, Explorer.Chain.Cache.TokenExchangeRate,
+  enabled: true,
+  enable_consolidation: true
 
 config :explorer, Explorer.Counters.TokenHoldersCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: token_holders_counter_cache_period
-
-token_transfers_counter_cache_period =
-  case Integer.parse(System.get_env("TOKEN_TRANSFERS_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
+  enable_consolidation: true
 
 config :explorer, Explorer.Counters.TokenTransfersCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: token_transfers_counter_cache_period
+  enable_consolidation: true
 
 config :explorer, Explorer.Counters.AddressTransactionsCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: address_transactions_counter_cache_period
+  enable_consolidation: true
 
 bridge_market_cap_update_interval =
   if System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
@@ -143,7 +117,8 @@ bridge_market_cap_update_interval =
 config :explorer, Explorer.Counters.Bridge,
   enabled: if(System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false),
   enable_consolidation: System.get_env("DISABLE_BRIDGE_MARKET_CAP_UPDATER") !== "true",
-  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60
+  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60,
+  disable_lp_tokens_in_market_cap: System.get_env("DISABLE_LP_TOKENS_IN_MARKET_CAP") == "true"
 
 config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
 
@@ -202,7 +177,9 @@ config :explorer, Explorer.Chain.Block.Reward,
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.ContractState,
     enabled: true,
-    staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+    staking_contract_address: System.get_env("POS_STAKING_CONTRACT"),
+    eth_subscribe_max_delay: System.get_env("POS_ETH_SUBSCRIBE_MAX_DELAY", "60"),
+    eth_blocknumber_pull_interval: System.get_env("POS_ETH_BLOCKNUMBER_PULL_INTERVAL", "500")
 else
   config :explorer, Explorer.Staking.ContractState, enabled: false
 end
@@ -239,14 +216,6 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   tracer: Explorer.Tracer,
   otp_app: :explorer
 
-market_history_cache_period =
-  case Integer.parse(System.get_env("MARKET_HISTORY_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(6)
-  end
-
-config :explorer, Explorer.Market.MarketHistoryCache, period: market_history_cache_period
-
 config :explorer, Explorer.Chain.Cache.Blocks,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
@@ -271,6 +240,12 @@ config :explorer, Explorer.Chain.Cache.PendingTransactions,
 config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
+  server_url: System.get_env("SOURCIFY_SERVER_URL") || "https://sourcify.dev/server",
+  enabled: System.get_env("ENABLE_SOURCIFY_INTEGRATION") == "true",
+  chain_id: System.get_env("CHAIN_ID"),
+  repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts/full_match/"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

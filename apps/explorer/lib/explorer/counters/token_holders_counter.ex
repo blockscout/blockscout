@@ -8,7 +8,6 @@ defmodule Explorer.Counters.TokenHoldersCounter do
 
   @cache_name :token_holders_counter
   @last_update_key "last_update"
-  @cache_period Application.get_env(:explorer, __MODULE__)[:period]
 
   @ets_opts [
     :set,
@@ -61,12 +60,13 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash) do
+    cache_period = token_holders_counter_cache_period()
     address_hash_string = get_address_hash_string(address_hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
-      current_time() - updated_at > @cache_period -> true
+      current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
@@ -109,4 +109,11 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   end
 
   def enable_consolidation?, do: @enable_consolidation
+
+  defp token_holders_counter_cache_period do
+    case Integer.parse(System.get_env("TOKEN_HOLDERS_COUNTER_CACHE_PERIOD", "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.hours(1)
+    end
+  end
 end

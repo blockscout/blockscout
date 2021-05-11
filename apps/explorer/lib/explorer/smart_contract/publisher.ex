@@ -45,10 +45,10 @@ defmodule Explorer.SmartContract.Publisher do
     end
   end
 
-  defp publish_smart_contract(address_hash, params, abi) do
+  def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
-    Chain.create_smart_contract(attrs, attrs.external_libraries)
+    Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message) do
@@ -89,7 +89,9 @@ defmodule Explorer.SmartContract.Publisher do
       contract_source_code: params["contract_source_code"],
       constructor_arguments: clean_constructor_arguments,
       external_libraries: prepared_external_libraries,
-      abi: abi
+      secondary_sources: params["secondary_sources"],
+      abi: abi,
+      verified_via_sourcify: params["verified_via_sourcify"]
     }
   end
 
@@ -104,7 +106,7 @@ defmodule Explorer.SmartContract.Publisher do
 
   defp add_external_libraries(params, external_libraries) do
     clean_external_libraries =
-      Enum.reduce(1..5, %{}, fn number, acc ->
+      Enum.reduce(1..10, %{}, fn number, acc ->
         address_key = "library#{number}_address"
         name_key = "library#{number}_name"
 

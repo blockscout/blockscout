@@ -86,7 +86,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
-    Publisher.broadcast([{:last_block_number, number}], :realtime)
+
+    if number > 0 do
+      Publisher.broadcast([{:last_block_number, number}], :realtime)
+    end
+
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
     start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
@@ -134,6 +138,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
          max_number_seen: new_max_number,
          timer: timer
      }}
+  end
+
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
   end
 
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)

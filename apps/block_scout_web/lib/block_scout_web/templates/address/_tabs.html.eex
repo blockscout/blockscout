@@ -1,4 +1,6 @@
-<% dark_forest_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
+<% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
+<% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
+<% dark_forest_addresses_list = dark_forest_addresses_list_0_4 ++ dark_forest_addresses_list_0_5 %>
 <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
 <div class="card-tabs js-card-tabs">
   <%= link(
@@ -81,7 +83,7 @@
         class: "card-tab #{tab_status("read-contract", @conn.request_path)}")
         %>
   <% end %>
-  <%= if smart_contract_is_proxy?(@address) do %>
+  <%= if @is_proxy do %>
     <%= link(
         gettext("Read Proxy"),
         to: AccessHelpers.get_path(@conn, :address_read_proxy_path, :index, @address.hash),
@@ -95,7 +97,7 @@
         class: "card-tab #{tab_status("write-contract", @conn.request_path)}")
         %>
   <% end %>
-  <%= if smart_contract_with_write_functions?(@address) && smart_contract_is_proxy?(@address)  do %>
+  <%= if smart_contract_with_write_functions?(@address) && @is_proxy  do %>
     <%= link(
         gettext("Write Proxy"),
         to: AccessHelpers.get_path(@conn, :address_write_proxy_path, :index, @address.hash),

@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/tokens", TokensController, only: [:index])
 
-    resources("/bridged-tokens", BridgedTokensController, only: [:index])
+    resources("/bridged-tokens", BridgedTokensController, only: [:index, :show])
 
     resources "/address", AddressController, only: [:show] do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
@@ -124,6 +124,36 @@ defmodule BlockScoutWeb.WebRouter do
         AddressContractVerificationController,
         only: [:new],
         as: :verify_contract
+      )
+
+      # if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+      #   resources(
+      #     "/contract_verifications",
+      #     AddressContractVerificationController,
+      #     only: [:new],
+      #     as: :verify_contract
+      #   )
+      # else
+      #   resources(
+      #     "/contract_verifications",
+      #     AddressContractVerificationViaFlattenedCodeController,
+      #     only: [:new],
+      #     as: :verify_contract
+      #   )
+      # end
+
+      resources(
+        "/verify-via-flattened-code",
+        AddressContractVerificationViaFlattenedCodeController,
+        only: [:new],
+        as: :verify_contract_via_flattened_code
+      )
+
+      resources(
+        "/verify-via-json",
+        AddressContractVerificationViaJsonController,
+        only: [:new],
+        as: :verify_contract_via_json
       )
 
       resources(
@@ -256,11 +286,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-logs", AddressLogsController, :search_logs)
 
-    get("/transactions_csv", AddressTransactionController, :transactions_csv)
-
     get("/token-autocomplete", ChainController, :token_autocomplete)
-
-    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
 
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)
 

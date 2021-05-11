@@ -224,6 +224,7 @@ defmodule Explorer.EthRPC do
 
   defp validate_topics(topics) when is_list(topics) do
     topics
+    |> Enum.filter(&(!is_nil(&1)))
     |> Stream.with_index()
     |> Enum.reduce({:ok, %{}}, fn {topic, index}, {:ok, acc} ->
       case cast_topics(topic) do

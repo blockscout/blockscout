@@ -38,15 +38,22 @@ defmodule BlockScoutWeb.StakesHelpers do
   end
 
   def list_title(:validator), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Validators")
-  def list_title(:active), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Active Pools")
+  def list_title(:active), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Active Pools (Candidates)")
   def list_title(:inactive), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Inactive Pools")
 
-  def from_wei(%Decimal{} = amount, %Token{} = token) do
+  def from_wei(%Decimal{} = amount, %Token{} = token, to_string \\ true) do
     decimals = if token.decimals, do: Decimal.to_integer(token.decimals), else: 0
 
-    amount.sign
-    |> Decimal.new(amount.coef, amount.exp - decimals)
-    |> Decimal.reduce()
+    result =
+      amount.sign
+      |> Decimal.new(amount.coef, amount.exp - decimals)
+      |> Decimal.normalize()
+
+    if to_string do
+      Decimal.to_string(result, :normal)
+    else
+      result
+    end
   end
 
   def format_token_amount(amount, token, options \\ [])
@@ -65,10 +72,14 @@ defmodule BlockScoutWeb.StakesHelpers do
     ellipsize = Keyword.get(options, :ellipsize, true)
     no_tooltip = Keyword.get(options, :no_tooltip, false)
 
-    reduced = from_wei(amount, token)
+    reduced = from_wei(amount, token, false)
 
     if digits >= -reduced.exp or not ellipsize do
-      "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
+      if min(digits, -reduced.exp) >= 0 do
+        "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
+      else
+        "#{Number.to_string!(reduced, fractional_digits: 0)}#{symbol}"
+      end
     else
       clipped = "#{Number.to_string!(reduced, fractional_digits: digits)}...#{symbol}"
 

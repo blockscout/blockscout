@@ -1,15 +1,15 @@
 defmodule Explorer.Counters.Bridge do
   @moduledoc """
-  Caches the prices of bridged tokens.
+  Caches the total supply of TokenBridge and OmniBridge.
 
   It loads the count asynchronously and in a time interval of 30 minutes.
   """
 
   use GenServer
 
+  alias Explorer.Chain.Cache.TokenExchangeRate
   alias Explorer.Chain.Supply.TokenBridge
 
-  @prices_table :omni_bridge_bridged_tokens_prices
   @bridges_table :bridges_market_cap
 
   @current_total_supply_from_token_bridge_cache_key "current_total_supply_from_token_bridge"
@@ -21,10 +21,6 @@ defmodule Explorer.Counters.Bridge do
     :public,
     read_concurrency: true
   ]
-
-  def price_cache_key(symbol) do
-    "token_symbol_price_#{symbol}"
-  end
 
   # It is undesirable to automatically start the consolidation in all environments.
   # Consider the test environment: if the consolidation initiates but does not
@@ -51,16 +47,6 @@ defmodule Explorer.Counters.Bridge do
     {:ok, %{consolidate?: enable_consolidation?()}, {:continue, :ok}}
   end
 
-  def prices_table_exists? do
-    :ets.whereis(@prices_table) !== :undefined
-  end
-
-  def create_prices_table do
-    unless prices_table_exists?() do
-      :ets.new(@prices_table, @ets_opts)
-    end
-  end
-
   def bridges_table_exists? do
     :ets.whereis(@bridges_table) !== :undefined
   end
@@ -72,7 +58,7 @@ defmodule Explorer.Counters.Bridge do
   end
 
   def create_tables do
-    create_prices_table()
+    TokenExchangeRate.create_cache_table()
     create_bridges_table()
   end
 
@@ -84,8 +70,8 @@ defmodule Explorer.Counters.Bridge do
   Inserts new bridged token price into the `:ets` table.
   """
   def insert_price({key, info}) do
-    if prices_table_exists?() do
-      :ets.insert(@prices_table, {key, info})
+    if TokenExchangeRate.cache_table_exists?() do
+      TokenExchangeRate.put_into_cache(key, info)
     end
   end
 
@@ -110,19 +96,10 @@ defmodule Explorer.Counters.Bridge do
     {:noreply, state}
   end
 
-  @doc """
-  Fetches the info for a specific item from the `:ets` table.
-  """
-  def fetch_token_price(symbol) do
-    if prices_table_exists?() do
-      do_fetch_token_price(:ets.lookup(@prices_table, price_cache_key(symbol)))
-    else
-      0
-    end
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
   end
-
-  defp do_fetch_token_price([{_, result}]), do: result
-  defp do_fetch_token_price([]), do: 0
 
   def fetch_token_bridge_total_supply do
     if bridges_table_exists?() do
@@ -142,7 +119,7 @@ defmodule Explorer.Counters.Bridge do
     if bridges_table_exists?() do
       do_fetch_omni_bridge_market_cap(:ets.lookup(@bridges_table, @current_market_cap_from_omni_bridge_cache_key))
     else
-      0
+      Decimal.new(0)
     end
   end
 
@@ -189,9 +166,12 @@ defmodule Explorer.Counters.Bridge do
     bridged_mainnet_tokens_list = TokenBridge.get_bridged_mainnet_tokens_list()
 
     bridged_mainnet_tokens_list
-    |> Enum.each(fn {_bridged_token_hash, bridged_token_symbol} ->
-      bridged_token_price = TokenBridge.get_current_price_for_bridged_token(bridged_token_symbol)
-      insert_price({price_cache_key(bridged_token_symbol), bridged_token_price})
+    |> Enum.each(fn {bridged_token_hash, _bridged_token_symbol, _custom_cap, foreign_token_contract_address_hash} ->
+      bridged_token_price =
+        TokenBridge.get_current_price_for_bridged_token(bridged_token_hash, foreign_token_contract_address_hash)
+
+      cache_key = TokenExchangeRate.cache_key(foreign_token_contract_address_hash)
+      TokenExchangeRate.put_into_cache(cache_key, bridged_token_price)
     end)
 
     update_total_supply_from_token_bridge_cache()

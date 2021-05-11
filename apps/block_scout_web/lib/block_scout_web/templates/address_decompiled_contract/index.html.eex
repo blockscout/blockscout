@@ -1,7 +1,9 @@
 <section class="container">
-  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
   <div class="card">
-    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
     <% contract = last_decompiled_contract_version(@address.decompiled_smart_contracts) %>
     <%= if contract do %>
       <div class="card-body">

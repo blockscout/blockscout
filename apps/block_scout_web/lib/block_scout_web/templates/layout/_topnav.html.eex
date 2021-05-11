@@ -2,6 +2,8 @@
 <link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>">
 <script src="<%= static_path(@conn, "/js/awesomplete.min.js") %>"></script>
 <script src="<%= static_path(@conn, "/js/awesomplete-util.min.js") %>"></script>
+<% staking_enabled_in_menu = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled_in_menu] %>
+<% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {
@@ -78,7 +80,7 @@
               <%= gettext("Accounts") %>
             <% end %>
           </li>
-          <%= if Application.get_env(:block_scout_web, :omni_bridge_mediator) && Application.get_env(:block_scout_web, :omni_bridge_mediator) != "" do %>
+          <%= if Chain.bridged_tokens_enabled?() do %>
             <li class="nav-item dropdown">
               <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="nav-link-icon">
@@ -93,9 +95,14 @@
                       to: tokens_path(@conn, :index)
                     ) %>
                 <%= link(
-                      gettext("Bridged"),
-                      class: "dropdown-item #{tab_status("bridged-tokens", @conn.request_path)}",
-                      to: bridged_tokens_path(@conn, :index)
+                      gettext("Bridged from Ethereum"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/eth", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :eth)
+                    ) %>
+                <%= link(
+                      gettext("Bridged from BSC"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/bsc", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :bsc)
                     ) %>
               </div>
             </li>
@@ -137,36 +144,28 @@
             </div>
           </li>
         <% end %>
-        <%= if Application.get_env(:block_scout_web, :apps_menu) == true || Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
+        <%= if apps_menu == true || staking_enabled_in_menu do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
               </span>
-              <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+              <%= if apps_menu == true do %>
                 <%= gettext("Apps") %>
               <% else %>
                 <%= gettext("Stakes") %>
               <% end %>
             </a>
             <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
-              <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
+              <%= if staking_enabled_in_menu do %>
                 <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                  <%= gettext("Validators") %>
-                  <span class="bs-label secondary right from-dropdown">Beta</span>
-                </a>
-                <a class="dropdown-item <%= #{tab_status("active-pools", @conn.request_path)} %>" href="<%= active_pools_path(@conn, :index) %>">
-                  <%= gettext("Active Pools") %>
-                  <span class="bs-label secondary right from-dropdown">Beta</span>
-                </a>
-                <a class="dropdown-item <%= #{tab_status("inactive-pools", @conn.request_path)} %>" href="<%= inactive_pools_path(@conn, :index) %>">
-                  <%= gettext("Inactive Pools") %>
-                  <span class="bs-label secondary right from-dropdown">Beta</span>
+                  <%= gettext("Staking") %>
+                  <span class="bs-label secondary right from-dropdown">New</span>
                 </a>
               <% end %>
-              <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+              <%= if apps_menu == true do %>
                 <%= for %{url: url, title: title} <- external_apps_list() do %> 
-                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %>
+                    <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
                       <span class="external-link-icon">
                         <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
                       </span>
@@ -186,15 +185,15 @@
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">  
             <a class="dropdown-item header division">Mainnets</a> 
             <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>  
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
             <% end %> 
             <a class="dropdown-item header division">Testnets</a> 
             <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %> 
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
             <% end %> 
             <a class="dropdown-item header division">Other Networks</a> 
             <%= for %{url: url, title: title} <- dropdown_other_nets() do %>  
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
             <% end %> 
           </div>
         </li>
@@ -240,10 +239,23 @@
                       }
                     }"
                     ]) %>
-                <div class="input-group-append">
+                <div class="input-group-append left">
                   <button class="input-group-text" id="search-icon">
                     <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
                   </button>
+                </div>
+                <div class="input-group-append right desktop-only">
+                  <div
+                    id="slash-icon"
+                    class="input-group-text border"
+                    data-placement="bottom"
+                    data-toggle="tooltip"
+                    title=""
+                    data-original-title='<%= gettext("Press / and focus will be moved to the search field") %>'
+                    data-template="<div class='tooltip tooltip-pale-color' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+                  >
+                    /
+                  </div>
                 </div>
             </div>
             <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
@@ -261,7 +273,7 @@
 </nav>
 <script>
   if (localStorage.getItem("current-color-mode") === "dark") {
-    var modeChanger = document.getElementById("dark-mode-changer");
+    let modeChanger = document.getElementById("dark-mode-changer");
     modeChanger.className += " " + "dark-mode-changer--dark";
   }
 </script> 

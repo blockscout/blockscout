@@ -68,7 +68,7 @@
       },
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "epochPoolNativeReward",
@@ -190,7 +190,7 @@
       },
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "epochPoolTokenReward",
@@ -260,7 +260,7 @@
       },
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "blocksCreated",
@@ -364,6 +364,10 @@
     "inputs": [
       {
         "name": "_validatorSet",
+        "type": "address"
+      },
+      {
+        "name": "_prevBlockReward",
         "type": "address"
       }
     ],
@@ -548,8 +552,8 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_stakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       }
     ],
     "name": "validatorRewardPercent",

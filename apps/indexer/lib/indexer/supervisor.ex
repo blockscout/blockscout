@@ -5,7 +5,17 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
-  alias Indexer.{Block, PendingOpsCleaner, SetAmbBridgedMetadataForTokens, SetOmniBridgedMetadataForTokens}
+  alias Explorer.Chain
+
+  alias Indexer.{
+    Block,
+    CalcLpTokensTotalLiqudity,
+    PendingOpsCleaner,
+    PendingTransactionsSanitizer,
+    SetAmbBridgedMetadataForTokens,
+    SetOmniBridgedMetadataForTokens
+  }
+
   alias Indexer.Block.{Catchup, Realtime}
 
   alias Indexer.Fetcher.{
@@ -117,6 +127,7 @@ defmodule Indexer.Supervisor do
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers
       {UncatalogedTokenTransfers.Supervisor, [[]]},
@@ -127,11 +138,10 @@ defmodule Indexer.Supervisor do
       {PendingOpsCleaner, [[], []]}
     ]
 
-    omni_bridge_mediator = Application.get_env(:block_scout_web, :omni_bridge_mediator)
-
     extended_fetchers =
-      if omni_bridge_mediator && omni_bridge_mediator !== "" do
-        [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
+      if Chain.bridged_tokens_enabled?() do
+        fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
+        [{CalcLpTokensTotalLiqudity, [[], []]} | fetchers_with_omni_status]
       else
         basic_fetchers
       end

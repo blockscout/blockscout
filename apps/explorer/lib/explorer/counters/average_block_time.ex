@@ -11,8 +11,6 @@ defmodule Explorer.Counters.AverageBlockTime do
   alias Explorer.Repo
   alias Timex.Duration
 
-  @refresh_period Application.get_env(:explorer, __MODULE__)[:period]
-
   @doc """
   Starts a process to periodically update the counter of the token holders.
   """
@@ -41,7 +39,8 @@ defmodule Explorer.Counters.AverageBlockTime do
   ## Server
   @impl true
   def init(_) do
-    Process.send_after(self(), :refresh_timestamps, @refresh_period)
+    refresh_period = average_block_cache_period()
+    Process.send_after(self(), :refresh_timestamps, refresh_period)
 
     {:ok, refresh_timestamps()}
   end
@@ -56,7 +55,8 @@ defmodule Explorer.Counters.AverageBlockTime do
 
   @impl true
   def handle_info(:refresh_timestamps, _) do
-    Process.send_after(self(), :refresh_timestamps, @refresh_period)
+    refresh_period = Application.get_env(:explorer, __MODULE__)[:period]
+    Process.send_after(self(), :refresh_timestamps, refresh_period)
 
     {:noreply, refresh_timestamps()}
   end
@@ -127,5 +127,12 @@ defmodule Explorer.Counters.AverageBlockTime do
       end
     end)
     |> elem(0)
+  end
+
+  defp average_block_cache_period do
+    case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.minutes(30)
+    end
   end
 end

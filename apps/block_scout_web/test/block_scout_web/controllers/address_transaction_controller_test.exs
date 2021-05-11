@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.AddressTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
+  use ExUnit.Case, async: false
 
   import BlockScoutWeb.WebRouter.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
   import Mox
@@ -154,42 +155,6 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert Enum.all?([transaction.hash], fn transaction_hash ->
                Enum.any?(transaction_tiles, &String.contains?(&1, to_string(transaction_hash)))
              end)
-    end
-  end
-
-  describe "GET token-transfers-csv/2" do
-    test "exports token transfers to csv", %{conn: conn} do
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: address)
-        |> with_block()
-
-      insert(:token_transfer, transaction: transaction, from_address: address)
-      insert(:token_transfer, transaction: transaction, to_address: address)
-
-      conn = get(conn, "/token-transfers-csv", %{"address_id" => Address.checksum(address.hash)})
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
-    end
-  end
-
-  describe "GET transactions_csv/2" do
-    test "download csv file with transactions", %{conn: conn} do
-      address = insert(:address)
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block()
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block()
-
-      conn = get(conn, "/transactions_csv", %{"address_id" => Address.checksum(address.hash)})
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end
   end
 end

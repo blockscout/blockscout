@@ -19,17 +19,19 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
   }
 
   if (!from) {
-    return callbackFunc('Your MetaMask account is undefined. Please, contact support.')
+    return callbackFunc('Your MetaMask account is undefined. Please, ensure you are using the latest version of MetaMask and connected it to the page')
   } else if (!web3) {
     return callbackFunc('Web3 is undefined. Please, contact support.')
   }
 
-  const gasPrice = web3.utils.toWei('1', 'gwei')
+  const gasPrice = web3.utils.toWei('20', 'gwei')
 
   if (!gasLimit) {
     try {
       gasLimit = await call.estimateGas({ from, gasPrice })
     } catch (e) {
+      console.log(`from = ${from}`)
+      console.error(e)
       return callbackFunc('Your transaction cannot be mined at the moment. Please, try again in a few blocks.')
     }
   }
@@ -128,7 +130,7 @@ export function isSupportedNetwork (store) {
   if (state.network && state.network.authorized) {
     return true
   }
-  openWarningModal('Unauthorized', 'Please, connect to the xDai Chain.<br /><a href="https://xdaichain.com" target="_blank">Instructions</a>')
+  openWarningModal('Unauthorized', 'Please, connect to the xDai Chain.<br /><a href="https://xdaichain.com" target="_blank">Instructions</a>. If you have already connected to, please update MetaMask to the latest version.')
   return false
 }
 

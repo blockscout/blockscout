@@ -3,7 +3,7 @@ HOST = host.docker.internal
 DOCKER_IMAGE = blockscout_prod
 BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
-PG_CONTAINER_IMAGE = postgres:12.4
+PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 
 ifeq ($(SYSTEM), Linux)
@@ -272,8 +272,14 @@ endif
 ifdef DISABLE_KNOWN_TOKENS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_KNOWN_TOKENS=$(DISABLE_KNOWN_TOKENS)'
 endif
+ifdef DISABLE_LP_TOKENS_IN_MARKET_CAP
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_LP_TOKENS_IN_MARKET_CAP=$(DISABLE_LP_TOKENS_IN_MARKET_CAP)'
+endif
+ifdef CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN=$(CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN)'
+endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
@@ -283,11 +289,14 @@ else
 	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 endif
 
-migrate: build postgres
+migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+
+migrate: build postgres
+	@$(MAKE) -f $(THIS_FILE) migrate_only
 
 
 PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
@@ -297,9 +306,11 @@ ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"
 ifdef PG_STARTED
 	@echo "==> PostgreSQL Already started"
+	@$(MAKE) -f $(THIS_FILE) migrate_only
 else
 	@echo "==> Starting PostgreSQL container"
 	@docker start $(PG_CONTAINER_NAME)
+	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
 else
 	@echo "==> Creating new PostgreSQL container"
@@ -310,7 +321,7 @@ else
 					-p 5432:5432 \
 					$(PG_CONTAINER_IMAGE)
 	@sleep 1
-	@$(MAKE) -f $(THIS_FILE) migrate
+	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
 
 start: build postgres 

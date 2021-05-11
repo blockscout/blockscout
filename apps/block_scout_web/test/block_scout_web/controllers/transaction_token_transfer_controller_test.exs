@@ -1,12 +1,19 @@
 defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
   use BlockScoutWeb.ConnCase
 
+  import Mox
+
   import BlockScoutWeb.WebRouter.Helpers, only: [transaction_token_transfer_path: 3]
 
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
     test "load token transfers", %{conn: conn} do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
+        {:ok, "100"}
+      end)
+
       transaction = insert(:transaction)
       token_transfer = insert(:token_transfer, transaction: transaction)
 
@@ -64,6 +71,11 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
+        {:ok, "100"}
+      end)
+
       transaction = insert(:transaction)
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
@@ -146,6 +158,11 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "preloads to_address smart contract verified", %{conn: conn} do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
+        {:ok, "100"}
+      end)
+
       transaction = insert(:transaction_to_verified_contract)
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))

@@ -25,6 +25,9 @@ import '../app'
  *
  *   the data-async-load is the attribute responsible for binding the store.
  *
+ *   data-no-first-loading attribute can also be used along with data-async-load
+ *   to prevent loading items for the first time
+ *
  * If the page has a redux associated with, you need to connect the reducers instead of creating
  * the store using the `createStore`. For instance:
  *
@@ -38,6 +41,8 @@ import '../app'
  * to create a store and it is not necessary for this case.
  *
  */
+
+var enableFirstLoading = true
 
 export const asyncInitialState = {
   /* it will consider any query param in the current URI as paging */
@@ -91,7 +96,7 @@ export function asyncReducer (state = asyncInitialState, action) {
       })
     }
     case 'ITEMS_FETCHED': {
-      var prevPagePath = null
+      let prevPagePath = null
 
       if (state.pagesStack.length >= 2) {
         prevPagePath = state.pagesStack[state.pagesStack.length - 2]
@@ -250,6 +255,15 @@ export const elements = {
       $el.hide()
     }
   },
+  '[data-async-listing] [data-pagination-container]': {
+    render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+
+      $el.show()
+    }
+  },
   '[csv-download]': {
     render ($el, state) {
       if (state.emptyResponse) {
@@ -310,7 +324,10 @@ function firstPageLoad (store) {
   function loadItemsPrev () {
     loadPage(store, store.getState().prevPagePath)
   }
-  loadItemsNext()
+
+  if (enableFirstLoading) {
+    loadItemsNext()
+  }
 
   $element.on('click', '[data-error-message]', (event) => {
     event.preventDefault()
@@ -334,7 +351,12 @@ function firstPageLoad (store) {
 
 const $element = $('[data-async-load]')
 if ($element.length) {
-  const store = createStore(asyncReducer)
-  connectElements({ store, elements })
-  firstPageLoad(store)
+  if (Object.prototype.hasOwnProperty.call($element.data(), 'noFirstLoading')) {
+    enableFirstLoading = false
+  }
+  if (enableFirstLoading) {
+    const store = createStore(asyncReducer)
+    connectElements({ store, elements })
+    firstPageLoad(store)
+  }
 }

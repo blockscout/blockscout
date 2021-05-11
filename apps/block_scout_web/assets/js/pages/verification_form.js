@@ -5,6 +5,7 @@ import humps from 'humps'
 import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import '../app'
+import Dropzone from 'dropzone'
 
 export const initialState = {
   channelDisconnected: false,
@@ -27,7 +28,7 @@ export function reducer (state = initialState, action) {
     }
     case 'RECEIVED_VERIFICATION_RESULT': {
       if (action.msg.verificationResult === 'ok') {
-        return window.location.replace(window.location.href.split('/contract_verifications')[0] + '/contracts')
+        return window.location.replace(window.location.href.split('/contract_verifications')[0].split('/verify')[0] + '/contracts')
       } else {
         return Object.assign({}, state, {
           newForm: action.msg.verificationResult
@@ -49,7 +50,7 @@ const elements = {
     render ($el, state) {
       if (state.newForm) {
         $el.replaceWith(state.newForm)
-        $('button[data-button-loading="animation"]').click(event => {
+        $('button[data-button-loading="animation"]').click(_event => {
           $('#loading').removeClass('d-none')
         })
 
@@ -88,13 +89,13 @@ const elements = {
 }
 
 const $contractVerificationPage = $('[data-page="contract-verification"]')
+const $contractVerificationChooseTypePage = $('[data-page="contract-verification-choose-type"]')
 
 function filterNightlyBuilds (filter) {
-  var select, options
-  select = document.getElementById('smart_contract_compiler_version')
-  options = select.getElementsByTagName('option')
+  const select = document.getElementById('smart_contract_compiler_version')
+  const options = select.getElementsByTagName('option')
   for (const option of options) {
-    var txtValue = option.textContent || option.innerText
+    const txtValue = option.textContent || option.innerText
     if (filter) {
       if (txtValue.toLowerCase().indexOf('nightly') > -1) {
         option.style.display = 'none'
@@ -132,11 +133,40 @@ if ($contractVerificationPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  $('button[data-button-loading="animation"]').click(event => {
+  $('button[data-button-loading="animation"]').click(_event => {
     $('#loading').removeClass('d-none')
   })
 
   $(function () {
+    if ($('#metadata-json-dropzone').length) {
+      var dropzone = new Dropzone('#metadata-json-dropzone', {
+        autoProcessQueue: false,
+        acceptedFiles: 'text/plain,application/json,.sol,.json',
+        parallelUploads: 100,
+        uploadMultiple: true,
+        addRemoveLinks: true,
+        params: { address_hash: $('#smart_contract_address_hash').val() },
+        init: function () {
+          this.on('addedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+            $('#file-help-block').text('')
+          })
+
+          this.on('removedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+          })
+        }
+      })
+    }
+
+    function changeVisibilityOfVerifyButton (filesLength) {
+      if (filesLength > 0) {
+        $('#verify-via-json-submit').prop('disabled', false)
+      } else {
+        $('#verify-via-json-submit').prop('disabled', true)
+      }
+    }
+
     setTimeout(function () {
       $('.nightly-builds-false').trigger('click')
     }, 10)
@@ -189,5 +219,27 @@ if ($contractVerificationPage.length) {
         $('.js-add-contract-library-wrapper').hide()
       }
     })
+
+    $('#verify-via-json-submit').on('click', function () {
+      if (dropzone.files.length > 0) {
+        dropzone.processQueue()
+      } else {
+        $('#loading').addClass('d-none')
+      }
+    })
+  })
+} else if ($contractVerificationChooseTypePage.length) {
+  $('.verify-via-flattened-code').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').show()
+      $('#verify_via_json_button').hide()
+    }
+  })
+
+  $('.verify-via-json').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').hide()
+      $('#verify_via_json_button').show()
+    }
   })
 }

@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
+  import Mox
+
   import BlockScoutWeb.WebRouter.Helpers, only: [transaction_internal_transaction_path: 3]
 
   alias Explorer.Chain.InternalTransaction
@@ -73,6 +75,11 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
+        {:ok, "100"}
+      end)
+
       transaction = insert(:transaction)
 
       conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash))

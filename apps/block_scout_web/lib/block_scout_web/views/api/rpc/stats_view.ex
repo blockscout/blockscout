@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
     RPCView.render("show_value.json", data: total_supply)
   end
 
-  def render("ethprice.json", %{rates: rates}) do
+  def render("coinprice.json", %{rates: rates}) do
     RPCView.render("show.json", data: prepare_rates(rates))
   end
 
@@ -28,13 +28,22 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
   end
 
   defp prepare_rates(rates) do
-    timestamp = rates.last_updated |> DateTime.to_unix() |> to_string()
+    if rates do
+      timestamp = rates.last_updated |> DateTime.to_unix() |> to_string()
 
-    %{
-      "ethbtc" => to_string(rates.btc_value),
-      "ethbtc_timestamp" => timestamp,
-      "ethusd" => to_string(rates.usd_value),
-      "ethusd_timestamp" => timestamp
-    }
+      %{
+        "coin_btc" => to_string(rates.btc_value),
+        "coin_btc_timestamp" => timestamp,
+        "coin_usd" => to_string(rates.usd_value),
+        "coin_usd_timestamp" => timestamp
+      }
+    else
+      %{
+        "coin_btc" => nil,
+        "coin_btc_timestamp" => nil,
+        "coin_usd" => nil,
+        "coin_usd_timestamp" => nil
+      }
+    end
   end
 end
