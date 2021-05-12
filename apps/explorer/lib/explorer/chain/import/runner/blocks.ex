@@ -404,7 +404,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         on:
           ordered_address_current_token_balance.address_hash == ctb.address_hash and
             ordered_address_current_token_balance.token_contract_address_hash ==
-              ctb.token_contract_address_hash
+              ctb.token_contract_address_hash and
+            ordered_address_current_token_balance.token_id ==
+              ctb.token_id
       )
 
     try do

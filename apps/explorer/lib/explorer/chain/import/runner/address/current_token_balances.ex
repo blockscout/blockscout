@@ -198,6 +198,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_atom(repo) and is_list(changes_list) do
+    inserted_changes_list =
+      insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options)
+
+    {:ok, inserted_changes_list}
+  end
+
+  defp insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
@@ -272,9 +279,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         {:ok, []}
       end
 
-    inserted_changes_list = inserted_changes_list_no_token_id ++ inserted_changes_list_with_token_id
-
-    {:ok, inserted_changes_list}
+    inserted_changes_list_no_token_id ++ inserted_changes_list_with_token_id
   end
 
   defp default_on_conflict do
