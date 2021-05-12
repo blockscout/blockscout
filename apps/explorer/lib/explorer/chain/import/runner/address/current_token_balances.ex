@@ -204,7 +204,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     {:ok, inserted_changes_list}
   end
 
-  defp insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
+  def insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
