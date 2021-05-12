@@ -93,8 +93,8 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     ordered_changes_list_no_token_id =
       changes_list_no_token_id
       |> Enum.group_by(fn %{
-                            token_contract_address_hash: token_contract_address_hash,
                             address_hash: address_hash,
+                            token_contract_address_hash: token_contract_address_hash,
                             block_number: block_number
                           } ->
         {token_contract_address_hash, address_hash, block_number}
@@ -106,14 +106,14 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           Enum.at(grouped_address_token_balances, 0)
         end
       end)
-      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
+      |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash, &1.block_number})
 
     ordered_changes_list_with_token_id =
       changes_list_with_token_id
       |> Enum.group_by(fn %{
+                            address_hash: address_hash,
                             token_contract_address_hash: token_contract_address_hash,
                             token_id: token_id,
-                            address_hash: address_hash,
                             block_number: block_number
                           } ->
         {token_contract_address_hash, token_id, address_hash, block_number}
@@ -125,7 +125,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           Enum.at(grouped_address_token_balances, 0)
         end
       end)
-      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash, &1.block_number})
+      |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash, &1.token_id, &1.block_number})
 
     {:ok, inserted_changes_list_no_token_id} =
       if Enum.count(ordered_changes_list_no_token_id) > 0 do
