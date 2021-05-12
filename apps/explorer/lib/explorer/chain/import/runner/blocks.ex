@@ -379,7 +379,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     ordered_query =
       from(ctb in Address.CurrentTokenBalance,
         where: ctb.block_number in ^consensus_block_numbers,
-        select: map(ctb, [:address_hash, :token_contract_address_hash]),
+        select: map(ctb, [:address_hash, :token_contract_address_hash, :token_id]),
         # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
           ctb.token_contract_address_hash,
@@ -402,11 +402,16 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           ]),
         inner_join: ordered_address_current_token_balance in subquery(ordered_query),
         on:
-          ordered_address_current_token_balance.address_hash == ctb.address_hash and
-            ordered_address_current_token_balance.token_contract_address_hash ==
-              ctb.token_contract_address_hash and
-            ordered_address_current_token_balance.token_id ==
-              ctb.token_id
+          (ordered_address_current_token_balance.address_hash == ctb.address_hash and
+             ordered_address_current_token_balance.token_contract_address_hash ==
+               ctb.token_contract_address_hash and
+             is_nil(ordered_address_current_token_balance.token_id) and is_nil(ctb.token_id)) or
+            (ordered_address_current_token_balance.address_hash == ctb.address_hash and
+               ordered_address_current_token_balance.token_contract_address_hash ==
+                 ctb.token_contract_address_hash and
+               ordered_address_current_token_balance.token_id ==
+                 ctb.token_id and
+               not is_nil(ordered_address_current_token_balance.token_id) and not is_nil(ctb.token_id))
       )
 
     try do
