@@ -244,6 +244,16 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
     ordered_changes_list_with_token_id =
       changes_list_with_token_id
+      |> Enum.group_by(fn %{
+                            address_hash: address_hash,
+                            token_contract_address_hash: token_contract_address_hash,
+                            token_id: token_id
+                          } ->
+        {address_hash, token_contract_address_hash, token_id}
+      end)
+      |> Enum.map(fn {_, grouped_address_token_balances} ->
+        Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
+      end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
     {:ok, inserted_changes_list_no_token_id} =
