@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.FaucetController do
     {:ok, sanitized_phone_number}
   end
 
-  defp generate_phone_hash(conn, phone_number) when is_nil(phone_number) do
+  defp generate_phone_hash(conn, phone_number) when is_nil(phone_number) or phone_number == "" do
     json(conn, %{
       success: false,
       message: "Phone number is empty."

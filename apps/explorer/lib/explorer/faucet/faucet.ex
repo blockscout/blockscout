@@ -2,6 +2,8 @@ defmodule Explorer.Faucet do
   @moduledoc """
   Context for data related to the faucet.
   """
+  require Logger
+
   alias ETH
   alias Explorer.Faucet.FaucetRequest
   alias Explorer.{Chain, Repo}
@@ -209,12 +211,22 @@ defmodule Explorer.Faucet do
       faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
 
       signed_tx =
-        raw_tx
-        |> ETH.build()
-        |> ETH.sign_transaction(faucet_address_pk)
-        |> Base.encode16(case: :lower)
+        try do
+          raw_tx
+          |> ETH.build()
+          |> ETH.sign_transaction(faucet_address_pk)
+          |> Base.encode16(case: :lower)
+        rescue
+          error ->
+            Logger.error(inspect(error))
+            nil
+        end
 
-      {:ok, signed_tx}
+      if signed_tx do
+        {:ok, signed_tx}
+      else
+        {:error}
+      end
     end
   end
 
