@@ -5798,6 +5798,17 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
+  @spec block_exists?(Hash.Full.t()) :: boolean()
+  def block_exists?(hash) do
+    query =
+      from(
+        block in Block,
+        where: block.hash == ^hash
+      )
+
+    Repo.exists?(query)
+  end
+
   @doc """
   Checks if a `t:Explorer.Chain.Token.t/0` with the given `hash` exists.
 
