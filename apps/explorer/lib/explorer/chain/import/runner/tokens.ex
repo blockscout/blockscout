@@ -21,19 +21,44 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
   @type holder_count :: non_neg_integer()
   @type token_holder_count :: %{contract_address_hash: Hash.Address.t(), count: holder_count()}
 
-  def acquire_contract_address_tokens(repo, contract_address_hashes) do
-    token_query =
-      from(
-        token in Token,
-        where: token.contract_address_hash in ^contract_address_hashes,
-        # Enforce Token ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          token.contract_address_hash
-        ],
-        lock: "FOR UPDATE"
-      )
+  def acquire_contract_address_tokens(repo, contract_address_hashes_and_token_ids) do
+    tokens =
+      contract_address_hashes_and_token_ids
+      |> Enum.reduce([], fn {contract_address_hash, token_id}, acc ->
+        if is_nil(token_id) do
+          token_query =
+            from(
+              token in Token,
+              where: token.contract_address_hash == ^contract_address_hash,
+              # Enforce Token ShareLocks order (see docs: sharelocks.md)
+              order_by: [
+                token.contract_address_hash
+              ],
+              lock: "FOR UPDATE"
+            )
 
-    tokens = repo.all(token_query)
+          res = repo.all(token_query)
+          acc ++ res
+        else
+          token_query =
+            from(
+              token in Token,
+              left_join: instance in Token.Instance,
+              on: token.contract_address_hash == instance.token_contract_address_hash,
+              where: token.contract_address_hash == ^contract_address_hash,
+              where: instance.token_id == ^token_id,
+              # Enforce Token ShareLocks order (see docs: sharelocks.md)
+              order_by: [
+                token.contract_address_hash,
+                instance.token_id
+              ],
+              lock: "FOR UPDATE"
+            )
+
+          res = repo.all(token_query)
+          acc ++ res
+        end
+      end)
 
     {:ok, tokens}
   end
