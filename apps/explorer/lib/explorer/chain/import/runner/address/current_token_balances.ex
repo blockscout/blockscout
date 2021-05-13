@@ -109,8 +109,16 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      contract_address_hashes = changes_list |> Enum.map(& &1.token_contract_address_hash) |> Enum.uniq()
-      Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+      token_contract_address_hashes_and_ids =
+        changes_list
+        |> Enum.map(fn change ->
+          token_id = get_tokend_id(change)
+
+          {change.token_contract_address_hash, token_id}
+        end)
+        |> Enum.uniq()
+
+      Tokens.acquire_contract_address_tokens(repo, token_contract_address_hashes_and_ids)
     end)
     |> Multi.run(:address_current_token_balances, fn repo, _ ->
       insert(repo, changes_list, insert_options)
@@ -129,6 +137,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         insert_options
       )
     end)
+  end
+
+  defp get_tokend_id(change) do
+    if Map.has_key?(change, :token_id), do: change.token_id, else: nil
   end
 
   @impl Import.Runner
@@ -240,6 +252,15 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
     ordered_changes_list_no_token_id =
       changes_list_no_token_id
+      |> Enum.group_by(fn %{
+                            address_hash: address_hash,
+                            token_contract_address_hash: token_contract_address_hash
+                          } ->
+        {address_hash, token_contract_address_hash}
+      end)
+      |> Enum.map(fn {_, grouped_address_token_balances} ->
+        Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
+      end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
 
     ordered_changes_list_with_token_id =

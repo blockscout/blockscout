@@ -119,13 +119,13 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     query =
       from(ctb in Address.CurrentTokenBalance,
         where: ctb.block_number in ^consensus_block_numbers,
-        select: ctb.token_contract_address_hash,
-        distinct: ctb.token_contract_address_hash
+        select: {ctb.token_contract_address_hash, ctb.token_id},
+        distinct: [ctb.token_contract_address_hash, ctb.token_id]
       )
 
-    contract_address_hashes = repo.all(query)
+    contract_address_hashes_and_token_ids = repo.all(query)
 
-    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes_and_token_ids)
   end
 
   defp fork_transactions(%{
