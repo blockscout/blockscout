@@ -7,7 +7,7 @@ defmodule Explorer.Etherscan do
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Address.TokenBalance
+  alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.{Block, Hash, InternalTransaction, TokenTransfer, Transaction}
 
   @default_options %{
@@ -312,14 +312,14 @@ defmodule Explorer.Etherscan do
   def list_tokens(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     query =
       from(
-        tb in TokenBalance,
-        inner_join: t in assoc(tb, :token),
-        where: tb.address_hash == ^address_hash,
+        ctb in CurrentTokenBalance,
+        inner_join: t in assoc(ctb, :token),
+        where: ctb.address_hash == ^address_hash,
+        where: ctb.value > 0,
         distinct: :token_contract_address_hash,
-        order_by: [desc: :block_number],
         select: %{
-          balance: tb.value,
-          contract_address_hash: tb.token_contract_address_hash,
+          balance: ctb.value,
+          contract_address_hash: ctb.token_contract_address_hash,
           name: t.name,
           decimals: t.decimals,
           symbol: t.symbol,
