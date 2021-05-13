@@ -201,7 +201,10 @@ defmodule BlockScoutWeb.FaucetController do
   end
 
   defp check_request_interval(status_code, body, address_hash, phone_hash) do
-    last_requested = Faucet.get_last_faucet_request_for_phone(phone_hash)
+    last_requested_phone = Faucet.get_last_faucet_request_for_phone(phone_hash)
+    last_requested_address = Faucet.get_last_faucet_request_for_address(address_hash)
+
+    last_requested = combine_last_requested(last_requested_phone, last_requested_address)
 
     body_json = Jason.decode!(body)
 
@@ -226,6 +229,23 @@ defmodule BlockScoutWeb.FaucetController do
       end
     else
       :wrong_captcha_response
+    end
+  end
+
+  defp combine_last_requested(last_requested_phone, last_requested_address) do
+    cond do
+      !last_requested_phone ->
+        last_requested_address
+
+      !last_requested_address ->
+        last_requested_phone
+
+      true ->
+        if DateTime.compare(last_requested_phone, last_requested_address) == :gt do
+          last_requested_phone
+        else
+          last_requested_address
+        end
     end
   end
 
