@@ -241,7 +241,7 @@ defmodule BlockScoutWeb.FaucetController do
         last_requested_phone
 
       true ->
-        if Datetime.compare(last_requested_phone, last_requested_address) == :gt do
+        if DateTime.compare(last_requested_phone, last_requested_address) == :gt do
           last_requested_phone
         else
           last_requested_address
