@@ -16,6 +16,7 @@ defmodule Explorer.Faucet do
     last_requested_query =
       from(faucet in FaucetRequest,
         where: faucet.receiver_hash == ^receiver,
+        where: faucet.coins_sent == true,
         select: max(faucet.inserted_at)
       )
 
