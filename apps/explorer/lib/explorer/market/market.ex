@@ -82,7 +82,15 @@ defmodule Explorer.Market do
   end
 
   def add_price(tokens) when is_list(tokens) do
-    Enum.map(tokens, &add_price/1)
+    Enum.map(tokens, fn item ->
+      case item do
+        {token_balance, bridged_token} ->
+          {add_price(token_balance), bridged_token}
+
+        token_balance ->
+          add_price(token_balance)
+      end
+    end)
   end
 
   defp mainnet_bridged_token?(token) do
