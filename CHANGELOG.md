@@ -9,6 +9,7 @@
 - [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix
 
 ### Chore
+- [#4063](https://github.com/blockscout/blockscout/pull/4063) - Do not display 4bytes signature in the tx tile for contract creation
 - [#3934](https://github.com/blockscout/blockscout/pull/3934) - Update nimble_csv package
 - [#3902](https://github.com/blockscout/blockscout/pull/3902) - Increase number of left symbols in short address view
 - [#3894](https://github.com/blockscout/blockscout/pull/3894) - Refactoring: replace inline style display: none with d-none class
