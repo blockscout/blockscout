@@ -59,4 +59,11 @@ defmodule BlockScoutWeb.AccessHelpers do
 
     apply(Helpers, path, full_args)
   end
+
+  def gas_tracker_restricted_access?(params) do
+    key = if params && Map.has_key?(params, "key"), do: Map.get(params, "key"), else: nil
+    correct_key = key && key == Application.get_env(:block_scout_web, :gas_tracker)[:access_token]
+
+    if correct_key, do: {:ok, false}, else: {:restricted_access, true}
+  end
 end

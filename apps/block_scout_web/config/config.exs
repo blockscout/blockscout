@@ -72,7 +72,8 @@ config :block_scout_web, :faucet,
 
 config :block_scout_web, :gas_tracker,
   enabled: System.get_env("GAS_TRACKER_ENABLED", "false") == "true",
-  enabled_in_menu: System.get_env("GAS_TRACKER_ENABLED_IN_MENU", "false") == "true"
+  enabled_in_menu: System.get_env("GAS_TRACKER_ENABLED_IN_MENU", "false") == "true",
+  access_token: System.get_env("GAS_TRACKER_ACCESS_KEY", nil)
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
