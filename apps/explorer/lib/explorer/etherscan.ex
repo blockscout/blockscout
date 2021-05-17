@@ -461,6 +461,7 @@ defmodule Explorer.Etherscan do
         inner_join: t in Transaction,
         on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
         inner_join: b in assoc(t, :block),
+        order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
         select: %{
           token_contract_address_hash: tt.token_contract_address_hash,
           transaction_hash: tt.transaction_hash,
