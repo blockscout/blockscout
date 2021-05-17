@@ -1174,14 +1174,32 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block(first_block)
 
-      insert(:token_transfer, from_address: address, transaction: transaction2)
-      insert(:token_transfer, from_address: address, transaction: transaction1)
-      insert(:token_transfer, from_address: address, transaction: transaction3)
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction2,
+        block: transaction2.block,
+        block_number: transaction2.block_number
+      )
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction1,
+        block: transaction1.block,
+        block_number: transaction1.block_number
+      )
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction3,
+        block: transaction3.block,
+        block_number: transaction3.block_number
+      )
 
       found_token_transfers = Etherscan.list_token_transfers(address.hash, nil)
 
       block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
 
+      assert Enum.count(block_numbers_order) == 3
       assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
     end
 
@@ -1206,9 +1224,26 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block(first_block)
 
-      insert(:token_transfer, from_address: address, transaction: transaction2)
-      insert(:token_transfer, from_address: address, transaction: transaction1)
-      insert(:token_transfer, from_address: address, transaction: transaction3)
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction2,
+        block: transaction2.block,
+        block_number: transaction2.block_number
+      )
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction1,
+        block: transaction1.block,
+        block_number: transaction1.block_number
+      )
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction3,
+        block: transaction3.block,
+        block_number: transaction3.block_number
+      )
 
       options = %{order_by_direction: :desc}
 
@@ -1216,6 +1251,7 @@ defmodule Explorer.EtherscanTest do
 
       block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
 
+      assert Enum.count(block_numbers_order) == 3
       assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
     end
 

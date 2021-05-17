@@ -6266,6 +6266,8 @@ defmodule Explorer.Chain do
     end)
   end
 
+  defp abi_decode_address_output(address) when is_nil(address), do: nil
+
   defp abi_decode_address_output(address) do
     if String.length(address) > 42 do
       "0x" <> String.slice(address, -40, 40)
