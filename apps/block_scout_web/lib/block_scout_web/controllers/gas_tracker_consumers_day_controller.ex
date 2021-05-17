@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.GasTrackerConsumersDayController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, ChainController, GasTrackerController, GasTrackerView}
+  alias BlockScoutWeb.{AccessHelpers, GasTrackerController, GasTrackerView}
   alias Explorer.{Chain, PagingOptions}
   alias Phoenix.View
 
