@@ -435,7 +435,7 @@ defmodule Explorer.Factory do
     to_address_hash = address_hash_from_zero_padded_hash_string(log.third_topic)
     from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
 
-    # `to_address` is only the only thing that isn't created from the token_transfer_log_factory
+    # `to_address` is the only thing that isn't created from the token_transfer_log_factory
     to_address = build(:address, hash: to_address_hash)
     from_address = build(:address, hash: from_address_hash)
     contract_code = Map.fetch!(contract_code_info(), :bytecode)
