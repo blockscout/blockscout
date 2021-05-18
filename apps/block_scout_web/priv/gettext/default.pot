@@ -3003,12 +3003,6 @@ msgid "Your Pool Short Description (optional)"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:30
-msgid "Drop sources and metadata JSON file or click here"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:35
 msgid "Flattened source code"
 msgstr ""

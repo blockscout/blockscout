@@ -12,6 +12,7 @@
       contract: true,
       use_custom_tooltip: false
     %>
+    <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @gas_consumer.address_hash %>
   </td>
   <td class="stakes-td">
     $<%= BlockScoutWeb.Cldr.Number.to_string!(gas_fees(@gas_consumer.total_gas)) %> (<%= BlockScoutWeb.Cldr.Number.to_string!(@gas_consumer.total_gas) %>)
