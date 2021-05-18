@@ -98,7 +98,10 @@ defmodule EthereumJSONRPC.Geth do
     request(%{
       id: id,
       method: "debug_traceTransaction",
-      params: [hash_data, %{tracer: @tracer, disableStack: true, disableMemory: true, disableStorage: true}]
+      params: [
+        hash_data,
+        %{tracer: @tracer, disableStack: true, disableMemory: true, disableStorage: true, timeout: "30s"}
+      ]
     })
   end
 
