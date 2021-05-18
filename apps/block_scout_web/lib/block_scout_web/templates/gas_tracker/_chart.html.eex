@@ -1,7 +1,7 @@
 <script defer src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
 <script src="<%= static_path(@conn, "/js/easy-pie-chart.min.js") %>"></script>
 
-<div class="dashboard-banner-chart gas-usage-chart" style="display: table-cell; width:70%;">
+<div class="gas-tracker-header-item dashboard-banner-chart gas-usage-chart">
     <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
         <span><%= gettext("There was a problem loading the chart.") %></span>
     </button>
