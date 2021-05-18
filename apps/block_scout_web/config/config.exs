@@ -118,7 +118,7 @@ tx_chart_config =
   end
 
 gas_usage_chart_config =
-  if System.get_env("ENABLE_GAS_TRACKER", "false") == "true" do
+  if System.get_env("GAS_TRACKER_ENABLED", "false") == "true" do
     %{gas_usage: [:gas_usage_per_day]}
   else
     %{}
