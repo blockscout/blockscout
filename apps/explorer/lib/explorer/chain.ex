@@ -2223,7 +2223,7 @@ defmodule Explorer.Chain do
 
   def address_tokens_usd_sum(token_balances) do
     token_balances
-    |> Enum.reduce(Decimal.new(0), fn token_balance, acc ->
+    |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc ->
       if token_balance.value && token_balance.token.usd_value do
         Decimal.add(acc, balance_in_usd(token_balance))
       else

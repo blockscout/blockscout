@@ -20,9 +20,9 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
       token_balance_a = build(:token_balance, token: build(:token, type: "ERC-20"))
       token_balance_b = build(:token_balance, token: build(:token, type: "ERC-721"))
 
-      token_balances = [token_balance_a, token_balance_b]
+      token_balances = [{token_balance_a, %{}}, {token_balance_b, %{}}]
 
-      assert AddressTokenBalanceView.filter_by_type(token_balances, "ERC-20") == [token_balance_a]
+      assert AddressTokenBalanceView.filter_by_type(token_balances, "ERC-20") == [{token_balance_a, %{}}]
     end
   end
 
@@ -116,23 +116,23 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
         )
 
       token_balances = [
-        token_balance_a,
-        token_balance_b,
-        token_balance_c,
-        token_balance_d,
-        token_balance_e,
-        token_balance_f,
-        token_balance_g
+        {token_balance_a, %{}},
+        {token_balance_b, %{}},
+        {token_balance_c, %{}},
+        {token_balance_d, %{}},
+        {token_balance_e, %{}},
+        {token_balance_f, %{}},
+        {token_balance_g, %{}}
       ]
 
       expected = [
-        token_balance_b,
-        token_balance_a,
-        token_balance_c,
-        token_balance_d,
-        token_balance_g,
-        token_balance_e,
-        token_balance_f
+        {token_balance_b, %{}},
+        {token_balance_a, %{}},
+        {token_balance_c, %{}},
+        {token_balance_d, %{}},
+        {token_balance_g, %{}},
+        {token_balance_e, %{}},
+        {token_balance_f, %{}}
       ]
 
       assert AddressTokenBalanceView.sort_by_usd_value_and_name(token_balances) == expected

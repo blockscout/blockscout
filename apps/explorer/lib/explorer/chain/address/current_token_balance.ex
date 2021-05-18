@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, where: 3]
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Block, Hash, Token}
+  alias Explorer.Chain.{Address, Block, BridgedToken, Hash, Token}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -107,10 +107,13 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   """
   def last_token_balances(address_hash) do
     from(
-      tb in __MODULE__,
-      where: tb.address_hash == ^address_hash,
-      where: tb.value > 0,
-      preload: :token
+      ctb in __MODULE__,
+      where: ctb.address_hash == ^address_hash,
+      where: ctb.value > 0,
+      left_join: bt in BridgedToken,
+      on: ctb.token_contract_address_hash == bt.home_token_contract_address_hash,
+      preload: :token,
+      select: {ctb, bt}
     )
   end
 

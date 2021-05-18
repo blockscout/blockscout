@@ -36,7 +36,7 @@
             placeholder: gettext("Search tokens")
           ) %>
     </div>
-    <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-721") do %>
+    <%= if Enum.any?(@token_balances, fn {token_balance, _} -> token_balance.token.type == "ERC-721" end) do %>
       <%= render(
             "_tokens.html",
             conn: @conn,
@@ -45,7 +45,7 @@
           ) %>
     <% end %>
 
-    <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-1155") do %>
+    <%= if Enum.any?(@token_balances, fn {token_balance, _} -> token_balance.token.type == "ERC-1155" end) do %>
       <%= render(
             "_tokens.html",
             conn: @conn,
@@ -54,7 +54,7 @@
           ) %>
     <% end %>
 
-    <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-20") do %>
+    <%= if Enum.any?(@token_balances, fn {token_balance, _} -> token_balance.token.type == "ERC-20" end) do %>
       <%= render(
             "_tokens.html",
             conn: @conn,
