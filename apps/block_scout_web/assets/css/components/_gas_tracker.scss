@@ -1,0 +1,12 @@
+.gas-tracker-header-container {
+    display: flex;
+    flex-direction: row;
+    @include media-breakpoint-down(sm) {
+        flex-direction: column;
+    }
+}
+
+.gas-tracker-header-item {
+    display: table-cell;
+    width: 100%;
+}
