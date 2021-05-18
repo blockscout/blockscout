@@ -236,6 +236,7 @@ jobs:
           cd apps/ethereum_jsonrpc
           mix test --no-start --exclude no_parity
         env:
+          MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
@@ -294,6 +295,7 @@ jobs:
           cd apps/explorer
           mix test --no-start --exclude no_parity
         env:
+          MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
@@ -352,6 +354,7 @@ jobs:
           cd apps/indexer
           mix test --no-start --exclude no_parity
         env:
+          MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
@@ -411,6 +414,7 @@ jobs:
           mix test --no-start --exclude no_parity
         env:
           # match POSTGRES_PASSWORD for postgres image below
+          MIX_ENV: "test"
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
