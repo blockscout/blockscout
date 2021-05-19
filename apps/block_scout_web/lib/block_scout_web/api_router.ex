@@ -22,6 +22,8 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     get("/health", HealthController, :health)
 
+    get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
+
     if Application.get_env(:block_scout_web, __MODULE__)[:writing_enabled] do
       post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", VerifiedSmartContractController, :create)
