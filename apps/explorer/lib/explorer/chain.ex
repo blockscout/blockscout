@@ -2592,6 +2592,70 @@ defmodule Explorer.Chain do
     end
   end
 
+  def get_average_gas_price(num_of_blocks, safelow_percentile, average_percentile, fast_percentile) do
+    lates_gas_price_query =
+      from(
+        block in Block,
+        left_join: transaction in assoc(block, :transactions),
+        where: block.consensus == true,
+        where: transaction.status == ^1,
+        where: transaction.gas_price > ^0,
+        order_by: [desc: block.number],
+        group_by: block.number,
+        limit: ^num_of_blocks,
+        select: min(transaction.gas_price)
+      )
+
+    latest_gas_prices =
+      lates_gas_price_query
+      |> Repo.all()
+
+    latest_ordered_gas_prices =
+      latest_gas_prices
+      |> Enum.map(fn %Explorer.Chain.Wei{value: gas_price} -> Decimal.to_integer(gas_price) end)
+
+    safelow_gas_price = gas_price_percentile_to_gwei(latest_ordered_gas_prices, safelow_percentile)
+    average_gas_price = gas_price_percentile_to_gwei(latest_ordered_gas_prices, average_percentile)
+    fast_gas_price = gas_price_percentile_to_gwei(latest_ordered_gas_prices, fast_percentile)
+
+    gas_prices = %{
+      "slow" => safelow_gas_price,
+      "average" => average_gas_price,
+      "fast" => fast_gas_price
+    }
+
+    {:ok, gas_prices}
+  catch
+    error ->
+      {:error, error}
+  end
+
+  defp gas_price_percentile_to_gwei(gas_prices, percentile) do
+    safelow_gas_price_wei = percentile(gas_prices, percentile)
+
+    if safelow_gas_price_wei do
+      safelow_gas_price_gwei = Wei.to(%Explorer.Chain.Wei{value: Decimal.from_float(safelow_gas_price_wei)}, :gwei)
+      Decimal.to_float(safelow_gas_price_gwei)
+    else
+      nil
+    end
+  end
+
+  @spec percentile(list, number) :: number | nil
+  defp percentile([], _), do: nil
+  defp percentile([x], _), do: x
+  defp percentile(list, 0), do: Enum.min(list)
+  defp percentile(list, 100), do: Enum.max(list)
+
+  defp percentile(list, n) when is_list(list) and is_number(n) do
+    s = Enum.sort(list)
+    r = n / 100.0 * (length(list) - 1)
+    f = :erlang.trunc(r)
+    lower = Enum.at(s, f)
+    upper = Enum.at(s, f + 1)
+    lower + (upper - lower) * (r - f)
+  end
+
   @spec upsert_last_fetched_counter(map()) :: {:ok, LastFetchedCounter.t()} | {:error, Ecto.Changeset.t()}
   def upsert_last_fetched_counter(params) do
     changeset = LastFetchedCounter.changeset(%LastFetchedCounter{}, params)
