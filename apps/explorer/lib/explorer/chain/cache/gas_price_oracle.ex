@@ -5,33 +5,33 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   require Logger
 
-  @default_cache_period :timer.minutes(20)
+  @default_cache_period :timer.minutes(10)
 
   @num_of_blocks (if System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS") do
                     case Integer.parse(System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS")) do
                       {integer, ""} -> integer
-                      _ -> nil
+                      _ -> 200
                     end
                   end)
 
   @safelow (if System.get_env("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE") do
               case Integer.parse(System.get_env("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE")) do
                 {integer, ""} -> integer
-                _ -> nil
+                _ -> 35
               end
             end)
 
   @average (if System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE") do
               case Integer.parse(System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE")) do
                 {integer, ""} -> integer
-                _ -> nil
+                _ -> 60
               end
             end)
 
   @fast (if System.get_env("GAS_PRICE_ORACLE_FAST_PERCENTILE") do
            case Integer.parse(System.get_env("GAS_PRICE_ORACLE_FAST_PERCENTILE")) do
              {integer, ""} -> integer
-             _ -> nil
+             _ -> 90
            end
          end)
 
