@@ -2608,7 +2608,7 @@ defmodule Explorer.Chain do
 
     latest_gas_prices =
       lates_gas_price_query
-      |> Repo.all()
+      |> Repo.all(timeout: :infinity)
 
     latest_ordered_gas_prices =
       latest_gas_prices
