@@ -2923,10 +2923,10 @@ defmodule Explorer.Chain do
         where: block.consensus == true,
         where: transaction.status == ^1,
         where: transaction.gas_price > ^0,
-        order_by: [desc: block.number],
         group_by: block.number,
-        limit: ^num_of_blocks,
-        select: min(transaction.gas_price)
+        order_by: [desc: block.number],
+        select: min(transaction.gas_price),
+        limit: ^num_of_blocks
       )
 
     latest_gas_prices =
