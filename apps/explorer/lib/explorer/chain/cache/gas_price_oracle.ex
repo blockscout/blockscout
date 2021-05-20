@@ -7,32 +7,24 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   @default_cache_period :timer.minutes(10)
 
-  @num_of_blocks (if System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS") do
-                    case Integer.parse(System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS")) do
-                      {integer, ""} -> integer
-                      _ -> 200
-                    end
+  @num_of_blocks (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", "200")) do
+                    {integer, ""} -> integer
+                    _ -> 200
                   end)
 
-  @safelow (if System.get_env("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE") do
-              case Integer.parse(System.get_env("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE")) do
-                {integer, ""} -> integer
-                _ -> 35
-              end
+  @safelow (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE", "35")) do
+              {integer, ""} -> integer
+              _ -> 35
             end)
 
-  @average (if System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE") do
-              case Integer.parse(System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE")) do
-                {integer, ""} -> integer
-                _ -> 60
-              end
+  @average (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60)) do
+              {integer, ""} -> integer
+              _ -> 60
             end)
 
-  @fast (if System.get_env("GAS_PRICE_ORACLE_FAST_PERCENTILE") do
-           case Integer.parse(System.get_env("GAS_PRICE_ORACLE_FAST_PERCENTILE")) do
-             {integer, ""} -> integer
-             _ -> 90
-           end
+  @fast (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_FAST_PERCENTILE", "90")) do
+           {integer, ""} -> integer
+           _ -> 90
          end)
 
   use Explorer.Chain.MapCache,
