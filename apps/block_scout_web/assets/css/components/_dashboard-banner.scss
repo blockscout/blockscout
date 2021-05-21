@@ -89,6 +89,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   padding-bottom: 12px;
   padding-left:20px;
 
+  @include media-breakpoint-down(sm) {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .dashboard-banner-chart-legend-item {
     padding-bottom: 3px;
     padding-left: 12px;
@@ -99,6 +103,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     @include media-breakpoint-down(md) {
       display: flex;
       flex-direction: row;
+    }
+
+    @include media-breakpoint-down(sm) {
+      margin-top: 10px;
     }
 
     @media (max-width: 599px) {
@@ -122,11 +130,15 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     }
 
     &:nth-child(2)::before {
-      background-color: $dashboard-line-color-market;
+      background-color: $dashboard-line-color-price;
     }
 
     &:nth-child(3)::before {
-        background-color: $dashboard-line-color-transactions;
+        background-color: $dashboard-line-color-market;
+    }
+
+    &:nth-child(4)::before {
+      background-color: $dashboard-line-color-transactions;
     }
   }
 

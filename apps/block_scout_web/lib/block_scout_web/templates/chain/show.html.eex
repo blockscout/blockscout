@@ -25,7 +25,7 @@
         <!-- Legend -->
         <script>
          numChartData = <%= Enum.reduce(@chart_config, 0, fn (source, acc) ->
-                        acc + length(elem(source, 1)) end) %>
+                        acc + length(elem(source, 1)) end) + 1 %>
          document.documentElement.style.setProperty("--numChartData", numChartData);
         </script>
         <div class="dashboard-banner-chart-legend">
@@ -38,25 +38,49 @@
             <% market_chart_config = @chart_config.market%>
 
             <%= if Enum.member?(market_chart_config, :price) do %>
-                <div class="dashboard-banner-chart-legend-item">
-                    <span class="dashboard-banner-chart-legend-label">
-                    <%= gettext "Price" %>
+              <div class="dashboard-banner-chart-legend-item">
+                  <span class="dashboard-banner-chart-legend-label">
+                  <%= gettext "Price" %>
+                  </span>
+                  <div class="dashboard-banner-chart-legend-value-container">
+                    <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
                     </span>
-                    <div class="dashboard-banner-chart-legend-value-container">
-                      <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
-                      </span>
-                      <%= if @gas_price do %>
-                        <span class="dashboard-banner-chart-legend-value inline ml-2">
-                          <span class="gas-price-icon">
-                            <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
-                          </span>
-                          <%= @gas_price <> " " %>
-                          <%= gettext "Gwei" %>
-                        </span>
-                      <% end %>
-                    </div>
-                </div>
+                  </div>
+              </div>
             <% end %>
+            <div class="dashboard-banner-chart-legend-item">
+                <div class="dashboard-banner-chart-legend-value-container">
+                  <% gas_prices_from_oracle = gas_prices() %>
+                  <%= if gas_prices_from_oracle do %>
+                    <span class="dashboard-banner-chart-legend-value inline">
+                      <div>
+                        <div class="d-flex flex-row">
+                          <div class="flex-column" style="width: 55px;"><%= gettext("Slow") %></div>
+                          <div class="flex-column"><%= "#{gas_prices_from_oracle["slow"]}" <> " " %><%= gettext "Gwei" %></div>
+                        </div>
+                        <div class="d-flex flex-row" style="height: 20px; line-height: 20px;">
+                          <div class="flex-column" style="width: 55px;"><%= gettext("Average") %></div>
+                          <div class="flex-column"><%= "#{gas_prices_from_oracle["average"]}" <> " " %><%= gettext "Gwei" %></div>
+                        </div>
+                        <div class="d-flex flex-row">
+                          <div class="flex-column" style="width: 55px;"><%= gettext("Fast") %></div>
+                          <div class="flex-column"><%= "#{gas_prices_from_oracle["fast"]}" <> " " %><%= gettext "Gwei" %></div>
+                        </div>
+                      </div>
+                    </span>
+                  <% else %>
+                    <%= if @gas_price do %>
+                      <span class="dashboard-banner-chart-legend-value inline ml-2">
+                        <span class="gas-price-icon">
+                          <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
+                        </span>
+                        <%= @gas_price <> " " %>
+                        <%= gettext "Gwei" %>
+                      </span>
+                    <% end %>
+                  <% end %>
+                </div>
+            </div>
             <%= if Enum.member?(@chart_config.market, :market_cap) do %>
             <div class="dashboard-banner-chart-legend-item">
                 <span class="dashboard-banner-chart-legend-label">
