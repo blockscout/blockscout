@@ -25,7 +25,7 @@
         <!-- Legend -->
         <script>
          numChartData = <%= Enum.reduce(@chart_config, 0, fn (source, acc) ->
-                        acc + length(elem(source, 1)) end) + 1 %>
+                        acc + length(elem(source, 1)) end) %>
          document.documentElement.style.setProperty("--numChartData", numChartData);
         </script>
         <div class="dashboard-banner-chart-legend">
