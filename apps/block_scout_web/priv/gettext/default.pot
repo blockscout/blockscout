@@ -1161,7 +1161,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:43
 #: lib/block_scout_web/templates/layout/app.html.eex:32
 msgid "Price"
-msgstr ""
+msgstr "xDai Price"
 
 #, elixir-format
 #: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10

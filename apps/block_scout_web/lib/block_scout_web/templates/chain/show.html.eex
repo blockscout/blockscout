@@ -86,7 +86,7 @@
                 <span class="dashboard-banner-chart-legend-label">
                 <%= gettext "Total Value Locked" %>
                 </span>
-                <div>
+                <div class="d-flex">
                   <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
                   <span style="display: contents;" class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= total_market_cap %>">
                   </span>
@@ -117,7 +117,7 @@
                 <span class="dashboard-banner-chart-legend-label">
                     <%= gettext "Tx/day" %>
                 </span>
-                <span class="dashboard-banner-chart-legend-value" data-selector="tx_per_day">
+                <span class="dashboard-banner-chart-legend-value d-flex" data-selector="tx_per_day">
                     <% num_of_transactions = BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
                     <%= num_of_transactions %>
                     <% gas_used = Enum.at(@transaction_stats, 0).gas_used %>
