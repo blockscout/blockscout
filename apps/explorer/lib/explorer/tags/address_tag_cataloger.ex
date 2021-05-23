@@ -48,6 +48,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set dark-forest-0.5 tag
     AddressTag.set_tag("dark forest 0.5")
 
+    # set dark-forest-0.6 tag
+    AddressTag.set_tag("dark forest 0.6")
+
     # set hopr tag
     AddressTag.set_tag("hopr")
 
@@ -86,6 +89,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set DarkForest 0.5 tag
     set_df_0_5_tag()
+
+    # set DarkForest 0.6 tag
+    set_df_0_6_tag()
 
     # set Hopr tag
     set_hopr_tag()
@@ -191,6 +197,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_df_0_5_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5", "dark forest 0.5")
+  end
+
+  defp set_df_0_6_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6", "dark forest 0.6")
   end
 
   defp set_hopr_tag do

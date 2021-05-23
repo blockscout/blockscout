@@ -29,6 +29,9 @@
 <%= if is_df_0_5?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "dark forest v0.5", additional_classes: ["df", "ml-1"] %>
 <% end %>
+<%= if is_df_0_6?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "dark forest v0.6", additional_classes: ["df", "ml-1"] %>
+<% end %>
 <%= if is_hopr?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "HOPR Multisig", additional_classes: ["hopr", "ml-1"] %>
 <% end %>

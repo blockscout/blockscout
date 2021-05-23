@@ -537,6 +537,13 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5", "")) =~ address_hash_str
   end
 
+  def is_df_0_6?(nil), do: false
+
+  def is_df_0_6?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6", "")) =~ address_hash_str
+  end
+
   def is_hopr?(nil), do: false
 
   def is_hopr?(address_hash) do

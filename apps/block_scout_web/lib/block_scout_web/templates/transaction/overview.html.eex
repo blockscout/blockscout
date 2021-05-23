@@ -386,10 +386,11 @@
                         title: gettext("Copy Txn Hex Input") %>
                     <!-- Copy UTF-8 input  -->
                     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                        additional_classes: ["btn-copy-icon-small", "btn-copy-icon-no-borders", "btn-copy-icon-ml-0", "btn-copy-tx-raw-input", "tx-utf8-input", "d-none"],
+                        additional_classes: ["btn-copy-icon-small", "btn-copy-icon-no-borders", "btn-copy-icon-ml-0", "btn-copy-tx-raw-input", "tx-utf8-input"],
                         clipboard_text: @transaction.input.bytes,
                         aria_label: gettext("Copy Value"),
-                        title: gettext("Copy Txn UTF-8 Input") %>
+                        title: gettext("Copy Txn UTF-8 Input"),
+                        style: "display: none;" %>
                   </div>
                 </div>
                 <!-- Textarea -->
@@ -399,7 +400,7 @@
                   </div>
                 </div>
                 <!-- Textfield -->
-                <div class="tx-utf8-input d-none">
+                <div class="tx-utf8-input" style="display: none;">
                   <div class="tile tile-muted">
                     <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input.bytes %></code></pre>
                   </div>
