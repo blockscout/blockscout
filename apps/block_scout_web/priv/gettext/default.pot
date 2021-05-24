@@ -990,7 +990,7 @@ msgid "License ID"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:295
+#: lib/block_scout_web/templates/transaction/overview.html.eex:296
 msgid "Limit"
 msgstr ""
 
@@ -1546,8 +1546,8 @@ msgid "Validator Info"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:214
-#: lib/block_scout_web/templates/transaction/overview.html.eex:267
+#: lib/block_scout_web/templates/transaction/overview.html.eex:215
+#: lib/block_scout_web/templates/transaction/overview.html.eex:268
 msgid "Value"
 msgstr ""
 
