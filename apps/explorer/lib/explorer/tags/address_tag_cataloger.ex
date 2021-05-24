@@ -61,8 +61,11 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set gtgs tag
     AddressTag.set_tag("gtgs")
 
-    # set chainlink oracle tag
+    # set common chainlink oracle tag
     AddressTag.set_tag("chainlink oracle")
+
+    # set tag for every chainlink oracle
+    create_chainlink_oracle_tag()
 
     send(self(), :bind_addresses)
 
@@ -110,6 +113,21 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     set_chainlink_oracle_tag()
 
     {:noreply, state}
+  end
+
+  def create_chainlink_oracle_tag do
+    chainlink_oracles_config = Application.get_env(:block_scout_web, :chainlink_oracles)
+
+    if chainlink_oracles_config do
+      chainlink_oracles_config
+      |> Parser.parse!(%{keys: :atoms!})
+      |> Enum.each(fn %{:name => name, :address => address} ->
+        chainlink_tag_name = "chainlink oracle #{String.downcase(name)}"
+        AddressTag.set_tag(chainlink_tag_name)
+        tag_id = AddressTag.get_tag_id(chainlink_tag_name)
+        AddressToTag.set_tag_to_addresses(tag_id, [address])
+      end)
+    end
   end
 
   defp set_tag_for_single_env_var_address(env_var, tag) do

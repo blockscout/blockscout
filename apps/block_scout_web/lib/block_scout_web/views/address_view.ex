@@ -21,6 +21,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
+  alias Poison.Parser
 
   @dialyzer :no_match
 
@@ -570,5 +571,31 @@ defmodule BlockScoutWeb.AddressView do
   def is_chainlink_oracle?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES", "")) =~ address_hash_str
+  end
+
+  def get_chainlink_oracle_name(oracle_address) do
+    if oracle_address do
+      chainlink_oracles_config = Application.get_env(:block_scout_web, :chainlink_oracles)
+
+      if chainlink_oracles_config do
+        try do
+          chainlink_oracle =
+            chainlink_oracles_config
+            |> Parser.parse!(%{keys: :atoms!})
+            |> Enum.find(fn %{:name => _name, :address => address} ->
+              String.downcase(address) == String.downcase(oracle_address)
+            end)
+
+          chainlink_oracle[:name]
+        rescue
+          _ ->
+            ""
+        end
+      else
+        ""
+      end
+    else
+      ""
+    end
   end
 end
