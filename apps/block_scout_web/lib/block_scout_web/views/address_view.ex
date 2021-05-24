@@ -564,4 +564,11 @@ defmodule BlockScoutWeb.AddressView do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN", "")) =~ address_hash_str
   end
+
+  def is_chainlink_oracle?(nil), do: false
+
+  def is_chainlink_oracle?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES", "")) =~ address_hash_str
+  end
 end

@@ -38,6 +38,9 @@
 <%= if is_gtgs?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "GTGS", additional_classes: ["gtgs", "ml-1"] %>
 <% end %>
+<%= if is_chainlink_oracle?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "Chainlink Oracle", additional_classes: ["chainlink-oracle", "ml-1"] %>
+<% end %>
 <%= if is_test?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-1"] %>
 <% end %>

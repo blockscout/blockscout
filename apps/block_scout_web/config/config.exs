@@ -58,6 +58,7 @@ config :block_scout_web,
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
   test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
   gts_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN"),
+  chainlink_oracles: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil)
 

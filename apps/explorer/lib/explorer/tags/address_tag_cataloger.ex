@@ -7,6 +7,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Validator.MetadataRetriever
+  alias Poison.Parser
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -60,6 +61,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set gtgs tag
     AddressTag.set_tag("gtgs")
 
+    # set chainlink oracle tag
+    AddressTag.set_tag("chainlink oracle")
+
     send(self(), :bind_addresses)
 
     {:noreply, state}
@@ -101,6 +105,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set gtgs tag
     set_gtgs_tag()
+
+    # set chainlink oracle tag
+    set_chainlink_oracle_tag()
 
     {:noreply, state}
   end
@@ -213,5 +220,29 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_gtgs_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN", "gtgs")
+  end
+
+  def set_chainlink_oracle_tag do
+    chainlink_oracles = chainlink_oracles_list()
+
+    tag_id = AddressTag.get_tag_id("chainlink oracle")
+    AddressToTag.set_tag_to_addresses(tag_id, chainlink_oracles)
+  end
+
+  defp chainlink_oracles_list do
+    chainlink_oracles_config = Application.get_env(:block_scout_web, :chainlink_oracles)
+
+    if chainlink_oracles_config do
+      try do
+        chainlink_oracles_config
+        |> Parser.parse!(%{keys: :atoms!})
+        |> Enum.map(fn %{:name => _name, :address => address} -> address end)
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
+    end
   end
 end
