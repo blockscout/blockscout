@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -103,7 +103,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -142,7 +142,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -167,7 +167,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -211,7 +211,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
@@ -267,7 +267,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
@@ -325,7 +325,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
@@ -383,7 +383,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '23.2.7'
+          otp-version: '23.3.4.1'
           elixir-version: '1.11.3'
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV

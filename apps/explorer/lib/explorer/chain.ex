@@ -1603,6 +1603,9 @@ defmodule Explorer.Chain do
       )
 
     Repo.one(query) || 0
+  rescue
+    _ ->
+      0
   end
 
   @spec fetch_max_block_number() :: non_neg_integer
@@ -1616,6 +1619,9 @@ defmodule Explorer.Chain do
       )
 
     Repo.one(query) || 0
+  rescue
+    _ ->
+      0
   end
 
   @spec fetch_count_consensus_block() :: non_neg_integer
@@ -2472,7 +2478,7 @@ defmodule Explorer.Chain do
         select: last_fetched_counter.value
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query) || Decimal.new(0)
   end
 
   defp block_status({number, timestamp}) do
@@ -2487,6 +2493,33 @@ defmodule Explorer.Chain do
   end
 
   defp block_status(nil), do: {:error, :no_blocks}
+
+  def fetch_min_missing_block_cache do
+    max_block_number = BlockNumber.get_max()
+
+    if max_block_number > 0 do
+      query =
+        from(b in Block,
+          right_join:
+            missing_range in fragment(
+              """
+                (SELECT b1.number 
+                FROM generate_series(0, (?)::integer) AS b1(number)
+                WHERE NOT EXISTS
+                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
+              """,
+              ^max_block_number
+            ),
+          on: b.number == missing_range.number,
+          select: min(missing_range.number)
+        )
+
+      query
+      |> Repo.one() || 0
+    else
+      0
+    end
+  end
 
   @doc """
   Calculates the ranges of missing consensus blocks in `range`.
