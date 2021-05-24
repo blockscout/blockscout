@@ -58,6 +58,7 @@
     <% raw_circles_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:circles_addresses) %>
     <%= cond do %>
       <% (
+        @view_module == Elixir.BlockScoutWeb.TransactionView ||
         @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
         @view_module == Elixir.BlockScoutWeb.TransactionLogView ||
         @view_module == Elixir.BlockScoutWeb.TransactionRawTraceView ||
