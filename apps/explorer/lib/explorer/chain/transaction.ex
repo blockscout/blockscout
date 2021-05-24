@@ -481,19 +481,23 @@ defmodule Explorer.Chain.Transaction do
           input: %{bytes: <<method_id::binary-size(4), _::binary>>}
         } = transaction
       ) do
-    case Transaction.decoded_input_data(%__MODULE__{
-           to_address: %{smart_contract: nil},
-           input: transaction.input,
-           hash: transaction.hash
-         }) do
-      {:error, :contract_not_verified, [{:ok, _method_id, decoded_func, _}]} ->
-        parse_method_name(decoded_func)
+    if transaction.created_contract_address_hash do
+      nil
+    else
+      case Transaction.decoded_input_data(%__MODULE__{
+             to_address: %{smart_contract: nil},
+             input: transaction.input,
+             hash: transaction.hash
+           }) do
+        {:error, :contract_not_verified, [{:ok, _method_id, decoded_func, _}]} ->
+          parse_method_name(decoded_func)
 
-      {:error, :contract_not_verified, []} ->
-        "0x" <> Base.encode16(method_id, case: :lower)
+        {:error, :contract_not_verified, []} ->
+          "0x" <> Base.encode16(method_id, case: :lower)
 
-      _ ->
-        "Transfer"
+        _ ->
+          "Transfer"
+      end
     end
   end
 

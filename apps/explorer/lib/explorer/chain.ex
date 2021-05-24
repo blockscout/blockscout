@@ -2184,7 +2184,7 @@ defmodule Explorer.Chain do
 
   def address_tokens_usd_sum(token_balances) do
     token_balances
-    |> Enum.reduce(Decimal.new(0), fn token_balance, acc ->
+    |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc ->
       if token_balance.value && token_balance.token.usd_value do
         Decimal.add(acc, balance_in_usd(token_balance))
       else
@@ -6069,7 +6069,7 @@ defmodule Explorer.Chain do
     []
   end
 
-  def proxy_contract?(abi) when not is_nil(abi) do
+  def proxy_contract?(address_hash, abi) when not is_nil(abi) do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
@@ -6077,10 +6077,13 @@ defmodule Explorer.Chain do
           master_copy_pattern?(method)
       end)
 
-    if implementation_method_abi, do: true, else: false
+    if implementation_method_abi ||
+         get_implementation_address_hash_eip_1967(address_hash) !== "0x0000000000000000000000000000000000000000",
+       do: true,
+       else: false
   end
 
-  def proxy_contract?(abi) when is_nil(abi), do: false
+  def proxy_contract?(_address_hash, abi) when is_nil(abi), do: false
 
   def gnosis_safe_contract?(abi) when not is_nil(abi) do
     implementation_method_abi =
@@ -6099,13 +6102,8 @@ defmodule Explorer.Chain do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation"
+        Map.get(method, "name") == "implementation" && Map.get(method, "stateMutability") == "view"
       end)
-
-    implementation_method_abi_state_mutability =
-      implementation_method_abi && Map.get(implementation_method_abi, "stateMutability")
-
-    is_eip1967 = if implementation_method_abi_state_mutability == "nonpayable", do: true, else: false
 
     master_copy_method_abi =
       abi
@@ -6114,9 +6112,6 @@ defmodule Explorer.Chain do
       end)
 
     cond do
-      is_eip1967 ->
-        get_implementation_address_hash_eip_1967(proxy_address_hash)
-
       implementation_method_abi ->
         get_implementation_address_hash_basic(proxy_address_hash, abi)
 
@@ -6124,7 +6119,7 @@ defmodule Explorer.Chain do
         get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
 
       true ->
-        nil
+        get_implementation_address_hash_eip_1967(proxy_address_hash)
     end
   end
 
@@ -6198,6 +6193,8 @@ defmodule Explorer.Chain do
       Map.get(input, "name") == "_masterCopy"
     end)
   end
+
+  defp abi_decode_address_output(address) when is_nil(address), do: nil
 
   defp abi_decode_address_output(address) do
     if String.length(address) > 42 do
