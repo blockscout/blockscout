@@ -264,7 +264,6 @@ ifdef DISABLE_BRIDGE_MARKET_CAP_UPDATER
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_BRIDGE_MARKET_CAP_UPDATER=$(DISABLE_BRIDGE_MARKET_CAP_UPDATER)'
 endif
 
-<<<<<<< HEAD
 ifdef ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD=$(ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD)'
 endif
@@ -275,13 +274,10 @@ ifdef DISABLE_KNOWN_TOKENS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_KNOWN_TOKENS=$(DISABLE_KNOWN_TOKENS)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
-=======
 BLOCKSCOUT_CONTAINNER_PARAMS += -e 'ECTO_USE_SSL=false'
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
 
->>>>>>> 0362f9f4d1d4842f27adb634d628f969f53c046d
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
@@ -331,17 +327,9 @@ blockscout: build
 	@echo "==> Starting blockscout"
 	@echo "DB_URL=$(DB_URL)"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
-<<<<<<< HEAD
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
 					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
-=======
-					$(BLOCKSCOUT_CONTAINNER_PARAMS) \
-					-p 6000:6000 \
-					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server" 
-
-start: build postgres blockscout
->>>>>>> 0362f9f4d1d4842f27adb634d628f969f53c046d
 
 run: start
 

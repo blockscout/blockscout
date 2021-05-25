@@ -7,6 +7,7 @@ hostname = if System.get_env("DATABASE_URL"), do: nil, else: "localhost"
 config :explorer, Explorer.Repo,
   database: database,
   hostname: hostname,
+  username: "postgres",
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
   timeout: :timer.seconds(80)
