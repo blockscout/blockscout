@@ -293,12 +293,11 @@ defmodule Explorer.Etherscan do
       ) do
     query =
       from(
-        tb in TokenBalance,
-        where: tb.token_contract_address_hash == ^contract_address_hash,
-        where: tb.address_hash == ^address_hash,
-        order_by: [desc: :block_number],
+        ctb in CurrentTokenBalance,
+        where: ctb.token_contract_address_hash == ^contract_address_hash,
+        where: ctb.address_hash == ^address_hash,
         limit: 1,
-        select: tb
+        select: ctb
       )
 
     Repo.one(query)
