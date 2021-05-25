@@ -1,3 +1,16 @@
+## `msgid`s in this file come from POT (.pot) files.
+##
+## Do not add, change, or remove `msgid`s manually here as
+## they're tied to the ones in the corresponding POT file
+## (with the same domain).
+##
+## Use `mix gettext.extract --merge` or `mix gettext.merge`
+## to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2\n"
+
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
 msgid "%{blocks} block"
@@ -659,6 +672,11 @@ msgid "Contract is not verified. However, we found a verified contract with the 
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:12
+msgid "Contract is not verified. However, we found a verified contract with the same bytecode in our DB"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:34
 msgid "Contract name:"
 msgstr ""
@@ -905,6 +923,12 @@ msgid "Downtime"
 msgstr ""
 
 #, elixir-format
+#:
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:30
+msgid "Drop sources and metadata JSON file or click here"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:22
 msgid "During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
 msgstr ""
@@ -1040,6 +1064,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:32
 msgid "Fetching tokens..."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:35
+msgid "Flattened source code"
 msgstr ""
 
 #, elixir-format
@@ -1448,6 +1477,12 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:18
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:9
 msgid "New Smart Contract Verification"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:72
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:79
+msgid "Next"
 msgstr ""
 
 #, elixir-format
@@ -1864,6 +1899,17 @@ msgid "Source Pool"
 msgstr ""
 
 #, elixir-format
+#:
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:23
+msgid "Sources and Metadata JSON"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
+msgid "Sources and metadata JSON file"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:7
 msgid "Stake"
 msgstr ""
@@ -2134,6 +2180,11 @@ msgstr ""
 #: lib/block_scout_web/views/block_signers_view.ex:34
 #: lib/block_scout_web/views/block_transaction_view.ex:11
 msgid "This block has not been processed yet."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:26
+msgid "This contract has been verified via Sourcify."
 msgstr ""
 
 #, elixir-format
@@ -2787,42 +2838,4 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:15
 msgid "validator"
-msgstr ""
-
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:12
-msgid "Contract is not verified. However, we found a verified contract with the same bytecode in our DB"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:30
-msgid "Drop sources and metadata JSON file or click here"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:35
-msgid "Flattened source code"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:72
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:79
-msgid "Next"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:23
-msgid "Sources and Metadata JSON"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
-msgid "Sources and metadata JSON file"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:26
-msgid "This contract has been verified via Sourcify."
 msgstr ""
