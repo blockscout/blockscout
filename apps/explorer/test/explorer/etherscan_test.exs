@@ -1586,46 +1586,13 @@ defmodule Explorer.EtherscanTest do
 
   describe "get_token_balance/2" do
     test "with a single matching token_balance record" do
-      token_balance =
-        %{token_contract_address_hash: contract_address_hash, address_hash: address_hash} = insert(:token_balance)
+      address_current_token_balance =
+        %{token_contract_address_hash: contract_address_hash, address_hash: address_hash} =
+        insert(:address_current_token_balance)
 
       found_token_balance = Etherscan.get_token_balance(contract_address_hash, address_hash)
 
-      assert found_token_balance.id == token_balance.id
-    end
-
-    test "returns token balance in latest block" do
-      token = insert(:token)
-
-      contract_address_hash = token.contract_address_hash
-
-      address = insert(:address)
-
-      token_details1 = %{
-        token_contract_address_hash: contract_address_hash,
-        address: address,
-        block_number: 5
-      }
-
-      token_details2 = %{
-        token_contract_address_hash: contract_address_hash,
-        address: address,
-        block_number: 15
-      }
-
-      token_details3 = %{
-        token_contract_address_hash: contract_address_hash,
-        address: address,
-        block_number: 10
-      }
-
-      _token_balance1 = insert(:token_balance, token_details1)
-      token_balance2 = insert(:token_balance, token_details2)
-      _token_balance3 = insert(:token_balance, token_details3)
-
-      found_token_balance = Etherscan.get_token_balance(contract_address_hash, address.hash)
-
-      assert found_token_balance.id == token_balance2.id
+      assert found_token_balance.id == address_current_token_balance.id
     end
   end
 
