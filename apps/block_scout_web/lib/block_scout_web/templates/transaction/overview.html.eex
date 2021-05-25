@@ -30,7 +30,7 @@
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
             </div>
-            <%= if status == :pending do %>
+            <!-- <%= if status == :pending do %>
               <span class="btn btn-danger btn-full-primary ml-2 js-cancel-transaction"
                 style="display: inline-flex;"
                 data-from="<%= from_address_hash %>"
@@ -38,7 +38,7 @@
                 data-chain-id="<%= Chain.Cache.NetVersion.get_version() %>"
                 data-placement="top"
                 data-toggle="tooltip">Cancel transaction</span>
-            <% end %>
+            <% end %> -->
             <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash %>
           </h1>
           <%= if show_alm_link?(@transaction.hash) do %>
