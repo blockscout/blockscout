@@ -3,8 +3,6 @@ defmodule BlockScoutWeb.AddressCeloController do
 
   require Logger
 
-  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
-
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
