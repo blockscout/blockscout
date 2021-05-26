@@ -2085,7 +2085,7 @@ defmodule Explorer.Chain do
 
   def address_tokens_usd_sum(token_balances) do
     token_balances
-    |> Enum.reduce(Decimal.new(0), fn token_balance, acc ->
+    |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc ->
       if token_balance.value && token_balance.token.usd_value do
         Decimal.add(acc, balance_in_usd(token_balance))
       else
@@ -6096,6 +6096,8 @@ defmodule Explorer.Chain do
       Map.get(input, "name") == "_masterCopy"
     end)
   end
+
+  defp abi_decode_address_output(address) when is_nil(address), do: nil
 
   defp abi_decode_address_output(address) do
     if String.length(address) > 42 do

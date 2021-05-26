@@ -13,7 +13,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:229
+#: lib/block_scout_web/templates/transaction/overview.html.eex:230
 msgid " Token Transfer"
 msgstr ""
 
@@ -753,7 +753,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:38
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:76
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:78
 msgid "IN"
 msgstr ""
 
@@ -771,7 +771,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:36
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:38
 #: lib/block_scout_web/templates/transaction/overview.html.eex:118
 msgid "TX Fee"
 msgstr ""
@@ -988,7 +988,7 @@ msgid "License ID"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:295
+#: lib/block_scout_web/templates/transaction/overview.html.eex:296
 msgid "Limit"
 msgstr ""
 
@@ -1089,7 +1089,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:36
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:72
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:74
 msgid "OUT"
 msgstr ""
 
@@ -1517,7 +1517,7 @@ msgid "Use the search box to find a hosted network, or select from the list of a
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:289
+#: lib/block_scout_web/templates/transaction/overview.html.eex:290
 msgid "Used"
 msgstr ""
 
@@ -1547,8 +1547,8 @@ msgid "Validator Info"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:214
-#: lib/block_scout_web/templates/transaction/overview.html.eex:267
+#: lib/block_scout_web/templates/transaction/overview.html.eex:215
+#: lib/block_scout_web/templates/transaction/overview.html.eex:268
 msgid "Value"
 msgstr ""
 
@@ -1597,12 +1597,12 @@ msgid "View Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:57
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:59
 msgid "View Less Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:56
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:58
 msgid "View More Transfers"
 msgstr ""
 
@@ -1745,7 +1745,7 @@ msgid "Decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:285
+#: lib/block_scout_web/templates/transaction/overview.html.eex:286
 msgid "Gas"
 msgstr ""
 
@@ -1876,7 +1876,7 @@ msgid "Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:251
+#: lib/block_scout_web/templates/transaction/overview.html.eex:252
 msgid " Token Burning"
 msgstr ""
 
@@ -1888,7 +1888,7 @@ msgid "Token Burning"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:240
+#: lib/block_scout_web/templates/transaction/overview.html.eex:241
 msgid " Token Minting"
 msgstr ""
 
