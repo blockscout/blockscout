@@ -28,7 +28,7 @@
           <% end %>
           <h1 class="card-title">
             <%= gettext "Transaction Details" %>
-            <%= if status == :pending do %>
+            <!-- <%= if status == :pending do %>
               <span class="btn btn-danger btn-full-primary ml-2 js-cancel-transaction"
                 style="display: inline-flex;"
                 data-from="<%= from_address_hash %>"
@@ -36,7 +36,7 @@
                 data-chain-id="<%= Chain.Cache.NetVersion.get_version() %>"
                 data-placement="top"
                 data-toggle="tooltip">Cancel transaction</span>
-            <% end %>
+            <% end %> -->
           </h1>
           <%= if status == :pending do %>
             <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
