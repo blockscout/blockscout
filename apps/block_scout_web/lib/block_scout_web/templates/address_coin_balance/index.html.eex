@@ -28,7 +28,7 @@
         <button data-chart-error-message class="alert alert-danger col-12 text-left mb-4" style="display: none;">
           <span><%= gettext("There was a problem loading the chart.") %></span>
         </button>
-        <div data-chart-container class="mb-4 d-none">
+        <div data-chart-container class="mb-4" style="display: none;">
           <canvas data-chart="coinBalanceHistoryChart" data-coin_balance_history_data_path="<%= AccessHelpers.get_path(@conn, :address_coin_balance_by_day_path, :index, @address.hash) %>" width="350" height="152"></canvas>
         </div>
 
