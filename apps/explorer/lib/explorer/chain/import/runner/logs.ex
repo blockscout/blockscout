@@ -3,9 +3,11 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   Bulk imports `t:Explorer.Chain.Log.t/0`.
   """
 
+  require Logger
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
+  alias Explorer.Chain
   alias Explorer.Chain.{Import, Log}
 
   import Ecto.Query, only: [from: 2]
@@ -61,10 +63,32 @@ defmodule Explorer.Chain.Import.Runner.Logs do
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index})
 
+    filtered_changes_list =
+      ordered_changes_list
+      |> Enum.filter(fn change ->
+        block_exists = Chain.block_exists?(change.block_hash)
+
+        unless block_exists do
+          Logger.error(fn ->
+            [
+              "failed to insert log item ",
+              inspect(change),
+              " for transaction with hash ",
+              inspect(to_string(change.transaction_hash)),
+              " because block with hash ",
+              inspect(to_string(change.block_hash)),
+              " doesn't exist in the DB"
+            ]
+          end)
+        end
+
+        block_exists
+      end)
+
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        ordered_changes_list,
+        filtered_changes_list,
         conflict_target: [:transaction_hash, :index, :block_hash],
         on_conflict: on_conflict,
         for: Log,

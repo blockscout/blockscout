@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.FaucetController do
   require Logger
 
   alias Explorer.{Chain, Faucet}
+  alias Explorer.Faucet.PhoneNumberLookup
   alias ExTwilio.Message
 
   @internal_server_err_msg "Internal server error. Please try again later."
@@ -20,7 +21,11 @@ defmodule BlockScoutWeb.FaucetController do
   end
 
   defp handle_render(_full_options, conn, _params) do
-    render(conn, "index.html")
+    if Application.get_env(:block_scout_web, :faucet)[:enabled] do
+      render(conn, "index.html")
+    else
+      not_found(conn)
+    end
   end
 
   def request(conn, %{
@@ -30,15 +35,20 @@ defmodule BlockScoutWeb.FaucetController do
         "verificationCodeHash" => verification_code_hash,
         "captchaResponse" => captcha_response
       }) do
-    with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
-           validate_address_and_captcha(conn, receiver, captcha_response),
-         {:ok, phone_hash} <- generate_phone_hash(conn, phone_number),
-         :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
-         :ok <- parse_verify_code_response(conn, verification_code_hash, address_hash, phone_hash, session_key_hash) do
-      try_num = 0
-      send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
+    if Application.get_env(:block_scout_web, :faucet)[:enabled] do
+      with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
+             validate_address_and_captcha(conn, receiver, captcha_response),
+           {:ok, sanitized_phone_number} <- sanitize_phone_number(phone_number),
+           {:ok, phone_hash} <- generate_phone_hash(conn, sanitized_phone_number),
+           :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
+           :ok <- parse_verify_code_response(conn, verification_code_hash, address_hash, phone_hash, session_key_hash) do
+        try_num = 0
+        send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
+      else
+        res -> res
+      end
     else
-      res -> res
+      json(conn, %{success: false, message: @internal_server_err_msg})
     end
   end
 
@@ -48,44 +58,82 @@ defmodule BlockScoutWeb.FaucetController do
         "sessionKeyHash" => session_key_hash,
         "captchaResponse" => captcha_response
       }) do
-    with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
-           validate_address_and_captcha(conn, receiver, captcha_response),
-         {:ok, phone_hash} <- generate_phone_hash(conn, phone_number),
-         :ok <- parse_check_number_of_sms_per_phone_number(conn, phone_hash),
-         :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
-         :ok <- parse_enough_coins(conn),
-         {:ok, verification_code_hash} <-
-           parse_send_sms_response(conn, phone_number) do
-      case Faucet.insert_faucet_request_record(
-             address_hash,
-             phone_hash,
-             session_key_hash,
-             verification_code_hash
-           ) do
-        {:ok, _} ->
-          json(conn, %{success: true, message: "Success"})
+    if Application.get_env(:block_scout_web, :faucet)[:enabled] do
+      with {:ok, address_hash, captcha_response: %{status_code: status_code, body: body}} <-
+             validate_address_and_captcha(conn, receiver, captcha_response),
+           {:ok, sanitized_phone_number} <- sanitize_phone_number(phone_number),
+           {:ok, phone_hash} <- generate_phone_hash(conn, sanitized_phone_number),
+           :ok <- parse_check_number_of_sms_per_phone_number(conn, phone_hash),
+           :ok <- parse_request_interval_response(conn, status_code, body, address_hash, phone_hash),
+           :ok <- parse_enough_coins(conn),
+           {:ok, _} <- phone_number_lookup(conn, sanitized_phone_number),
+           {:ok, verification_code_hash} <-
+             parse_send_sms_response(conn, sanitized_phone_number) do
+        case Faucet.insert_faucet_request_record(
+               address_hash,
+               phone_hash,
+               session_key_hash,
+               verification_code_hash
+             ) do
+          {:ok, _} ->
+            json(conn, %{success: true, message: "Success"})
 
-        {:error, err} ->
-          Logger.error(fn -> ["failed to insert faucet request history item: ", inspect(err)] end)
-          json(conn, %{success: false, message: @internal_server_err_msg})
+          {:error, err} ->
+            Logger.error(fn -> ["failed to insert faucet request history item: ", inspect(err)] end)
+            json(conn, %{success: false, message: @internal_server_err_msg})
+        end
+      else
+        res -> res
       end
     else
-      res -> res
+      json(conn, %{success: false, message: @internal_server_err_msg})
     end
   end
 
   def request(conn, _), do: not_found(conn)
 
-  defp generate_phone_hash(conn, phone_number) when is_nil(phone_number) do
+  defp sanitize_phone_number(nil), do: nil
+
+  defp sanitize_phone_number(phone_number) do
+    sanitized_phone_number = phone_number |> String.split(~r"[^\d]", trim: true) |> Enum.join("")
+    {:ok, sanitized_phone_number}
+  end
+
+  defp generate_phone_hash(conn, phone_number) when is_nil(phone_number) or phone_number == "" do
     json(conn, %{
       success: false,
       message: "Phone number is empty."
     })
   end
 
-  defp generate_phone_hash(_conn, phone_number) do
-    salted_phone_number = phone_number <> System.get_env("FAUCET_PHONE_NUMBER_SALT")
-    ExKeccak.hash_256(to_string(salted_phone_number))
+  defp generate_phone_hash(_conn, sanitized_phone_number) do
+    salted_phone_number = sanitized_phone_number <> System.get_env("FAUCET_PHONE_NUMBER_SALT")
+    ExKeccak.hash_256(salted_phone_number)
+  end
+
+  defp phone_number_lookup(conn, sanitized_phone_number) do
+    case PhoneNumberLookup.check(sanitized_phone_number) do
+      {:error, :virtual} ->
+        json(conn, %{
+          success: false,
+          message: "VoIP phone numbers are prohibited."
+        })
+
+      {:error, :prohibited_operator} ->
+        json(conn, %{
+          success: false,
+          message: "This carrier is prohibited."
+        })
+
+      {:error, :unknown} ->
+        json(conn, %{
+          success: false,
+          message: "A wrong phone number provided."
+        })
+
+      res ->
+        res
+    end
   end
 
   defp parse_request_interval_response(conn, status_code, body, address_hash, phone_hash) do
@@ -297,6 +345,22 @@ defmodule BlockScoutWeb.FaucetController do
           message: "Failed to send SMS. Please try again later"
         })
 
+      {:error, error} ->
+        Logger.error(inspect(error))
+
+        json(conn, %{
+          success: false,
+          message: "Failed to send SMS. Please try again later"
+        })
+
+      {:error, error, _} ->
+        Logger.error(inspect(error))
+
+        json(conn, %{
+          success: false,
+          message: "Failed to send SMS. Please try again later"
+        })
+
       res ->
         res
     end
@@ -304,25 +368,33 @@ defmodule BlockScoutWeb.FaucetController do
 
   defp send_coins(address_hash, phone_hash, session_key_hash, conn, try_num) do
     if try_num < 5 do
-      case Faucet.send_coins_from_faucet(address_hash) do
-        {:ok, transaction_hash} ->
-          case Faucet.finalize_faucet_request(address_hash, phone_hash, session_key_hash) do
-            {:ok, _} ->
+      case Faucet.process_faucet_request(address_hash, phone_hash, session_key_hash, true) do
+        {:ok, _} ->
+          case Faucet.send_coins_from_faucet(address_hash) do
+            {:ok, transaction_hash} ->
               json(conn, %{success: true, transactionHash: transaction_hash, message: "Success"})
 
-            {:error, err} ->
-              Logger.error(fn -> ["failed to insert faucet request history item: ", inspect(err)] end)
-              json(conn, %{success: false, message: @internal_server_err_msg})
+            err ->
+              Logger.error(fn ->
+                [
+                  "failed to send coins from faucet to address: ",
+                  inspect(address_hash |> to_string()),
+                  ": ",
+                  inspect(err)
+                ]
+              end)
+
+              try_num = try_num + 1
+              Process.sleep(500)
+
+              with {:ok, _} <- Faucet.process_faucet_request(address_hash, phone_hash, session_key_hash, nil) do
+                send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
+              end
           end
 
-        err ->
-          Logger.error(fn ->
-            ["failed to send coins from faucet to address: ", inspect(address_hash |> to_string()), ": ", inspect(err)]
-          end)
-
-          try_num = try_num + 1
-          Process.sleep(500)
-          send_coins(address_hash, phone_hash, session_key_hash, conn, try_num)
+        {:error, err} ->
+          Logger.error(fn -> ["failed to update faucet request history item: ", inspect(err)] end)
+          json(conn, %{success: false, message: @internal_server_err_msg})
       end
     else
       json(conn, %{success: false, message: @send_coins_failed_msg})

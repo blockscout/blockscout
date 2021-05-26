@@ -53,6 +53,7 @@ defmodule Explorer.Chain do
     Log,
     PendingBlockOperation,
     SmartContract,
+    SmartContractAdditionalSource,
     StakingPool,
     StakingPoolsDelegator,
     Token,
@@ -1315,7 +1316,12 @@ defmodule Explorer.Chain do
         options \\ [],
         query_decompiled_code_flag \\ false
       ) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    necessity_by_association =
+      options
+      |> Keyword.get(:necessity_by_association, %{})
+      |> Map.merge(%{
+        smart_contract_additional_sources: :optional
+      })
 
     query =
       from(
@@ -3364,7 +3370,7 @@ defmodule Explorer.Chain do
   naming the address for reference.
   """
   @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def create_smart_contract(attrs \\ %{}, external_libraries \\ []) do
+  def create_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     new_contract = %SmartContract{}
 
     smart_contract_changeset =
@@ -3372,10 +3378,23 @@ defmodule Explorer.Chain do
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
 
+    new_contract_additional_source = %SmartContractAdditionalSource{}
+
+    smart_contract_additional_sources_changesets =
+      if secondary_sources do
+        secondary_sources
+        |> Enum.map(fn changeset ->
+          new_contract_additional_source
+          |> SmartContractAdditionalSource.changeset(changeset)
+        end)
+      else
+        []
+      end
+
     address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    insert_result =
+    insert_contract_query =
       Multi.new()
       |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
       |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
@@ -3384,6 +3403,16 @@ defmodule Explorer.Chain do
         create_address_name(repo, name, address_hash)
       end)
       |> Multi.insert(:smart_contract, smart_contract_changeset)
+
+    insert_contract_query_with_additional_sources =
+      smart_contract_additional_sources_changesets
+      |> Enum.with_index()
+      |> Enum.reduce(insert_contract_query, fn {changeset, index}, multi ->
+        Multi.insert(multi, "smart_contract_additional_source_#{Integer.to_string(index)}", changeset)
+      end)
+
+    insert_result =
+      insert_contract_query_with_additional_sources
       |> Repo.transaction()
 
     case insert_result do
@@ -3503,7 +3532,7 @@ defmodule Explorer.Chain do
   def get_address_verified_twin_contract(address_hash) do
     case Repo.get(Address, address_hash) do
       nil ->
-        %{:verified_contract => nil}
+        %{:verified_contract => nil, :additional_sources => nil}
 
       target_address ->
         target_address_hash = target_address.hash
@@ -3531,12 +3560,15 @@ defmodule Explorer.Chain do
               verified_contract_twin_query
               |> Repo.one(timeout: 10_000)
 
+            verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
+
             %{
-              :verified_contract => verified_contract_twin
+              :verified_contract => verified_contract_twin,
+              :additional_sources => verified_contract_twin_additional_sources
             }
 
           _ ->
-            %{:verified_contract => nil}
+            %{:verified_contract => nil, :additional_sources => nil}
         end
     end
   end
@@ -3587,6 +3619,21 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp get_contract_additional_sources(verified_contract_twin) do
+    if verified_contract_twin do
+      verified_contract_twin_additional_sources_query =
+        from(
+          s in SmartContractAdditionalSource,
+          where: s.address_hash == ^verified_contract_twin.address_hash
+        )
+
+      verified_contract_twin_additional_sources_query
+      |> Repo.all()
+    else
+      []
+    end
+  end
+
   @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
   def address_hash_to_smart_contract(address_hash) do
     query =
@@ -3610,6 +3657,16 @@ defmodule Explorer.Chain do
         current_smart_contract
       end
     end
+  end
+
+  def smart_contract_verified?(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    if Repo.one(query), do: true, else: false
   end
 
   defp fetch_transactions(paging_options \\ nil) do
@@ -5741,6 +5798,17 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
+  @spec block_exists?(Hash.Full.t()) :: boolean()
+  def block_exists?(hash) do
+    query =
+      from(
+        block in Block,
+        where: block.hash == ^hash
+      )
+
+    Repo.exists?(query)
+  end
+
   @doc """
   Checks if a `t:Explorer.Chain.Token.t/0` with the given `hash` exists.
 
@@ -5904,7 +5972,7 @@ defmodule Explorer.Chain do
     []
   end
 
-  def proxy_contract?(abi) when not is_nil(abi) do
+  def proxy_contract?(address_hash, abi) when not is_nil(abi) do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
@@ -5912,10 +5980,13 @@ defmodule Explorer.Chain do
           master_copy_pattern?(method)
       end)
 
-    if implementation_method_abi, do: true, else: false
+    if implementation_method_abi ||
+         get_implementation_address_hash_eip_1967(address_hash) !== "0x0000000000000000000000000000000000000000",
+       do: true,
+       else: false
   end
 
-  def proxy_contract?(abi) when is_nil(abi), do: false
+  def proxy_contract?(_address_hash, abi) when is_nil(abi), do: false
 
   def gnosis_safe_contract?(abi) when not is_nil(abi) do
     implementation_method_abi =
@@ -5934,13 +6005,8 @@ defmodule Explorer.Chain do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation"
+        Map.get(method, "name") == "implementation" && Map.get(method, "stateMutability") == "view"
       end)
-
-    implementation_method_abi_state_mutability =
-      implementation_method_abi && Map.get(implementation_method_abi, "stateMutability")
-
-    is_eip1967 = if implementation_method_abi_state_mutability == "nonpayable", do: true, else: false
 
     master_copy_method_abi =
       abi
@@ -5949,9 +6015,6 @@ defmodule Explorer.Chain do
       end)
 
     cond do
-      is_eip1967 ->
-        get_implementation_address_hash_eip_1967(proxy_address_hash)
-
       implementation_method_abi ->
         get_implementation_address_hash_basic(proxy_address_hash, abi)
 
@@ -5959,7 +6022,7 @@ defmodule Explorer.Chain do
         get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
 
       true ->
-        nil
+        get_implementation_address_hash_eip_1967(proxy_address_hash)
     end
   end
 

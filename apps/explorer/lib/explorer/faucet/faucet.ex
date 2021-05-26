@@ -2,6 +2,8 @@ defmodule Explorer.Faucet do
   @moduledoc """
   Context for data related to the faucet.
   """
+  require Logger
+
   alias ETH
   alias Explorer.Faucet.FaucetRequest
   alias Explorer.{Chain, Repo}
@@ -103,7 +105,7 @@ defmodule Explorer.Faucet do
     end
   end
 
-  def finalize_faucet_request(address_hash, phone_hash, session_key_hash) do
+  def process_faucet_request(address_hash, phone_hash, session_key_hash, coins_sent) do
     faucet_request =
       Repo.get_by(FaucetRequest,
         receiver_hash: address_hash,
@@ -114,12 +116,12 @@ defmodule Explorer.Faucet do
     if faucet_request do
       changeset =
         FaucetRequest.changeset(faucet_request, %{
-          coins_sent: true
+          coins_sent: coins_sent
         })
 
       Repo.update(changeset)
     else
-      :error
+      {:error, "faucet request history item is missing"}
     end
   end
 
@@ -209,12 +211,22 @@ defmodule Explorer.Faucet do
       faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
 
       signed_tx =
-        raw_tx
-        |> ETH.build()
-        |> ETH.sign_transaction(faucet_address_pk)
-        |> Base.encode16(case: :lower)
+        try do
+          raw_tx
+          |> ETH.build()
+          |> ETH.sign_transaction(faucet_address_pk)
+          |> Base.encode16(case: :lower)
+        rescue
+          error ->
+            Logger.error(inspect(error))
+            nil
+        end
 
-      {:ok, signed_tx}
+      if signed_tx do
+        {:ok, signed_tx}
+      else
+        {:error}
+      end
     end
   end
 
