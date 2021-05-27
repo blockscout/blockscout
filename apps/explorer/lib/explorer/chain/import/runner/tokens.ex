@@ -30,10 +30,6 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             from(
               token in Token,
               where: token.contract_address_hash == ^contract_address_hash,
-              # Enforce Token ShareLocks order (see docs: sharelocks.md)
-              order_by: [
-                token.contract_address_hash
-              ],
               lock: "FOR UPDATE"
             )
 
@@ -49,7 +45,6 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
               where: instance.token_id == ^token_id,
               # Enforce Token ShareLocks order (see docs: sharelocks.md)
               order_by: [
-                token.contract_address_hash,
                 instance.token_id
               ],
               lock: "FOR UPDATE"
