@@ -18,6 +18,7 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
     field(:date, :date)
     field(:number_of_transactions, :integer)
     field(:gas_used, :decimal)
+    field(:total_fee, :decimal)
   end
 
   @typedoc """
@@ -25,11 +26,13 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
    * `:date` - The date in UTC.
    * `:number_of_transactions` - Number of transactions processed by the vm for a given date.
    * `:gas_used` - Gas used in transactions per single day
+   * `:total_fee` - Total fee paid to validators from success transactions per single day
   """
   @type t :: %__MODULE__{
           date: Date.t(),
           number_of_transactions: integer(),
-          gas_used: non_neg_integer()
+          gas_used: non_neg_integer(),
+          total_fee: non_neg_integer()
         }
 
   @spec by_date_range(Date.t(), Date.t()) :: [__MODULE__]
