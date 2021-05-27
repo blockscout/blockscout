@@ -11,6 +11,7 @@
 - [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix
 
 ### Chore
+- [#4157](https://github.com/blockscout/blockscout/pull/4157) - Fix internal docs generation
 - [#4127](https://github.com/blockscout/blockscout/pull/4127) - Update ex_keccak package
 - [#4063](https://github.com/blockscout/blockscout/pull/4063) - Do not display 4bytes signature in the tx tile for contract creation
 - [#3934](https://github.com/blockscout/blockscout/pull/3934) - Update nimble_csv package
