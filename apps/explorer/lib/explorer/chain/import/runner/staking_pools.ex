@@ -169,6 +169,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_deleted: fragment("EXCLUDED.is_deleted"),
           banned_until: fragment("EXCLUDED.banned_until"),
           banned_delegators_until: fragment("EXCLUDED.banned_delegators_until"),
+          name: fragment("EXCLUDED.name"),
+          description: fragment("EXCLUDED.description"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pool.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pool.updated_at)
         ]

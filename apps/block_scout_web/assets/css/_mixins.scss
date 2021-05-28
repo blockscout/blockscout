@@ -95,6 +95,7 @@
   &:hover {
     background-color: darken($bg-color, 10%);
     border-color: darken($bg-color, 10%);
+    color: $text-color;
     text-decoration: none;
   }
 

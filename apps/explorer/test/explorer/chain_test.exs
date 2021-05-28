@@ -987,7 +987,7 @@ defmodule Explorer.ChainTest do
       block_height = Chain.block_height()
 
       assert block.number == block_height
-      assert {:ok, 0} = Chain.confirmations(block, block_height: block_height)
+      assert {:ok, 1} = Chain.confirmations(block, block_height: block_height)
     end
 
     test "with block.number < block_height" do
@@ -996,7 +996,7 @@ defmodule Explorer.ChainTest do
 
       assert block.number < block_height
       assert {:ok, confirmations} = Chain.confirmations(block, block_height: block_height)
-      assert confirmations == block_height - block.number
+      assert confirmations == block_height - block.number + 1
     end
   end
 
@@ -3229,7 +3229,12 @@ defmodule Explorer.ChainTest do
     test "finds a contract address" do
       address =
         insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
-        |> Repo.preload([:contracts_creation_internal_transaction, :contracts_creation_transaction, :token])
+        |> Repo.preload([
+          :contracts_creation_internal_transaction,
+          :contracts_creation_transaction,
+          :token,
+          :smart_contract_additional_sources
+        ])
 
       options = [
         necessity_by_association: %{
@@ -4501,7 +4506,7 @@ defmodule Explorer.ChainTest do
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
-        |> Enum.map(& &1.address_hash)
+        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end

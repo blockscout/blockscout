@@ -250,7 +250,7 @@ defmodule Explorer.Token.MetadataRetriever do
   defp atomized_key("18160ddd"), do: :total_supply
 
   # It's a temp fix to store tokens that have names and/or symbols with characters that the database
-  # doesn't accept. See https://github.com/poanetwork/blockscout/issues/669 for more info.
+  # doesn't accept. See https://github.com/blockscout/blockscout/issues/669 for more info.
   defp handle_invalid_strings(%{name: name, symbol: symbol} = contract_functions, contract_address_hash) do
     name = handle_invalid_name(name, contract_address_hash)
     symbol = handle_invalid_symbol(symbol)

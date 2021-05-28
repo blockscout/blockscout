@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Address do
     Hash,
     InternalTransaction,
     SmartContract,
+    SmartContractAdditionalSource,
     Token,
     Transaction,
     Wei
@@ -68,7 +69,8 @@ defmodule Explorer.Chain.Address do
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
-             :names
+             :names,
+             :smart_contract_additional_sources
            ]}
 
   @derive {Jason.Encoder,
@@ -79,7 +81,8 @@ defmodule Explorer.Chain.Address do
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
-             :names
+             :names,
+             :smart_contract_additional_sources
            ]}
 
   @primary_key {:hash, Hash.Address, autogenerate: false}
@@ -110,6 +113,7 @@ defmodule Explorer.Chain.Address do
 
     has_many(:names, Address.Name, foreign_key: :address_hash)
     has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
+    has_many(:smart_contract_additional_sources, SmartContractAdditionalSource, foreign_key: :address_hash)
 
     timestamps()
   end

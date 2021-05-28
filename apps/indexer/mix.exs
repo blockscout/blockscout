@@ -13,14 +13,7 @@ defmodule Indexer.MixProject do
       elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls],
       version: "0.1.0"
     ]
   end
@@ -50,8 +43,6 @@ defmodule Indexer.MixProject do
       {:ethereum_jsonrpc, in_umbrella: true},
       # RLP encoding
       {:ex_rlp, "~> 0.5.2"},
-      # Code coverage
-      {:excoveralls, "~> 0.13.3"},
       # Importing to database
       {:explorer, in_umbrella: true},
       # libsecp2561k1 crypto functions

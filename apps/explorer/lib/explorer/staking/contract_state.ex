@@ -436,6 +436,7 @@ defmodule Explorer.Staking.ContractState do
     mining_address_to_id = get_mining_address_to_id(validators.all, contracts, abi, block_number)
 
     # the list of all pools (validators + active pools + inactive pools)
+    # (pool IDs)
     pools =
       Enum.uniq(
         Map.values(mining_address_to_id) ++
@@ -889,7 +890,7 @@ defmodule Explorer.Staking.ContractState do
          total_likelihood: total_likelihood
        }) do
     # total amount staked into all active pools
-    staked_total = Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.total_staked_amount)
+    staked_total = sum_total_staked_amount(pool_staking_responses)
 
     Enum.map(pools, fn pool_id ->
       staking_resp = pool_staking_responses[pool_id]
@@ -920,6 +921,9 @@ defmodule Explorer.Staking.ContractState do
           100
         end
 
+      pool_name = if is_valid_string?(staking_resp.name), do: staking_resp.name
+      pool_description = if is_valid_string?(staking_resp.description), do: staking_resp.description
+
       %{
         staking_address_hash: pool_staking_address,
         delegators_count: delegators_count,
@@ -935,7 +939,9 @@ defmodule Explorer.Staking.ContractState do
         is_deleted: false,
         is_validator: is_validator,
         is_unremovable: is_unremovable,
-        ban_reason: binary_to_string(mining_resp.ban_reason)
+        ban_reason: binary_to_string(mining_resp.ban_reason),
+        name: pool_name,
+        description: pool_description
       }
       |> Map.merge(
         Map.take(staking_resp, [
@@ -1115,8 +1121,16 @@ defmodule Explorer.Staking.ContractState do
     end
   end
 
+  defp is_valid_string?(str) do
+    String.valid?(str) and String.length(String.trim(str)) > 0
+  end
+
   defp ratio(_numerator, 0), do: 0
   defp ratio(numerator, denominator), do: numerator / denominator * 100
+
+  defp sum_total_staked_amount(pool_staking_responses) do
+    Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.total_staked_amount)
+  end
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
