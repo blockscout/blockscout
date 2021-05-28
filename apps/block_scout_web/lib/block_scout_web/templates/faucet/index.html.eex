@@ -33,7 +33,7 @@
                     <div>
                     <h3>Current Faucet Balance </h3><h1 id="faucetBalance" class="mb-3">N/A</h1>
                     <div class="mb-2">
-                        <b>Note:</b> If balance is less than 0.1 xDai the faucet is non-operational. There is no current timetable for faucet refills. See the <a href="https://www.xdaichain.com/for-users/get-xdai-tokens/xdai-faucet">xDai website for more faucet options.</a>
+                        <b>Note:</b> If balance is less than <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %> the faucet is non-operational. There is no current timetable for faucet refills. See the <a href="https://www.xdaichain.com/for-users/get-xdai-tokens/xdai-faucet">xDai website for more faucet options.</a>
                     </div>
                     <div connect-to class="connect-container mb-2">
                         <span style="margin-top: -2px;" class="mr-2">
