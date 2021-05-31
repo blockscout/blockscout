@@ -2,7 +2,7 @@
 <% minimal_proxy_template = Chain.get_minimal_proxy_template(@address.hash) %>
 <% metadata_for_verification = minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
 <% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
-<% additional_sources_from_twin = Explorer.Chain.get_address_verified_twin_contract(@address.hash).additional_sources %>
+<% additional_sources_from_twin = Chain.get_address_verified_twin_contract(@address.hash).additional_sources %>
 <% additional_sources = if smart_contract_verified, do: @address.smart_contract_additional_sources, else: additional_sources_from_twin %>
 
 <section class="container">

@@ -15,7 +15,8 @@ function formatTokenUsdValue (value) {
 }
 
 function formatCurrencyValue (value, symbol) {
-  symbol = symbol === undefined ? '$' : symbol
+  symbol = symbol || '$'
+  if (isNaN(value) || value === '0') return 'N/A'
   if (value === 0) return `${symbol}0.000000`
   if (value < 0.000001) return `${window.localized['Less than']} ${symbol}0.000001`
   if (value < 10) return `${symbol}${numeral(value).format('0.000')}`

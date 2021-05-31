@@ -1,7 +1,6 @@
 import Web3 from 'web3'
-import { props } from 'eth-net-props'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals'
-import { getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { compareChainIDs, formatError, getContractABI, getCurrentAccount, getMethodInputs, prepareMethodArgs } from './common_helpers'
 
 export const walletEnabled = () => {
   return new Promise((resolve) => {
@@ -54,13 +53,6 @@ export const connectToWallet = () => {
   }
 }
 
-export const getCurrentAccount = async () => {
-  const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-  const account = accounts[0] ? accounts[0].toLowerCase() : null
-
-  return account
-}
-
 export const shouldHideConnectButton = () => {
   return new Promise((resolve) => {
     if (window.ethereum) {
@@ -100,6 +92,7 @@ export function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $
 
   const { chainId: walletChainIdHex } = window.ethereum
   compareChainIDs(explorerChainId, walletChainIdHex)
+    .then(() => getCurrentAccount())
     .then(currentAccount => {
       if (functionName) {
         const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
@@ -153,27 +146,10 @@ function onTransactionHash (txHash, $element, functionName) {
   const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
 }
 
-const formatError = (error) => {
-  let { message } = error
-  message = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
-  return message
-}
-
 function getTxValue ($functionInputs) {
   const WEI_MULTIPLIER = 10 ** 18
   const $txValue = $functionInputs.filter('[tx-value]:first')
   const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
   const txValueStr = txValue && txValue.toString(16)
   return txValueStr
-}
-
-function compareChainIDs (explorerChainId, walletChainIdHex) {
-  if (explorerChainId !== parseInt(walletChainIdHex)) {
-    const networkDisplayNameFromWallet = props.getNetworkDisplayName(walletChainIdHex)
-    const networkDisplayName = props.getNetworkDisplayName(explorerChainId)
-    const errorMsg = `You connected to ${networkDisplayNameFromWallet} chain in the wallet, but the current instance of Blockscout is for ${networkDisplayName} chain`
-    return Promise.reject(new Error(errorMsg))
-  } else {
-    return getCurrentAccount()
-  }
 }

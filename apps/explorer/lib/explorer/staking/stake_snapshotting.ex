@@ -48,33 +48,27 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.map(fn pool_id ->
         case Map.fetch(cached_pool_staking_responses, pool_id) do
           {:ok, resp} ->
-            Map.merge(
-              resp,
-              ContractReader.perform_requests(
-                snapshotted_pool_amounts_requests(pool_id, resp.staking_address_hash, block_number),
-                contracts,
-                abi
-              )
-            )
+            snapshotted_pool_amounts_requests(pool_id, resp.staking_address_hash, block_number)
 
           :error ->
             pool_staking_address = id_to_staking_address[pool_id]
 
-            Map.merge(
-              %{
-                staking_address_hash: pool_staking_address
-              },
-              ContractReader.perform_requests(
-                ContractReader.active_delegators_request(pool_id, block_number) ++
-                  snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number),
-                contracts,
-                abi
-              )
-            )
+            ContractReader.active_delegators_request(pool_id, block_number) ++
+              snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number)
         end
       end)
-      |> Enum.zip(pool_ids)
-      |> Map.new(fn {key, val} -> {val, key} end)
+      |> ContractReader.perform_grouped_requests(pool_ids, contracts, abi)
+      |> Map.new(fn {pool_id, resp} ->
+        {pool_id,
+         case Map.fetch(cached_pool_staking_responses, pool_id) do
+           {:ok, cached_resp} ->
+             Map.merge(cached_resp, resp)
+
+           :error ->
+             pool_staking_address = id_to_staking_address[pool_id]
+             Map.merge(%{staking_address_hash: pool_staking_address}, resp)
+         end}
+      end)
 
     # get a flat list of all stakers of each validator
     # in the form of {pool_id, pool_staking_address, staker_address}
@@ -85,73 +79,19 @@ defmodule Explorer.Staking.StakeSnapshotting do
       end)
 
     # read info about each staker from the contracts
-    staker_responses =
-      stakers
-      |> Enum.map(fn {pool_id, pool_staking_address, staker_address} ->
-        ContractReader.perform_requests(
-          snapshotted_staker_amount_request(
-            pool_id,
-            pool_staking_address,
-            staker_address,
-            block_number
-          ),
-          contracts,
-          abi
-        )
-      end)
-      |> Enum.zip(stakers)
-      |> Map.new(fn {key, val} -> {val, key} end)
-
-    # to keep sort order when using `perform_grouped_requests` (see below)
-    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _} -> key end)
+    staker_responses = get_staker_responses(stakers, block_number, contracts, abi)
 
     # call `BlockReward.validatorShare` function for each pool
     # to get validator's reward share of the pool (needed for the `Delegators` list in UI)
     validator_reward_responses =
-      pool_staking_responses
-      |> Enum.map(fn {_pool_id, resp} ->
-        ContractReader.validator_reward_request(
-          [
-            epoch_number,
-            resp.snapshotted_self_staked_amount,
-            resp.snapshotted_total_staked_amount,
-            1000_000
-          ],
-          block_number
-        )
-      end)
-      |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
+      get_validator_reward_responses(pool_staking_responses, epoch_number, block_number, contracts, abi)
 
     # call `BlockReward.delegatorShare` function for each delegator
     # to get their reward share of the pool (needed for the `Delegators` list in UI)
-    delegator_responses =
-      Enum.reduce(staker_responses, %{}, fn {{_pool_id, pool_staking_address, staker_address} = key, value}, acc ->
-        if pool_staking_address != staker_address do
-          Map.put(acc, key, value)
-        else
-          acc
-        end
-      end)
-
-    delegator_keys = Enum.map(delegator_responses, fn {key, _} -> key end)
-
     delegator_reward_responses =
-      delegator_responses
-      |> Enum.map(fn {{pool_id, _pool_staking_address, _staker_address}, resp} ->
-        staking_resp = pool_staking_responses[pool_id]
-
-        ContractReader.delegator_reward_request(
-          [
-            epoch_number,
-            resp.snapshotted_stake_amount,
-            staking_resp.snapshotted_self_staked_amount,
-            staking_resp.snapshotted_total_staked_amount,
-            1000_000
-          ],
-          block_number
-        )
-      end)
-      |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
+      staker_responses
+      |> get_delegator_responses()
+      |> get_delegator_reward_responses(pool_staking_responses, epoch_number, block_number, contracts, abi)
 
     # form entries for updating the `staking_pools` table in DB
     pool_entries =
@@ -223,6 +163,96 @@ defmodule Explorer.Staking.StakeSnapshotting do
   end
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
+
+  defp get_delegator_responses(staker_responses) do
+    Enum.reduce(staker_responses, %{}, fn {{_pool_id, pool_staking_address, staker_address} = key, value}, acc ->
+      if pool_staking_address != staker_address do
+        Map.put(acc, key, value)
+      else
+        acc
+      end
+    end)
+  end
+
+  defp get_delegator_reward_responses(
+         delegator_responses,
+         pool_staking_responses,
+         epoch_number,
+         block_number,
+         contracts,
+         abi
+       ) do
+    delegator_keys = Enum.map(delegator_responses, fn {key, _} -> key end)
+
+    delegator_requests =
+      delegator_responses
+      |> Enum.map(fn {{pool_id, _pool_staking_address, _staker_address}, resp} ->
+        staking_resp = pool_staking_responses[pool_id]
+
+        ContractReader.delegator_reward_request(
+          [
+            epoch_number,
+            resp.snapshotted_stake_amount,
+            staking_resp.snapshotted_self_staked_amount,
+            staking_resp.snapshotted_total_staked_amount,
+            1000_000
+          ],
+          block_number
+        )
+      end)
+
+    chunk_size = 100
+    chunks = 0..trunc(ceil(Enum.count(delegator_keys) / chunk_size) - 1)
+
+    Enum.reduce(chunks, %{}, fn i, acc ->
+      delegator_keys_slice = Enum.slice(delegator_keys, i * chunk_size, chunk_size)
+
+      responses =
+        delegator_requests
+        |> Enum.slice(i * chunk_size, chunk_size)
+        |> ContractReader.perform_grouped_requests(delegator_keys_slice, contracts, abi)
+
+      Map.merge(acc, responses)
+    end)
+  end
+
+  defp get_staker_responses(stakers, block_number, contracts, abi) do
+    # we split batch requests by chunks
+    chunk_size = 100
+    chunks = 0..trunc(ceil(Enum.count(stakers) / chunk_size) - 1)
+
+    Enum.reduce(chunks, %{}, fn i, acc ->
+      stakers_slice = Enum.slice(stakers, i * chunk_size, chunk_size)
+
+      responses =
+        stakers_slice
+        |> Enum.map(fn {pool_id, pool_staking_address, staker_address} ->
+          snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number)
+        end)
+        |> ContractReader.perform_grouped_requests(stakers_slice, contracts, abi)
+
+      Map.merge(acc, responses)
+    end)
+  end
+
+  defp get_validator_reward_responses(pool_staking_responses, epoch_number, block_number, contracts, abi) do
+    # to keep sort order when using `perform_grouped_requests` (see below)
+    pool_ids = Enum.map(pool_staking_responses, fn {pool_id, _} -> pool_id end)
+
+    pool_staking_responses
+    |> Enum.map(fn {_pool_id, resp} ->
+      ContractReader.validator_reward_request(
+        [
+          epoch_number,
+          resp.snapshotted_self_staked_amount,
+          resp.snapshotted_total_staked_amount,
+          1000_000
+        ],
+        block_number
+      )
+    end)
+    |> ContractReader.perform_grouped_requests(pool_ids, contracts, abi)
+  end
 
   defp snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number) do
     [

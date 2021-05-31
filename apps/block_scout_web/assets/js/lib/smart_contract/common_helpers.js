@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import { props } from 'eth-net-props'
 
 export function getContractABI ($form) {
   const implementationAbi = $form.data('implementation-abi')
@@ -35,12 +36,56 @@ export function prepareMethodArgs ($functionInputs, inputs) {
         const inputValueElements = sanitizedInputValue.split(',')
         const sanitizedInputValueElements = inputValueElements.map(elementValue => {
           const elementInputType = inputType.split('[')[0]
-          return replaceDoubleQuotes(elementValue, elementInputType)
+
+          var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+
+          if (isBoolInputType(elementInputType)) {
+            sanitizedElementValue = convertToBool(elementValue)
+          }
+          return sanitizedElementValue
         })
         return [sanitizedInputValueElements]
       }
+    } else if (isBoolInputType(inputType)) {
+      return convertToBool(sanitizedInputValue)
     } else { return sanitizedInputValue }
   })
+}
+
+export function compareChainIDs (explorerChainId, walletChainIdHex) {
+  if (explorerChainId !== parseInt(walletChainIdHex)) {
+    const networkDisplayNameFromWallet = props.getNetworkDisplayName(walletChainIdHex)
+    const networkDisplayName = props.getNetworkDisplayName(explorerChainId)
+    const errorMsg = `You connected to ${networkDisplayNameFromWallet} chain in the wallet, but the current instance of Blockscout is for ${networkDisplayName} chain`
+    return Promise.reject(new Error(errorMsg))
+  } else {
+    return Promise.resolve()
+  }
+}
+
+export const formatError = (error) => {
+  let { message } = error
+  message = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
+  return message
+}
+
+export const getCurrentAccount = () => {
+  return new Promise((resolve, reject) => {
+    window.ethereum.request({ method: 'eth_accounts' })
+      .then(accounts => {
+        const account = accounts[0] ? accounts[0].toLowerCase() : null
+        resolve(account)
+      })
+      .catch(err => {
+        reject(err)
+      })
+  })
+}
+
+function convertToBool (value) {
+  const boolVal = (value === 'true' || value === '1' || value === 1)
+
+  return boolVal
 }
 
 function isArrayInputType (inputType) {
@@ -61,6 +106,10 @@ function isUintInputType (inputType) {
 
 function isStringInputType (inputType) {
   return inputType && inputType.includes('string') && !isArrayInputType(inputType)
+}
+
+function isBoolInputType (inputType) {
+  return inputType && inputType.includes('bool') && !isArrayInputType(inputType)
 }
 
 function isNonSpaceInputType (inputType) {

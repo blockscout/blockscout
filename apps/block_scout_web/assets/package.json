@@ -1,7 +1,7 @@
 {
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/poanetwork/blockscout.git"
+    "url": "git+https://github.com/blockscout/blockscout.git"
   },
   "private": true,
   "name": "blockscout",
@@ -21,20 +21,20 @@
   "dependencies": {
     "@analytics/segment": "^0.6.0",
     "analytics": "^0.6.6",
-    "@fortawesome/fontawesome-free": "5.1.0-4",
+    "@fortawesome/fontawesome-free": "^5.15.3",
     "assert": "^2.0.0",
     "awesomplete": "^1.1.5",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.3.1",
     "chart.js": "^2.9.3",
     "clipboard": "^2.0.4",
-    "highlight.js": "^9.16.2",
+    "core-js": "^2.6.12",
+    "crypto-browserify": "^3.12.0",
+    "dropzone": "^5.7.2",
+    "eth-net-props": "^1.0.33",
+    "highlight.js": "^10.4.0",
     "highlightjs-solidity": "^1.0.8",
     "https-browserify": "^1.0.0",
-    "eth-net-props": "^1.0.33",
-    "dropzone": "^5.7.2",
-    "crypto-browserify": "^3.12.0",
-    "core-js": "^2.6.12",
     "humps": "^2.0.1",
     "jquery": "^3.4.0",
     "lodash": "^4.17.19",
@@ -51,10 +51,11 @@
     "redux": "^4.0.5",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.1.1",
+    "sweetalert2": "^10.14.0",
     "urijs": "^1.19.2",
     "url": "^0.11.0",
     "util": "^0.12.3",
-    "web3": "^1.3.0"
+    "web3": "^1.3.5"
   },
   "devDependencies": {
     "@babel/core": "^7.7.2",

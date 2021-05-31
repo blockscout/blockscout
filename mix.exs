@@ -16,15 +16,10 @@ defmodule BlockScout.Mixfile do
       ],
       elixir: "~> 1.10",
       preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
         credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls],
       releases: [
         blockscout: [
           applications: [
@@ -76,9 +71,6 @@ defmodule BlockScout.Mixfile do
       {:tesla, "~> 1.3.3"},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
-      {:mox, "~> 0.5"},
-      # Code coverage
-      {:excoveralls, "~> 0.13.3"},
       {:number, "~> 1.0.3"}
     ]
   end

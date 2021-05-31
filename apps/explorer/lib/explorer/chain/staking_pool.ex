@@ -18,6 +18,7 @@ defmodule Explorer.Chain.StakingPool do
           banned_until: integer,
           ban_reason: String.t(),
           delegators_count: integer,
+          description: String.t(),
           is_active: boolean,
           is_banned: boolean,
           is_deleted: boolean,
@@ -25,6 +26,7 @@ defmodule Explorer.Chain.StakingPool do
           is_validator: boolean,
           likelihood: Decimal.t(),
           mining_address_hash: Hash.Address.t(),
+          name: String.t(),
           self_staked_amount: Decimal.t(),
           snapshotted_self_staked_amount: Decimal.t(),
           snapshotted_total_staked_amount: Decimal.t(),
@@ -44,12 +46,14 @@ defmodule Explorer.Chain.StakingPool do
     banned_until
     ban_reason
     delegators_count
+    description
     is_active
     is_banned
     is_unremovable
     is_validator
     likelihood
     mining_address_hash
+    name
     self_staked_amount
     snapshotted_self_staked_amount
     snapshotted_total_staked_amount
@@ -83,12 +87,14 @@ defmodule Explorer.Chain.StakingPool do
     field(:banned_until, :integer)
     field(:ban_reason, :string)
     field(:delegators_count, :integer)
+    field(:description, :string, size: 1024)
     field(:is_active, :boolean, default: false)
     field(:is_banned, :boolean, default: false)
     field(:is_deleted, :boolean, default: false)
     field(:is_unremovable, :boolean, default: false)
     field(:is_validator, :boolean, default: false)
     field(:likelihood, :decimal)
+    field(:name, :string, size: 256)
     field(:self_staked_amount, :decimal)
     field(:stakes_ratio, :decimal)
     field(:snapshotted_self_staked_amount, :decimal)
