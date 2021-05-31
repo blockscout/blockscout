@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
       assert_reply(ref, :ok, %{balance: sent_balance, balance_card: balance_card})
 
       assert sent_balance == address.fetched_coin_balance.value
-      assert balance_card =~ "/address/#{address.hash}/token-balances"
+      # assert balance_card =~ "/address/#{address.hash}/token-balances"
     end
   end
 

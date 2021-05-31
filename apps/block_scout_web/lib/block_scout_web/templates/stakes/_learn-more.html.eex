@@ -7,7 +7,7 @@
         </svg>
     </button>
     <span style="font-size: 1.3em;">
-        <i style="color: #f7b32b;" class="fa fa-info-circle ml-1"></i>
+        <%= render BlockScoutWeb.CommonComponentsView, "_info.html", extra_class: "ml-1" %>
         Participate in Proof-of-Stake consensus on the xDai chain as a delegator or validator. To start you will need STAKE on the xDai network. <a href="https://www.xdaichain.com/for-stakers/staking-protocol" target="_blank">Learn More</a>
     </span>
   </div>

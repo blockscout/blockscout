@@ -135,7 +135,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       assert conn.assigns.read_only_functions == []
     end
 
-    test "lists [] proxy read only functions if no verified eip-1967 implementation and eth_getStorageAt returns not nnormalized address hash" do
+    test "lists [] proxy read only functions if no verified eip-1967 implementation and eth_getStorageAt returns not normalized address hash" do
       token_contract_address = insert(:contract_address)
 
       insert(:smart_contract,

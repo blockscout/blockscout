@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.StakesController do
           address: account_address,
           balance: Chain.fetch_last_token_balance(account_address, token.contract_address_hash),
           pool: Chain.staking_pool(account_address),
-          pool_mining_address: conn.assigns[:mining_address]
+          pool_id: conn.assigns[:pool_id]
         })
       end
 
@@ -70,10 +70,15 @@ defmodule BlockScoutWeb.StakesController do
       if Map.has_key?(params, "filterMy") do
         [paging_options: options] = paging_options(params)
 
-        last_index =
-          params
-          |> Map.get("position", "0")
-          |> String.to_integer()
+        # turn off paging for Validators page as we sort by APY below
+        # and max number of validators is no more than 19
+        # (for the current POSDAO implementation)
+        options =
+          if is_page_unlimited?(filter) do
+            Map.put(options, :page_size, 1_000_000)
+          else
+            options
+          end
 
         pools_plus_one =
           Chain.staking_pools(
@@ -86,21 +91,7 @@ defmodule BlockScoutWeb.StakesController do
             params["filterMy"] == "true"
           )
 
-        {pools, next_page} = split_list_by_page(pools_plus_one)
-
-        next_page_path =
-          case next_page_params(next_page, pools, params) do
-            nil ->
-              nil
-
-            next_page_params ->
-              updated_page_params =
-                next_page_params
-                |> Map.delete("type")
-                |> Map.put("position", last_index + 1)
-
-              next_page_path(filter, conn, updated_page_params)
-          end
+        {pools, next_page_path, last_index} = get_one_page(filter, conn, params, pools_plus_one)
 
         average_block_time = AverageBlockTime.average_block_time()
 
@@ -119,14 +110,13 @@ defmodule BlockScoutWeb.StakesController do
         calc_apy_enabled = ContractState.calc_apy_enabled?()
         snapshotted_delegator_data = snapshotted_delegator_data(filter, calc_apy_enabled)
 
-        items =
+        pools =
           pools
-          |> Enum.with_index(last_index + 1)
-          |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
+          |> Enum.map(fn %{pool: pool} = item ->
             apy =
-              if calc_apy_enabled and snapshotted_delegator_data != nil do
+              if calc_apy_enabled and snapshotted_delegator_data !== nil do
                 calc_apy(
-                  pool,
+                  item.pool,
                   pool_rewards,
                   snapshotted_delegator_data,
                   average_block_time_seconds,
@@ -134,11 +124,22 @@ defmodule BlockScoutWeb.StakesController do
                 )
               end
 
+            pool = Map.put(pool, :apy, apy)
+            Map.put(item, :pool, pool)
+          end)
+
+        # sort pools on Validators page by descending APY if all APYs known
+        pools = sort_pools_by_apy(pools)
+
+        items =
+          pools
+          |> Enum.with_index(last_index + 1)
+          |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
             View.render_to_string(
               StakesView,
               "_rows.html",
               token: token,
-              pool: Map.put(pool, :apy, apy),
+              pool: pool,
               delegator: delegator,
               index: index,
               average_block_time: average_block_time,
@@ -227,7 +228,49 @@ defmodule BlockScoutWeb.StakesController do
     end
   end
 
+  defp sort_pools_by_apy(pools) do
+    if Enum.all?(pools, fn item -> item.pool.apy !== nil end) do
+      Enum.sort(pools, fn item1, item2 -> item1.pool.apy.apy_raw >= item2.pool.apy.apy_raw end)
+    else
+      pools
+    end
+  end
+
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
+
+  defp get_one_page(filter, conn, params, pools_plus_one) do
+    last_index =
+      params
+      |> Map.get("position", "0")
+      |> String.to_integer()
+
+    {pools, next_page} =
+      if is_page_unlimited?(filter) do
+        {pools_plus_one, []}
+      else
+        split_list_by_page(pools_plus_one)
+      end
+
+    next_page_path =
+      case next_page_params(next_page, pools, params) do
+        nil ->
+          nil
+
+        next_page_params ->
+          updated_page_params =
+            next_page_params
+            |> Map.delete("type")
+            |> Map.put("position", last_index + 1)
+
+          next_page_path(filter, conn, updated_page_params)
+      end
+
+    {pools, next_page_path, last_index}
+  end
+
+  defp is_page_unlimited?(filter) do
+    filter == :validator
+  end
 
   defp next_page_path(:validator, conn, params) do
     validators_path(conn, :index, params)
