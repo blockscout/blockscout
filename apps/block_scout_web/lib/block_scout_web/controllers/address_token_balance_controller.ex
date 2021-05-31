@@ -26,12 +26,12 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
 
       token_balances_except_bridged =
         token_balances
-        |> Enum.filter(fn token_balance -> !token_balance.token.bridged end)
+        |> Enum.filter(fn {token_balance, _} -> !token_balance.token.bridged end)
 
       circles_total_balance =
         if Enum.count(circles_addresses_list) > 0 do
           token_balances_except_bridged
-          |> Enum.reduce(Decimal.new(0), fn token_balance, acc_balance ->
+          |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc_balance ->
             {:ok, token_address} = Chain.hash_to_address(token_balance.address_hash)
 
             from_address = from_address_hash(token_address)
