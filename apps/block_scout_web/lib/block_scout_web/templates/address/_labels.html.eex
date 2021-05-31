@@ -45,3 +45,6 @@
 <%= if is_test?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-1"] %>
 <% end %>
+<%= if is_spam?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "SPAM", additional_classes: ["spam", "ml-1"] %>
+<% end %>

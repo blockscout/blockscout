@@ -566,6 +566,13 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN", "")) =~ address_hash_str
   end
 
+  def is_spam?(nil), do: false
+
+  def is_spam?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SPAM", "")) =~ address_hash_str
+  end
+
   def is_chainlink_oracle?(nil), do: false
 
   def is_chainlink_oracle?(address_hash) do

@@ -64,6 +64,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set common chainlink oracle tag
     AddressTag.set_tag("chainlink oracle")
 
+    # set common spam tag
+    AddressTag.set_tag("spam")
+
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
 
@@ -108,6 +111,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set gtgs tag
     set_gtgs_tag()
+
+    # set spam tag
+    set_spam_tag()
 
     # set chainlink oracle tag
     set_chainlink_oracle_tag()
@@ -238,6 +244,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_gtgs_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN", "gtgs")
+  end
+
+  defp set_spam_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_SPAM", "spam")
   end
 
   def set_chainlink_oracle_tag do

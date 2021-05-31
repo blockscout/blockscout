@@ -113,6 +113,10 @@
         background: rgba(40, 167, 69, 0.2);
         color: rgb(40, 167, 69);
     }
+    &.spam {
+        background: #380000;
+        color: #fff;
+    }
 }
 
 .confirmations-label {
