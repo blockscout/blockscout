@@ -395,6 +395,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           map(ctb, [
             :address_hash,
             :token_contract_address_hash,
+            :token_id,
             # Used to determine if `address_hash` was a holder of `token_contract_address_hash` before
 
             # `address_current_token_balance` is deleted in `update_tokens_holder_count`.
@@ -442,13 +443,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       Enum.reduce(deleted_address_current_token_balances, initial_query, fn %{
                                                                               address_hash: address_hash,
                                                                               token_contract_address_hash:
-                                                                                token_contract_address_hash
+                                                                                token_contract_address_hash,
+                                                                              token_id: token_id
                                                                             },
                                                                             acc_query ->
         from(tb in acc_query,
           or_where:
             tb.address_hash == ^address_hash and
-              tb.token_contract_address_hash == ^token_contract_address_hash
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              tb.token_id == ^token_id
         )
       end)
 
@@ -458,6 +461,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         on:
           tb.address_hash == new_current_token_balance.address_hash and
             tb.token_contract_address_hash == new_current_token_balance.token_contract_address_hash and
+            tb.token_id == new_current_token_balance.token_id and
             tb.block_number == new_current_token_balance.block_number,
         select: %{
           address_hash: new_current_token_balance.address_hash,
@@ -469,7 +473,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           updated_at: over(max(tb.updated_at), :w)
         },
         windows: [
-          w: [partition_by: [tb.address_hash, tb.token_contract_address_hash]]
+          w: [partition_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]]
         ]
       )
 
@@ -489,7 +493,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     derived_address_current_token_balances =
-      Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :block_number, :value]))
+      Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :token_id, :block_number, :value]))
 
     {:ok, derived_address_current_token_balances}
   end
