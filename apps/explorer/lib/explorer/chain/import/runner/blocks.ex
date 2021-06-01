@@ -428,32 +428,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          %{timeout: timeout} = options
        )
        when is_list(deleted_address_current_token_balances) do
-    initial_query =
-      from(tb in Address.TokenBalance,
-        select: %{
-          address_hash: tb.address_hash,
-          token_contract_address_hash: tb.token_contract_address_hash,
-          token_id: tb.token_id,
-          block_number: max(tb.block_number)
-        },
-        group_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]
-      )
-
-    final_query =
-      Enum.reduce(deleted_address_current_token_balances, initial_query, fn %{
-                                                                              address_hash: address_hash,
-                                                                              token_contract_address_hash:
-                                                                                token_contract_address_hash,
-                                                                              token_id: token_id
-                                                                            },
-                                                                            acc_query ->
-        from(tb in acc_query,
-          or_where:
-            tb.address_hash == ^address_hash and
-              tb.token_contract_address_hash == ^token_contract_address_hash and
-              tb.token_id == ^token_id
-        )
-      end)
+    final_query = derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances)
 
     new_current_token_balance_query =
       from(new_current_token_balance in subquery(final_query),
@@ -461,7 +436,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         on:
           tb.address_hash == new_current_token_balance.address_hash and
             tb.token_contract_address_hash == new_current_token_balance.token_contract_address_hash and
-            tb.token_id == new_current_token_balance.token_id and
+            ((is_nil(tb.token_id) and is_nil(new_current_token_balance.token_id)) or
+               (tb.token_id == new_current_token_balance.token_id and
+                  not is_nil(tb.token_id) and not is_nil(new_current_token_balance.token_id))) and
             tb.block_number == new_current_token_balance.block_number,
         select: %{
           address_hash: new_current_token_balance.address_hash,
@@ -496,6 +473,43 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :token_id, :block_number, :value]))
 
     {:ok, derived_address_current_token_balances}
+  end
+
+  defp derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances) do
+    initial_query =
+      from(tb in Address.TokenBalance,
+        select: %{
+          address_hash: tb.address_hash,
+          token_contract_address_hash: tb.token_contract_address_hash,
+          token_id: tb.token_id,
+          block_number: max(tb.block_number)
+        },
+        group_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]
+      )
+
+    Enum.reduce(deleted_address_current_token_balances, initial_query, fn %{
+                                                                            address_hash: address_hash,
+                                                                            token_contract_address_hash:
+                                                                              token_contract_address_hash,
+                                                                            token_id: token_id
+                                                                          },
+                                                                          acc_query ->
+      if token_id do
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              tb.token_id == ^token_id
+        )
+      else
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              is_nil(tb.token_id)
+        )
+      end
+    end)
   end
 
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
