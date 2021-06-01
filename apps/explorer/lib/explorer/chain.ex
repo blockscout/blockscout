@@ -3778,8 +3778,6 @@ defmodule Explorer.Chain do
 
             verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
 
-            verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
-
             %{
               :verified_contract => verified_contract_twin,
               :additional_sources => verified_contract_twin_additional_sources
@@ -3788,21 +3786,6 @@ defmodule Explorer.Chain do
           _ ->
             %{:verified_contract => nil, :additional_sources => nil}
         end
-    end
-  end
-
-  defp get_contract_additional_sources(verified_contract_twin) do
-    if verified_contract_twin do
-      verified_contract_twin_additional_sources_query =
-        from(
-          s in SmartContractAdditionalSource,
-          where: s.address_hash == ^verified_contract_twin.address_hash
-        )
-
-      verified_contract_twin_additional_sources_query
-      |> Repo.all()
-    else
-      []
     end
   end
 
