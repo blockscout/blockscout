@@ -59,16 +59,31 @@ defmodule Explorer.Chain.Transaction.History.Historian do
             join: block in Block,
             on: transaction.block_hash == block.hash,
             where: block.consensus == true,
-            select: transaction.hash
+            select: transaction
           )
 
         num_transactions = Repo.aggregate(query, :count, :hash, timeout: :infinity)
         gas_used = Repo.aggregate(query, :sum, :gas_used, timeout: :infinity)
 
-        records = [%{date: day_to_fetch, number_of_transactions: num_transactions, gas_used: gas_used} | records]
+        total_fee_query =
+          from(transaction in subquery(all_transactions_query),
+            join: block in Block,
+            on: transaction.block_hash == block.hash,
+            where: block.consensus == true,
+            where: transaction.status == ^1,
+            select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
+          )
+
+        total_fee = Repo.one(total_fee_query, timeout: :infinity)
+
+        records = [
+          %{date: day_to_fetch, number_of_transactions: num_transactions, gas_used: gas_used, total_fee: total_fee}
+          | records
+        ]
+
         compile_records(num_days - 1, records)
       else
-        records = [%{date: day_to_fetch, number_of_transactions: 0} | records]
+        records = [%{date: day_to_fetch, number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
         compile_records(num_days - 1, records)
       end
     end
