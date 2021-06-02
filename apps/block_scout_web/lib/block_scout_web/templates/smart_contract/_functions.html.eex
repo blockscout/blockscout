@@ -122,10 +122,7 @@
                       </div>
                     </div> 
                 <% else %>
-                  <details class="py-2 word-break-all">
-                    <summary>Click to view</summary>
                     <%= raw(values_only(output["value"], output["type"], output["components"])) %>
-                  </details>
                 <% end %>
             <% end %>
           <% end %>
