@@ -304,12 +304,14 @@ defmodule Indexer.TokenBalancesTest do
 
       token_balance_a = %{
         token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+        token_id: nil,
         address_hash: address_hash_string,
         block_number: 1_000
       }
 
       token_balance_b = %{
         token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+        token_id: nil,
         address_hash: address_hash_string,
         block_number: 1_001
       }
