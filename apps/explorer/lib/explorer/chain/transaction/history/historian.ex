@@ -70,7 +70,6 @@ defmodule Explorer.Chain.Transaction.History.Historian do
             join: block in Block,
             on: transaction.block_hash == block.hash,
             where: block.consensus == true,
-            where: transaction.status == ^1,
             select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
           )
 
