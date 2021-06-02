@@ -341,7 +341,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     ordered_query =
       from(tb in Address.TokenBalance,
         where: tb.block_number in ^consensus_block_numbers,
-        select: map(tb, [:address_hash, :token_contract_address_hash, :block_number]),
+        select: map(tb, [:address_hash, :token_contract_address_hash, :token_id, :block_number]),
         # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
           tb.token_contract_address_hash,
@@ -360,6 +360,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           ordered_address_token_balance.address_hash == tb.address_hash and
             ordered_address_token_balance.token_contract_address_hash ==
               tb.token_contract_address_hash and
+            ((is_nil(ordered_address_token_balance.token_id) and is_nil(tb.token_id)) or
+               (ordered_address_token_balance.token_id == tb.token_id and
+                  not is_nil(ordered_address_token_balance.token_id) and not is_nil(tb.token_id))) and
             ordered_address_token_balance.block_number == tb.block_number
       )
 

@@ -182,10 +182,20 @@ defmodule Indexer.TokenBalances do
   end
 
   defp present?(list, token_balance) do
-    Enum.any?(list, fn item ->
-      token_balance.address_hash == item.address_hash &&
-        token_balance.token_contract_address_hash == item.token_contract_address_hash &&
-        token_balance.block_number == item.block_number
-    end)
+    if token_balance.token_id do
+      Enum.any?(list, fn item ->
+        token_balance.address_hash == item.address_hash &&
+          token_balance.token_contract_address_hash == item.token_contract_address_hash &&
+          token_balance.token_id == item.token_id &&
+          token_balance.block_number == item.block_number
+      end)
+    else
+      Enum.any?(list, fn item ->
+        token_balance.address_hash == item.address_hash &&
+          token_balance.token_contract_address_hash == item.token_contract_address_hash &&
+          is_nil(item.token_id) &&
+          token_balance.block_number == item.block_number
+      end)
+    end
   end
 end
