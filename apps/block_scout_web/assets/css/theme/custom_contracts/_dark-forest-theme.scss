@@ -1036,6 +1036,10 @@ $dark-primary-alternate: $dark-primary;
 			}
 		}
 	}
+
+	.confirmations-label:after {
+        border-left: .9rem solid #111111;
+    }
 }
 
 .navbar-dark .navbar-toggler {
