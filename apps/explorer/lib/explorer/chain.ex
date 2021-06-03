@@ -79,6 +79,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -6312,6 +6313,28 @@ defmodule Explorer.Chain do
       1 -> "eth"
       56 -> "bsc"
       _ -> ""
+    end
+  end
+
+  @doc """
+  It is used by `totalfees` API endpoint of `stats` module for retrieving of total fee per day
+  """
+  @spec get_total_fees_per_day(String.t()) :: {:ok, non_neg_integer() | nil} | {:error, String.t()}
+  def get_total_fees_per_day(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, date} ->
+        query =
+          from(
+            tx_stats in TransactionStats,
+            where: tx_stats.date == ^date,
+            select: tx_stats.total_fee
+          )
+
+        total_fees = Repo.one(query)
+        {:ok, total_fees}
+
+      _ ->
+        {:error, "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd)."}
     end
   end
 end
