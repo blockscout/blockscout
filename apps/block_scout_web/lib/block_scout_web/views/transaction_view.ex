@@ -71,10 +71,10 @@ defmodule BlockScoutWeb.TransactionView do
       token_transfers
       |> Enum.reduce(
         %{
-          transfers: {%{}, []},
-          mintings: {%{}, []},
-          burnings: {%{}, []},
-          creations: {%{}, []}
+          transfers: {[], []},
+          mintings: {[], []},
+          burnings: {[], []},
+          creations: {[], []}
         },
         fn token_transfer, acc ->
           token_transfer_type = Chain.get_token_transfer_type(token_transfer)
@@ -123,17 +123,13 @@ defmodule BlockScoutWeb.TransactionView do
         end
       )
 
-    final_ft_transfers = Map.values(ft_transfers)
-    transfers = final_ft_transfers ++ nft_transfers
+    transfers = ft_transfers ++ nft_transfers
 
-    final_ft_mintings = Map.values(ft_mintings)
-    mintings = final_ft_mintings ++ nft_mintings
+    mintings = ft_mintings ++ nft_mintings
 
-    final_ft_burnings = Map.values(ft_burnings)
-    burnings = final_ft_burnings ++ nft_burnings
+    burnings = ft_burnings ++ nft_burnings
 
-    final_ft_creations = Map.values(ft_creations)
-    creations = final_ft_creations ++ nft_creations
+    creations = ft_creations ++ nft_creations
 
     %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations}
   end
@@ -179,13 +175,35 @@ defmodule BlockScoutWeb.TransactionView do
       from_address_hash: token_transfer.from_address_hash
     }
 
-    existing_entry = Map.get(acc1, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
+    existing_entry =
+      acc1
+      |> Enum.find(fn entry ->
+        entry.to_address_hash == token_transfer.to_address_hash &&
+          entry.from_address_hash == token_transfer.from_address_hash &&
+          entry.token == token_transfer.token
+      end)
 
     new_acc1 =
-      Map.put(acc1, token_transfer.token_contract_address, %{
-        new_entry
-        | amount: Decimal.add(new_entry.amount, existing_entry.amount)
-      })
+      if existing_entry do
+        acc1
+        |> Enum.map(fn entry ->
+          if entry.to_address_hash == token_transfer.to_address_hash &&
+               entry.from_address_hash == token_transfer.from_address_hash &&
+               entry.token == token_transfer.token do
+            updated_entry =
+              Map.put(entry, token_transfer.token_contract_address, %{
+                new_entry
+                | amount: Decimal.add(new_entry.amount, entry.amount)
+              })
+
+            updated_entry
+          else
+            entry
+          end
+        end)
+      else
+        [new_entry | acc1]
+      end
 
     {new_acc1, acc2}
   end
