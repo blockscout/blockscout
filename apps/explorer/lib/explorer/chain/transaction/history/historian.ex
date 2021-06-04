@@ -25,27 +25,13 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       earliest = datetime(day_to_fetch, ~T[00:00:00])
       latest = datetime(day_to_fetch, ~T[23:59:59])
 
-      min_block_query =
+      min_max_block_query =
         from(block in Block,
           where: block.timestamp >= ^earliest and block.timestamp <= ^latest,
-          group_by: block.number,
-          order_by: [asc: min(block.number)],
-          limit: 1,
-          select: min(block.number)
+          select: {min(block.number), max(block.number)}
         )
 
-      min_block = Repo.one(min_block_query, timeout: :infinity)
-
-      max_block_query =
-        from(block in Block,
-          where: block.timestamp >= ^earliest and block.timestamp <= ^latest,
-          group_by: block.number,
-          order_by: [desc: max(block.number)],
-          limit: 1,
-          select: max(block.number)
-        )
-
-      max_block = Repo.one(max_block_query, timeout: :infinity)
+      {min_block, max_block} = Repo.one(min_max_block_query, timeout: :infinity)
 
       if min_block && max_block do
         all_transactions_query =
