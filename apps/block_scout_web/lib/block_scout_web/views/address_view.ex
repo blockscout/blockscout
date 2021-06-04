@@ -573,6 +573,27 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SPAM", "")) =~ address_hash_str
   end
 
+  def is_lewinswap?(nil), do: false
+
+  def is_lewinswap?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP", "")) =~ address_hash_str
+  end
+
+  def is_lewinswap_farm?(nil), do: false
+
+  def is_lewinswap_farm?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP_FARM", "")) =~ address_hash_str
+  end
+
+  def is_lewinswap_stake?(nil), do: false
+
+  def is_lewinswap_stake?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP_STAKE", "")) =~ address_hash_str
+  end
+
   def is_chainlink_oracle?(nil), do: false
 
   def is_chainlink_oracle?(address_hash) do

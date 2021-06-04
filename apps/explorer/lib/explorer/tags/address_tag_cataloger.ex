@@ -64,8 +64,13 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set common chainlink oracle tag
     AddressTag.set_tag("chainlink oracle")
 
-    # set common spam tag
+    # set spam tag
     AddressTag.set_tag("spam")
+
+    # set Levinswap tags
+    AddressTag.set_tag("lewinswap")
+    AddressTag.set_tag("lewinswap farm")
+    AddressTag.set_tag("lewinswap stake")
 
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
@@ -114,6 +119,11 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set spam tag
     set_spam_tag()
+
+    # set Lewinswap tag
+    set_lewinswap_tag()
+    set_lewinswap_farm_tag()
+    set_lewinswap_stake_tag()
 
     # set chainlink oracle tag
     set_chainlink_oracle_tag()
@@ -248,6 +258,18 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_spam_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_SPAM", "spam")
+  end
+
+  defp set_lewinswap_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP", "lewinswap")
+  end
+
+  defp set_lewinswap_farm_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP_FARM", "lewinswap farm")
+  end
+
+  defp set_lewinswap_stake_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP_STAKE", "lewinswap stake")
   end
 
   def set_chainlink_oracle_tag do
