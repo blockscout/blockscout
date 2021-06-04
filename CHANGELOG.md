@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contract's 
 - [#4205](https://github.com/blockscout/blockscout/pull/4205) - Total transactions fees per day API endpoint
 - [#4158](https://github.com/blockscout/blockscout/pull/4158) - Calculate total fee per day
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
