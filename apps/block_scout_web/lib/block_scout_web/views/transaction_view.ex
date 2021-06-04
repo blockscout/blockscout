@@ -190,11 +190,10 @@ defmodule BlockScoutWeb.TransactionView do
           if entry.to_address_hash == token_transfer.to_address_hash &&
                entry.from_address_hash == token_transfer.from_address_hash &&
                entry.token == token_transfer.token do
-            updated_entry =
-              Map.put(entry, token_transfer.token_contract_address, %{
-                new_entry
-                | amount: Decimal.add(new_entry.amount, entry.amount)
-              })
+            updated_entry = %{
+              entry
+              | amount: Decimal.add(new_entry.amount, entry.amount)
+            }
 
             updated_entry
           else
