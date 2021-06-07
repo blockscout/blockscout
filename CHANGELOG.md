@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
 - [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contract's 
 - [#4205](https://github.com/blockscout/blockscout/pull/4205) - Total transactions fees per day API endpoint
 - [#4158](https://github.com/blockscout/blockscout/pull/4158) - Calculate total fee per day
