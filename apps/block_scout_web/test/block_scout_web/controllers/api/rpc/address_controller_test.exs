@@ -2462,13 +2462,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
 
     test "with contract address and address with existing balance in token_balances table", %{conn: conn} do
-      token_balance = insert(:token_balance)
+      current_token_balance = insert(:address_current_token_balance)
 
       params = %{
         "module" => "account",
         "action" => "tokenbalance",
-        "contractaddress" => to_string(token_balance.token_contract_address_hash),
-        "address" => to_string(token_balance.address_hash)
+        "contractaddress" => to_string(current_token_balance.token_contract_address_hash),
+        "address" => to_string(current_token_balance.address_hash)
       }
 
       assert response =
@@ -2476,7 +2476,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == to_string(token_balance.value)
+      assert response["result"] == to_string(current_token_balance.value)
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(tokenbalance_schema(), response)
