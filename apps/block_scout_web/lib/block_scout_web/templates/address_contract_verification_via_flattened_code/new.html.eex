@@ -136,24 +136,24 @@
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
-                  <%= radio_button f, :autodetect_contructor_args, false, checked: !fetch_constructor_arguments_automatically, class: "form-check-input autodetectfalse" %>
+                  <%= radio_button f, :autodetect_constructor_args, false, checked: !fetch_constructor_arguments_automatically, class: "form-check-input autodetectfalse" %>
                   <div class="radio-icon"></div>
-                  <%= label :autodetect_contructor_args, :false, gettext("No"), class: "radio-text" %>
+                  <%= label :autodetect_constructor_args, :false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
-                  <%= radio_button f, :autodetect_contructor_args, true, checked: fetch_constructor_arguments_automatically, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_contructor_args-help-block" %>
+                  <%= radio_button f, :autodetect_constructor_args, true, checked: fetch_constructor_arguments_automatically, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_constructor_args-help-block" %>
                   <div class="radio-icon"></div>
-                  <%= label :autodetect_contructor_args, :true, gettext("Yes"), class: "radio-text" %>
+                  <%= label :autodetect_constructor_args, :true, gettext("Yes"), class: "radio-text" %>
                 </div>
               </div>
-              <%= error_tag f, :autodetect_contructor_args, id: "autodetect_contructor_args-help-block", class: "text-danger form-error" %>
+              <%= error_tag f, :autodetect_constructor_args, id: "autodetect_constructor_args-help-block", class: "text-danger form-error" %>
             </div>
           </div>
         </div>
 
         <div class="smart-contract-form-group constructor-arguments" style="display: <%= display_constructor_arguments_text_area %>">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :contructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
+            <%= label f, :constructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
             <div class="center-column">
               <%= textarea f, :constructor_arguments, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-constructor-arguments-help-block" %>
               <%= error_tag f, :constructor_arguments, id: "contract-constructor-arguments-help-block", class: "text-danger form-error", "data-test": "contract-constructor-arguments-error" %>

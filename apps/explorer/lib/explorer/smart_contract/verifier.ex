@@ -60,7 +60,7 @@ defmodule Explorer.SmartContract.Verifier do
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
     optimization_runs = Map.get(params, "optimization_runs", 200)
-    autodetect_contructor_arguments = params |> Map.get("autodetect_contructor_args", "false") |> parse_boolean()
+    autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
 
     solc_output =
       CodeCompiler.run(
@@ -77,7 +77,7 @@ defmodule Explorer.SmartContract.Verifier do
       solc_output,
       address_hash,
       constructor_arguments,
-      autodetect_contructor_arguments,
+      autodetect_constructor_arguments,
       contract_source_code,
       name
     )
@@ -95,7 +95,7 @@ defmodule Explorer.SmartContract.Verifier do
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
          address_hash,
          arguments_data,
-         autodetect_contructor_arguments,
+         autodetect_constructor_arguments,
          contract_source_code,
          contract_name
        ) do
@@ -131,11 +131,11 @@ defmodule Explorer.SmartContract.Verifier do
           !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
         {:error, :generated_bytecode}
 
-      has_constructor_with_params?(abi) && autodetect_contructor_arguments ->
+      has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
         result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
 
         if result do
-          {:ok, %{abi: abi, contructor_arguments: result}}
+          {:ok, %{abi: abi, constructor_arguments: result}}
         else
           {:error, :constructor_arguments}
         end
