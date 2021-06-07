@@ -132,7 +132,7 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, "Try to fetch contructor arguments automatically" %>
+            <%= label f, "Try to fetch constructor arguments automatically" %>
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
