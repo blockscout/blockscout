@@ -8,6 +8,7 @@
 
 ### Fixes
 - [#4236](https://github.com/blockscout/blockscout/pull/4236) - Fix typo, constructor instead of contructor
+- [#4167](https://github.com/blockscout/blockscout/pull/4167) - Deduplicate block numbers in acquire_blocks function
 - [#4149](https://github.com/blockscout/blockscout/pull/4149) - Exclude smart_contract_additional_sources from JSON encoding in address schema
 - [#4137](https://github.com/blockscout/blockscout/pull/4137) - Get token balance query improvement
 - [#4038](https://github.com/blockscout/blockscout/pull/4038) - Add clause for abi_decode_address_output/1 when is_nil(address)

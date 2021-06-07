@@ -214,7 +214,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp acquire_blocks(repo, changes_list) do
-    block_numbers = Enum.map(changes_list, & &1.block_number)
+    block_numbers =
+      changes_list
+      |> Enum.map(& &1.block_number)
+      |> Enum.dedup()
 
     query =
       from(
