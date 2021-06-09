@@ -35,7 +35,7 @@ config :indexer,
     String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{2 * 24 * 60 * 60}"),
   # bytes
   memory_limit: 8 <<< 30,
-  first_block: System.get_env("FIRST_BLOCK") || "0",
+  first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || ""
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,

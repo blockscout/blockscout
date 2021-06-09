@@ -1,7 +1,7 @@
 const path = require('path')
 const TerserJSPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const { ContextReplacementPlugin } = require('webpack')
 const glob = require('glob')
@@ -49,7 +49,7 @@ const awesompleteJs = {
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: "css-loader",
+            loader: 'css-loader',
           }
         ]
       }
@@ -82,7 +82,7 @@ const dropzoneJs = {
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: "css-loader",
+            loader: 'css-loader',
           }
         ]
       }
@@ -135,7 +135,7 @@ const appJs =
       path: path.resolve(__dirname, '../priv/static/js')
     },
     optimization: {
-      minimizer: [new TerserJSPlugin(jsOptimizationParams), new OptimizeCSSAssetsPlugin({})],
+      minimizer: [new TerserJSPlugin(jsOptimizationParams), new CssMinimizerPlugin()],
     },
     module: {
       rules: [

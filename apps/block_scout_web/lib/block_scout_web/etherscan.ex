@@ -324,6 +324,20 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @stats_totalfees_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "total_fees" => "75411956011480008034"
+    }
+  }
+
+  @stats_totalfees_example_value_error %{
+    "status" => "0",
+    "message" => "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd).",
+    "result" => nil
+  }
+
   @block_getblockreward_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -1130,6 +1144,17 @@ defmodule BlockScoutWeb.Etherscan do
         type: "timestamp",
         definition: "Last updated timestamp.",
         example: ~s("1537234460")
+      }
+    }
+  }
+
+  @total_fees_model %{
+    name: "TotalFees",
+    fields: %{
+      total_fees: %{
+        type: "total_fees",
+        definition: "Total transaction fees in Wei are paid by users to validators per day.",
+        example: ~s("75411956011480008034")
       }
     }
   }
@@ -2067,6 +2092,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @stats_totalfees_action %{
+    name: "totalfees",
+    description: "Gets total transaction fees in Wei are paid by users to validators per day.",
+    required_params: [
+      %{
+        key: "date",
+        placeholder: "date",
+        type: "string",
+        description: "day in ISO 8601 format (yyyy-mm-dd)"
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_totalfees_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "model",
+              model: @total_fees_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@stats_totalfees_example_value_error)
+      }
+    ]
+  }
+
   @block_eth_block_number_action %{
     name: "eth_block_number",
     description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the lastest block number",
@@ -2602,7 +2664,8 @@ defmodule BlockScoutWeb.Etherscan do
       @stats_ethsupplyexchange_action,
       @stats_ethsupply_action,
       @stats_coinsupply_action,
-      @stats_coinprice_action
+      @stats_coinprice_action,
+      @stats_totalfees_action
     ]
   }
 
