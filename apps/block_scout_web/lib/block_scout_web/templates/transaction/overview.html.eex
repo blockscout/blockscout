@@ -8,6 +8,17 @@
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
+<!-- Coinzilla Banner 728x90 -->
+<script async src="https://coinzillatag.com/lib/display.js"></script>
+<div class="coinzilla" class="mb-2" data-zone="C-26660bf627543e46851"></div>
+<script>
+    window.coinzilla_display = window.coinzilla_display || [];
+    var c_display_preferences = {};
+    c_display_preferences.zone = "26660bf627543e46851";
+    c_display_preferences.width = "728";
+    c_display_preferences.height = "90";
+    coinzilla_display.push(c_display_preferences);
+</script>
 <section class="transaction-details" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
@@ -389,6 +400,14 @@
       </div>
     </div>
   </div>
+
+  <script src="https://coinzillatag.com/lib/wdnative.js">
+  </script><script>var c_widget = czilla_widget || [];
+  var c_widget_preferences = {};
+  c_widget_preferences.zone = "19260bf627546ab7242";
+  c_widget_preferences.article = true;
+  c_widget.push(c_widget_preferences);</script>
+  <div id="c_widget_19260bf627546ab7242"></div>
 
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">
