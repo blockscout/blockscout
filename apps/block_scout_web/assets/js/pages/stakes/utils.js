@@ -1,7 +1,9 @@
 import $ from 'jquery'
-import Chart from 'chart.js'
+import { ArcElement, Chart, DoughnutController } from 'chart.js'
 import { openErrorModal, openSuccessModal, openWarningModal } from '../../lib/modals'
 import * as Sentry from '@sentry/browser'
+
+Chart.register(ArcElement, DoughnutController)
 
 export async function makeContractCall (call, store, gasLimit, callbackFunc) {
   const state = store.getState()
@@ -105,12 +107,11 @@ export function setupChart ($canvas, self, total) {
       }]
     },
     options: {
-      cutoutPercentage: 80,
-      legend: {
-        display: false
-      },
-      tooltips: {
-        enabled: false
+      cutout: '80%',
+      plugins: {
+        legend: {
+          display: false
+        }
       }
     }
   })
