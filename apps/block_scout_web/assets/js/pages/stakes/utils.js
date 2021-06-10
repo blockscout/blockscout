@@ -1,6 +1,8 @@
 import $ from 'jquery'
-import Chart from 'chart.js'
+import { ArcElement, Chart, DoughnutController } from 'chart.js'
 import { openErrorModal, openSuccessModal, openWarningModal } from '../../lib/modals'
+
+Chart.register(ArcElement, DoughnutController)
 
 export async function makeContractCall (call, store, gasLimit, callbackFunc) {
   const state = store.getState()
@@ -69,7 +71,8 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
             callbackFunc('Transaction reverted')
           }
         } else {
-          callbackFunc(`Your transaction wasn't processed in ${maxWaitBlocks} blocks. Please, try again with the increased gas price or fixed nonce (use Reset Account feature of MetaMask).`)
+          const msg = `Your transaction wasn't processed in ${maxWaitBlocks} blocks. Please, try again with the increased gas price or fixed nonce (use Reset Account feature of MetaMask).`
+          callbackFunc(msg)
         }
       } catch (e) {
         callbackFunc(e.message)
@@ -98,12 +101,11 @@ export function setupChart ($canvas, self, total) {
       }]
     },
     options: {
-      cutoutPercentage: 80,
-      legend: {
-        display: false
-      },
-      tooltips: {
-        enabled: false
+      cutout: '80%',
+      plugins: {
+        legend: {
+          display: false
+        }
       }
     }
   })
