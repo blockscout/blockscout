@@ -4,7 +4,7 @@ import 'chartjs-adapter-moment'
 import humps from 'humps'
 import numeral from 'numeral'
 import moment from 'moment'
-import { formatUsdValue } from '../lib/currency'
+import { formatCurrencyValue, formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
@@ -59,23 +59,12 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      price: {
+      marketCap: {
         position: 'left',
         grid: grid,
         ticks: {
-          beginAtZero: true,
-          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
-          maxTicksLimit: 4,
-          color: sassVariables.dashboardBannerChartAxisFontColor
-        }
-      },
-      marketCap: {
-        position: 'right',
-        grid: grid,
-        ticks: {
-          callback: (_value, _index, _values) => '',
+          callback: (value, _index, _values) => formatCurrencyValue(value),
           maxTicksLimit: 6,
-          drawOnChartArea: false,
           color: sassVariables.dashboardBannerChartAxisFontColor
         }
       },
@@ -244,7 +233,6 @@ class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
     const axes = config.options.scales
 
-    let priceActivated = true
     let marketCapActivated = true
 
     this.price = {
@@ -257,11 +245,6 @@ class MarketHistoryChart {
       backgroundColor: priceLineColor,
       borderColor: priceLineColor
       // lineTension: 0
-    }
-    if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
-      this.price.hidden = true
-      axes.price.display = false
-      priceActivated = false
     }
 
     this.marketCap = {
@@ -296,14 +279,14 @@ class MarketHistoryChart {
     if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {
       this.numTransactions.hidden = true
       axes.numTransactions.display = false
-    } else if (!priceActivated && !marketCapActivated) {
+    } else if (!marketCapActivated) {
       axes.numTransactions.position = 'left'
       this.numTransactions.backgroundColor = sassVariables.dashboardLineColorPrice
       this.numTransactions.borderColor = sassVariables.dashboardLineColorPrice
     }
 
     this.availableSupply = availableSupply
-    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
+    config.data.datasets = [this.marketCap, this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoadedXDAI'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'

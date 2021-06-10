@@ -10,7 +10,7 @@ function formatTokenUsdValue (value) {
   return formatCurrencyValue(value, '@')
 }
 
-function formatCurrencyValue (value, symbol) {
+export function formatCurrencyValue (value, symbol) {
   symbol = symbol || '$'
   if (isNaN(value) || value === '0') return 'N/A'
   if (value === 0) return `${symbol}0.000000`
