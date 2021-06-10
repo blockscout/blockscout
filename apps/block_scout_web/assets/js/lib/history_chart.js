@@ -57,7 +57,6 @@ const config = {
       intersect: false,
       mode: 'index'
     },
-    legend: legend,
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
       price: {
@@ -133,53 +132,41 @@ const gasUsageConfig = {
     layout: {
       padding: padding
     },
-    legend: legend,
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
     scales: {
-      xAxes: xAxes(gasUsageFontColor),
-      yAxes: [{
-        id: 'gasUsage',
+      x: xAxe(gasUsageFontColor),
+      gasUsage: {
         position: 'right',
-        gridLines: gridLines,
+        grid: grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
           maxTicksLimit: 4,
-          fontColor: gasUsageFontColor
+          color: gasUsageFontColor
         }
-      }]
+      }
     },
-    tooltips: {
-      mode: 'index',
-      intersect: false,
-      callbacks: {
-        label: ({ datasetIndex, yLabel }, { datasets }) => {
-          const label = datasets[datasetIndex].label
-          if (datasets[datasetIndex].yAxisID === 'gasUsage') {
-            return `${label}: ${formatValue(yLabel)}`
-          } else {
-            return yLabel
+    plugins: {
+      legend: legend,
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: (context) => {
+            const { label } = context.dataset
+            const { formattedValue } = context
+            if (context.dataset.yAxisID === 'gasUsage') {
+              return `${label}: ${formatValue(formattedValue)}`
+            } else {
+              return formattedValue
+            }
           }
         }
       }
     }
-  }
-}
-
-const blockGasPieConfig = {
-  type: 'doughnut',
-  responsive: true,
-  data: {
-    datasets: [{
-      label: 'Population (millions)',
-      backgroundColor: ['linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(26,236,124,1) 0%, rgba(230,58,90,1) 100%)', '#fff'],
-      data: [2478, 5267]
-    }]
-  },
-  options: {
-    layout: {
-      padding: padding
-    },
-    legend: legend
   }
 }
 
@@ -349,11 +336,7 @@ class MarketHistoryChart {
 
 class GasUsageHistoryChart {
   constructor (el, dataConfig) {
-    const axes = gasUsageConfig.options.scales.yAxes.reduce(function (solution, elem) {
-      solution[elem.id] = elem
-      return solution
-    },
-    {})
+    const axes = gasUsageConfig.options.scales
 
     this.gasUsage = {
       label: 'Gas/day',
@@ -386,12 +369,6 @@ class GasUsageHistoryChart {
   updateGasUsageHistory (gasUsageHistory) {
     this.gasUsage.data = getGasUsageHistoryData(gasUsageHistory)
     this.chart.update()
-  }
-}
-
-class BlockGasChart {
-  constructor (el) {
-    this.chart = new Chart(el, blockGasPieConfig)
   }
 }
 
