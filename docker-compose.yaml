@@ -1,0 +1,159 @@
+version: "3"
+
+services: 
+  bootnode:
+    container_name: bootnode
+    image: hyperledger/besu:latest
+    entrypoint: /entrypoint.sh
+    environment:
+      NODE_NAME: "bootnode"
+    ports:
+      - 8545:8545
+      - 8546:8546
+    volumes:
+      # Files shared between the containers
+      - ${PWD}/docker/work:/work
+      - ${PWD}/docker/besu-entrypoint.sh:/entrypoint.sh
+      - ${PWD}/docker/besu-enode-extracter.sh:/besu-enode-extracter.sh
+      - ${PWD}/docker/ibftConfigFile.json:/ibftConfigFile.json
+    networks:
+      besu:
+        ipv4_address: 172.24.2.10
+
+  validator-0:
+    container_name: validator-0
+    image: hyperledger/besu:latest
+    entrypoint: /entrypoint.sh
+    environment:
+      NODE_NAME: "validator-0"
+    volumes:
+      # Files shared between the containers
+      - ${PWD}/docker/work:/work
+      - ${PWD}/docker/besu-entrypoint.sh:/entrypoint.sh
+    networks:
+      besu:
+        ipv4_address: 172.24.2.20
+
+  validator-1:
+    container_name: validator-1
+    image: hyperledger/besu:latest
+    entrypoint: /entrypoint.sh
+    environment:
+      NODE_NAME: "validator-1"
+    volumes:
+      # Files shared between the containers
+      - ${PWD}/docker/work:/work
+      - ${PWD}/docker/besu-entrypoint.sh:/entrypoint.sh
+    networks:
+      besu:
+        ipv4_address: 172.24.2.21
+
+  validator-2:
+    container_name: validator-2
+    image: hyperledger/besu:latest
+    entrypoint: /entrypoint.sh
+    environment:
+      NODE_NAME: "validator-2"
+    volumes:
+      # Files shared between the containers
+      - ${PWD}/docker/work:/work
+      - ${PWD}/docker/besu-entrypoint.sh:/entrypoint.sh
+    networks:
+      besu:
+        ipv4_address: 172.24.2.22
+
+  validator-3:
+    container_name: validator-3
+    image: hyperledger/besu:latest
+    entrypoint: /entrypoint.sh
+    environment:
+      NODE_NAME: "validator-3"
+    volumes:
+      # Files shared between the containers
+      - ${PWD}/docker/work:/work
+      - ${PWD}/docker/besu-entrypoint.sh:/entrypoint.sh
+    networks:
+      besu:
+        ipv4_address: 172.24.2.23
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment: 
+      POSTGRES_PASSWORD: "bspgpass"
+      POSTGRES_USER: "postgres"
+    ports: 
+      - 5432
+    networks:
+      besu:
+        ipv4_address: 172.24.2.30
+    
+  bsindexer:
+    container_name: bsindexer
+    # image: core-harbor.us-east-2.codefi.network/palm/blockscout:3.7.0-1
+    build:
+     context: .
+     dockerfile: docker/Dockerfile
+    entrypoint: "/blockscout-entrypoint.sh"
+    ports:
+      - 4000:4000
+    environment:
+      DATABASE_URL: postgresql://postgres:bspgpass@postgres:5432/blockscout?ssl=false
+      BLOCKSCOUT_HOST: localhost
+      ETHEREUM_JSONRPC_HTTP_URL: http://bootnode:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://bootnode:8546
+      ETHEREUM_JSONRPC_TRACE_URL: http://bootnode:8545
+      ETHEREUM_JSONRPC_VARIANT: besu
+      LINK_TO_OTHER_EXPLORERS: "false"
+      APPS_MENU: "false"
+      SHOW_PRICE_CHART: "false"
+      MIX_ENV: prod
+      POOL_SIZE: "10"
+      COIN: Palm
+      NETWORK: NFT
+      SUBNETWORK: Palm
+      BLOCKSCOUT_PROTOCOL: "http"
+    volumes: 
+      - ${PWD}/docker/blockscout-entrypoint.sh:/blockscout-entrypoint.sh
+    networks:
+      besu:
+        ipv4_address: 172.24.2.31
+
+  bsui:
+    container_name: bsui
+    # image: core-harbor.us-east-2.codefi.network/palm/blockscout:3.7.0-1
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    entrypoint: "/blockscout-entrypoint.sh"
+    ports:
+      - 5000:4000
+    environment:
+      DATABASE_URL: postgresql://postgres:bspgpass@postgres:5432/blockscout?ssl=false
+      BLOCKSCOUT_HOST: bsindexer
+      ETHEREUM_JSONRPC_HTTP_URL: http://bootnode:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://bootnode:8546
+      ETHEREUM_JSONRPC_TRACE_URL: http://bootnode:8545
+      ETHEREUM_JSONRPC_VARIANT: besu
+      LINK_TO_OTHER_EXPLORERS: "false"
+      APPS_MENU: "false"
+      SHOW_PRICE_CHART: "false"
+      MIX_ENV: prod
+      POOL_SIZE: "10"
+      COIN: Palm
+      NETWORK: NFT
+      SUBNETWORK: Palm
+      DISABLE_INDEXER: "true"
+      BLOCKSCOUT_PROTOCOL: "http"
+    volumes: 
+      - ${PWD}/docker/blockscout-entrypoint.sh:/blockscout-entrypoint.sh
+    networks:
+      besu:
+        ipv4_address: 172.24.2.32        
+
+networks:
+  besu:
+    driver: bridge
+    ipam:
+      config: 
+        - subnet: 172.24.2.0/24
