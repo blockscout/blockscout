@@ -13,7 +13,8 @@ config :block_scout_web,
   segment_key: System.get_env("SEGMENT_KEY"),
   release_link: System.get_env("RELEASE_LINK"),
   decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
-  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true)
+  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true),
+  checksum_address_hashes: if(System.get_env("CHECKSUM_ADDRESS_HASHES", "true") == "false", do: false, else: true)
 
 config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
@@ -21,31 +22,43 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network_icon: System.get_env("NETWORK_ICON"),
   logo: System.get_env("LOGO"),
   logo_footer: System.get_env("LOGO_FOOTER"),
-  has_emission_funds: false
+  logo_text: System.get_env("LOGO_TEXT"),
+  has_emission_funds: false,
+  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
+  # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
+  staking_pool_list_refresh_interval: 5
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
-  other_explorers: %{
-    "Etherscan" => "https://etherscan.io/",
-    "EtherChain" => "https://www.etherchain.org/",
-    "Bloxy" => "https://bloxy.info/"
-  },
+  other_explorers: System.get_env("OTHER_EXPLORERS"),
   other_networks: System.get_env("SUPPORTED_CHAINS"),
   webapp_url: System.get_env("WEBAPP_URL"),
-  api_url: System.get_env("API_URL")
+  api_url: System.get_env("API_URL"),
+  apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
+  external_apps: System.get_env("EXTERNAL_APPS"),
+  eth_omni_bridge_mediator: System.get_env("ETH_OMNI_BRIDGE_MEDIATOR"),
+  bsc_omni_bridge_mediator: System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"),
+  amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
+  foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
+  gas_price: System.get_env("GAS_PRICE", nil),
+  restricted_list: System.get_env("RESTRICTED_LIST", nil),
+  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
+  dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
+  dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
+  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
-  instrumenters: [BlockScoutWeb.Prometheus.Instrumenter, SpandexPhoenix.Instrumenter],
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
-    path: System.get_env("NETWORK_PATH") || "/"
+    path: System.get_env("NETWORK_PATH") || "/",
+    api_path: System.get_env("API_PATH") || "/"
   ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: BlockScoutWeb.PubSub]
+  pubsub_server: BlockScoutWeb.PubSub
 
 config :block_scout_web, BlockScoutWeb.Tracer,
   service: :block_scout_web,
@@ -60,6 +73,32 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
   telegram: "poa_network",
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
+
+# Configures History
+price_chart_config =
+  if System.get_env("SHOW_PRICE_CHART", "true") != "false" do
+    %{market: [:price, :market_cap]}
+  else
+    %{}
+  end
+
+tx_chart_config =
+  if System.get_env("SHOW_TXS_CHART", "false") == "true" do
+    %{transactions: [:transactions_per_day]}
+  else
+    %{}
+  end
+
+config :block_scout_web,
+  chart_config: Map.merge(price_chart_config, tx_chart_config)
+
+config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
+  # days
+  history_size: 30
+
+config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
+  # days
+  coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
 
 config :ex_cldr,
   default_locale: "en",

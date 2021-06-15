@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
     test "with an invalid address", %{conn: conn, api_params: api_params} do
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [%{"address" => "badhash"}]))
+               |> post("/api/eth-rpc", params(api_params, [%{"address" => "badhash"}]))
                |> json_response(200)
 
       assert %{"error" => "invalid address"} = response
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [%{"address" => to_string(address.hash)}]))
+               |> post("/api/eth-rpc", params(api_params, [%{"address" => to_string(address.hash)}]))
                |> json_response(200)
 
       assert %{"result" => []} = response
@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [%{"address" => to_string(address.hash)}]))
+               |> post("/api/eth-rpc", params(api_params, [%{"address" => to_string(address.hash)}]))
                |> json_response(200)
 
       assert %{"result" => []} = response
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert %{"result" => [%{"data" => "0x010101"}]} = response
@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert %{"result" => [%{"data" => "0x010101"}]} = response
@@ -119,7 +119,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert [%{"data" => "0x010101"}, %{"data" => "0x020202"}] = Enum.sort_by(response["result"], &Map.get(&1, "data"))
@@ -141,7 +141,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert Enum.count(response["result"]) == 1000
@@ -161,7 +161,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert new_response =
                conn
-               |> post("/api/eth_rpc", new_params)
+               |> post("/api/eth-rpc", new_params)
                |> json_response(200)
 
       assert Enum.count(response["result"]) == 1000
@@ -202,7 +202,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert [%{"data" => "0x010101"}] = response["result"]
@@ -238,7 +238,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert [%{"data" => "0x010101"}, %{"data" => "0x020202"}] = Enum.sort_by(response["result"], &Map.get(&1, "data"))
@@ -270,7 +270,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert [%{"data" => "0x020202"}, %{"data" => "0x030303"}] = Enum.sort_by(response["result"], &Map.get(&1, "data"))
@@ -298,7 +298,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert [%{"data" => "0x020202"}] = response["result"]
@@ -327,7 +327,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert [%{"data" => "0x010101"}] = response["result"]
@@ -360,7 +360,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params)
+               |> post("/api/eth-rpc", params)
                |> json_response(200)
 
       assert [%{"data" => "0x030303"}] = response["result"]
@@ -381,7 +381,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
     test "with an invalid address", %{conn: conn, api_params: api_params} do
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, ["badHash"]))
+               |> post("/api/eth-rpc", params(api_params, ["badHash"]))
                |> json_response(200)
 
       assert %{"error" => "Query parameter 'address' is invalid"} = response
@@ -392,7 +392,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash)]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash)]))
                |> json_response(200)
 
       assert %{"error" => "Balance not found"} = response
@@ -406,7 +406,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash)]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash)]))
                |> json_response(200)
 
       assert %{"result" => "0x1"} = response
@@ -420,7 +420,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash), "earliest"]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "earliest"]))
                |> json_response(200)
 
       assert response["error"] == "Balance not found"
@@ -434,7 +434,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash), "earliest"]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "earliest"]))
                |> json_response(200)
 
       assert response["result"] == "0x1"
@@ -448,7 +448,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash), "pending"]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "pending"]))
                |> json_response(200)
 
       assert response["error"] == "Balance not found"
@@ -462,7 +462,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash), "pending"]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "pending"]))
                |> json_response(200)
 
       assert response["result"] == "0x1"
@@ -477,7 +477,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash), "pending"]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "pending"]))
                |> json_response(200)
 
       assert response["result"] == "0x1"
@@ -492,7 +492,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash), "2"]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "2"]))
                |> json_response(200)
 
       assert response["result"] == "0x2"
@@ -505,7 +505,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert response =
                conn
-               |> post("/api/eth_rpc", params(api_params, [to_string(address.hash), "2"]))
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "2"]))
                |> json_response(200)
 
       assert response["error"] == "Balance not found"
@@ -527,7 +527,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       assert response =
                conn
                |> put_req_header("content-type", "application/json")
-               |> post("/api/eth_rpc", Jason.encode!(params))
+               |> post("/api/eth-rpc", Jason.encode!(params))
                |> json_response(200)
 
       assert [

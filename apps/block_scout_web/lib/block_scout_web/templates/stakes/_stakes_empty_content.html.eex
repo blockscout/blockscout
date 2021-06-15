@@ -1,0 +1,15 @@
+<div class="stakes-empty-content">
+    <div class="stakes-empty-content-pic">
+        <svg class="stakes-empty-content-pic-svg" xmlns="http://www.w3.org/2000/svg" width="94" height="121">
+            <path class="stakes-empty-content-pic-svg-path" fill-rule="evenodd" d="M40 1.47l48 27.759c3.314 1.916 6 6.156 6 9.47v57.999c0 3.314-2.686 4.447-6 2.531L40 71.47c-3.314-1.916-6-6.156-6-9.47V4c0-3.314 2.686-4.446 6-2.53z" opacity=".2"/>
+            <path class="stakes-empty-content-pic-svg-path" fill-rule="evenodd" d="M23 11.47l48 27.759c3.314 1.916 6 6.156 6 9.47v58c0 3.313-2.686 4.446-6 2.53L23 81.47c-3.314-1.917-6-6.156-6-9.47V14c0-3.314 2.686-4.446 6-2.53z" opacity=".6"/>
+            <path class="stakes-empty-content-pic-svg-path" fill-rule="evenodd" d="M6 21.47l48 27.759c3.314 1.916 6 6.156 6 9.469v58.001c0 3.313-2.686 4.446-6 2.53L6 91.47C2.686 89.553 0 85.314 0 82V24c0-3.314 2.686-4.447 6-2.53z"/>
+            <path fill="#FFF" fill-rule="evenodd" d="M39 78.814l-9-5.18v11c0 1.104-.895 1.484-2 .849-1.105-.636-2-2.047-2-3.152v-11l-9-5.18c-1.105-.636-2-2.046-2-3.151s.895-1.485 2-.849l9 5.18v-11c0-1.104.895-1.484 2-.848 1.105.635 2 2.046 2 3.151v11l9 5.18c1.105.636 2 2.047 2 3.151 0 1.105-.895 1.485-2 .849z"/>
+        </svg>
+    </div>
+    <div class="stakes-empty-content-info">
+        <h1 class="stakes-empty-content-title"><%= gettext("No Information") %></h1>
+        <p class="stakes-empty-content-text"><%= gettext("There is no information currently available for this view. Deselect filters or choose another pool view to see current info. To participate as a delegator, select a pool address and click the Stake icon. To become a candidate, click the button below.") %></p>
+        <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_line.html", text: gettext("Become a Candidate"), extra_class: "js-become-candidate" %>
+    </div>
+</div>

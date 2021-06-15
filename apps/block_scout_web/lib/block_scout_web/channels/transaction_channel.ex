@@ -5,16 +5,24 @@ defmodule BlockScoutWeb.TransactionChannel do
   use BlockScoutWeb, :channel
 
   alias BlockScoutWeb.TransactionView
+  alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Phoenix.View
 
   intercept(["pending_transaction", "transaction"])
+
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
 
   def join("transactions:new_transaction", _params, socket) do
     {:ok, %{}, socket}
   end
 
   def join("transactions:new_pending_transaction", _params, socket) do
+    {:ok, %{}, socket}
+  end
+
+  def join("transactions:stats", _params, socket) do
     {:ok, %{}, socket}
   end
 
@@ -29,7 +37,9 @@ defmodule BlockScoutWeb.TransactionChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
-        transaction: transaction
+        transaction: transaction,
+        burn_address_hash: @burn_address_hash,
+        conn: socket
       )
 
     push(socket, "pending_transaction", %{
@@ -47,7 +57,9 @@ defmodule BlockScoutWeb.TransactionChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
-        transaction: transaction
+        transaction: transaction,
+        burn_address_hash: @burn_address_hash,
+        conn: socket
       )
 
     push(socket, "transaction", %{

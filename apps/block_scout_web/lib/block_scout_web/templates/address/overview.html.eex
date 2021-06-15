@@ -1,11 +1,32 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
+  <% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
+  <% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
+  <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+  <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
+  <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row">
     <!-- Address details -->
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
         <div class="card-body">
+          <%= cond do %>
+            <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.4)" %>
+            <% Enum.member?(dark_forest_addresses_list_0_5, current_address) -> %>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.5)" %>
+            <% Enum.member?(circles_addresses_list, current_address) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% Enum.member?(circles_addresses_list, created_from_address_hash) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% true -> %>
+              <%= nil %>
+          <% end %>
           <h1 class="card-title lg-card-title">
-            <%= address_title(@address) %> <%= gettext "Details" %>
+            <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
               <span class="overview-title-item" data-selector="copy-address" data-clipboard-text="<%= @address %>">
@@ -63,7 +84,9 @@
           <h3 class="address-detail-hash-title <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <div class="d-flex flex-column flex-lg-row justify-content-start text-muted">
             <%= if address_name = primary_name(@address) do %>
-              <strong class="mr-4 mb-2 text-dark"><%= address_name %></strong>
+              <strong class="mr-4 mb-2 text-dark" title="<%= address_name %>">
+                <%= short_contract_name(address_name, 30) %>
+              </strong>
             <% end %>
             <%= if @address.token do %>
               <span class="mr-4 mb-2">
@@ -73,6 +96,10 @@
             <span>
               <span class="address-detail-item" style="display: none">
                 <span data-selector="transaction-count">
+                </span>
+              </span>
+              <span class="address-detail-item" style="display: none">
+                <span data-selector="gas-usage-count">
                 </span>
               </span>
               <%= if @address.fetched_coin_balance_block_number do %>

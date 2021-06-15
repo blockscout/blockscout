@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
+    Application.put_env(:block_scout_web, :checksum_address_hashes, false)
+
     block = insert(:block, number: 42)
 
     lincoln = insert(:address, fetched_coin_balance: 5)
@@ -37,6 +39,10 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         block_hash: block.hash,
         address_type: :validator
       )
+
+    on_exit(fn ->
+      Application.put_env(:block_scout_web, :checksum_address_hashes, true)
+    end)
 
     {:ok,
      %{
@@ -315,7 +321,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   describe "viewing token balances" do
     setup do
       block = insert(:block)
-      lincoln = insert(:address, fetched_coin_balance: 5)
+      lincoln = insert(:address, fetched_coin_balance: 5, fetched_coin_balance_block_number: block.number)
       taft = insert(:address, fetched_coin_balance: 5)
 
       contract_address = insert(:contract_address)
@@ -360,28 +366,43 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     test "filter tokens balances by token name", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
-      |> assert_has(AddressPage.token_balance(count: 2))
-      |> assert_has(AddressPage.token_type(count: 2))
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-721", text: "1"))
     end
 
     test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("T2")
-      |> assert_has(AddressPage.token_balance(count: 2))
-      |> assert_has(AddressPage.token_type(count: 2))
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
     end
 
     test "reset token balances filter when dropdown closes", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> AddressPage.click_outside_of_the_dropdown()

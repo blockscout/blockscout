@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Tokens.HolderView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.Tokens.OverviewView
-  alias Explorer.Chain.{Token}
+  alias Explorer.Chain.Token
 
   @doc """
   Checks if the total supply percentage must be shown.

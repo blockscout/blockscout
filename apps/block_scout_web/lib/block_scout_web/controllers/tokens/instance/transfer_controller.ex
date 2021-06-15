@@ -3,9 +3,13 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
 
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
+
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
 
   def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
@@ -24,7 +28,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
               conn,
               :index,
               token_id,
-              token.contract_address_hash,
+              Address.checksum(token.contract_address_hash),
               Map.delete(next_page_params, "type")
             )
         end
@@ -36,7 +40,8 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
             "_token_transfer.html",
             conn: conn,
             token: token,
-            token_transfer: transfer
+            token_transfer: transfer,
+            burn_address_hash: @burn_address_hash
           )
         end)
 

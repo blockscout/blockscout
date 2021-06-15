@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Resolvers.CeloClaim do
 
   alias Absinthe.Relay.Connection
   alias Explorer.{Chain, GraphQL, Repo}
-  alias Explorer.Chain.{CeloAccount}
+  alias Explorer.Chain.CeloAccount
 
   def get_by(_, %{hash: hash}, _) do
     {:ok, Chain.get_celo_claims(hash)}

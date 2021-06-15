@@ -3,44 +3,25 @@
     <div class="modal-content">
       <div class="modal-status-graph modal-status-graph-<%= if assigns[:status] do @status end %>">
         <%=
-          if @status == "error" do
-            render BlockScoutWeb.CommonComponentsView, "_icon_error_modal.html"
-          end
-        %>
-        <%=
-          if @status == "success" do
-            render BlockScoutWeb.CommonComponentsView, "_icon_success_modal.html"
-          end
-        %>
-        <%=
-          if @status == "warning" do
-            render BlockScoutWeb.CommonComponentsView, "_icon_warning_modal.html"
-          end
-        %>
-        <%=
-          if @status == "question" do
-            render BlockScoutWeb.CommonComponentsView, "_icon_question_modal.html"
+          if @status in ["error", "success", "warning", "question"] do
+            render BlockScoutWeb.CommonComponentsView, "_icon_#{@status}_modal.html"
           end
         %>
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body modal-status-body">
-        <%= if assigns[:title] do %>
-        <h2 class="modal-status-title"><%= @title %></h2>
-        <% end %>
-        <%= if assigns[:text] do %>
-        <p class="modal-status-text"><%= @text %></p>
-        <% end %>
+        <h2 class="modal-status-title"><%= if assigns[:title] do @title end %></h2>
+        <p class="modal-status-text"><%= if assigns[:text] do @text end %></p>
         <div class="modal-status-button-wrapper">
           <%= if @status !== "question" do %>
             <button class="btn-line" type="button" data-dismiss="modal">
               <span class="btn-line-text">Ok</span>
             </button>
           <% else %>
-            <button class="btn-line except" type="button" data-dismiss="modal">
+            <button class="btn-line except" type="button">
               <span class="btn-line-text">No</span>
             </button>
-            <button class="btn-line accept" type="button" data-dismiss="modal">
+            <button class="btn-line accept" type="button">
               <span class="btn-line-text">Yes</span>
             </button>
           <% end %>

@@ -13,18 +13,6 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end)
   end
 
-  describe "network_icon_partial/0" do
-    test "use the enviroment icon when it's configured" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, network_icon: "custom_icon")
-
-      assert LayoutView.network_icon_partial() == "custom_icon"
-    end
-
-    test "use the default icon when there is no env configured for it" do
-      assert LayoutView.network_icon_partial() == "_network_icon.html"
-    end
-  end
-
   describe "logo/0" do
     test "use the enviroment logo when it's configured" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, logo: "custom/logo.png")
@@ -45,7 +33,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end
 
     test "use the default subnetwork title when there is no env configured for it" do
-      assert LayoutView.subnetwork_title() == "Testnet"
+      assert LayoutView.subnetwork_title() == "Sokol"
     end
   end
 
@@ -103,7 +91,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end
   end
 
-  @supported_chains_pattern ~s([ { "title": "RSK Mainnet", "url": "https://blockscout.com/rsk/mainnet", "other?": true }, { "title": "POA Sokol", "url": "https://blockscout.com/poa/sokol", "test_net?": true }, { "title": "POA Core", "url": "https://blockscout.com/poa/core" }, { "title": "LUKSO L14 testnet", "url": "https://blockscout.com/lukso/l14", "test_net?": true, "hide_in_dropdown?": true } ])
+  @supported_chains_pattern ~s([ { "title": "RSK", "url": "https://blockscout.com/rsk/mainnet", "other?": true }, { "title": "Sokol", "url": "https://blockscout.com/poa/sokol", "test_net?": true }, { "title": "POA", "url": "https://blockscout.com/poa/core" }, { "title": "LUKSO L14", "url": "https://blockscout.com/lukso/l14", "test_net?": true, "hide_in_dropdown?": true } ])
 
   describe "other_networks/0" do
     test "get networks list based on env variables" do
@@ -111,26 +99,27 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.other_networks() == [
                %{
-                 title: "POA Core",
+                 title: "POA",
                  url: "https://blockscout.com/poa/core"
                },
                %{
-                 title: "RSK Mainnet",
+                 title: "RSK",
                  url: "https://blockscout.com/rsk/mainnet",
                  other?: true
                },
                %{
-                 title: "POA Sokol",
-                 url: "https://blockscout.com/poa/sokol",
-                 test_net?: true
-               },
-               %{
-                 title: "LUKSO L14 testnet",
+                 title: "LUKSO L14",
                  url: "https://blockscout.com/lukso/l14",
                  test_net?: true,
                  hide_in_dropdown?: true
                }
              ]
+    end
+
+    test "get empty networks list if SUPPORTED_CHAINS is not parsed" do
+      Application.put_env(:block_scout_web, :other_networks, "not a valid json")
+
+      assert LayoutView.other_networks() == []
     end
   end
 
@@ -140,11 +129,11 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.main_nets(LayoutView.other_networks()) == [
                %{
-                 title: "POA Core",
+                 title: "POA",
                  url: "https://blockscout.com/poa/core"
                },
                %{
-                 title: "RSK Mainnet",
+                 title: "RSK",
                  url: "https://blockscout.com/rsk/mainnet",
                  other?: true
                }
@@ -158,12 +147,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.test_nets(LayoutView.other_networks()) == [
                %{
-                 title: "POA Sokol",
-                 url: "https://blockscout.com/poa/sokol",
-                 test_net?: true
-               },
-               %{
-                 title: "LUKSO L14 testnet",
+                 title: "LUKSO L14",
                  url: "https://blockscout.com/lukso/l14",
                  test_net?: true,
                  hide_in_dropdown?: true
@@ -178,18 +162,13 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.dropdown_nets() == [
                %{
-                 title: "POA Core",
+                 title: "POA",
                  url: "https://blockscout.com/poa/core"
                },
                %{
-                 title: "RSK Mainnet",
+                 title: "RSK",
                  url: "https://blockscout.com/rsk/mainnet",
                  other?: true
-               },
-               %{
-                 title: "POA Sokol",
-                 url: "https://blockscout.com/poa/sokol",
-                 test_net?: true
                }
              ]
     end
@@ -201,7 +180,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.dropdown_head_main_nets() == [
                %{
-                 title: "POA Core",
+                 title: "POA",
                  url: "https://blockscout.com/poa/core"
                }
              ]
@@ -214,7 +193,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.dropdown_other_nets() == [
                %{
-                 title: "RSK Mainnet",
+                 title: "RSK",
                  url: "https://blockscout.com/rsk/mainnet",
                  other?: true
                }

@@ -5,6 +5,8 @@ import humps from 'humps'
 import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import '../address'
+import { isFiltered } from './utils'
 
 export const initialState = {
   addressHash: null,
@@ -48,6 +50,21 @@ const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
       if (state.channelDisconnected) $el.show()
+    }
+  },
+  '[data-test="filter_dropdown"]': {
+    render ($el, state) {
+      if (state.emptyResponse && !state.isSearch) {
+        if (isFiltered(state.filter)) {
+          $el.addClass('no-rm')
+        } else {
+          return $el.hide()
+        }
+      } else {
+        $el.removeClass('no-rm')
+      }
+
+      return $el.show()
     }
   }
 }

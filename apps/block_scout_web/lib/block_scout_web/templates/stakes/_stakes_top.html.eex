@@ -1,0 +1,34 @@
+<div class="stakes-top">
+  <div class="container">
+    <div class="stakes-top-stats" data-block-number="<%= @block_number %>">
+      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Epoch number"), value: @epoch_number %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Block number"), value: @block_number %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Next epoch in"), value: ngettext("%{blocks} block", "%{blocks} blocks", @epoch_end_in, blocks: @epoch_end_in) %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item_account.html", account: @account, token: @token %>
+      <!-- Buttons -->
+      <div class="stakes-top-buttons">
+        <%= if @account[:pool] && @account.pool.is_active do %>
+          <%= unless @account.pool.is_unremovable do %>
+            <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
+          <% end %>
+        <% else %>
+          <%=
+            button_class = "full-width " <>
+              if !is_nil(@account[:pool]) or !is_nil(@account[:pool_mining_address]) do
+                "js-make-stake"
+              else
+                "js-become-candidate"
+              end
+
+            render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html",
+              text: gettext("Become a Candidate"),
+              extra_class: button_class,
+              disabled: @account[:pool] && @account.pool.is_banned || @candidates_limit_reached
+          %>
+        <% end %>
+
+        <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward"), extra_class: "full-width" %>
+      </div>
+    </div>
+  </div>
+</div>

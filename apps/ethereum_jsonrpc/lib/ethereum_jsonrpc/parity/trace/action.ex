@@ -45,7 +45,7 @@ defmodule EthereumJSONRPC.Parity.Trace.Action do
   end
 
   defp entry_to_elixir({key, value} = entry)
-       when key in ~w(address callType from init input refundAddress to) and is_binary(value),
+       when key in ~w(address callType from init input refundAddress to creationMethod) and is_binary(value),
        do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(balance gas value) do

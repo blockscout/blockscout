@@ -171,6 +171,13 @@ defmodule EthereumJSONRPC do
     Contract.execute_contract_functions(functions, abi, json_rpc_named_arguments)
   end
 
+  @spec execute_contract_functions_by_name([Contract.call_by_name()], [map()], json_rpc_named_arguments) :: [
+          Contract.call_result()
+        ]
+  def execute_contract_functions_by_name(functions, abi, json_rpc_named_arguments) do
+    Contract.execute_contract_functions_by_name(functions, abi, json_rpc_named_arguments)
+  end
+
   @doc """
   Fetches balance for each address `hash` at the `block_number`
   """
@@ -215,7 +222,18 @@ defmodule EthereumJSONRPC do
   @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
           {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
+    min_block = first_block_to_fetch()
+
+    filtered_block_numbers =
+      block_numbers
+      |> Enum.filter(fn block_number ->
+        block_number >= min_block
+      end)
+
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(
+      filtered_block_numbers,
+      json_rpc_named_arguments
+    )
   end
 
   @doc """
@@ -294,8 +312,26 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches internal transactions for entire blocks from variant API.
   """
-  def fetch_block_internal_transactions(params_list, json_rpc_named_arguments) when is_list(params_list) do
+  def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
+    min_block = first_block_to_fetch()
+
+    filtered_block_numbers =
+      block_numbers
+      |> Enum.filter(fn block_number ->
+        block_number >= min_block
+      end)
+
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_block_internal_transactions(
+      filtered_block_numbers,
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
+  Retrieves traces from variant API.
+  """
+  def fetch_first_trace(params_list, json_rpc_named_arguments) when is_list(params_list) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_first_trace(
       params_list,
       json_rpc_named_arguments
     )
@@ -459,6 +495,15 @@ defmodule EthereumJSONRPC do
            |> Blocks.requests(request)
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, Blocks.from_responses(responses, id_to_params)}
+    end
+  end
+
+  defp first_block_to_fetch do
+    string_value = Application.get_env(:indexer, :first_block)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 0
     end
   end
 end

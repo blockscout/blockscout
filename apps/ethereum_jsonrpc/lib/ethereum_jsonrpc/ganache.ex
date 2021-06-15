@@ -36,4 +36,12 @@ defmodule EthereumJSONRPC.Ganache do
   """
   @impl EthereumJSONRPC.Variant
   def fetch_pending_transactions(_json_rpc_named_arguments), do: :ignore
+
+  @doc """
+  Traces are not supported currently for Ganache.
+
+  To signal to the caller that fetching is not supported, `:ignore` is returned.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_first_trace(_transactions_params, _json_rpc_named_arguments), do: :ignore
 end

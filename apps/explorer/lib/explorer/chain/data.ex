@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Data do
   alias Explorer.Chain.Data
   alias Poison.Encoder.BitString
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @typedoc """
   A variable-byte-length binary, wrapped in a struct, so that it can use protocols.

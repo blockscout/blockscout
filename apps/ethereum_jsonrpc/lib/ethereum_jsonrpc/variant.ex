@@ -12,6 +12,7 @@ defmodule EthereumJSONRPC.Variant do
   @type t :: module
 
   @type internal_transaction_params :: map()
+  @type raw_trace_params :: map()
 
   @doc """
   Fetch the block reward contract beneficiaries for a given blocks from the variant of the Ethereum JSONRPC API.
@@ -71,4 +72,26 @@ defmodule EthereumJSONRPC.Variant do
   """
   @callback fetch_pending_transactions(EthereumJSONRPC.json_rpc_named_arguments()) ::
               {:ok, [Transaction.params()]} | {:error, reason :: term} | :ignore
+
+  @doc """
+  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the variant of the Ethereum JSONRPC API.
+  Uses API for retrieve first trace of transaction
+
+  ## Returns
+
+   * `{:ok, raw_trace_params}` - first trace was successfully retrieved for transaction
+   * `{:error, reason}` - there was one or more errors with `reason` in extraction trace of transaction
+   * `:ignore` - the variant does not support extraction of trace.
+  """
+  @callback fetch_first_trace(
+              [
+                %{
+                  hash_data: EthereumJSONRPC.hash(),
+                  block_hash: EthereumJSONRPC.hash(),
+                  block_number: EthereumJSONRPC.block_number(),
+                  transaction_index: Integer
+                }
+              ],
+              EthereumJSONRPC.json_rpc_named_arguments()
+            ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
 end

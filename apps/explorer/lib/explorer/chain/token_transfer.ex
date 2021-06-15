@@ -155,7 +155,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: tt.block_number, desc: tt.log_index]
+        order_by: [desc: tt.block_number]
       )
 
     query
@@ -175,7 +175,7 @@ defmodule Explorer.Chain.TokenTransfer do
         where: tt.token_id == ^token_id,
         where: not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: tt.block_number, desc: tt.log_index]
+        order_by: [desc: tt.block_number]
       )
 
     query
@@ -193,7 +193,7 @@ defmodule Explorer.Chain.TokenTransfer do
         select: fragment("COUNT(*)")
       )
 
-    Repo.one(query)
+    Repo.one(query, timeout: :infinity)
   end
 
   @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), binary()) :: non_neg_integer()
@@ -205,13 +205,13 @@ defmodule Explorer.Chain.TokenTransfer do
         select: fragment("COUNT(*)")
       )
 
-    Repo.one(query)
+    Repo.one(query, timeout: :infinity)
   end
 
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
-    where(query, [token_transfer], token_transfer.token_id > ^token_id)
+    where(query, [tt], tt.token_id < ^token_id)
   end
 
   def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}}) do
@@ -287,6 +287,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @doc """
+  Innventory tab query.
   A token ERC-721 is considered unique because it corresponds to the possession
   of a specific asset.
 
@@ -299,9 +300,9 @@ defmodule Explorer.Chain.TokenTransfer do
       tt in TokenTransfer,
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-      where: tt.token_contract_address_hash == ^contract_address_hash,
+      where: instance.token_contract_address_hash == ^contract_address_hash,
       order_by: [desc: tt.block_number],
-      distinct: tt.token_id,
+      distinct: [desc: tt.token_id],
       preload: [:to_address],
       select: %{tt | instance: instance}
     )

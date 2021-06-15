@@ -47,19 +47,19 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
 
   describe "current_tab_name/1" do
     test "returns the correctly text for the token_transfers tab" do
-      token_transfers_path = "/page/0xSom3tH1ng/token_transfers/?additional_params=blah"
+      token_transfers_path = "/page/0xSom3tH1ng/token-transfers/?additional_params=blah"
 
       assert OverviewView.current_tab_name(token_transfers_path) == "Token Transfers"
     end
 
     test "returns the correctly text for the token_holders tab" do
-      token_holders_path = "/page/0xSom3tH1ng/token_holders/?additional_params=blah"
+      token_holders_path = "/page/0xSom3tH1ng/token-holders/?additional_params=blah"
 
       assert OverviewView.current_tab_name(token_holders_path) == "Token Holders"
     end
 
     test "returns the correctly text for the read_contract tab" do
-      read_contract_path = "/page/0xSom3tH1ng/read_contract/?additional_params=blah"
+      read_contract_path = "/page/0xSom3tH1ng/read-contract/?additional_params=blah"
 
       assert OverviewView.current_tab_name(read_contract_path) == "Read Contract"
     end

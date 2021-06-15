@@ -1,10 +1,13 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Plug.Conn
   alias Poison.Parser
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
 
   @issue_url "https://github.com/celo-org/celo-monorepo/issues/new"
+
   @default_other_networks [
     %{
       title: "Celo Mainnet",
@@ -23,11 +26,7 @@ defmodule BlockScoutWeb.LayoutView do
     }
   ]
 
-  alias BlockScoutWeb.SocialMedia
-
-  def network_icon_partial do
-    Keyword.get(application_config(), :network_icon) || "_network_icon.html"
-  end
+  alias BlockScoutWeb.{CustomContractsHelpers, SocialMedia}
 
   def logo do
     Keyword.get(application_config(), :logo) || "/images/celo_logo.svg"
@@ -38,8 +37,12 @@ defmodule BlockScoutWeb.LayoutView do
       "/images/celo_logo.svg"
   end
 
+  def logo_text do
+    Keyword.get(application_config(), :logo_text) || nil
+  end
+
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "Testnet"
+    Keyword.get(application_config(), :subnetwork) || "Sokol"
   end
 
   def network_title do
@@ -130,9 +133,14 @@ defmodule BlockScoutWeb.LayoutView do
   def other_networks do
     get_other_networks =
       if Application.get_env(:block_scout_web, :other_networks) do
-        :block_scout_web
-        |> Application.get_env(:other_networks)
-        |> Parser.parse!(%{keys: :atoms!})
+        try do
+          :block_scout_web
+          |> Application.get_env(:other_networks)
+          |> Parser.parse!(%{keys: :atoms!})
+        rescue
+          _ ->
+            []
+        end
       else
         @default_other_networks
       end
@@ -183,10 +191,16 @@ defmodule BlockScoutWeb.LayoutView do
 
   def other_explorers do
     if Application.get_env(:block_scout_web, :link_to_other_explorers) do
-      Application.get_env(:block_scout_web, :other_explorers, [])
+      decode_other_explorers_json(Application.get_env(:block_scout_web, :other_explorers, []))
     else
       []
     end
+  end
+
+  defp decode_other_explorers_json(data) do
+    Jason.decode!(~s(#{data}))
+  rescue
+    _ -> []
   end
 
   def webapp_url(conn) do
@@ -206,6 +220,21 @@ defmodule BlockScoutWeb.LayoutView do
     |> case do
       :error -> ""
       {:ok, url} -> url
+    end
+  end
+
+  def external_apps_list do
+    if Application.get_env(:block_scout_web, :external_apps) do
+      try do
+        :block_scout_web
+        |> Application.get_env(:external_apps)
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
     end
   end
 

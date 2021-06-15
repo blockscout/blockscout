@@ -81,6 +81,27 @@ defmodule Explorer.Chain.Address do
              :names
            ]}
 
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__,
+             :smart_contract,
+             :celo_account,
+             :celo_attestation_stats,
+             :celo_validator,
+             :celo_validator_group,
+             :celo_delegator,
+             :celo_signers,
+             :celo_members,
+             :celo_voters,
+             :celo_voted,
+             :celo_claims,
+             :decompiled_smart_contracts,
+             :token,
+             :contracts_creation_internal_transaction,
+             :contracts_creation_transaction,
+             :names
+           ]}
+
   @primary_key {:hash, Hash.Address, autogenerate: false}
   schema "addresses" do
     field(:fetched_coin_balance, Wei)
@@ -170,7 +191,6 @@ defmodule Explorer.Chain.Address do
     end
   end
 
-  # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
   def eth_checksum(hash) do
     string_hash =
       hash
@@ -194,6 +214,7 @@ defmodule Explorer.Chain.Address do
     end)
   end
 
+  # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
   def rsk_checksum(hash) do
     chain_id = NetVersion.get_version()
 
@@ -222,8 +243,9 @@ defmodule Explorer.Chain.Address do
   end
 
   defp stream_every_four_bytes_of_sha256(value) do
-    :sha3_256
-    |> :keccakf1600.hash(value)
+    {:ok, hash} = ExKeccak.hash_256(value)
+
+    hash
     |> stream_binary()
     |> Stream.map(&Bitwise.band(&1, 136))
     |> Stream.flat_map(fn

@@ -22,7 +22,8 @@ defmodule Explorer.ChainSpec.POA.Importer do
     "inputs" => [],
     "constant" => true
   }
-  @block_reward_amount_params %{"blockRewardAmount" => []}
+  # 26cc2256=keccak256(blockRewardAmount())
+  @block_reward_amount_params %{"26cc2256" => []}
   @emission_funds_amount_abi %{
     "type" => "function",
     "stateMutability" => "view",
@@ -32,7 +33,8 @@ defmodule Explorer.ChainSpec.POA.Importer do
     "inputs" => [],
     "constant" => true
   }
-  @emission_funds_amount_params %{"emissionFundsAmount" => []}
+  # ee8d75ff=keccak256(emissionFundsAmount())
+  @emission_funds_amount_params %{"ee8d75ff" => []}
   @emission_funds_block_start 5_098_087
 
   def import_emission_rewards do
@@ -65,8 +67,7 @@ defmodule Explorer.ChainSpec.POA.Importer do
         from(
           e in EmissionReward,
           join: s in subquery(inner_delete_query),
-          # we join on reward because it's faster and we have to delete them all anyway
-          on: e.reward == s.reward
+          on: e.block_range == s.block_range
         )
 
       # Enforce EmissionReward ShareLocks order (see docs: sharelocks.md)
@@ -92,7 +93,7 @@ defmodule Explorer.ChainSpec.POA.Importer do
   defp call_contract(address, abi, params) do
     abi = [abi]
 
-    method_name =
+    method_id =
       params
       |> Enum.map(fn {key, _value} -> key end)
       |> List.first()
@@ -101,7 +102,7 @@ defmodule Explorer.ChainSpec.POA.Importer do
 
     value =
       case Reader.query_contract(address, abi, params) do
-        %{^method_name => {:ok, [result]}} -> result
+        %{^method_id => {:ok, [result]}} -> result
         _ -> 0
       end
 

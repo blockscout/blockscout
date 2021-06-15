@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Transaction.Status do
   for failure.
   """
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @typedoc """
    * `:ok` - transaction succeeded

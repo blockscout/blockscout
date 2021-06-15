@@ -3,7 +3,7 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   Internal transaction types
   """
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @typedoc """
    * `:call`

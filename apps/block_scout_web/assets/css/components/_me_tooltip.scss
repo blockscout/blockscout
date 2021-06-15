@@ -1,0 +1,25 @@
+$me-tooltip-background: #f5f6fa !default;
+$me-tooltip-background-active: $primary !default;
+$me-tooltip-text: #a3a9b5 !default;
+$me-tooltip-text-active: #fff !default;
+
+.me-tooltip {
+  display: block;
+  height: 16px;
+  width: 24px;
+  border-radius: 8px;
+  background-color: $me-tooltip-background;
+  color: $me-tooltip-text;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: bold;
+  text-align: center;
+  position: relative;
+  top: 2px;
+
+  &:hover {
+    background-color: $me-tooltip-background-active;
+    color: $me-tooltip-text-active;
+  }
+}

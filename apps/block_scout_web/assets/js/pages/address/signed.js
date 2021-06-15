@@ -4,6 +4,7 @@ import humps from 'humps'
 import socket from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load.js'
+import '../address'
 
 export const initialState = {
   addressHash: null,

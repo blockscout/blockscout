@@ -147,6 +147,8 @@ window.AwesompleteUtil = (function () {
     var awe = this
     awe.utilprops.changed = true // yes, user made a change
     awe.utilprops.selected = ev.text // Suggestion object
+    const address = ev.text.split(/<p>/)[0]
+    window.open(`/search?q=${address}`, '_self')
   }
 
   // check if the object is empty {} object

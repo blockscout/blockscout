@@ -12,8 +12,9 @@ defmodule BlockScoutWeb.Notifier do
   }
 
   alias Explorer.{Chain, ExchangeRates, Market, Repo}
-  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
@@ -30,6 +31,16 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :address_coin_balances, type, address_coin_balances})
       when type in [:realtime, :on_demand] do
     Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
+  end
+
+  def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
+      when type in [:realtime, :on_demand] do
+    Enum.each(address_token_balances, &broadcast_address_token_balance/1)
+  end
+
+  def handle_event({:chain_event, :address_current_token_balances, type, address_current_token_balances})
+      when type in [:realtime, :on_demand] do
+    Enum.each(address_current_token_balances, &broadcast_address_token_balance/1)
   end
 
   def handle_event(
@@ -134,6 +145,22 @@ defmodule BlockScoutWeb.Notifier do
         token_transfers,
         token_transfers: token_contract_address_hash
       )
+
+      token_transfers_full =
+        token_transfers
+        |> Stream.map(
+          &(TokenTransfer
+            |> Repo.get_by(
+              block_hash: &1.block_hash,
+              #              transaction_hash: &1.transaction_hash,
+              token_contract_address_hash: &1.token_contract_address_hash,
+              log_index: &1.log_index
+            )
+            |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
+        )
+
+      token_transfers_full
+      |> Enum.each(&broadcast_token_transfer/1)
     end
   end
 
@@ -145,11 +172,28 @@ defmodule BlockScoutWeb.Notifier do
         :block => :optional,
         [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
-        [to_address: :names] => :optional,
-        :token_transfers => :optional
+        [to_address: :names] => :optional
       }
     )
+    |> Enum.map(fn tx ->
+      # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab
+      Map.put(tx, :token_transfers, [])
+    end)
     |> Enum.each(&broadcast_transaction/1)
+  end
+
+  def handle_event({:chain_event, :transaction_stats}) do
+    today = Date.utc_today()
+
+    [{:history_size, history_size}] =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, 30)
+
+    x_days_back = Date.add(today, -1 * history_size)
+
+    date_range = TransactionStats.by_date_range(x_days_back, today)
+    stats = Enum.map(date_range, fn item -> Map.drop(item, [:__meta__]) end)
+
+    Endpoint.broadcast("transactions:stats", "update", %{stats: stats})
   end
 
   def handle_event(_), do: nil
@@ -166,6 +210,12 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
+      block_number: block_number
+    })
+  end
+
+  defp broadcast_address_token_balance(%{address_hash: address_hash, block_number: block_number}) do
+    Endpoint.broadcast("addresses:#{address_hash}", "token_balance", %{
       block_number: block_number
     })
   end
@@ -198,11 +248,15 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_rewards(rewards) do
     preloaded_rewards = Repo.preload(rewards, [:address, :block])
+    emission_reward = Enum.find(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
 
-    Enum.each(preloaded_rewards, fn reward ->
+    preloaded_rewards_except_emission =
+      Enum.reject(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
+
+    Enum.each(preloaded_rewards_except_emission, fn reward ->
       Endpoint.broadcast("rewards:#{to_string(reward.address_hash)}", "new_reward", %{
-        emission_funds: Enum.at(preloaded_rewards, 1),
-        validator: Enum.at(preloaded_rewards, 0)
+        emission_funds: emission_reward,
+        validator: reward
       })
     end)
   end
@@ -249,6 +303,35 @@ defmodule BlockScoutWeb.Notifier do
       Endpoint.broadcast("addresses:#{transaction.to_address_hash}", event, %{
         address: transaction.to_address,
         transaction: transaction
+      })
+    end
+  end
+
+  defp broadcast_token_transfer(token_transfer) do
+    broadcast_token_transfer(token_transfer, "token_transfers:new_token_transfer", "token_transfer")
+  end
+
+  defp broadcast_token_transfer(token_transfer, token_transfer_channel, event) do
+    Endpoint.broadcast("token_transfers:#{token_transfer.transaction_hash}", event, %{})
+
+    Endpoint.broadcast(token_transfer_channel, event, %{
+      token_transfer: token_transfer
+    })
+
+    Endpoint.broadcast("addresses:#{token_transfer.from_address_hash}", event, %{
+      address: token_transfer.from_address,
+      token_transfer: token_transfer
+    })
+
+    Endpoint.broadcast("tokens:#{token_transfer.token_contract_address_hash}", event, %{
+      address: token_transfer.token_contract_address_hash,
+      token_transfer: token_transfer
+    })
+
+    if token_transfer.to_address_hash != token_transfer.from_address_hash do
+      Endpoint.broadcast("addresses:#{token_transfer.to_address_hash}", event, %{
+        address: token_transfer.to_address,
+        token_transfer: token_transfer
       })
     end
   end

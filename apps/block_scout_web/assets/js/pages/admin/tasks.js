@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import '../../app'
 
 const runTask = (event) => {
   const element = event.currentTarget
@@ -13,7 +14,7 @@ const runTask = (event) => {
   $loading.show()
 
   $.get(apiPath)
-    .done(response => {
+    .done(_response => {
       $successMessage.show()
       $loading.hide()
     })

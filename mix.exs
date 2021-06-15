@@ -14,7 +14,7 @@ defmodule BlockScout.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: ".dialyzer-ignore"
       ],
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
@@ -72,12 +72,14 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       {:tesla, "~> 1.3.3"},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
       {:mox, "~> 0.5"},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"}
+      {:excoveralls, "~> 0.13.3"},
+      {:number, "~> 1.0.3"}
     ]
   end
 end

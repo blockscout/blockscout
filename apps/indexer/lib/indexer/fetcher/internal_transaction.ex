@@ -22,8 +22,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @behaviour BufferedTask
 
-  @max_batch_size 10
-  @max_concurrency 4
+  @max_batch_size 20
+  @max_concurrency 8
   @defaults [
     flush_interval: :timer.seconds(3),
     poll_interval: :timer.seconds(3),
@@ -109,8 +109,16 @@ defmodule Indexer.Fetcher.InternalTransaction do
       EthereumJSONRPC.Parity ->
         EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
+      EthereumJSONRPC.Besu ->
+        EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
+
       _ ->
-        fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
+        try do
+          fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
+        rescue
+          error ->
+            {:error, error}
+        end
     end
     |> case do
       {:ok, internal_transactions_params} ->
@@ -132,6 +140,27 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
       :ignore ->
         :ok
+    end
+  end
+
+  def import_first_trace(internal_transactions_params) do
+    imports =
+      Chain.import(%{
+        internal_transactions: %{params: internal_transactions_params, with: :blockless_changeset},
+        timeout: :infinity
+      })
+
+    case imports do
+      {:error, step, reason, _changes_so_far} ->
+        Logger.error(
+          fn ->
+            [
+              "failed to import first trace for tx: ",
+              inspect(reason)
+            ]
+          end,
+          step: step
+        )
     end
   end
 
@@ -160,8 +189,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
             {{:ok, []}, 0, block}
 
           transactions ->
-            res = EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
-            {res, Enum.count(transactions), block}
+            try do
+              res = EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+              {res, Enum.count(transactions), block}
+            catch
+              :exit, error ->
+                {:error, error, block}
+            end
         end
         |> case do
           {{:ok, internal_transactions}, num, {:ok, %{gas_used: used_gas, hash: block_hash}}} ->
@@ -278,27 +312,28 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp remove_failed_creations(internal_transactions_params) do
     internal_transactions_params
-    |> Enum.map(fn internal_transaction_params ->
-      internal_transaction_params[:trace_address]
+    |> Enum.map(fn internal_transaction_param ->
+      transaction_index = internal_transaction_param[:transaction_index]
+      block_number = internal_transaction_param[:block_number]
 
-      failed_parent_index =
-        Enum.find(internal_transaction_params[:trace_address], fn trace_address ->
-          parent = Enum.at(internal_transactions_params, trace_address)
-
-          !is_nil(parent[:error])
+      failed_parent =
+        internal_transactions_params
+        |> Enum.filter(fn internal_transactions_param ->
+          internal_transactions_param[:block_number] == block_number &&
+            internal_transactions_param[:transaction_index] == transaction_index &&
+            internal_transactions_param[:trace_address] == [] && !is_nil(internal_transactions_param[:error])
         end)
-
-      failed_parent = failed_parent_index && Enum.at(internal_transactions_params, failed_parent_index)
+        |> Enum.at(0)
 
       if failed_parent do
-        internal_transaction_params
+        internal_transaction_param
         |> Map.delete(:created_contract_address_hash)
         |> Map.delete(:created_contract_code)
         |> Map.delete(:gas_used)
         |> Map.delete(:output)
         |> Map.put(:error, failed_parent[:error])
       else
-        internal_transaction_params
+        internal_transaction_param
       end
     end)
   end

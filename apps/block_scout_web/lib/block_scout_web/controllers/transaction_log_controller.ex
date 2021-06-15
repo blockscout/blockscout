@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionLogController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{TransactionLogView, TransactionView}
+  alias BlockScoutWeb.{AccessHelpers, TransactionLogView, TransactionView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
@@ -16,7 +16,9 @@ defmodule BlockScoutWeb.TransactionLogController do
                [to_address: :smart_contract] => :optional,
                [{:to_address, :implementation_contract, :smart_contract}] => :optional
              }
-           ) do
+           ),
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
         Keyword.merge(
           [
@@ -60,6 +62,12 @@ defmodule BlockScoutWeb.TransactionLogController do
         }
       )
     else
+      {:restricted_access, _} ->
+        conn
+        |> put_status(404)
+        |> put_view(TransactionView)
+        |> render("not_found.html", transaction_hash: transaction_hash_string)
+
       :error ->
         conn
         |> put_status(422)
@@ -74,7 +82,7 @@ defmodule BlockScoutWeb.TransactionLogController do
     end
   end
 
-  def index(conn, %{"transaction_id" => transaction_hash_string}) do
+  def index(conn, %{"transaction_id" => transaction_hash_string} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
@@ -88,7 +96,9 @@ defmodule BlockScoutWeb.TransactionLogController do
                [{:to_address, :implementation_contract, :smart_contract}] => :optional,
                :token_transfers => :optional
              }
-           ) do
+           ),
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
       render(
         conn,
         "index.html",
@@ -99,6 +109,12 @@ defmodule BlockScoutWeb.TransactionLogController do
         exchange_rate: Market.get_exchange_rate("cGLD") || Token.null()
       )
     else
+      {:restricted_access, _} ->
+        conn
+        |> put_status(404)
+        |> put_view(TransactionView)
+        |> render("not_found.html", transaction_hash: transaction_hash_string)
+
       :error ->
         conn
         |> put_status(422)

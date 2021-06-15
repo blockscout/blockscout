@@ -5,6 +5,9 @@
       <div class="col-md-12">
         <%= link to: webapp_url(@conn), class: "footer-brand" do %>
           <img class="footer-logo" src="<%= logo_footer() %>" alt="<%= subnetwork_title() %>" />
+          <%= if logo_text() do %>
+            <span class="logo-text footer"> <%= logo_text() %> </span>
+          <% end %>
         <% end %>
       </div>
     </div>

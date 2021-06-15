@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
   end
 
   defp fetch_external_libraries(params) do
-    keys = Enum.flat_map(1..5, fn i -> ["library#{i}_name", "library#{i}_address"] end)
+    keys = Enum.flat_map(1..10, fn i -> ["library#{i}_name", "library#{i}_address"] end)
 
     Map.take(params, keys)
   end

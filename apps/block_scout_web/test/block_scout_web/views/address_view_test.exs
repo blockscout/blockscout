@@ -143,6 +143,26 @@ defmodule BlockScoutWeb.AddressViewTest do
     end
   end
 
+  describe "balance_percentage_enabled/1" do
+    test "with non_zero market cap" do
+      Application.put_env(:block_scout_web, :show_percentage, true)
+
+      assert AddressView.balance_percentage_enabled?(100_500) == true
+    end
+
+    test "with zero market cap" do
+      Application.put_env(:block_scout_web, :show_percentage, true)
+
+      assert AddressView.balance_percentage_enabled?(0) == false
+    end
+
+    test "with switched off show_percentage" do
+      Application.put_env(:block_scout_web, :show_percentage, false)
+
+      assert AddressView.balance_percentage_enabled?(100_501) == false
+    end
+  end
+
   test "balance_percentage/1" do
     Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     address = insert(:address, fetched_coin_balance: 2_524_608_000_000_000_000_000_000)
@@ -281,11 +301,12 @@ defmodule BlockScoutWeb.AddressViewTest do
   end
 
   describe "token_title/1" do
-    test "returns the 6 first chars of address hash when token has no name" do
+    test "returns the 6 first and 6 last chars of address hash when token has no name" do
       token = insert(:token, name: nil)
 
-      expected_hash = to_string(token.contract_address_hash)
-      assert String.starts_with?(expected_hash, AddressView.token_title(token))
+      hash = to_string(token.contract_address_hash)
+      expected_hash = String.slice(hash, 0, 8) <> "-" <> String.slice(hash, -6, 6)
+      assert expected_hash == AddressView.token_title(token)
     end
 
     test "returns name(symbol) when token has name" do

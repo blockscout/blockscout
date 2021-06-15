@@ -6,6 +6,7 @@ import humps from 'humps'
 import listMorph from '../lib/list_morph'
 import reduceReducers from 'reduce-reducers'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../app'
 
 /**
  * This is a generic lib to add pagination with asynchronous page loading. There are two ways of
@@ -24,6 +25,9 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
  *
  *   the data-async-load is the attribute responsible for binding the store.
  *
+ *   data-no-first-loading attribute can also be used along with data-async-load
+ *   to prevent loading items for the first time
+ *
  * If the page has a redux associated with, you need to connect the reducers instead of creating
  * the store using the `createStore`. For instance:
  *
@@ -38,9 +42,13 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
  *
  */
 
+var enableFirstLoading = true
+
 export const asyncInitialState = {
   /* it will consider any query param in the current URI as paging */
   beyondPageOne: (URI(window.location).query() !== ''),
+  /* will be sent along with { type: 'JSON' } to controller, useful for dynamically changing parameters */
+  additionalParams: {},
   /* an array with every html element of the list being shown */
   items: [],
   /* the key for diffing the elements in the items array */
@@ -51,6 +59,8 @@ export const asyncInitialState = {
   requestError: false,
   /* if response has no items */
   emptyResponse: false,
+  /* link to the current page */
+  currentPagePath: null,
   /* link to the next page */
   nextPagePath: null,
   /* link to the previous page */
@@ -62,7 +72,10 @@ export const asyncInitialState = {
 export function asyncReducer (state = asyncInitialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, { nextPagePath: action.nextPagePath })
+      return Object.assign({}, state, {
+        nextPagePath: action.nextPagePath,
+        currentPagePath: action.nextPagePath
+      })
     }
     case 'ADD_ITEM_KEY': {
       return Object.assign({}, state, { itemKey: action.itemKey })
@@ -70,7 +83,8 @@ export function asyncReducer (state = asyncInitialState, action) {
     case 'START_REQUEST': {
       return Object.assign({}, state, {
         loading: true,
-        requestError: false
+        requestError: false,
+        currentPagePath: action.path
       })
     }
     case 'REQUEST_ERROR': {
@@ -82,7 +96,7 @@ export function asyncReducer (state = asyncInitialState, action) {
       })
     }
     case 'ITEMS_FETCHED': {
-      var prevPagePath = null
+      let prevPagePath = null
 
       if (state.pagesStack.length >= 2) {
         prevPagePath = state.pagesStack[state.pagesStack.length - 2]
@@ -176,6 +190,7 @@ export const elements = {
         return $el.hide()
       }
 
+      $el.show()
       if (state.requestError || !state.nextPagePath || state.loading) {
         return $el.attr('disabled', 'disabled')
       }
@@ -190,6 +205,7 @@ export const elements = {
         return $el.hide()
       }
 
+      $el.show()
       if (state.requestError || !state.prevPagePath || state.loading) {
         return $el.attr('disabled', 'disabled')
       }
@@ -203,12 +219,13 @@ export const elements = {
       if (state.pagesStack.length === 0) {
         return $el.hide()
       }
-      $el.show()
-      $el.attr('disabled', false)
 
       const urlParams = new URLSearchParams(window.location.search)
       const blockParam = urlParams.get('block_type')
       const firstPageHref = window.location.href.split('?')[0]
+
+      $el.show()
+      $el.attr('disabled', false)
 
       if (blockParam !== null) {
         $el.attr('href', firstPageHref + '?block_type=' + blockParam)
@@ -223,6 +240,7 @@ export const elements = {
         return $el.hide()
       }
 
+      $el.show()
       if (state.pagesStack.length === 0) {
         return $el.text('Page 1')
       }
@@ -235,6 +253,15 @@ export const elements = {
       if (state.loading) return $el.show()
 
       $el.hide()
+    }
+  },
+  '[data-async-listing] [data-pagination-container]': {
+    render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+
+      $el.show()
     }
   },
   '[csv-download]': {
@@ -276,26 +303,31 @@ export function createAsyncLoadStore (reducer, initialState, itemKey) {
   return store
 }
 
+export function refreshPage (store) {
+  loadPage(store, store.getState().currentPagePath)
+}
+
+function loadPage (store, path) {
+  store.dispatch({ type: 'START_REQUEST', path })
+  $.getJSON(path, merge({ type: 'JSON' }, store.getState().additionalParams))
+    .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
+    .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+    .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
+}
+
 function firstPageLoad (store) {
   const $element = $('[data-async-listing]')
   function loadItemsNext () {
-    const path = store.getState().nextPagePath
-    store.dispatch({ type: 'START_REQUEST' })
-    $.getJSON(path, { type: 'JSON' })
-      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
-      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
+    loadPage(store, store.getState().nextPagePath)
   }
 
   function loadItemsPrev () {
-    const path = store.getState().prevPagePath
-    store.dispatch({ type: 'START_REQUEST' })
-    $.getJSON(path, { type: 'JSON' })
-      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
-      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
+    loadPage(store, store.getState().prevPagePath)
   }
-  loadItemsNext()
+
+  if (enableFirstLoading) {
+    loadItemsNext()
+  }
 
   $element.on('click', '[data-error-message]', (event) => {
     event.preventDefault()
@@ -319,7 +351,12 @@ function firstPageLoad (store) {
 
 const $element = $('[data-async-load]')
 if ($element.length) {
-  const store = createStore(asyncReducer)
-  connectElements({ store, elements })
-  firstPageLoad(store)
+  if (Object.prototype.hasOwnProperty.call($element.data(), 'noFirstLoading')) {
+    enableFirstLoading = false
+  }
+  if (enableFirstLoading) {
+    const store = createStore(asyncReducer)
+    connectElements({ store, elements })
+    firstPageLoad(store)
+  }
 }

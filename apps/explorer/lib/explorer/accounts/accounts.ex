@@ -5,7 +5,7 @@ defmodule Explorer.Accounts do
 
   alias Comeonin.Bcrypt
   alias Ecto.Changeset
-  alias Explorer.Accounts.{User}
+  alias Explorer.Accounts.User
   alias Explorer.Accounts.User.{Authenticate, Registration}
   alias Explorer.Repo
 

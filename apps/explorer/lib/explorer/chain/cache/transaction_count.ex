@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Cache.TransactionCount do
     key: :count,
     key: :async_task,
     global_ttl: cache_period(),
-    ttl_check_interval: :timer.minutes(10),
+    ttl_check_interval: :timer.minutes(15),
     callback: &async_task_on_deletion(&1)
 
   require Logger

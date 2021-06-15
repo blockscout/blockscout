@@ -13,9 +13,11 @@ defmodule EthereumJSONRPC.Encoder do
   """
   @spec encode_function_call(%ABI.FunctionSelector{}, [term()]) :: String.t()
   def encode_function_call(function_selector, args) do
+    parsed_args = parse_args(args)
+
     encoded_args =
       function_selector
-      |> ABI.encode(parse_args(args))
+      |> ABI.encode(parsed_args)
       |> Base.encode16(case: :lower)
 
     "0x" <> encoded_args
@@ -28,7 +30,15 @@ defmodule EthereumJSONRPC.Encoder do
         Base.decode16!(hexadecimal_digits, case: :mixed)
 
       item ->
-        item
+        if is_list(item) do
+          item
+          |> Enum.map(fn el ->
+            <<"0x", hexadecimal_digits::binary>> = el
+            Base.decode16!(hexadecimal_digits, case: :mixed)
+          end)
+        else
+          item
+        end
     end)
   end
 
@@ -37,6 +47,10 @@ defmodule EthereumJSONRPC.Encoder do
   """
   @spec decode_result(map(), %ABI.FunctionSelector{} | [%ABI.FunctionSelector{}]) ::
           {String.t(), {:ok, any()} | {:error, String.t() | :invalid_data}}
+  def decode_result(%{error: %{code: code, data: data, message: message}, id: id}, _selector) do
+    {id, {:error, "(#{code}) #{message} (#{data})"}}
+  end
+
   def decode_result(%{error: %{code: code, message: message}, id: id}, _selector) do
     {id, {:error, "(#{code}) #{message}"}}
   end
@@ -60,21 +74,19 @@ defmodule EthereumJSONRPC.Encoder do
 
   def decode_result(%{id: id, result: result}, function_selector) do
     types_list = List.wrap(function_selector.returns)
-    tuple_list = [{:tuple, types_list}]
 
     decoded_data =
       result
       |> String.slice(2..-1)
       |> Base.decode16!(case: :lower)
-      |> TypeDecoder.decode_raw(tuple_list)
+      |> TypeDecoder.decode_raw(types_list)
+      |> Enum.zip(types_list)
+      |> Enum.map(fn
+        {value, :address} -> "0x" <> Base.encode16(value, case: :lower)
+        {value, _} -> value
+      end)
 
-    fixed_data =
-      case decoded_data do
-        [tup] -> Tuple.to_list(tup)
-        _ -> decoded_data
-      end
-
-    {id, {:ok, fixed_data}}
+    {id, {:ok, decoded_data}}
   rescue
     MatchError ->
       {id, {:error, :invalid_data}}

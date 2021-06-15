@@ -8,7 +8,7 @@ config :explorer, Explorer.Repo,
   database: System.get_env("DATABASE_DB") || "blockscout",
   hostname: System.get_env("DATABASE_HOSTNAME") || "localhost",
   port: System.get_env("DATABASE_PORT") || "5432",
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "50"),
   ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
   prepare: :unnamed,
   timeout: :timer.seconds(60)

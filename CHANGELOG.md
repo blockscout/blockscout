@@ -1,13 +1,100 @@
 ## Current
 
 ### Features
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - Tokens search
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - BSC OMNI bridge support
+- [#3603](https://github.com/poanetwork/blockscout/pull/3603) - Display method output parameter name at contract read page
+- [#3597](https://github.com/poanetwork/blockscout/pull/3597) - Show APY for delegators in Staking DApp
+- [#3584](https://github.com/poanetwork/blockscout/pull/3584) - Token holders API endpoint
+- [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
-
-- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix endless block invalidation issue
-- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled total transferred/minted/burnt tokens on transaction page if block has reorg
+- [#3634](https://github.com/poanetwork/blockscout/pull/3634) - Fix transaction decoding view: support tuple types
+- [#3623](https://github.com/poanetwork/blockscout/pull/3623) - Ignore unrecognized messages in bridge counter processes
+- [#3622](https://github.com/poanetwork/blockscout/pull/3622) - Contract reader: fix int type output Ignore unrecognized messages in bridge counter processes
+- [#3621](https://github.com/poanetwork/blockscout/pull/3621) - Contract reader: :binary input/output fix
+- [#3620](https://github.com/poanetwork/blockscout/pull/3620) - Ignore unfamiliar messages by Explorer.Staking.ContractState module
+- [#3611](https://github.com/poanetwork/blockscout/pull/3611) - Fix logo size
+- [#3600](https://github.com/poanetwork/blockscout/pull/3600) - Prevent update validator metadata with empty name from contract
+- [#3592](https://github.com/poanetwork/blockscout/pull/3592), [#3601](https://github.com/poanetwork/blockscout/pull/3601), [#3607](https://github.com/poanetwork/blockscout/pull/3607) - Contract interaction: fix nested tuples in the output view, add formatting
+- [#3583](https://github.com/poanetwork/blockscout/pull/3583) - Reduce RPC requests and DB changes by Staking DApp
+- [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3618](https://github.com/poanetwork/blockscout/pull/3618) - Contracts verification up to 10 libraries
+- [#3616](https://github.com/poanetwork/blockscout/pull/3616) - POSDAO refactoring: use zero address instead of staker address for certain cases
+- [#3612](https://github.com/poanetwork/blockscout/pull/3612) - POSDAO refactoring: use 'getDelegatorPools' getter instead of 'getStakerPools' in Staking DApp
+- [#3585](https://github.com/poanetwork/blockscout/pull/3585) - Add autoswitching from eth_subscribe to eth_blockNumber in Staking DApp
+- [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
+- [#3569](https://github.com/poanetwork/blockscout/pull/3569) - Allow re-define cache period vars at runtime
+- [#3567](https://github.com/poanetwork/blockscout/pull/3567) - Force to show filter at the page where filtered items list is empty
+- [#3565](https://github.com/poanetwork/blockscout/pull/3565) - Staking dapp: unhealthy state alert message
+
+
+## 3.5.1-beta
+
+### Features
+- [#3558](https://github.com/poanetwork/blockscout/pull/3558) - Focus to search field with a forward slash key
+- [#3541](https://github.com/poanetwork/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount 
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances
+
+### Fixes
+- [#3551](https://github.com/poanetwork/blockscout/pull/3551) - Fix contract's method's output of tuple type
+
+### Chore
+- [#3557](https://github.com/poanetwork/blockscout/pull/3557) - Single Staking menu
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540), [#3545](https://github.com/poanetwork/blockscout/pull/3545) - Support different versions of DarkForest (0.4 - 0.5)
+
+
+## 3.5.0-beta
+
+### Features
+- [#3536](https://github.com/poanetwork/blockscout/pull/3536) - Revert reason in the result of contract's method call
+- [#3532](https://github.com/poanetwork/blockscout/pull/3532) - Contract interaction: an easy setting of precision for integer input
+- [#3531](https://github.com/poanetwork/blockscout/pull/3531) - Allow double quotes in input data of contract methods
+- [#3515](https://github.com/poanetwork/blockscout/pull/3515) - CRC total balance
+- [#3513](https://github.com/poanetwork/blockscout/pull/3513) - Allow square brackets for an array input data in contracts interaction
+- [#3480](https://github.com/poanetwork/blockscout/pull/3480) - Add support of Autonity client
+- [#3470](https://github.com/poanetwork/blockscout/pull/3470) - Display sum of tokens' USD value at tokens holder's address page
+- [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
+
+### Fixes
+- [#3535](https://github.com/poanetwork/blockscout/pull/3535) - Improve speed of tokens dropdown loading at owner address page
+- [#3530](https://github.com/poanetwork/blockscout/pull/3530) - Allow trailing/leading whitespaces for inputs for contract read methods
+- [#3526](https://github.com/poanetwork/blockscout/pull/3526) - Order staking pools
+- [#3525](https://github.com/poanetwork/blockscout/pull/3525), [#3533](https://github.com/poanetwork/blockscout/pull/3533) - Address token balance on demand fetcher
+- [#3514](https://github.com/poanetwork/blockscout/pull/3514) - Read contract: fix internal server error
+- [#3513](https://github.com/poanetwork/blockscout/pull/3513) - Fix input data processing for method call (array type of data)
+- [#3509](https://github.com/poanetwork/blockscout/pull/3509) - Fix QR code tooltip appearance in mobile view
+- [#3507](https://github.com/poanetwork/blockscout/pull/3507), [#3510](https://github.com/poanetwork/blockscout/pull/3510) - Fix left margin of balance card in mobile view
+- [#3506](https://github.com/poanetwork/blockscout/pull/3506) - Fix token transfer's tile styles: prevent overlapping of long names
+- [#3505](https://github.com/poanetwork/blockscout/pull/3505) - Fix Staking DApp first loading
+- [#3433](https://github.com/poanetwork/blockscout/pull/3433) - Token balances and rewards tables deadlocks elimination
+- [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3497](https://github.com/poanetwork/blockscout/pull/3497), [#3504](https://github.com/poanetwork/blockscout/pull/3504), [#3517](https://github.com/poanetwork/blockscout/pull/3517) - Contracts interaction: fix method call with array[] inputs
+- [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3495](https://github.com/poanetwork/blockscout/pull/3495) - Contracts interaction: fix tuple output display
+- [#3479](https://github.com/poanetwork/blockscout/pull/3479) - Fix working with big numbers in Staking DApp
+- [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of GnosisProxy contract methods with parameters
+- [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of fallback function
+- [#3476](https://github.com/poanetwork/blockscout/pull/3476) - Fix contract verification of precompiled contracts
+- [#3467](https://github.com/poanetwork/blockscout/pull/3467) - Fix Firefox styles
+- [#3464](https://github.com/poanetwork/blockscout/pull/3464) - Fix display of token transfers list at token page (fix unique identifier of a tile)
+
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix endless block invalidation issue
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled total transferred/minted/burnt tokens on transaction's page if block has reorg
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled token transfer on block's page if block has reorg
+
+### Chore
+- [#3500](https://github.com/poanetwork/blockscout/pull/3500) - Update solc version in explorer folder
+- [#3498](https://github.com/poanetwork/blockscout/pull/3498) - Make Staking DApp work with transferAndCall function
+- [#3496](https://github.com/poanetwork/blockscout/pull/3496) - Rollback websocket_client module to 1.3.0
+- [#3489](https://github.com/poanetwork/blockscout/pull/3489) - Migrate to Webpack@5
+- [#3487](https://github.com/poanetwork/blockscout/pull/3487) - Docker setup update to be compatible with Erlang OTP 23
+- [#3484](https://github.com/poanetwork/blockscout/pull/3484) - Elixir upgrade to 11.2
+- [#3483](https://github.com/poanetwork/blockscout/pull/3483) - Update outdated dependencies
+- [#3483](https://github.com/poanetwork/blockscout/pull/3483) - Migrate to Erlang/OTP 23
+- [#3468](https://github.com/poanetwork/blockscout/pull/3468) - Do not check supported networks on application loading page
+- [#3467](https://github.com/poanetwork/blockscout/pull/3467) - NodeJS engine upgrade up to 14
+- [#3460](https://github.com/poanetwork/blockscout/pull/3460) - Update Staking DApp scripts due to MetaMask breaking changes
 
 
 ## 3.4.0-beta
@@ -268,6 +355,7 @@
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 
 ### Chore
+- [#3100](https://github.com/poanetwork/blockscout/pull/3100) - Update npm packages
 - [#3099](https://github.com/poanetwork/blockscout/pull/3099) - Remove pending txs cache
 - [#3093](https://github.com/poanetwork/blockscout/pull/3093) - Extend list of env vars for Docker setup
 - [#3084](https://github.com/poanetwork/blockscout/pull/3084) - Bump Elixir version 1.10.2
@@ -333,8 +421,13 @@
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
 ### Fixes
-- [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
-- [#3284](https://github.com/poanetwork/blockscout/pull/3284) - Fix fetch_coin_balance query: coin balance delta
+- [#2969](https://github.com/poanetwork/blockscout/pull/2969) - Fix contract constructor require msg appearance in constructor arguments encoded view
+- [#2964](https://github.com/poanetwork/blockscout/pull/2964) - Fix bug in skipping of constructor arguments in contract verification
+- [#2961](https://github.com/poanetwork/blockscout/pull/2961) - Add a guard that addresses is enum in `values` function in `read contract` page
+- [#2960](https://github.com/poanetwork/blockscout/pull/2960) - Add BLOCKSCOUT_HOST to docker setup
+- [#2956](https://github.com/poanetwork/blockscout/pull/2956) - Add support of 0.6.x version of compiler
+- [#2955](https://github.com/poanetwork/blockscout/pull/2955) - Move socket path to env
+- [#2938](https://github.com/poanetwork/blockscout/pull/2938) - utf8 copy tx input tooltip
 - [#2934](https://github.com/poanetwork/blockscout/pull/2934) - RSK release 1.2.0 breaking changes support
 - [#2933](https://github.com/poanetwork/blockscout/pull/2933) - Get rid of deadlock in the query to address_current_token_balance table
 - [#2932](https://github.com/poanetwork/blockscout/pull/2932) - fix duplicate websocket connection
@@ -342,6 +435,7 @@
 - [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
 - [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
 - [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
+- [#2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 - [#2908](https://github.com/poanetwork/blockscout/pull/2908) - Fix performance of address page
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
@@ -349,10 +443,14 @@
 - [#2899](https://github.com/poanetwork/blockscout/pull/2899) - fix empty buffered task
 - [#2887](https://github.com/poanetwork/blockscout/pull/2887) - increase chart loading speed
 
-- [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
-
 ### Chore
+- [#2959](https://github.com/poanetwork/blockscout/pull/2959) - Remove logs from test folder too in the cleaning script
+- [#2954](https://github.com/poanetwork/blockscout/pull/2954) - Upgrade absinthe and ecto deps
+- [#2947](https://github.com/poanetwork/blockscout/pull/2947) - Upgrade Circle CI postgres Docker image
+- [#2946](https://github.com/poanetwork/blockscout/pull/2946) - Fix vulnerable NPM deps
+- [#2942](https://github.com/poanetwork/blockscout/pull/2942) - Actualize Docker setup
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
+- [#2873](https://github.com/poanetwork/blockscout/pull/2873) - bump elixir to 1.9.4
 
 
 ## 2.1.1-beta

@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     test "returns a welcome message", %{conn: conn} do
       conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show))
 
-      assert(html_response(conn, 200) =~ "POA")
+      assert(html_response(conn, 200) =~ "Celo")
     end
 
     test "returns a block" do
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
       conn =
         build_conn()
         |> put_req_header("x-requested-with", "xmlhttprequest")
-        |> get("/chain_blocks")
+        |> get("/chain-blocks")
 
       response = json_response(conn, 200)
 
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
       conn =
         build_conn()
         |> put_req_header("x-requested-with", "xmlhttprequest")
-        |> get("/chain_blocks")
+        |> get("/chain-blocks")
 
       response = json_response(conn, 200)
 
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
       conn =
         build_conn()
         |> put_req_header("x-requested-with", "xmlhttprequest")
-        |> get("/chain_blocks")
+        |> get("/chain-blocks")
 
       response = List.first(json_response(conn, 200)["blocks"])
 
@@ -75,7 +75,9 @@ defmodule BlockScoutWeb.ChainControllerTest do
       insert(:token, name: "MaGiC")
       insert(:token, name: "Evil")
 
-      conn = get(conn(), "/token_autocomplete?q=magic")
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=magic")
 
       assert Enum.count(json_response(conn, 200)) == 1
     end
@@ -84,9 +86,47 @@ defmodule BlockScoutWeb.ChainControllerTest do
       insert(:token, name: "MaGiC")
       insert(:token, name: "magic")
 
-      conn = get(conn(), "/token_autocomplete?q=magic")
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=magic")
 
       assert Enum.count(json_response(conn, 200)) == 2
+    end
+
+    test "finds verified contract" do
+      insert(:smart_contract, name: "SuperToken")
+
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=sup")
+
+      assert Enum.count(json_response(conn, 200)) == 1
+    end
+
+    test "finds verified contract and token" do
+      insert(:smart_contract, name: "MagicContract")
+      insert(:token, name: "magicToken")
+
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=mag")
+
+      assert Enum.count(json_response(conn, 200)) == 2
+    end
+
+    test "finds verified contracts and tokens" do
+      insert(:smart_contract, name: "something")
+      insert(:smart_contract, name: "MagicContract")
+      insert(:token, name: "Magic3")
+      insert(:smart_contract, name: "magicContract2")
+      insert(:token, name: "magicToken")
+      insert(:token, name: "OneMoreToken")
+
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=mag")
+
+      assert Enum.count(json_response(conn, 200)) == 4
     end
   end
 

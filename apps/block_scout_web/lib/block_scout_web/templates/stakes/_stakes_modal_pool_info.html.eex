@@ -1,0 +1,79 @@
+<div class="modal modal-fullwidth-xs fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-validator-info" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title"><%= to_string(@validator.staking_address_hash) %></h5>
+          <div>
+            <span class="modal-validator-info-item-title"><%= gettext("Mining Address:") %></span>
+            <span class="modal-validator-info-item-value"><%= to_string(@validator.mining_address_hash) %></span>
+          </div>
+        </div>
+      </div>
+      <%= if @validator.is_banned do %>
+        <div class="modal-validator-alert">
+          <%= gettext("This pool is banned until block #%{banned_until} (%{estimated_unban_day})", banned_until: @validator.banned_until, estimated_unban_day: estimated_unban_day(@validator.banned_until, @average_block_time)) %><br />
+          <%= gettext("Reason for Ban: %{ban_reason}", ban_reason: String.capitalize(@validator.ban_reason)) %>
+          <%= if @delegator &&
+                 @delegator.address_hash != @validator.staking_address_hash &&
+                 @validator.are_delegators_banned &&
+                 @validator.banned_until != @validator.banned_delegators_until do %>
+            <br />
+            <%= gettext("You will be able to withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})", banned_delegators_until: @validator.banned_delegators_until, estimated_unban_day: estimated_unban_day(@validator.banned_delegators_until, @average_block_time)) %>
+          <% end %>
+        </div>
+      <% end %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-validator-info-content">
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("Candidate’s Staked Amount"),
+          value: format_token_amount(@validator.self_staked_amount, @token)
+        %>
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("Delegators’ Staked Amount"),
+          value: format_token_amount(Decimal.sub(@validator.total_staked_amount, @validator.self_staked_amount), @token)
+        %>
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("Stakes Ratio"),
+          value: if(@validator.is_active, do: "#{@validator.stakes_ratio}%")
+        %>
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("Share of Pool’s Reward"),
+          value: "#{@validator.validator_reward_percent}%"
+        %>
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("How Many Times this Address has been a Validator"),
+          value: @validator.was_validator_count
+        %>
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("How Many Times this Address has been Banned"),
+          value: @validator.was_banned_count
+        %>
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("Likelihood of Becoming a Validator on the Next Epoch"),
+          value: "#{@validator.likelihood}%"
+        %>
+        <%=
+          render BlockScoutWeb.StakesView,
+          "_stakes_pool_info_item.html",
+          title: gettext("The Number of Delegators in the Pool"),
+          value: @validator.delegators_count
+        %>
+      </div>
+    </div>
+  </div>
+</div>

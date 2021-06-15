@@ -7,15 +7,17 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.AddressCoinBalanceView
+  alias BlockScoutWeb.{AccessHelpers, AddressCoinBalanceView}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         :ok <- Chain.check_address_exists(address_hash) do
+         :ok <- Chain.check_address_exists(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       full_options = paging_options(params)
 
       coin_balances_plus_one = Chain.address_to_coin_balances(address_hash, full_options)
@@ -48,6 +50,9 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
       json(conn, %{items: coin_balances_json, next_page_path: next_page_url})
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
 
@@ -56,17 +61,21 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
     end
   end
 
-  def index(conn, %{"address_id" => address_hash_string}) do
+  def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(conn, "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
         current_path: current_path(conn),
-        counters_path: address_path(conn, :address_counters, %{"id" => to_string(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
 

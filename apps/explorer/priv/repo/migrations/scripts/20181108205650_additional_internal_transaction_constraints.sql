@@ -1,69 +1,77 @@
+-- UPDATE (2020-08-01): use pending_block_operations table
 DO $$
 DECLARE
    row_count integer := 1;
-   batch_size  integer := 50000; -- HOW MANY ITEMS WILL BE UPDATED AT TIME
+   batch_size  integer := 500; -- HOW MANY ITEMS WILL BE UPDATED AT TIME
    iterator  integer := batch_size;
    max_row_number integer;
    next_iterator integer;
-   updated_transaction_count integer;
+   updated_blocks_count integer;
    deleted_internal_transaction_count integer;
    deleted_row_count integer;
 BEGIN
-  DROP TABLE IF EXISTS transactions_with_deprecated_internal_transactions;
+  DROP TABLE IF EXISTS blocks_with_deprecated_internal_transactions;
   -- CREATES TEMP TABLE TO STORE DATA TO BE UPDATED
-  CREATE TEMP TABLE transactions_with_deprecated_internal_transactions(
-    hash bytea NOT NULL,
+  CREATE TEMP TABLE blocks_with_deprecated_internal_transactions(
+    block_number integer NOT NULL,
     row_number integer
   );
-  INSERT INTO transactions_with_deprecated_internal_transactions
-  SELECT DISTINCT ON (transaction_hash)
-    transaction_hash,
+  INSERT INTO blocks_with_deprecated_internal_transactions
+  SELECT DISTINCT ON (a.block_number)
+    a.block_number,
     ROW_NUMBER () OVER ()
-  FROM internal_transactions
-  WHERE
-    -- call_has_call_type CONSTRAINT
-    (type = 'call' AND call_type IS NULL) OR
-    -- call_has_input CONSTRAINT
-    (type = 'call' AND input IS NULL) OR
-    -- create_has_init CONSTRAINT
-    (type = 'create' AND init is NULL)
-  ORDER BY transaction_hash DESC;
+  FROM (
+    SELECT DISTINCT i.block_number, i.transaction_index
+    FROM internal_transactions i
+    WHERE
+      i.block_number IS NOT NULL
+    AND
+      -- call_has_call_type CONSTRAINT
+      ((i.type = 'call' AND i.call_type IS NULL) OR
+      -- call_has_input CONSTRAINT
+      (i.type = 'call' AND i.input IS NULL) OR
+      -- create_has_init CONSTRAINT
+      (i.type = 'create' AND i.init is NULL))
+    ORDER BY i.block_number DESC, i.transaction_index
+  ) a;
 
-  max_row_number := (SELECT MAX(row_number) FROM transactions_with_deprecated_internal_transactions);
-  RAISE NOTICE '% transactions to be updated', max_row_number + 1;
+  max_row_number := (SELECT MAX(row_number) FROM blocks_with_deprecated_internal_transactions);
+  RAISE NOTICE '% blocks to be updated', max_row_number + 1;
 
   -- ITERATES THROUGH THE ITEMS UNTIL THE TEMP TABLE IS EMPTY
   WHILE iterator <= max_row_number LOOP
     next_iterator := iterator + batch_size;
 
-    RAISE NOTICE '-> transactions with deprecated internal transactions % to % to be updated', iterator, next_iterator - 1;
+    RAISE NOTICE '-> blocks with deprecated internal transactions % to % to be updated', iterator, next_iterator - 1;
 
-    UPDATE transactions
-    SET internal_transactions_indexed_at = NULL,
-        error = NULL
-    FROM transactions_with_deprecated_internal_transactions
-    WHERE transactions.hash = transactions_with_deprecated_internal_transactions.hash AND
-          transactions_with_deprecated_internal_transactions.row_number < next_iterator;
+    INSERT INTO pending_block_operations (block_hash, inserted_at, updated_at, fetch_internal_transactions)
+    SELECT b.hash, NOW(), NOW(), true
+    FROM blocks_with_deprecated_internal_transactions bd, blocks b
+    WHERE bd.block_number = b.number
+    AND bd.row_number < next_iterator
+    AND b.consensus = true
+    ON CONFLICT (block_hash) 
+    DO NOTHING;
 
-    GET DIAGNOSTICS updated_transaction_count = ROW_COUNT;
+    GET DIAGNOSTICS updated_blocks_count = ROW_COUNT;
 
-    RAISE NOTICE '-> % transactions updated to refetch internal transactions', updated_transaction_count;
+    RAISE NOTICE '-> % blocks updated to refetch internal transactions', updated_blocks_count;
 
     DELETE FROM internal_transactions
-    USING transactions_with_deprecated_internal_transactions
-    WHERE internal_transactions.transaction_hash = transactions_with_deprecated_internal_transactions.hash AND
-          transactions_with_deprecated_internal_transactions.row_number < next_iterator;
+    USING blocks_with_deprecated_internal_transactions
+    WHERE internal_transactions.block_number = blocks_with_deprecated_internal_transactions.block_number AND
+          blocks_with_deprecated_internal_transactions.row_number < next_iterator;
 
     GET DIAGNOSTICS deleted_internal_transaction_count = ROW_COUNT;
 
     RAISE NOTICE  '-> % internal transactions deleted', deleted_internal_transaction_count;
 
-    DELETE FROM transactions_with_deprecated_internal_transactions
+    DELETE FROM blocks_with_deprecated_internal_transactions
     WHERE row_number < next_iterator;
 
     GET DIAGNOSTICS deleted_row_count = ROW_COUNT;
 
-    ASSERT updated_transaction_count = deleted_row_count;
+    ASSERT updated_blocks_count = deleted_row_count;
 
     -- COMMITS THE BATCH UPDATES
     CHECKPOINT;

@@ -38,9 +38,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
-    |> Multi.run(:acquire_all_celo_accounts, fn repo, _ ->
-      acquire_all_celo_accounts(repo)
-    end)
     |> Multi.run(:insert_celo_accounts, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
@@ -48,19 +45,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
 
   @impl Import.Runner
   def timeout, do: @timeout
-
-  defp acquire_all_celo_accounts(repo) do
-    query =
-      from(
-        account in CeloAccount,
-        order_by: account.address,
-        lock: "FOR UPDATE"
-      )
-
-    accounts = repo.all(query)
-
-    {:ok, accounts}
-  end
 
   defp handle_dedup(lst) do
     Enum.reduce(lst, fn %{attestations_requested: req, attestations_fulfilled: full}, acc ->
@@ -81,17 +65,15 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
       |> Map.values()
       |> Enum.map(&handle_dedup/1)
 
-    {:ok, _} =
-      Import.insert_changes_list(
-        repo,
-        uniq_changes_list,
-        conflict_target: :address,
-        on_conflict: on_conflict,
-        for: CeloAccount,
-        returning: [:address],
-        timeout: timeout,
-        timestamps: timestamps
-      )
+    Import.insert_changes_list(
+      repo,
+      uniq_changes_list,
+      conflict_target: :address,
+      on_conflict: on_conflict,
+      for: CeloAccount,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp default_on_conflict do

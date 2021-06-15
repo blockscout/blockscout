@@ -3,7 +3,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   Internal transaction types
   """
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @typedoc """
    * `:call` - call a function in a contract by jumping into the contract's context

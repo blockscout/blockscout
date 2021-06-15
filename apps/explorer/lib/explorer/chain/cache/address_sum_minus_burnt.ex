@@ -31,6 +31,13 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurnt do
         try do
           result = Chain.fetch_sum_coin_total_supply_minus_burnt()
 
+          params = %{
+            counter_type: "sum_coin_total_supply_minus_burnt",
+            value: result
+          }
+
+          Chain.upsert_last_fetched_counter(params)
+
           set_sum_minus_burnt(result)
         rescue
           e ->

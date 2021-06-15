@@ -1,14 +1,23 @@
-<div class="tile tile-type-token-transfer fade-in">
+<div class="tile tile-type-token-transfer fade-in" data-test="token-transfer" data-identifier-hash="<%= @token_transfer.transaction_hash %>-<%= @token_transfer.log_index %>">
   <div class="row tile-body">
     <!-- Color Block -->
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
-      <span class="tile-label"><%= gettext "Token Transfer" %></span>
+      <span class="tile-label">
+        <%= cond do %>
+          <% @token_transfer.to_address.hash == @burn_address_hash -> %>
+            <%= gettext("Token Burning") %>
+          <% @token_transfer.from_address.hash == @burn_address_hash -> %>
+            <%= gettext("Token Minting") %>
+          <% true -> %>
+            <%= gettext("Token Transfer") %>
+        <% end %>
+      </span>
     </div>
     <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <%= if @token_transfer.transaction_hash != nil do render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @token_transfer.transaction_hash else "System transfer" end %>
       <span class="text-nowrap">
-        <%= link to: address_token_transfers_path(@conn, :index, to_string(@token_transfer.from_address), to_string(@token.contract_address_hash)), "data-test": "address_hash_link" do %>
+        <%= link to: address_token_transfers_path(@conn, :index, Address.checksum(@token_transfer.from_address), Address.checksum(@token.contract_address_hash)), "data-test": "address_hash_link" do %>
             <%= render(
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",
@@ -18,7 +27,7 @@
                 ) %>
         <% end %>
         &rarr;
-        <%= link to: address_token_transfers_path(@conn, :index, to_string(@token_transfer.to_address), to_string(@token.contract_address_hash)), "data-test": "address_hash_link" do %>
+        <%= link to: address_token_transfers_path(@conn, :index, Address.checksum(@token_transfer.to_address), Address.checksum(@token.contract_address_hash)), "data-test": "address_hash_link" do %>
             <%= render(
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",
@@ -30,15 +39,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column text-md-right mt-3 mt-md-0">
         <span class="tile-title">
-          <%= case token_transfer_amount(@token_transfer) do %>
-            <% {:ok, :erc721_instance} -> %>
-              <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "]" %>
-            <% {:ok, value} -> %>
-              <%= value %>
-          <% end %>
-          <%= " "%>
-          <%= Gettext.gettext(BlockScoutWeb.Gettext, @token_transfer.token.symbol) %>
-          <%= if @token_transfer.comment != nil do " Comment: " <> @token_transfer.comment else "" end %>
+          <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, @token_transfer) %>
         </span>
       </span>
     </div>
@@ -50,12 +51,7 @@
           to: block_path(BlockScoutWeb.Endpoint, :show, @token_transfer.block_number)
         ) %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= 
-      if @token_transfer.transaction != nil do
-        @token_transfer.transaction.block.timestamp
-      else
-        Unknown
-      end %>"></span>
+      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @token_transfer.transaction && @token_transfer.transaction.block && @token_transfer.transaction.block.timestamp %>"></span>
     </div>
   </div>
 </div>

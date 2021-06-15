@@ -93,30 +93,31 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transactions: transactions
       })
     end)
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      acquire_contract_address_tokens(repo, consensus_block_numbers)
-    end)
-    |> Multi.run(:delete_address_token_balances, fn repo, _ ->
-      delete_address_token_balances(repo, consensus_block_numbers, insert_options)
-    end)
-    |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
-      delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
-    end)
-    |> Multi.run(:derive_address_current_token_balances, fn repo,
-                                                            %{
-                                                              delete_address_current_token_balances:
-                                                                deleted_address_current_token_balances
-                                                            } ->
-      derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
-    end)
-    |> Multi.run(:blocks_update_token_holder_counts, fn repo,
-                                                        %{
-                                                          delete_address_current_token_balances: deleted,
-                                                          derive_address_current_token_balances: inserted
-                                                        } ->
-      deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
-      Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
-    end)
+
+    # |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+    #   acquire_contract_address_tokens(repo, consensus_block_numbers)
+    # end)
+    # |> Multi.run(:delete_address_token_balances, fn repo, _ ->
+    #   delete_address_token_balances(repo, consensus_block_numbers, insert_options)
+    # end)
+    # |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
+    #   delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
+    # end)
+    # |> Multi.run(:derive_address_current_token_balances, fn repo,
+    #                                                         %{
+    #                                                           delete_address_current_token_balances:
+    #                                                             deleted_address_current_token_balances
+    #                                                         } ->
+    #   derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
+    # end)
+    # |> Multi.run(:blocks_update_token_holder_counts, fn repo,
+    #                                                     %{
+    #                                                       delete_address_current_token_balances: deleted,
+    #                                                       derive_address_current_token_balances: inserted
+    #                                                     } ->
+    #   deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
+    #   Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
+    # end)
   end
 
   @impl Runner
@@ -124,10 +125,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
     query =
-      from(address_current_token_balance in Address.CurrentTokenBalance,
-        where: address_current_token_balance.block_number in ^consensus_block_numbers,
-        select: address_current_token_balance.token_contract_address_hash,
-        distinct: address_current_token_balance.token_contract_address_hash
+      from(ctb in Address.CurrentTokenBalance,
+        where: ctb.block_number in ^consensus_block_numbers,
+        select: ctb.token_contract_address_hash,
+        distinct: ctb.token_contract_address_hash
       )
 
     contract_address_hashes = repo.all(query)
@@ -321,52 +322,56 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
-    sorted_pending_ops =
-      nonconsensus_hashes
-      |> MapSet.new()
-      |> MapSet.union(MapSet.new(hashes))
-      |> Enum.sort()
-      |> Enum.map(fn hash ->
-        %{block_hash: hash, fetch_internal_transactions: true}
-      end)
+    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
+      {:ok, []}
+    else
+      sorted_pending_ops =
+        nonconsensus_hashes
+        |> MapSet.new()
+        |> MapSet.union(MapSet.new(hashes))
+        |> Enum.sort()
+        |> Enum.map(fn hash ->
+          %{block_hash: hash, fetch_internal_transactions: true}
+        end)
 
-    Import.insert_changes_list(
-      repo,
-      sorted_pending_ops,
-      conflict_target: :block_hash,
-      on_conflict: PendingBlockOperation.default_on_conflict(),
-      for: PendingBlockOperation,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+      Import.insert_changes_list(
+        repo,
+        sorted_pending_ops,
+        conflict_target: :block_hash,
+        on_conflict: PendingBlockOperation.default_on_conflict(),
+        for: PendingBlockOperation,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+    end
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
 
   defp delete_address_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
     ordered_query =
-      from(address_token_balance in Address.TokenBalance,
-        where: address_token_balance.block_number in ^consensus_block_numbers,
-        select: map(address_token_balance, [:address_hash, :token_contract_address_hash, :block_number]),
+      from(tb in Address.TokenBalance,
+        where: tb.block_number in ^consensus_block_numbers,
+        select: map(tb, [:address_hash, :token_contract_address_hash, :block_number]),
         # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
-          address_token_balance.address_hash,
-          address_token_balance.token_contract_address_hash,
-          address_token_balance.block_number
+          tb.token_contract_address_hash,
+          tb.address_hash,
+          tb.block_number
         ],
         lock: "FOR UPDATE"
       )
 
     query =
-      from(address_token_balance in Address.TokenBalance,
-        select: map(address_token_balance, [:address_hash, :token_contract_address_hash, :block_number]),
+      from(tb in Address.TokenBalance,
+        select: map(tb, [:address_hash, :token_contract_address_hash, :block_number]),
         inner_join: ordered_address_token_balance in subquery(ordered_query),
         on:
-          ordered_address_token_balance.address_hash == address_token_balance.address_hash and
+          ordered_address_token_balance.address_hash == tb.address_hash and
             ordered_address_token_balance.token_contract_address_hash ==
-              address_token_balance.token_contract_address_hash and
-            ordered_address_token_balance.block_number == address_token_balance.block_number
+              tb.token_contract_address_hash and
+            ordered_address_token_balance.block_number == tb.block_number
       )
 
     try do
@@ -383,21 +388,21 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp delete_address_current_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
     ordered_query =
-      from(address_current_token_balance in Address.CurrentTokenBalance,
-        where: address_current_token_balance.block_number in ^consensus_block_numbers,
-        select: map(address_current_token_balance, [:address_hash, :token_contract_address_hash]),
+      from(ctb in Address.CurrentTokenBalance,
+        where: ctb.block_number in ^consensus_block_numbers,
+        select: map(ctb, [:address_hash, :token_contract_address_hash]),
         # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
-          address_current_token_balance.address_hash,
-          address_current_token_balance.token_contract_address_hash
+          ctb.token_contract_address_hash,
+          ctb.address_hash
         ],
         lock: "FOR UPDATE"
       )
 
     query =
-      from(address_current_token_balance in Address.CurrentTokenBalance,
+      from(ctb in Address.CurrentTokenBalance,
         select:
-          map(address_current_token_balance, [
+          map(ctb, [
             :address_hash,
             :token_contract_address_hash,
             # Used to determine if `address_hash` was a holder of `token_contract_address_hash` before
@@ -407,9 +412,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           ]),
         inner_join: ordered_address_current_token_balance in subquery(ordered_query),
         on:
-          ordered_address_current_token_balance.address_hash == address_current_token_balance.address_hash and
+          ordered_address_current_token_balance.address_hash == ctb.address_hash and
             ordered_address_current_token_balance.token_contract_address_hash ==
-              address_current_token_balance.token_contract_address_hash
+              ctb.token_contract_address_hash
       )
 
     try do
@@ -427,13 +432,13 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp derive_address_current_token_balances(repo, deleted_address_current_token_balances, %{timeout: timeout})
        when is_list(deleted_address_current_token_balances) do
     initial_query =
-      from(address_token_balance in Address.TokenBalance,
+      from(tb in Address.TokenBalance,
         select: %{
-          address_hash: address_token_balance.address_hash,
-          token_contract_address_hash: address_token_balance.token_contract_address_hash,
-          block_number: max(address_token_balance.block_number)
+          address_hash: tb.address_hash,
+          token_contract_address_hash: tb.token_contract_address_hash,
+          block_number: max(tb.block_number)
         },
-        group_by: [address_token_balance.address_hash, address_token_balance.token_contract_address_hash]
+        group_by: [tb.address_hash, tb.token_contract_address_hash]
       )
 
     final_query =
@@ -443,30 +448,30 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
                                                                                 token_contract_address_hash
                                                                             },
                                                                             acc_query ->
-        from(address_token_balance in acc_query,
+        from(tb in acc_query,
           or_where:
-            address_token_balance.address_hash == ^address_hash and
-              address_token_balance.token_contract_address_hash == ^token_contract_address_hash
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash
         )
       end)
 
     new_current_token_balance_query =
       from(new_current_token_balance in subquery(final_query),
-        inner_join: address_token_balance in Address.TokenBalance,
+        inner_join: tb in Address.TokenBalance,
         on:
-          address_token_balance.address_hash == new_current_token_balance.address_hash and
-            address_token_balance.token_contract_address_hash == new_current_token_balance.token_contract_address_hash and
-            address_token_balance.block_number == new_current_token_balance.block_number,
+          tb.address_hash == new_current_token_balance.address_hash and
+            tb.token_contract_address_hash == new_current_token_balance.token_contract_address_hash and
+            tb.block_number == new_current_token_balance.block_number,
         select: %{
           address_hash: new_current_token_balance.address_hash,
           token_contract_address_hash: new_current_token_balance.token_contract_address_hash,
           block_number: new_current_token_balance.block_number,
-          value: address_token_balance.value,
-          inserted_at: over(min(address_token_balance.inserted_at), :w),
-          updated_at: over(max(address_token_balance.updated_at), :w)
+          value: tb.value,
+          inserted_at: over(min(tb.inserted_at), :w),
+          updated_at: over(max(tb.updated_at), :w)
         },
         windows: [
-          w: [partition_by: [address_token_balance.address_hash, address_token_balance.token_contract_address_hash]]
+          w: [partition_by: [tb.address_hash, tb.token_contract_address_hash]]
         ]
       )
 
@@ -474,7 +479,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       new_current_token_balance_query
       |> repo.all()
       # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-      |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash})
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
 
     {_total, result} =
       repo.insert_all(
@@ -510,8 +515,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: block.hash in ^hashes or block.number in ^numbers,
         # Enforce Reward ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :address_type, asc: :block_hash],
-        # NOTE: find a better way to know the alias that ecto gives to token
-        lock: "FOR UPDATE OF b0"
+        # acquire locks for `reward`s only
+        lock: fragment("FOR UPDATE OF ?", reward)
       )
 
     delete_query =

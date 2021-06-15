@@ -5,7 +5,7 @@ defmodule Explorer.Chain.MethodIdentifier do
   Represented in the database as a 4 byte integer, decodes into a 4 byte bitstring
   """
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @type t :: binary
 

@@ -21,4 +21,5 @@
       <%= render "_eth_rpc_item.html", action: method, info: info %>
     <% end %>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/try-eth-api.js") %>"></script>
 </section>

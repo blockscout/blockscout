@@ -6,8 +6,8 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
-  alias Explorer.Repo
 
   @required_attrs ~w(address_hash data block_hash index )a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number transaction_hash)a
@@ -122,55 +122,35 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-  def decode(%__MODULE__{address: nil}, %Transaction{to_address: nil}), do: {:error, :no_to_address}
 
-  def decode(
-        log,
-        %Transaction{
-          to_address: %{implementation_contract: %{smart_contract: %{abi: impl_abi}}, smart_contract: %{abi: abi}}
-        }
-      )
-      when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi ++ impl_abi, log),
-         identifier <- Base.encode16(selector.method_id, case: :lower),
-         text <- function_call(selector.function, mapping),
-         do: {:ok, identifier, text, mapping}
+  def decode(log, transaction) do
+    address_options = [
+      necessity_by_association: %{
+        :smart_contract => :optional
+      }
+    ]
+
+    case Chain.find_contract_address(log.address_hash, address_options, true) do
+      {:ok, %{smart_contract: %{abi: abi}}} ->
+        full_abi = Chain.combine_proxy_implementation_abi(log.address_hash, abi)
+
+        with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
+             identifier <- Base.encode16(selector.method_id, case: :lower),
+             text <- function_call(selector.function, mapping),
+             do: {:ok, identifier, text, mapping}
+
+      _ ->
+        find_candidates(log, transaction)
+    end
   end
 
-  def decode(log, %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi, log),
-         identifier <- Base.encode16(selector.method_id, case: :lower),
-         text <- function_call(selector.function, mapping),
-         do: {:ok, identifier, text, mapping}
-  end
-
-  def decode(
-        log = %__MODULE__{
-          address: %{implementation_contract: %{smart_contract: %{abi: impl_abi}}, smart_contract: %{abi: abi}}
-        },
-        _
-      )
-      when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi ++ impl_abi, log),
-         identifier <- Base.encode16(selector.method_id, case: :lower),
-         text <- function_call(selector.function, mapping),
-         do: {:ok, identifier, text, mapping}
-  end
-
-  def decode(log = %__MODULE__{address: %{smart_contract: %{abi: abi}}}, _) when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi, log),
-         identifier <- Base.encode16(selector.method_id, case: :lower),
-         text <- function_call(selector.function, mapping),
-         do: {:ok, identifier, text, mapping}
-  end
-
-  def decode(log, _tx) do
+  defp find_candidates(log, transaction) do
     case log.first_topic do
       "0x" <> hex_part ->
         case Integer.parse(hex_part, 16) do
           {number, ""} ->
             <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-            find_candidates(method_id, log)
+            find_candidates_query(method_id, log, transaction)
 
           _ ->
             {:error, :could_not_decode}
@@ -181,7 +161,7 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_candidates(method_id, log) do
+  defp find_candidates_query(method_id, log, transaction) do
     candidates_query =
       from(
         contract_method in ContractMethod,
@@ -193,7 +173,7 @@ defmodule Explorer.Chain.Log do
       candidates_query
       |> Repo.all()
       |> Enum.flat_map(fn contract_method ->
-        case find_and_decode([contract_method.abi], log) do
+        case find_and_decode([contract_method.abi], log, transaction) do
           {:ok, selector, mapping} ->
             identifier = Base.encode16(selector.method_id, case: :lower)
             text = function_call(selector.function, mapping)
@@ -209,7 +189,7 @@ defmodule Explorer.Chain.Log do
     {:error, :contract_not_verified, candidates}
   end
 
-  defp find_and_decode(abi, log) do
+  defp find_and_decode(abi, log, _tx) do
     with {%FunctionSelector{} = selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)

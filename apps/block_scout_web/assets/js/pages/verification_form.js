@@ -50,7 +50,7 @@ const elements = {
     render ($el, state) {
       if (state.newForm) {
         $el.replaceWith(state.newForm)
-        $('button[data-button-loading="animation"]').on('click', event => {
+        $('button[data-button-loading="animation"]').click(_event => {
           $('#loading').removeClass('d-none')
         })
 
@@ -91,6 +91,25 @@ const elements = {
 const $contractVerificationPage = $('[data-page="contract-verification"]')
 const $contractVerificationChooseTypePage = $('[data-page="contract-verification-choose-type"]')
 
+function filterNightlyBuilds (filter) {
+  const select = document.getElementById('smart_contract_compiler_version')
+  const options = select.getElementsByTagName('option')
+  for (const option of options) {
+    const txtValue = option.textContent || option.innerText
+    if (filter) {
+      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
+        option.style.display = 'none'
+      } else {
+        option.style.display = ''
+      }
+    } else {
+      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
+        option.style.display = ''
+      }
+    }
+  }
+}
+
 if ($contractVerificationPage.length) {
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
@@ -114,7 +133,7 @@ if ($contractVerificationPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  $('button[data-button-loading="animation"]').on('click', event => {
+  $('button[data-button-loading="animation"]').on('click', _event => {
     $('#loading').removeClass('d-none')
   })
 
@@ -163,6 +182,22 @@ if ($contractVerificationPage.length) {
 
     $('.autodetecttrue').on('click', function () {
       if ($(this).prop('checked')) { $('.constructor-arguments').hide() }
+    })
+
+    $('.nightly-builds-true').on('click', function () {
+      if ($(this).prop('checked')) { filterNightlyBuilds(false) }
+    })
+
+    $('.nightly-builds-false').on('click', function () {
+      if ($(this).prop('checked')) { filterNightlyBuilds(true) }
+    })
+
+    $('.optimization-false').on('click', function () {
+      if ($(this).prop('checked')) { $('.optimization-runs').hide() }
+    })
+
+    $('.optimization-true').on('click', function () {
+      if ($(this).prop('checked')) { $('.optimization-runs').show() }
     })
 
     $('.js-smart-contract-form-reset').on('click', function () {

@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import '../app'
 
 // This file adds event handlers responsible for the 'Try it out' UI in the
 // Etherscan-compatible API documentation page.

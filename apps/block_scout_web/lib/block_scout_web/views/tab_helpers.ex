@@ -42,6 +42,6 @@ defmodule BlockScoutWeb.TabHelpers do
   false
   """
   def tab_active?(tab_name, request_path) do
-    String.match?(request_path, ~r/\b#{tab_name}\b/)
+    String.match?(request_path, ~r/\/\b#{tab_name}\b/)
   end
 end

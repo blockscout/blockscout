@@ -3,9 +3,12 @@ defmodule BlockScoutWeb.TransactionController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.TransactionView
+  alias BlockScoutWeb.{AccessHelpers, TransactionView}
   alias Explorer.Chain
   alias Phoenix.View
+
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
 
   def index(conn, %{"type" => "JSON"} = params) do
     full_options =
@@ -42,6 +45,7 @@ defmodule BlockScoutWeb.TransactionController do
               TransactionView,
               "_tile.html",
               transaction: transaction,
+              burn_address_hash: @burn_address_hash,
               conn: conn
             )
           end),
@@ -65,13 +69,16 @@ defmodule BlockScoutWeb.TransactionController do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
-        redirect(conn, to: transaction_token_transfer_path(conn, :index, id))
+        redirect(conn, to: AccessHelpers.get_path(conn, :transaction_token_transfer_path, :index, id))
       else
-        redirect(conn, to: transaction_internal_transaction_path(conn, :index, id))
+        redirect(conn, to: AccessHelpers.get_path(conn, :transaction_internal_transaction_path, :index, id))
       end
     else
-      :error -> conn |> put_status(422) |> render("invalid.html", transaction_hash: id)
-      :not_found -> conn |> put_status(404) |> render("not_found.html", transaction_hash: id)
+      :error ->
+        conn |> put_status(422) |> render("invalid.html", transaction_hash: id)
+
+      :not_found ->
+        conn |> put_status(404) |> render("not_found.html", transaction_hash: id)
     end
   end
 end

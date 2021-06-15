@@ -8,6 +8,10 @@ $btn-dropdown-line-font: #333;
   border-color: $btn-dropdown-line-color;
   color: $btn-dropdown-line-font;
   outline: none !important;
+  margin-right: 20px;
+  &.no-rm {
+    margin-right: 0;
+  }
 
   &:hover {
     background-color: $btn-dropdown-line-color-hover;

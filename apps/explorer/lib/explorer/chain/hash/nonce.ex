@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Hash.Nonce do
 
   alias Explorer.Chain.Hash
 
-  @behaviour Ecto.Type
+  use Ecto.Type
   @behaviour Hash
 
   @byte_count 8

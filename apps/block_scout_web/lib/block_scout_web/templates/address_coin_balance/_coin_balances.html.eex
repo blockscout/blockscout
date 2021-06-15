@@ -1,15 +1,22 @@
 <div class="tile tile-type-coin-balance fade-up" data-test="coin_balance" data-block-number="<%= to_string(@coin_balance.block_number) %>">
   <div class="row justify-content align-items-center">
-    <div class="col-md-3 d-flex flex-column mt-3 mt-md-0">
+    <div class="col-md-6 d-flex flex-column mt-3 mt-md-0">
       <%= link(
             to: block_path(@conn, :show, @coin_balance.block_number),
             class: "tile-title-lg"
         ) do %>
         <%= gettext "Block" %> <%= @coin_balance.block_number %>
       <% end %>
+      <%= if @coin_balance.transaction_hash do %>
+        <%= link(
+              to: transaction_path(@conn, :show, @coin_balance.transaction_hash)
+          ) do %>
+          <%= @coin_balance.transaction_hash %>
+        <% end %>
+      <% end %>
       <span data-from-now="<%= @coin_balance.block_timestamp %>"></span>
     </div>
-    <div class="col-md-3 offset-md-3 d-flex flex-column text-md-right mt-3 mt-md-0">
+    <div class="col-md-3 d-flex flex-column text-md-right mt-3 mt-md-0">
       <span class="tile-title-lg align-bottom" data-balance-change-sign="<%= delta_sign(@coin_balance.delta) %>">
         <%= delta_arrow(@coin_balance.delta) %>
         <%= format_delta(@coin_balance.delta) %>

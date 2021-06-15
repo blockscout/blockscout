@@ -107,6 +107,18 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   end
 
   @doc """
+  Builds an `t:Ecto.Query.t/0` to fetch the current balance of the given address for the given token.
+  """
+  def last_token_balance(address_hash, token_contract_address_hash) do
+    from(
+      tb in __MODULE__,
+      where: tb.token_contract_address_hash == ^token_contract_address_hash,
+      where: tb.address_hash == ^address_hash,
+      select: tb.value
+    )
+  end
+
+  @doc """
   Builds an `t:Ecto.Query.t/0` to fetch addresses that hold the token.
 
   Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value.

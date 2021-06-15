@@ -56,7 +56,8 @@ defmodule Indexer.Transform.Blocks do
       decode(block.nonce)
     ]
 
-    :keccakf1600.hash(:sha3_256, ExRLP.encode(header_data))
+    {:ok, hash} = ExKeccak.hash_256(ExRLP.encode(header_data))
+    hash
   end
 
   defp trim_prefix("0x" <> rest), do: rest
@@ -83,7 +84,7 @@ defmodule Indexer.Transform.Blocks do
       :libsecp256k1.ecdsa_recover_compact(signature_hash, r <> s, :uncompressed, v)
 
     # Public key comes from the last 20 bytes
-    <<_::bytes-size(12), public_key::binary>> = :keccakf1600.hash(:sha3_256, private_key)
+    {:ok, <<_::bytes-size(12), public_key::binary>>} = ExKeccak.hash_256(private_key)
 
     miner_address = Base.encode16(public_key, case: :lower)
     "0x" <> miner_address

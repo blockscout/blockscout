@@ -29,3 +29,16 @@ pre {
 .tile pre {
   margin-bottom: 0;
 }
+
+.contract-code-container {
+  @include media-breakpoint-down(md) {
+    flex-direction: column;
+  }
+
+  & .buttons {
+    @include media-breakpoint-down(md) {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  }
+}

@@ -61,6 +61,36 @@ describe('RECEIVED_NEW_BLOCK', () => {
     expect(output.averageBlockTime).toEqual('5 seconds')
     expect(output.blocks).toEqual([
       { blockNumber: 2, chainBlockHtml: 'new block', averageBlockTime: '5 seconds' },
+      { blockNumber: 1, chainBlockHtml: 'test 1' },
+      { blockNumber: 0, chainBlockHtml: 'test 0' }
+    ])
+  })
+
+  test('receives new block if >= 4 blocks', () => {
+    const state = Object.assign({}, initialState, {
+      averageBlockTime: '6 seconds',
+      blocks: [
+        { blockNumber: 3, chainBlockHtml: 'test 3' },
+        { blockNumber: 2, chainBlockHtml: 'test 2' },
+        { blockNumber: 1, chainBlockHtml: 'test 1' },
+        { blockNumber: 0, chainBlockHtml: 'test 0' }
+      ]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: {
+        averageBlockTime: '5 seconds',
+        blockNumber: 4,
+        chainBlockHtml: 'new block'
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.averageBlockTime).toEqual('5 seconds')
+    expect(output.blocks).toEqual([
+      { blockNumber: 4, chainBlockHtml: 'new block', averageBlockTime: '5 seconds' },
+      { blockNumber: 3, chainBlockHtml: 'test 3' },
+      { blockNumber: 2, chainBlockHtml: 'test 2' },
       { blockNumber: 1, chainBlockHtml: 'test 1' }
     ])
   })
@@ -318,7 +348,8 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
   })
   test('single transaction after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      transactionsBatch: [1,2,3,4,5,6,7,8,9,10,11]
+      transactionsBatch: [6,7,8,9,10,11,12,13,14,15,16],
+      transactions: [1,2,3,4,5]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
@@ -328,7 +359,7 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([])
+    expect(output.transactions).toEqual([1,2,3,4,5])
     expect(output.transactionsBatch.length).toEqual(12)
   })
   test('large batch of transactions after large batch of transactions', () => {

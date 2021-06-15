@@ -15,7 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -72,9 +72,9 @@ defmodule EthereumJsonrpc.MixProject do
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
+      {:excoveralls, "~> 0.13.3"},
       # JSONRPC HTTP Post calls
-      {:httpoison, "~> 1.0"},
+      {:httpoison, "~> 1.8"},
       # Decode/Encode JSON for JSONRPC
       {:jason, "~> 1.0"},
       # Log errors and application output to separate files
@@ -82,25 +82,23 @@ defmodule EthereumJsonrpc.MixProject do
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 0.4", only: [:test]},
       # Tracing
-      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.4.0"},
+      {:spandex_datadog, "~> 1.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.6"},
       # Encode/decode function names and arguments
-      {:ex_abi, github: "poanetwork/ex_abi", branch: "vb-3.0", override: true},
-      # {:ex_abi, "~> 0.2.2"},
+      {:ex_abi, "~> 0.4"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
       {:websocket_client, "~> 1.3"},
       {:decimal, "~> 1.0"},
       {:decorator, "~> 1.2"},
-      {:hackney, "~> 1.15.2"},
+      {:hackney, "~> 1.16"},
       {:poolboy, "~> 1.5.2"},
       # Log json format
       {:logger_json, "~> 3.2"}
-      # {:jason, "~> 1.1"}
     ]
   end
 end

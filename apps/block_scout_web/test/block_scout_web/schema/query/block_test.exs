@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
 
       variables = %{"number" => block.number}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
 
       variables = %{"number" => non_existent_block_number}
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/graphql", query: query, variables: variables)
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Block number #{non_existent_block_number} was not found)
