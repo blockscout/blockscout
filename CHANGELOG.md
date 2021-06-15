@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
 - [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
 - [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contract's 
 - [#4205](https://github.com/blockscout/blockscout/pull/4205) - Total transactions fees per day API endpoint
@@ -20,6 +21,7 @@
 - [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix
 
 ### Chore
+- [#4268](https://github.com/blockscout/blockscout/pull/4268) - Migration to Chart.js 3.0
 - [#4253](https://github.com/blockscout/blockscout/pull/4253) - Elixir 1.11.4, npm audit fix
 - [#4231](https://github.com/blockscout/blockscout/pull/4231) - Transactions stats: get min/max blocks in one query
 - [#4157](https://github.com/blockscout/blockscout/pull/4157) - Fix internal docs generation

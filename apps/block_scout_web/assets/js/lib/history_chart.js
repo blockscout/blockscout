@@ -1,31 +1,33 @@
 import $ from 'jquery'
-import Chart from 'chart.js'
+import { Chart, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
+import 'chartjs-adapter-moment'
 import humps from 'humps'
 import numeral from 'numeral'
 import moment from 'moment'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
-function xAxes (fontColor) {
-  return [{
-    gridLines: {
-      display: false,
-      drawBorder: false
-    },
+Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
+
+const grid = {
+  display: false,
+  drawBorder: false,
+  drawOnChartArea: false
+}
+
+function xAxe (fontColor) {
+  return {
+    grid: grid,
     type: 'time',
     time: {
       unit: 'day',
+      tooltipFormat: 'YYYY-MM-DD',
       stepSize: 14
     },
     ticks: {
-      fontColor: fontColor
+      color: fontColor
     }
-  }]
-}
-
-const gridLines = {
-  display: false,
-  drawBorder: false
+  }
 }
 
 const padding = {
@@ -51,52 +53,62 @@ const config = {
     layout: {
       padding: padding
     },
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
     legend: legend,
     scales: {
-      xAxes: xAxes(sassVariables.dashboardBannerChartAxisFontColor),
-      yAxes: [{
-        id: 'price',
-        gridLines: gridLines,
+      x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
+      price: {
+        position: 'left',
+        grid: grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
           maxTicksLimit: 4,
-          fontColor: sassVariables.dashboardBannerChartAxisFontColor
+          color: sassVariables.dashboardBannerChartAxisFontColor
         }
-      }, {
-        id: 'marketCap',
-        gridLines: gridLines,
+      },
+      marketCap: {
+        position: 'right',
+        grid: grid,
         ticks: {
           callback: (_value, _index, _values) => '',
           maxTicksLimit: 6,
-          drawOnChartArea: false
+          drawOnChartArea: false,
+          color: sassVariables.dashboardBannerChartAxisFontColor
         }
-      }, {
-        id: 'numTransactions',
+      },
+      numTransactions: {
         position: 'right',
-        gridLines: gridLines,
+        grid: grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
           maxTicksLimit: 4,
-          fontColor: sassVariables.dashboardBannerChartAxisFontColor
+          color: sassVariables.dashboardBannerChartAxisFontColor
         }
-      }]
+      }
     },
-    tooltips: {
-      mode: 'index',
-      intersect: false,
-      callbacks: {
-        label: ({ datasetIndex, yLabel }, { datasets }) => {
-          const label = datasets[datasetIndex].label
-          if (datasets[datasetIndex].yAxisID === 'price') {
-            return `${label}: ${formatUsdValue(yLabel)}`
-          } else if (datasets[datasetIndex].yAxisID === 'marketCap') {
-            return `${label}: ${formatUsdValue(yLabel)}`
-          } else if (datasets[datasetIndex].yAxisID === 'numTransactions') {
-            return `${label}: ${yLabel}`
-          } else {
-            return yLabel
+    plugins: {
+      legend: legend,
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: (context) => {
+            const { label } = context.dataset
+            const { formattedValue, parsed } = context
+            if (context.dataset.yAxisID === 'price') {
+              return `${label}: ${formatUsdValue(parsed.y)}`
+            } else if (context.dataset.yAxisID === 'marketCap') {
+              return `${label}: ${formatUsdValue(parsed.y)}`
+            } else if (context.dataset.yAxisID === 'numTransactions') {
+              return `${label}: ${formattedValue}`
+            } else {
+              return formattedValue
+            }
           }
         }
       }
@@ -243,11 +255,7 @@ const mcapLineColor = sassVariables.dashboardLineColorMarket
 
 class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
-    const axes = config.options.scales.yAxes.reduce(function (solution, elem) {
-      solution[elem.id] = elem
-      return solution
-    },
-    {})
+    const axes = config.options.scales
 
     let priceActivated = true
     let marketCapActivated = true
@@ -257,6 +265,7 @@ class MarketHistoryChart {
       yAxisID: 'price',
       data: [],
       fill: false,
+      cubicInterpolationMode: 'monotone',
       pointRadius: 0,
       backgroundColor: priceLineColor,
       borderColor: priceLineColor
@@ -273,6 +282,7 @@ class MarketHistoryChart {
       yAxisID: 'marketCap',
       data: [],
       fill: false,
+      cubicInterpolationMode: 'monotone',
       pointRadius: 0,
       backgroundColor: mcapLineColor,
       borderColor: mcapLineColor
@@ -288,6 +298,7 @@ class MarketHistoryChart {
       label: window.localized['Tx/day'],
       yAxisID: 'numTransactions',
       data: [],
+      cubicInterpolationMode: 'monotone',
       fill: false,
       pointRadius: 0,
       backgroundColor: sassVariables.dashboardLineColorTransactions,

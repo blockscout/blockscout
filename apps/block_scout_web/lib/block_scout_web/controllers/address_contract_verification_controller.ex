@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     end
   end
 
-  defp get_metadata_and_publish(address_hash_string, conn) do
+  def get_metadata_and_publish(address_hash_string, conn) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
         %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
