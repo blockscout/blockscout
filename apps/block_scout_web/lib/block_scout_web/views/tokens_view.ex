@@ -19,5 +19,11 @@ defmodule BlockScoutWeb.TokensView do
 
   def token_display_name(%Token{name: "", symbol: symbol}), do: symbol
 
+  def token_display_name(%Token{name: "Celo Gold", symbol: "cGLD"}), do: "CELO (CELO)"
+
   def token_display_name(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
+
+  def token_display_symbol(%Token{symbol: "cGLD"}), do: "CELO"
+
+  def token_display_symbol(%Token{symbol: symbol}), do: symbol
 end

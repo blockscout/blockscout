@@ -38,9 +38,6 @@ defmodule Explorer.Chain.Import.Runner.CeloWallets do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
-    |> Multi.run(:acquire_all_items, fn repo, _ ->
-      acquire_all_items(repo)
-    end)
     |> Multi.run(:insert_wallets, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
@@ -48,20 +45,6 @@ defmodule Explorer.Chain.Import.Runner.CeloWallets do
 
   @impl Import.Runner
   def timeout, do: @timeout
-
-  defp acquire_all_items(repo) do
-    query =
-      from(
-        account in CeloWallet,
-        # Enforce ShareLocks order (see docs: sharelocks.md)
-        order_by: [account.wallet_address_hash, account.account_address_hash],
-        lock: "FOR UPDATE"
-      )
-
-    accounts = repo.all(query)
-
-    {:ok, accounts}
-  end
 
   @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [CeloWallet.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
@@ -79,7 +62,6 @@ defmodule Explorer.Chain.Import.Runner.CeloWallets do
       conflict_target: [:wallet_address_hash, :account_address_hash],
       on_conflict: on_conflict,
       for: CeloWallet,
-      returning: [:wallet_address_hash, :account_address_hash],
       timeout: timeout,
       timestamps: timestamps
     )
