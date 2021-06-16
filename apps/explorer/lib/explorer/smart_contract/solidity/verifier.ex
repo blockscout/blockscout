@@ -1,5 +1,5 @@
 # credo:disable-for-this-file
-defmodule Explorer.SmartContract.Verifier do
+defmodule Explorer.SmartContract.Solidity.Verifier do
   @moduledoc """
   Module responsible to verify the Smart Contract.
 
@@ -107,12 +107,12 @@ defmodule Explorer.SmartContract.Verifier do
 
     blockchain_created_tx_input =
       case Chain.smart_contract_creation_tx_bytecode(address_hash) do
-        nil ->
-          bytecode
+        %{init: init, created_contract_code: _created_contract_code} ->
+          "0x" <> init_without_0x = init
+          init_without_0x
 
-        blockchain_created_tx_input_with_0x ->
-          "0x" <> blockchain_created_tx_input = blockchain_created_tx_input_with_0x
-          blockchain_created_tx_input
+        _ ->
+          nil
       end
 
     %{

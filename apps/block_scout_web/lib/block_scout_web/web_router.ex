@@ -162,6 +162,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/verify-vyper-contract",
+        AddressContractVerificationVyperController,
+        only: [:new],
+        as: :verify_vyper_contract
+      )
+
+      resources(
         "/read-contract",
         AddressReadContractController,
         only: [:index, :show],

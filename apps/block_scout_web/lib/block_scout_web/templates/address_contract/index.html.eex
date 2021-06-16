@@ -43,7 +43,7 @@
             <div class="d-none d-sm-block d-md-none"></br></br></div>
             <div class="d-block d-sm-none"></br></br></div>
             <dt class="col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
-            <dd class="col-md-4"><%= format_optimization_text(target_contract.optimization) %></dd>
+            <dd class="col-md-4"><%= if target_contract.is_vyper_contract, do: "N/A", else: format_optimization_text(target_contract.optimization) %></dd>
           </dl>
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
@@ -154,13 +154,7 @@
                     </div>
                   <% else %>
                     <%= if !smart_contract_verified do %>
-                      <% path = 
-                        if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-                          address_verify_contract_path(@conn, :new, @address.hash)
-                        else
-                          address_verify_contract_via_flattened_code_path(@conn, :new, @address.hash)
-                        end
-                      %>
+                      <% path = address_verify_contract_path(@conn, :new, @address.hash) %>
                       <%= link(
                             gettext("Verify & Publish"),
                             to: path,
