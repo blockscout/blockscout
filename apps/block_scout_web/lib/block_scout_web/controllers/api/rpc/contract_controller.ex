@@ -1,11 +1,13 @@
 defmodule BlockScoutWeb.API.RPC.ContractController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Publisher
+  alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
@@ -43,7 +45,82 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
-  def publish(conn, %{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
+  def verify_via_sourcify(conn, %{"addressHash" => address_hash} = input) do
+    files =
+      if Map.has_key?(input, "files") do
+        input["files"]
+      else
+        []
+      end
+
+    if Chain.smart_contract_verified?(address_hash) do
+      render(conn, :error, error: "Smart-contract already verified.")
+    else
+      case Sourcify.check_by_address(address_hash) do
+        {:ok, _verified_status} ->
+          get_metadata_and_publish(address_hash, conn)
+
+        _ ->
+          files_array = VerificationController.prepare_files_array(files)
+
+          json_files =
+            files_array
+            |> Enum.filter(fn file -> file.content_type == "application/json" end)
+
+          json_file = json_files |> Enum.at(0)
+
+          if json_file do
+            verify_and_publish(address_hash, files_array, conn)
+          else
+            render(conn, :error, error: "Please attach JSON file with metadata of contract's compilation.")
+          end
+      end
+    end
+  end
+
+  defp get_metadata_and_publish(address_hash_string, conn) do
+    case Sourcify.get_metadata(address_hash_string) do
+      {:ok, verification_metadata} ->
+        %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
+          VerificationController.parse_params_from_sourcify(address_hash_string, verification_metadata)
+
+        case publish_without_broadcast(%{
+               "addressHash" => address_hash_string,
+               "params" => params_to_publish,
+               "abi" => abi,
+               "secondarySources" => secondary_sources
+             }) do
+          {:ok, _contract} ->
+            {:format, {:ok, address_hash}} = to_address_hash(address_hash_string)
+            address = Chain.address_hash_to_address_with_source_code(address_hash)
+            render(conn, :verify, %{contract: address})
+
+          {:error, changeset} ->
+            render(conn, :error, error: changeset)
+        end
+
+      {:error, %{"error" => error}} ->
+        render(conn, :error, error: error)
+    end
+  end
+
+  defp verify_and_publish(address_hash_string, files_array, conn) do
+    case Sourcify.verify(address_hash_string, files_array) do
+      {:ok, _verified_status} ->
+        case Sourcify.check_by_address(address_hash_string) do
+          {:ok, _verified_status} ->
+            get_metadata_and_publish(address_hash_string, conn)
+
+          {:error, %{"error" => error}} ->
+            render(conn, :error, error: error)
+        end
+
+      {:error, %{"error" => error}} ->
+        render(conn, :error, error: error)
+    end
+  end
+
+  def publish_without_broadcast(%{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
     params =
       if Map.has_key?(input, "secondarySources") do
         params
@@ -52,14 +129,17 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         params
       end
 
-    result =
-      case Publisher.publish_smart_contract(address_hash, params, abi) do
-        {:ok, _contract} = result ->
-          result
+    case Publisher.publish_smart_contract(address_hash, params, abi) do
+      {:ok, _contract} = result ->
+        result
 
-        {:error, changeset} ->
-          {:error, changeset}
-      end
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def publish(conn, %{"addressHash" => address_hash} = input) do
+    result = publish_without_broadcast(input)
 
     EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
   end
