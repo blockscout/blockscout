@@ -10,27 +10,31 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
-    changeset =
-      SmartContract.changeset(
-        %SmartContract{address_hash: address_hash_string},
-        %{}
+    if Chain.smart_contract_verified?(address_hash_string) do
+      redirect(conn, to: address_path(conn, :show, address_hash_string))
+    else
+      changeset =
+        SmartContract.changeset(
+          %SmartContract{address_hash: address_hash_string},
+          %{}
+        )
+
+      compiler_versions =
+        case CompilerVersion.fetch_versions() do
+          {:ok, compiler_versions} ->
+            compiler_versions
+
+          {:error, _} ->
+            []
+        end
+
+      render(conn, "new.html",
+        changeset: changeset,
+        compiler_versions: compiler_versions,
+        evm_versions: CodeCompiler.allowed_evm_versions(),
+        address_hash: address_hash_string
       )
-
-    compiler_versions =
-      case CompilerVersion.fetch_versions() do
-        {:ok, compiler_versions} ->
-          compiler_versions
-
-        {:error, _} ->
-          []
-      end
-
-    render(conn, "new.html",
-      changeset: changeset,
-      compiler_versions: compiler_versions,
-      evm_versions: CodeCompiler.allowed_evm_versions(),
-      address_hash: address_hash_string
-    )
+    end
   end
 
   def create(
