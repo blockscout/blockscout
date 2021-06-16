@@ -1,6 +1,6 @@
-defmodule Explorer.SmartContract.SolcDownloader do
+defmodule Explorer.SmartContract.VyperDownloader do
   @moduledoc """
-  Checks to see if the requested solc compiler version exists, and if not it
+  Checks to see if the requested Vyper compiler version exists, and if not it
   downloads and stores the file.
   """
   use GenServer
@@ -16,7 +16,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
       path
     else
       compiler_versions =
-        case CompilerVersion.fetch_versions(:solc) do
+        case CompilerVersion.fetch_versions(:vyper) do
           {:ok, compiler_versions} ->
             compiler_versions
 
@@ -57,8 +57,10 @@ defmodule Explorer.SmartContract.SolcDownloader do
       file = File.open!(temp_path, [:write, :exclusive])
 
       IO.binwrite(file, contents)
+      File.close(file)
 
       File.rename(temp_path, path)
+      System.cmd("chmod", ["+x", path])
     end
 
     {:reply, path, state}
@@ -82,18 +84,44 @@ defmodule Explorer.SmartContract.SolcDownloader do
   end
 
   defp file_path(version) do
-    Path.join(compiler_dir(), "#{version}.js")
+    Path.join(compiler_dir(), "#{version}")
   end
 
   defp compiler_dir do
-    Application.app_dir(:explorer, "priv/solc_compilers/")
+    Application.app_dir(:explorer, "priv/vyper_compilers/")
   end
 
   defp download(version) do
-    download_path = "https://solc-bin.ethereum.org/bin/soljson-#{version}.js"
+    version = CompilerVersion.get_strict_compiler_version(:vyper, version)
+    releases_path = CompilerVersion.vyper_releases_url()
+
+    releases_body =
+      releases_path
+      |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000)
+      |> Map.get(:body)
+      |> Jason.decode!()
+
+    release =
+      releases_body
+      |> Enum.find(fn release ->
+        Map.get(release, "tag_name") == version
+      end)
+
+    release_assets = Map.get(release, "assets")
+
+    download_path =
+      Enum.reduce_while(release_assets, "", fn asset, acc ->
+        browser_download_url = Map.get(asset, "browser_download_url")
+
+        if browser_download_url =~ "linux" do
+          {:halt, browser_download_url}
+        else
+          {:cont, acc}
+        end
+      end)
 
     download_path
-    |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000)
+    |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true, hackney: [force_redirect: true])
     |> Map.get(:body)
   end
 end
