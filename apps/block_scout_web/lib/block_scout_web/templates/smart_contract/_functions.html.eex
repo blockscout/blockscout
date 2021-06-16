@@ -5,13 +5,7 @@
     <%= if minimal_proxy_template do %>
       <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: metadata_for_verification.address_hash, conn: @conn %>
     <% else %>
-      <% path = 
-        if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-          address_verify_contract_path(@conn, :new, @address.hash)
-        else
-          address_verify_contract_via_flattened_code_path(@conn, :new, @address.hash)
-        end
-      %>
+      <% path = address_verify_contract_path(@conn, :new, @address.hash) %>
       <div class="mb-4">
         <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
   metadata_for_verification.address_hash,

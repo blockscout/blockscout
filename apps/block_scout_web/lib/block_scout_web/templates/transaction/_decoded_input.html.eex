@@ -8,13 +8,7 @@
       <%= gettext "To see accurate decoded input data, the contract must be verified." %>
       <%= case @transaction do %>
         <% %{to_address: %{hash: hash}} -> %>
-          <% path = 
-            if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-              address_verify_contract_path(@conn, :new, hash)
-            else
-              address_verify_contract_via_flattened_code_path(@conn, :new, hash)
-            end
-          %>
+          <% path = address_verify_contract_path(@conn, :new, hash) %>
           <%= gettext "Verify the contract " %><a href="<%= path %>"><%= gettext "here" %></a>
         <% _ -> %>
           <%= nil %>
