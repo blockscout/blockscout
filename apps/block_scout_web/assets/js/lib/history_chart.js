@@ -59,17 +59,8 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      marketCap: {
-        position: 'left',
-        grid: grid,
-        ticks: {
-          callback: (value, _index, _values) => formatCurrencyValue(value),
-          maxTicksLimit: 6,
-          color: sassVariables.dashboardBannerChartAxisFontColor
-        }
-      },
       numTransactions: {
-        position: 'right',
+        position: 'left',
         grid: grid,
         ticks: {
           beginAtZero: true,
@@ -81,6 +72,11 @@ const config = {
     },
     plugins: {
       legend: legend,
+      title: {
+        display: true,
+        text: 'Daily transactions (14 days)',
+        color: sassVariables.dashboardBannerChartAxisFontColor
+      },
       tooltip: {
         mode: 'index',
         intersect: false,
@@ -286,7 +282,7 @@ class MarketHistoryChart {
     }
 
     this.availableSupply = availableSupply
-    config.data.datasets = [this.marketCap, this.numTransactions]
+    config.data.datasets = [this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoadedXDAI'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'

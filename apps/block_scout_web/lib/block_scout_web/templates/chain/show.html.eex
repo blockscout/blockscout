@@ -44,9 +44,8 @@
                   </span>
                   <div class="dashboard-banner-chart-legend-value-container">
                   <%
-                    coin_price = 
-                      1
-                      |> Decimal.new()
+                    coin_price = 1 |> Decimal.new()
+
                     coin_price_usd = 
                     if @exchange_rate.usd_value do
                       coin_price
@@ -55,11 +54,13 @@
                       coin_price
                     end
 
+                    formatted_coin_price_usd =
                     coin_price_usd
+                    |> Decimal.to_float()
                     |> format_currency_value()
                   %>
                     <span class="dashboard-banner-chart-legend-value inline">
-                      <%= "#{coin_price_usd} " <> gettext("USD") %>
+                      <%= "#{formatted_coin_price_usd}" %>
                     </span>
                   </div>
               </div>
@@ -107,18 +108,19 @@
                   <%
                     total_value_locked = 
                     total_market_cap
+                    |> Decimal.to_float()
                     |> format_currency_value()
                   %>
                     <span style="display: contents;" class="dashboard-banner-chart-legend-value">
-                      <%= "#{total_value_locked} " <> gettext("USD") %>
+                      <%= "#{total_value_locked}" %>
                     </span>
                   </span>
                   <%= if token_bridge_supply?() do %>
                     <% token_bridge_market_cap = total_market_cap_from_token_bridge(@exchange_rate) %>
                     <% omni_bridge_market_cap = total_market_cap_from_omni_bridge() %>
-                    <% formatted_total_market_cap = if Decimal.cmp(total_market_cap, 0) == :gt, do: format_usd_value(total_market_cap), else: "N/A" %>
-                    <% formatted_token_bridge_market_cap = if Decimal.cmp(token_bridge_market_cap, 0) == :gt, do: format_usd_value(token_bridge_market_cap), else: "N/A" %>
-                    <% formatted_omni_bridge_market_cap = if Decimal.cmp(omni_bridge_market_cap, 0) == :gt, do: format_usd_value(omni_bridge_market_cap), else: "N/A" %>
+                    <% formatted_total_market_cap = if Decimal.cmp(total_market_cap, 0) == :gt, do: format_currency_value(total_market_cap), else: "N/A" %>
+                    <% formatted_token_bridge_market_cap = if Decimal.cmp(token_bridge_market_cap, 0) == :gt, do: format_currency_value(token_bridge_market_cap), else: "N/A" %>
+                    <% formatted_omni_bridge_market_cap = if Decimal.cmp(omni_bridge_market_cap, 0) == :gt, do: format_currency_value(omni_bridge_market_cap), else: "N/A" %>
                     <span
                       data-toggle="tooltip"
                       data-placement="top"
@@ -138,7 +140,7 @@
             <%= if Enum.member?(transaction_chart_config, :transactions_per_day) do %>
             <div class="dashboard-banner-chart-legend-item">
                 <span class="dashboard-banner-chart-legend-label">
-                    <%= gettext "Tx/day" %>
+                    <%= gettext "Transactions per day" %>
                 </span>
                 <span class="dashboard-banner-chart-legend-value d-flex" data-selector="tx_per_day">
                     <% num_of_transactions = BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
