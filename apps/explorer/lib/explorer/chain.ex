@@ -3298,8 +3298,10 @@ defmodule Explorer.Chain do
     creation_tx_query =
       from(
         tx in Transaction,
+        left_join: a in Address,
+        on: tx.created_contract_address_hash == a.hash,
         where: tx.created_contract_address_hash == ^address_hash,
-        select: tx.input
+        select: %{init: tx.input, created_contract_code: a.contract_code}
       )
 
     tx_input =
@@ -3307,7 +3309,9 @@ defmodule Explorer.Chain do
       |> Repo.one()
 
     if tx_input do
-      Data.to_string(tx_input)
+      with %{init: input, created_contract_code: created_contract_code} <- tx_input do
+        %{init: Data.to_string(input), created_contract_code: Data.to_string(created_contract_code)}
+      end
     else
       creation_int_tx_query =
         from(
@@ -3315,17 +3319,19 @@ defmodule Explorer.Chain do
           join: t in assoc(itx, :transaction),
           where: itx.created_contract_address_hash == ^address_hash,
           where: t.status == ^1,
-          select: itx.init
+          select: %{init: itx.init, created_contract_code: itx.created_contract_code}
         )
 
-      itx_init_code =
-        creation_int_tx_query
-        |> Repo.one()
+      res = creation_int_tx_query |> Repo.one()
 
-      if itx_init_code do
-        Data.to_string(itx_init_code)
-      else
-        nil
+      case res do
+        %{init: init, created_contract_code: created_contract_code} ->
+          init_str = Data.to_string(init)
+          created_contract_code_str = Data.to_string(created_contract_code)
+          %{init: init_str, created_contract_code: created_contract_code_str}
+
+        _ ->
+          nil
       end
     end
   end

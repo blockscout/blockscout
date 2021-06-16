@@ -15,7 +15,7 @@
   </div>
 
   <div class="new-smart-contract-form">
-      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
+      <h1 class="smart-contract-title"><%= gettext "New Solidity Smart Contract Verification" %></h1>
 
       <%= form_for @changeset,
           address_contract_verification_path(@conn, :create),
