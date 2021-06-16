@@ -1,18 +1,18 @@
-defmodule Explorer.SmartContract.Publisher do
+defmodule Explorer.SmartContract.Solidity.Publisher do
   @moduledoc """
   Module responsible to control the contract verification.
   """
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.Solidity.CompilerVersion
-  alias Explorer.SmartContract.Verifier
+  alias Explorer.SmartContract.CompilerVersion
+  alias Explorer.SmartContract.Solidity.Verifier
 
   @doc """
   Evaluates smart contract authenticity and saves its details.
 
   ## Examples
-      Explorer.SmartContract.Publisher.publish(
+      Explorer.SmartContract.Solidity.Publisher.publish(
         "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
         %{
           "compiler_version" => "0.4.24",
@@ -77,7 +77,7 @@ defmodule Explorer.SmartContract.Publisher do
 
     prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
 
-    compiler_version = CompilerVersion.get_strict_compiler_version(params["compiler_version"])
+    compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
 
     %{
       address_hash: address_hash,
@@ -91,7 +91,8 @@ defmodule Explorer.SmartContract.Publisher do
       external_libraries: prepared_external_libraries,
       secondary_sources: params["secondary_sources"],
       abi: abi,
-      verified_via_sourcify: params["verified_via_sourcify"]
+      verified_via_sourcify: params["verified_via_sourcify"],
+      is_vyper_contract: false
     }
   end
 

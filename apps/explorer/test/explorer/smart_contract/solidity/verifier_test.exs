@@ -1,12 +1,12 @@
-defmodule Explorer.SmartContract.VerifierTest do
+defmodule Explorer.SmartContract.Solidity.VerifierTest do
   use ExUnit.Case, async: true
   use Explorer.DataCase
 
   @moduletag timeout: :infinity
 
-  doctest Explorer.SmartContract.Verifier
+  doctest Explorer.SmartContract.Solidity.Verifier
 
-  alias Explorer.SmartContract.Verifier
+  alias Explorer.SmartContract.Solidity.Verifier
   alias Explorer.Factory
 
   @code_0_4 """

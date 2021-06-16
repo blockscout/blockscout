@@ -19,11 +19,13 @@
     <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <span>
-      <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %>
-      <% method_name = Transaction.get_method_name(@transaction) %>
-      <%= if method_name do %>
-        <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
-      <% end %>
+      <div class="text-truncate d-flex">
+        <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %>
+        <% method_name = Transaction.get_method_name(@transaction) %>
+        <%= if method_name do %>
+          <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
+        <% end %>
+      </div>
       </span>
       <span>
         <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
