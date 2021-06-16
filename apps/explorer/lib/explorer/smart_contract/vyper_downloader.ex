@@ -112,9 +112,9 @@ defmodule Explorer.SmartContract.VyperDownloader do
       Enum.reduce_while(release_assets, "", fn asset, acc ->
         browser_download_url = Map.get(asset, "browser_download_url")
 
-        # todo 
-        # if browser_download_url =~ "linux" do
-        if browser_download_url =~ "darwin" do
+        # darwin is for local tests
+        # if browser_download_url =~ "darwin" do
+        if browser_download_url =~ "linux" do
           {:halt, browser_download_url}
         else
           {:cont, acc}
