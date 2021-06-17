@@ -1,6 +1,9 @@
 alias HTTPoison.Response
 
 defmodule Explorer.Advertisement do
+  @moduledoc """
+  Advertisement helpers
+  """
   def get_text_ad_data do
     ad_api_key = "19260bf627546ab7242"
     ad_api_url = "https://request-global.czilladx.com/serve/native.php?z=#{ad_api_key}"
@@ -9,8 +12,6 @@ defmodule Explorer.Advertisement do
       {:ok, %Response{body: body, status_code: 200}} ->
         case Jason.decode(body) do
           {:ok, body_decoded} ->
-            IO.inspect("Gimme body_decoded")
-            IO.inspect(body_decoded)
             ad = body_decoded |> Map.get("ad")
             name = ad |> Map.get("name")
             img_url = ad |> Map.get("thumbnail")
