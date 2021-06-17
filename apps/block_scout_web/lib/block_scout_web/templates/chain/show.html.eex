@@ -172,7 +172,7 @@
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
 </div>
 <section class="container">
-  <div class="card card-chain-blocks">
+  <div class="card card-chain-blocks mb-3">
     <div class="card-body">
       <%= link(gettext("View All Blocks"), to: block_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
@@ -229,6 +229,8 @@
       </div>
     </div>
   </div>
+
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
 
   <div class="card card-chain-transactions">
     <div class="card-body">
