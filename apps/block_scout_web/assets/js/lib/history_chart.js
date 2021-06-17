@@ -74,7 +74,7 @@ const config = {
       legend: legend,
       title: {
         display: true,
-        text: 'Daily transactions (14 days)',
+        text: 'Daily transactions (30 days)',
         color: sassVariables.dashboardBannerChartAxisFontColor
       },
       tooltip: {
