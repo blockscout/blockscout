@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.ChainView do
     "#{number_to_currency(value, precision: 6)}"
   end
 
-  defp format_currency_value(value, symbol) when value < 100_000 do
+  defp format_currency_value(value, _symbol) when value < 100_000 do
     "#{number_to_currency(value)}"
   end
 
