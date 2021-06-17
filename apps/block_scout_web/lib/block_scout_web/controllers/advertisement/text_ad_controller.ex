@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Advertisement.TextAdController do
 
   alias HTTPoison.Response
 
-  def index(conn, params) do
+  def index(conn, _params) do
     # todo
     ad_api_key = "19260bf627546ab7242"
     ad_api_url = "https://request-global.czilladx.com/serve/native.php?z=#{ad_api_key}"
