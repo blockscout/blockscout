@@ -1,4 +1,5 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
   <% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
@@ -6,8 +7,8 @@
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row">
     <!-- Address details -->
-    <div class="card-section col-md-12 col-lg-8 pr-0-md">
-      <div class="card">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
+      <div class="card mb-2">
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
@@ -120,7 +121,7 @@
       </div>
     </div>
     <!-- Balance -->
-    <div class="card-section col-md-12 col-lg-4 pl-0-md" data-selector="balance-card">
+    <div class="card-section col-md-12 col-lg-4 pl-0-md mb-2" data-selector="balance-card">
       <%= render BlockScoutWeb.AddressView, "_balance_card.html", conn: @conn, address: @address, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status %>
     </div>
 
@@ -134,3 +135,5 @@
 <%= if validator_metadata do %>
   <%= render BlockScoutWeb.AddressView, "_validator_metadata_modal.html", address_name: address_name, validator_metadata: validator_metadata %>
 <% end %>
+
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
