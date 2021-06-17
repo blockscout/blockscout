@@ -1,4 +1,5 @@
 <section class="container" data-page="transaction-pending-list">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html" %>
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "Pending Transactions" %></h1>
