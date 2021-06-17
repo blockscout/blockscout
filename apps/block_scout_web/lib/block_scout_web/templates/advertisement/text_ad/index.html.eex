@@ -1,0 +1,6 @@
+<% ad_data = Advertisement.get_text_ad_data() %>
+<%= if ad_data do %>
+    <div class="mb-3">
+    Sponsored: <img src="<%= ad_data.img_url %>" width=20 height=20 /> <b><%= ad_data.name %></b> - <%= ad_data.short_description %> <a href="<%= ad_data.url %>"><%= ad_data.cta_button %></a>
+    </div>
+<% end %>

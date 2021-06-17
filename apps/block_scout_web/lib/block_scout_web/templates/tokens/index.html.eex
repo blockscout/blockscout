@@ -1,4 +1,5 @@
 <section class="container" data-page="tokens">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html" %>
   <div class="card">
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
 	  <h1 class="card-title list-title-description"><%= gettext "Tokens" %></h1>
