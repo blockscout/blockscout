@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.ChainView do
     value
   end
 
-  defp format_currency_value(value, symbol) do
+  defp format_currency_value(value, _symbol) do
     "#{number_to_currency(value, precision: 0)}"
   end
 
