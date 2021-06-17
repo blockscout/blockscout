@@ -58,9 +58,10 @@ defmodule Explorer.SmartContract.VyperDownloader do
 
       IO.binwrite(file, contents)
 
+      File.close(file)      
+
       File.rename(temp_path, path)
-      # need for test environment
-      # System.cmd("chmod", ["+x", path])
+      System.cmd("chmod", ["+x", path])
     end
 
     {:reply, path, state}
