@@ -1,4 +1,5 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html" %>
   <% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
   <% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>

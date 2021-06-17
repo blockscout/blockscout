@@ -1,4 +1,5 @@
 <section class="container" data-page="<%= String.downcase(@block_type) %>-list">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html" %>
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <div data-selector="channel-disconnected-message" style="display: none;">
