@@ -1,0 +1,4 @@
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/ad.js") %>"></script>
+<div class="ad mb-3 d-none">
+Sponsored: <img class="ad-img-url" width=20 height=20 /> <b><span class="ad-name"></span></b> - <span class="ad-short-description"></span> <a class="ad-url"><span class="ad-cta-button"></span></a>
+</div>
