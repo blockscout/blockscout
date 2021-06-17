@@ -58,6 +58,8 @@ defmodule Explorer.SmartContract.VyperDownloader do
 
       IO.binwrite(file, contents)
 
+      File.close(file)      
+
       File.rename(temp_path, path)
       System.cmd("chmod", ["+x", path])
     end
