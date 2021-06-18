@@ -10,7 +10,9 @@ defmodule Explorer.Advertisement do
     ad_api_key = "19260bf627546ab7242"
     ad_api_url = "https://request-global.czilladx.com/serve/native.php?z=#{ad_api_key}"
 
-    case HTTPoison.get(ad_api_url) do
+    headers = [{"Content-Type", "application/json"}]
+
+    case HTTPoison.get(ad_api_url, headers) do
       {:ok, %Response{body: body, status_code: 200}} ->
         Logger.info("Text banner advertisement")
         Logger.info(body)
