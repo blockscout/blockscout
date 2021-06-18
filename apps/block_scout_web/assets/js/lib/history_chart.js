@@ -4,9 +4,10 @@ import 'chartjs-adapter-moment'
 import humps from 'humps'
 import numeral from 'numeral'
 import moment from 'moment'
-import { formatCurrencyValue, formatUsdValue } from '../lib/currency'
+import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
+Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
 const grid = {

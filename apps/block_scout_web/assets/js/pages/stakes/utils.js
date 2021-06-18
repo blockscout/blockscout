@@ -3,6 +3,7 @@ import { ArcElement, Chart, DoughnutController } from 'chart.js'
 import { openErrorModal, openSuccessModal, openWarningModal } from '../../lib/modals'
 import * as Sentry from '@sentry/browser'
 
+Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
 Chart.register(ArcElement, DoughnutController)
 
 export async function makeContractCall (call, store, gasLimit, callbackFunc) {
