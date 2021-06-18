@@ -23,6 +23,7 @@
 - [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix
 
 ### Chore
+- [#4300](https://github.com/blockscout/blockscout/pull/4300) - Remove clear_build.sh script
 - [#4268](https://github.com/blockscout/blockscout/pull/4268) - Migration to Chart.js 3.0
 - [#4253](https://github.com/blockscout/blockscout/pull/4253) - Elixir 1.11.4, npm audit fix
 - [#4231](https://github.com/blockscout/blockscout/pull/4231) - Transactions stats: get min/max blocks in one query
