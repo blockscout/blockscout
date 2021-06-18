@@ -16,6 +16,7 @@ defmodule Explorer.Advertisement do
       {:ok, %Response{body: body, status_code: 200}} ->
         Logger.info("Text banner advertisement")
         Logger.info(body)
+
         case Jason.decode(body) do
           {:ok, body_decoded} ->
             ad = body_decoded |> Map.get("ad")
@@ -27,13 +28,18 @@ defmodule Explorer.Advertisement do
             %{name: name, img_url: img_url, short_description: short_description, cta_button: cta_button, url: url}
 
           error ->
-            Logger.info("Text banner advertisement error")
+            Logger.info("Text banner advertisement error 1")
             Logger.info(error)
             nil
         end
 
+      {:ok, response} ->
+        Logger.info("Text banner advertisement error 2")
+        Logger.info(response)
+        nil
+
       error ->
-        Logger.info("Text banner advertisement error")
+        Logger.info("Text banner advertisement error 3")
         Logger.info(error)
         nil
     end
