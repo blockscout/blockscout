@@ -1,3 +1,5 @@
+require Logger
+
 alias HTTPoison.Response
 
 defmodule Explorer.Advertisement do
@@ -10,6 +12,8 @@ defmodule Explorer.Advertisement do
 
     case HTTPoison.get(ad_api_url) do
       {:ok, %Response{body: body, status_code: 200}} ->
+        Logger.info("Text banner advertisement")
+        Logger.info(body)
         case Jason.decode(body) do
           {:ok, body_decoded} ->
             ad = body_decoded |> Map.get("ad")
@@ -20,11 +24,15 @@ defmodule Explorer.Advertisement do
             url = ad |> Map.get("url")
             %{name: name, img_url: img_url, short_description: short_description, cta_button: cta_button, url: url}
 
-          _ ->
+          error ->
+            Logger.info("Text banner advertisement error")
+            Logger.info(error)
             nil
         end
 
-      _ ->
+      error ->
+        Logger.info("Text banner advertisement error")
+        Logger.info(error)
         nil
     end
   end
