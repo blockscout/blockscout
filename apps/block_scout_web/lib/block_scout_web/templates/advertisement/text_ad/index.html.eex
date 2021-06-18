@@ -1,6 +1,4 @@
-<% ad_data = Advertisement.get_text_ad_data() %>
-<%= if ad_data do %>
-    <div class="mb-3">
-    Sponsored: <img src="<%= ad_data.img_url %>" width=20 height=20 /> <b><%= ad_data.name %></b> - <%= ad_data.short_description %> <a href="<%= ad_data.url %>"><%= ad_data.cta_button %></a>
-    </div>
-<% end %>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/ad.js") %>"></script>
+<div class="ad mb-3 d-none">
+Sponsored: <img class="ad-img-url" width=20 height=20 /> <b><span class="ad-name"></span></b> - <span class="ad-short-description"></span> <a class="ad-url"><span class="ad-cta-button"></span></a>
+</div>

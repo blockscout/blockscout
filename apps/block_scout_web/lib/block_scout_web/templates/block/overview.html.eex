@@ -1,5 +1,5 @@
 <section>
-  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html" %>
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
     <div class="col-md-12 col-lg-8 pr-0-md">
       <!-- Block Details -->

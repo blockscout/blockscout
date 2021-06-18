@@ -1,5 +1,5 @@
 <section class="container" data-page="tokens">
-  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html" %>
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
 	  <div class="tokens-list-search-input-outer-container">
