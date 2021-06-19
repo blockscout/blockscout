@@ -1083,51 +1083,64 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp prepare_search_term(string) do
+    case Regex.scan(~r/[a-zA-Z0-9]+/, string) do
+      [_ | _] = words ->
+        term_final =
+          words
+          |> Enum.map(fn [word] -> word <> ":*" end)
+          |> Enum.join(" & ")
+
+        {:some, term_final}
+
+      _ ->
+        :none
+    end
+  end
+
   @spec search_token(String.t()) :: [Token.t()]
-  def search_token(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
+  def search_token(string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        query =
+          from(token in Token,
+            where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+            select: %{
+              contract_address_hash: token.contract_address_hash,
+              symbol: token.symbol,
+              name:
+                fragment(
+                  "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
+                  token.name,
+                  token.symbol,
+                  token.holder_count
+                )
+            },
+            order_by: [desc: token.holder_count]
+          )
 
-    term_final = term <> ":*"
+        Repo.all(query)
 
-    query =
-      from(token in Token,
-        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term_final),
-        select: %{
-          contract_address_hash: token.contract_address_hash,
-          symbol: token.symbol,
-          name:
-            fragment(
-              "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
-              token.name,
-              token.symbol,
-              token.holder_count
-            )
-        },
-        order_by: [desc: token.holder_count]
-      )
-
-    Repo.all(query)
+      _ ->
+        []
+    end
   end
 
   @spec search_contract(String.t()) :: [SmartContract.t()]
-  def search_contract(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
+  def search_contract(string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        query =
+          from(smart_contract in SmartContract,
+            where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
+          )
 
-    term_final = term <> ":*"
+        Repo.all(query)
 
-    query =
-      from(smart_contract in SmartContract,
-        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term_final),
-        select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
-      )
-
-    Repo.all(query)
+      _ ->
+        []
+    end
   end
 
   @doc """
