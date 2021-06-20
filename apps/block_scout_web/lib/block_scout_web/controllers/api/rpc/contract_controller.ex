@@ -61,20 +61,90 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           get_metadata_and_publish(address_hash, conn)
 
         _ ->
-          files_array = VerificationController.prepare_files_array(files)
-
-          json_files =
-            files_array
-            |> Enum.filter(fn file -> file.content_type == "application/json" end)
-
-          json_file = json_files |> Enum.at(0)
-
-          if json_file do
-            verify_and_publish(address_hash, files_array, conn)
+          with {:ok, files_array} <- prepare_params(files),
+               {:ok, validated_files} <- validate_files(files_array) do
+            verify_and_publish(address_hash, validated_files, conn)
           else
-            render(conn, :error, error: "Please attach JSON file with metadata of contract's compilation.")
+            {:error, error} ->
+              render(conn, :error, error: error)
+
+            _ ->
+              render(conn, :error, error: "Invalid body")
           end
       end
+    end
+  end
+
+  defp prepare_params(files) when is_struct(files) do
+    {:error, "Invalid args format"}
+  end
+
+  defp prepare_params(files) when is_map(files) do
+    {:ok, VerificationController.prepare_files_array(files)}
+  end
+
+  defp prepare_params(files) when is_list(files) do
+    {:ok, files}
+  end
+
+  defp prepare_params(_arg) do
+    {:error, "Invalid args format"}
+  end
+
+  defp validate_files(files) do
+    if length(files) < 2 do
+      {:error, "You should attach at least 2 files"}
+    else
+      files_array =
+        files
+        |> Enum.filter(fn file -> validate_filename(file.filename) end)
+
+      jsons =
+        files_array
+        |> Enum.filter(fn file -> only_json(file.filename) end)
+
+      sols =
+        files_array
+        |> Enum.filter(fn file -> only_sol(file.filename) end)
+
+      if length(jsons) > 0 and length(sols) > 0 do
+        {:ok, files_array}
+      else
+        {:error, "You should attach at least one *.json and one *.sol files"}
+      end
+    end
+  end
+
+  defp validate_filename(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "sol" ->
+        true
+
+      "json" ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp only_sol(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "sol" ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp only_json(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "json" ->
+        true
+
+      _ ->
+        false
     end
   end
 
@@ -113,9 +183,15 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
           {:error, %{"error" => error}} ->
             render(conn, :error, error: error)
+
+          {:error, error} ->
+            render(conn, :error, error: error)
         end
 
       {:error, %{"error" => error}} ->
+        render(conn, :error, error: error)
+
+      {:error, error} ->
         render(conn, :error, error: error)
     end
   end
