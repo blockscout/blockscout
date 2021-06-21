@@ -68,6 +68,8 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:mime, "~> 1.6"},
+      {:file_info, "~> 0.0.4"},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       {:tesla, "~> 1.3.3"},
       # Documentation
