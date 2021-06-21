@@ -594,6 +594,20 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP_STAKE", "")) =~ address_hash_str
   end
 
+  def is_swarm?(nil), do: false
+
+  def is_swarm?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SWARM", "")) =~ address_hash_str
+  end
+
+  def is_cryptostamps?(nil), do: false
+
+  def is_cryptostamps?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CRYPTOSTAMPS", "")) =~ address_hash_str
+  end
+
   def is_chainlink_oracle?(nil), do: false
 
   def is_chainlink_oracle?(address_hash) do

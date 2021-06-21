@@ -72,6 +72,12 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     AddressTag.set_tag("lewinswap farm")
     AddressTag.set_tag("lewinswap stake")
 
+    # set Swarm tags
+    AddressTag.set_tag("swarm")
+
+    # set CryptoStamps tags
+    AddressTag.set_tag("cryptostamps")
+
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
 
@@ -127,6 +133,12 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set chainlink oracle tag
     set_chainlink_oracle_tag()
+
+    # set Swarm tag
+    set_swarm_tag()
+
+    # set CryptoStamps tag
+    set_cryptostamps_tag()
 
     {:noreply, state}
   end
@@ -277,6 +289,14 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     tag_id = AddressTag.get_tag_id("chainlink oracle")
     AddressToTag.set_tag_to_addresses(tag_id, chainlink_oracles)
+  end
+
+  defp set_swarm_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_SWARM", "swarm")
+  end
+
+  defp set_cryptostamps_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_CRYPTOSTAMPS", "cryptostamps")
   end
 
   defp chainlink_oracles_list do
