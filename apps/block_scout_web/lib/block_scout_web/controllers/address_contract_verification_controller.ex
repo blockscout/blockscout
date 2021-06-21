@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "file" => files
         }
       ) do
-    files_array = if is_map(files), do: Enum.map(files, fn {_, file} -> file end), else: []
+    files_array = prepare_files_array(files)
 
     json_files =
       files_array
@@ -144,6 +144,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           :on_demand
         )
     end
+  end
+
+  def prepare_files_array(files) do
+    if is_map(files), do: Enum.map(files, fn {_, file} -> file end), else: []
   end
 
   defp prepare_verification_error(msg, address_hash_string, conn) do
