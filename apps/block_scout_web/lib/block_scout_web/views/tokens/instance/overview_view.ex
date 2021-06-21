@@ -53,12 +53,14 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
             File.write!(path, body)
 
-            file_info = FileInfo.get_info([path])
+            case FileInfo.get_info([path]) do
+              %{^path => %FileInfo.Mime{subtype: subtype}} ->
+                subtype
+                |> MIME.type()
 
-            %{^path => %FileInfo.Mime{subtype: subtype}} = file_info
-
-            subtype
-            |> MIME.type()
+              _ ->
+                nil
+            end
 
           _ ->
             nil
@@ -80,15 +82,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   def media_type(nil), do: nil
-
-  def file_path_has_extension?(media_src) do
-    path_parts_count =
-      media_src
-      |> String.split(".")
-      |> Enum.count()
-
-    path_parts_count > 1
-  end
 
   def external_url(nil), do: nil
 
