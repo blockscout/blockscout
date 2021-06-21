@@ -4,6 +4,9 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   alias BlockScoutWeb.CurrencyHelpers
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
+  alias FileInfo
+  alias MIME
+  alias Path
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
 
@@ -40,9 +43,42 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   def media_type(media_src) when not is_nil(media_src) do
-    media_src
-    |> String.split(".")
-    |> Enum.at(-1)
+    ext = media_src |> Path.extname() |> String.trim()
+
+    mime_type =
+      if ext == "" do
+        case HTTPoison.get(media_src) do
+          {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+            {:ok, path} = Briefly.create()
+
+            File.write!(path, body)
+
+            case FileInfo.get_info([path]) do
+              %{^path => %FileInfo.Mime{subtype: subtype}} ->
+                subtype
+                |> MIME.type()
+
+              _ ->
+                nil
+            end
+
+          _ ->
+            nil
+        end
+      else
+        ext_with_dot =
+          media_src
+          |> Path.extname()
+
+        "." <> ext = ext_with_dot
+
+        ext
+        |> MIME.type()
+      end
+
+    basic_mime_type = mime_type |> String.split("/") |> Enum.at(0)
+
+    basic_mime_type
   end
 
   def media_type(nil), do: nil
