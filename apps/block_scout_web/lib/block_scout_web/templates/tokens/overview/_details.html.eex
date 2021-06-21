@@ -95,6 +95,17 @@
                   <%= @token.custom_metadata %>
                 </div>
               <% end %>
+            <% else %>
+              <div class="view-original-token-container">
+                <span>
+                  <%= link to:
+                      AccessHelpers.get_path(@conn, :address_path, :show, Address.checksum(@token.contract_address_hash)),
+                      "data-test": "token_contract_address"
+                  do %>
+                    <%=  gettext "View Contract" %>
+                  <% end %>
+                </span>
+              </div>
             <% end %>
           </h1>
 
