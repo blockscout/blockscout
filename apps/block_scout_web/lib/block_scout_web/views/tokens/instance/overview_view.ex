@@ -54,7 +54,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
             File.write!(path, body)
 
             file_info = FileInfo.get_info([path])
-            File.rm(path)
 
             %{^path => %FileInfo.Mime{subtype: subtype}} = file_info
 
