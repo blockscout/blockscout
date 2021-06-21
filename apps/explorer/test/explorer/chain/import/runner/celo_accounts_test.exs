@@ -16,7 +16,8 @@ defmodule Explorer.Chain.Import.Runner.CeloAccountsTest do
           changeset.changes
         end)
 
-      assert {:ok, %{insert_celo_accounts: list}} = run_changes(pools)
+      assert {:ok, _} = run_changes(pools)
+      list = Repo.all(CeloAccount)
       assert Enum.count(list) == Enum.count(pools)
     end
   end

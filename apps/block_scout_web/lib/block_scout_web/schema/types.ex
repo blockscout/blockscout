@@ -170,7 +170,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:rewards_ratio, :wei)
     field(:accumulated_rewards, :wei)
     field(:accumulated_active, :wei)
-    field(:receivable_votes, :integer)
+    field(:receivable_votes, :decimal)
 
     field(:address_info, :address) do
       resolve(&Address.get_by/3)
