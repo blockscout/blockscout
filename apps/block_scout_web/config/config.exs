@@ -185,6 +185,11 @@ config :ex_twilio,
   account_sid: {:system, "TWILIO_ACCOUNT_SID"},
   auth_token: {:system, "TWILIO_AUTH_TOKEN"}
 
+config :briefly,
+  directory: ["/tmp"],
+  default_prefix: "briefly",
+  default_extname: ""
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
