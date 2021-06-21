@@ -86,7 +86,6 @@
                             <div class='custom-tooltip header'><%= gettext "Gas tracker" %></div>
                             <div>
                               <div class='custom-tooltip description left d-flex'><span><%= gettext "Slow" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["slow"] %> <%= gettext "Gwei" %></span></div>
-                              <div class='custom-tooltip description left d-flex'><span><%= gettext "Average" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["average"] %> <%= gettext "Gwei" %></span></div>
                               <div class='custom-tooltip description left d-flex'><span><%= gettext "Fast" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["fast"] %> <%= gettext "Gwei" %></span></div>
                             </div>
                             "
