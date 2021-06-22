@@ -250,7 +250,7 @@ msgid "Call Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:88
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:91
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:305
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:56
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
@@ -740,7 +740,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:38
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:78
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:80
 msgid "IN"
 msgstr ""
 
@@ -758,7 +758,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:38
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:40
 #: lib/block_scout_web/templates/transaction/overview.html.eex:119
 msgid "TX Fee"
 msgstr ""
@@ -870,7 +870,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:405
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:125
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:135
 #: lib/block_scout_web/views/tokens/overview_view.ex:41
 #: lib/block_scout_web/views/transaction_view.ex:414
 msgid "Token Transfers"
@@ -984,7 +984,7 @@ msgid "Loading..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:69
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:72
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:299
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:50
 msgid "Loading...."
@@ -1071,7 +1071,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:36
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:74
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:76
 msgid "OUT"
 msgstr ""
 
@@ -1568,12 +1568,12 @@ msgid "View Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:59
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:61
 msgid "View Less Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:58
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:60
 msgid "View More Transfers"
 msgstr ""
 
@@ -1727,7 +1727,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:126
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:136
 msgid "Metadata"
 msgstr ""
 
@@ -2727,8 +2727,8 @@ msgid "Flattened source code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:72
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:79
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:75
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:82
 msgid "Next"
 msgstr ""
 
@@ -2739,13 +2739,13 @@ msgid "Sources and Metadata JSON"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
-msgid "Sources and metadata JSON file"
+#: lib/block_scout_web/templates/address_contract/index.html.eex:33
+msgid "This contract has been verified via Sourcify."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:33
-msgid "This contract has been verified via Sourcify."
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
+msgid "Sourcify: Sources and metadata JSON file"
 msgstr ""
 
 #, elixir-format
@@ -2778,7 +2778,7 @@ msgstr ""
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
 #: lib/block_scout_web/templates/layout/app.html.eex:33
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:35
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:37
 #: lib/block_scout_web/templates/transaction/overview.html.eex:256
 #: lib/block_scout_web/templates/transaction/overview.html.eex:309
 #: lib/block_scout_web/views/transaction_view.ex:394

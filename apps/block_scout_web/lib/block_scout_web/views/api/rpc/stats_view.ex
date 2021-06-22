@@ -27,6 +27,10 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
     RPCView.render("show.json", data: count)
   end
 
+  def render("totalfees.json", %{total_fees: total_fees}) do
+    RPCView.render("show.json", data: total_fees)
+  end
+
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
   end

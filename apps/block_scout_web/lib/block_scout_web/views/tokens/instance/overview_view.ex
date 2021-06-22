@@ -114,11 +114,21 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   defp retrieve_image(image_url) do
-    if image_url =~ "ipfs://ipfs" do
-      "ipfs://ipfs" <> ipfs_uid = image_url
-      "https://ipfs.io/ipfs/" <> ipfs_uid
-    else
-      image_url
+    compose_ipfs_url(image_url)
+  end
+
+  defp compose_ipfs_url(image_url) do
+    cond do
+      image_url =~ "ipfs://ipfs" ->
+        "ipfs://ipfs" <> ipfs_uid = image_url
+        "https://ipfs.io/ipfs/" <> ipfs_uid
+
+      image_url =~ "ipfs://" ->
+        "ipfs://" <> ipfs_uid = image_url
+        "https://ipfs.io/ipfs/" <> ipfs_uid
+
+      true ->
+        image_url
     end
   end
 
