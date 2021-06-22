@@ -5,5 +5,8 @@
   router: "lib/block_scout_web/router.ex",
   exit: "low",
   format: "compact",
-  ignore: ["Config.Headers", "Config.CSWH", "XSS.SendResp", "XSS.Raw"]
+  ignore: ["Config.Headers", "Config.CSWH", "XSS.SendResp", "XSS.Raw"],
+  ignore_files: [
+    "apps/block_scout_web/lib/block_scout_web/views/tokens/instance/overview_view.ex"
+  ]
 ]
