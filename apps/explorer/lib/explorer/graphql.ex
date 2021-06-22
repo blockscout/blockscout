@@ -13,6 +13,8 @@ defmodule Explorer.GraphQL do
       where: 3
     ]
 
+  alias Explorer.Celo.Util
+
   alias Explorer.Chain.{
     Address,
     Block,
@@ -282,11 +284,13 @@ defmodule Explorer.GraphQL do
   end
 
   def txtransfers_query do
+    token_contract_names = Util.get_token_contract_names()
+
     from(
       tt in TokenTransfer,
       join: t in CeloParams,
       where: tt.token_contract_address_hash == t.address_value,
-      where: t.name == "goldToken" or t.name == "stableToken",
+      where: t.name in ^token_contract_names,
       where: not is_nil(tt.transaction_hash),
       inner_join: tx in Transaction,
       on: tx.hash == tt.transaction_hash,
@@ -316,11 +320,27 @@ defmodule Explorer.GraphQL do
   end
 
   def celo_tx_transfers_query do
+    token_contract_names = Util.get_token_contract_names()
+    token_symbols = Util.get_token_contract_symbols()
+
     from(
       tt in TokenTransfer,
       join: t in CeloParams,
       where: tt.token_contract_address_hash == t.address_value,
-      where: t.name == "goldToken" or t.name == "stableToken",
+      where: t.name in ^token_contract_names,
+      inner_join:
+        tkn in fragment(
+          """
+          (
+            WITH token_names AS (
+              SELECT contract_name, token_symbol FROM unnest(?::text[], ?::text[]) t (contract_name, token_symbol)
+            ) SELECT * FROM token_names
+          )
+          """,
+          ^token_contract_names,
+          ^token_symbols
+        ),
+      on: t.name == tkn.contract_name,
       inner_join: tx in Transaction,
       on: tx.hash == tt.transaction_hash,
       inner_join: b in Block,
@@ -342,7 +362,7 @@ defmodule Explorer.GraphQL do
         log_index: tt.log_index,
         value: tt.amount,
         comment: tt.comment,
-        token: fragment("(case when ? = 'stableToken' then 'cUSD' else 'cGLD' end)", t.name),
+        token: tkn.token_symbol,
         nonce: tx.nonce,
         block_number: tt.block_number
       },

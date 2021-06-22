@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
+  alias Explorer.Celo.Util
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -122,7 +123,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "confirmations" => "#{transaction.confirmations}",
       "gatewayFeeRecipient" => "#{transaction.gas_fee_recipient_hash}",
       "gatewayFee" => "#{transaction.gateway_fee}",
-      "feeCurrency" => if(transaction.fee_currency == "stableToken", do: "cUSD", else: "CELO")
+      "feeCurrency" => Util.contract_name_to_symbol(transaction.fee_currency, true)
     }
   end
 

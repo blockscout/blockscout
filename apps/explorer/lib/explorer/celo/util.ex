@@ -7,6 +7,13 @@ defmodule Explorer.Celo.Util do
   alias Explorer.Celo.AbiHandler
   alias Explorer.SmartContract.Reader
 
+  @celo_token_contract_symbols %{
+    "stableToken" => "cUSD",
+    "stableTokenEUR" => "cEUR",
+    # cGLD is the old symbol, needs to be updated to CELO
+    "goldToken" => "cGLD"
+  }
+
   def call_methods(methods) do
     contract_abi = AbiHandler.get_abi()
 
@@ -47,6 +54,7 @@ defmodule Explorer.Celo.Util do
   defp contract(:accounts), do: get_address("Accounts")
   defp contract(:gold), do: get_address("GoldToken")
   defp contract(:usd), do: get_address("StableToken")
+  defp contract(:eur), do: get_address("StableTokenEUR")
 
   def get_address(name) do
     case get_address_raw(name) do
@@ -77,6 +85,24 @@ defmodule Explorer.Celo.Util do
     case res["getAddressForString"] do
       {:ok, [address]} -> {:ok, address}
       _ -> :error
+    end
+  end
+
+  def get_token_contract_names do
+    Map.keys(@celo_token_contract_symbols)
+  end
+
+  def get_token_contract_symbols do
+    Map.values(@celo_token_contract_symbols)
+  end
+
+  def contract_name_to_symbol(name, use_celo_instead_cgld?) do
+    case name do
+      n when n in [nil, "goldToken"] ->
+        if(use_celo_instead_cgld?, do: "CELO", else: "cGLD")
+
+      _ ->
+        @celo_token_contract_symbols[name]
     end
   end
 end
