@@ -357,7 +357,21 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartError = $('[data-chart-error-message]')
-  const chart = new MarketHistoryChart(el, 0, [], dataConfig)
+  const txsHistoryChartDataCache = JSON.parse(localStorage.getItem('txHistoryDataXDAI')) || []
+
+  const numTransactions = {
+    label: window.localized['Tx/day'],
+    yAxisID: 'numTransactions',
+    data: getTxHistoryData(txsHistoryChartDataCache),
+    cubicInterpolationMode: 'monotone',
+    fill: false,
+    pointRadius: 0,
+    backgroundColor: sassVariables.dashboardLineColorTransactions,
+    borderColor: sassVariables.dashboardLineColorTransactions
+  }
+
+  const chart = new MarketHistoryChart(el, 0, [numTransactions], dataConfig)
+
   Object.keys(dataPaths).forEach(function (historySource) {
     $.getJSON(dataPaths[historySource], { type: 'JSON' })
       .done(data => {
@@ -371,16 +385,15 @@ export function createMarketHistoryChart (el) {
             break
           }
           case 'transaction': {
-            const transactionHistory = JSON.parse(data.history_data)
+            const txsHistoryData = JSON.parse(data.history_data)
 
             $(el).show()
-            chart.updateTransactionHistory(transactionHistory)
+            chart.updateTransactionHistory(txsHistoryData)
             break
           }
         }
       })
       .fail(() => {
-        $(el).hide()
         $chartError.show()
       })
   })
@@ -407,7 +420,6 @@ export function createGasUsageHistoryChart (el) {
         }
       })
       .fail(() => {
-        $(el).hide()
         $chartError.show()
       })
   })
