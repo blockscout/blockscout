@@ -10,6 +10,7 @@
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
 
 ### Fixes
+- [#4310](https://github.com/blockscout/blockscout/pull/4310) - Fix logo URL redirection, set font-family defaults for chart.js
 - [#4308](https://github.com/blockscout/blockscout/pull/4308) - Fix internal server error on contract verification options page
 - [#4307](https://github.com/blockscout/blockscout/pull/4307) - Fix for composing IPFS URLs for NFTs images
 - [#4306](https://github.com/blockscout/blockscout/pull/4306) - Check token instance images MIME types
