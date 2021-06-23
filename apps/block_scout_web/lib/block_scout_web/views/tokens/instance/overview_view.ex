@@ -76,9 +76,13 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
         |> MIME.type()
       end
 
-    basic_mime_type = mime_type |> String.split("/") |> Enum.at(0)
+    if mime_type do
+      basic_mime_type = mime_type |> String.split("/") |> Enum.at(0)
 
-    basic_mime_type
+      basic_mime_type
+    else
+      nil
+    end
   end
 
   def media_type(nil), do: nil
