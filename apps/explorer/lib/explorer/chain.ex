@@ -2684,7 +2684,7 @@ defmodule Explorer.Chain do
         )
 
       query
-      |> Repo.one() || 0
+      |> Repo.one(timeout: :infinity) || 0
     else
       0
     end
