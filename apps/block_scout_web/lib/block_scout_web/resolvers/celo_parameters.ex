@@ -5,20 +5,28 @@ defmodule BlockScoutWeb.Resolvers.CeloParameters do
 
   def get_by(_, _, _) do
     with {:ok, result} <- Chain.get_celo_parameters(),
-         {:ok, stable} <- get_address_param(result, "stableToken"),
-         {:ok, gold} <- get_address_param(result, "goldToken"),
+         {:ok, usd} <- get_address_param(result, "stableToken"),
+         {:ok, eur} <- get_address_param(result, "stableTokenEUR"),
+         {:ok, celo} <- get_address_param(result, "goldToken"),
          {:ok, locked} <- get_param(result, "totalLockedGold"),
          {:ok, validators} <- get_param(result, "numRegisteredValidators"),
          {:ok, min_validators} <- get_param(result, "minElectableValidators"),
          {:ok, max_validators} <- get_param(result, "maxElectableValidators") do
       {:ok,
        %{
-         gold_token: gold,
-         stable_token: stable,
+         celo_token: celo,
+         stable_tokens: %{
+           cusd: usd,
+           ceur: eur
+         },
          total_locked_gold: locked,
          min_electable_validators: min_validators.value,
          max_electable_validators: max_validators.value,
-         num_registered_validators: validators.value
+         num_registered_validators: validators.value,
+
+         # deprecated
+         gold_token: celo,
+         stable_token: usd
        }}
     else
       _ -> {:error, "Celo network parameters not found???"}

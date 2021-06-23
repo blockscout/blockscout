@@ -129,10 +129,10 @@ defmodule Indexer.Block.Fetcher do
     e_logs
   end
 
-  defp add_gold_token_balances(gold_token, addresses, acc) do
+  defp add_celo_token_balances(celo_token, addresses, acc) do
     Enum.reduce(addresses, acc, fn
       %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
-        MapSet.put(acc, %{address_hash: hash, token_contract_address_hash: gold_token, block_number: bn})
+        MapSet.put(acc, %{address_hash: hash, token_contract_address_hash: celo_token, block_number: bn})
 
       _, acc ->
         acc
@@ -144,13 +144,20 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp read_addresses do
-    with {:ok, gold_token} <- Util.get_address("GoldToken"),
-         {:ok, stable_token} <- Util.get_address("StableToken"),
+    with {:ok, celo_token} <- Util.get_address("GoldToken"),
+         {:ok, stable_token_usd} <- Util.get_address("StableToken"),
+         {:ok, stable_token_eur} <- Util.get_address("StableTokenEUR"),
          {:ok, oracle_address} <- Util.get_address("SortedOracles") do
-      {:ok, gold_token, stable_token, oracle_address, true}
+      tokens = %{
+        celo: celo_token,
+        cusd: stable_token_usd,
+        ceur: stable_token_eur
+      }
+
+      {:ok, tokens, oracle_address, true}
     else
       _err ->
-        {:ok, nil, nil, nil, false}
+        {:ok, %{celo: nil, cusd: nil, ceur: nil}, nil, false}
     end
   end
 
@@ -184,20 +191,26 @@ defmodule Indexer.Block.Fetcher do
          logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
-         try_gold_token_enabled = config(:enable_gold_token),
-         {:ok, gold_token, stable_token, oracle_address, gold_token_enabled} <-
-           (if try_gold_token_enabled do
+         try_celo_token_enabled = config(:enable_gold_token),
+         {:ok,
+          %{
+            celo: celo_token,
+            cusd: stable_token_usd,
+            ceur: _
+          }, oracle_address,
+          celo_token_enabled} <-
+           (if try_celo_token_enabled do
               read_addresses()
             else
-              {:ok, nil, nil, nil, false}
+              {:ok, %{celo: nil, cusd: nil, ceur: nil}, nil, false}
             end),
          %{token_transfers: celo_token_transfers} =
-           (if gold_token_enabled do
-              TokenTransfers.parse_tx(transactions_with_receipts, gold_token)
+           (if celo_token_enabled do
+              TokenTransfers.parse_tx(transactions_with_receipts, celo_token)
             else
               %{token_transfers: []}
             end),
-         # Non gold fees should be handled by events
+         # Non CELO fees should be handled by events
          %{
            accounts: celo_accounts,
            validators: celo_validators,
@@ -213,7 +226,7 @@ defmodule Indexer.Block.Fetcher do
          } = CeloAccounts.parse(logs, oracle_address),
          market_history =
            exchange_rates
-           |> Enum.filter(fn el -> el.token == stable_token end)
+           |> Enum.filter(fn el -> el.token == stable_token_usd end)
            |> Enum.filter(fn el -> el.rate > 0 end)
            |> Enum.map(fn %{rate: rate, stamp: time} ->
              inv_rate = Decimal.from_float(1 / rate)
@@ -221,8 +234,8 @@ defmodule Indexer.Block.Fetcher do
              %{opening_price: inv_rate, closing_price: inv_rate, date: date}
            end),
          exchange_rates =
-           (if Enum.count(exchange_rates) > 0 and gold_token != nil do
-              [%{token: gold_token, rate: 1.0} | exchange_rates]
+           (if Enum.count(exchange_rates) > 0 and celo_token != nil do
+              [%{token: celo_token, rate: 1.0} | exchange_rates]
             else
               []
             end),
@@ -231,8 +244,8 @@ defmodule Indexer.Block.Fetcher do
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
          tokens =
            normal_tokens ++
-             (if gold_token_enabled do
-                [%{contract_address_hash: gold_token, type: "ERC-20"}]
+             (if celo_token_enabled do
+                [%{contract_address_hash: celo_token, type: "ERC-20"}]
               else
                 []
               end),
@@ -246,23 +259,23 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
              wallets: celo_wallets,
-             # The address of the Gold token has to be added to the addresses table
-             gold_token:
-               if gold_token_enabled do
-                 [%{hash: gold_token, block_number: last_block}]
+             # The address of the CELO token has to be added to the addresses table
+             celo_token:
+               if celo_token_enabled do
+                 [%{hash: celo_token, block_number: last_block}]
                else
                  []
                end
            }),
-         gold_transfers =
+         celo_transfers =
            normal_token_transfers
-           |> Enum.filter(fn %{token_contract_address_hash: contract} -> contract == gold_token end),
+           |> Enum.filter(fn %{token_contract_address_hash: contract} -> contract == celo_token end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
-             gold_transfers: gold_transfers,
+             celo_transfers: celo_transfers,
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),
@@ -280,10 +293,10 @@ defmodule Indexer.Block.Fetcher do
            |> BlockReward.reduce_uncle_rewards(),
          address_token_balances_from_transfers =
            AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
-         # Also update the Gold token balances
+         # Also update the CELO token balances
          address_token_balances =
-           (if gold_token_enabled do
-              add_gold_token_balances(gold_token, addresses, address_token_balances_from_transfers)
+           (if celo_token_enabled do
+              add_celo_token_balances(celo_token, addresses, address_token_balances_from_transfers)
             else
               address_token_balances_from_transfers
             end),

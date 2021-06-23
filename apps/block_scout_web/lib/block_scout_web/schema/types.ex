@@ -190,6 +190,14 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
+  Celo stable coins
+  """
+  object :celo_stable_coins do
+    field(:cusd, :address_hash)
+    field(:ceur, :address_hash)
+  end
+
+  @desc """
   Celo network parameters
   """
   object :celo_parameters do
@@ -197,8 +205,10 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:num_registered_validators, :integer)
     field(:min_electable_validators, :integer)
     field(:max_electable_validators, :integer)
-    field(:gold_token, :address_hash)
-    field(:stable_token, :address_hash)
+    field(:gold_token, :address_hash, deprecate: "Use celoToken instead.")
+    field(:stable_token, :address_hash, deprecate: "Use stableTokens instead.")
+    field(:celo_token, :address_hash)
+    field(:stable_tokens, :celo_stable_coins)
   end
 
   @desc """

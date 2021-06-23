@@ -138,7 +138,7 @@ defmodule Indexer.Transform.Addresses do
         %{from: :address_hash, to: :hash}
       ]
     ],
-    gold_token: [
+    celo_token: [
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
         %{from: :hash, to: :hash}
@@ -440,7 +440,7 @@ defmodule Indexer.Transform.Addresses do
               required(:block_number) => non_neg_integer()
             }
           ],
-          optional(:gold_token) => [
+          optional(:celo_token) => [
             %{
               required(:hash) => String.t(),
               required(:block_number) => non_neg_integer()
