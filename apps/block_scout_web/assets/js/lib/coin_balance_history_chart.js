@@ -3,6 +3,7 @@ import { Chart, Filler, LineController, LineElement, PointElement, LinearScale, 
 import 'chartjs-adapter-moment'
 import humps from 'humps'
 
+Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
 Chart.register(Filler, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
 export function createCoinBalanceHistoryChart (el) {
