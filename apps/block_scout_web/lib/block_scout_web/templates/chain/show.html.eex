@@ -9,7 +9,6 @@
             <span><%= gettext("There was a problem loading the chart.") %></span>
           </button>
           <canvas data-chart="historyChart"
-
                   data-history_chart_paths=
                   '{<%= for {{key, value}, x} <- Enum.with_index(@chart_data_paths) do %>
                         "<%= key %>":"<%= value %>"
@@ -17,10 +16,10 @@
                         ,
                         <% end %>
                   <% end %>}'
-
                   data-history_chart_config = '<%= @chart_config_json %>'
-
-                  width="350" height="152" style="display: none;"></canvas>
+                  width="350" height="152">
+          </canvas>
+          <script data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
         </div>
         <!-- Legend -->
         <script>
@@ -170,7 +169,6 @@
       </div>
     </div>
   </div>
-  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
 </div>
 <section class="container">

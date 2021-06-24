@@ -80,6 +80,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
+      {:file_info, "~> 0.0.4"},
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.20.1", only: :test},
       {:flow, "~> 0.12"},

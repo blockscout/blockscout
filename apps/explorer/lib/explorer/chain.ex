@@ -3805,14 +3805,20 @@ defmodule Explorer.Chain do
     |> handle_paging_options(paging_options)
   end
 
-  def smart_contract_verified?(address_hash) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
+  def smart_contract_verified?(address_hash_str) do
+    case string_to_address_hash(address_hash_str) do
+      {:ok, address_hash} ->
+        query =
+          from(
+            smart_contract in SmartContract,
+            where: smart_contract.address_hash == ^address_hash
+          )
 
-    if Repo.one(query), do: true, else: false
+        if Repo.one(query), do: true, else: false
+
+      _ ->
+        false
+    end
   end
 
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do

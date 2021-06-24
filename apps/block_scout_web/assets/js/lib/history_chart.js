@@ -7,6 +7,7 @@ import moment from 'moment'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
+Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
 const grid = {
@@ -391,16 +392,15 @@ export function createMarketHistoryChart (el) {
             break
           }
           case 'transaction': {
-            const transactionHistory = JSON.parse(data.history_data)
+            const txsHistoryData = JSON.parse(data.history_data)
 
             $(el).show()
-            chart.updateTransactionHistory(transactionHistory)
+            chart.updateTransactionHistory(txsHistoryData)
             break
           }
         }
       })
       .fail(() => {
-        $(el).hide()
         $chartError.show()
       })
   })

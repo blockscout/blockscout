@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added sourcify verification api endpoint
 - [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
 - [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
 - [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contract's 
@@ -9,6 +10,10 @@
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
 
 ### Fixes
+- [#4310](https://github.com/blockscout/blockscout/pull/4310) - Fix logo URL redirection, set font-family defaults for chart.js
+- [#4308](https://github.com/blockscout/blockscout/pull/4308) - Fix internal server error on contract verification options page
+- [#4307](https://github.com/blockscout/blockscout/pull/4307) - Fix for composing IPFS URLs for NFTs images
+- [#4306](https://github.com/blockscout/blockscout/pull/4306) - Check token instance images MIME types
 - [#4295](https://github.com/blockscout/blockscout/pull/4295) - Mobile view fix: transaction tile tx hash overflow
 - [#4294](https://github.com/blockscout/blockscout/pull/4294) - User wont be able to open verification pages for verified smart-contract
 - [#4240](https://github.com/blockscout/blockscout/pull/4240) - `[]` is accepted in write contract page
