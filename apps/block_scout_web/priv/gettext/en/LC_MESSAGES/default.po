@@ -2884,3 +2884,11 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:6
 msgid "explorer.celo.org"
 msgstr ""
+
+# From templates/transaction/_token_transfer.html.eex
+msgid "cGLD"
+msgstr "CELO"
+
+# From templates/tokens/overview/details.html.eex#
+msgid "Celo Gold"
+msgstr "CELO"
