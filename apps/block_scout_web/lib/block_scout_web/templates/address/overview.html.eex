@@ -7,7 +7,7 @@
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row">
     <!-- Address details -->
-    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-3">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
       <div class="card">
         <div class="card-body">
           <%= cond do %>
@@ -147,7 +147,7 @@
       </div>
     </div>
     <!-- Balance -->
-    <div class="card-section col-md-12 col-lg-4 pl-0-md mb-3" data-selector="balance-card">
+    <div class="card-section col-md-12 col-lg-4 pl-0-md mb-2" data-selector="balance-card">
       <%= render BlockScoutWeb.AddressView, "_balance_card.html", conn: @conn, address: @address, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status %>
     </div>
 

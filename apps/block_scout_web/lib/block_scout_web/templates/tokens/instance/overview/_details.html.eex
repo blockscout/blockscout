@@ -1,7 +1,7 @@
 <section class="address-overview">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="card-section col-md-12 col-lg-7 pr-0-md">
+    <div class="card-section col-md-12 col-lg-7 pr-0-md mb-2">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title">
@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    <div class="card-section col-md-12 col-lg-5 pl-0-md">
+    <div class="card-section col-md-12 col-lg-5 pl-0-md mb-2">
       <div class="card">
         <div class="card-body">
           <div class="erc721-media" >
@@ -76,5 +76,6 @@
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-counters.js") %>"></script>
 </section>
+<%= render BlockScoutWeb.AdView, "_banner_728.html" %>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@conn, @token_id, @token.contract_address_hash), title: @token.contract_address %>

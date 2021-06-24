@@ -5,7 +5,7 @@
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-3">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
       <div class="card">
         <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title">
@@ -81,7 +81,7 @@
     </div>
 
     <%= if total_supply?(@token) do %>
-      <div class="card-section col-md-12 col-lg-4 pl-0-md mb-3">
+      <div class="card-section col-md-12 col-lg-4 pl-0-md mb-2">
         <div class="card card-background-1">
           <div class="card-body">
             <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
