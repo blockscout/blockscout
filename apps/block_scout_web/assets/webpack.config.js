@@ -125,6 +125,7 @@ const appJs =
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
+      'main-page': './css/main-page.scss',
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
       'faucet': './js/pages/faucet.js',

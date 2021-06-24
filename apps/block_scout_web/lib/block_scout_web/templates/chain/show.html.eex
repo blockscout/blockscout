@@ -19,7 +19,6 @@
                   data-history_chart_config = '<%= @chart_config_json %>'
                   width="350" height="152">
           </canvas>
-          <script data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
         </div>
         <!-- Legend -->
         <script>
@@ -217,7 +216,6 @@
       </div>
     </div>
   </div>
-  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
 </div>
 <section class="container">
   <div class="card card-chain-blocks">

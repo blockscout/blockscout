@@ -1,0 +1,89 @@
+@import "./mixins";
+
+/* Phoenix flash messages */
+.alert:empty {
+  display: none;
+}
+
+/* This file is for your main application css. */
+
+// Font Awesome
+$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+@import "fontawesome";
+@import "~@fortawesome/fontawesome-free/scss/brands";
+@import "~@fortawesome/fontawesome-free/scss/regular";
+@import "~@fortawesome/fontawesome-free/scss/solid";
+
+// Bootstrap Core CSS
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+
+@import "theme/variables";
+
+@import "~bootstrap/scss/root";
+@import "~bootstrap/scss/reboot";
+@import "~bootstrap/scss/grid";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/input-group";
+@import "~bootstrap/scss/utilities/spacing";
+@import "~bootstrap/scss/utilities/sizing";
+@import "~bootstrap/scss/utilities/display";
+@import "~bootstrap/scss/utilities/flex";
+@import "~bootstrap/scss/utilities/float";
+@import "~bootstrap/scss/utilities/text";
+@import "~bootstrap/scss/utilities/borders";
+
+// Bootstrap Components
+@import "~bootstrap/scss/alert";
+@import "~bootstrap/scss/badge";
+@import "~bootstrap/scss/card";
+@import "~bootstrap/scss/dropdown";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/nav";
+@import "~bootstrap/scss/navbar";
+@import "~bootstrap/scss/transitions";
+
+//Custom theme
+@import "theme/fonts";
+
+// Custom SCSS
+@import "layout";
+@import "typography";
+@import "helpers";
+@import "elements";
+@import "components/nav_tabs";
+@import "components/address_link";
+@import "components/footer";
+@import "components/button";
+@import "components/navbar";
+@import "components/alerts";
+@import "components/animations";
+@import "components/card";
+@import "components/tile";
+@import "components/dashboard-banner";
+@import "components/badge";
+@import "components/nounderline-link";
+@import "components/dropdown";
+@import "components/btn_full";
+@import "components/btn_line";
+@import "components/stakes_variables";
+@import "components/errors";
+@import "components/btn_no_border";
+@import "components/custom_tooltips";
+@import "components/label";
+
+@import "theme/dark-theme";
+
+:export {
+  dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
+  dashboardBannerChartAxisFontAltColor: $dashboard-banner-chart-axis-font-color-alt;
+  dashboardLineColorMarket: $dashboard-line-color-market;
+  dashboardLineColorPrice: $dashboard-line-color-price;
+  dashboardLineColorTransactions: $dashboard-line-color-transactions;
+  primary: $primary;
+  secondary: $secondary;
+  darkprimary: $dark-primary;
+  darksecondary: $dark-secondary;
+}
