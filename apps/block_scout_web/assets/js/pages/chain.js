@@ -1,9 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
-import first from 'lodash/first'
-import rangeRight from 'lodash/rangeRight'
-import find from 'lodash/find'
-import map from 'lodash/map'
+import { omit, first, rangeRight, find, map } from 'lodash-core'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
@@ -11,7 +7,7 @@ import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
-import '../app'
+import '../main_page'
 
 const BATCH_THRESHOLD = 6
 const BLOCKS_PER_PAGE = 4

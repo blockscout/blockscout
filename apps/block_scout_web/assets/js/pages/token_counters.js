@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import { omit } from 'lodash-core'
 import humps from 'humps'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import '../lib/async_listing_load'

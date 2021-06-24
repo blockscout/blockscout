@@ -1,7 +1,5 @@
 import $ from 'jquery'
-import reduce from 'lodash/reduce'
-import isObject from 'lodash/isObject'
-import forIn from 'lodash/forIn'
+import { reduce, isObject, forIn } from 'lodash-core'
 import { createStore as reduxCreateStore } from 'redux'
 
 /**

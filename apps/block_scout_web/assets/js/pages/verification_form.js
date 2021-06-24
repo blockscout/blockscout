@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import { omit } from 'lodash-core'
 import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'

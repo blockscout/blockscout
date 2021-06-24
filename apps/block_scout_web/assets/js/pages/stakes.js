@@ -1,7 +1,7 @@
 import '../../css/stakes.scss'
 
 import $ from 'jquery'
-import _ from 'lodash'
+import _ from 'lodash-core'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'

@@ -1,10 +1,5 @@
 import $ from 'jquery'
-import map from 'lodash/map'
-import get from 'lodash/get'
-import noop from 'lodash/noop'
-import find from 'lodash/find'
-import intersectionBy from 'lodash/intersectionBy'
-import differenceBy from 'lodash/differenceBy'
+import { map, get, noop, find, intersectionBy, differenceBy } from 'lodash-core'
 import morph from 'nanomorph'
 import { updateAllAges } from './from_now'
 

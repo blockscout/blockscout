@@ -1,6 +1,5 @@
 import $ from 'jquery'
-import map from 'lodash/map'
-import merge from 'lodash/merge'
+import { map, merge } from 'lodash-core'
 import URI from 'urijs'
 import humps from 'humps'
 import listMorph from '../lib/list_morph'

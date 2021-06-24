@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import { omit } from 'lodash-core'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../../socket'
