@@ -3,8 +3,9 @@
 <% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="card-section col-md-12 col-lg-8 pr-0-md">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
       <div class="card">
         <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title" style="margin-bottom: 1rem;">
@@ -149,7 +150,7 @@
     </div>
 
     <%= if total_supply?(@token) do %>
-      <div class="card-section col-md-12 col-lg-4 pl-0-md">
+      <div class="card-section col-md-12 col-lg-4 pl-0-md mb-2">
         <div class="card card-background-1">
           <div class="card-body">
             <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
@@ -181,3 +182,4 @@
 </section>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)), title: @token.contract_address %>
+<%= render BlockScoutWeb.AdView, "_banner_728.html" %>
