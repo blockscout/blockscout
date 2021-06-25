@@ -1,6 +1,8 @@
 <!-- Coinzilla Banner 728x90 -->
 <script async src="https://coinzillatag.com/lib/display.js"></script>
-<div class="coinzilla" data-zone="C-57360d190f653191213"></div>
+<div class="ad-container mb-2">
+    <div class="coinzilla" data-zone="C-57360d190f653191213"></div>
+</div>
 <script>
     window.coinzilla_display = window.coinzilla_display || [];
     var c_display_preferences = {};
