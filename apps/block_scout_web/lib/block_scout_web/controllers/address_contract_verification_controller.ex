@@ -10,27 +10,31 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
-    changeset =
-      SmartContract.changeset(
-        %SmartContract{address_hash: address_hash_string},
-        %{}
+    if Chain.smart_contract_verified?(address_hash_string) do
+      redirect(conn, to: address_path(conn, :show, address_hash_string))
+    else
+      changeset =
+        SmartContract.changeset(
+          %SmartContract{address_hash: address_hash_string},
+          %{}
+        )
+
+      compiler_versions =
+        case CompilerVersion.fetch_versions() do
+          {:ok, compiler_versions} ->
+            compiler_versions
+
+          {:error, _} ->
+            []
+        end
+
+      render(conn, "new.html",
+        changeset: changeset,
+        compiler_versions: compiler_versions,
+        evm_versions: CodeCompiler.allowed_evm_versions(),
+        address_hash: address_hash_string
       )
-
-    compiler_versions =
-      case CompilerVersion.fetch_versions() do
-        {:ok, compiler_versions} ->
-          compiler_versions
-
-        {:error, _} ->
-          []
-      end
-
-    render(conn, "new.html",
-      changeset: changeset,
-      compiler_versions: compiler_versions,
-      evm_versions: CodeCompiler.allowed_evm_versions(),
-      address_hash: address_hash_string
-    )
+    end
   end
 
   def create(
@@ -52,7 +56,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "file" => files
         }
       ) do
-    files_array = if is_map(files), do: Enum.map(files, fn {_, file} -> file end), else: []
+    files_array = prepare_files_array(files)
 
     json_files =
       files_array
@@ -121,7 +125,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     end
   end
 
-  defp get_metadata_and_publish(address_hash_string, conn) do
+  def get_metadata_and_publish(address_hash_string, conn) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
         %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
@@ -140,6 +144,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           :on_demand
         )
     end
+  end
+
+  def prepare_files_array(files) do
+    if is_map(files), do: Enum.map(files, fn {_, file} -> file end), else: []
   end
 
   defp prepare_verification_error(msg, address_hash_string, conn) do

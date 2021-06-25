@@ -1,5 +1,5 @@
 <section data-page="contract-verification" class="container new-smart-contract-container">
-  <div data-selector="channel-disconnected-message" style="display: none;">
+  <div data-selector="channel-disconnected-message" class="d-none">
     <div data-selector="reload-button" class="alert alert-danger">
       <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
     </div>

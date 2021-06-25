@@ -1,6 +1,9 @@
 import $ from 'jquery'
-import Chart from 'chart.js'
+import { Chart, Filler, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
+import 'chartjs-adapter-moment'
 import humps from 'humps'
+
+Chart.register(Filler, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
 export function createCoinBalanceHistoryChart (el) {
   const $chartContainer = $('[data-chart-container]')
@@ -32,30 +35,40 @@ export function createCoinBalanceHistoryChart (el) {
           datasets: [{
             label: 'coin balance',
             data: coinBalanceHistoryData,
-            lineTension: 0
+            lineTension: 0,
+            cubicInterpolationMode: 'monotone',
+            fill: true
           }]
         },
-        options: {
+        plugins: {
           legend: {
             display: false
-          },
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        options: {
           scales: {
-            xAxes: [{
+            x: {
               type: 'time',
               time: {
                 unit: 'day',
+                tooltipFormat: 'YYYY-MM-DD',
                 stepSize: stepSize
               }
-            }],
-            yAxes: [{
+            },
+            y: {
+              type: 'linear',
               ticks: {
                 beginAtZero: true
               },
-              scaleLabel: {
+              title: {
                 display: true,
                 labelString: window.localized.Ether
               }
-            }]
+            }
           }
         }
       })

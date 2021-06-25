@@ -8,18 +8,18 @@ const weiToEtherConverter = (element, event) => {
   const $conversionTextWei = $element.find('[data-conversion-text-wei]')
   const $conversionTextEth = $element.find('[data-conversion-text-eth]')
   const $conversionUnit = $element.find('[data-conversion-unit]')
-  let unitVal = new BigNumber(numeral($conversionUnit.html()).value())
+  const originalValueStr = $conversionUnit.data('original-value')
+  const unitVal = new BigNumber(numeral(originalValueStr).value())
+  const weiVal = unitVal.dividedBy(weiUnit)
 
   if (event.target.checked) {
     $conversionTextWei.removeClass('d-inline-block').addClass('d-none')
     $conversionTextEth.removeClass('d-none').addClass('d-inline-block')
-    unitVal = unitVal.dividedBy(weiUnit)
-    $conversionUnit.html(unitVal.toFixed() > 0 ? String(unitVal.toFixed()) : numeral(unitVal).format('0[.000000000000000000]'))
+    $conversionUnit.html(weiVal.toFixed() > 0 ? String(weiVal.toFixed()) : numeral(weiVal).format('0[.000000000000000000]'))
   } else {
     $conversionTextWei.removeClass('d-none').addClass('d-inline-block')
     $conversionTextEth.removeClass('d-inline-block').addClass('d-none')
-    unitVal = unitVal.multipliedBy(weiUnit)
-    $conversionUnit.html(String(unitVal.toFixed()))
+    $conversionUnit.html(originalValueStr)
   }
 }
 

@@ -75,8 +75,11 @@ defmodule Explorer.Market do
         matches_known_address ->
           fetch_token_usd_value(matches_known_address, symbol)
 
-        mainnet_bridged_token?(token) ->
-          TokenBridge.get_current_price_for_bridged_token(symbol)
+        bridged_token = mainnet_bridged_token?(token) ->
+          TokenBridge.get_current_price_for_bridged_token(
+            token.contract_address_hash,
+            bridged_token.foreign_token_contract_address_hash
+          )
 
         true ->
           nil
@@ -92,7 +95,15 @@ defmodule Explorer.Market do
   end
 
   def add_price(tokens) when is_list(tokens) do
-    Enum.map(tokens, &add_price/1)
+    Enum.map(tokens, fn item ->
+      case item do
+        {token_balance, bridged_token} ->
+          {add_price(token_balance), bridged_token}
+
+        token_balance ->
+          add_price(token_balance)
+      end
+    end)
   end
 
   defp mainnet_bridged_token?(token) do
@@ -103,7 +114,7 @@ defmodule Explorer.Market do
 
       if bridged_token do
         if bridged_token.foreign_chain_id do
-          if Decimal.cmp(bridged_token.foreign_chain_id, Decimal.new(1)) == :eq, do: true, else: false
+          if Decimal.cmp(bridged_token.foreign_chain_id, Decimal.new(1)) == :eq, do: bridged_token, else: false
         else
           false
         end

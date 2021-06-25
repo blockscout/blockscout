@@ -27,7 +27,7 @@
                     value="<%= pool.staking_address_hash %>"
                     <%= if @pool_to && pool.staking_address_hash == @pool_to.staking_address_hash do "selected" end %>
                   >
-                    <%= BlockScoutWeb.AddressView.trimmed_hash(pool.staking_address_hash) %>
+                    <%= if is_nil(pool.name), do: BlockScoutWeb.AddressView.trimmed_hash(pool.staking_address_hash), else: pool.name %>
                   </option>
                 <% end %>
               </select>

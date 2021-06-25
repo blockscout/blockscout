@@ -12,7 +12,7 @@
         float: right;
     }
     &.omni {
-        background: $primary;
+        background: #6ca1e2;
         color: #fff;
     }
     &.amb {
@@ -38,6 +38,9 @@
     &.secondary {
         background: $secondary;
         color: #fff;
+    }
+    &.method {
+        color: #1e2022;
     }
     &.from-dropdown {
         margin-top: -3px;

@@ -31,7 +31,9 @@ export async function openBecomeCandidateModal (event, store) {
         $form,
         {
           'candidate-stake': value => isCandidateStakeValid(value, store, msg),
-          'mining-address': value => isMiningAddressValid(value, store)
+          'mining-address': value => isMiningAddressValid(value, store),
+          'pool-name': value => isPoolNameValid(value, store),
+          'pool-description': value => isPoolDescriptionValid(value, store)
         },
         $modal.find('form button')
       )
@@ -74,36 +76,42 @@ export function becomeCandidateConnectionLost () {
 
 async function becomeCandidate ($modal, store, msg) {
   const state = store.getState()
+  const web3 = state.web3
   const stakingContract = state.stakingContract
   const tokenContract = state.tokenContract
   const decimals = state.tokenDecimals
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
   const $miningAddressInput = $modal.find('[mining-address]')
+  const $poolNameInput = $modal.find('[pool-name]')
+  const $poolDescriptionInput = $modal.find('[pool-description]')
   const miningAddress = $miningAddressInput.val().trim().toLowerCase()
+  const poolName = $poolNameInput.val().trim()
+  const poolDescription = $poolDescriptionInput.val().trim()
 
   try {
     if (!isSupportedNetwork(store)) return false
     if (!isStakingAllowed(state)) return false
 
     const validatorSetContract = state.validatorSetContract
-    const stakingAddress = await validatorSetContract.methods.stakingByMiningAddress(miningAddress).call()
+    const hasEverBeenMiningAddress = await validatorSetContract.methods.hasEverBeenMiningAddress(miningAddress).call()
 
-    if (stakingAddress !== '0x0000000000000000000000000000000000000000') {
-      displayInputError($miningAddressInput, `This mining address is already bound to another staking address (<span title="${stakingAddress}">${shortenAddress(stakingAddress)}</span>). Please use another mining address.`)
+    if (hasEverBeenMiningAddress !== '0') {
+      displayInputError($miningAddressInput, 'This mining address has already been used for another pool. Please use another mining address.')
       $modal.find('form button').blur()
       return false
     }
 
     lockModal($modal)
 
-    makeContractCall(tokenContract.methods.transferAndCall(stakingContract.options.address, stake.toFixed(), `${miningAddress}01`), store)
+    const poolNameHex = web3.utils.stripHexPrefix(web3.utils.utf8ToHex(poolName))
+    const poolNameLength = web3.utils.stripHexPrefix(web3.utils.padLeft(web3.utils.numberToHex(poolNameHex.length / 2), 2, '0'))
+    const poolDescriptionHex = web3.utils.stripHexPrefix(web3.utils.utf8ToHex(poolDescription))
+    const poolDescriptionLength = web3.utils.stripHexPrefix(web3.utils.padLeft(web3.utils.numberToHex(poolDescriptionHex.length / 2), 4, '0'))
+
+    makeContractCall(tokenContract.methods.transferAndCall(stakingContract.options.address, stake.toFixed(), `${miningAddress}01${poolNameLength}${poolNameHex}${poolDescriptionLength}${poolDescriptionHex}`), store)
   } catch (err) {
     openErrorModal('Error', err.message)
   }
-}
-
-function shortenAddress (address) {
-  return address.substring(0, 6) + '–' + address.substring(address.length - 6)
 }
 
 function isCandidateStakeValid (value, store, msg) {
@@ -131,6 +139,33 @@ function isMiningAddressValid (value, store) {
     return 'Invalid mining address'
   } else if (miningAddress === store.getState().account.toLowerCase()) {
     return 'The mining address cannot match the staking address'
+  }
+
+  return true
+}
+
+function isPoolNameValid (name, store) {
+  const web3 = store.getState().web3
+  const nameHex = web3.utils.stripHexPrefix(web3.utils.utf8ToHex(name.trim()))
+  const nameLength = nameHex.length / 2
+  const maxLength = 256
+
+  if (nameLength > maxLength) {
+    return `Pool name length cannot exceed ${maxLength} bytes`
+  } else if (nameLength === 0) {
+    return 'Pool name shouldn\'t be empty'
+  }
+
+  return true
+}
+
+function isPoolDescriptionValid (description, store) {
+  const web3 = store.getState().web3
+  const descriptionHex = web3.utils.stripHexPrefix(web3.utils.utf8ToHex(description.trim()))
+  const maxLength = 1024
+
+  if (descriptionHex.length / 2 > maxLength) {
+    return `Pool description length cannot exceed ${maxLength} bytes`
   }
 
   return true

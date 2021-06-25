@@ -10,6 +10,10 @@
           <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "candidate-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "candidate-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
 
           <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "mining-address", classes: "form-group", input_classes: "form-control", attributes: "mining-address", type: "text", placeholder: gettext("Your Mining Address") %>
+
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "pool-name", classes: "form-group", input_classes: "form-control", attributes: "pool-name", type: "text", placeholder: gettext("Your Pool Name") %>
+
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "pool-description", classes: "form-group", input_classes: "form-control", attributes: "pool-description", type: "text", placeholder: gettext("Your Pool Short Description (optional)") %>
           <p class="form-p m-b-0"><%= gettext("Minimum Stake:") %>
             <span class="text-dark">
               <%= format_token_amount(@min_candidate_stake, @token) %>

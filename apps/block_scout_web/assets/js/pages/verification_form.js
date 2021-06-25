@@ -232,14 +232,14 @@ if ($contractVerificationPage.length) {
   $('.verify-via-flattened-code').on('click', function () {
     if ($(this).prop('checked')) {
       $('#verify_via_flattened_code_button').show()
-      $('#verify_via_json_button').hide()
+      $('#verify_via_sourcify_button').hide()
     }
   })
 
-  $('.verify-via-json').on('click', function () {
+  $('.verify-via-sourcify').on('click', function () {
     if ($(this).prop('checked')) {
       $('#verify_via_flattened_code_button').hide()
-      $('#verify_via_json_button').show()
+      $('#verify_via_sourcify_button').show()
     }
   })
 }

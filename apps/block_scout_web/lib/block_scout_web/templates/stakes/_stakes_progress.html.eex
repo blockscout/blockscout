@@ -18,7 +18,7 @@
     <div class="stakes-progress-info">
       <h2 class="stakes-progress-info-title"><%= (if assigns[:pool_label], do: @pool_label) || gettext("Pool") %></h2>
       <p class="stakes-progress-info-value<%= unless @pool.is_deleted do %> stakes-progress-info-link js-pool-info<% end %>" data-address="<%= to_string(@pool.staking_address_hash) %>">
-        <%= BlockScoutWeb.AddressView.trimmed_hash(@pool.staking_address_hash) %>
+        <%= if is_nil(@pool.name), do: BlockScoutWeb.AddressView.trimmed_hash(@pool.staking_address_hash), else: @pool.name %>
       </p>
     </div>
     <div class="stakes-progress-info">

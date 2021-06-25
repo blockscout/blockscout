@@ -1,7 +1,10 @@
 defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.Hash.Address
+  alias Explorer.Chain
+  alias Explorer.Chain.Address
+  alias Explorer.Chain.Hash.Address, as: HashAddress
+  alias Explorer.SmartContract.Helper
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
@@ -9,29 +12,14 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def writable?(function) when not is_nil(function),
     do:
-      !constructor?(function) && !event?(function) &&
-        (payable?(function) || nonpayable?(function))
+      !Helper.constructor?(function) && !Helper.event?(function) &&
+        (Helper.payable?(function) || Helper.nonpayable?(function))
 
   def writable?(function) when is_nil(function), do: false
 
   def outputs?(outputs) when not is_nil(outputs), do: Enum.any?(outputs)
 
   def outputs?(outputs) when is_nil(outputs), do: false
-
-  defp event?(function), do: function["type"] == "event"
-
-  defp constructor?(function), do: function["type"] == "constructor"
-
-  def payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
-
-  def nonpayable?(function) do
-    if function["type"] do
-      function["stateMutability"] == "nonpayable" ||
-        (!function["payable"] && !function["constant"] && !function["stateMutability"])
-    else
-      false
-    end
-  end
 
   def address?(type), do: type in ["address", "address payable"]
   def int?(type), do: String.contains?(type, "int") && !String.contains?(type, "[")
@@ -93,8 +81,13 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = Address.cast(value)
-    render_type_value("address", to_string(address))
+    case HashAddress.cast(value) do
+      {:ok, address} ->
+        render_type_value("address", to_string(address))
+
+      _ ->
+        ""
+    end
   end
 
   def values_with_type(value, "string", _components), do: render_type_value("string", value)
@@ -112,6 +105,9 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_only(value, type, components) when is_list(value) do
+    max_size = Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
+    is_too_long = length(value) > max_size
+
     cond do
       String.starts_with?(type, "tuple") ->
         tuple_types =
@@ -124,7 +120,7 @@ defmodule BlockScoutWeb.SmartContractView do
           |> tuple_array_to_array(tuple_types)
           |> Enum.join(", ")
 
-        render_array_value(values)
+        wrap_output(render_array_value(values), is_too_long)
 
       String.starts_with?(type, "address") ->
         values =
@@ -132,7 +128,7 @@ defmodule BlockScoutWeb.SmartContractView do
           |> Enum.map(&binary_to_utf_string(&1))
           |> Enum.join(", ")
 
-        render_array_value(values)
+        wrap_output(render_array_value(values), is_too_long)
 
       String.starts_with?(type, "bytes") ->
         values =
@@ -140,14 +136,14 @@ defmodule BlockScoutWeb.SmartContractView do
           |> Enum.map(&binary_to_utf_string(&1))
           |> Enum.join(", ")
 
-        render_array_value(values)
+        wrap_output(render_array_value(values), is_too_long)
 
       true ->
         values =
           value
           |> Enum.join(", ")
 
-        render_array_value(values)
+        wrap_output(render_array_value(values), is_too_long)
     end
   end
 
@@ -157,26 +153,36 @@ defmodule BlockScoutWeb.SmartContractView do
       |> tuple_to_array(type)
       |> Enum.join(", ")
 
-    values
+    max_size = Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
+
+    wrap_output(values, tuple_size(value) > max_size)
   end
 
   def values_only(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = Address.cast(value)
-    to_string(address)
+    {:ok, address} = HashAddress.cast(value)
+    wrap_output(to_string(address))
   end
 
-  def values_only(value, "string", _components), do: value
+  def values_only(value, "string", _components), do: wrap_output(value)
 
-  def values_only(value, :string, _components), do: value
+  def values_only(value, :string, _components), do: wrap_output(value)
 
-  def values_only(value, :bytes, _components), do: value
+  def values_only(value, :bytes, _components), do: wrap_output(value)
 
-  def values_only(value, "bool", _components), do: to_string(value)
+  def values_only(value, "bool", _components), do: wrap_output(to_string(value))
 
-  def values_only(value, :bool, _components), do: to_string(value)
+  def values_only(value, :bool, _components), do: wrap_output(to_string(value))
 
   def values_only(value, _type, _components) do
-    binary_to_utf_string(value)
+    wrap_output(binary_to_utf_string(value))
+  end
+
+  def wrap_output(value, is_too_long \\ false) do
+    if is_too_long do
+      "<details class=\"py-2 word-break-all\"><summary>Click to view</summary>#{value}</details>"
+    else
+      "<div class=\"py-2 word-break-all\">#{value}</div>"
+    end
   end
 
   defp tuple_array_to_array(value, type) do

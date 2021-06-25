@@ -85,6 +85,11 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_metadata(ipfs_url)
   end
 
+  def fetch_json(%{@token_uri => {:ok, ["ipfs://" <> ipfs_uid]}}) do
+    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
+    fetch_metadata(ipfs_url)
+  end
+
   def fetch_json(%{@token_uri => {:ok, [json]}}) do
     {:ok, json} = decode_json(json)
 
@@ -116,6 +121,11 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
           check_type(json)
         end
+
+      {:ok, %Response{body: body, status_code: 301}} ->
+        {:ok, json} = decode_json(body)
+
+        check_type(json)
 
       {:ok, %Response{body: body}} ->
         {:error, body}

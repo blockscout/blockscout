@@ -39,7 +39,11 @@ function parseInput (input) {
     case 'string':
       return value
     case 'json':
-      return JSON.parse(value)
+      try {
+        return JSON.parse(value)
+      } catch (e) {
+        return {}
+      }
     default:
       return value
   }

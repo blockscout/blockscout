@@ -1,0 +1,10 @@
+<div class="mb-4">
+        <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %>
+        <span> <%= gettext("Minimal Proxy Contract for") %> <%= link(
+@address_hash,
+to: address_contract_path(@conn, :index, @address_hash)) %>.<br/> <%= link(
+        gettext("EIP-1167"),
+        to: "https://eips.ethereum.org/EIPS/eip-1167",
+        target: "_blank"
+) %><%= gettext(" - minimal bytecode implementation that delegates all calls to a known address") %> </span>
+</div>

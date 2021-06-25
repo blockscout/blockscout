@@ -75,10 +75,24 @@ defmodule BlockScoutWeb.TransactionController do
       end
     else
       :error ->
-        conn |> put_status(422) |> render("invalid.html", transaction_hash: id)
+        set_invalid_view(conn, id)
 
       :not_found ->
-        conn |> put_status(404) |> render("not_found.html", transaction_hash: id)
+        set_not_found_view(conn, id)
     end
+  end
+
+  def set_not_found_view(conn, transaction_hash_string) do
+    conn
+    |> put_status(404)
+    |> put_view(TransactionView)
+    |> render("not_found.html", transaction_hash: transaction_hash_string)
+  end
+
+  def set_invalid_view(conn, transaction_hash_string) do
+    conn
+    |> put_status(422)
+    |> put_view(TransactionView)
+    |> render("invalid.html", transaction_hash: transaction_hash_string)
   end
 end

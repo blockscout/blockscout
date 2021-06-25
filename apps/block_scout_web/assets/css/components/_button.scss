@@ -70,6 +70,11 @@ $button-secondary-color: $secondary !default;
     padding: 20px 60px 20px;
   }
 
+  &-danger {
+    background-color: #dc3545 !important;
+    border: 1px solid #dc3545 !important;
+  }
+
   // Block button
   // -------------------------
 

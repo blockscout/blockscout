@@ -5,7 +5,7 @@
     tooltip = if @pool.is_validator, do: gettext("This is a validator"), else: false
     render BlockScoutWeb.StakesView,
     "_stakes_address.html",
-    address: @pool.staking_address_hash,
+    pool: @pool,
     tooltip: tooltip,
     index: @index
     %>

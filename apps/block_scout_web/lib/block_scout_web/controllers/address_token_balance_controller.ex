@@ -2,8 +2,9 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
-  alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers}
-  alias Explorer.{Chain, Market}
+  alias BlockScoutWeb.AccessHelpers
+  alias Explorer.{Chain, CustomContractsHelpers, Market}
+  alias Explorer.Chain.Address
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -25,12 +26,12 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
 
       token_balances_except_bridged =
         token_balances
-        |> Enum.filter(fn token_balance -> !token_balance.token.bridged end)
+        |> Enum.filter(fn {token_balance, _} -> !token_balance.token.bridged end)
 
       circles_total_balance =
         if Enum.count(circles_addresses_list) > 0 do
           token_balances_except_bridged
-          |> Enum.reduce(Decimal.new(0), fn token_balance, acc_balance ->
+          |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc_balance ->
             {:ok, token_address} = Chain.hash_to_address(token_balance.address_hash)
 
             from_address = from_address_hash(token_address)
@@ -57,7 +58,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
           |> put_status(200)
           |> put_layout(false)
           |> render("_token_balances.html",
-            address_hash: address_hash,
+            address_hash: Address.checksum(address_hash),
             token_balances: token_balances_with_price,
             circles_total_balance: circles_total_balance
           )
@@ -67,7 +68,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
           |> put_status(200)
           |> put_layout(false)
           |> render("_token_balances.html",
-            address_hash: address_hash,
+            address_hash: Address.checksum(address_hash),
             token_balances: [],
             circles_total_balance: Decimal.new(0)
           )
