@@ -79,6 +79,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -1082,51 +1083,64 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp prepare_search_term(string) do
+    case Regex.scan(~r/[a-zA-Z0-9]+/, string) do
+      [_ | _] = words ->
+        term_final =
+          words
+          |> Enum.map(fn [word] -> word <> ":*" end)
+          |> Enum.join(" & ")
+
+        {:some, term_final}
+
+      _ ->
+        :none
+    end
+  end
+
   @spec search_token(String.t()) :: [Token.t()]
-  def search_token(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
+  def search_token(string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        query =
+          from(token in Token,
+            where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+            select: %{
+              contract_address_hash: token.contract_address_hash,
+              symbol: token.symbol,
+              name:
+                fragment(
+                  "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
+                  token.name,
+                  token.symbol,
+                  token.holder_count
+                )
+            },
+            order_by: [desc: token.holder_count]
+          )
 
-    term_final = term <> ":*"
+        Repo.all(query)
 
-    query =
-      from(token in Token,
-        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term_final),
-        select: %{
-          contract_address_hash: token.contract_address_hash,
-          symbol: token.symbol,
-          name:
-            fragment(
-              "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
-              token.name,
-              token.symbol,
-              token.holder_count
-            )
-        },
-        order_by: [desc: token.holder_count]
-      )
-
-    Repo.all(query)
+      _ ->
+        []
+    end
   end
 
   @spec search_contract(String.t()) :: [SmartContract.t()]
-  def search_contract(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
+  def search_contract(string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        query =
+          from(smart_contract in SmartContract,
+            where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
+          )
 
-    term_final = term <> ":*"
+        Repo.all(query)
 
-    query =
-      from(smart_contract in SmartContract,
-        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term_final),
-        select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
-      )
-
-    Repo.all(query)
+      _ ->
+        []
+    end
   end
 
   @doc """
@@ -1603,6 +1617,9 @@ defmodule Explorer.Chain do
       )
 
     Repo.one(query) || 0
+  rescue
+    _ ->
+      0
   end
 
   @spec fetch_max_block_number() :: non_neg_integer
@@ -1616,6 +1633,9 @@ defmodule Explorer.Chain do
       )
 
     Repo.one(query) || 0
+  rescue
+    _ ->
+      0
   end
 
   @spec fetch_count_consensus_block() :: non_neg_integer
@@ -2472,7 +2492,7 @@ defmodule Explorer.Chain do
         select: last_fetched_counter.value
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query) || Decimal.new(0)
   end
 
   defp block_status({number, timestamp}) do
@@ -2487,6 +2507,33 @@ defmodule Explorer.Chain do
   end
 
   defp block_status(nil), do: {:error, :no_blocks}
+
+  def fetch_min_missing_block_cache do
+    max_block_number = BlockNumber.get_max()
+
+    if max_block_number > 0 do
+      query =
+        from(b in Block,
+          right_join:
+            missing_range in fragment(
+              """
+                (SELECT b1.number 
+                FROM generate_series(0, (?)::integer) AS b1(number)
+                WHERE NOT EXISTS
+                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
+              """,
+              ^max_block_number
+            ),
+          on: b.number == missing_range.number,
+          select: min(missing_range.number)
+        )
+
+      query
+      |> Repo.one(timeout: :infinity) || 0
+    else
+      0
+    end
+  end
 
   @doc """
   Calculates the ranges of missing consensus blocks in `range`.
@@ -3659,14 +3706,20 @@ defmodule Explorer.Chain do
     end
   end
 
-  def smart_contract_verified?(address_hash) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
+  def smart_contract_verified?(address_hash_str) do
+    case string_to_address_hash(address_hash_str) do
+      {:ok, address_hash} ->
+        query =
+          from(
+            smart_contract in SmartContract,
+            where: smart_contract.address_hash == ^address_hash
+          )
 
-    if Repo.one(query), do: true, else: false
+        if Repo.one(query), do: true, else: false
+
+      _ ->
+        false
+    end
   end
 
   defp fetch_transactions(paging_options \\ nil) do
@@ -6323,6 +6376,28 @@ defmodule Explorer.Chain do
       1 -> "eth"
       56 -> "bsc"
       _ -> ""
+    end
+  end
+
+  @doc """
+  It is used by `totalfees` API endpoint of `stats` module for retrieving of total fee per day
+  """
+  @spec get_total_fees_per_day(String.t()) :: {:ok, non_neg_integer() | nil} | {:error, String.t()}
+  def get_total_fees_per_day(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, date} ->
+        query =
+          from(
+            tx_stats in TransactionStats,
+            where: tx_stats.date == ^date,
+            select: tx_stats.total_fee
+          )
+
+        total_fees = Repo.one(query)
+        {:ok, total_fees}
+
+      _ ->
+        {:error, "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd)."}
     end
   end
 end

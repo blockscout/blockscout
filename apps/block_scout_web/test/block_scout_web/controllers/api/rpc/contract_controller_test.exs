@@ -605,6 +605,62 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   end
 
   describe "verify" do
+    test "verify known on sourcify repo contract", %{conn: conn} do
+      response = verify(conn)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+
+      assert response["result"]["ABI"] ==
+               "[{\"inputs\":[],\"name\":\"retrieve\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_number\",\"type\":\"uint256\"}],\"name\":\"store\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+
+      assert response["result"]["CompilerVersion"] == "v0.7.6+commit.7338295f"
+      assert response["result"]["ContractName"] == "Storage"
+      assert response["result"]["EVMVersion"] == "istanbul"
+      assert response["result"]["OptimizationUsed"] == "false"
+    end
+
+    test "verify already verified contract", %{conn: conn} do
+      _response = verify(conn)
+
+      params = %{
+        "module" => "contract",
+        "action" => "verify_via_sourcify",
+        "addressHash" => "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2"
+      }
+
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      assert response["message"] == "Smart-contract already verified."
+      assert response["status"] == "0"
+      assert response["result"] == nil
+    end
+
+    defp verify(conn) do
+      smart_contract_bytecode =
+        "0x6080604052348015600f57600080fd5b506004361060325760003560e01c80632e64cec11460375780636057361d146053575b600080fd5b603d607e565b6040518082815260200191505060405180910390f35b607c60048036036020811015606757600080fd5b81019080803590602001909291905050506087565b005b60008054905090565b806000819055505056fea26469706673582212205afbc4864a2486ec80f10e5eceeaac30e88c9b3dfcd1bfadd6cdf6e6cb6e1fd364736f6c63430007060033"
+
+      _created_contract_address =
+        insert(
+          :address,
+          hash: "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2",
+          contract_code: smart_contract_bytecode
+        )
+
+      params = %{
+        "module" => "contract",
+        "action" => "verify_via_sourcify",
+        "addressHash" => "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2"
+      }
+
+      conn
+      |> get("/api", params)
+      |> json_response(200)
+    end
+
     # flaky test
     # test "with an address that doesn't exist", %{conn: conn} do
     #   contract_code_info = Factory.contract_code_info()

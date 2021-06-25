@@ -35,9 +35,9 @@
                   <%= label :verify_via, :true, gettext("Flattened source code"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
-                  <%= radio_button f, :verify_via, false, class: "form-check-input verify-via-json" %>
+                  <%= radio_button f, :verify_via, false, class: "form-check-input verify-via-sourcify" %>
                   <div class="radio-icon"></div>
-                  <%= label :verify_via, :false, gettext("Sources and metadata JSON file"), class: "radio-text" %>
+                  <%= label :verify_via, :false, gettext("Sourcify: Sources and metadata JSON file"), class: "radio-text" %>
                 </div>
               </div>
               <%= error_tag f, :verify_via, id: "verify_via-help-block", class: "text-danger form-error" %>
@@ -50,7 +50,10 @@
                       data-template="<div class='tooltip' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
                       title="If using a flat file for contract verification, you can use the POA Solidity flattener or the Truffle flattener">
                       <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i></span><br/>
-            2. Verification through raw source files and standard JSON file(s) with metadata from the Solidity contract compilation process.</div>
+            2. Verification through <a href="https://sourcify.dev">Sourcify</a>.<br/>
+              a) if smart-contract already verified on Sourcify, it will automatically fetch the data from the <a href="https://repo.sourcify.dev">repo</a><br/>
+              b) otherwise you will be asked to upload source files and JSON metadata file(s).</div>
+              
           </div>
         </div>
 
@@ -78,7 +81,7 @@
           <%= link(
             gettext("Next"),
             to: address_verify_contract_via_json_path(@conn, :new, @address_hash),
-            id: "verify_via_json_button",
+            id: "verify_via_sourcify_button",
             class: "btn-full-primary mr-2",
             style: "display: none;",
             "data-button-loading": "animation"

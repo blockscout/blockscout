@@ -27,7 +27,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
     sanitizedInputValue = replaceDoubleQuotes(sanitizedInputValue, inputType, inputComponents)
 
     if (isArrayInputType(inputType) || isTupleInputType(inputType)) {
-      if (sanitizedInputValue === '') {
+      if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
         return [[]]
       } else {
         if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
