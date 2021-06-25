@@ -102,6 +102,7 @@ const appJs =
       stakes: './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
       'chain': './js/pages/chain.js',
+      'display-body': './js/display_body.js',
       'blocks': './js/pages/blocks.js',
       'address': './js/pages/address.js',
       'address-transactions': './js/pages/address/transactions.js',
