@@ -3537,7 +3537,8 @@ defmodule Explorer.Chain do
         nil
 
       address ->
-        address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+        address_with_smart_contract =
+          Repo.preload(address, [:smart_contract, :decompiled_smart_contracts, :smart_contract_additional_sources])
 
         if address_with_smart_contract.smart_contract do
           formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
