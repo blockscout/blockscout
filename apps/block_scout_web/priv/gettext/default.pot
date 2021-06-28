@@ -355,12 +355,6 @@ msgid "Contract Address Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:137
-#: lib/block_scout_web/templates/address_contract/index.html.eex:145
-msgid "Contract Byte Code"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:351
 msgid "Contract Call"
 msgstr ""
@@ -372,6 +366,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:122
+#: lib/block_scout_web/templates/address_contract/index.html.eex:179
 msgid "Contract Creation Code"
 msgstr ""
 
@@ -422,6 +417,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:124
+#: lib/block_scout_web/templates/address_contract/index.html.eex:181
 msgid "Copy Contract Creation Code"
 msgstr ""
 
@@ -671,7 +667,7 @@ msgid "Nonce"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:186
+#: lib/block_scout_web/templates/address_contract/index.html.eex:195
 msgid "External libraries"
 msgstr ""
 
@@ -2800,4 +2796,10 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
 msgid "Sourcify: Sources and metadata JSON file"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:137
+#: lib/block_scout_web/templates/address_contract/index.html.eex:145
+msgid "Deployed Contract Byte Code"
 msgstr ""
