@@ -25,7 +25,7 @@ export function reducer (state, action) {
 }
 
 if ($('[data-page="tokens"]').length) {
-  const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierLog')
+  const store = createAsyncLoadStore(reducer, initialState, 'childNodes[5].childNodes[1].childNodes[1].dataset.addressHash')
 
   store.dispatch({
     type: 'PAGE_LOAD'

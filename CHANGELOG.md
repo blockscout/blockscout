@@ -636,6 +636,7 @@
 - [#2470](https://github.com/blockscout/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#4325](https://github.com/blockscout/blockscout/pull/4325) - Fix search on `/tokens` page
 - [#2793](https://github.com/blockscout/blockscout/pull/2793) - Hide "We are indexing this chain right now. Some of the counts may be inaccurate" banner if no txs in blockchain
 - [#2779](https://github.com/blockscout/blockscout/pull/2779) - fix fetching `latin1` encoded data
 - [#2799](https://github.com/blockscout/blockscout/pull/2799) - fix catchup fetcher for empty node and db
