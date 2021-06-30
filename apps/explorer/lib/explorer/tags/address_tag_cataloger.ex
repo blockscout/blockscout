@@ -81,6 +81,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set CryptoStamps tags
     AddressTag.set_tag("cryptostamps")
 
+    # set Curve tags
+    AddressTag.set_tag("curve")
+
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
 
@@ -145,6 +148,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set CryptoStamps tag
     set_cryptostamps_tag()
+
+    # set Curve tag
+    set_curve_tag()
 
     {:noreply, state}
   end
@@ -307,6 +313,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_cryptostamps_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_CRYPTOSTAMPS", "cryptostamps")
+  end
+
+  defp set_curve_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_CURVE", "curve")
   end
 
   defp chainlink_oracles_list do

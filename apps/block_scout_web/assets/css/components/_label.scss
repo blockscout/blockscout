@@ -119,6 +119,10 @@
         background: #fadb4a;
         color: #000000;
     }
+    &.curve {
+        background: #3465a4;
+        color: #fff;
+    }
     &.secondary {
         background: $secondary;
         color: #fff;

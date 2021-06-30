@@ -1193,31 +1193,30 @@ defmodule Explorer.Chain do
   end
 
   @spec search_label(String.t()) :: [AddressToTag.t()]
-  def search_label(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
+  def search_label(string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        inner_query =
+          from(tag in AddressTag,
+            where: fragment("to_tsvector('english', label ) @@ to_tsquery(?)", ^term),
+            select: tag
+          )
 
-    term_final = term <> ":*"
+        query =
+          from(att in AddressToTag,
+            left_join: at in subquery(inner_query),
+            on: att.tag_id == at.id,
+            select: %{
+              contract_address_hash: att.address_hash,
+              name: fragment("'<i class=\"fa fa-tag\"></i> label: <b>' || ? || '</b>'", at.label)
+            }
+          )
 
-    inner_query =
-      from(tag in AddressTag,
-        where: fragment("to_tsvector('english', label ) @@ to_tsquery(?)", ^term_final),
-        select: tag
-      )
+        Repo.all(query)
 
-    query =
-      from(att in AddressToTag,
-        left_join: at in subquery(inner_query),
-        on: att.tag_id == at.id,
-        select: %{
-          contract_address_hash: att.address_hash,
-          name: fragment("'<i class=\"fa fa-tag\"></i> label: <b>' || ? || '</b>'", at.label)
-        }
-      )
-
-    Repo.all(query)
+      _ ->
+        []
+    end
   end
 
   @doc """

@@ -60,6 +60,9 @@
 <%= if is_cryptostamps?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "CryptoStamps", additional_classes: ["cryptostamps", "ml-1"] %>
 <% end %>
+<%= if is_curve?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "Curve", additional_classes: ["curve", "ml-1"] %>
+<% end %>
 <%= if is_test?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-1"] %>
 <% end %>
