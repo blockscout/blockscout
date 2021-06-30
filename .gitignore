@@ -50,3 +50,4 @@ tmpbriefly*
 
 tmpbriefly*
 node_modules
+.elixir_ls
