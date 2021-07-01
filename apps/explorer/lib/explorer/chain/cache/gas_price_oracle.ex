@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
               _ -> 35
             end)
 
-  @average (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60)) do
+  @average (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", "60")) do
               {integer, ""} -> integer
               _ -> 60
             end)
