@@ -44,7 +44,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
 
     transactions =
       address_hash
-      |> Chain.address_to_mined_transactions_with_rewards(options)
+      |> Chain.address_to_transactions_with_rewards(options)
       |> Enum.filter(fn transaction -> Enum.count(transaction.token_transfers) > 0 end)
 
     new_acc = transactions ++ acc
