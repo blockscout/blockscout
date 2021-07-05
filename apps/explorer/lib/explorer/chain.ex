@@ -343,17 +343,17 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_mined_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
+  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
           [
             Transaction.t()
           ]
-  def address_to_mined_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
       cond do
         Keyword.get(options, :direction) == :from ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
+          address_to_transactions_without_rewards(address_hash, options)
 
         address_has_rewards?(address_hash) ->
           %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(address_hash)
@@ -361,14 +361,14 @@ defmodule Explorer.Chain do
           if block_miner_payout_address && address_hash == block_miner_payout_address do
             transactions_with_rewards_results(address_hash, options, paging_options)
           else
-            address_to_mined_transactions_without_rewards(address_hash, options)
+            address_to_transactions_without_rewards(address_hash, options)
           end
 
         true ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
+          address_to_transactions_without_rewards(address_hash, options)
       end
     else
-      address_to_mined_transactions_without_rewards(address_hash, options)
+      address_to_transactions_without_rewards(address_hash, options)
     end
   end
 
@@ -378,7 +378,7 @@ defmodule Explorer.Chain do
     rewards_task =
       Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
-    [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
+    [rewards_task | address_to_transactions_tasks(address_hash, options)]
     |> wait_for_address_transactions()
     |> Enum.sort_by(fn item ->
       case item do
@@ -1129,51 +1129,64 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp prepare_search_term(string) do
+    case Regex.scan(~r/[a-zA-Z0-9]+/, string) do
+      [_ | _] = words ->
+        term_final =
+          words
+          |> Enum.map(fn [word] -> word <> ":*" end)
+          |> Enum.join(" & ")
+
+        {:some, term_final}
+
+      _ ->
+        :none
+    end
+  end
+
   @spec search_token(String.t()) :: [Token.t()]
-  def search_token(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
+  def search_token(string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        query =
+          from(token in Token,
+            where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+            select: %{
+              contract_address_hash: token.contract_address_hash,
+              symbol: token.symbol,
+              name:
+                fragment(
+                  "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
+                  token.name,
+                  token.symbol,
+                  token.holder_count
+                )
+            },
+            order_by: [desc: token.holder_count]
+          )
 
-    term_final = term <> ":*"
+        Repo.all(query)
 
-    query =
-      from(token in Token,
-        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term_final),
-        select: %{
-          contract_address_hash: token.contract_address_hash,
-          symbol: token.symbol,
-          name:
-            fragment(
-              "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
-              token.name,
-              token.symbol,
-              token.holder_count
-            )
-        },
-        order_by: [desc: token.holder_count]
-      )
-
-    Repo.all(query)
+      _ ->
+        []
+    end
   end
 
   @spec search_contract(String.t()) :: [SmartContract.t()]
-  def search_contract(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
+  def search_contract(string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        query =
+          from(smart_contract in SmartContract,
+            where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
+          )
 
-    term_final = term <> ":*"
+        Repo.all(query)
 
-    query =
-      from(smart_contract in SmartContract,
-        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term_final),
-        select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
-      )
-
-    Repo.all(query)
+      _ ->
+        []
+    end
   end
 
   @doc """
@@ -2615,7 +2628,7 @@ defmodule Explorer.Chain do
         )
 
       query
-      |> Repo.one() || 0
+      |> Repo.one(timeout: :infinity) || 0
     else
       0
     end
@@ -3629,7 +3642,8 @@ defmodule Explorer.Chain do
         nil
 
       address ->
-        address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+        address_with_smart_contract =
+          Repo.preload(address, [:smart_contract, :decompiled_smart_contracts, :smart_contract_additional_sources])
 
         if address_with_smart_contract.smart_contract do
           formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
@@ -3943,6 +3957,9 @@ defmodule Explorer.Chain do
   end
 
   defp page_transaction(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
+    do: page_pending_transaction(query, options)
 
   defp page_transaction(query, %PagingOptions{key: {block_number, index}}) do
     where(

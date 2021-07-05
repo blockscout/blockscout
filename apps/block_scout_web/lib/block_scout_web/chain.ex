@@ -182,7 +182,7 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {inserted_at, hash}}]
+      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
     else
       _ ->
         [paging_options: @default_paging_options]
