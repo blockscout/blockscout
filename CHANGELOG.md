@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4312](https://github.com/blockscout/blockscout/pull/4312) - Display pending transactions on address page
 - [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added sourcify verification api endpoint
 - [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
 - [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
@@ -10,6 +11,7 @@
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
 
 ### Fixes
+- [#4320](https://github.com/blockscout/blockscout/pull/4320) - Fix absence of imported smart-contracts' source code in `getsourcecode` api method 
 - [#4274](https://github.com/blockscout/blockscout/pull/4302) - Fix search token-autocomplete
 - [#4316](https://github.com/blockscout/blockscout/pull/4316) - Fix `/decompiled-contracts` bug
 - [#4310](https://github.com/blockscout/blockscout/pull/4310) - Fix logo URL redirection, set font-family defaults for chart.js
