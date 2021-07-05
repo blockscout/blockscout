@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4312](https://github.com/blockscout/blockscout/pull/4312) - Display pending transactions on address page
 - [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added sourcify verification api endpoint
 - [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
 - [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
