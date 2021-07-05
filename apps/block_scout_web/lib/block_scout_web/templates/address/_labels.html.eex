@@ -58,7 +58,7 @@
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Swarm", additional_classes: ["swarm", "ml-1"] %>
 <% end %>
 <%= if is_cryptostamps?(@address_hash) do %>
-  <%= render BlockScoutWeb.FormView, "_tag.html", text: "CryptoStamps", additional_classes: ["cryptostamps", "ml-1"] %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "Crypto stamp", additional_classes: ["cryptostamps", "ml-1"] %>
 <% end %>
 <%= if is_curve?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Curve", additional_classes: ["curve", "ml-1"] %>
