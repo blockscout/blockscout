@@ -573,6 +573,10 @@ defmodule Explorer.Chain.Transaction do
     where(query, [t], not is_nil(t.block_number))
   end
 
+  def not_dropped_or_replaced_transacions(query) do
+    where(query, [t], is_nil(t.error) or t.error != "dropped/replaced")
+  end
+
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
 
   @collated_message "can't be blank when the transaction is collated into a block"
