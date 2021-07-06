@@ -446,9 +446,6 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    from_block = from_block(options)
-    to_block = to_block(options)
-
     options
     |> address_to_transactions_tasks_query()
     |> Transaction.not_dropped_or_replaced_transacions()
