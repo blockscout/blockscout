@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4323](https://github.com/blockscout/blockscout/pull/4323) - Renamed Contract Byte Code, add Contract Creation Code on contract's page
 - [#4312](https://github.com/blockscout/blockscout/pull/4312) - Display pending transactions on address page
 - [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added sourcify verification api endpoint
 - [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
@@ -11,6 +12,7 @@
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
 
 ### Fixes
+- [#4342](https://github.com/blockscout/blockscout/pull/4342) - Remove dropped/replaced txs from address transactions page
 - [#4320](https://github.com/blockscout/blockscout/pull/4320) - Fix absence of imported smart-contracts' source code in `getsourcecode` api method 
 - [#4274](https://github.com/blockscout/blockscout/pull/4302) - Fix search token-autocomplete
 - [#4316](https://github.com/blockscout/blockscout/pull/4316) - Fix `/decompiled-contracts` bug
@@ -639,6 +641,7 @@
 - [#2470](https://github.com/blockscout/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#4325](https://github.com/blockscout/blockscout/pull/4325) - Fix search on `/tokens` page
 - [#2793](https://github.com/blockscout/blockscout/pull/2793) - Hide "We are indexing this chain right now. Some of the counts may be inaccurate" banner if no txs in blockchain
 - [#2779](https://github.com/blockscout/blockscout/pull/2779) - fix fetching `latin1` encoded data
 - [#2799](https://github.com/blockscout/blockscout/pull/2799) - fix catchup fetcher for empty node and db

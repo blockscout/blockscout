@@ -454,7 +454,7 @@ defmodule Explorer.Chain do
 
     options
     |> address_to_transactions_tasks_query()
-    |> where_block_number_in_period(from_block, to_block)
+    |> Transaction.not_dropped_or_replaced_transacions()
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
