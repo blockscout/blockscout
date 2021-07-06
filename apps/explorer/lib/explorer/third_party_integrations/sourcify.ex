@@ -84,7 +84,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
 
   defp process_sourcify_response(url, body) do
     cond do
-      url =~ "checkByAddresses" ->
+      url =~ "check-by-addresses" ->
         parse_check_by_address_http_response(body)
 
       url =~ "/verify" ->
@@ -174,7 +174,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp check_by_address_url do
-    "#{base_server_url()}" <> "/checkByAddresses"
+    "#{base_server_url()}" <> "/check-by-addresses"
   end
 
   defp get_metadata_url do

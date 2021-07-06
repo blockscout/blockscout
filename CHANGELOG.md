@@ -1,12 +1,44 @@
 ## Current
 
 ### Features
+- [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added sourcify verification api endpoint
+- [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
+- [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
+- [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contract's 
+- [#4205](https://github.com/blockscout/blockscout/pull/4205) - Total transactions fees per day API endpoint
+- [#4158](https://github.com/blockscout/blockscout/pull/4158) - Calculate total fee per day
+- [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
 
 ### Fixes
+- [#4274](https://github.com/blockscout/blockscout/pull/4302) - Fix search token-autocomplete
+- [#4316](https://github.com/blockscout/blockscout/pull/4316) - Fix `/decompiled-contracts` bug
+- [#4310](https://github.com/blockscout/blockscout/pull/4310) - Fix logo URL redirection, set font-family defaults for chart.js
+- [#4308](https://github.com/blockscout/blockscout/pull/4308) - Fix internal server error on contract verification options page
+- [#4307](https://github.com/blockscout/blockscout/pull/4307) - Fix for composing IPFS URLs for NFTs images
+- [#4306](https://github.com/blockscout/blockscout/pull/4306) - Check token instance images MIME types
+- [#4295](https://github.com/blockscout/blockscout/pull/4295) - Mobile view fix: transaction tile tx hash overflow
+- [#4294](https://github.com/blockscout/blockscout/pull/4294) - User wont be able to open verification pages for verified smart-contract
+- [#4240](https://github.com/blockscout/blockscout/pull/4240) - `[]` is accepted in write contract page
+- [#4236](https://github.com/blockscout/blockscout/pull/4236), [#4242](https://github.com/blockscout/blockscout/pull/4242) - Fix typo, constructor instead of contructor
+- [#4167](https://github.com/blockscout/blockscout/pull/4167) - Deduplicate block numbers in acquire_blocks function
+- [#4149](https://github.com/blockscout/blockscout/pull/4149) - Exclude smart_contract_additional_sources from JSON encoding in address schema
+- [#4137](https://github.com/blockscout/blockscout/pull/4137) - Get token balance query improvement
+- [#4129](https://github.com/blockscout/blockscout/pull/4129) - Speedup procedure of finding missing block numbers for catchup fetcher
+- [#4038](https://github.com/blockscout/blockscout/pull/4038) - Add clause for abi_decode_address_output/1 when is_nil(address)
+- [#3989](https://github.com/blockscout/blockscout/pull/3989), [4061](https://github.com/blockscout/blockscout/pull/4061) - Fixed bug that sometimes lead to incorrect ordering of token transfers
 - [#3946](https://github.com/blockscout/blockscout/pull/3946) - Get NFT metadata from URIs with status_code 301
-- [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix 
+- [#3888](https://github.com/blockscout/blockscout/pull/3888) - EIP-1967 contract proxy pattern detection fix
 
 ### Chore
+- [#4315](https://github.com/blockscout/blockscout/pull/4315) - Replace node_modules/ with ~ in app.scss
+- [#4314](https://github.com/blockscout/blockscout/pull/4314) - Set infinite timeout for fetch_min_missing_block_cache method DB query
+- [#4300](https://github.com/blockscout/blockscout/pull/4300) - Remove clear_build.sh script
+- [#4268](https://github.com/blockscout/blockscout/pull/4268) - Migration to Chart.js 3.0
+- [#4253](https://github.com/blockscout/blockscout/pull/4253) - Elixir 1.11.4, npm audit fix
+- [#4231](https://github.com/blockscout/blockscout/pull/4231) - Transactions stats: get min/max blocks in one query
+- [#4157](https://github.com/blockscout/blockscout/pull/4157) - Fix internal docs generation
+- [#4127](https://github.com/blockscout/blockscout/pull/4127) - Update ex_keccak package
+- [#4063](https://github.com/blockscout/blockscout/pull/4063) - Do not display 4bytes signature in the tx tile for contract creation
 - [#3934](https://github.com/blockscout/blockscout/pull/3934) - Update nimble_csv package
 - [#3902](https://github.com/blockscout/blockscout/pull/3902) - Increase number of left symbols in short address view
 - [#3894](https://github.com/blockscout/blockscout/pull/3894) - Refactoring: replace inline style display: none with d-none class

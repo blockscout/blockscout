@@ -15,6 +15,7 @@ defmodule Explorer.Application do
     BlockNumber,
     Blocks,
     GasUsage,
+    MinMissingBlockNumber,
     NetVersion,
     TransactionCount,
     Transactions,
@@ -60,7 +61,8 @@ defmodule Explorer.Application do
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       Transactions,
       Accounts,
-      Uncles
+      Uncles,
+      MinMissingBlockNumber
     ]
 
     children = base_children ++ configurable_children()

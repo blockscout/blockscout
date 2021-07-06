@@ -48,7 +48,8 @@ config :block_scout_web,
   dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
-  test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN")
+  test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
+  max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50"))
 
 config :block_scout_web, :faucet,
   enabled: if(System.get_env("ENABLE_FAUCET", "false") == "true", do: true, else: false),
