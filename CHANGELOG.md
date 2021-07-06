@@ -12,6 +12,7 @@
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
 
 ### Fixes
+- [#4345](https://github.com/blockscout/blockscout/pull/4345) - Fix bug on validator's address transactions page
 - [#4342](https://github.com/blockscout/blockscout/pull/4342) - Remove dropped/replaced txs from address transactions page
 - [#4320](https://github.com/blockscout/blockscout/pull/4320) - Fix absence of imported smart-contracts' source code in `getsourcecode` api method 
 - [#4274](https://github.com/blockscout/blockscout/pull/4302) - Fix search token-autocomplete
