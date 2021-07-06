@@ -1,6 +1,10 @@
 import $ from 'jquery'
 
-export function getTextAdData () {
+function countImpressions (impressionUrl) {
+  $.get(impressionUrl)
+}
+
+function getTextAdData () {
   $.get('https://request-global.czilladx.com/serve/native.php?z=19260bf627546ab7242', function (data) {
     if (data) {
       console.log(data)
@@ -11,7 +15,7 @@ export function getTextAdData () {
       $('.ad-cta-button').text(ctaButton)
       $('.ad-url').attr('href', url)
       $('.ad-img-url').attr('src', thumbnail)
-      $('.ad').data('impressionUrl', impressionUrl)
+      countImpressions(impressionUrl)
     } else {
       $('.ad').addClass('d-none')
     }
@@ -20,8 +24,4 @@ export function getTextAdData () {
 
 $(function () {
   getTextAdData()
-
-  $('.ad-url').on('click', function () {
-    $.get($('.ad').data('impressionUrl'))
-  })
 })
