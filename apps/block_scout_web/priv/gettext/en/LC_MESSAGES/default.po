@@ -1070,9 +1070,9 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:239
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:12
-#: lib/block_scout_web/templates/transaction/index.html.eex:18
+#: lib/block_scout_web/templates/chain/show.html.eex:241
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:13
+#: lib/block_scout_web/templates/transaction/index.html.eex:19
 msgid "More transactions have come in"
 msgstr ""
 
@@ -1315,8 +1315,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/address_validation/index.html.eex:24
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
-#: lib/block_scout_web/templates/chain/show.html.eex:182
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:21
+#: lib/block_scout_web/templates/chain/show.html.eex:184
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:22
 #: lib/block_scout_web/templates/stakes/_table.html.eex:49
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:22
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:23
@@ -2718,7 +2718,7 @@ msgid "Faucet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/bridged_tokens/index.html.eex:6
+#: lib/block_scout_web/templates/bridged_tokens/index.html.eex:7
 msgid "Bridged Tokens from "
 msgstr ""
 

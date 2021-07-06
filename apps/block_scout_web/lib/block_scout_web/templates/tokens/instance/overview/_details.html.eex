@@ -76,6 +76,6 @@
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-counters.js") %>"></script>
 </section>
-<%= render BlockScoutWeb.AdView, "_banner_728.html" %>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@conn, @token_id, @token.contract_address_hash), title: @token.contract_address %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>

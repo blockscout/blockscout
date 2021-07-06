@@ -1,7 +1,7 @@
 <section>
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="col-md-12 col-lg-8 pr-0-md">
+    <div class="col-md-12 col-lg-8 pr-0-md mb-2">
       <!-- Block Details -->
       <div class="card card-mr-50-md mb-2">
         <div class="card-body">
@@ -117,7 +117,7 @@
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
+    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md mb-2">
 
       <!-- Validator -->
       <div class="card card-background-1 flex-grow-1">
@@ -172,4 +172,4 @@
   </div>
 </section>
 
-<%= render BlockScoutWeb.AdView, "_banner_728.html" %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
