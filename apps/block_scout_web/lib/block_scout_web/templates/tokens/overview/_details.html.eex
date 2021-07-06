@@ -182,4 +182,4 @@
 </section>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)), title: @token.contract_address %>
-<%= render BlockScoutWeb.AdView, "_banner_728.html" %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>

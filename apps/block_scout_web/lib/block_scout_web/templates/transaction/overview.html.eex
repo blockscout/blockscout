@@ -414,7 +414,7 @@
     </div>
   </div>
 
-  <%= render BlockScoutWeb.AdView, "_banner_728.html" %>
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
 
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">

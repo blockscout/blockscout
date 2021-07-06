@@ -276,7 +276,7 @@
     </div>
   </div>
 
-  <%= render BlockScoutWeb.AdView, "_banner_728.html" %>
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
 
   <div class="card card-chain-transactions">
     <div class="card-body">
