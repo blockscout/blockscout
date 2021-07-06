@@ -8,7 +8,7 @@
   <div class="row">
     <!-- Address details -->
     <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
-      <div class="card">
+      <div class="card mb-2">
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
