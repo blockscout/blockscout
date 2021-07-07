@@ -1,6 +1,7 @@
 <section class="address-overview">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="card-section col-md-12 col-lg-7 pr-0-md">
+    <div class="card-section col-md-12 col-lg-7 pr-0-md mb-2">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title">
@@ -57,7 +58,7 @@
       </div>
     </div>
 
-    <div class="card-section col-md-12 col-lg-5 pl-0-md">
+    <div class="card-section col-md-12 col-lg-5 pl-0-md mb-2">
       <div class="card">
         <div class="card-body">
           <div class="erc721-media" >
@@ -94,3 +95,4 @@
     </div>
   </div>
 </div>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>

@@ -125,7 +125,8 @@ const appJs =
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
       'tokens': './js/pages/token/search.js',
-      'faucet': './js/pages/faucet.js'
+      'faucet': './js/pages/faucet.js',
+      'ad': './js/lib/ad.js'
     },
     output: {
       filename: '[name].js',
