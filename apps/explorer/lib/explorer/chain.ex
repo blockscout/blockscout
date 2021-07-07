@@ -386,7 +386,11 @@ defmodule Explorer.Chain do
           {-emission_reward.block.number, 1}
 
         item ->
-          {-item.block_number, -item.index}
+          if item.block_number do
+            {-item.block_number, -item.index}
+          else
+            {0, -item.index}
+          end
       end
     end)
     |> Enum.dedup_by(fn item ->
