@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Data, InternalTransaction, SmartContract}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, SmartContract, Transaction}
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
@@ -117,6 +117,14 @@ defmodule BlockScoutWeb.AddressContractView do
 
   def contract_creation_code(%Address{contract_code: contract_code}) do
     {:ok, contract_code}
+  end
+
+  def creation_code(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.input
+  end
+
+  def creation_code(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction.input
   end
 
   def sourcify_repo_url(address_hash) do

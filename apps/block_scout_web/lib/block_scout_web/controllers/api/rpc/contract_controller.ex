@@ -1,11 +1,13 @@
 defmodule BlockScoutWeb.API.RPC.ContractController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Publisher
+  alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
@@ -43,7 +45,158 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
-  def publish(conn, %{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
+  def verify_via_sourcify(conn, %{"addressHash" => address_hash} = input) do
+    files =
+      if Map.has_key?(input, "files") do
+        input["files"]
+      else
+        []
+      end
+
+    if Chain.smart_contract_verified?(address_hash) do
+      render(conn, :error, error: "Smart-contract already verified.")
+    else
+      case Sourcify.check_by_address(address_hash) do
+        {:ok, _verified_status} ->
+          get_metadata_and_publish(address_hash, conn)
+
+        _ ->
+          with {:ok, files_array} <- prepare_params(files),
+               {:ok, validated_files} <- validate_files(files_array) do
+            verify_and_publish(address_hash, validated_files, conn)
+          else
+            {:error, error} ->
+              render(conn, :error, error: error)
+
+            _ ->
+              render(conn, :error, error: "Invalid body")
+          end
+      end
+    end
+  end
+
+  defp prepare_params(files) when is_struct(files) do
+    {:error, "Invalid args format"}
+  end
+
+  defp prepare_params(files) when is_map(files) do
+    {:ok, VerificationController.prepare_files_array(files)}
+  end
+
+  defp prepare_params(files) when is_list(files) do
+    {:ok, files}
+  end
+
+  defp prepare_params(_arg) do
+    {:error, "Invalid args format"}
+  end
+
+  defp validate_files(files) do
+    if length(files) < 2 do
+      {:error, "You should attach at least 2 files"}
+    else
+      files_array =
+        files
+        |> Enum.filter(fn file -> validate_filename(file.filename) end)
+
+      jsons =
+        files_array
+        |> Enum.filter(fn file -> only_json(file.filename) end)
+
+      sols =
+        files_array
+        |> Enum.filter(fn file -> only_sol(file.filename) end)
+
+      if length(jsons) > 0 and length(sols) > 0 do
+        {:ok, files_array}
+      else
+        {:error, "You should attach at least one *.json and one *.sol files"}
+      end
+    end
+  end
+
+  defp validate_filename(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "sol" ->
+        true
+
+      "json" ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp only_sol(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "sol" ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp only_json(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "json" ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp get_metadata_and_publish(address_hash_string, conn) do
+    case Sourcify.get_metadata(address_hash_string) do
+      {:ok, verification_metadata} ->
+        %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
+          VerificationController.parse_params_from_sourcify(address_hash_string, verification_metadata)
+
+        case publish_without_broadcast(%{
+               "addressHash" => address_hash_string,
+               "params" => params_to_publish,
+               "abi" => abi,
+               "secondarySources" => secondary_sources
+             }) do
+          {:ok, _contract} ->
+            {:format, {:ok, address_hash}} = to_address_hash(address_hash_string)
+            address = Chain.address_hash_to_address_with_source_code(address_hash)
+            render(conn, :verify, %{contract: address})
+
+          {:error, changeset} ->
+            render(conn, :error, error: changeset)
+        end
+
+      {:error, %{"error" => error}} ->
+        render(conn, :error, error: error)
+    end
+  end
+
+  defp verify_and_publish(address_hash_string, files_array, conn) do
+    case Sourcify.verify(address_hash_string, files_array) do
+      {:ok, _verified_status} ->
+        case Sourcify.check_by_address(address_hash_string) do
+          {:ok, _verified_status} ->
+            get_metadata_and_publish(address_hash_string, conn)
+
+          {:error, %{"error" => error}} ->
+            render(conn, :error, error: error)
+
+          {:error, error} ->
+            render(conn, :error, error: error)
+        end
+
+      {:error, %{"error" => error}} ->
+        render(conn, :error, error: error)
+
+      {:error, error} ->
+        render(conn, :error, error: error)
+    end
+  end
+
+  def publish_without_broadcast(%{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
     params =
       if Map.has_key?(input, "secondarySources") do
         params
@@ -52,14 +205,17 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         params
       end
 
-    result =
-      case Publisher.publish_smart_contract(address_hash, params, abi) do
-        {:ok, _contract} = result ->
-          result
+    case Publisher.publish_smart_contract(address_hash, params, abi) do
+      {:ok, _contract} = result ->
+        result
 
-        {:error, changeset} ->
-          {:error, changeset}
-      end
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def publish(conn, %{"addressHash" => address_hash} = input) do
+    result = publish_without_broadcast(input)
 
     EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
   end
@@ -229,7 +385,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractSourceCode", "contract_source_code")
     |> optional_param(params, "evmVersion", "evm_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
-    |> optional_param(params, "autodetectConstructorArguments", "autodetect_contructor_args")
+    |> optional_param(params, "autodetectConstructorArguments", "autodetect_constructor_args")
     |> optional_param(params, "optimizationRuns", "optimization_runs")
     |> parse_optimization_runs()
   end

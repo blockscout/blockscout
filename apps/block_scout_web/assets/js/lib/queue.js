@@ -16,7 +16,7 @@ http://creativecommons.org/publicdomain/zero/1.0/legalcode
 /* Creates a new queue. A queue is a first-in-first-out (FIFO) data structure -
  * items are added to the end of the queue and removed from the front.
  */
-module.exports = function Queue(){
+export default function Queue(){
 
   // initialise the queue and offset
   var queue  = [];

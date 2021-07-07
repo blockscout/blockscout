@@ -91,6 +91,12 @@ if ($('[data-page="address-transactions"]').length) {
       msg: humps.camelizeKeys(msg)
     })
   })
+  addressChannel.on('pending_transaction', (msg) => {
+    store.dispatch({
+      type: 'RECEIVED_NEW_TRANSACTION',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
 
   const rewardsChannel = subscribeChannel(`rewards:${addressHash}`)
   rewardsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))

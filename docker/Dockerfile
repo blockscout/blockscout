@@ -1,6 +1,6 @@
-FROM bitwalker/alpine-elixir-phoenix:1.11.3
+FROM bitwalker/alpine-elixir-phoenix:1.11.4
 
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file
 
 # Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
