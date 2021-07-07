@@ -332,17 +332,17 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_mined_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
+  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
           [
             Transaction.t()
           ]
-  def address_to_mined_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
       cond do
         Keyword.get(options, :direction) == :from ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
+          address_to_transactions_without_rewards(address_hash, options)
 
         address_has_rewards?(address_hash) ->
           %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(address_hash)
@@ -350,14 +350,14 @@ defmodule Explorer.Chain do
           if block_miner_payout_address && address_hash == block_miner_payout_address do
             transactions_with_rewards_results(address_hash, options, paging_options)
           else
-            address_to_mined_transactions_without_rewards(address_hash, options)
+            address_to_transactions_without_rewards(address_hash, options)
           end
 
         true ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
+          address_to_transactions_without_rewards(address_hash, options)
       end
     else
-      address_to_mined_transactions_without_rewards(address_hash, options)
+      address_to_transactions_without_rewards(address_hash, options)
     end
   end
 
@@ -367,7 +367,7 @@ defmodule Explorer.Chain do
     rewards_task =
       Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
-    [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
+    [rewards_task | address_to_transactions_tasks(address_hash, options)]
     |> wait_for_address_transactions()
     |> Enum.sort_by(fn item ->
       case item do
@@ -375,7 +375,11 @@ defmodule Explorer.Chain do
           {-emission_reward.block.number, 1}
 
         item ->
-          {-item.block_number, -item.index}
+          if item.block_number do
+            {-item.block_number, -item.index}
+          else
+            {0, -item.index}
+          end
       end
     end)
     |> Enum.dedup_by(fn item ->
@@ -434,6 +438,7 @@ defmodule Explorer.Chain do
 
     options
     |> address_to_transactions_tasks_query()
+    |> Transaction.not_dropped_or_replaced_transacions()
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
@@ -3537,7 +3542,8 @@ defmodule Explorer.Chain do
         nil
 
       address ->
-        address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+        address_with_smart_contract =
+          Repo.preload(address, [:smart_contract, :decompiled_smart_contracts, :smart_contract_additional_sources])
 
         if address_with_smart_contract.smart_contract do
           formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
@@ -3842,6 +3848,9 @@ defmodule Explorer.Chain do
   end
 
   defp page_transaction(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
+    do: page_pending_transaction(query, options)
 
   defp page_transaction(query, %PagingOptions{key: {block_number, index}}) do
     where(
