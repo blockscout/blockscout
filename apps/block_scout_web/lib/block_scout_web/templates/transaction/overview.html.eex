@@ -6,11 +6,12 @@
 <% address_hash_str = if @transaction.to_address_hash, do: "0x" <> Base.encode16(@transaction.to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
+<%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12 col-lg-8 pr-0-md">
       <!-- Transaction Details -->
-      <div class="card card-mr-50-md">
+      <div class="card card-mr-50-md mb-3">
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
@@ -281,7 +282,7 @@
       </div>
     <% end %>
       <!-- Gas -->
-      <div class="card mob-transaction flex-grow-1 ml-0 ml-md-5 ml-lg-0">
+      <div class="card mob-transaction flex-grow-1 ml-0 ml-md-5 ml-lg-0 mb-3">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
           <div class="text-right">
@@ -300,6 +301,8 @@
       </div>
     </div>
   </div>
+
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
 
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">
