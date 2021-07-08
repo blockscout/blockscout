@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4353](https://github.com/blockscout/blockscout/pull/4353) - Added live-reload on the token holders page
 
 ### Fixes
 
