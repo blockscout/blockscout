@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.AddressTokenController do
 
       items =
         tokens
+        |> AddressTokenView.max_token_balance_by_latest_block_number()
         |> Market.add_price()
         |> Enum.map(fn token ->
           View.render_to_string(
