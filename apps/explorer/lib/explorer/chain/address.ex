@@ -97,6 +97,7 @@ defmodule Explorer.Chain.Address do
              :celo_voted,
              :celo_claims,
              :decompiled_smart_contracts,
+             :implementation_contract,
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
