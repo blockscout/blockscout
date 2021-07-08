@@ -32,12 +32,11 @@ defmodule BlockScoutWeb.Tokens.HolderController do
 
       token_balances_json =
         token_balances_paginated
-        |> HolderView.group_current_token_balances(token.type)
         |> Enum.sort_by(& &1.value, &>=/2)
-        |> Enum.map(fn token_balance ->
+        |> Enum.map(fn current_token_balance ->
           View.render_to_string(HolderView, "_token_balances.html",
             address_hash: address_hash,
-            token_balance: token_balance,
+            token_balance: current_token_balance,
             token: token
           )
         end)

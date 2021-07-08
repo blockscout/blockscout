@@ -45,17 +45,14 @@ defmodule Explorer.Chain.Address.Token do
       order_by: fragment("? DESC, LOWER(?) ASC NULLS LAST", token.type, token.name),
       where: balance.value > 0,
       group_by: [token.name, token.symbol, balance.value, token.type, token.contract_address_hash, balance.block_number],
-      select: %{
-        token: %Address.Token{
-          contract_address_hash: token.contract_address_hash,
-          inserted_at: max(token.inserted_at),
-          name: token.name,
-          symbol: token.symbol,
-          balance: balance.value,
-          decimals: max(token.decimals),
-          type: token.type
-        },
-        block_number: balance.block_number
+      select: %Address.Token{
+        contract_address_hash: token.contract_address_hash,
+        inserted_at: max(token.inserted_at),
+        name: token.name,
+        symbol: token.symbol,
+        balance: balance.value,
+        decimals: max(token.decimals),
+        type: token.type
       }
     )
   end
@@ -68,14 +65,20 @@ defmodule Explorer.Chain.Address.Token do
         select: %{
           value: ctb.value,
           token_contract_address_hash: ctb.token_contract_address_hash,
-          block_number: ctb.block_number
-        }
+          block_number: ctb.block_number,
+          max_block_number: over(max(ctb.block_number), :w)
+        },
+        windows: [
+          w: [partition_by: [ctb.token_contract_address_hash, ctb.address_hash]]
+        ]
       )
 
     from(
       t in Chain.Token,
       join: tb in subquery(last_balance_query),
-      on: tb.token_contract_address_hash == t.contract_address_hash
+      on: tb.token_contract_address_hash == t.contract_address_hash,
+      where: tb.block_number == tb.max_block_number,
+      distinct: t.contract_address_hash
     )
   end
 
