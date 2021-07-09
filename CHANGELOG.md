@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4331](https://github.com/blockscout/blockscout/pull/4331) - Added support for partially verified contracts via [Sourcify](https://sourcify.dev)
 - [#4323](https://github.com/blockscout/blockscout/pull/4323) - Renamed Contract Byte Code, add Contract Creation Code on contract's page
 - [#4312](https://github.com/blockscout/blockscout/pull/4312) - Display pending transactions on address page
 - [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added sourcify verification api endpoint
