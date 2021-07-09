@@ -1590,7 +1590,7 @@ msgid "Potential matches from our contract method database:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:254
+#: lib/block_scout_web/templates/layout/_search.html.eex:48
 msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
@@ -1729,18 +1729,18 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:16
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:217
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:261
+#: lib/block_scout_web/templates/layout/_search.html.eex:11
+#: lib/block_scout_web/templates/layout/_search.html.eex:55
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:211
+#: lib/block_scout_web/templates/layout/_search.html.eex:5
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:215
+#: lib/block_scout_web/templates/layout/_search.html.eex:9
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 

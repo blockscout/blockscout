@@ -1,0 +1,21 @@
+.mobile-search-show {
+    @include media-breakpoint-down(lg) {
+        width: 100%;
+    }
+    @include media-breakpoint-up(lg) {
+        display: none !important;
+    }
+}
+
+.mobile-search-hide {
+    @include media-breakpoint-down(lg) {
+        display: none !important;
+    }
+}
+
+.search-control {
+    height: 57px !important;
+    @include media-breakpoint-down(lg) {
+        height: 33px !important;
+    }
+}
