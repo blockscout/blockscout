@@ -63,7 +63,8 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       secondary_sources: [],
       abi: abi,
       verified_via_sourcify: false,
-      is_vyper_contract: true
+      is_vyper_contract: true,
+      partially_verified: false
     }
   end
 end

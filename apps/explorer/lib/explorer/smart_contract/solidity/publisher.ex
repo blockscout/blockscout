@@ -48,7 +48,11 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
-    Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    if Chain.smart_contract_verified?(address_hash) do
+      Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    else
+      Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    end
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message) do
@@ -92,7 +96,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: params["verified_via_sourcify"],
-      is_vyper_contract: false
+      is_vyper_contract: false,
+      partially_verified: params["partially_verified"]
     }
   end
 

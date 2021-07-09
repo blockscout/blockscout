@@ -3930,6 +3930,167 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "update_smart_contract/1" do
+    setup do
+      smart_contract_bytecode =
+        "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582040d82a7379b1ee1632ad4d8a239954fd940277b25628ead95259a85c5eddb2120029"
+
+      created_contract_address =
+        insert(
+          :address,
+          hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
+          contract_code: smart_contract_bytecode
+        )
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :internal_transaction_create,
+        transaction: transaction,
+        index: 0,
+        created_contract_address: created_contract_address,
+        created_contract_code: smart_contract_bytecode,
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        transaction_index: transaction.index
+      )
+
+      valid_attrs = %{
+        address_hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
+        name: "SimpleStorage",
+        compiler_version: "0.4.23",
+        optimization: false,
+        contract_source_code:
+          "pragma solidity ^0.4.23; contract SimpleStorage {uint storedData; function set(uint x) public {storedData = x; } function get() public constant returns (uint) {return storedData; } }",
+        abi: [
+          %{
+            "constant" => false,
+            "inputs" => [%{"name" => "x", "type" => "uint256"}],
+            "name" => "set",
+            "outputs" => [],
+            "payable" => false,
+            "stateMutability" => "nonpayable",
+            "type" => "function"
+          },
+          %{
+            "constant" => true,
+            "inputs" => [],
+            "name" => "get",
+            "outputs" => [%{"name" => "", "type" => "uint256"}],
+            "payable" => false,
+            "stateMutability" => "view",
+            "type" => "function"
+          }
+        ],
+        partially_verified: true
+      }
+
+      secondary_sources = [
+        %{
+          file_name: "storage.sol",
+          contract_source_code:
+            "pragma solidity >=0.7.0 <0.9.0;contract Storage {uint256 number;function store(uint256 num) public {number = num;}function retrieve_() public view returns (uint256){return number;}}",
+          address_hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c"
+        },
+        %{
+          file_name: "storage_1.sol",
+          contract_source_code:
+            "pragma solidity >=0.7.0 <0.9.0;contract Storage_1 {uint256 number;function store(uint256 num) public {number = num;}function retrieve_() public view returns (uint256){return number;}}",
+          address_hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c"
+        }
+      ]
+
+      changed_sources = [
+        %{
+          file_name: "storage_2.sol",
+          contract_source_code:
+            "pragma solidity >=0.7.0 <0.9.0;contract Storage_2 {uint256 number;function store(uint256 num) public {number = num;}function retrieve_() public view returns (uint256){return number;}}",
+          address_hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c"
+        },
+        %{
+          file_name: "storage_3.sol",
+          contract_source_code:
+            "pragma solidity >=0.7.0 <0.9.0;contract Storage_3 {uint256 number;function store(uint256 num) public {number = num;}function retrieve_() public view returns (uint256){return number;}}",
+          address_hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c"
+        }
+      ]
+
+      _ = Chain.create_smart_contract(valid_attrs, [], secondary_sources)
+
+      {:ok,
+       valid_attrs: valid_attrs,
+       address: created_contract_address,
+       secondary_sources: secondary_sources,
+       changed_sources: changed_sources}
+    end
+
+    test "change partially_verified field", %{valid_attrs: valid_attrs, address: address} do
+      sc_before_call = Repo.get_by(SmartContract, address_hash: address.hash)
+      assert sc_before_call.name == Map.get(valid_attrs, :name)
+      assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
+
+      assert {:ok, %SmartContract{} = smart_contract} =
+               Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
+
+      sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
+      assert sc_after_call.name == Map.get(valid_attrs, :name)
+      assert sc_after_call.partially_verified == false
+      assert sc_after_call.compiler_version == Map.get(valid_attrs, :compiler_version)
+      assert sc_after_call.optimization == Map.get(valid_attrs, :optimization)
+      assert sc_after_call.contract_source_code == Map.get(valid_attrs, :contract_source_code)
+    end
+
+    test "check nothing changed", %{valid_attrs: valid_attrs, address: address} do
+      sc_before_call = Repo.get_by(SmartContract, address_hash: address.hash)
+      assert sc_before_call.name == Map.get(valid_attrs, :name)
+      assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
+
+      assert {:ok, %SmartContract{} = smart_contract} = Chain.update_smart_contract(%{address_hash: address.hash})
+
+      sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
+      assert sc_after_call.name == Map.get(valid_attrs, :name)
+      assert sc_after_call.partially_verified == Map.get(valid_attrs, :partially_verified)
+      assert sc_after_call.compiler_version == Map.get(valid_attrs, :compiler_version)
+      assert sc_after_call.optimization == Map.get(valid_attrs, :optimization)
+      assert sc_after_call.contract_source_code == Map.get(valid_attrs, :contract_source_code)
+    end
+
+    test "check additional sources update", %{
+      address: address,
+      secondary_sources: secondary_sources,
+      changed_sources: changed_sources
+    } do
+      sc_before_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
+
+      assert sc_before_call.smart_contract_additional_sources
+             |> Enum.with_index()
+             |> Enum.all?(fn {el, ind} ->
+               {:ok, src} = Enum.fetch(secondary_sources, ind)
+
+               el.file_name == Map.get(src, :file_name) and
+                 el.contract_source_code == Map.get(src, :contract_source_code)
+             end)
+
+      assert {:ok, %SmartContract{} = smart_contract} =
+               Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
+
+      sc_after_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
+
+      assert sc_after_call.smart_contract_additional_sources
+             |> Enum.with_index()
+             |> Enum.all?(fn {el, ind} ->
+               {:ok, src} = Enum.fetch(changed_sources, ind)
+
+               el.file_name == Map.get(src, :file_name) and
+                 el.contract_source_code == Map.get(src, :contract_source_code)
+             end)
+    end
+  end
+
   describe "stream_unfetched_balances/2" do
     test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Block.t/0` `miner_hash`" do
