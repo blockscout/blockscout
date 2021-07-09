@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#4355](https://github.com/blockscout/blockscout/pull/4355) - Do not redirect to 404 page with empty string in the search field
 
 
 ## 3.7.1-beta
