@@ -204,72 +204,10 @@
             <path fill="#9B62FF" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"/>
         </svg>
       </button>
-      <!-- Search navbar -->
-      <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
-        <div class="search-form d-lg-flex d-inline-block">
-          <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
-          <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
-                <%= awesomplete(f, :q,
-                    [
-                    class: "form-control me auto",
-                    placeholder: gettext("Search by address, token symbol, name, transaction hash, or block number"),
-                    "aria-describedby": "search-icon",
-                    "aria-label": gettext("Search"),
-                    "data-test": "search_input"
-                    ],
-                    [ url: "#{chain_path(@conn, :token_autocomplete)}?q=",
-                    limit: 0,
-                    maxItems: 1000,
-                    minChars: 2,
-                    value: "contract_address_hash",
-                    label: "contract_address_hash",
-                    descrSearch: true,
-                    descr: "name",
-                    sort: "function(x1, x2){
-                      const tokenName1 = x1.split('<b>').length > 1 ? x1.split('<b>')[1].split('</b>')[0].toLowerCase() : ''
-                      const tokenName2 = x2.split('<b>').length > 1 ? x2.split('<b>')[1].split('</b>')[0].toLowerCase() : ''
-                      const holdersCount1 = x1.split('<i>').length > 1 ? parseInt(x1.split('<i>')[1].split('</i>')[0].split('holder')[0], 10) : null
-                      const holdersCount2 = x2.split('<i>').length > 1 ? parseInt(x2.split('<i>')[1].split('</i>')[0].split('holder')[0], 10) : null
-                      if (holdersCount1 && holdersCount2 && holdersCount1 !== holdersCount2 || (holdersCount1 && !holdersCount2) || (!holdersCount1 && holdersCount2)) {
-                        holdersCount1 > holdersCount2
-                      } else {
-                        if (tokenName1 < tokenName2) { return -1 }
-                        if (tokenName1 > tokenName2) { return 1 }
-                        return 0
-                      }
-                    }"
-                    ]) %>
-                <div class="input-group-append left">
-                  <button class="input-group-text" id="search-icon">
-                    <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
-                  </button>
-                </div>
-                <div class="input-group-append right desktop-only">
-                  <div
-                    id="slash-icon"
-                    class="input-group-text border"
-                    data-placement="bottom"
-                    data-toggle="tooltip"
-                    title=""
-                    data-original-title='<%= gettext("Press / and focus will be moved to the search field") %>'
-                    data-template="<div class='tooltip tooltip-pale-color' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                  >
-                    /
-                  </div>
-                </div>
-            </div>
-            <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
-            <script>
-              if (localStorage.getItem("current-color-mode") === "dark") {
-                document.getElementById("q").style.backgroundColor = "#22223a";
-                document.getElementById("q").style.borderColor = "#22223a";
-              }
-            </script>
-          <% end %>
-        </div>
-      <% end %>
+      <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, additional_classes: ["mobile-search-hide"] %>
     </div>
   </div>
+  <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, additional_classes: ["mobile-search-show"] %>
 </nav>
 <script>
   if (localStorage.getItem("current-color-mode") === "dark") {

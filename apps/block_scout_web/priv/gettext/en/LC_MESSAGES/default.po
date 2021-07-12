@@ -1590,7 +1590,7 @@ msgid "Potential matches from our contract method database:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:254
+#: lib/block_scout_web/templates/layout/_search.html.eex:48
 msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
@@ -1729,18 +1729,18 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:16
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:217
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:261
+#: lib/block_scout_web/templates/layout/_search.html.eex:11
+#: lib/block_scout_web/templates/layout/_search.html.eex:55
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:211
+#: lib/block_scout_web/templates/layout/_search.html.eex:5
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:215
+#: lib/block_scout_web/templates/layout/_search.html.eex:9
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2801,12 +2801,12 @@ msgstr ""
 msgid "validator"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
 msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
