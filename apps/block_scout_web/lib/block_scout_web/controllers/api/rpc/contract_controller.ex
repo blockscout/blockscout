@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
+  alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
@@ -45,6 +46,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+<<<<<<< HEAD
   def verify_via_sourcify(conn, %{"addressHash" => address_hash} = input) do
     files =
       if Map.has_key?(input, "files") do
@@ -192,11 +194,47 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         render(conn, :error, error: error)
 
       {:error, error} ->
+=======
+  def verify_vyper_contract(conn, %{"addressHash" => address_hash} = params) do
+    with {:params, {:ok, fetched_params}} <- {:params, fetch_vyper_verify_params(params)},
+         {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+         {:publish, {:ok, _}} <-
+           {:publish, VyperPublisher.publish(address_hash, fetched_params)} do
+      address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
+
+      render(conn, :verify, %{contract: address})
+    else
+      {:publish,
+       {:error,
+        %Ecto.Changeset{
+          errors: [
+            address_hash:
+              {"has already been taken",
+               [
+                 constraint: :unique,
+                 constraint_name: "smart_contracts_address_hash_index"
+               ]}
+          ]
+        }}} ->
+        render(conn, :error, error: "Smart-contract already verified.")
+
+      {:publish, _} ->
+        render(conn, :error, error: "Something went wrong while publishing the contract.")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address hash")
+
+      {:params, {:error, error}} ->
+>>>>>>> 168346aa9 (added vyper verification api endpoint)
         render(conn, :error, error: error)
     end
   end
 
+<<<<<<< HEAD
   def publish_without_broadcast(%{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
+=======
+  def publish(conn, %{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
+>>>>>>> 168346aa9 (added vyper verification api endpoint)
     params =
       if Map.has_key?(input, "secondarySources") do
         params
@@ -395,6 +433,15 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> optional_param(params, "autodetectConstructorArguments", "autodetect_constructor_args")
     |> optional_param(params, "optimizationRuns", "optimization_runs")
     |> parse_optimization_runs()
+  end
+
+  defp fetch_vyper_verify_params(params) do
+    {:ok, %{}}
+    |> required_param(params, "addressHash", "address_hash")
+    |> required_param(params, "name", "name")
+    |> required_param(params, "compilerVersion", "compiler_version")
+    |> required_param(params, "contractSourceCode", "contract_source_code")
+    |> optional_param(params, "constructorArguments", "constructor_arguments")
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do
