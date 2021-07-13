@@ -18,4 +18,38 @@
     @include media-breakpoint-down(lg) {
         height: 33px !important;
     }
+    &.focused-field {
+      border: 1px solid $secondary !important;
+    }
+}
+
+.autoComplete_wrapper {
+    width: 100% !important;
+}
+
+.main-search-autocomplete {
+    width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background-color: #f5f6fa !important;
+    @include media-breakpoint-down(lg) {
+        height: auto !important;
+    }
+}
+
+.autoComplete_highlight {
+    background-color: #feff54 !important;
+    color: #212121 !important;
+}
+
+ul[id^='autoComplete_list_'] {
+    margin-left: -39px !important;
+    border-radius: 0px !important;
+    padding: 5px !important;
+}
+
+li[id^='autoComplete_result_'] {
+    font-size: 12px !important;
+    border-radius: 0 !important;
 }

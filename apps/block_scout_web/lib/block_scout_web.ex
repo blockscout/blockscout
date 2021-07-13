@@ -57,8 +57,6 @@ defmodule BlockScoutWeb do
       }
 
       import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
-
-      import PhoenixFormAwesomplete
     end
   end
 
