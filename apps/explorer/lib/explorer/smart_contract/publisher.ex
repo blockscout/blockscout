@@ -48,7 +48,11 @@ defmodule Explorer.SmartContract.Publisher do
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
-    Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    if Chain.smart_contract_verified?(address_hash) do
+      Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    else
+      Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    end
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message) do
@@ -91,7 +95,8 @@ defmodule Explorer.SmartContract.Publisher do
       external_libraries: prepared_external_libraries,
       secondary_sources: params["secondary_sources"],
       abi: abi,
-      verified_via_sourcify: params["verified_via_sourcify"]
+      verified_via_sourcify: params["verified_via_sourcify"],
+      partially_verified: params["partially_verified"]
     }
   end
 

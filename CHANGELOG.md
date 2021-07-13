@@ -1,21 +1,34 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+- [#4371] - (https://github.com/blockscout/blockscout/pull/4371) - Place search outside of burger in mobile view
+- [#4355](https://github.com/blockscout/blockscout/pull/4355) - Do not redirect to 404 page with empty string in the search field
+
+
+## 3.7.1-beta
+
+### Features
+- [#4331](https://github.com/blockscout/blockscout/pull/4331) - Added support for partially verified contracts via [Sourcify](https://sourcify.dev)
 - [#4323](https://github.com/blockscout/blockscout/pull/4323) - Renamed Contract Byte Code, add Contract Creation Code on contract's page
 - [#4312](https://github.com/blockscout/blockscout/pull/4312) - Display pending transactions on address page
-- [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added sourcify verification api endpoint
+- [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added [Sourcify](https://sourcify.dev) verification API endpoint
 - [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
 - [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
-- [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contract's 
+- [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contracts 
 - [#4205](https://github.com/blockscout/blockscout/pull/4205) - Total transactions fees per day API endpoint
 - [#4158](https://github.com/blockscout/blockscout/pull/4158) - Calculate total fee per day
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
 
 ### Fixes
+- [#4351](https://github.com/blockscout/blockscout/pull/4351) - Support effectiveGasPrice property in tx receipt (Geth specific)
 - [#4346](https://github.com/blockscout/blockscout/pull/4346) - Fix internal server error on raw-trace transaction page
-- [#4345](https://github.com/blockscout/blockscout/pull/4345) - Fix bug on validator's address transactions page
+- [#4345](https://github.com/blockscout/blockscout/pull/4345) - Fix bug on validator's address transactions page(Support effectiveGasPrice property in receipt (geth specific))
 - [#4342](https://github.com/blockscout/blockscout/pull/4342) - Remove dropped/replaced txs from address transactions page
-- [#4320](https://github.com/blockscout/blockscout/pull/4320) - Fix absence of imported smart-contracts' source code in `getsourcecode` api method 
+- [#4320](https://github.com/blockscout/blockscout/pull/4320) - Fix absence of imported smart-contracts' source code in `getsourcecode` API method 
 - [#4274](https://github.com/blockscout/blockscout/pull/4302) - Fix search token-autocomplete
 - [#4316](https://github.com/blockscout/blockscout/pull/4316) - Fix `/decompiled-contracts` bug
 - [#4310](https://github.com/blockscout/blockscout/pull/4310) - Fix logo URL redirection, set font-family defaults for chart.js
