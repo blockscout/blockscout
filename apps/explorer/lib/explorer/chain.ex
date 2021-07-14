@@ -1165,18 +1165,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec build_tsvector_term(String.t()) :: String.t()
+  defp build_tsvector_term(word) do
+    word
+    |> String.replace(~r/[^a-zA-Z0-9]/, " ")
+    |> String.trim()
+    |> String.replace(~r/ +/, " & ")
+    |> Kernel.<>(":*")
+  end
+
   @spec search_token(String.t()) :: [Token.t()]
   def search_token(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
-
-    term_final = term <> ":*"
+    term = build_tsvector_term(word)
 
     query =
       from(token in Token,
-        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term_final),
+        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
         select: %{
           contract_address_hash: token.contract_address_hash,
           symbol: token.symbol,
@@ -1196,16 +1200,11 @@ defmodule Explorer.Chain do
 
   @spec search_contract(String.t()) :: [SmartContract.t()]
   def search_contract(word) do
-    term =
-      word
-      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
-      |> String.replace(~r/ +/, " & ")
-
-    term_final = term <> ":*"
+    term = build_tsvector_term(word)
 
     query =
       from(smart_contract in SmartContract,
-        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term_final),
+        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
         select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
       )
 
@@ -2675,7 +2674,7 @@ defmodule Explorer.Chain do
           right_join:
             missing_range in fragment(
               """
-                (SELECT b1.number 
+                (SELECT b1.number
                 FROM generate_series(0, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
                   (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
@@ -4561,7 +4560,7 @@ defmodule Explorer.Chain do
 
   # Fetches custom metadata for bridged tokens from the node.
   # Currently, gets Balancer token composite tokens with their weights
-  # from foreign chain 
+  # from foreign chain
   defp get_bridged_token_custom_metadata(foreign_token_address_hash, json_rpc_named_arguments, foreign_json_rpc)
        when not is_nil(foreign_json_rpc) and foreign_json_rpc !== "" do
     eth_call_foreign_json_rpc_named_arguments =
