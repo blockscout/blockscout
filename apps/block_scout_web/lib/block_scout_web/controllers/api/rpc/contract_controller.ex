@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
-  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         []
       end
 
-    if Chain.smart_contract_verified?(address_hash) do
+    if Chain.smart_contract_fully_verified?(address_hash) do
       render(conn, :error, error: "Smart-contract already verified.")
     else
       case Sourcify.check_by_address(address_hash) do
@@ -214,6 +214,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+  def publish(nil, %{"addressHash" => _address_hash} = input) do
+    publish_without_broadcast(input)
+  end
+
   def publish(conn, %{"addressHash" => address_hash} = input) do
     result = publish_without_broadcast(input)
 
@@ -261,6 +265,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
+      _ = VerificationController.check_and_verify(address_param)
       address = Chain.address_hash_to_address_with_source_code(address_hash)
 
       render(conn, :getsourcecode, %{
@@ -364,6 +369,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp to_smart_contract(address_hash) do
+    _ = VerificationController.check_and_verify(Hash.to_string(address_hash))
+
     result =
       case Chain.address_hash_to_smart_contract(address_hash) do
         nil ->

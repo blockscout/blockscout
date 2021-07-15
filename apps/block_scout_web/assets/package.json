@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
+    "@tarekraafat/autocomplete.js": "^10.2.5",
     "assert": "^2.0.0",
-    "awesomplete": "^1.1.5",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.3.1",
     "chart.js": "^3.3.2",
@@ -58,14 +58,14 @@
     "web3": "^1.3.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.7.2",
-    "@babel/polyfill": "^7.7.0",
-    "@babel/preset-env": "^7.7.1",
+    "@babel/core": "^7.14.6",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.14.7",
     "autoprefixer": "^8.4.1",
-    "babel-loader": "^8.0.6",
+    "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^6.0.3",
-    "css-loader": "^3.1.0",
-    "css-minimizer-webpack-plugin": "^3.0.1",
+    "css-loader": "^3.6.0",
+    "css-minimizer-webpack-plugin": "^3.0.2",
     "eslint": "^6.6.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",
@@ -74,14 +74,14 @@
     "eslint-plugin-standard": "^4.0.1",
     "file-loader": "^6.2.0",
     "jest": "^25.1.0",
-    "mini-css-extract-plugin": "^1.3.9",
+    "mini-css-extract-plugin": "^1.6.2",
     "node-sass": "^5.0.0",
-    "postcss": "^8.1.10",
-    "postcss-loader": "^4.1.0",
-    "sass-loader": "^11.0.1",
+    "postcss": "^8.3.5",
+    "postcss-loader": "^4.3.0",
+    "sass-loader": "^11.1.1",
     "style-loader": "^1.3.0",
-    "webpack": "^5.8.0",
-    "webpack-cli": "^4.2.0"
+    "webpack": "^5.44.0",
+    "webpack-cli": "^4.7.2"
   },
   "jest": {
     "moduleNameMapper": {

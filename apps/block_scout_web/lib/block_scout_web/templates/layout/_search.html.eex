@@ -1,0 +1,43 @@
+<!-- Search navbar -->
+<%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
+<div class="search-form d-lg-flex d-inline-block <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>">
+	<div class="input-group" style="width: 100%;" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
+		<div class="form-control search-control me auto <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>">
+			<input id="<%= @id %>" class="main-search-autocomplete" data-test="search_input" type="text" tabindex="1">
+		</div>
+		<div class="input-group-append left">
+			<button class="input-group-text" id="search-icon">
+			<%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
+			</button>
+		</div>
+		<div class="input-group-append right desktop-only">
+			<div
+			id="slash-icon"
+			class="input-group-text border"
+			data-placement="bottom"
+			data-toggle="tooltip"
+			title=""
+			data-original-title='<%= gettext("Press / and focus will be moved to the search field") %>'
+			data-template="<div class='tooltip tooltip-pale-color' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+			>
+			/
+			</div>
+		</div>
+	</div>
+	<button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
+    <script>
+        if (localStorage.getItem("current-color-mode") === "dark") {
+		const search = document.getElementById("main-search-autocomplete")
+		const searchMobile = document.getElementById("main-search-autocomplete-mobile")
+        if (search && search.style) {
+			search.style.backgroundColor = "#22223a";
+        	search.style.borderColor = "#22223a";
+		}
+		if (searchMobile && searchMobile.style) {
+			searchMobile.style.backgroundColor = "#22223a";
+			searchMobile.style.borderColor = "#22223a";
+		}
+        }
+    </script>
+</div>
+<% end %>
