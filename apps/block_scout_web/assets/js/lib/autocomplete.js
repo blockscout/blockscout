@@ -25,8 +25,15 @@ const dataSrc = async (query, id) => {
 }
 const resultsListElement = (list, data) => {
   const info = document.createElement('p')
+  const adv = `
+  <div class="ad mb-3 d-none">
+    Sponsored: <img class="ad-img-url" width=20 height=20 /> <b><span class="ad-name"></span></b> - <span class="ad-short-description"></span> <a class="ad-url"><b><span class="ad-cta-button"></span></a></b>
+    </div>`
+  info.innerHTML = adv
   if (data.results.length > 0) {
-    info.innerHTML = `Displaying <strong>${data.results.length}</strong> results`
+    info.innerHTML += `
+    Displaying <strong>${data.results.length}</strong> results
+    `
   }
 
   list.prepend(info)
@@ -104,4 +111,21 @@ document.querySelector('#main-search-autocomplete').addEventListener('selection'
 })
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('selection', function (event) {
   selection(event)
+})
+
+const openOnFocus = (event) => {
+  if (event.target.value) {
+    autoCompleteJS.start(event.target.value)
+  } else {
+    autoCompleteJS.start('###')
+  }
+  autoCompleteJS.open()
+}
+
+document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
+  openOnFocus(event)
+})
+
+document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
+  openOnFocus(event)
 })
