@@ -1195,99 +1195,6 @@ msgid "Records"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:55
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:57
-msgid "Potential Reward Share"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:24
-msgid "Potential matches from our contract method database:"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_search.html.eex:48
-msgid "Press / and focus will be moved to the search field"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:42
-#: lib/block_scout_web/templates/layout/app.html.eex:32
-msgid "Price"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10
-#: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:5
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:83
-msgid "QR Code"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
-msgid "Query"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:135
-msgid "RPC"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:143
-msgid "Raw Input"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:7
-#: lib/block_scout_web/views/transaction_view.ex:408
-msgid "Raw Trace"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:81
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:25
-#: lib/block_scout_web/views/address_view.ex:349
-#: lib/block_scout_web/views/tokens/overview_view.ex:43
-msgid "Read Contract"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:88
-#: lib/block_scout_web/views/address_view.ex:350
-msgid "Read Proxy"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:32
-msgid "Reason for Ban: %{ban_reason}"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:58
-msgid "Recalculate"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:13
-msgid "Records"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_table.html.eex:58
-msgid "Refresh now"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:12
-msgid "Remove My Pool"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:155
 msgid "Request URL"
 msgstr ""
@@ -1331,19 +1238,14 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:16
-#: lib/block_scout_web/templates/layout/_search.html.eex:11
-#: lib/block_scout_web/templates/layout/_search.html.eex:55
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:217
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:261
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_search.html.eex:5
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
 msgid "Search by address, token symbol name, transaction hash, or block number"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_search.html.eex:9
-msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
@@ -3177,12 +3079,12 @@ msgstr ""
 msgid "Deployed ByteCode"
 msgstr ""
 
-#, elixir-format
+#, elixir-format, fuzzy
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
-#, elixir-format
+#, elixir-format, fuzzy
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
 msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
