@@ -1113,13 +1113,8 @@ defmodule Explorer.Chain do
             select: %{
               contract_address_hash: token.contract_address_hash,
               symbol: token.symbol,
-              name:
-                fragment(
-                  "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
-                  token.name,
-                  token.symbol,
-                  token.holder_count
-                )
+              name: token.name,
+              holder_count: token.holder_count
             },
             order_by: [desc: token.holder_count]
           )
@@ -3479,6 +3474,79 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Updates a `t:SmartContract.t/0`.
+
+  Has the similar logic as create_smart_contract/1.
+  Used in cases when you need to update row in DB contains SmartContract, e.g. in case of changing 
+  status `partially verified` to `fully verified` (re-verify).
+  """
+  @spec update_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
+  def update_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
+    address_hash = Map.get(attrs, :address_hash)
+
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    query_sources =
+      from(
+        source in SmartContractAdditionalSource,
+        where: source.address_hash == ^address_hash
+      )
+
+    _delete_sources = Repo.delete_all(query_sources)
+
+    smart_contract = Repo.one(query)
+
+    smart_contract_changeset =
+      smart_contract
+      |> SmartContract.changeset(attrs)
+      |> Changeset.put_change(:external_libraries, external_libraries)
+
+    new_contract_additional_source = %SmartContractAdditionalSource{}
+
+    smart_contract_additional_sources_changesets =
+      if secondary_sources do
+        secondary_sources
+        |> Enum.map(fn changeset ->
+          new_contract_additional_source
+          |> SmartContractAdditionalSource.changeset(changeset)
+        end)
+      else
+        []
+      end
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    insert_contract_query =
+      Multi.new()
+      |> Multi.update(:smart_contract, smart_contract_changeset)
+
+    insert_contract_query_with_additional_sources =
+      smart_contract_additional_sources_changesets
+      |> Enum.with_index()
+      |> Enum.reduce(insert_contract_query, fn {changeset, index}, multi ->
+        Multi.insert(multi, "smart_contract_additional_source_#{Integer.to_string(index)}", changeset)
+      end)
+
+    insert_result =
+      insert_contract_query_with_additional_sources
+      |> Repo.transaction()
+
+    case insert_result do
+      {:ok, %{smart_contract: smart_contract}} ->
+        {:ok, smart_contract}
+
+      {:error, :smart_contract, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :set_address_verified, message, _} ->
+        {:error, message}
+    end
+  end
+
   defp set_address_verified(repo, address_hash) do
     query =
       from(
@@ -3712,20 +3780,54 @@ defmodule Explorer.Chain do
     end
   end
 
-  def smart_contract_verified?(address_hash_str) do
+  def smart_contract_fully_verified?(address_hash_str) when is_binary(address_hash_str) do
     case string_to_address_hash(address_hash_str) do
       {:ok, address_hash} ->
-        query =
-          from(
-            smart_contract in SmartContract,
-            where: smart_contract.address_hash == ^address_hash
-          )
-
-        if Repo.one(query), do: true, else: false
+        check_fully_verified(address_hash)
 
       _ ->
         false
     end
+  end
+
+  def smart_contract_fully_verified?(address_hash) do
+    check_fully_verified(address_hash)
+  end
+
+  defp check_fully_verified(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    result = Repo.one(query)
+
+    if result, do: !result.partially_verified
+  end
+
+  def smart_contract_verified?(address_hash_str) when is_binary(address_hash_str) do
+    case string_to_address_hash(address_hash_str) do
+      {:ok, address_hash} ->
+        check_verified(address_hash)
+
+      _ ->
+        false
+    end
+  end
+
+  def smart_contract_verified?(address_hash) do
+    check_verified(address_hash)
+  end
+
+  defp check_verified(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    if Repo.one(query), do: true, else: false
   end
 
   defp fetch_transactions(paging_options \\ nil) do

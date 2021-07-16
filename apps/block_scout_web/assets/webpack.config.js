@@ -32,10 +32,9 @@ const jsOptimizationParams = {
   parallel: true
 }
 
-const awesompleteJs = {
+const autocompleteJs = {
   entry: {
-    awesomplete: './js/lib/awesomplete.js',
-    'awesomplete-util': './js/lib/awesomplete-util.js',
+    autocomplete: './js/lib/autocomplete.js',
   },
   output: {
     filename: '[name].min.js',
@@ -61,7 +60,7 @@ const awesompleteJs = {
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: '../css/awesomplete.css'
+      filename: '../css/autocomplete.css'
     })
   ]
 }
@@ -212,4 +211,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, awesompleteJs, dropzoneJs)
+module.exports = viewScripts.concat(appJs, autocompleteJs, dropzoneJs)
