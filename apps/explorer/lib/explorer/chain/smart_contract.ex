@@ -193,8 +193,8 @@ defmodule Explorer.Chain.SmartContract do
   * `abi` - The [JSON ABI specification](https://solidity.readthedocs.io/en/develop/abi-spec.html#json) for this
     contract.
   * `verified_via_sourcify` - whether contract verified through Sourcify utility or not.
-  * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
   * `partially_verified` - whether contract verified using partial matched source code or not.
+  * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -207,8 +207,8 @@ defmodule Explorer.Chain.SmartContract do
           optimization_runs: non_neg_integer() | nil,
           abi: [function_description],
           verified_via_sourcify: boolean | nil,
-          is_vyper_contract: boolean | nil,
-          partially_verified: boolean | nil
+          partially_verified: boolean | nil,
+          is_vyper_contract: boolean | nil
         }
 
   schema "smart_contracts" do
@@ -222,8 +222,8 @@ defmodule Explorer.Chain.SmartContract do
     embeds_many(:external_libraries, ExternalLibrary)
     field(:abi, {:array, :map})
     field(:verified_via_sourcify, :boolean)
-    field(:is_vyper_contract, :boolean)
     field(:partially_verified, :boolean)
+    field(:is_vyper_contract, :boolean)
 
     has_many(
       :decompiled_smart_contracts,
@@ -259,8 +259,8 @@ defmodule Explorer.Chain.SmartContract do
       :evm_version,
       :optimization_runs,
       :verified_via_sourcify,
-      :is_vyper_contract,
-      :partially_verified
+      :partially_verified,
+      :is_vyper_contract
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
@@ -280,8 +280,8 @@ defmodule Explorer.Chain.SmartContract do
         :optimization_runs,
         :constructor_arguments,
         :verified_via_sourcify,
-        :is_vyper_contract,
-        :partially_verified
+        :partially_verified,
+        :is_vyper_contract
       ])
       |> validate_required([:name, :compiler_version, :optimization, :address_hash])
 

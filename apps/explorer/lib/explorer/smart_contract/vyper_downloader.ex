@@ -57,7 +57,6 @@ defmodule Explorer.SmartContract.VyperDownloader do
       file = File.open!(temp_path, [:write, :exclusive])
 
       IO.binwrite(file, contents)
-
       File.close(file)
 
       File.rename(temp_path, path)
