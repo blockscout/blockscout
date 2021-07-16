@@ -1155,13 +1155,8 @@ defmodule Explorer.Chain do
             select: %{
               contract_address_hash: token.contract_address_hash,
               symbol: token.symbol,
-              name:
-                fragment(
-                  "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
-                  token.name,
-                  token.symbol,
-                  token.holder_count
-                )
+              name: token.name,
+              holder_count: token.holder_count
             },
             order_by: [desc: token.holder_count]
           )
@@ -1190,7 +1185,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec search_label(String.t()) :: [AddressToTag.t()]
+  @spec search_label(String.t()) :: [Map.t()]
   def search_label(string) do
     case prepare_search_term(string) do
       {:some, term} ->
@@ -1202,11 +1197,12 @@ defmodule Explorer.Chain do
 
         query =
           from(att in AddressToTag,
-            left_join: at in subquery(inner_query),
+            inner_join: at in subquery(inner_query),
             on: att.tag_id == at.id,
             select: %{
               contract_address_hash: att.address_hash,
-              name: fragment("'<i class=\"fa fa-tag\"></i> label: <b>' || ? || '</b>'", at.label)
+              name: at.label,
+              label: true
             }
           )
 

@@ -8,18 +8,44 @@ $(document).click(function (event) {
   }
 })
 
+const search = (value) => {
+  if (value) {
+    window.location.href = `/search?q=${value}`
+  }
+}
+
 $(document).on('keyup', function (event) {
   if (event.key === '/') {
-    $('#q').trigger('focus')
+    $('.main-search-autocomplete').trigger('focus')
   }
 })
 
-$('#q').on('focus', function (_event) {
-  $('#slash-icon').hide()
-  $(this).addClass('focused-field')
+$('.main-search-autocomplete').on('keyup', function (event) {
+  if (event.key === 'Enter') {
+    console.log($('li[id^="autoComplete_result_"]'))
+    var selected = false
+    $('li[id^="autoComplete_result_"]').each(function () {
+      if ($(this).attr('aria-selected')) {
+        selected = true
+      }
+    })
+    if (!selected) {
+      search(event.target.value)
+    }
+  }
 })
 
-$('#q').on('focusout', function (_event) {
+$('#search-icon').on('click', function (event) {
+  const value = $('.main-search-autocomplete').val() || $('.main-search-autocomplete-mobile').val()
+  search(value)
+})
+
+$('.main-search-autocomplete').on('focus', function (_event) {
+  $('#slash-icon').hide()
+  $('.search-control').addClass('focused-field')
+})
+
+$('.main-search-autocomplete').on('focusout', function (_event) {
   $('#slash-icon').show()
-  $(this).removeClass('focused-field')
+  $('.search-control').removeClass('focused-field')
 })

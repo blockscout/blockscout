@@ -391,33 +391,6 @@ $c-dark-text-color: #8a8dba;
 		}
 	}
 
-	.awesomplete {
-		& > ul {
-			background: #fff;
-			&:before {
-				background: #fff;
-			}
-			li {
-				&:hover {
-					background-color: $c-primary;
-					color: #fff;
-					mark {
-						background: darken($c-primary, 10);
-						color: #fff;
-					}
-				}
-			}
-		}
-	}
-
-	.awesomplete mark {
-		background: $c-tertiary !important;
-	}
-
-	.awesomplete li:hover mark {
-		background: $c-tertiary !important;
-	}
-
 	#qrModal {
 		.modal-content {
 
