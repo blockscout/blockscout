@@ -275,25 +275,29 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
       {:ok, :already_fully_verified}
     else
-      if Chain.smart_contract_verified?(address_hash_string) do
-        case Sourcify.check_by_address(address_hash_string) do
-          {:ok, _verified_status} ->
-            get_metadata_and_publish(address_hash_string, nil)
+      if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+        if Chain.smart_contract_verified?(address_hash_string) do
+          case Sourcify.check_by_address(address_hash_string) do
+            {:ok, _verified_status} ->
+              get_metadata_and_publish(address_hash_string, nil)
 
-          _ ->
-            {:error, :not_verified}
+            _ ->
+              {:error, :not_verified}
+          end
+        else
+          case Sourcify.check_by_address_any(address_hash_string) do
+            {:ok, "full", metadata} ->
+              proccess_metadata_add_publish(address_hash_string, metadata, false)
+
+            {:ok, "partial", metadata} ->
+              proccess_metadata_add_publish(address_hash_string, metadata, true)
+
+            _ ->
+              {:error, :not_verified}
+          end
         end
       else
-        case Sourcify.check_by_address_any(address_hash_string) do
-          {:ok, "full", metadata} ->
-            proccess_metadata_add_publish(address_hash_string, metadata, false)
-
-          {:ok, "partial", metadata} ->
-            proccess_metadata_add_publish(address_hash_string, metadata, true)
-
-          _ ->
-            {:error, :not_verified}
-        end
+        {:error, :sourcify_disabled}
       end
     end
   end
