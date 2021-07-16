@@ -78,6 +78,10 @@ defmodule BlockScoutWeb.ChainController do
     %{earliest: x_days_back, latest: latest}
   end
 
+  def search(conn, %{"q" => ""}) do
+    show(conn, [])
+  end
+
   def search(conn, %{"q" => query}) do
     query
     |> String.trim()

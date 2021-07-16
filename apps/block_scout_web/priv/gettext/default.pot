@@ -1207,9 +1207,106 @@ msgstr ""
 
 #, elixir-format
 #:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:55
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:57
+msgid "Potential Reward Share"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:24
+msgid "Potential matches from our contract method database:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_search.html.eex:48
+msgid "Press / and focus will be moved to the search field"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/show.html.eex:42
+#: lib/block_scout_web/templates/layout/app.html.eex:32
+msgid "Price"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10
+#: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:5
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:83
+msgid "QR Code"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
+msgid "Query"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:135
+msgid "RPC"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:143
+msgid "Raw Input"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:7
+#: lib/block_scout_web/views/transaction_view.ex:408
+msgid "Raw Trace"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:81
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:25
+#: lib/block_scout_web/views/address_view.ex:349
+#: lib/block_scout_web/views/tokens/overview_view.ex:43
+msgid "Read Contract"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:88
+#: lib/block_scout_web/views/address_view.ex:350
+msgid "Read Proxy"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:32
+msgid "Reason for Ban: %{ban_reason}"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:58
+msgid "Recalculate"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:13
+msgid "Records"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:58
+msgid "Refresh now"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:12
+msgid "Remove My Pool"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:155
+msgid "Request URL"
+msgstr ""
+
+#, elixir-format
+#:
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:302
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:53
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:90
 msgid "Reset"
 msgstr ""
 
@@ -1244,17 +1341,23 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:16
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:217
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:261
+#: lib/block_scout_web/templates/layout/_search.html.eex:11
+#: lib/block_scout_web/templates/layout/_search.html.eex:55
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
+#: lib/block_scout_web/templates/layout/_search.html.eex:5
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_search.html.eex:9
+msgid "Search by address, token symbol, name, transaction hash, or block number"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
 msgid "Search network"
 msgstr ""
 

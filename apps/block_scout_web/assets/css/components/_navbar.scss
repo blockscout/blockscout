@@ -95,6 +95,7 @@ $navbar-logo-width: auto !default;
   .navbar-toggler {
     outline: none;
     color: $primary;
+    padding-right: 0px;
 
     .navbar-toggler-icon {
       background-image: url($header-toggler-icon);
