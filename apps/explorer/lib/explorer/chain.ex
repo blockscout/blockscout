@@ -1113,13 +1113,8 @@ defmodule Explorer.Chain do
             select: %{
               contract_address_hash: token.contract_address_hash,
               symbol: token.symbol,
-              name:
-                fragment(
-                  "'<b>' || coalesce(?, '') || '</b>' || ' (' || coalesce(?, '') || ') ' || '<i>' || coalesce(?::varchar(255), '') || ' holder(s)' || '</i>'",
-                  token.name,
-                  token.symbol,
-                  token.holder_count
-                )
+              name: token.name,
+              holder_count: token.holder_count
             },
             order_by: [desc: token.holder_count]
           )
