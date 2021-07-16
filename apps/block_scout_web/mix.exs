@@ -127,7 +127,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:wallaby, "~> 0.28", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:phoenix_form_awesomplete, "~> 0.1.4"},
       {:ex_json_schema, "~> 0.6.2"}
     ]
   end
