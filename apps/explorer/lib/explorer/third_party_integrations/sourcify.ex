@@ -13,6 +13,11 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     http_get_request(check_by_address_url(), params)
   end
 
+  def check_by_address_any(address_hash_string) do
+    get_metadata_full_url = get_metadata_any_url() <> "/" <> address_hash_string
+    http_get_request(get_metadata_full_url, [])
+  end
+
   def get_metadata(address_hash_string) do
     get_metadata_full_url = get_metadata_url() <> "/" <> address_hash_string
     http_get_request(get_metadata_full_url, [])
@@ -90,6 +95,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       url =~ "/verify" ->
         parse_verify_http_response(body)
 
+      url =~ "/files/any" ->
+        parse_get_metadata_any_http_response(body)
+
       url =~ "/files/" ->
         parse_get_metadata_http_response(body)
 
@@ -143,6 +151,21 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
+  defp parse_get_metadata_any_http_response(body) do
+    body_json = decode_json(body)
+
+    case body_json do
+      %{"message" => message, "errors" => errors} ->
+        {:error, "#{message}: #{decode_json(errors)}"}
+
+      %{"status" => status, "files" => metadata} ->
+        {:ok, status, metadata}
+
+      _ ->
+        {:error, "Unknown Error"}
+    end
+  end
+
   defp parse_http_error_response(body) do
     body_json = decode_json(body)
 
@@ -180,5 +203,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   defp get_metadata_url do
     chain_id = config(:chain_id)
     "#{base_server_url()}" <> "/files/" <> chain_id
+  end
+
+  defp get_metadata_any_url do
+    chain_id = config(:chain_id)
+    "#{base_server_url()}" <> "/files/any/" <> chain_id
   end
 end

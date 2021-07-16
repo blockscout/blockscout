@@ -332,17 +332,17 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_mined_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
+  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
           [
             Transaction.t()
           ]
-  def address_to_mined_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
       cond do
         Keyword.get(options, :direction) == :from ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
+          address_to_transactions_without_rewards(address_hash, options)
 
         address_has_rewards?(address_hash) ->
           %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(address_hash)
@@ -350,14 +350,14 @@ defmodule Explorer.Chain do
           if block_miner_payout_address && address_hash == block_miner_payout_address do
             transactions_with_rewards_results(address_hash, options, paging_options)
           else
-            address_to_mined_transactions_without_rewards(address_hash, options)
+            address_to_transactions_without_rewards(address_hash, options)
           end
 
         true ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
+          address_to_transactions_without_rewards(address_hash, options)
       end
     else
-      address_to_mined_transactions_without_rewards(address_hash, options)
+      address_to_transactions_without_rewards(address_hash, options)
     end
   end
 
@@ -367,7 +367,7 @@ defmodule Explorer.Chain do
     rewards_task =
       Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
-    [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
+    [rewards_task | address_to_transactions_tasks(address_hash, options)]
     |> wait_for_address_transactions()
     |> Enum.sort_by(fn item ->
       case item do
@@ -375,7 +375,11 @@ defmodule Explorer.Chain do
           {-emission_reward.block.number, 1}
 
         item ->
-          {-item.block_number, -item.index}
+          if item.block_number do
+            {-item.block_number, -item.index}
+          else
+            {0, -item.index}
+          end
       end
     end)
     |> Enum.dedup_by(fn item ->
@@ -434,6 +438,7 @@ defmodule Explorer.Chain do
 
     options
     |> address_to_transactions_tasks_query()
+    |> Transaction.not_dropped_or_replaced_transacions()
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
@@ -3474,6 +3479,79 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Updates a `t:SmartContract.t/0`.
+
+  Has the similar logic as create_smart_contract/1.
+  Used in cases when you need to update row in DB contains SmartContract, e.g. in case of changing 
+  status `partially verified` to `fully verified` (re-verify).
+  """
+  @spec update_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
+  def update_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
+    address_hash = Map.get(attrs, :address_hash)
+
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    query_sources =
+      from(
+        source in SmartContractAdditionalSource,
+        where: source.address_hash == ^address_hash
+      )
+
+    _delete_sources = Repo.delete_all(query_sources)
+
+    smart_contract = Repo.one(query)
+
+    smart_contract_changeset =
+      smart_contract
+      |> SmartContract.changeset(attrs)
+      |> Changeset.put_change(:external_libraries, external_libraries)
+
+    new_contract_additional_source = %SmartContractAdditionalSource{}
+
+    smart_contract_additional_sources_changesets =
+      if secondary_sources do
+        secondary_sources
+        |> Enum.map(fn changeset ->
+          new_contract_additional_source
+          |> SmartContractAdditionalSource.changeset(changeset)
+        end)
+      else
+        []
+      end
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    insert_contract_query =
+      Multi.new()
+      |> Multi.update(:smart_contract, smart_contract_changeset)
+
+    insert_contract_query_with_additional_sources =
+      smart_contract_additional_sources_changesets
+      |> Enum.with_index()
+      |> Enum.reduce(insert_contract_query, fn {changeset, index}, multi ->
+        Multi.insert(multi, "smart_contract_additional_source_#{Integer.to_string(index)}", changeset)
+      end)
+
+    insert_result =
+      insert_contract_query_with_additional_sources
+      |> Repo.transaction()
+
+    case insert_result do
+      {:ok, %{smart_contract: smart_contract}} ->
+        {:ok, smart_contract}
+
+      {:error, :smart_contract, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :set_address_verified, message, _} ->
+        {:error, message}
+    end
+  end
+
   defp set_address_verified(repo, address_hash) do
     query =
       from(
@@ -3537,7 +3615,8 @@ defmodule Explorer.Chain do
         nil
 
       address ->
-        address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+        address_with_smart_contract =
+          Repo.preload(address, [:smart_contract, :decompiled_smart_contracts, :smart_contract_additional_sources])
 
         if address_with_smart_contract.smart_contract do
           formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
@@ -3706,20 +3785,54 @@ defmodule Explorer.Chain do
     end
   end
 
-  def smart_contract_verified?(address_hash_str) do
+  def smart_contract_fully_verified?(address_hash_str) when is_binary(address_hash_str) do
     case string_to_address_hash(address_hash_str) do
       {:ok, address_hash} ->
-        query =
-          from(
-            smart_contract in SmartContract,
-            where: smart_contract.address_hash == ^address_hash
-          )
-
-        if Repo.one(query), do: true, else: false
+        check_fully_verified(address_hash)
 
       _ ->
         false
     end
+  end
+
+  def smart_contract_fully_verified?(address_hash) do
+    check_fully_verified(address_hash)
+  end
+
+  defp check_fully_verified(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    result = Repo.one(query)
+
+    if result, do: !result.partially_verified
+  end
+
+  def smart_contract_verified?(address_hash_str) when is_binary(address_hash_str) do
+    case string_to_address_hash(address_hash_str) do
+      {:ok, address_hash} ->
+        check_verified(address_hash)
+
+      _ ->
+        false
+    end
+  end
+
+  def smart_contract_verified?(address_hash) do
+    check_verified(address_hash)
+  end
+
+  defp check_verified(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    if Repo.one(query), do: true, else: false
   end
 
   defp fetch_transactions(paging_options \\ nil) do
@@ -3842,6 +3955,9 @@ defmodule Explorer.Chain do
   end
 
   defp page_transaction(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
+    do: page_pending_transaction(query, options)
 
   defp page_transaction(query, %PagingOptions{key: {block_number, index}}) do
     where(

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaJsonController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
-    if Chain.smart_contract_verified?(address_hash_string) do
+    if Chain.smart_contract_fully_verified?(address_hash_string) do
       redirect(conn, to: address_path(conn, :show, address_hash_string))
     else
       case Sourcify.check_by_address(address_hash_string) do
