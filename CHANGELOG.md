@@ -5,7 +5,7 @@
 
 ### Fixes
 - [#4388](https://github.com/blockscout/blockscout/pull/4388) - Fix internal server error on contract page for insctances without sourcify envs
-- [#4385](https://github.com/blockscout/blockscout/pull/4385) - Fix html template for transaction's input
+- [#4385](https://github.com/blockscout/blockscout/pull/4385) - Fix html template for transaction's input; Add copy text for tuples
 
 ### Chore
 - [#4384](https://github.com/blockscout/blockscout/pull/4384) - Fix Elixir version in `.tool-versions`

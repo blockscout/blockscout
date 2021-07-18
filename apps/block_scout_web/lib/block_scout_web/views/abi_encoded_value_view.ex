@@ -63,6 +63,17 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     hex(value)
   end
 
+  defp do_copy_text({:tuple, types}, value) do
+    values =
+      value
+      |> Tuple.to_list()
+      |> Enum.with_index()
+      |> Enum.map(fn {val, ind} -> do_copy_text(Enum.at(types, ind), val) end)
+      |> Enum.intersperse(", ")
+
+    ~E|(<%= values %>)|
+  end
+
   defp do_copy_text(_type, value) do
     to_string(value)
   end
