@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#4388](https://github.com/blockscout/blockscout/pull/4388) - Fix internal server error on contract page for insctances without sourcify envs
 
 ### Chore
 - [#4382](https://github.com/blockscout/blockscout/pull/4382) - Replace awesomplete with autocomplete.js
