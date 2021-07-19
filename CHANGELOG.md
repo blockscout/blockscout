@@ -9,6 +9,7 @@
 - [#4385](https://github.com/blockscout/blockscout/pull/4385) - Fix html template for transaction's input; Add copy text for tuples
 
 ### Chore
+- [#4398](https://github.com/blockscout/blockscout/pull/4398) - Speed up the transactions loading on the front-end
 - [#4384](https://github.com/blockscout/blockscout/pull/4384) - Fix Elixir version in `.tool-versions`
 - [#4382](https://github.com/blockscout/blockscout/pull/4382) - Replace awesomplete with autocomplete.js
 - [#4371] - (https://github.com/blockscout/blockscout/pull/4371) - Place search outside of burger in mobile view
