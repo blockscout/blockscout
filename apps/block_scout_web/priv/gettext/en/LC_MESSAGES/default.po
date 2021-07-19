@@ -1392,6 +1392,7 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/chain/show.html.eex:239
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:12
 #: lib/block_scout_web/templates/transaction/index.html.eex:18
@@ -1803,7 +1804,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:23
 #: lib/block_scout_web/templates/address_token/index.html.eex:17
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:58
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:54
 #: lib/block_scout_web/templates/address_validation/index.html.eex:24
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:182
@@ -2077,7 +2078,7 @@ msgid "There are no tokens."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:55
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 msgid "There are no transactions for this address."
 msgstr ""
 
