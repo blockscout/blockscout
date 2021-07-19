@@ -2218,6 +2218,7 @@ msgid "Token Holders"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:38
 #: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:11
 msgid "Token ID"
 msgstr ""
