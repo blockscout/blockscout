@@ -3,6 +3,4 @@
 # For details on acceptable file patterns, please refer to the [Github Documentation](https://help.github.com/articles/about-codeowners/)
 
 # default owners
-* @celo-org/core-services
-* @obasilakis
-* @eruizgar91
+* @celo-org/core-services @obasilakis @eruizgar91
