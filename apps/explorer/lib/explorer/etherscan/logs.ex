@@ -79,20 +79,12 @@ defmodule Explorer.Etherscan.Logs do
 
     logs_query = where_topic_match(Log, prepared_filter)
 
-    query_to_address_hash_wrapped =
-      logs_query
-      |> internal_transaction_query(:to_address_hash, prepared_filter, address_hash)
-      |> Chain.wrapped_union_subquery()
-
-    query_from_address_hash_wrapped =
-      logs_query
-      |> internal_transaction_query(:from_address_hash, prepared_filter, address_hash)
-      |> Chain.wrapped_union_subquery()
-
-    query_created_contract_address_hash_wrapped =
-      logs_query
-      |> internal_transaction_query(:created_contract_address_hash, prepared_filter, address_hash)
-      |> Chain.wrapped_union_subquery()
+    [query_to_address_hash_wrapped, query_from_address_hash_wrapped, query_created_contract_address_hash_wrapped] =
+      Enum.map([:to_address_hash, :from_address_hash, :created_contract_address_hash], fn hash ->
+        logs_query
+        |> internal_transaction_query(hash, prepared_filter, address_hash)
+        |> Chain.wrapped_union_subquery()
+      end)
 
     internal_transaction_log_query =
       query_to_address_hash_wrapped
@@ -114,10 +106,10 @@ defmodule Explorer.Etherscan.Logs do
           gas_price: transaction.gas_price,
           gas_currency_hash: transaction.gas_currency_hash,
           gas_fee_recipient_hash: transaction.gas_fee_recipient_hash,
-          gateway_fee: transaction.gateway_fee,
           gas_used: transaction.gas_used,
-          transaction_index: transaction.index,
-          block_number: transaction.block_number
+          gateway_fee: transaction.gateway_fee,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         },
         union: ^internal_transaction_log_query
       )
