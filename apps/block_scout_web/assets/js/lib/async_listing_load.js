@@ -307,7 +307,7 @@ export function refreshPage (store) {
   loadPage(store, store.getState().currentPagePath)
 }
 
-function loadPage (store, path) {
+export function loadPage (store, path) {
   store.dispatch({ type: 'START_REQUEST', path })
   $.getJSON(path, merge({ type: 'JSON' }, store.getState().additionalParams))
     .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
