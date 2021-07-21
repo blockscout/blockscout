@@ -791,7 +791,7 @@ msgid "Telegram"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:27
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:32
 msgid "There are no holders for this Token."
 msgstr ""
 
@@ -827,7 +827,7 @@ msgid "There are no tokens."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:55
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 msgid "There are no transactions for this address."
 msgstr ""
 
@@ -869,13 +869,14 @@ msgid "Token Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:15
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:20
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:9
 #: lib/block_scout_web/views/tokens/overview_view.ex:42
 msgid "Token Holders"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:38
 #: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:11
 msgid "Token ID"
 msgstr ""
@@ -1033,18 +1034,10 @@ msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
 #: lib/block_scout_web/templates/chain/show.html.eex:62
 #: lib/block_scout_web/templates/layout/app.html.eex:31
 #: lib/block_scout_web/views/address_view.ex:142
 msgid "Market Cap"
-=======
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
-#: lib/block_scout_web/templates/chain/show.html.eex:239
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:12
-#: lib/block_scout_web/templates/transaction/index.html.eex:18
-msgid "More transactions have come in"
->>>>>>> origin/master
 msgstr ""
 
 #, elixir-format
@@ -1074,9 +1067,10 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:241
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:13
-#: lib/block_scout_web/templates/transaction/index.html.eex:19
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/chain/show.html.eex:239
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:12
+#: lib/block_scout_web/templates/transaction/index.html.eex:18
 msgid "More transactions have come in"
 msgstr ""
 
@@ -1536,13 +1530,8 @@ msgid "Unique Token"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
 msgid "Use the search box to find a hosted network, or select from the list of available networks below."
-=======
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:32
-msgid "There are no holders for this Token."
->>>>>>> origin/master
 msgstr ""
 
 #, elixir-format
@@ -1597,15 +1586,10 @@ msgid "Verify & publish"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:16
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:18
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:16
 msgid "Verify the contract "
-=======
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:59
-msgid "There are no transactions for this address."
->>>>>>> origin/master
 msgstr ""
 
 #, elixir-format
@@ -1732,7 +1716,6 @@ msgid "string"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
 #: lib/block_scout_web/views/address_contract_view.ex:23
 msgid "true"
 msgstr ""
@@ -1744,18 +1727,6 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:85
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:93
 msgid "Close"
-=======
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:20
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:9
-#: lib/block_scout_web/views/tokens/overview_view.ex:42
-msgid "Token Holders"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:38
-#: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:11
-msgid "Token ID"
->>>>>>> origin/master
 msgstr ""
 
 #, elixir-format
