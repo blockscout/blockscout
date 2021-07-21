@@ -99,6 +99,8 @@ const appJs =
       app: './js/app.js',
       stakes: './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
+      'coin-balance-history-chart-loader': './js/coin-balance-history-chart-loader.js',
+      'gas-tracker-chart-loader': './js/gas-tracker-chart-loader.js',
       'chain': './js/pages/chain.js',
       'display-body': './js/display_body.js',
       'blocks': './js/pages/blocks.js',

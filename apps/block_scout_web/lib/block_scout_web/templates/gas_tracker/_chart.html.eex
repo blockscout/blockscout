@@ -1,5 +1,4 @@
-<script defer src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
-<script src="<%= static_path(@conn, "/js/easy-pie-chart.min.js") %>"></script>
+<script defer src="<%= static_path(@conn, "/js/gas-tracker-chart-loader.js") %>"></script>
 
 <div class="gas-tracker-header-item dashboard-banner-chart gas-usage-chart">
     <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">

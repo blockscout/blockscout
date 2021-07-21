@@ -78,11 +78,12 @@ $card-tab-active: $secondary;
 
 .layout-container {
   .dashboard-banner-container {
+    background-color: $primary !important;
     background-image: linear-gradient(
       to bottom,
       $dashboard-banner-gradient-start,
       $dashboard-banner-gradient-end
-    );
+    ) !important;
   }
 }
 
