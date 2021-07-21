@@ -82,13 +82,17 @@ $dark-stakes-banned-background: #3e314c;
 		background: $dark-light-bg;
 		color: $labels-dark;
 	}
-	.footer-social-icon,
 	.footer-link {
 		color: $labels-dark;
 	}
-	.footer-social-icon:hover,
 	.footer-link:hover {
 		color: #fff;
+	}
+	.footer-social-icon-container {
+		background-color: $labels-dark;
+	}
+	.footer-social-icon-container:hover {
+		background-color: #fff;
 	}
 	.footer-list ul li::before {
 		background-color: $dark-secondary;

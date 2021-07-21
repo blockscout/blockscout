@@ -88,7 +88,7 @@
                             </div>
                             "
                           >
-                            <i style="color: #ffffff; line-height: 20px;" class="fa fa-info-circle ml-1"></i>
+                            <span style="display: inline-block; height: 20px;" class="fontawesome-icon info-circle ml-1"></span>
                           </span>
                         </div>
                       </div>
@@ -111,7 +111,7 @@
                 <span class="dashboard-banner-chart-legend-label">
                 <%= gettext "Total Value Locked" %>
                 </span>
-                <div class="d-flex">
+                <div class="d-flex" style="height: 20px; line-height: 20px;">
                   <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
                   <%
                     total_value_locked = 
@@ -135,7 +135,7 @@
                       data-html="true"
                       data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
                       title="<div class='custom-tooltip header'><b><%= formatted_total_market_cap %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip description left'><b><%= formatted_token_bridge_market_cap %></b> locked in Dai in TokenBridge <br/><b><%= formatted_omni_bridge_market_cap %></b> locked in different assets on xDai in OmniBridge</div>">
-                      <i style="color: #ffffff;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i>
+                      <span style="display: inline-block; height: 20px;" class="fontawesome-icon info-circle ml-1" data-test="token-bridge-supply"></span>
                     </span>
                   <% end %>
                 </div>
@@ -161,7 +161,7 @@
                         data-html="true"
                         data-template="<div class='tooltip tooltip-inversed-color tooltip-gas-usage' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
                         title="<div class='custom-tooltip header'>Gas used</div><div class='custom-tooltip description'><b><%= BlockScoutWeb.Cldr.Number.to_string!(gas_used, format: "#,###") %><b></div>">
-                        <i style="color: #ffffff;" class="fa fa-info-circle ml-1"></i>
+                        <span class="fontawesome-icon info-circle ml-1"></span>
                       </span>
                     <% end %> -->
                 </span>

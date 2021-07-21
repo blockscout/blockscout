@@ -42,22 +42,25 @@ $footer-logo-width: auto !default;
 }
 
 .footer-social-icon {
-  color: $footer-social-icon-color;
   font-size: 22px;
   margin-right: 15px;
   text-decoration: none;
   transition: $transition-cont;
 
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.footer-social-icon-container {
+  background-color: $footer-text-color;
+
   &:hover {
-    color: #fff;
+    background-color: #fff;
   }
 
   &:focus {
-    color: darken($footer-text-color, 5);
-  }
-
-  &:last-child {
-    margin-right: 0;
+    background-color: darken($footer-text-color, 5);
   }
 }
 

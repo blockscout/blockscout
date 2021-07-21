@@ -7,13 +7,6 @@
 
 /* This file is for your main application css. */
 
-// Font Awesome
-$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
-@import "fontawesome";
-@import "~@fortawesome/fontawesome-free/scss/brands";
-@import "~@fortawesome/fontawesome-free/scss/regular";
-@import "~@fortawesome/fontawesome-free/scss/solid";
-
 // Bootstrap Core CSS
 @import "~bootstrap/scss/functions";
 @import "~bootstrap/scss/variables";
@@ -76,6 +69,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/label";
 @import "components/ad";
 @import "components/_search";
+// Font Awesome
+@import "components/_fontawesome_icon";
 
 @import "theme/dark-theme";
 

@@ -44,13 +44,15 @@ $c-dark-text-color: #8a8dba;
 		background-position: bottom 0px right 30px;
 		background-repeat: no-repeat;
 	}
-	.footer-social-icon {
-		color: $c-tertiary !important
+	.footer-social-icon-container {
+		background-color: $c-tertiary !important;
 	}
 	.footer-link {
 		color: $c-quarternary;
 	}
-	.footer-social-icon:hover,
+	.footer-social-icon-container:hover {
+		background-color: #fff;
+	}
 	.footer-link:hover {
 		color: #fff;
 	}

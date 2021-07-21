@@ -23,16 +23,16 @@
         <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
         <div class="footer-social-icons">
           <a href="https://github.com/blockscout/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
-            <i class="fab fa-github"></i>
+            <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
           <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
-            <i class="fab fa-twitter"></i>
+            <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
           <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
-            <i class="fab fa-telegram-plane"></i>
+            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
           </a>
           <a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Staking") %>'>
-            <i class="fas fa-chart-bar"></i>
+            <div class="footer-social-icon-container fontawesome-icon bar-chart"></div>
           </a>
         </div>
       </div>

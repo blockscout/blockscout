@@ -60,13 +60,15 @@ $dark-primary-alternate: $dark-primary;
 		background: $dark-light-bg;
 		color: $labels-dark;
 	}
-	.footer-social-icon {
-		color: $dark-primary !important
+	.footer-social-icon-container {
+		background-color: $dark-primary !important
 	}
 	.footer-link {
 		color: $labels-dark;
 	}
-	.footer-social-icon:hover,
+	.footer-social-icon-container:hover {
+		background-color: #fff;
+	}
 	.footer-link:hover {
 		color: #fff;
 	}
