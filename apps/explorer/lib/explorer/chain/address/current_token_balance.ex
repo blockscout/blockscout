@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, subquery: 1, where: 3]
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, BridgedToken, Hash, Token}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -98,7 +98,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     token_contract_address_hash
     |> token_holders_query
     |> preload(:address)
-    |> order_by([tb], desc: :value)
+    |> order_by([tb], desc: :value, desc: :address_hash)
     |> page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
     |> offset(^offset)
@@ -137,30 +137,41 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value.
   """
   def token_holders_query(token_contract_address_hash) do
-    query =
+    with token <- Repo.get_by(Token, contract_address_hash: token_contract_address_hash),
+         "ERC-20" <- token.type do
       from(
         tb in __MODULE__,
         where: tb.token_contract_address_hash == ^token_contract_address_hash,
         where: tb.address_hash != ^@burn_address_hash,
-        where: tb.value > 0,
-        windows: [
-          w: [partition_by: [tb.token_contract_address_hash, tb.address_hash]]
-        ],
-        select: %__MODULE__{
-          token_contract_address_hash: tb.token_contract_address_hash,
-          address_hash: tb.address_hash,
-          value: tb.value,
-          block_number: tb.block_number,
-          max_block_number: over(max(tb.block_number), :w)
-        }
+        where: tb.value > 0
       )
+    else
+      _ ->
+        query =
+          from(
+            tb in __MODULE__,
+            where: tb.token_contract_address_hash == ^token_contract_address_hash,
+            where: tb.address_hash != ^@burn_address_hash,
+            where: tb.value > 0,
+            windows: [
+              w: [partition_by: [tb.token_contract_address_hash, tb.address_hash]]
+            ],
+            select: %__MODULE__{
+              token_contract_address_hash: tb.token_contract_address_hash,
+              address_hash: tb.address_hash,
+              value: tb.value,
+              block_number: tb.block_number,
+              max_block_number: over(max(tb.block_number), :w)
+            }
+          )
 
-    from(
-      q in subquery(query),
-      where: q.max_block_number == q.block_number,
-      select: q,
-      distinct: q.address_hash
-    )
+        from(
+          q in subquery(query),
+          where: q.max_block_number == q.block_number,
+          select: q,
+          distinct: q.address_hash
+        )
+    end
   end
 
   defp page_token_balances(query, %PagingOptions{key: nil}), do: query
