@@ -13,6 +13,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Import.Runner.Blocks
+  alias Explorer.Chain.Transaction
 
   @interval :timer.hours(3)
 
@@ -83,7 +84,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
               fetcher: :pending_transactions_to_refetch
             )
 
-            fetch_block_and_invalidate(block_hash)
+            fetch_block_and_invalidate(block_hash, pending_tx)
           else
             Logger.debug(
               "Transaction with hash #{pending_tx_hash_str} is still pending. Do nothing.",
@@ -129,7 +130,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
     end
   end
 
-  defp fetch_block_and_invalidate(block_hash) do
+  defp fetch_block_and_invalidate(block_hash, pending_tx) do
     case Chain.fetch_block_by_hash(block_hash) do
       %{number: number, consensus: consensus} ->
         Logger.debug(
@@ -139,7 +140,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
           fetcher: :pending_transactions_to_refetch
         )
 
-        invalidate_block(number, consensus)
+        invalidate_block(number, block_hash, consensus, pending_tx)
 
       _ ->
         Logger.debug(
@@ -149,14 +150,24 @@ defmodule Indexer.PendingTransactionsSanitizer do
     end
   end
 
-  defp invalidate_block(number, consensus) do
+  defp invalidate_block(block_number, block_hash, consensus, pending_tx) do
     if consensus do
       opts = %{
         timeout: 60_000,
         timestamps: %{updated_at: DateTime.utc_now()}
       }
 
-      Blocks.lose_consensus(Repo, [], [number], [], opts)
+      Blocks.lose_consensus(Repo, [], [block_number], [], opts)
+    else
+      changeset =
+        pending_tx
+        |> Transaction.changeset()
+        |> Changeset.put_change(:block_number, block_number)
+        |> Changeset.put_change(:block_hash, block_hash)
+
+      Repo.update(changeset)
+
+      Logger.debug("Pending tx with hash #{pending_tx.hash} assigned to block ##{block_number}")
     end
   end
 end

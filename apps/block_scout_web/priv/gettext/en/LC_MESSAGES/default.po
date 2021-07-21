@@ -836,7 +836,7 @@ msgid "There are no tokens."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:55
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 msgid "There are no transactions for this address."
 msgstr ""
 
@@ -885,6 +885,7 @@ msgid "Token Holders"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:38
 #: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:11
 msgid "Token ID"
 msgstr ""
@@ -1070,9 +1071,10 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:241
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:13
-#: lib/block_scout_web/templates/transaction/index.html.eex:19
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/chain/show.html.eex:239
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:12
+#: lib/block_scout_web/templates/transaction/index.html.eex:18
 msgid "More transactions have come in"
 msgstr ""
 
@@ -1312,7 +1314,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:23
 #: lib/block_scout_web/templates/address_token/index.html.eex:17
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:58
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:54
 #: lib/block_scout_web/templates/address_validation/index.html.eex:24
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:184
@@ -3088,12 +3090,12 @@ msgstr ""
 msgid "Deployed ByteCode"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
 msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
