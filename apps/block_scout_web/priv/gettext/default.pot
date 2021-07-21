@@ -298,6 +298,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:13
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:4
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:8
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:17
 msgid "Connection Lost"
 msgstr ""
 
@@ -821,7 +822,7 @@ msgid "There are no tokens."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:55
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 msgid "There are no transactions for this address."
 msgstr ""
 
@@ -863,13 +864,14 @@ msgid "Token Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:15
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:20
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:9
 #: lib/block_scout_web/views/tokens/overview_view.ex:42
 msgid "Token Holders"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:38
 #: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:11
 msgid "Token ID"
 msgstr ""
@@ -1056,9 +1058,10 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:241
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:13
-#: lib/block_scout_web/templates/transaction/index.html.eex:19
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/chain/show.html.eex:239
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:12
+#: lib/block_scout_web/templates/transaction/index.html.eex:18
 msgid "More transactions have come in"
 msgstr ""
 
@@ -1302,13 +1305,13 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:23
 #: lib/block_scout_web/templates/address_token/index.html.eex:17
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:58
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:54
 #: lib/block_scout_web/templates/address_validation/index.html.eex:24
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:184
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:22
 #: lib/block_scout_web/templates/stakes/_table.html.eex:49
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:22
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:27
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:22
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:21
