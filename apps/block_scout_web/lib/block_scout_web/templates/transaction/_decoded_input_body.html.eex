@@ -47,7 +47,7 @@
                       </svg>
                     </span>
                 <% end %>
-                <pre class="transaction-input-text pre-wrap" style="margin-bottom: 0px;"><code style="line-height: 25px;"><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
+                <pre class="transaction-input-text pre-wrap" style="margin-bottom: 20px;" ><code style="line-height: 25px;"><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
               <% end %>
           </td>
         </tr>
