@@ -25,7 +25,7 @@
 		</div>
 	</div>
 	<button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
-	<script defer data-cfasync="false">
+	<script>
         if (localStorage.getItem("current-color-mode") === "dark") {
 		const search = document.getElementById("main-search-autocomplete")
 		const searchMobile = document.getElementById("main-search-autocomplete-mobile")

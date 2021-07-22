@@ -14,7 +14,7 @@
 }
 
 @mixin gradient-container() {
-  background-color: $primary;
+  background-color: $primary !important;
   background-image: linear-gradient(
     to right,
     $dashboard-banner-gradient-start,

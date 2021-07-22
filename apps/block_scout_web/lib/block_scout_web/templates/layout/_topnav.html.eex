@@ -209,7 +209,7 @@
   </div>
   <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete-mobile", additional_classes: ["mobile-search-show"] %>
 </nav>
-<script defer data-cfasync="false">
+<script>
   if (localStorage.getItem("current-color-mode") === "dark") {
     document.getElementById("top-navbar").style.backgroundColor = "#282945";
     document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
@@ -217,4 +217,4 @@
     modeChanger.className += " " + "dark-mode-changer--dark";
   }
 </script> 
-<script defer src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>
+<script src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>

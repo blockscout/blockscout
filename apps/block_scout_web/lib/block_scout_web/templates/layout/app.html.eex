@@ -7,14 +7,26 @@
 
     <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
       <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
+      <link rel="preload" href="<%= static_path(@conn, "/js/autocomplete.min.js") %>" as="script">
+      <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
+      <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
+      <link rel="preload" href="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>" as="script">
+      <link rel="preload" href="<%= static_path(@conn, "/images/xdai_logo.svg") %>" as="image" crossorigin>
+      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/github.svg") %>" as="image" crossorigin>
+      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/twitter.svg") %>" as="image" crossorigin>
+      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/telegram.svg") %>" as="image" crossorigin>
+      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/bar-chart.svg") %>" as="image" crossorigin>
+      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/info-circle.svg") %>" as="image" crossorigin>
+      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/tag.svg") %>" as="image" crossorigin>
     <% else %>
       <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <% end %>
-    <link rel="dns-prefetch" href="//google-analytics.com/">
-    <link rel="dns-prefetch" href="//fonts.gstatic.com/">
+    <link rel="dns-prefetch" href="https://coinzillatag.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://www.google-analytics.com">
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
-    <%= render_existing(@view_module, "styles.html", assigns) %>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">
@@ -27,18 +39,6 @@
     <meta name="theme-color" content="#ffffff">
 
     <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-125140709-1"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'UA-125140709-1');
-    </script>
-
   </head>
 
   <body>
@@ -242,10 +242,10 @@
     %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
     <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
-      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
-      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+      <script src="<%= static_path(@conn, "/js/chain.js") %>"></script>
+      <script src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
     <% end %>
-    <script defer data-cfasync="false">
+    <script>
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
           document.body.className += " " + "dark-theme-applied";

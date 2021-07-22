@@ -41,4 +41,15 @@
       mask-size: 12px !important;
       -webkit-mask-size: 12px !important;
     }
+    &.tag {
+      -webkit-mask: url(/images/icons/fontawesome/tag.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/tag.svg) no-repeat center;
+      height: 12px;
+      width: 12px;
+      mask-size: 12px !important;
+      -webkit-mask-size: 12px !important;
+      display: inline-block;
+      background-color: #212121;
+      margin-bottom: -2px;
+    }
 }

@@ -1,9 +1,9 @@
 import $ from 'jquery'
 import { Chart, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
-import 'chartjs-adapter-moment'
+import 'chartjs-adapter-luxon'
 import humps from 'humps'
 import numeral from 'numeral'
-import moment from 'moment'
+import { DateTime } from 'luxon'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
@@ -22,7 +22,7 @@ function xAxe (fontColor) {
     type: 'time',
     time: {
       unit: 'day',
-      tooltipFormat: 'YYYY-MM-DD',
+      tooltipFormat: 'DD',
       stepSize: 14
     },
     ticks: {
@@ -127,9 +127,9 @@ function getTxHistoryData (transactionHistory) {
 
   // it should be empty value for tx history the current day
   const prevDayStr = data[0].x
-  const prevDay = moment(prevDayStr)
-  let curDay = prevDay.add(1, 'days')
-  curDay = curDay.format('YYYY-MM-DD')
+  const prevDay = DateTime.fromISO(prevDayStr)
+  let curDay = prevDay.plus({days: 1})
+  curDay = curDay.toISODate()
   data.unshift({ x: curDay, y: null })
 
   setDataToLocalStorage('txHistoryDataXDAI', data)

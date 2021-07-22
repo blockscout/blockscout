@@ -47,7 +47,7 @@ const searchEngine = (query, record) => {
         record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) {
     var searchResult = `${record.contract_address_hash}<br/>`
     if (record.label) {
-      searchResult += `<i class="fa fa-tag"></i> label: <b>${record.name}</b>`
+      searchResult += `<div class="fontawesome-icon tag"></div><span> label: <b>${record.name}</b></span>`
     } else {
       searchResult += `<b>${record.name}</b>`
       if (record.symbol) {
