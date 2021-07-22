@@ -1131,7 +1131,8 @@ defmodule Explorer.Chain do
         query =
           from(smart_contract in SmartContract,
             where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
-            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
+            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name},
+            order_by: [desc: smart_contract.inserted_at]
           )
 
         Repo.all(query)
