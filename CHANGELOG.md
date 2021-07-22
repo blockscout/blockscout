@@ -5,6 +5,7 @@
 - [#4353](https://github.com/blockscout/blockscout/pull/4353) - Added live-reload on the token holders page
 
 ### Fixes
+- [#4419](https://github.com/blockscout/blockscout/pull/4419) - Order contracts in the search by inserted_at in descending order
 - [#4406](https://github.com/blockscout/blockscout/pull/4406) - Fix internal server error on the validator's txs page
 - [#4360](https://github.com/blockscout/blockscout/pull/4360) - Fix false-pending transactions in reorg blocks
 - [#4388](https://github.com/blockscout/blockscout/pull/4388) - Fix internal server error on contract page for insctances without sourcify envs
