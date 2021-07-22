@@ -65,6 +65,9 @@ const resultItemElement = (item, data) => {
   item.innerHTML = `
   <span style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
+  </span>
+  <span style="display: flex; align-items: center; font-size: 13px; font-weight: 100; text-transform: uppercase; color: rgb(33,33,33);">
+    ${data.value.type}
   </span>`
 }
 const config = (id) => {
