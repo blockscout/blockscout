@@ -1130,8 +1130,14 @@ defmodule Explorer.Chain do
       {:some, term} ->
         query =
           from(smart_contract in SmartContract,
-            where: fragment("to_tsvector(name) @@ to_tsquery(?)", ^term),
-            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name},
+            left_join: address in Address,
+            on: smart_contract.address_hash == address.hash,
+            where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
+            select: %{
+              contract_address_hash: smart_contract.address_hash,
+              name: smart_contract.name,
+              inserted_at: address.inserted_at
+            },
             order_by: [desc: smart_contract.inserted_at]
           )
 

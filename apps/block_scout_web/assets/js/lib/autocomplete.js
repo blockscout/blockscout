@@ -1,4 +1,5 @@
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
+import { DateTime } from 'luxon'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
@@ -44,10 +45,13 @@ const searchEngine = (query, record) => {
         record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) {
     var searchResult = `${record.contract_address_hash}<br/><b>${record.name}</b>`
     if (record.symbol) {
-      searchResult = searchResult + ` (${record.symbol})`
+      searchResult += ` (${record.symbol})`
     }
     if (record.holder_count) {
-      searchResult = searchResult + ` <i>${record.holder_count} holder(s)</i>`
+      searchResult += ` <i>${record.holder_count} holder(s)</i>`
+    }
+    if (record.inserted_at) {
+      searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
     }
     var re = new RegExp(query, 'ig')
     searchResult = searchResult.replace(re, '<mark class=\'autoComplete_highlight\'>$&</mark>')
