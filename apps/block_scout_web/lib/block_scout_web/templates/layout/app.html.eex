@@ -245,7 +245,7 @@
       <script src="<%= static_path(@conn, "/js/chain.js") %>"></script>
       <script src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
     <% end %>
-    <script>
+    <script defer >
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
           document.body.className += " " + "dark-theme-applied";

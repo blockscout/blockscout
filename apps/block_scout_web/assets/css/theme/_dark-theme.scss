@@ -101,8 +101,8 @@ $dark-stakes-banned-background: #3e314c;
 	// hero stats
 
 	.layout-container .dashboard-banner-container {
-		background-image: none;
-		background-color: $dark-bg;
+		background-image: none !important;
+		background-color: $dark-bg !important;
 	}
 	.dashboard-banner-network-plain-container,
 	.dashboard-banner-network-plain-container::after {
