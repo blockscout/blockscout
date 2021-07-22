@@ -6,6 +6,7 @@
 
 ### Fixes
 - [#4419](https://github.com/blockscout/blockscout/pull/4419) - Order contracts in the search by inserted_at in descending order
+- [#4418](https://github.com/blockscout/blockscout/pull/4418) - Fix empty search results for the full-word search criteria
 - [#4406](https://github.com/blockscout/blockscout/pull/4406) - Fix internal server error on the validator's txs page
 - [#4360](https://github.com/blockscout/blockscout/pull/4360) - Fix false-pending transactions in reorg blocks
 - [#4388](https://github.com/blockscout/blockscout/pull/4388) - Fix internal server error on contract page for insctances without sourcify envs
