@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4423](https://github.com/blockscout/blockscout/pull/4423) - Add creation time of contract in the results of the search
 - [#4391](https://github.com/blockscout/blockscout/pull/4391) - Add batched transactions on the `address/{addressHash}/transactions` page
 - [#4353](https://github.com/blockscout/blockscout/pull/4353) - Added live-reload on the token holders page
 
