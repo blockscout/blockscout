@@ -51,10 +51,13 @@ const searchEngine = (query, record) => {
     } else {
       searchResult += `<b>${record.name}</b>`
       if (record.symbol) {
-        searchResult = searchResult + ` (${record.symbol})`
+        searchResult += ` (${record.symbol})`
       }
       if (record.holder_count) {
-        searchResult = searchResult + ` <i>${record.holder_count} holder(s)</i>`
+        searchResult += ` <i>${record.holder_count} holder(s)</i>`
+      }
+      if (record.inserted_at) {
+        searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
       }
     }
     var re = new RegExp(query, 'ig')
@@ -69,6 +72,9 @@ const resultItemElement = (item, data) => {
   item.innerHTML = `
   <span style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
+  </span>
+  <span style="display: flex; align-items: center; font-size: 13px; font-weight: 100; text-transform: uppercase; color: rgb(33,33,33);">
+    ${data.value.type}
   </span>`
 }
 const config = (id) => {
