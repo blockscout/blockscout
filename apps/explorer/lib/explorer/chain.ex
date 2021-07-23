@@ -1209,7 +1209,7 @@ defmodule Explorer.Chain do
             select: %{
               contract_address_hash: att.address_hash,
               name: at.label,
-              label: true
+              type: "label"
             }
           )
 

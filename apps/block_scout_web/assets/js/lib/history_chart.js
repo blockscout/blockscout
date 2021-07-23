@@ -128,7 +128,7 @@ function getTxHistoryData (transactionHistory) {
   // it should be empty value for tx history the current day
   const prevDayStr = data[0].x
   const prevDay = DateTime.fromISO(prevDayStr)
-  let curDay = prevDay.plus({days: 1})
+  let curDay = prevDay.plus({ days: 1 })
   curDay = curDay.toISODate()
   data.unshift({ x: curDay, y: null })
 

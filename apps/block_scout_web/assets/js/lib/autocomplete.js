@@ -1,5 +1,6 @@
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
 import { getTextAdData, fetchTextAdData } from './ad.js'
+import { DateTime } from 'luxon'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
@@ -46,8 +47,8 @@ const searchEngine = (query, record) => {
         record.symbol.toLowerCase().includes(query.toLowerCase()) ||
         record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) {
     var searchResult = `${record.contract_address_hash}<br/>`
-    if (record.label) {
-      searchResult += `<div class="fontawesome-icon tag"></div><span> label: <b>${record.name}</b></span>`
+    if (record.type === 'label') {
+      searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
     } else {
       searchResult += `<b>${record.name}</b>`
       if (record.symbol) {
