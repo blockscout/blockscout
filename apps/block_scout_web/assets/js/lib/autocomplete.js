@@ -102,7 +102,7 @@ const config = (id) => {
 }
 const autoCompleteJS = new AutoComplete(config('main-search-autocomplete'))
 // eslint-disable-next-line
-const _autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-mobile'))
+const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-mobile'))
 
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
@@ -121,24 +121,24 @@ document.querySelector('#main-search-autocomplete-mobile').addEventListener('sel
   selection(event)
 })
 
-const openOnFocus = (event) => {
+const openOnFocus = (event, autoCompleteJSObject) => {
   const query = event.target.value
   if (query) {
-    autoCompleteJS.start(query)
+    autoCompleteJSObject.start(query)
   } else {
     getTextAdData()
       .then(adData => {
         if (adData) {
-          autoCompleteJS.start('###')
+          autoCompleteJSObject.start('###')
         }
       })
   }
 }
 
 document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
-  openOnFocus(event)
+  openOnFocus(event, autoCompleteJS)
 })
 
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
-  openOnFocus(event)
+  openOnFocus(event, autoCompleteJSMobile)
 })
