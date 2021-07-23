@@ -88,7 +88,7 @@
                             </div>
                             "
                           >
-                            <span style="display: inline-block; height: 20px;" class="fontawesome-icon info-circle ml-1"></span>
+                            <span style="display: inline-block; height: 20px; width: 12px;" class="fontawesome-icon info-circle ml-1"></span>
                           </span>
                         </div>
                       </div>
@@ -135,7 +135,7 @@
                       data-html="true"
                       data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
                       title="<div class='custom-tooltip header'><b><%= formatted_total_market_cap %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip description left'><b><%= formatted_token_bridge_market_cap %></b> locked in Dai in TokenBridge <br/><b><%= formatted_omni_bridge_market_cap %></b> locked in different assets on xDai in OmniBridge</div>">
-                      <span style="display: inline-block; height: 20px;" class="fontawesome-icon info-circle ml-1" data-test="token-bridge-supply"></span>
+                      <span style="display: inline-block; height: 20px; width: 12px;" class="fontawesome-icon info-circle ml-1" data-test="token-bridge-supply"></span>
                     </span>
                   <% end %>
                 </div>

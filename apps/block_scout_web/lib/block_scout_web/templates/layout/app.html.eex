@@ -11,7 +11,6 @@
       <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
       <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
       <link rel="preload" href="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>" as="script">
-      <link rel="preload" href="<%= static_path(@conn, "/images/xdai_logo.svg") %>" as="image" crossorigin>
       <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/github.svg") %>" as="image" crossorigin>
       <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/twitter.svg") %>" as="image" crossorigin>
       <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/telegram.svg") %>" as="image" crossorigin>
@@ -63,7 +62,7 @@
         <% to_address = assigns[:transaction] && @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
         <% {:ok, created_from_address} = if assigns[:transaction] && @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
         <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-        <script>
+        <script defer data-cfasync="false">
           function applyCustomMode() {
             applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
             applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
@@ -104,7 +103,7 @@
         @view_module == Elixir.BlockScoutWeb.AddressWriteProxyView
       ) -> %>
         <% created_from_address = if @address && from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
-        <script>
+        <script defer data-cfasync="false">
           function applyCustomMode() {
             applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
             applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
@@ -137,7 +136,7 @@
       ) -> %>
         <% {:ok, created_from_address} = if @token && @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
         <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-        <script>
+        <script defer data-cfasync="false">
           function applyCustomMode() {
             applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
             applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
@@ -242,10 +241,10 @@
     %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
     <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
-      <script src="<%= static_path(@conn, "/js/chain.js") %>"></script>
-      <script src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
     <% end %>
-    <script defer >
+    <script defer data-cfasync="false">
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
           document.body.className += " " + "dark-theme-applied";

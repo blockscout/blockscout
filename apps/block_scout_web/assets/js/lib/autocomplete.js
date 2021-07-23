@@ -128,24 +128,32 @@ document.querySelector('#main-search-autocomplete-mobile').addEventListener('sel
   selection(event)
 })
 
-const openOnFocus = (event, autoCompleteJSObject) => {
+const openOnFocus = (event, type) => {
   const query = event.target.value
   if (query) {
-    autoCompleteJSObject.start(query)
+    if (type === 'desktop') {
+      autoCompleteJS.start(query)
+    } else if (type === 'mobile') {
+      autoCompleteJSMobile.start(query)
+    }
   } else {
     getTextAdData()
       .then(adData => {
         if (adData) {
-          autoCompleteJSObject.start('###')
+          if (type === 'desktop') {
+            autoCompleteJS.start('###')
+          } else if (type === 'mobile') {
+            autoCompleteJSMobile.start('###')
+          }
         }
       })
   }
 }
 
 document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
-  openOnFocus(event, autoCompleteJS)
+  openOnFocus(event, 'desktop')
 })
 
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
-  openOnFocus(event, autoCompleteJSMobile)
+  openOnFocus(event, 'mobile')
 })

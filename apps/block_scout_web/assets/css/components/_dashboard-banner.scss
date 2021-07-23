@@ -81,6 +81,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     max-width: 100%;
     width: 100%;
   }
+
+  @include media-breakpoint-down(sm) {
+    height: 150px !important;
+  }
 }
 
 .dashboard-banner-chart-legend {
