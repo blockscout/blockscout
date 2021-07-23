@@ -1112,7 +1112,8 @@ defmodule Explorer.Chain do
               contract_address_hash: token.contract_address_hash,
               symbol: token.symbol,
               name: token.name,
-              holder_count: token.holder_count
+              holder_count: token.holder_count,
+              type: "token"
             },
             order_by: [desc: token.holder_count]
           )
@@ -1136,7 +1137,8 @@ defmodule Explorer.Chain do
             select: %{
               contract_address_hash: smart_contract.address_hash,
               name: smart_contract.name,
-              inserted_at: address.inserted_at
+              inserted_at: address.inserted_at,
+              type: "contract"
             },
             order_by: [desc: smart_contract.inserted_at]
           )
