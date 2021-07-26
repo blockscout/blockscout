@@ -1,4 +1,5 @@
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
+import { getTextAdData, fetchTextAdData } from './ad.js'
 import { DateTime } from 'luxon'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
@@ -38,20 +39,27 @@ const resultsListElement = (list, data) => {
   }
 
   list.prepend(info)
+
+  fetchTextAdData()
 }
 const searchEngine = (query, record) => {
   if (record.name.toLowerCase().includes(query.toLowerCase()) ||
         record.symbol.toLowerCase().includes(query.toLowerCase()) ||
         record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) {
-    var searchResult = `${record.contract_address_hash}<br/><b>${record.name}</b>`
-    if (record.symbol) {
-      searchResult += ` (${record.symbol})`
-    }
-    if (record.holder_count) {
-      searchResult += ` <i>${record.holder_count} holder(s)</i>`
-    }
-    if (record.inserted_at) {
-      searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
+    var searchResult = `${record.contract_address_hash}<br/>`
+    if (record.type === 'label') {
+      searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
+    } else {
+      searchResult += `<b>${record.name}</b>`
+      if (record.symbol) {
+        searchResult += ` (${record.symbol})`
+      }
+      if (record.holder_count) {
+        searchResult += ` <i>${record.holder_count} holder(s)</i>`
+      }
+      if (record.inserted_at) {
+        searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
+      }
     }
     var re = new RegExp(query, 'ig')
     searchResult = searchResult.replace(re, '<mark class=\'autoComplete_highlight\'>$&</mark>')
@@ -101,7 +109,7 @@ const config = (id) => {
 }
 const autoCompleteJS = new AutoComplete(config('main-search-autocomplete'))
 // eslint-disable-next-line
-const _autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-mobile'))
+const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-mobile'))
 
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
@@ -120,17 +128,32 @@ document.querySelector('#main-search-autocomplete-mobile').addEventListener('sel
   selection(event)
 })
 
-const openOnFocus = (event) => {
+const openOnFocus = (event, type) => {
   const query = event.target.value
   if (query) {
-    autoCompleteJS.start(query)
+    if (type === 'desktop') {
+      autoCompleteJS.start(query)
+    } else if (type === 'mobile') {
+      autoCompleteJSMobile.start(query)
+    }
+  } else {
+    getTextAdData()
+      .then(adData => {
+        if (adData) {
+          if (type === 'desktop') {
+            autoCompleteJS.start('###')
+          } else if (type === 'mobile') {
+            autoCompleteJSMobile.start('###')
+          }
+        }
+      })
   }
 }
 
 document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
-  openOnFocus(event)
+  openOnFocus(event, 'desktop')
 })
 
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
-  openOnFocus(event)
+  openOnFocus(event, 'mobile')
 })
