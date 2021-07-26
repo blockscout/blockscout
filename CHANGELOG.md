@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.7.2-beta
+
+### Features
 - [#4424](https://github.com/blockscout/blockscout/pull/4424) - Display search results categories
 - [#4423](https://github.com/blockscout/blockscout/pull/4423) - Add creation time of contract in the results of the search
 - [#4391](https://github.com/blockscout/blockscout/pull/4391) - Add batched transactions on the `address/{addressHash}/transactions` page
