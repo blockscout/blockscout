@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   #   end
   # end
 
-  describe "ethprice" do
+  describe "coinprice" do
     setup :set_mox_global
 
     setup do
@@ -179,16 +179,16 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
       params = %{
         "module" => "stats",
-        "action" => "ethprice"
+        "action" => "coinprice"
       }
 
       expected_timestamp = eth.last_updated |> DateTime.to_unix() |> to_string()
 
       expected_result = %{
-        "ethbtc" => to_string(eth.btc_value),
-        "ethbtc_timestamp" => expected_timestamp,
-        "ethusd" => to_string(eth.usd_value),
-        "ethusd_timestamp" => expected_timestamp
+        "coin_btc" => to_string(eth.btc_value),
+        "coin_btc_timestamp" => expected_timestamp,
+        "coin_usd" => to_string(eth.usd_value),
+        "coin_usd_timestamp" => expected_timestamp
       }
 
       assert response =
@@ -199,7 +199,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
-      assert :ok = ExJsonSchema.Validator.validate(ethprice_schema(), response)
+      assert :ok = ExJsonSchema.Validator.validate(coinprice_schema(), response)
     end
   end
 
@@ -221,14 +221,14 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     })
   end
 
-  defp ethprice_schema do
+  defp coinprice_schema do
     resolve_schema(%{
       "type" => "object",
       "properties" => %{
-        "ethbtc" => %{"type" => "string"},
-        "ethbtc_timestamp" => %{"type" => "string"},
-        "ethusd" => %{"type" => "string"},
-        "ethusd_timestamp" => %{"type" => "string"}
+        "coin_btc" => %{"type" => "string"},
+        "coin_btc_timestamp" => %{"type" => "string"},
+        "coin_usd" => %{"type" => "string"},
+        "coin_usd_timestamp" => %{"type" => "string"}
       }
     })
   end

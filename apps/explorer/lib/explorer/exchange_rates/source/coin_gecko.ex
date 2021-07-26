@@ -3,6 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
+  alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -100,17 +101,26 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   @impl Source
-  def source_url(symbol) do
-    id =
-      case coin_id(symbol) do
-        {:ok, id} ->
-          id
+  def source_url(input) do
+    case Chain.Hash.Address.cast(input) do
+      {:ok, _} ->
+        address_hash_str = input
+        "#{base_url()}/coins/ethereum/contract/#{address_hash_str}"
 
-        _ ->
-          nil
-      end
+      _ ->
+        symbol = input
 
-    if id, do: "#{base_url()}/coins/#{id}", else: nil
+        id =
+          case coin_id(symbol) do
+            {:ok, id} ->
+              id
+
+            _ ->
+              nil
+          end
+
+        if id, do: "#{base_url()}/coins/#{id}", else: nil
+    end
   end
 
   defp base_url do
@@ -124,29 +134,35 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   def coin_id(symbol) do
-    url = "#{base_url()}/coins/list"
+    id_mapping = bridged_token_symbol_to_id_mapping_to_get_price(symbol)
 
-    symbol_downcase = String.downcase(symbol)
+    if id_mapping do
+      {:ok, id_mapping}
+    else
+      url = "#{base_url()}/coins/list"
 
-    case Source.http_request(url) do
-      {:ok, data} = resp ->
-        if is_list(data) do
-          symbol_data =
-            Enum.find(data, fn item ->
-              item["symbol"] == symbol_downcase
-            end)
+      symbol_downcase = String.downcase(symbol)
 
-          if symbol_data do
-            {:ok, symbol_data["id"]}
+      case Source.http_request(url) do
+        {:ok, data} = resp ->
+          if is_list(data) do
+            symbol_data =
+              Enum.find(data, fn item ->
+                item["symbol"] == symbol_downcase
+              end)
+
+            if symbol_data do
+              {:ok, symbol_data["id"]}
+            else
+              {:error, :not_found}
+            end
           else
-            {:error, :not_found}
+            resp
           end
-        else
-          resp
-        end
 
-      resp ->
-        resp
+        resp ->
+          resp
+      end
     end
   end
 
@@ -171,5 +187,13 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @spec config(atom()) :: term
   defp config(key) do
     Application.get_env(:explorer, __MODULE__, [])[key]
+  end
+
+  defp bridged_token_symbol_to_id_mapping_to_get_price(symbol) do
+    case symbol do
+      "UNI" -> "uniswap"
+      "SURF" -> "surf-finance"
+      _symbol -> nil
+    end
   end
 end

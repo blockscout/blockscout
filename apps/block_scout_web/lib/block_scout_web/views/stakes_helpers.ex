@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.StakesHelpers do
   end
 
   def list_title(:validator), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Validators")
-  def list_title(:active), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Active Pools")
+  def list_title(:active), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Active Pools (Candidates)")
   def list_title(:inactive), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Inactive Pools")
 
   def from_wei(%Decimal{} = amount, %Token{} = token, to_string \\ true) do

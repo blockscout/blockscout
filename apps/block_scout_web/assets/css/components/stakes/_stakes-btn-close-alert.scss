@@ -1,0 +1,14 @@
+$stakes-btn-close-alert-color: $primary !default;
+
+.stakes-btn-close-alert {
+  position: absolute;
+  left: 0.5em;
+  top: 1em;
+  border-style: none;
+  background: transparent;
+  outline: none !important;
+
+  path {
+    fill: $stakes-btn-close-alert-color;
+  }
+}

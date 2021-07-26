@@ -59,11 +59,11 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     render(conn, "coinsupply.json", total_supply: cached_coin_total_supply)
   end
 
-  def ethprice(conn, _params) do
+  def coinprice(conn, _params) do
     symbol = Application.get_env(:explorer, :coin)
     rates = ExchangeRates.lookup(symbol)
 
-    render(conn, "ethprice.json", rates: rates)
+    render(conn, "coinprice.json", rates: rates)
   end
 
   defp fetch_contractaddress(params) do

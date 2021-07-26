@@ -25,7 +25,9 @@ defmodule Explorer.Staking.ContractStateTest do
 
     Application.put_env(:explorer, ContractState,
       enabled: true,
-      staking_contract_address: "0x1100000000000000000000000000000000000001"
+      staking_contract_address: "0x1100000000000000000000000000000000000001",
+      eth_blocknumber_pull_interval: "500",
+      eth_subscribe_max_delay: "60"
     )
 
     start_supervised!(ContractState)
@@ -99,7 +101,7 @@ defmodule Explorer.Staking.ContractStateTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 15
+        assert length(requests) == 18
 
         {:ok,
          format_responses([
@@ -114,26 +116,52 @@ defmodule Explorer.Staking.ContractStateTest do
            # 5 StakingAuRa.getPoolsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
            # 6 StakingAuRa.MAX_CANDIDATES
-           "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000bb8",
-           # 7 StakingAuRa.candidateMinStake
+           "0x0000000000000000000000000000000000000000000000000000000000000bb8",
+           # 7 StakingAuRa.MAX_VALIDATORS
+           "0x0000000000000000000000000000000000000000000000000000000000000013",
+           # 8 StakingAuRa.candidateMinStake
            "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-           # 8 StakingAuRa.delegatorMinStake
+           # 9 StakingAuRa.delegatorMinStake
            "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-           # 9 StakingAuRa.getPoolsLikelihood
+           # 10 StakingAuRa.getPoolsLikelihood
            "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000001bc16d674ec8000000000000000000000000000000000000000000000000000098a7d9b8314c000000000000000000000000000000000000000000000000000029a2241af62c0000",
-           # 10 StakingAuRa.getPoolsToBeElected
+           # 11 StakingAuRa.getPoolsToBeElected
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000b916e7e1f4bcb13549602ed042d36746fd0d96c9000000000000000000000000db9cb2478d917719c53862008672166808258577000000000000000000000000b6695f5c2e3f5eff8036b5f5f3a9d83a5310e51e",
-           # 11 StakingAuRa.areStakeAndWithdrawAllowed
+           # 12 StakingAuRa.areStakeAndWithdrawAllowed
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 12 StakingAuRa.erc677TokenContract
+           # 13 StakingAuRa.lastChangeBlock
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
+           # 14 StakingAuRa.erc677TokenContract
            "0x0000000000000000000000006f7a73c96bd56f8b0debc795511eda135e105ea3",
-           # 13 ValidatorSetAuRa.unremovableValidator
+           # 15 ValidatorSetAuRa.unremovableValidator
            "0x0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6",
-           # 14 ValidatorSetAuRa.getValidators
+           # 16 ValidatorSetAuRa.getValidators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000bbcaa8d48289bb1ffcf9808d9aa4b1d215054c7800000000000000000000000075df42383afe6bf5194aa8fa0e9b3d5f9e869441000000000000000000000000522df396ae70a058bd69778408630fdb023389b2",
-           # 15 ValidatorSetAuRa.validatorSetApplyBlock
+           # 17 ValidatorSetAuRa.validatorSetApplyBlock
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
+           # 18 ValidatorSetAuRa.lastChangeBlock
            "0x0000000000000000000000000000000000000000000000000000000000000000"
          ])}
+      end
+    )
+
+    # ContractReader.call_current_token_reward_to_distribute
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _request, _opts ->
+        {:ok,
+         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}
+      end
+    )
+
+    # ContractReader.call_current_pool_rewards
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _request, _opts ->
+        {:ok,
+         "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"}
       end
     )
 
@@ -148,6 +176,44 @@ defmodule Explorer.Staking.ContractStateTest do
          format_responses([
            # BlockRewardAuRa.validatorMinRewardPercent
            "0x000000000000000000000000000000000000000000000000000000000000001e"
+         ])}
+      end
+    )
+
+    # invoke update_block_reward_balance()
+
+    ## BalanceReader.get_balances_of
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn requests, _opts ->
+        assert length(requests) == 1
+
+        {:ok,
+         format_responses([
+           # ERC677BridgeTokenRewardable.balanceOf(BlockRewardAuRa)
+           "0x0000000000000000000000000000000000000000000000000000000000000000"
+         ])}
+      end
+    )
+
+    ## MetadataRetriever.get_functions_of
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn requests, _opts ->
+        assert length(requests) == 4
+
+        {:ok,
+         format_responses([
+           # ERC677BridgeTokenRewardable.decimals
+           "0x0000000000000000000000000000000000000000000000000000000000000012",
+           # ERC677BridgeTokenRewardable.name
+           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
+           # ERC677BridgeTokenRewardable.symbol
+           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
+           # ERC677BridgeTokenRewardable.totalSupply
+           "0x000000000000000000000000000000000000000000000001f399b1438a100000"
          ])}
       end
     )
@@ -169,7 +235,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    # get_mining_to_staking_address
+    # get_mining_address_to_id
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -178,125 +244,161 @@ defmodule Explorer.Staking.ContractStateTest do
 
         {:ok,
          format_responses([
-           # 1 ValidatorSetAuRa.stakingByMiningAddress
+           # 1 ValidatorSetAuRa.idByMiningAddress
            "0x0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6",
-           # 2 ValidatorSetAuRa.stakingByMiningAddress
+           # 2 ValidatorSetAuRa.idByMiningAddress
            "0x000000000000000000000000aa94b687d3f9552a453b81b2834ca53778980dc0",
-           # 3 ValidatorSetAuRa.stakingByMiningAddress
+           # 3 ValidatorSetAuRa.idByMiningAddress
            "0x000000000000000000000000312c230e7d6db05224f60208a656e3541c5c42ba",
-           # 4 ValidatorSetAuRa.stakingByMiningAddress
+           # 4 ValidatorSetAuRa.idByMiningAddress
            "0x000000000000000000000000b916e7e1f4bcb13549602ed042d36746fd0d96c9",
-           # 5 ValidatorSetAuRa.stakingByMiningAddress
+           # 5 ValidatorSetAuRa.idByMiningAddress
            "0x000000000000000000000000db9cb2478d917719c53862008672166808258577",
-           # 6 ValidatorSetAuRa.stakingByMiningAddress
+           # 6 ValidatorSetAuRa.idByMiningAddress
            "0x000000000000000000000000b6695f5c2e3f5eff8036b5f5f3a9d83a5310e51e"
          ])}
       end
     )
 
-    # get_responses, ContractReader.pool_staking_requests
+    # get_pool_staking_responses
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 6 * 7
+        assert length(requests) == 6 * 10
 
         {:ok,
          format_responses([
            # 1.1 StakingAuRa.poolDelegators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 1.2 StakingAuRa.poolDelegatorsInactive
+           # 1.2 ValidatorSetAuRa.poolDescription
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 1.3 StakingAuRa.poolDelegatorsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 1.3 StakingAuRa.isPoolActive
+           # 1.4 StakingAuRa.isPoolActive
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 1.4 ValidatorSetAuRa.miningByStakingAddress
+           # 1.5 ValidatorSetAuRa.miningAddressById
            "0x000000000000000000000000522df396ae70a058bd69778408630fdb023389b2",
-           # 1.5 StakingAuRa.stakeAmount
+           # 1.6 ValidatorSetAuRa.poolName
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 1.7 ValidatorSetAuRa.stakingAddressById
+           "0x0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6",
+           # 1.8 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 1.6 StakingAuRa.stakeAmountTotal
+           # 1.9 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 1.7 BlockRewardAuRa.validatorRewardPercent
+           # 1.10 BlockRewardAuRa.validatorRewardPercent
            "0x0000000000000000000000000000000000000000000000000000000000000000",
 
            # 2.1 StakingAuRa.poolDelegators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000d788829c11f61972c6c43ff6a7aaef4b154006ba",
-           # 2.2 StakingAuRa.poolDelegatorsInactive
+           # 2.2 ValidatorSetAuRa.poolDescription
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 2.3 StakingAuRa.poolDelegatorsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 2.3 StakingAuRa.isPoolActive
+           # 2.4 StakingAuRa.isPoolActive
            "0x0000000000000000000000000000000000000000000000000000000000000001",
-           # 2.4 ValidatorSetAuRa.miningByStakingAddress
+           # 2.5 ValidatorSetAuRa.miningAddressById
            "0x000000000000000000000000720e118ab1006cc97ed2ef6b4b49ac04bb3aa6d9",
-           # 2.5 StakingAuRa.stakeAmount
+           # 1.6 ValidatorSetAuRa.poolName
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 2.7 ValidatorSetAuRa.stakingAddressById
+           "0x000000000000000000000000aa94b687d3f9552a453b81b2834ca53778980dc0",
+           # 2.8 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
-           # 2.6 StakingAuRa.stakeAmountTotal
+           # 2.9 StakingAuRa.stakeAmountTotal
            "0x00000000000000000000000000000000000000000000000029a2241af62c0000",
-           # 2.7 BlockRewardAuRa.validatorRewardPercent
+           # 2.10 BlockRewardAuRa.validatorRewardPercent
            "0x00000000000000000000000000000000000000000000000000000000000a2c2a",
 
            # 3.1 StakingAuRa.poolDelegators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 3.2 StakingAuRa.poolDelegatorsInactive
+           # 3.2 ValidatorSetAuRa.poolDescription
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 3.3 StakingAuRa.poolDelegatorsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 3.3 StakingAuRa.isPoolActive
+           # 3.4 StakingAuRa.isPoolActive
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 3.4 ValidatorSetAuRa.miningByStakingAddress
+           # 3.5 ValidatorSetAuRa.miningAddressById
            "0x00000000000000000000000075df42383afe6bf5194aa8fa0e9b3d5f9e869441",
-           # 3.5 StakingAuRa.stakeAmount
+           # 3.6 ValidatorSetAuRa.poolName
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 3.7 ValidatorSetAuRa.stakingAddressById
+           "0x000000000000000000000000312c230e7d6db05224f60208a656e3541c5c42ba",
+           # 3.8 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 3.6 StakingAuRa.stakeAmountTotal
+           # 3.9 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 3.7 BlockRewardAuRa.validatorRewardPercent
+           # 3.10 BlockRewardAuRa.validatorRewardPercent
            "0x0000000000000000000000000000000000000000000000000000000000000000",
 
            # 4.1 StakingAuRa.poolDelegators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 4.2 StakingAuRa.poolDelegatorsInactive
+           # 4.2 ValidatorSetAuRa.poolDescription
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 4.3 StakingAuRa.poolDelegatorsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 4.3 StakingAuRa.isPoolActive
+           # 4.4 StakingAuRa.isPoolActive
            "0x0000000000000000000000000000000000000000000000000000000000000001",
-           # 4.4 ValidatorSetAuRa.miningByStakingAddress
+           # 4.5 ValidatorSetAuRa.miningAddressById
            "0x000000000000000000000000bbcaa8d48289bb1ffcf9808d9aa4b1d215054c78",
-           # 4.5 StakingAuRa.stakeAmount
+           # 4.6 ValidatorSetAuRa.poolName
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 4.7 ValidatorSetAuRa.stakingAddressById
+           "0x000000000000000000000000b916e7e1f4bcb13549602ed042d36746fd0d96c9",
+           # 4.8 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 4.6 StakingAuRa.stakeAmountTotal
+           # 4.9 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 4.7 BlockRewardAuRa.validatorRewardPercent
+           # 4.10 BlockRewardAuRa.validatorRewardPercent
            "0x0000000000000000000000000000000000000000000000000000000000000000",
 
            # 5.1 StakingAuRa.poolDelegators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000009000000000000000000000000d5bd381ffd0aba13265a7489f4a141d0ece91054000000000000000000000000682271d71c0412adb8ad7cd027a46da18f220315000000000000000000000000aa6a2866891a5c9046b06abb638bb8030e332724000000000000000000000000e90b1459d82917f1727b656756181b39f807044200000000000000000000000000898d801f6a565503f4df66ecb38292a9744828000000000000000000000000c69fe675984232f239cdfd3a35ad234b2b24988a000000000000000000000000fe9739a22165d48acae6b2385bfe0e43f3ea983000000000000000000000000044c331d263b5e319f34903adfd1621787fda381e000000000000000000000000629c7e8be1b2e0d40850689401ca59ea1769a08e",
-           # 5.2 StakingAuRa.poolDelegatorsInactive
+           # 5.2 ValidatorSetAuRa.poolDescription
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 5.3 StakingAuRa.poolDelegatorsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 5.3 StakingAuRa.isPoolActive
+           # 5.4 StakingAuRa.isPoolActive
            "0x0000000000000000000000000000000000000000000000000000000000000001",
-           # 5.4 ValidatorSetAuRa.miningByStakingAddress
+           # 5.5 ValidatorSetAuRa.miningAddressById
            "0x000000000000000000000000be69eb0968226a1808975e1a1f2127667f2bffb3",
-           # 5.5 StakingAuRa.stakeAmount
+           # 5.6 ValidatorSetAuRa.poolName
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 5.7 ValidatorSetAuRa.stakingAddressById
+           "0x000000000000000000000000db9cb2478d917719c53862008672166808258577",
+           # 5.8 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
-           # 5.6 StakingAuRa.stakeAmountTotal
+           # 5.9 StakingAuRa.stakeAmountTotal
            "0x00000000000000000000000000000000000000000000000098a7d9b8314c0000",
-           # 5.7 BlockRewardAuRa.validatorRewardPercent
+           # 5.10 BlockRewardAuRa.validatorRewardPercent
            "0x00000000000000000000000000000000000000000000000000000000000493e0",
 
            # 6.1 StakingAuRa.poolDelegators
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 6.2 StakingAuRa.poolDelegatorsInactive
+           # 6.2 ValidatorSetAuRa.poolDescription
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 6.3 StakingAuRa.poolDelegatorsInactive
            "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
-           # 6.3 StakingAuRa.isPoolActive
+           # 6.4 StakingAuRa.isPoolActive
            "0x0000000000000000000000000000000000000000000000000000000000000001",
-           # 6.4 ValidatorSetAuRa.miningByStakingAddress
+           # 6.5 ValidatorSetAuRa.miningAddressById
            "0x000000000000000000000000f67cc5231c5858ad6cc87b105217426e17b824bb",
-           # 6.5 StakingAuRa.stakeAmount
+           # 6.6 ValidatorSetAuRa.poolName
+           "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b504f41204e6574776f726b000000000000000000000000000000000000000000",
+           # 6.7 ValidatorSetAuRa.stakingAddressById
+           "0x000000000000000000000000b6695f5c2e3f5eff8036b5f5f3a9d83a5310e51e",
+           # 6.8 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
-           # 6.6 StakingAuRa.stakeAmountTotal
+           # 6.9 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
-           # 6.7 BlockRewardAuRa.validatorRewardPercent
+           # 6.10 BlockRewardAuRa.validatorRewardPercent
            "0x00000000000000000000000000000000000000000000000000000000000f4240"
          ])}
       end
     )
 
-    # get_responses, ContractReader.pool_mining_requests
+    # get_pool_mining_responses
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -398,7 +500,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    # get_responses, ContractReader.staker_requests
+    # get_staker_responses
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -644,24 +746,9 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    # invoke at_start_snapshotting()
+    # start_snapshotting
 
-    ## BalanceReader.get_balances_of
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # ERC677BridgeTokenRewardable.balanceOf(BlockRewardAuRa)
-           "0x0000000000000000000000000000000000000000000000000000000000000000"
-         ])}
-      end
-    )
-
-    ## MetadataRetriever.get_functions_of
+    ## get_mining_to_staking_address
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -670,299 +757,79 @@ defmodule Explorer.Staking.ContractStateTest do
 
         {:ok,
          format_responses([
-           # ERC677BridgeTokenRewardable.decimals
-           "0x0000000000000000000000000000000000000000000000000000000000000012",
-           # ERC677BridgeTokenRewardable.name
-           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
-           # ERC677BridgeTokenRewardable.symbol
-           "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055354414b45000000000000000000000000000000000000000000000000000000",
-           # ERC677BridgeTokenRewardable.totalSupply
-           "0x000000000000000000000000000000000000000000000001f399b1438a100000"
+           # 1 ValidatorSetAuRa.stakingByMiningAddress
+           "0x000000000000000000000000b916e7e1f4bcb13549602ed042d36746fd0d96c9",
+           # 2 ValidatorSetAuRa.stakingByMiningAddress
+           "0x000000000000000000000000b6695f5c2e3f5eff8036b5f5f3a9d83a5310e51e",
+           # 3 ValidatorSetAuRa.stakingByMiningAddress
+           "0x000000000000000000000000db9cb2478d917719c53862008672166808258577",
+           # 4 ValidatorSetAuRa.stakingByMiningAddress
+           "0x000000000000000000000000aa94b687d3f9552a453b81b2834ca53778980dc0"
          ])}
       end
     )
 
-    # invoke do_snapshotting()
-
-    ## 1 snapshotted_pool_amounts_requests
+    ## snapshotted_pool_amounts_requests
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 2
+        assert length(requests) == 4 * 2
 
         {:ok,
          format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 1.1 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000000000000000000"
-         ])}
-      end
-    )
+           # 1.2 StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
 
-    ## 2 snapshotted_pool_amounts_requests
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 2
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 2.1 StakingAuRa.stakeAmountTotal
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
+           # 2.2 StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
 
-    ## 3 snapshotted_pool_amounts_requests
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 2
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 3.1 StakingAuRa.stakeAmountTotal
            "0x00000000000000000000000000000000000000000000000098a7d9b8314c0000",
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
+           # 3.2 StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
 
-    ## 4 snapshotted_pool_amounts_requests
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 2
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmountTotal
+           # 4.1 StakingAuRa.stakeAmountTotal
            "0x00000000000000000000000000000000000000000000000029a2241af62c0000",
-           # StakingAuRa.stakeAmount
+           # 4.2 StakingAuRa.stakeAmount
            "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
          ])}
       end
     )
 
-    ## 1 snapshotted_staker_amount_request
+    ## get_staker_responses, snapshotted_staker_amount_request
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 1
+        assert length(requests) == 14
 
         {:ok,
          format_responses([
            # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000000000000000000"
-         ])}
-      end
-    )
-
-    ## 2 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
-
-    ## 3 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
+           "0x0000000000000000000000000000000000000000000000000000000000000000",
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
+           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
            "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
          ])}
       end
     )
 
-    ## 4 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
-
-    ## 5 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"
-         ])}
-      end
-    )
-
-    ## 6 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 7 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 8 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 9 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 10 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 11 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 12 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 13 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## 14 snapshotted_staker_amount_request
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn requests, _opts ->
-        assert length(requests) == 1
-
-        {:ok,
-         format_responses([
-           # StakingAuRa.stakeAmount
-           "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-         ])}
-      end
-    )
-
-    ## ContractReader.validator_reward_request
+    ## get_validator_reward_responses, validator_reward_request
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
@@ -983,7 +850,7 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
-    ## ContractReader.delegator_reward_request
+    ## get_delegator_reward_responses, delegator_reward_request
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,

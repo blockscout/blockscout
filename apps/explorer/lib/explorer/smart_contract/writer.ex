@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Writer do
   """
 
   alias Explorer.Chain
+  alias Explorer.SmartContract.Helper
 
   @spec write_functions(Hash.t()) :: [%{}]
   def write_functions(contract_address_hash) do
@@ -37,21 +38,12 @@ defmodule Explorer.SmartContract.Writer do
   end
 
   def write_function?(function) do
-    !event?(function) && !constructor?(function) &&
-      (payable?(function) || nonpayable?(function))
+    !Helper.event?(function) && !Helper.constructor?(function) &&
+      (Helper.payable?(function) || Helper.nonpayable?(function))
   end
 
   defp filter_write_functions(abi) do
     abi
     |> Enum.filter(&write_function?(&1))
   end
-
-  defp event?(function), do: function["type"] == "event"
-  defp constructor?(function), do: function["type"] == "constructor"
-  defp payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
-
-  defp nonpayable?(function),
-    do:
-      function["stateMutability"] == "nonpayable" ||
-        (!function["payable"] && !function["constant"] && !function["stateMutability"])
 end

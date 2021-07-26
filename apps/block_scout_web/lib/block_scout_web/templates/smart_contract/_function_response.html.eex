@@ -3,8 +3,8 @@
 [ <strong><%= @function_name %></strong> method Response ]
 
 [<%= for item <- @outputs do %>
-<span class="function-response-item"><%= if named_argument?(item) do %><%= item["name"] %>
-<% end %>
-<span class="text-muted">(<%= item["type"] %>)</span> : <%= values(item["value"], item["type"]) %></span><% end %>]
+<%= if named_argument?(item) do %><span class="function-response-item"><%= item["name"] %></span><% end %>
+<span class="text-muted"><%= raw(values_with_type(item["value"], item["type"])) %></span>
+<% end %>]
 </pre>
 </div>

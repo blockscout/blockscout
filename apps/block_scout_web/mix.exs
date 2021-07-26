@@ -20,15 +20,10 @@ defmodule BlockScoutWeb.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
         credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls],
       version: "0.0.1"
     ]
   end
@@ -60,20 +55,20 @@ defmodule BlockScoutWeb.Mixfile do
   defp deps do
     [
       # GraphQL toolkit
-      {:absinthe, "~> 1.5.2"},
+      {:absinthe, "~> 1.5"},
       # Integrates Absinthe subscriptions with Phoenix
       {:absinthe_phoenix, "~> 2.0.0"},
       # Plug support for Absinthe
-      {:absinthe_plug, "~> 1.5.0"},
+      {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.5"},
       {:bypass, "~> 1.0", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 2.0"},
-      {:credo, "~> 1.1", only: :test, runtime: false},
+      {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
       # The current `absinthe_relay` is compatible though as shown from that PR
       {:ecto, "~> 3.3", override: true},
@@ -82,8 +77,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_cldr_units, "~> 2.5"},
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
-      # Code coverage
-      {:excoveralls, "~> 0.13.3"},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
       # HTML CSS selectors for Phoenix controller tests
@@ -109,7 +102,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
-      {:poison, "~> 3.1"},
+      {:poison, "~> 4.0"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
@@ -128,7 +121,7 @@ defmodule BlockScoutWeb.Mixfile do
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 1.0"},
       {:timex, "~> 3.6"},
-      {:wallaby, "~> 0.26", only: :test, runtime: false},
+      {:wallaby, "~> 0.28", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
       {:phoenix_form_awesomplete, "~> 0.1.4"},
@@ -161,7 +154,7 @@ defmodule BlockScoutWeb.Mixfile do
     [
       maintainers: ["POA Networks Ltd."],
       licenses: ["GPL 3.0"],
-      links: %{"GitHub" => "https://github.com/poanetwork/blockscout"}
+      links: %{"GitHub" => "https://github.com/blockscout/blockscout"}
     ]
   end
 end

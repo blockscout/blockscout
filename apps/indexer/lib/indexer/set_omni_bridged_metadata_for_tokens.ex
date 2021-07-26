@@ -9,7 +9,7 @@ defmodule Indexer.SetOmniBridgedMetadataForTokens do
 
   alias Explorer.Chain
 
-  @interval :timer.minutes(1)
+  @interval :timer.minutes(10)
 
   def start_link([init_opts, gen_server_opts]) do
     start_link(init_opts, gen_server_opts)
@@ -38,6 +38,11 @@ defmodule Indexer.SetOmniBridgedMetadataForTokens do
 
     Process.send_after(self(), :reveal_unprocessed_tokens, interval)
 
+    {:noreply, state}
+  end
+
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
     {:noreply, state}
   end
 

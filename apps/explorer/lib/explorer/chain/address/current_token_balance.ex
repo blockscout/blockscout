@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, order_by: 3, preload: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, where: 3]
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Hash, Token}
@@ -85,6 +85,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   """
   def token_holders_ordered_by_value(token_contract_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
     token_contract_address_hash
     |> token_holders_query
@@ -92,6 +93,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     |> order_by([tb], desc: :value)
     |> page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
+    |> offset(^offset)
   end
 
   @doc """

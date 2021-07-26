@@ -80,7 +80,8 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       token_balance_b =
         build(:token_balance,
-          token: build(:token, name: "token", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(3.45)),
+          token:
+            build(:token, name: "token", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.from_float(3.45)),
           value: Decimal.new(100_500)
         )
 

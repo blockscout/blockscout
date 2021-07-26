@@ -1,21 +1,21 @@
 <div class="card-tabs js-card-tabs">
     <%=
     link(
-        gettext("Validators"),
+        list_title(:validator),
         class: "card-tab #{tab_status("validators", @conn.request_path)}",
         to: validators_path(@conn, :index)
         )
     %>
     <%=
     link(
-        gettext("Active Pools"),
+        list_title(:active),
         class: "card-tab #{tab_status("active-pools", @conn.request_path)}",
         to: active_pools_path(@conn, :index)
         )
     %>
     <%=
     link(
-        gettext("Inactive Pools"),
+        list_title(:inactive),
         class: "card-tab #{tab_status("inactive-pools", @conn.request_path)}",
         to: inactive_pools_path(@conn, :index)
         )

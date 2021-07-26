@@ -4,7 +4,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       },
       {
         "name": "",
@@ -40,7 +40,7 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_staker",
+        "name": "_delegator",
         "type": "address"
       },
       {
@@ -52,11 +52,11 @@
         "type": "uint256"
       }
     ],
-    "name": "getStakerPools",
+    "name": "getDelegatorPools",
     "outputs": [
       {
         "name": "result",
-        "type": "address[]"
+        "type": "uint256[]"
       }
     ],
     "payable": false,
@@ -67,11 +67,11 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_staker",
+        "name": "_delegator",
         "type": "address"
       }
     ],
-    "name": "getStakerPoolsLength",
+    "name": "getDelegatorPoolsLength",
     "outputs": [
       {
         "name": "",
@@ -87,7 +87,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "poolInactiveIndex",
@@ -148,7 +148,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       },
       {
         "name": "",
@@ -185,7 +185,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       },
       {
         "name": "",
@@ -208,7 +208,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "poolIndex",
@@ -255,7 +255,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "orderedWithdrawAmountTotal",
@@ -288,7 +288,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       },
       {
         "name": "",
@@ -311,7 +311,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "poolToBeRemovedIndex",
@@ -344,7 +344,7 @@
     "inputs": [
       {
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "name": "poolToBeElectedIndex",
@@ -380,6 +380,11 @@
         "indexed": false,
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "fromPoolId",
+        "type": "uint256"
       }
     ],
     "name": "ClaimedOrderedWithdrawal",
@@ -406,6 +411,11 @@
       {
         "indexed": false,
         "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "toPoolId",
         "type": "uint256"
       }
     ],
@@ -439,6 +449,16 @@
         "indexed": false,
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "fromPoolId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "toPoolId",
+        "type": "uint256"
       }
     ],
     "name": "MovedStake",
@@ -466,6 +486,11 @@
         "indexed": false,
         "name": "amount",
         "type": "int256"
+      },
+      {
+        "indexed": false,
+        "name": "fromPoolId",
+        "type": "uint256"
       }
     ],
     "name": "OrderedWithdrawal",
@@ -493,6 +518,11 @@
         "indexed": false,
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "fromPoolId",
+        "type": "uint256"
       }
     ],
     "name": "WithdrewStake",
@@ -511,7 +541,12 @@
       }
     ],
     "name": "addPool",
-    "outputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "function"
@@ -538,8 +573,8 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_unremovableStakingAddress",
-        "type": "address"
+        "name": "_unremovablePoolId",
+        "type": "uint256"
       }
     ],
     "name": "clearUnremovableValidator",
@@ -565,8 +600,8 @@
         "type": "address"
       },
       {
-        "name": "_initialStakingAddresses",
-        "type": "address[]"
+        "name": "_initialIds",
+        "type": "uint256[]"
       },
       {
         "name": "_delegatorMinStake",
@@ -599,8 +634,8 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_stakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       }
     ],
     "name": "removePool",
@@ -771,7 +806,7 @@
     "outputs": [
       {
         "name": "",
-        "type": "address[]"
+        "type": "uint256[]"
       }
     ],
     "payable": false,
@@ -785,7 +820,7 @@
     "outputs": [
       {
         "name": "",
-        "type": "address[]"
+        "type": "uint256[]"
       }
     ],
     "payable": false,
@@ -817,7 +852,7 @@
     "outputs": [
       {
         "name": "",
-        "type": "address[]"
+        "type": "uint256[]"
       }
     ],
     "payable": false,
@@ -831,7 +866,7 @@
     "outputs": [
       {
         "name": "",
-        "type": "address[]"
+        "type": "uint256[]"
       }
     ],
     "payable": false,
@@ -870,8 +905,8 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_stakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       }
     ],
     "name": "isPoolActive",
@@ -932,7 +967,7 @@
     "type": "function"
   },
   {
-    "constant": true,
+    "constant": false,
     "inputs": [
       {
         "name": "",
@@ -955,15 +990,15 @@
       }
     ],
     "payable": false,
-    "stateMutability": "pure",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "constant": true,
     "inputs": [
       {
-        "name": "_poolStakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       }
     ],
     "name": "poolDelegators",
@@ -981,8 +1016,8 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_poolStakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       }
     ],
     "name": "poolDelegatorsInactive",
@@ -1000,11 +1035,11 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_poolStakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       },
       {
-        "name": "_staker",
+        "name": "_delegatorOrZero",
         "type": "address"
       }
     ],
@@ -1023,11 +1058,11 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_poolStakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       },
       {
-        "name": "_staker",
+        "name": "_delegatorOrZero",
         "type": "address"
       }
     ],
@@ -1046,8 +1081,8 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_poolStakingAddress",
-        "type": "address"
+        "name": "_poolId",
+        "type": "uint256"
       }
     ],
     "name": "stakeAmountTotal",
@@ -1065,6 +1100,20 @@
     "constant": true,
     "inputs": [],
     "name": "stakingEpochEndBlock",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "lastChangeBlock",
     "outputs": [
       {
         "name": "",

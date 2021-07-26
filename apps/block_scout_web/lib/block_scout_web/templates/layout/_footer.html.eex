@@ -19,10 +19,10 @@
       <div class="col-xs-12 col-lg-3">
         <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
         <div class="footer-social-icons">
-          <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+          <a href="https://github.com/blockscout/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <i class="fab fa-github"></i>
           </a>
-          <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+          <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <i class="fab fa-twitter"></i>
           </a>
           <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
@@ -35,7 +35,7 @@
         <h3>BlockScout</h3>
         <ul>
           <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
-          <li><a href="https://github.com/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
+          <li><a href="https://github.com/blockscout/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
           <li><a href="https://gitter.im/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
           <li><a href="https://forum.poa.network/c/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Support") %></a></li>
         </ul>
@@ -47,7 +47,7 @@
           <h3><%= gettext("Main Networks") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- main_nets do %>
-              <li><a href="<%= url%>" rel="norefferer" class="footer-link"> <%= title %> </a></li>
+              <li><a href="<%= url %>" rel="norefferer" class="footer-link"> <%= title %> </a></li>
             <% end %>
           </ul>
         </div>
@@ -60,7 +60,7 @@
           <h3><%= gettext("Test Networks") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- test_nets do %>
-              <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= title %> </a></li>
+              <li><a href="<%= url %>" rel="noreferrer" class="footer-link"> <%= title %> </a></li>
             <% end %>
           </ul>
         </div>
@@ -71,7 +71,7 @@
           <h3><%= gettext("Other Explorers") %></h3>
           <ul>
             <%= for {name, url} <- other_explorers do %>
-              <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= name %> </a></li>
+              <li><a href="<%= url %>" rel="noreferrer" class="footer-link"> <%= name %> </a></li>
             <% end %>
           </ul>
         </div>

@@ -255,6 +255,15 @@ export const elements = {
       $el.hide()
     }
   },
+  '[data-async-listing] [data-pagination-container]': {
+    render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+
+      $el.show()
+    }
+  },
   '[csv-download]': {
     render ($el, state) {
       if (state.emptyResponse) {

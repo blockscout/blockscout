@@ -1,4 +1,6 @@
 import Web3 from 'web3'
+import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals'
+import { compareChainIDs, formatError, getContractABI, getCurrentAccount, getMethodInputs, prepareMethodArgs } from './common_helpers'
 
 export const walletEnabled = () => {
   return new Promise((resolve) => {
@@ -51,13 +53,6 @@ export const connectToWallet = () => {
   }
 }
 
-export const getCurrentAccount = async () => {
-  const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-  const account = accounts[0] ? accounts[0].toLowerCase() : null
-
-  return account
-}
-
 export const shouldHideConnectButton = () => {
   return new Promise((resolve) => {
     if (window.ethereum) {
@@ -79,4 +74,82 @@ export const shouldHideConnectButton = () => {
       resolve({ shouldHide: false })
     }
   })
+}
+
+export function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, functionName, $element) {
+  if (!isWalletEnabled) {
+    const warningMsg = 'You haven\'t approved the reading of account list from your MetaMask or MetaMask/Nifty wallet is locked or is not installed.'
+    return openWarningModal('Unauthorized', warningMsg)
+  }
+  const contractAbi = getContractABI($form)
+  const inputs = getMethodInputs(contractAbi, functionName)
+
+  const $functionInputsExceptTxValue = $functionInputs.filter(':not([tx-value])')
+  const args = prepareMethodArgs($functionInputsExceptTxValue, inputs)
+
+  const txValue = getTxValue($functionInputs)
+  const contractAddress = $form.data('contract-address')
+
+  const { chainId: walletChainIdHex } = window.ethereum
+  compareChainIDs(explorerChainId, walletChainIdHex)
+    .then(() => getCurrentAccount())
+    .then(currentAccount => {
+      if (functionName) {
+        const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
+        const sendParams = { from: currentAccount, value: txValue || 0 }
+        const methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
+        methodToCall
+          .on('error', function (error) {
+            openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
+          })
+          .on('transactionHash', function (txHash) {
+            onTransactionHash(txHash, $element, functionName)
+          })
+      } else {
+        const txParams = {
+          from: currentAccount,
+          to: contractAddress,
+          value: txValue || 0
+        }
+        window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [txParams]
+        })
+          .then(function (txHash) {
+            onTransactionHash(txHash, $element, functionName)
+          })
+          .catch(function (error) {
+            openErrorModal('Error in sending transaction for fallback method', formatError(error), false)
+          })
+      }
+    })
+    .catch(error => {
+      openWarningModal('Unauthorized', formatError(error))
+    })
+}
+
+function onTransactionHash (txHash, $element, functionName) {
+  openModalWithMessage($element.find('#pending-contract-write'), true, txHash)
+  const getTxReceipt = (txHash) => {
+    window.ethereum.request({
+      method: 'eth_getTransactionReceipt',
+      params: [txHash]
+    })
+      .then(txReceipt => {
+        if (txReceipt) {
+          const successMsg = `Successfully sent <a href="/tx/${txHash}">transaction</a> for method "${functionName}"`
+          openSuccessModal('Success', successMsg)
+          clearInterval(txReceiptPollingIntervalId)
+        }
+      })
+  }
+  const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
+}
+
+function getTxValue ($functionInputs) {
+  const WEI_MULTIPLIER = 10 ** 18
+  const $txValue = $functionInputs.filter('[tx-value]:first')
+  const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
+  const txValueStr = txValue && txValue.toString(16)
+  return txValueStr
 }

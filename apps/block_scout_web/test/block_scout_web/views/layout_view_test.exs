@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.release_link("v1.3.4-beta") ==
                {:safe,
-                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
+                ~s(<a href="https://github.com/blockscout/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
     end
 
     test "use the default value when empty release_link env configured for it" do
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.release_link("v1.3.4-beta") ==
                {:safe,
-                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
+                ~s(<a href="https://github.com/blockscout/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
     end
 
     test "use the enviroment release link when it's configured" do

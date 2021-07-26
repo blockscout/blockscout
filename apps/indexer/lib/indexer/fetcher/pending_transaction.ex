@@ -135,6 +135,11 @@ defmodule Indexer.Fetcher.PendingTransaction do
         Logger.error("timeout")
 
         :ok
+
+      {:error, {:bad_gateway, _}} ->
+        Logger.error("bad_gateway")
+
+        :ok
     end
   end
 

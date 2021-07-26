@@ -1,16 +1,11 @@
 defmodule BlockScoutWeb.TokensView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Explorer.Chain.Token
 
   def decimals?(%Token{decimals: nil}), do: false
   def decimals?(%Token{decimals: _}), do: true
-
-  def bridged_tokens_enabled? do
-    omni_bridge_mediator = Application.get_env(:block_scout_web, :omni_bridge_mediator)
-
-    omni_bridge_mediator && omni_bridge_mediator !== ""
-  end
 
   def token_display_name(%Token{name: nil, symbol: nil}), do: ""
 
