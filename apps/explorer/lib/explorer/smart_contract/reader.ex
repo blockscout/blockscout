@@ -450,10 +450,15 @@ defmodule Explorer.SmartContract.Reader do
 
   def link_outputs_and_values(blockchain_values, outputs, method_id) do
     default_value = Enum.map(outputs, fn _ -> "" end)
-    {_, value} = Map.get(blockchain_values, method_id, {:ok, default_value})
 
-    for {output, index} <- Enum.with_index(outputs) do
-      new_value(output, List.wrap(value), index)
+    case Map.get(blockchain_values, method_id, {:ok, default_value}) do
+      {:ok, value} ->
+        for {output, index} <- Enum.with_index(outputs) do
+          new_value(output, List.wrap(value), index)
+        end
+
+      {:error, message} ->
+        {:error, message}
     end
   end
 

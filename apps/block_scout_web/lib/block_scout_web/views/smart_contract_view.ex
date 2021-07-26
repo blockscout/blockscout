@@ -100,6 +100,8 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_with_type(value, :bool, _components), do: render_type_value("bool", to_string(value))
 
+  def values_with_type(value, :error, _components), do: render_type_value("error", value)
+
   def values_with_type(value, type, _components) do
     render_type_value(type, binary_to_utf_string(value))
   end
