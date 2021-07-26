@@ -140,6 +140,8 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
+config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: System.get_env("DISABLE_WRITE_API") != "true"
+
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
   |> Integer.parse()
