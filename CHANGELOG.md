@@ -8,7 +8,7 @@
 
 ### Fixes
 - [#4430](https://github.com/blockscout/blockscout/pull/4430) - Fix current token balance on-demand fetcher
-- [#4431](https://github.com/blockscout/blockscout/pull/4431) - Fix 500 response on `/tokens/{addressHash}/token-holders?type=JSON` when total supply is zero
+- [#4429](https://github.com/blockscout/blockscout/pull/4429), [#4431](https://github.com/blockscout/blockscout/pull/4431) - Fix 500 response on `/tokens/{addressHash}/token-holders?type=JSON` when total supply is zero
 - [#4419](https://github.com/blockscout/blockscout/pull/4419) - Order contracts in the search by inserted_at in descending order
 - [#4418](https://github.com/blockscout/blockscout/pull/4418) - Fix empty search results for the full-word search criteria
 - [#4406](https://github.com/blockscout/blockscout/pull/4406) - Fix internal server error on the validator's txs page
