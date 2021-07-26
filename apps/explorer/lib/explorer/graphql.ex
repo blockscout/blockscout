@@ -280,7 +280,7 @@ defmodule Explorer.GraphQL do
   def celo_tx_transfers_query_by_address(address_hash) do
     celo_tx_transfers_query()
     |> where([t], t.from_address_hash == ^address_hash or t.to_address_hash == ^address_hash)
-    |> order_by([t, _, tx], desc: t.block_number, asc: tx.nonce)
+    |> order_by([transaction: t], desc: t.block_number, asc: t.nonce)
   end
 
   def txtransfers_query do
@@ -342,6 +342,7 @@ defmodule Explorer.GraphQL do
         ),
       on: t.name == tkn.contract_name,
       inner_join: tx in Transaction,
+      as: :transaction,
       on: tx.hash == tt.transaction_hash,
       inner_join: b in Block,
       on: tt.block_number == b.number,
