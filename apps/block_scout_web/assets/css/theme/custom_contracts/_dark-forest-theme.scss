@@ -714,29 +714,6 @@ $dark-primary-alternate: $dark-primary;
 		}
 	}
 
-	.awesomplete {
-		& > ul {
-			background: $dark-light-bg;
-			&:before {
-				background: $dark-light-bg;
-			}
-			li {
-				&:hover {
-					background-color: $dark-primary;
-					color: #fff;
-					mark {
-						background: darken($dark-primary, 10);
-						color: #fff;
-					}
-				}
-			}
-		}
-		mark {
-			background: $dark-primary;
-			color: #fff;
-		}
-	}
-
 	// Decoded data
 	.table.thead-light.table-bordered {
 		color: #fff !important;

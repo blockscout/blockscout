@@ -79,6 +79,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
+      {:file_info, "~> 0.0.4"},
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.20.1", only: :test},
       {:flow, "~> 0.12"},
@@ -124,7 +125,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:wallaby, "~> 0.28", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:phoenix_form_awesomplete, "~> 0.1.4"},
       {:ex_json_schema, "~> 0.6.2"}
     ]
   end

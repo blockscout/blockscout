@@ -1,7 +1,7 @@
 const path = require('path')
 const TerserJSPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const { ContextReplacementPlugin } = require('webpack')
 const glob = require('glob')
@@ -32,10 +32,9 @@ const jsOptimizationParams = {
   parallel: true
 }
 
-const awesompleteJs = {
+const autocompleteJs = {
   entry: {
-    awesomplete: './js/lib/awesomplete.js',
-    'awesomplete-util': './js/lib/awesomplete-util.js',
+    autocomplete: './js/lib/autocomplete.js',
   },
   output: {
     filename: '[name].min.js',
@@ -48,7 +47,7 @@ const awesompleteJs = {
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: "css-loader",
+            loader: 'css-loader',
           }
         ]
       }
@@ -61,7 +60,7 @@ const awesompleteJs = {
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: '../css/awesomplete.css'
+      filename: '../css/autocomplete.css'
     })
   ]
 }
@@ -81,7 +80,7 @@ const dropzoneJs = {
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: "css-loader",
+            loader: 'css-loader',
           }
         ]
       }
@@ -124,14 +123,16 @@ const appJs =
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
-      'tokens': './js/pages/token/search.js'
+      'tokens': './js/pages/token/search.js',
+      'ad': './js/lib/ad.js',
+      'banner': './js/lib/banner.js'
     },
     output: {
       filename: '[name].js',
       path: path.resolve(__dirname, '../priv/static/js')
     },
     optimization: {
-      minimizer: [new TerserJSPlugin(jsOptimizationParams), new OptimizeCSSAssetsPlugin({})],
+      minimizer: [new TerserJSPlugin(jsOptimizationParams), new CssMinimizerPlugin()],
     },
     module: {
       rules: [
@@ -211,4 +212,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, awesompleteJs, dropzoneJs)
+module.exports = viewScripts.concat(appJs, autocompleteJs, dropzoneJs)

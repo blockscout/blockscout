@@ -69,7 +69,8 @@ defmodule Explorer.Chain.Address do
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
-             :names
+             :names,
+             :smart_contract_additional_sources
            ]}
 
   @derive {Jason.Encoder,
@@ -80,7 +81,8 @@ defmodule Explorer.Chain.Address do
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
-             :names
+             :names,
+             :smart_contract_additional_sources
            ]}
 
   @primary_key {:hash, Hash.Address, autogenerate: false}

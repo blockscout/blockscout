@@ -324,6 +324,20 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @stats_totalfees_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "total_fees" => "75411956011480008034"
+    }
+  }
+
+  @stats_totalfees_example_value_error %{
+    "status" => "0",
+    "message" => "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd).",
+    "result" => nil
+  }
+
   @block_getblockreward_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -1130,6 +1144,17 @@ defmodule BlockScoutWeb.Etherscan do
         type: "timestamp",
         definition: "Last updated timestamp.",
         example: ~s("1537234460")
+      }
+    }
+  }
+
+  @total_fees_model %{
+    name: "TotalFees",
+    fields: %{
+      total_fees: %{
+        type: "total_fees",
+        definition: "Total transaction fees in Wei are paid by users to validators per day.",
+        example: ~s("75411956011480008034")
       }
     }
   }
@@ -2067,6 +2092,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @stats_totalfees_action %{
+    name: "totalfees",
+    description: "Gets total transaction fees in Wei are paid by users to validators per day.",
+    required_params: [
+      %{
+        key: "date",
+        placeholder: "date",
+        type: "string",
+        description: "day in ISO 8601 format (yyyy-mm-dd)"
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_totalfees_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "model",
+              model: @total_fees_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@stats_totalfees_example_value_error)
+      }
+    ]
+  }
+
   @block_eth_block_number_action %{
     name: "eth_block_number",
     description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the lastest block number",
@@ -2374,6 +2436,74 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @contract_verify_via_sourcify_action %{
+    name: "verify_via_sourcify",
+    description: """
+    Verify a contract through <a href="https://sourcify.dev">Sourcify</a>.<br/>
+    a) if smart-contract already verified on Sourcify, it will automatically fetch the data from the <a href="https://repo.sourcify.dev">repo</a><br/>
+    b) otherwise you have to upload source files and JSON metadata file(s).
+    <br/>
+    <br/>
+    <p class="api-doc-list-item-text">POST body example:</p>
+    <br/>
+    <div class='tab-content'>
+    <div class='tab-pane fade show active'>
+    <div class="tile tile-muted p-1">
+    <div class="m-2">
+    --6e1e4c11657c62dc1e4349d024de9e28<br/>
+    Content-Disposition: form-data; name="addressHash"<br/>
+    <br/>
+    0xb77b7443e0F32F1FEBf0BE0fBd7124D135d0a525<br/>
+    <br/>
+    --6e1e4c11657c62dc1e4349d024de9e28<br/>
+    Content-Disposition: form-data; name="files[0]"; filename="contract.sol"<br/>
+    Content-Type: application/json<br/>
+    <br/>
+    ...Source code...<br/>
+    <br/>
+    --6e1e4c11657c62dc1e4349d024de9e28<br/>
+    Content-Disposition: form-data; name="files[1]"; filename="metadata.json"<br/>
+    Content-Type: application/json<br/>
+    <br/>
+    ...JSON metadata...<br/>
+    <br/>
+    --6e1e4c11657c62dc1e4349d024de9e28--<br/>
+    </pre>
+    </div>
+    </div>
+    </div>
+    """,
+    required_params: [
+      %{
+        key: "addressHash",
+        placeholder: "addressHash",
+        type: "string",
+        description: "The address of the contract."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "files",
+        type: "file[]",
+        description: "Array with sources and metadata files"
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_verify_example_value),
+        type: "model",
+        model: @contract_model
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@contract_verify_example_value_error)
+      }
+    ]
+  }
+
   @contract_getabi_action %{
     name: "getabi",
     description: "Get ABI for verified contract. Also available through a GraphQL 'addresses' query.",
@@ -2602,7 +2732,8 @@ defmodule BlockScoutWeb.Etherscan do
       @stats_ethsupplyexchange_action,
       @stats_ethsupply_action,
       @stats_coinsupply_action,
-      @stats_coinprice_action
+      @stats_coinprice_action,
+      @stats_totalfees_action
     ]
   }
 
@@ -2617,7 +2748,8 @@ defmodule BlockScoutWeb.Etherscan do
       @contract_listcontracts_action,
       @contract_getabi_action,
       @contract_getsourcecode_action,
-      @contract_verify_action
+      @contract_verify_action,
+      @contract_verify_via_sourcify_action
     ]
   }
 

@@ -1,4 +1,5 @@
 <section class="container" data-page="transaction-pending-list">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "Pending Transactions" %></h1>
@@ -7,12 +8,12 @@
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
       </div>
  
-      <div data-selector="channel-batching-message" style="display:none;">
+      <div data-selector="channel-batching-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <div data-selector="channel-disconnected-message" style="display:none;">
+      <div data-selector="channel-disconnected-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-danger">
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
         </div>
@@ -34,4 +35,5 @@
     </div>
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/pending-transactions.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
 </section>
