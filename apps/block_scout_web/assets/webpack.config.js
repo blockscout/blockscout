@@ -127,7 +127,8 @@ const appJs =
       'datepicker': './js/lib/datepicker.js',
       'tokens': './js/pages/token/search.js',
       'faucet': './js/pages/faucet.js',
-      'ad': './js/lib/ad.js'
+      'ad': './js/lib/ad.js',
+      'banner': './js/lib/banner.js'
     },
     output: {
       filename: '[name].js',

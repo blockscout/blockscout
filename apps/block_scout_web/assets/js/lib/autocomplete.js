@@ -1,5 +1,6 @@
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
 import { getTextAdData, fetchTextAdData } from './ad.js'
+import { DateTime } from 'luxon'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
@@ -45,12 +46,20 @@ const searchEngine = (query, record) => {
   if (record.name.toLowerCase().includes(query.toLowerCase()) ||
         record.symbol.toLowerCase().includes(query.toLowerCase()) ||
         record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) {
-    var searchResult = `${record.contract_address_hash}<br/><b>${record.name}</b>`
-    if (record.symbol) {
-      searchResult = searchResult + ` (${record.symbol})`
-    }
-    if (record.holder_count) {
-      searchResult = searchResult + ` <i>${record.holder_count} holder(s)</i>`
+    var searchResult = `${record.contract_address_hash}<br/>`
+    if (record.type === 'label') {
+      searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
+    } else {
+      searchResult += `<b>${record.name}</b>`
+      if (record.symbol) {
+        searchResult += ` (${record.symbol})`
+      }
+      if (record.holder_count) {
+        searchResult += ` <i>${record.holder_count} holder(s)</i>`
+      }
+      if (record.inserted_at) {
+        searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
+      }
     }
     var re = new RegExp(query, 'ig')
     searchResult = searchResult.replace(re, '<mark class=\'autoComplete_highlight\'>$&</mark>')
@@ -64,6 +73,9 @@ const resultItemElement = (item, data) => {
   item.innerHTML = `
   <span style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
+  </span>
+  <span style="display: flex; align-items: center; font-size: 13px; font-weight: 100; text-transform: uppercase; color: rgb(33,33,33);">
+    ${data.value.type}
   </span>`
 }
 const config = (id) => {

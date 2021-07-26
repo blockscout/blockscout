@@ -7,8 +7,8 @@
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row">
     <!-- Address details -->
-    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
-      <div class="card mb-2">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md js-ad-dependant-mb-2">
+      <div class="card js-ad-dependant-mb-2">
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
@@ -147,7 +147,7 @@
       </div>
     </div>
     <!-- Balance -->
-    <div class="card-section col-md-12 col-lg-4 pl-0-md mb-2" data-selector="balance-card">
+    <div class="card-section col-md-12 col-lg-4 pl-0-md js-ad-dependant-mb-2" data-selector="balance-card">
       <%= render BlockScoutWeb.AddressView, "_balance_card.html", conn: @conn, address: @address, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status %>
     </div>
 
@@ -162,4 +162,4 @@
   <%= render BlockScoutWeb.AddressView, "_validator_metadata_modal.html", address_name: address_name, validator_metadata: validator_metadata %>
 <% end %>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 

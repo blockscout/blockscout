@@ -1146,12 +1146,13 @@ defmodule Explorer.Chain do
       {:some, term} ->
         query =
           from(token in Token,
-            where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+            where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
             select: %{
               contract_address_hash: token.contract_address_hash,
               symbol: token.symbol,
               name: token.name,
-              holder_count: token.holder_count
+              holder_count: token.holder_count,
+              type: "token"
             },
             order_by: [desc: token.holder_count]
           )
@@ -1169,8 +1170,16 @@ defmodule Explorer.Chain do
       {:some, term} ->
         query =
           from(smart_contract in SmartContract,
-            where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
-            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
+            left_join: address in Address,
+            on: smart_contract.address_hash == address.hash,
+            where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
+            select: %{
+              contract_address_hash: smart_contract.address_hash,
+              name: smart_contract.name,
+              inserted_at: address.inserted_at,
+              type: "contract"
+            },
+            order_by: [desc: smart_contract.inserted_at]
           )
 
         Repo.all(query)

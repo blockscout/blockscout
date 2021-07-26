@@ -13,7 +13,7 @@
   <div class="row">
     <div class="col-md-12">
       <!-- Transaction Details -->
-      <div class="card mb-3">
+      <div class="card js-ad-dependant-mb-3">
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
@@ -391,7 +391,7 @@
     </div>
   </div>
 
-  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">
