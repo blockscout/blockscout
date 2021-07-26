@@ -30,7 +30,7 @@ function showAd () {
 function getTextAdData () {
   return new Promise((resolve) => {
     if (showAd()) {
-      $.get('https://request-global.czilladx.com/serve/native.php?z=50860d190820e5a2595', function (data) {
+      $.get('https://request-global.czilladx.com/serve/native.php?z=19260bf627546ab7242', function (data) {
         resolve(data)
       })
     } else {
