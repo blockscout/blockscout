@@ -1,23 +1,13 @@
 <% staking_enabled_in_menu = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled_in_menu] %>
 <% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
-  <script>
-    if (localStorage.getItem("current-color-mode") === "dark") {
-      document.getElementById("top-navbar").style.backgroundColor = "#282945";
-    }
-  </script>
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" id="navbar-logo" src="<%= static_path(@conn, logo()) %>" alt="<%= subnetwork_title() %>" />
       <%= if logo_text() do %>
         <span class="logo-text"> <%= logo_text() %> </span>
       <% end %>
-    <% end %>   
-    <script>
-      if (localStorage.getItem("current-color-mode") === "dark") {
-        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
-      }
-    </script>
+    <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -205,10 +195,3 @@
   </div>
   <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete-mobile", additional_classes: ["mobile-search-show"] %>
 </nav>
-<script>
-  if (localStorage.getItem("current-color-mode") === "dark") {
-    let modeChanger = document.getElementById("dark-mode-changer");
-    modeChanger.className += " " + "dark-mode-changer--dark";
-  }
-</script> 
-<script defer src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>
