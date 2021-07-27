@@ -9,13 +9,8 @@
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row">
     <!-- Address details -->
-<<<<<<< HEAD
-    <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
-      <div class="card">
-=======
     <div class="card-section col-md-12 col-lg-8 pr-0-md js-ad-dependant-mb-2">
       <div class="card js-ad-dependant-mb-2">
->>>>>>> origin/master
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
