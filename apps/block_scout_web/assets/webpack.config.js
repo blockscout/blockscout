@@ -133,7 +133,8 @@ const appJs =
       'tokens': './js/pages/token/search.js',
       'add-to-mm': './js/pages/token/add_to_mm.js',
       'faucet': './js/pages/faucet.js',
-      'ad': './js/lib/ad.js'
+      'ad': './js/lib/ad.js',
+      'banner': './js/lib/banner.js'
     },
     output: {
       filename: '[name].js',

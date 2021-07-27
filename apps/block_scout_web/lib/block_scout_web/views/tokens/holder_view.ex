@@ -35,6 +35,8 @@ defmodule BlockScoutWeb.Tokens.HolderView do
   """
   def total_supply_percentage(_, 0), do: "N/A%"
 
+  def total_supply_percentage(_, %Decimal{coef: 0}), do: "N/A%"
+
   def total_supply_percentage(value, total_supply) do
     result =
       value
