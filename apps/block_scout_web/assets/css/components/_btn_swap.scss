@@ -1,0 +1,20 @@
+.btn-swap {
+    background-size: 15px 16px;
+    width: 15px;
+    height: 16px;
+    background-repeat: no-repeat;
+    display: inline-block;
+    margin-bottom: 3px;
+    vertical-align: middle;
+    cursor: pointer;
+
+    &.honeypot {
+        background-image: url("/images/icons/exchanges/honeyswap.png");
+    }
+    &.sushi {
+        margin-top: -14px;
+    }
+    &.swapr {
+        background-image: url("/images/icons/exchanges/swapr.png");
+    }
+}
