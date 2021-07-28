@@ -6,6 +6,7 @@
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
 
 ### Chore
+- [#4439](https://github.com/blockscout/blockscout/pull/4439) - Fix revert response in contract's output
 
 
 ## 3.7.2-beta
