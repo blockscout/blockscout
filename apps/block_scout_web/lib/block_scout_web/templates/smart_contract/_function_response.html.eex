@@ -3,12 +3,12 @@
 [ <strong><%= @function_name %></strong> method Response ]
 <%= case @outputs do %>
     <% {:error, message} -> %>
-        <span class="text-muted"><%=raw(values_with_type(message, :error))%></span>
+        <span class="text-muted"><%=raw(values_with_type(message, :error, nil, 0))%></span>
     <% _ -> %>
-        [<%= for item <- @outputs do %>
-            <%= if named_argument?(item) do %><span class="function-response-item"><%= item["name"] %></span><% end %>
-            <span class="text-muted"><%= raw(values_with_type(item["value"], item["type"])) %></span>
-        <% end %>]
+[<%= for {item, index} <- Enum.with_index(@outputs) do %>
+<%= if named_argument?(item) do %><span class="function-response-item"><%= item["name"] %></span><% end %>
+<span class="text-muted"><%= raw(values_with_type(item["value"], item["type"], fetch_name(@names, index), 0)) %></span>
+<% end %>]
 <% end %>
 </pre>
 </div>
