@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
 
 ### Chore
 
