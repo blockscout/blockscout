@@ -1,10 +1,14 @@
 <div class="tile tile-muted tile-function-response monospace">
 <pre>
 [ <strong><%= @function_name %></strong> method Response ]
-
-[<%= for item <- @outputs do %>
-<%= if named_argument?(item) do %><span class="function-response-item"><%= item["name"] %></span><% end %>
-<span class="text-muted"><%= raw(values_with_type(item["value"], item["type"])) %></span>
-<% end %>]
+<%= case @outputs do %>
+    <% {:error, message} -> %>
+        <span class="text-muted"><%=raw(values_with_type(message, :error))%></span>
+    <% _ -> %>
+        [<%= for item <- @outputs do %>
+            <%= if named_argument?(item) do %><span class="function-response-item"><%= item["name"] %></span><% end %>
+            <span class="text-muted"><%= raw(values_with_type(item["value"], item["type"])) %></span>
+        <% end %>]
+<% end %>
 </pre>
 </div>
