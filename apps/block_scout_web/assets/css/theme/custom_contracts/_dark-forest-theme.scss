@@ -345,6 +345,10 @@ $dark-primary-alternate: $dark-primary;
 	.stakes-td {
 		border-bottom-color: darken($labels-dark, 30);
 	}
+	.main-search-autocomplete {
+        background-color: $dark-light !important;
+        color: #fff !important;
+    }
 	.table th, .table td {
 		border-top-color: darken($labels-dark, 30);
 	}
