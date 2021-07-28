@@ -1089,6 +1089,9 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: $dark-bg !important;
 		color: #fff !important;
 	}
+	.autocomplete-category {
+		color: #fff !important;
+	}
 	ul[id^='autoComplete_list_'] {
 		background-color: $dark-light-bg !important;
 	}

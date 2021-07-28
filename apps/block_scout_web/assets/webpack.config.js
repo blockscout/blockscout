@@ -125,6 +125,7 @@ const appJs =
       'non-critical': './css/non-critical.scss',
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
+      'main-page': './css/main-page.scss',
       'tokens': './js/pages/token/search.js',
       'faucet': './js/pages/faucet.js',
       'ad': './js/lib/ad.js',

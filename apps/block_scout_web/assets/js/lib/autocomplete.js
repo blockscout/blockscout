@@ -74,7 +74,7 @@ const resultItemElement = (item, data) => {
   <span style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
   </span>
-  <span style="display: flex; align-items: center; font-size: 13px; font-weight: 100; text-transform: uppercase; color: rgb(33,33,33);">
+  <span class="autocomplete-category">
     ${data.value.type}
   </span>`
 }

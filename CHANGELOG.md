@@ -1,12 +1,23 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+- [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update
+
+
+## 3.7.2-beta
+
+### Features
 - [#4424](https://github.com/blockscout/blockscout/pull/4424) - Display search results categories
 - [#4423](https://github.com/blockscout/blockscout/pull/4423) - Add creation time of contract in the results of the search
 - [#4391](https://github.com/blockscout/blockscout/pull/4391) - Add batched transactions on the `address/{addressHash}/transactions` page
 - [#4353](https://github.com/blockscout/blockscout/pull/4353) - Added live-reload on the token holders page
 
 ### Fixes
+- [#4437](https://github.com/blockscout/blockscout/pull/4437) - Fix `PendingTransactionsSanitizer` for non-consensus blocks
 - [#4430](https://github.com/blockscout/blockscout/pull/4430) - Fix current token balance on-demand fetcher
 - [#4429](https://github.com/blockscout/blockscout/pull/4429), [#4431](https://github.com/blockscout/blockscout/pull/4431) - Fix 500 response on `/tokens/{addressHash}/token-holders?type=JSON` when total supply is zero
 - [#4419](https://github.com/blockscout/blockscout/pull/4419) - Order contracts in the search by inserted_at in descending order
@@ -21,7 +32,7 @@
 - [#4398](https://github.com/blockscout/blockscout/pull/4398) - Speed up the transactions loading on the front-end
 - [#4384](https://github.com/blockscout/blockscout/pull/4384) - Fix Elixir version in `.tool-versions`
 - [#4382](https://github.com/blockscout/blockscout/pull/4382) - Replace awesomplete with autocomplete.js
-- [#4371] - (https://github.com/blockscout/blockscout/pull/4371) - Place search outside of burger in mobile view
+- [#4371](https://github.com/blockscout/blockscout/pull/4371) - Place search outside of burger in mobile view
 - [#4355](https://github.com/blockscout/blockscout/pull/4355) - Do not redirect to 404 page with empty string in the search field
 
 
