@@ -181,7 +181,7 @@
       <% end %>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 
-      <main class="js-ad-dependant-pt">
+      <main class="js-ad-dependant-pt pt-4">
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
         <%= @inner_content %>
@@ -243,6 +243,7 @@
     <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
     <% end %>
     <script defer data-cfasync="false">
       function applyDarkMode() {
@@ -251,8 +252,30 @@
           document.body.style.backgroundColor = "#1c1d31";
         }
       }
-
       window.onload = applyDarkMode()
     </script>
+    <script defer data-cfasync="false">
+      if (localStorage.getItem("current-color-mode") === "dark") {
+        document.getElementById("top-navbar").style.backgroundColor = "#282945";
+        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
+        let modeChanger = document.getElementById("dark-mode-changer");
+        modeChanger.className += " " + "dark-mode-changer--dark";
+      }
+    </script>
+    <script defer data-cfasync="false">
+      if (localStorage.getItem("current-color-mode") === "dark") {
+        const search = document.getElementById("main-search-autocomplete")
+        const searchMobile = document.getElementById("main-search-autocomplete-mobile")
+            if (search && search.style) {
+          search.style.backgroundColor = "#22223a";
+              search.style.borderColor = "#22223a";
+        }
+        if (searchMobile && searchMobile.style) {
+          searchMobile.style.backgroundColor = "#22223a";
+          searchMobile.style.borderColor = "#22223a";
+        }
+      }
+    </script>
+    <script defer src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>
   </body>
 </html>

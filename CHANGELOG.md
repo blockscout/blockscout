@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update
 
 
 ## 3.7.2-beta

@@ -7,7 +7,7 @@
       <%= if logo_text() do %>
         <span class="logo-text"> <%= logo_text() %> </span>
       <% end %>
-    <% end %>   
+    <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -209,12 +209,3 @@
   </div>
   <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete-mobile", additional_classes: ["mobile-search-show"] %>
 </nav>
-<script defer data-cfasync="false">
-  if (localStorage.getItem("current-color-mode") === "dark") {
-    document.getElementById("top-navbar").style.backgroundColor = "#282945";
-    document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
-    let modeChanger = document.getElementById("dark-mode-changer");
-    modeChanger.className += " " + "dark-mode-changer--dark";
-  }
-</script> 
-<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>
