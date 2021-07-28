@@ -77,12 +77,12 @@
           title: gettext("How Many Times this Address has been Banned"),
           value: @validator.was_banned_count
         %>
-        <%=
+        <!-- <%=
           render BlockScoutWeb.StakesView,
           "_stakes_pool_info_item.html",
           title: gettext("Likelihood of Becoming a Validator on the Next Epoch"),
           value: "#{@validator.likelihood}%"
-        %>
+        %> -->
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_pool_info_item.html",
