@@ -153,8 +153,10 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     image["description"]
   end
 
-  defp retrieve_image(image_url, token_contract_address_hash) do
-    compose_ipfs_url(image_url, token_contract_address_hash)
+  defp retrieve_image(image_url) do
+    image_url
+    |> URI.encode()
+    |> compose_ipfs_url(token_contract_address_hash)
   end
 
   defp compose_ipfs_url(image_url, token_contract_address_hash) do
