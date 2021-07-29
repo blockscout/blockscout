@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.Reader do
   [wiki](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
   """
 
-  alias EthereumJSONRPC.Contract
+  alias EthereumJSONRPC.{Contract, Encoder}
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.Helper
@@ -450,10 +450,15 @@ defmodule Explorer.SmartContract.Reader do
 
   def link_outputs_and_values(blockchain_values, outputs, method_id) do
     default_value = Enum.map(outputs, fn _ -> "" end)
-    {_, value} = Map.get(blockchain_values, method_id, {:ok, default_value})
 
-    for {output, index} <- Enum.with_index(outputs) do
-      new_value(output, List.wrap(value), index)
+    case Map.get(blockchain_values, method_id, {:ok, default_value}) do
+      {:ok, value} ->
+        for {output, index} <- Enum.with_index(outputs) do
+          new_value(output, List.wrap(value), index)
+        end
+
+      {:error, message} ->
+        {:error, message}
     end
   end
 
@@ -496,6 +501,14 @@ defmodule Explorer.SmartContract.Reader do
 
   defp new_value(%{"type" => :bytes} = output, values, index) do
     Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => :string} = output, [value], _index) do
+    Map.put_new(output, "value", Encoder.unescape(value))
+  end
+
+  defp new_value(%{"type" => "string"} = output, [value], _index) do
+    Map.put_new(output, "value", Encoder.unescape(value))
   end
 
   defp new_value(output, [value], _index) do
