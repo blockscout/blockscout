@@ -14,7 +14,7 @@
       </button>
       <div data-empty-response-message style="display: none;">
         <div class="tile tile-muted text-center" data-selector="empty-logs-list">
-          <%= gettext "There are no internal transactions for this transaction." %>
+          <%= gettext "Internal transactions are not supported yet." %>
         </div>
       </div>
 

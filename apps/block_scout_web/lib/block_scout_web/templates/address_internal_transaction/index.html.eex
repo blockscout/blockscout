@@ -55,7 +55,7 @@
         </button>
         <div data-empty-response-message style="display: none;">
           <div class="tile tile-muted text-center">
-            <span data-selector="empty-internal-transactions-list"><%= gettext "There are no internal transactions for this address." %></span>
+            <span data-selector="empty-internal-transactions-list"><%= gettext "Internal transactions are not supported yet." %></span>
           </div>
         </div>
 
