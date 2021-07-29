@@ -60,6 +60,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:gas_limit, :decimal)
     field(:gas_used, :decimal)
     field(:nonce, :nonce_hash)
+    field(:base_fee_per_gas, :decimal)
     field(:number, :integer)
     field(:size, :integer)
     field(:timestamp, :datetime)
