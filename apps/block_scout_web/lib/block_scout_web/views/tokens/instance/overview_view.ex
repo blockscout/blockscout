@@ -27,10 +27,10 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     result =
       cond do
         instance.metadata && instance.metadata["image_url"] ->
-          retrieve_image(instance.metadata["image_url"])
+          retrieve_image(instance.metadata["image_url"], instance.token_contract_address_hash)
 
         instance.metadata && instance.metadata["image"] ->
-          retrieve_image(instance.metadata["image"])
+          retrieve_image(instance.metadata["image"], instance.token_contract_address_hash)
 
         instance.metadata && instance.metadata["properties"]["image"]["description"] ->
           instance.metadata["properties"]["image"]["description"]
@@ -149,15 +149,15 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     |> tab_name()
   end
 
-  defp retrieve_image(image) when is_map(image) do
+  defp retrieve_image(image, _) when is_map(image) do
     image["description"]
   end
 
-  defp retrieve_image(image_url) do
-    compose_ipfs_url(image_url)
+  defp retrieve_image(image_url, token_contract_address_hash) do
+    compose_ipfs_url(image_url, token_contract_address_hash)
   end
 
-  defp compose_ipfs_url(image_url) do
+  defp compose_ipfs_url(image_url, token_contract_address_hash) do
     cond do
       image_url =~ "ipfs://ipfs" ->
         "ipfs://ipfs" <> ipfs_uid = image_url
@@ -168,7 +168,27 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
         "https://ipfs.io/ipfs/" <> ipfs_uid
 
       true ->
+        case URI.parse(image_url) do
+          %URI{host: host} ->
+            process_kudos_relative_url(image_url, host, token_contract_address_hash)
+
+          _ ->
+            image_url
+        end
+    end
+  end
+
+  def process_kudos_relative_url(image_url, host, token_contract_address_hash) do
+    if host do
+      image_url
+    else
+      # Gitcoin Kudos token
+      if Base.encode16(token_contract_address_hash.bytes, case: :lower) ==
+           "74e596525c63393f42c76987b6a66f4e52733efa" do
+        "https://s.gitcoin.co/static/" <> image_url
+      else
         image_url
+      end
     end
   end
 
