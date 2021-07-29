@@ -154,7 +154,9 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   defp retrieve_image(image_url) do
-    compose_ipfs_url(image_url)
+    image_url
+    |> URI.encode()
+    |> compose_ipfs_url()
   end
 
   defp compose_ipfs_url(image_url) do
