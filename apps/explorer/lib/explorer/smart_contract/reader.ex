@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.Reader do
   [wiki](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
   """
 
-  alias EthereumJSONRPC.Contract
+  alias EthereumJSONRPC.{Contract, Encoder}
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.Helper
@@ -501,6 +501,14 @@ defmodule Explorer.SmartContract.Reader do
 
   defp new_value(%{"type" => :bytes} = output, values, index) do
     Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => :string} = output, [value], _index) do
+    Map.put_new(output, "value", Encoder.unescape(value))
+  end
+
+  defp new_value(%{"type" => "string"} = output, [value], _index) do
+    Map.put_new(output, "value", Encoder.unescape(value))
   end
 
   defp new_value(output, [value], _index) do
