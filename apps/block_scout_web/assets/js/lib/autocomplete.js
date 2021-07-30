@@ -2,6 +2,8 @@ import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
 import { getTextAdData, fetchTextAdData } from './ad.js'
 import { DateTime } from 'luxon'
 
+const customAds = process.env.CUSTOM_ADS
+
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
   try {
@@ -28,7 +30,7 @@ const dataSrc = async (query, id) => {
 const resultsListElement = (list, data) => {
   const info = document.createElement('p')
   const adv = `
-  <div class="ad mb-3 d-none">
+  <div class="ad mb-3">
     Sponsored: <img class="ad-img-url" width=20 height=20 /> <b><span class="ad-name"></span></b> - <span class="ad-short-description"></span> <a class="ad-url"><b><span class="ad-cta-button"></span></a></b>
   </div>`
   info.innerHTML = adv
@@ -40,7 +42,7 @@ const resultsListElement = (list, data) => {
 
   list.prepend(info)
 
-  fetchTextAdData()
+  fetchTextAdData(customAds)
 }
 const searchEngine = (query, record) => {
   if (record.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -137,7 +139,7 @@ const openOnFocus = (event, type) => {
       autoCompleteJSMobile.start(query)
     }
   } else {
-    getTextAdData()
+    getTextAdData(customAds)
       .then(adData => {
         if (adData) {
           if (type === 'desktop') {
