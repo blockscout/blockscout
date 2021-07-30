@@ -860,6 +860,11 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:59
+msgid "Base Fee"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:59
 msgid "Difficulty"
 msgstr ""
 
