@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.CurrencyHelpers
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
   alias FileInfo
