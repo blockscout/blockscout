@@ -278,6 +278,6 @@
         }
       }
     </script>
-    <script defer src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>
+    <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
   </body>
 </html>
