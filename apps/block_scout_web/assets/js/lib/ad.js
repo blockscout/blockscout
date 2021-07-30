@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import customAds from './custom_ad'
 
 function countImpressions (impressionUrl) {
   if (impressionUrl) {
@@ -23,16 +24,15 @@ function showAd () {
   }
 }
 
-function getTextAdData (customAds) {
+function getTextAdData () {
   return new Promise((resolve) => {
     if (showAd()) {
       $.get('https://request-global.czilladx.com/serve/native.php?z=50860d190820e5a2595', function (data) {
         if (!data) {
           if (customAds) {
             try {
-              data = JSON.parse(customAds)
-              const ind = getRandomInt(0, data.length)
-              resolve(data[ind])
+              const ind = getRandomInt(0, customAds.length)
+              resolve(customAds[ind])
             } catch (_e) {
               resolve(null)
             }
@@ -49,9 +49,9 @@ function getTextAdData (customAds) {
   })
 }
 
-function fetchTextAdData (customAds) {
+function fetchTextAdData () {
   if (showAd()) {
-    getTextAdData(customAds)
+    getTextAdData()
       .then(data => {
         if (data) {
           const { ad: { name, description_short: descriptionShort, thumbnail, url, cta_button: ctaButton, impressionUrl } } = data

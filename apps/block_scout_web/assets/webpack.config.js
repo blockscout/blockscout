@@ -183,8 +183,7 @@ const appJs =
         'process.env.COIN': JSON.stringify(process.env.COIN),
         'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE),
         'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN),
-        'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL),
-        'process.env.CUSTOM_ADS': JSON.stringify(process.env.CUSTOM_ADS)
+        'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
