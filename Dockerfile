@@ -200,14 +200,58 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 
+
 ARG COIN
-RUN if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/address/_balance_card.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/internal_transaction/_tile.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/layout/app.html.ee; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/transaction/_pending_tile.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/transaction/overview.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/views/wei_helpers.ex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
 ARG BLOCK_TRANSFORMER
-RUN if [ "$BLOCK_TRANSFORMER" == "clique" ]; then sed -i s/"Validated"/"Signed"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/address/_tabs.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/address_validation/index.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/views/address_view.ex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/layout/_topnav.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/transaction/index.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/asssets/js/pages/address.js; fi
 RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
-RUN if [ "$BLOCK_TRANSFORMER" == "clique" ]; then sed -i s/"Validator"/"Signer"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
-RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validator"/"Miner"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
+
+ARG CSS_PRIMARY
+RUN if [ "$CSS_PRIMARY" != "" ]; then sed -i s/"#5c34a2"/"${CSS_PRIMARY}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+RUN if [ "$CSS_PRIMARY" != "" ]; then sed -i s/"#5c34a2"/"${CSS_PRIMARY}"/g apps/block_scout_web/assets/css/theme/_neutral_variables-non-critical.scss; fi
+RUN if [ "$CSS_PRIMARY" != "" ]; then sed -i s/"#5b389f"/"${CSS_PRIMARY}"/g apps/block_scout_web/assets/css/theme/_base_variables.scss; fi
+
+ARG CSS_SECONDARY
+RUN if [ "$CSS_SECONDARY" != "" ]; then sed -i s/"#87e1a9"/"${CSS_SECONDARY}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+RUN if [ "$CSS_SECONDARY" != "" ]; then sed -i s/"#87e1a9"/"${CSS_SECONDARY}"/g apps/block_scout_web/assets/css/theme/_neutral_variables-non-critical.scss; fi
+RUN if [ "$CSS_SECONDARY" != "" ]; then sed -i s/"#87e1a9"/"${CSS_SECONDARY}"/g apps/block_scout_web/assets/css/theme/_base_variables.scss; fi
+
+ARG CSS_TERTIARY
+RUN if [ "$CSS_TERTIARY" != "" ]; then sed -i s/"#bf9cff"/"${CSS_TERTIARY}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+RUN if [ "$CSS_TERTIARY" != "" ]; then sed -i s/"#bf9cff"/"${CSS_TERTIARY}"/g apps/block_scout_web/assets/css/theme/_neutral_variables-non-critical.scss; fi
+RUN if [ "$CSS_TERTIARY" != "" ]; then sed -i s/"#997fdc"/"${CSS_TERTIARY}"/g apps/block_scout_web/assets/css/theme/_base_variables.scss; fi
+
+ARG CSS_PRIMARY_DARK
+RUN if [ "$CSS_PRIMARY_DARK" != "" ]; then sed -i s/"#9b62ff"/"${CSS_PRIMARY_DARK}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+RUN if [ "$CSS_PRIMARY_DARK" != "" ]; then sed -i s/"#9b62ff"/"${CSS_PRIMARY_DARK}"/g apps/block_scout_web/assets/css/theme/_base_variables.scss; fi
+
+ARG CSS_SECONDARY_DARK
+RUN if [ "$CSS_SECONDARY_DARK" != "" ]; then sed -i s/"#87e1a9"/"${CSS_SECONDARY_DARK}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+RUN if [ "$CSS_SECONDARY_DARK" != "" ]; then sed -i s/"#87e1a9"/"${CSS_SECONDARY_DARK}"/g apps/block_scout_web/assets/css/theme/_neutral_variables-non-critical.scss; fi
+RUN if [ "$CSS_SECONDARY_DARK" != "" ]; then sed -i s/"#87e1a9"/"${CSS_SECONDARY_DARK}"/g apps/block_scout_web/assets/css/theme/_base_variables.scss; fi
+
+ARG CSS_TERTIARY_DARK
+RUN if [ "$CSS_TERTIARY_DARK" != "" ]; then sed -i s/"#7e50d0"/"${CSS_TERTIARY_DARK}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+
+ARG CSS_FOOTER_BACKGROUND
+RUN if [ "$CSS_FOOTER_BACKGROUND" != "" ]; then sed -i s/"#3c226a"/"${CSS_FOOTER_BACKGROUND}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+
+ARG CSS_FOOTER_TEXT
+RUN if [ "$CSS_FOOTER_TEXT" != "" ]; then sed -i s/"#bda6e7"/"${CSS_FOOTER_TEXT}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
+
 
 # Run forderground build and phoenix digest
 RUN mix compile
