@@ -1,0 +1,33 @@
+[{
+    "ad": {
+        "thumbnail": "https://cryptologos.cc/logos/sushiswap-sushi-logo.svg?v=013",
+        "description_short": "Earn double digits APR on new Sushi farms!",
+        "cta_button": "Farm now",
+        "name": "Sushi",
+        "url": "https://app.sushi.com/swap"
+    }
+},{
+    "ad": {
+        "thumbnail": "🎨",
+        "description_short": "Create your own NFTs with a fun drawing tool!",
+        "cta_button": "Draw now",
+        "name": "Nifty.Ink",
+        "url": "https://nifty.ink/"
+    }
+},{
+    "ad": {
+        "thumbnail": "https://raw.githubusercontent.com/blockscout/docs/bf86572c0641377dc1daa82214d4eaf2ec6f3eb0/.gitbook/assets/curve.svg",
+        "description_short": "Swap xDai/USDC/USDT assets on Curve!",
+        "cta_button": "Try now",
+        "name": "Curve",
+        "url": "https://xdai.curve.fi/"
+    }
+},{
+    "ad": {
+        "thumbnail": "https://gblobscdn.gitbook.com/assets%2F-Lpi9AHj62wscNlQjI-l%2F-LsI4cyo_805A73-h--i%2F-LsI8IfCk8qZrHalGx_E%2Fxdai_alternative.png?alt=media&token=27c4995e-eefe-4bc6-9529-424ced6ff8ef",
+        "description_short": "Looking for opportunities? Check out awesome xDai ecosystem!",
+        "cta_button": "Explore apps",
+        "name": "xDai World",
+        "url": "https://www.xdai.world/"
+    }
+}]
