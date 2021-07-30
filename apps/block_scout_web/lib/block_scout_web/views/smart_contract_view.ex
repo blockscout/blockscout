@@ -17,7 +17,12 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def writable?(function) when is_nil(function), do: false
 
-  def outputs?(outputs) when not is_nil(outputs), do: Enum.any?(outputs)
+  def outputs?(outputs) when not is_nil(outputs) do
+    case outputs do
+      {:error, _} -> false
+      _ -> Enum.any?(outputs)
+    end
+  end
 
   def outputs?(outputs) when is_nil(outputs), do: false
 
