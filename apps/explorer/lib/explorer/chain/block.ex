@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Block do
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty)a
 
-  @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
+  @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce block_fee_per_gas number parent_hash timestamp)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -40,6 +40,7 @@ defmodule Explorer.Chain.Block do
    * `miner` - the hash of the `t:Explorer.Chain.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
      validator.
    * `nonce` - the hash of the generated proof-of-work.  Not used in Proof-of-Authority chains.
+   * `base_fee_per_gas` - EIP1559 block fee limit per gas.
    * `number` - which block this is along the chain.
    * `parent_hash` - the hash of the parent block, which should have the previous `number`
    * `size` - The size of the block in bytes.
