@@ -32,39 +32,6 @@ const jsOptimizationParams = {
   parallel: true
 }
 
-const autocompleteJs = {
-  entry: {
-    autocomplete: './js/lib/autocomplete.js'
-  },
-  output: {
-    filename: '[name].min.js',
-    path: path.resolve(__dirname, '../priv/static/js')
-  },
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader',
-          }
-        ]
-      }
-    ]
-  },
-  optimization: {
-    minimizer: [
-      new TerserJSPlugin(jsOptimizationParams),
-    ]
-  },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: '../css/autocomplete.css'
-    })
-  ]
-}
-
 const dropzoneJs = {
   entry: {
     dropzone: './js/lib/dropzone.js',
@@ -134,7 +101,9 @@ const appJs =
       'add-to-mm': './js/pages/token/add_to_mm.js',
       'faucet': './js/pages/faucet.js',
       'ad': './js/lib/ad.js',
-      'banner': './js/lib/banner.js'
+      'text_ad': './js/lib/text_ad.js',
+      'banner': './js/lib/banner.js',
+      'autocomplete': './js/lib/autocomplete.js',
     },
     output: {
       filename: '[name].js',
@@ -214,7 +183,8 @@ const appJs =
         'process.env.COIN': JSON.stringify(process.env.COIN),
         'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE),
         'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN),
-        'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL)
+        'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL),
+        'process.env.CUSTOM_ADS': JSON.stringify(process.env.CUSTOM_ADS)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -225,4 +195,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, autocompleteJs, dropzoneJs)
+module.exports = viewScripts.concat(appJs, dropzoneJs)

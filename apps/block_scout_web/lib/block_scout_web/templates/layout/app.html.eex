@@ -7,7 +7,7 @@
 
     <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
       <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
-      <link rel="preload" href="<%= static_path(@conn, "/js/autocomplete.min.js") %>" as="script">
+      <link rel="preload" href="<%= static_path(@conn, "/js/autocomplete.js") %>" as="script">
       <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
       <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
       <link rel="preload" href="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>" as="script">
@@ -276,6 +276,6 @@
         }
       }
     </script>
-    <script defer src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>
+    <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
   </body>
 </html>

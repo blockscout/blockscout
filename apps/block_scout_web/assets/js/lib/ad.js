@@ -1,13 +1,9 @@
 import $ from 'jquery'
 
-$(function () {
-  if (showAd()) {
-    fetchTextAdData()
-  }
-})
-
 function countImpressions (impressionUrl) {
-  $.get(impressionUrl)
+  if (impressionUrl) {
+    $.get(impressionUrl)
+  }
 }
 
 function showAd () {
@@ -27,11 +23,25 @@ function showAd () {
   }
 }
 
-function getTextAdData () {
+function getTextAdData (customAds) {
   return new Promise((resolve) => {
     if (showAd()) {
       $.get('https://request-global.czilladx.com/serve/native.php?z=50860d190820e5a2595', function (data) {
-        resolve(data)
+        if (!data) {
+          if (customAds) {
+            try {
+              data = JSON.parse(customAds)
+              const ind = getRandomInt(0, data.length)
+              resolve(data[ind])
+            } catch (_e) {
+              resolve(null)
+            }
+          } else {
+            resolve(null)
+          }
+        } else {
+          resolve(data)
+        }
       })
     } else {
       resolve(null)
@@ -39,24 +49,32 @@ function getTextAdData () {
   })
 }
 
-function fetchTextAdData () {
+function fetchTextAdData (customAds) {
   if (showAd()) {
-    getTextAdData()
+    getTextAdData(customAds)
       .then(data => {
         if (data) {
           const { ad: { name, description_short: descriptionShort, thumbnail, url, cta_button: ctaButton, impressionUrl } } = data
-          $('.ad').removeClass('d-none')
           $('.ad-name').text(name)
           $('.ad-short-description').text(descriptionShort)
           $('.ad-cta-button').text(ctaButton)
           $('.ad-url').attr('href', url)
-          $('.ad-img-url').attr('src', thumbnail)
+          const urlObject = new URL(url)
+          if (urlObject.hostname === 'nifty.ink') {
+            $('.ad-img-url').replaceWith('🎨')
+          } else {
+            $('.ad-img-url').attr('src', thumbnail)
+          }
           countImpressions(impressionUrl)
-        } else {
-          $('.ad').addClass('d-none')
         }
       })
   }
+}
+
+function getRandomInt (min, max) {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  return Math.floor(Math.random() * (max - min)) + min
 }
 
 export { showAd, getTextAdData, fetchTextAdData }
