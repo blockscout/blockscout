@@ -9,7 +9,7 @@
 
 ### Chore
 - [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update
-- [#4439](https://github.com/blockscout/blockscout/pull/4439) - Fix revert response in contract's output
+- [#4439](https://github.com/blockscout/blockscout/pull/4439), - [#4465](https://github.com/blockscout/blockscout/pull/4465) - Fix revert response in contract's output
 
 
 ## 3.7.2-beta
