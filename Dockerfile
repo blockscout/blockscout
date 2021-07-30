@@ -202,22 +202,24 @@ ADD . .
 
 
 ARG COIN
-RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/address/_balance_card.html.eex; fi
-RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/internal_transaction/_tile.html.eex; fi
-RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/layout/app.html.ee; fi
-RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/transaction/_pending_tile.html.eex; fi
-RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/templates/transaction/overview.html.eex; fi
-RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/views/wei_helpers.ex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/lib/block_scout_web/templates/address/_balance_card.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/lib/block_scout_web/templates/internal_transaction/_tile.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/lib/block_scout_web/templates/layout/app.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/lib/block_scout_web/templates/transaction/_pending_tile.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/lib/block_scout_web/templates/transaction/overview.html.eex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/lib/block_scout_web/views/wei_helpers.ex; fi
+RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/priv/gettext/default.pot; fi
 RUN if [ "$COIN" != "" ]; then sed -i s/"Ether"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
 ARG BLOCK_TRANSFORMER
-RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/address/_tabs.html.eex; fi
-RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/address_validation/index.html.eex; fi
-RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/views/address_view.ex; fi
-RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/layout/_topnav.html.eex; fi
-RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/templates/transaction/index.html.eex; fi
-RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/asssets/js/pages/address.js; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/lib/block_scout_web/templates/address/_tabs.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/lib/block_scout_web/templates/address_validation/index.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/lib/block_scout_web/views/address_view.ex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/lib/block_scout_web/templates/layout/_topnav.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/lib/block_scout_web/templates/transaction/index.html.eex; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/assets/js/pages/address.jss; fi
 RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
+RUN if [ "$BLOCK_TRANSFORMER" == "base" ]; then sed -i s/"Validated"/"Mined"/g apps/block_scout_web/priv/gettext/default.pot; fi
 
 ARG CSS_PRIMARY
 RUN if [ "$CSS_PRIMARY" != "" ]; then sed -i s/"#5c34a2"/"${CSS_PRIMARY}"/g apps/block_scout_web/assets/css/theme/_neutral_variables.scss; fi
