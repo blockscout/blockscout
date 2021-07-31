@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Block do
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty)a
 
-  @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce block_fee_per_gas number parent_hash timestamp)a
+  @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
