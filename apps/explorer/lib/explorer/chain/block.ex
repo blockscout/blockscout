@@ -40,7 +40,6 @@ defmodule Explorer.Chain.Block do
    * `miner` - the hash of the `t:Explorer.Chain.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
      validator.
    * `nonce` - the hash of the generated proof-of-work.  Not used in Proof-of-Authority chains.
-   * `base_fee_per_gas` - EIP1559 block fee limit per gas.
    * `number` - which block this is along the chain.
    * `parent_hash` - the hash of the parent block, which should have the previous `number`
    * `size` - The size of the block in bytes.
@@ -57,7 +56,6 @@ defmodule Explorer.Chain.Block do
           miner: %Ecto.Association.NotLoaded{} | Address.t(),
           miner_hash: Hash.Address.t(),
           nonce: Hash.Nonce.t(),
-          base_fee_per_gas: Gas.t(),
           number: block_number(),
           parent_hash: Hash.t(),
           size: non_neg_integer(),
@@ -74,7 +72,6 @@ defmodule Explorer.Chain.Block do
     field(:gas_limit, :decimal)
     field(:gas_used, :decimal)
     field(:nonce, Hash.Nonce)
-    field(:base_fee_per_gas, :decimal)
     field(:number, :integer)
     field(:size, :integer)
     field(:timestamp, :utc_datetime_usec)

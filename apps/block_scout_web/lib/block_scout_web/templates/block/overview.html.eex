@@ -54,14 +54,6 @@
               </dl>
           <% end %>
 
-          <!-- Base fee per gas -->
-          <dl class="row">
-            <dt class="col-sm-3 text-muted"><%= gettext "Base Fee" %></dt>
-            <dd class="col-sm-9">
-              <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block base fee per gas."><%= @block.base_fee_per_gas |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></span>
-            </dd>
-          </dl>
-
           <!-- Difficulty value -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
