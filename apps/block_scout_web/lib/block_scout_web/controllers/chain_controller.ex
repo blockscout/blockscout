@@ -100,7 +100,10 @@ defmodule BlockScoutWeb.ChainController do
   def token_autocomplete(conn, %{"q" => term}) when is_binary(term) do
     result_tokens = Chain.search_token(term)
     result_contracts = Chain.search_contract(term)
-    result = result_tokens ++ result_contracts
+    result_transactions = Chain.search_tx(term)
+    result_addresses = Chain.search_address(term)
+    result_blocks = Chain.search_block(term)
+    result = result_tokens ++ result_contracts ++ result_transactions ++ result_addresses ++ result_blocks
 
     json(conn, result)
   end
