@@ -30,4 +30,12 @@
         "name": "xDai World",
         "url": "https://www.xdai.world/"
     }
+},{
+    "ad": {
+        "thumbnail": "https://raw.githubusercontent.com/blockscout/docs/master/.gitbook/assets/perp.svg",
+        "description_short": "Decentralized Perpetual Contracts for Every Asset. Super cheap fees.",
+        "cta_button": "Trade now",
+        "name": "Perpetual Protocol",
+        "url": "https://www.perp.fi/"
+    }
 }]

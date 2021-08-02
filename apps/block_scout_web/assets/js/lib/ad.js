@@ -32,19 +32,21 @@ function getTextAdData () {
           if (customAds) {
             try {
               const ind = getRandomInt(0, customAds.length)
-              resolve(customAds[ind])
+              const inHouse = true
+              resolve({ data: customAds[ind], inHouse: inHouse })
             } catch (_e) {
-              resolve(null)
+              resolve({ data: null, inHouse: null })
             }
           } else {
-            resolve(null)
+            resolve({ data: null, inHouse: null })
           }
         } else {
-          resolve(data)
+          const inHouse = false
+          resolve({ data: data, inHouse: inHouse })
         }
       })
     } else {
-      resolve(null)
+      resolve({ data: null, inHouse: null })
     }
   })
 }
@@ -52,13 +54,16 @@ function getTextAdData () {
 function fetchTextAdData () {
   if (showAd()) {
     getTextAdData()
-      .then(data => {
+      .then(({ data, inHouse }) => {
         if (data) {
+          const prefix = inHouse ? 'Featured' : 'Sponsored'
           const { ad: { name, description_short: descriptionShort, thumbnail, url, cta_button: ctaButton, impressionUrl } } = data
           $('.ad-name').text(name)
           $('.ad-short-description').text(descriptionShort)
           $('.ad-cta-button').text(ctaButton)
           $('.ad-url').attr('href', url)
+          $('.ad-prefix').text(prefix)
+          $('.ad').css('visibility', 'visible')
           const urlObject = new URL(url)
           if (urlObject.hostname === 'nifty.ink') {
             $('.ad-img-url').replaceWith('🎨')

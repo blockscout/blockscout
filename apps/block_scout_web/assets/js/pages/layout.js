@@ -22,7 +22,6 @@ $(document).on('keyup', function (event) {
 
 $('.main-search-autocomplete').on('keyup', function (event) {
   if (event.key === 'Enter') {
-    console.log($('li[id^="autoComplete_result_"]'))
     var selected = false
     $('li[id^="autoComplete_result_"]').each(function () {
       if ($(this).attr('aria-selected')) {

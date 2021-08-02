@@ -4,6 +4,13 @@
     height: 96px;
 }
 
+.ad {
+    height: 20.05px;
+    @include media-breakpoint-down(sm) {
+        height: 38.05px;
+    }
+}
+
 a.ad-url {
     color: $tile-body-a-color;
 }
