@@ -43,9 +43,12 @@ const resultsListElement = (list, data) => {
   fetchTextAdData()
 }
 const searchEngine = (query, record) => {
-  if (record.name.toLowerCase().includes(query.toLowerCase()) ||
-        record.symbol.toLowerCase().includes(query.toLowerCase()) ||
-        record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) {
+  if (record && (
+    (record.name && record.name.toLowerCase().includes(query.toLowerCase())) ||
+      (record.symbol && record.symbol.toLowerCase().includes(query.toLowerCase())) ||
+      (record.contract_address_hash && record.contract_address_hash.toLowerCase().includes(query.toLowerCase()))
+  )
+  ) {
     var searchResult = `${record.contract_address_hash}<br/>`
     if (record.type === 'label') {
       searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
