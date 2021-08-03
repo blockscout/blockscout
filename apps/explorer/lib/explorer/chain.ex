@@ -99,6 +99,8 @@ defmodule Explorer.Chain do
   # keccak256("Error(string)")
   @revert_error_method_id "08c379a0"
 
+  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -1719,7 +1721,7 @@ defmodule Explorer.Chain do
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
   def fetch_sum_coin_total_supply_minus_burnt do
-    {:ok, burn_address_hash} = string_to_address_hash("0x0000000000000000000000000000000000000000")
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
 
     query =
       from(
@@ -6562,6 +6564,26 @@ defmodule Explorer.Chain do
 
       _ ->
         {:error, "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd)."}
+    end
+  end
+
+  @spec get_token_transfer_type(TokenTransfer.t()) ::
+          :token_burning | :token_minting | :token_spawning | :token_transfer
+  def get_token_transfer_type(transfer) do
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
+
+    cond do
+      transfer.to_address_hash == burn_address_hash && transfer.from_address_hash !== burn_address_hash ->
+        :token_burning
+
+      transfer.to_address_hash !== burn_address_hash && transfer.from_address_hash == burn_address_hash ->
+        :token_minting
+
+      transfer.to_address_hash == burn_address_hash && transfer.from_address_hash == burn_address_hash ->
+        :token_spawning
+
+      true ->
+        :token_transfer
     end
   end
 end
