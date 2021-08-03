@@ -21,6 +21,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.{
     BlockReward,
     CeloAccount,
+    CeloMaterializedViewRefresh,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
@@ -129,16 +130,6 @@ defmodule Indexer.Supervisor do
       {TokenBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {TokenUpdater.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
-      {CeloAccount.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloValidator.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloValidatorGroup.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloValidatorHistory.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloVoterRewards.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloVoters.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
 
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
@@ -151,7 +142,20 @@ defmodule Indexer.Supervisor do
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {BlocksTransactionsMismatch.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {PendingOpsCleaner, [[], []]}
+      {PendingOpsCleaner, [[], []]},
+
+      # Celo
+      {CeloAccount.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      {CeloValidator.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      {CeloValidatorGroup.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      {CeloValidatorHistory.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      {CeloVoterRewards.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      {CeloVoters.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      {CeloMaterializedViewRefresh, [[], []]}
     ]
 
     extended_fetchers =

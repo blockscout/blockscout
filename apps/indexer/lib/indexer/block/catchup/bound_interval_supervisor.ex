@@ -232,16 +232,6 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
       ["Checking if index needs to catch up in ", to_string(interval), "ms."]
     end)
 
-    if rem(state.elapsed, 10) == 0 do
-      Repo.query!("refresh materialized view celo_accumulated_rewards;")
-      Repo.query!("refresh materialized view celo_attestation_stats;")
-      Repo.query!("refresh materialized view celo_wallet_accounts;")
-
-      Logger.info(fn ->
-        ["Refreshed material views."]
-      end)
-    end
-
     Process.send_after(self(), :catchup_index, interval)
 
     {:noreply, %__MODULE__{state | bound_interval: new_bound_interval, task: nil, elapsed: state.elapsed + 1}}
