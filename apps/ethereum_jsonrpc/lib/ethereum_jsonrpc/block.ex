@@ -11,6 +11,7 @@ defmodule EthereumJSONRPC.Block do
   @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
   @type params :: %{
           difficulty: pos_integer(),
+          boundary: EthereumJSONRPC.hash(),
           extra_data: EthereumJSONRPC.hash(),
           gas_limit: non_neg_integer(),
           gas_used: non_neg_integer(),
@@ -194,6 +195,7 @@ defmodule EthereumJSONRPC.Block do
   def elixir_to_params(
         %{
           "difficulty" => difficulty,
+          "boundary" => boundary,
           "extraData" => extra_data,
           "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
@@ -214,6 +216,7 @@ defmodule EthereumJSONRPC.Block do
       ) do
     %{
       difficulty: difficulty,
+      boundary: boundary,
       extra_data: extra_data,
       gas_limit: gas_limit,
       gas_used: gas_used,
@@ -239,6 +242,7 @@ defmodule EthereumJSONRPC.Block do
   def elixir_to_params(
         %{
           "difficulty" => difficulty,
+          "boundary" => boundary,
           "extraData" => extra_data,
           "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
@@ -258,6 +262,7 @@ defmodule EthereumJSONRPC.Block do
       ) do
     %{
       difficulty: difficulty,
+      boundary: boundary,
       extra_data: extra_data,
       gas_limit: gas_limit,
       gas_used: gas_used,
@@ -494,7 +499,7 @@ defmodule EthereumJSONRPC.Block do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
+       when key in ~w(author boundary extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
                      signature stateRoot step transactionsRoot uncles bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining committedSeals committee pastCommittedSeals proposerSeal round),
        do: entry
 
