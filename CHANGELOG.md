@@ -3,6 +3,8 @@
 ### Features
 
 ### Fixes
+- [#4473](https://github.com/blockscout/blockscout/pull/4473) - Search autocomplete: fix for address/block/tx hash
+- [#4472](https://github.com/blockscout/blockscout/pull/4472) - Search autocomplete: fix Cannot read property toLowerCase of undefined 
 - [#4456](https://github.com/blockscout/blockscout/pull/4456) - URL encoding for NFT media files URLs
 - [#4453](https://github.com/blockscout/blockscout/pull/4453) - Unescape characters for string output type in the contract response
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount

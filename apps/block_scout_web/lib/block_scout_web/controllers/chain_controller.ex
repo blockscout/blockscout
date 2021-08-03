@@ -101,7 +101,10 @@ defmodule BlockScoutWeb.ChainController do
     result_labels = Chain.search_label(term)
     result_tokens = Chain.search_token(term)
     result_contracts = Chain.search_contract(term)
-    result = result_labels ++ result_tokens ++ result_contracts
+    result_transactions = Chain.search_tx(term)
+    result_addresses = Chain.search_address(term)
+    result_blocks = Chain.search_block(term)
+    result = result_labels ++ result_tokens ++ result_contracts ++ result_transactions ++ result_addresses ++ result_blocks
 
     json(conn, result)
   end

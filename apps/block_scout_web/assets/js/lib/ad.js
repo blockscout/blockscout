@@ -12,40 +12,52 @@ function showAd () {
   if (domainName === 'blockscout.com') {
     $('.js-ad-dependant-mb-2').addClass('mb-2')
     $('.js-ad-dependant-mb-3').addClass('mb-3')
-    $('.js-ad-dependant-pt').addClass('pt-4')
-    $('.js-ad-dependant-pt').removeClass('pt-5')
     return true
   } else {
     $('.js-ad-dependant-mb-2').removeClass('mb-2')
     $('.js-ad-dependant-mb-3').removeClass('mb-3')
+    return false
+  }
+}
+
+function adjustPaddingForTextAd (showAd, data) {
+  if (showAd && data) {
+    $('.js-ad-dependant-pt').addClass('pt-4')
+    $('.js-ad-dependant-pt').removeClass('pt-5')
+  } else {
     $('.js-ad-dependant-pt').addClass('pt-5')
     $('.js-ad-dependant-pt').removeClass('pt-4')
-    return false
   }
 }
 
 function getTextAdData () {
   return new Promise((resolve) => {
-    if (showAd()) {
+    const displayAd = showAd()
+    if (displayAd) {
       $.get('https://request-global.czilladx.com/serve/native.php?z=50860d190820e5a2595', function (data) {
         if (!data) {
-          if (customAds) {
+          if (customAds && customAds.length > 0) {
             try {
               const ind = getRandomInt(0, customAds.length)
               const inHouse = true
+              adjustPaddingForTextAd(displayAd, true)
               resolve({ data: customAds[ind], inHouse: inHouse })
             } catch (_e) {
+              adjustPaddingForTextAd(displayAd, false)
               resolve({ data: null, inHouse: null })
             }
           } else {
+            adjustPaddingForTextAd(displayAd, false)
             resolve({ data: null, inHouse: null })
           }
         } else {
           const inHouse = false
+          adjustPaddingForTextAd(displayAd, true)
           resolve({ data: data, inHouse: inHouse })
         }
       })
     } else {
+      adjustPaddingForTextAd(displayAd, false)
       resolve({ data: null, inHouse: null })
     }
   })

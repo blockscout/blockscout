@@ -1211,6 +1211,63 @@ defmodule Explorer.Chain do
               name: at.label,
               type: "label"
             }
+            )
+  
+          Repo.all(query)
+  
+      _ ->
+        []
+    end
+  end
+
+  def search_tx(term) do
+    case Chain.string_to_transaction_hash(term) do
+      {:ok, tx_hash} ->
+        query =
+          from(transaction in Transaction,
+            where: transaction.hash == ^tx_hash,
+            select: %{
+              transaction_hash: transaction.hash,
+              type: "transaction"
+            }
+          )
+
+        Repo.all(query)
+
+      _ ->
+        []
+    end
+  end
+
+  def search_address(term) do
+    case Chain.string_to_address_hash(term) do
+      {:ok, address_hash} ->
+        query =
+          from(address in Address,
+            where: address.hash == ^address_hash,
+            select: %{
+              address_hash: address.hash,
+              type: "address"
+            }
+          )
+
+        Repo.all(query)
+
+      _ ->
+        []
+    end
+  end
+
+  def search_block(term) do
+    case Chain.string_to_block_hash(term) do
+      {:ok, block_hash} ->
+        query =
+          from(block in Block,
+            where: block.hash == ^block_hash,
+            select: %{
+              block_hash: block.hash,
+              type: "block"
+            }
           )
 
         Repo.all(query)
