@@ -37,6 +37,7 @@
     "intl-tel-input": "^17.0.12",
     "jquery": "^3.4.0",
     "lodash": "^4.17.19",
+    "luxon": "^2.0.1",
     "moment": "^2.29.1",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",

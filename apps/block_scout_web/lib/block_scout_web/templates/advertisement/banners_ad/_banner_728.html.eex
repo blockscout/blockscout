@@ -1,13 +1,6 @@
 <!-- Coinzilla Banner 728x90 -->
 <script async src="https://coinzillatag.com/lib/display.js"></script>
-<div class="ad-container mb-2">
+<div class="ad-container mb-2" style="display: none;">
     <div class="coinzilla" data-zone="C-26660bf627543e46851"></div>
 </div>
-<script>
-    window.coinzilla_display = window.coinzilla_display || [];
-    var c_display_preferences = {};
-    c_display_preferences.zone = "26660bf627543e46851";
-    c_display_preferences.width = "728";
-    c_display_preferences.height = "90";
-    coinzilla_display.push(c_display_preferences);
-</script>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/banner.js") %>"></script>

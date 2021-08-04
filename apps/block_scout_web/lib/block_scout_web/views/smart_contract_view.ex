@@ -17,7 +17,12 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def writable?(function) when is_nil(function), do: false
 
-  def outputs?(outputs) when not is_nil(outputs), do: Enum.any?(outputs)
+  def outputs?(outputs) when not is_nil(outputs) do
+    case outputs do
+      {:error, _} -> false
+      _ -> Enum.any?(outputs)
+    end
+  end
 
   def outputs?(outputs) when is_nil(outputs), do: false
 
@@ -99,6 +104,8 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, "bool", _components), do: render_type_value("bool", to_string(value))
 
   def values_with_type(value, :bool, _components), do: render_type_value("bool", to_string(value))
+
+  def values_with_type(value, :error, _components), do: render_type_value("error", value)
 
   def values_with_type(value, type, _components) do
     render_type_value(type, binary_to_utf_string(value))
