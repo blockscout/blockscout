@@ -8,7 +8,7 @@ FROM ethereum/client-go:latest as builder
 # Build postgres && blockscout
 FROM bitwalker/alpine-elixir-phoenix:1.11.4
 
-# postgres 12 build with llvm10 - alpine3.13
+# postgres 13 build with llvm10 - alpine3.13
 # 70 is the standard uid/gid for "postgres" in Alpine
 # https://git.alpinelinux.org/aports/tree/main/postgresql/postgresql.pre-install?h=3.12-stable
 RUN set -eux; \
