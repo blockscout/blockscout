@@ -1,0 +1,6 @@
+<% tenderly_link = "https://dashboard.tenderly.co/tx/xdai/" <> "0x" <> Base.encode16(@transaction_hash.bytes, case: :lower) %>
+<span
+    onclick="window.location.href='<%= tenderly_link %>';"
+>
+<img class="tenderly-icon" />
+</span>

@@ -1211,10 +1211,10 @@ defmodule Explorer.Chain do
               name: at.label,
               type: "label"
             }
-            )
-  
-          Repo.all(query)
-  
+          )
+
+        Repo.all(query)
+
       _ ->
         []
     end

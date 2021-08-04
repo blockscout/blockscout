@@ -1,14 +1,14 @@
-    <span
-        aria-label='<%= @aria_label %>'
-        data-clipboard-text='<%= @clipboard_text %>'
-        id='<%= if assigns[:id] do @id end %>'
-        class="btn-copy-icon <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>"
-        data-placement='top'
-        data-toggle='tooltip'
-        title='<%= @title %>'
-        style='<%= if assigns[:style] do @style end %>'
-    >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-            <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-        </svg>
-    </span>
+<span
+    aria-label='<%= @aria_label %>'
+    data-clipboard-text='<%= @clipboard_text %>'
+    id='<%= if assigns[:id] do @id end %>'
+    class="btn-copy-icon <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>"
+    data-placement='top'
+    data-toggle='tooltip'
+    title='<%= @title %>'
+    style='<%= if assigns[:style] do @style end %>'
+>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+        <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+    </svg>
+</span>

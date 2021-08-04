@@ -66,12 +66,16 @@
             </dt>
             <dd class="col-sm-9 col-lg-10 d-flex" style="word-break: break-all;">
               <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction %> </span>
-              <span>
-              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+              <span style="width: 21px;">
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @transaction,
                   aria_label: gettext("Copy Transaction Hash"),
                   title: gettext("Copy Txn Hash") %>
+              </span>
+              <span>
+                <%= render BlockScoutWeb.CommonComponentsView, "_tendely_link.html",
+                  transaction_hash: @transaction.hash %>
               </span>
             </dd>
           </dl>
