@@ -5,7 +5,8 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.{Health, Memory}
+  alias Indexer.{LoggerBackend, Memory, Prometheus}
+  alias Prometheus.Setup
 
   @impl Application
   def start(_type, _args) do
@@ -16,11 +17,12 @@ defmodule Indexer.Application do
       end
 
     memory_monitor_name = Memory.Monitor
+    Setup.setup()
 
     base_children = [
       {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
       {Plug.Cowboy,
-       scheme: :http, plug: Health.Plug, options: [port: Application.get_env(:indexer, :health_check_port)]}
+       scheme: :http, plug: Indexer.Stack, options: [port: Application.get_env(:indexer, :health_check_port)]}
     ]
 
     children =
@@ -35,6 +37,8 @@ defmodule Indexer.Application do
       strategy: :rest_for_one,
       name: Indexer.Application
     ]
+
+    Logger.add_backend(LoggerBackend)
 
     Supervisor.start_link(children, opts)
   end

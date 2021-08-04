@@ -4,6 +4,8 @@ use Mix.Config
 
 import Bitwise
 
+alias Indexer.LoggerBackend
+
 block_transformers = %{
   "clique" => Indexer.Transform.Blocks.Clique,
   "celo" => Indexer.Transform.Blocks.Celo,
@@ -45,7 +47,8 @@ config :indexer,
   memory_limit: 1 <<< 30,
   health_check_port: port || 4001,
   first_block: System.get_env("FIRST_BLOCK") || "",
-  last_block: System.get_env("LAST_BLOCK") || ""
+  last_block: System.get_env("LAST_BLOCK") || "",
+  metrics_enabled: System.get_env("METRICS_ENABLED") || false
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu"
@@ -80,8 +83,9 @@ config :logger_json, :indexer,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :indexer]
 
-config :logger, :indexer, backends: [LoggerJSON]
+config :logger, :indexer, backends: [LoggerJSON, {LoggerBackend, :logger_backend}]
 
+config :logger, :logger_backend, level: :error
 # config :logger, :indexer,
 #  # keep synced with `config/config.exs`
 #  format: "$dateT$time $metadata[$level] $message\n",
@@ -91,7 +95,14 @@ config :logger, :indexer, backends: [LoggerJSON]
 #  metadata_filter: [application: :indexer]
 
 config :indexer, Indexer.Block.Fetcher, enable_gold_token: true
+config :indexer, Indexer.Prometheus.MetricsCron, metrics_fetcher_blocks_count: 1000
+config :indexer, Indexer.Prometheus.MetricsCron, metrics_cron_interval: System.get_env("METRICS_CRON_INTERVAL") || "2"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
+
+config :prometheus, Indexer.Prometheus.Exporter,
+  path: "/metrics/indexer",
+  format: :text,
+  registry: :default

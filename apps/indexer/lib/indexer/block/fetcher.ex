@@ -586,6 +586,8 @@ defmodule Indexer.Block.Fetcher do
             ]
           end)
 
+          :telemetry.execute([:indexer, :blocks, :reorgs], %{count: 1})
+
           false
       end
     end)

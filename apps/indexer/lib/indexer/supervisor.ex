@@ -47,6 +47,8 @@ defmodule Indexer.Supervisor do
     UnclesWithoutIndex
   }
 
+  alias Indexer.Prometheus.MetricsCron
+
   def child_spec([]) do
     child_spec([[]])
   end
@@ -158,7 +160,7 @@ defmodule Indexer.Supervisor do
       {CeloMaterializedViewRefresh, [[], []]}
     ]
 
-    extended_fetchers =
+    fetchers_with_bridged_tokens =
       if Chain.bridged_tokens_enabled?() do
         fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
         [{CalcLpTokensTotalLiqudity, [[], []]} | fetchers_with_omni_status]
@@ -168,15 +170,24 @@ defmodule Indexer.Supervisor do
 
     amb_bridge_mediators = Application.get_env(:block_scout_web, :amb_bridge_mediators)
 
-    all_fetchers =
+    fetchers_with_amb_bridge_mediators =
       if amb_bridge_mediators && amb_bridge_mediators !== "" do
-        [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
+        [{SetAmbBridgedMetadataForTokens, [[], []]} | fetchers_with_bridged_tokens]
       else
-        extended_fetchers
+        fetchers_with_bridged_tokens
+      end
+
+    metrics_enabled = Application.get_env(:indexer, :metrics_enabled)
+
+    fetchers_with_metrics =
+      if metrics_enabled do
+        [{MetricsCron, [[]]} | fetchers_with_amb_bridge_mediators]
+      else
+        fetchers_with_amb_bridge_mediators
       end
 
     Supervisor.init(
-      all_fetchers,
+      fetchers_with_metrics,
       strategy: :one_for_one
     )
   end
