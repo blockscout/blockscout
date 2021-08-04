@@ -36,7 +36,7 @@
             </span>
           </h1>
 
-          <h3><%= to_string(@token_id) %></h3>
+          <h3><%= gettext "Token ID" %>: <%= to_string(@token_id) %></h3>
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <div class="d-flex flex-row justify-content-start text-muted">
