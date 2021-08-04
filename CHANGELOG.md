@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
 
 ### Fixes
 - [#4473](https://github.com/blockscout/blockscout/pull/4473) - Search autocomplete: fix for address/block/tx hash
