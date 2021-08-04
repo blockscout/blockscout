@@ -135,7 +135,15 @@ const selection = (event) => {
   if (selectionValue.symbol) {
     window.location = `/tokens/${selectionValue.contract_address_hash}`
   } else {
-    window.location = `/address/${selectionValue.contract_address_hash}`
+    if (selectionValue.contract_address_hash) {
+      window.location = `/address/${selectionValue.contract_address_hash}`
+    } else if (selectionValue.address_hash) {
+      window.location = `/address/${selectionValue.address_hash}`
+    } else if (selectionValue.transaction_hash) {
+      window.location = `/tx/${selectionValue.transaction_hash}`
+    } else if (selectionValue.block_hash) {
+      window.location = `/blocks/${selectionValue.block_hash}`
+    }
   }
 }
 
