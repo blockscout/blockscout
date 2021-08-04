@@ -9,7 +9,7 @@ function countImpressions (impressionUrl) {
 
 function showAd () {
   const domainName = window.location.hostname
-  if (domainName === 'test.blockscout.com') {
+  if (domainName === 'blockscout.com') {
     $('.js-ad-dependant-mb-2').addClass('mb-2')
     $('.js-ad-dependant-mb-3').addClass('mb-3')
     return true
