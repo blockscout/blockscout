@@ -9,6 +9,13 @@
     @include media-breakpoint-down(sm) {
         height: 38.05px;
     }
+
+    &.dd {
+        height: 30.05px;
+        @include media-breakpoint-down(sm) {
+            height: 48.05px;
+        }
+    }
 }
 
 a.ad-url {
