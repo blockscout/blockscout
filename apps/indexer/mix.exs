@@ -24,7 +24,10 @@ defmodule Indexer.MixProject do
       extra_applications: [
         :logger,
         :jason,
-        :logger_json
+        :logger_json,
+        :cowboy,
+        :plug,
+        :prometheus
       ],
       mod: {Indexer.Application, []}
     ]
@@ -64,7 +67,12 @@ defmodule Indexer.MixProject do
       {:spandex_datadog, "~> 1.0"},
       # Log json format
       {:logger_json, "~> 3.2"},
-      {:jason, "~> 1.1"}
+      {:jason, "~> 1.1"},
+      # Metrics
+      {:prometheus_ex, "~> 3.0"},
+      {:prometheus_plugs, "~> 1.1"},
+      {:prometheus_process_collector, "~> 1.1"},
+      {:telemetry, "~> 0.4.0"}
     ]
   end
 
