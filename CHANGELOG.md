@@ -4,6 +4,7 @@
 - [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
 
 ### Fixes
+- [#4488](https://github.com/blockscout/blockscout/pull/4488) - Tx page: handle empty to_address
 - [#4483](https://github.com/blockscout/blockscout/pull/4483) - Fix copy-paste typo in `token_transfers_counter.ex`
 - [#4473](https://github.com/blockscout/blockscout/pull/4473), [#4481](https://github.com/blockscout/blockscout/pull/4481) - Search autocomplete: fix for address/block/tx hash
 - [#4472](https://github.com/blockscout/blockscout/pull/4472) - Search autocomplete: fix Cannot read property toLowerCase of undefined 
