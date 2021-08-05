@@ -184,26 +184,37 @@
               <% end %>
             </dt>
             <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container">
-              <%= if created_address_hash do %>
-                [<%= gettext("Contract") %>&nbsp;
-                <%= link(
-                  recipient_address_hash,
-                  to: address_path(@conn, :show, recipient_address_hash)
-                ) %> 
-                &nbsp;<%= gettext("created") %>]
-              <% else %>
-                <%= link(
-                  recipient_address_hash,
-                  to: address_path(@conn, :show, recipient_address_hash)
-                ) %>
+              <%= cond do %>
+                <% created_address_hash -> %>
+                  [<%= gettext("Contract") %>&nbsp;
+                  <%= link(
+                    recipient_address_hash,
+                    to: address_path(@conn, :show, recipient_address_hash)
+                  ) %> 
+                  &nbsp;<%= gettext("created") %>]
+
+                  <span class="float-right">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                      additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                      clipboard_text: recipient_address_hash,
+                      aria_label: gettext("Copy To Address"),
+                      title: gettext("Copy To Address") %>
+                  </span>
+                <% recipient_address_hash -> %>
+                  <%= link(
+                    recipient_address_hash,
+                    to: address_path(@conn, :show, recipient_address_hash)
+                  ) %>
+
+                  <span class="float-right">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                      additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                      clipboard_text: recipient_address_hash,
+                      aria_label: gettext("Copy To Address"),
+                      title: gettext("Copy To Address") %>
+                  </span>
+                <% true -> %>
               <% end %>
-              <span class="float-right">
-                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                  clipboard_text: recipient_address_hash,
-                  aria_label: gettext("Copy To Address"),
-                  title: gettext("Copy To Address") %>
-              </span>
             </dd>
           </dl>
           <%= case token_transfer_type(@transaction) do %>
