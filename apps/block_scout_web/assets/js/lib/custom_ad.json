@@ -1,6 +1,6 @@
 [{
     "ad": {
-        "thumbnail": "https://cryptologos.cc/logos/sushiswap-sushi-logo.svg?v=013",
+        "thumbnail": "/images/in-house-ad/sushiswap.svg",
         "description_short": "Earn double digits APR on new Sushi farms!",
         "cta_button": "Farm now",
         "name": "Sushi",
@@ -16,7 +16,7 @@
     }
 },{
     "ad": {
-        "thumbnail": "https://raw.githubusercontent.com/blockscout/docs/bf86572c0641377dc1daa82214d4eaf2ec6f3eb0/.gitbook/assets/curve.svg",
+        "thumbnail": "/images/in-house-ad/curve.svg",
         "description_short": "Swap xDai/USDC/USDT assets on Curve!",
         "cta_button": "Try now",
         "name": "Curve",
@@ -32,7 +32,7 @@
     }
 },{
     "ad": {
-        "thumbnail": "https://raw.githubusercontent.com/blockscout/docs/master/.gitbook/assets/perp.svg",
+        "thumbnail": "/images/in-house-ad/perp.svg",
         "description_short": "Decentralized Perpetual Contracts for Every Asset. Super cheap fees.",
         "cta_button": "Trade now",
         "name": "Perpetual Protocol",
