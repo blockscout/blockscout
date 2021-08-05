@@ -27,7 +27,7 @@
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title <%= if show_alm_link?(@transaction.hash), do: "alm", else: "" %>">
+          <h1 class="card-title margin-bottom-1">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
             </div>
@@ -42,13 +42,6 @@
             <% end %> -->
             <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash %>
           </h1>
-          <%= if show_alm_link?(@transaction.hash) do %>
-            <div class="mr-4 mb-4">
-              <a data-test="external_url" href=<%= "https://#{get_alm_app_link(@transaction.hash)}/100/#{@transaction.hash}" %> target="_blank">
-              View In ALM App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
-              </a>
-            </div>
-          <% end %>
           <%= if status == :pending do %>
             <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
               <div class="loading-spinner">
@@ -58,6 +51,19 @@
               <%= gettext("This transaction is pending confirmation.") %>
             </div>
           <% end %>
+          <div class="d-flex flex-row">
+            <%= if show_alm_link?(@transaction.hash) do %>
+              <div class="mr-4 mb-2">
+                <a data-test="external_url" class="d-flex flex-row" href=<%= "https://#{get_alm_app_link(@transaction.hash)}/100/#{@transaction.hash}" %> target="_blank">
+                View In ALM App <span class="external-link-icon-2"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+                </a>
+              </div>
+            <% end %>
+            <div class="mr-4 mb-4">
+              <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
+                  transaction_hash: @transaction.hash %>
+            </div>
+          </div>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -72,10 +78,6 @@
                   clipboard_text: @transaction,
                   aria_label: gettext("Copy Transaction Hash"),
                   title: gettext("Copy Txn Hash") %>
-              </span>
-              <span>
-                <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
-                  transaction_hash: @transaction.hash %>
               </span>
             </dd>
           </dl>
