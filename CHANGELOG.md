@@ -2,6 +2,7 @@
 
 ### Features
 - [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
+- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
 
 ### Fixes
 - [#4483](https://github.com/blockscout/blockscout/pull/4483) - Fix copy-paste typo in `token_transfers_counter.ex`
