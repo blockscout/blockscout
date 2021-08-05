@@ -9,7 +9,6 @@ import '../lib/async_listing_load'
 import '../app'
 import Swal from 'sweetalert2'
 import { compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
-import './transaction/tooltip'
 
 export const initialState = {
   blockNumber: null,

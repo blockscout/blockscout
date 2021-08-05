@@ -27,7 +27,7 @@
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title">
+          <h1 class="card-title margin-bottom-1">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
             </div>
@@ -41,6 +41,12 @@
               <%= gettext("This transaction is pending confirmation.") %>
             </div>
           <% end %>
+          <div class="d-flex flex-row">
+            <div class="mr-4 mb-4">
+              <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
+                  transaction_hash: @transaction.hash %>
+            </div>
+          </div>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -55,10 +61,6 @@
                   clipboard_text: @transaction,
                   aria_label: gettext("Copy Transaction Hash"),
                   title: gettext("Copy Txn Hash") %>
-              </span>
-              <span>
-                <%= render BlockScoutWeb.CommonComponentsView, "_tendely_link.html",
-                  transaction_hash: @transaction.hash %>
               </span>
             </dd>
           </dl>
