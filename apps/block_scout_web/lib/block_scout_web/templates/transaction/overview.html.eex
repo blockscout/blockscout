@@ -74,7 +74,7 @@
                   title: gettext("Copy Txn Hash") %>
               </span>
               <span>
-                <%= render BlockScoutWeb.CommonComponentsView, "_tendely_link.html",
+                <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
                   transaction_hash: @transaction.hash %>
               </span>
             </dd>

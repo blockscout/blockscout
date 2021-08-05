@@ -7,7 +7,7 @@ $(document.body)
 
     $btn.tooltip('dispose')
     $btn.tooltip({
-      title: `View on Tenderly`,
+      title: `Open in Tenderly`,
       trigger: 'hover',
       placement: 'top'
     }).tooltip('show')
