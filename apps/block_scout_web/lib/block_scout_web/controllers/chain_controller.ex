@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.ChainController do
           :standard
       end
 
-    exchange_rate = Market.get_exchange_rate("cGLD") || Token.null()
+    exchange_rate = Market.get_exchange_rate("CELO") || Market.get_exchange_rate("cGLD") || Token.null()
 
     transaction_stats = get_transaction_stats()
 
