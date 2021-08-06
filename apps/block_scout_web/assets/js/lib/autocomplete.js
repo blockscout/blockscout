@@ -46,22 +46,10 @@ const searchEngine = (query, record) => {
   if (record && (
     (record.name && record.name.toLowerCase().includes(query.toLowerCase())) ||
       (record.symbol && record.symbol.toLowerCase().includes(query.toLowerCase())) ||
-      (record.contract_address_hash && record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) ||
-      (record.transaction_hash && record.transaction_hash.toLowerCase().includes(query.toLowerCase())) ||
-      (record.address_hash && record.address_hash.toLowerCase().includes(query.toLowerCase())) ||
-      (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
+      (record.link && record.link.toLowerCase().includes(query.toLowerCase()))
   )
   ) {
-    var searchResult = ''
-    if (record.type === 'transaction') {
-      searchResult += `${record.transaction_hash}<br/>`
-    } else if (record.type === 'address') {
-      searchResult += `${record.address_hash}<br/>`
-    } else if (record.type === 'block') {
-      searchResult += `${record.block_hash}<br/>`
-    } else {
-      searchResult += `${record.contract_address_hash}<br/>`
-    }
+    var searchResult = `${record.link}<br/>`
 
     if (record.type === 'label') {
       searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
@@ -132,18 +120,14 @@ const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-m
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
-  if (selectionValue.symbol) {
-    window.location = `/tokens/${selectionValue.contract_address_hash}`
-  } else {
-    if (selectionValue.contract_address_hash) {
-      window.location = `/address/${selectionValue.contract_address_hash}`
-    } else if (selectionValue.address_hash) {
-      window.location = `/address/${selectionValue.address_hash}`
-    } else if (selectionValue.transaction_hash) {
-      window.location = `/tx/${selectionValue.transaction_hash}`
-    } else if (selectionValue.block_hash) {
-      window.location = `/blocks/${selectionValue.block_hash}`
-    }
+  if (selectionValue.type === 'contract' || selectionValue.type === 'address') {
+    window.location = `/address/${selectionValue.link}`
+  } else if (selectionValue.type === 'token') {
+    window.location = `/tokens/${selectionValue.link}`
+  } else if (selectionValue.type === 'transaction') {
+    window.location = `/tx/${selectionValue.link}`
+  } else if (selectionValue.type === 'block') {
+    window.location = `/blocks/${selectionValue.link}`
   }
 }
 

@@ -2973,3 +2973,8 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:194
 msgid "created"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/search/results.html.eex:5
+msgid "Search Results"
+msgstr ""
