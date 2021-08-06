@@ -1266,13 +1266,13 @@ defmodule Explorer.ChainTest do
       assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
     end
 
-    test "return only one result if multiple records are found" do
+    test "return not found if multiple records are in the results" do
       name = "TOKEN"
 
       insert(:token, symbol: name)
       insert(:token, symbol: name)
 
-      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
+      assert {:error, :not_found} = Chain.token_contract_address_from_token_name(name)
     end
   end
 
@@ -4537,7 +4537,7 @@ defmodule Explorer.ChainTest do
 
       [result] = Chain.search_token("magic")
 
-      assert result.contract_address_hash == token.contract_address_hash
+      assert result.link == token.contract_address_hash
     end
 
     test "finds multiple results in different columns" do
