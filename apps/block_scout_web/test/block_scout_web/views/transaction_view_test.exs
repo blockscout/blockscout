@@ -264,8 +264,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 
-      assert Enum.count(result) == 1
-      assert List.first(result).amount == Decimal.new(3)
+      assert Enum.count(result.transfers) == 1
+      assert List.first(result.transfers).amount == Decimal.new(3)
     end
 
     test "does not aggregate NFT tokens" do
@@ -274,12 +274,16 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil)
+      token = insert(:token)
 
-      result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
+      token_transfer1 = insert(:token_transfer, transaction: transaction, token: token, token_id: 1, amount: nil)
+      token_transfer2 = insert(:token_transfer, transaction: transaction, token: token, token_id: 2, amount: nil)
+      token_transfer3 = insert(:token_transfer, transaction: transaction, token: token, token_id: 3, amount: nil)
 
-      assert Enum.count(result) == 3
-      assert List.first(result).amount == nil
+      result = TransactionView.aggregate_token_transfers([token_transfer1, token_transfer2, token_transfer3])
+
+      assert Enum.count(result.transfers) == 3
+      assert List.first(result.transfers).amount == nil
     end
   end
 end

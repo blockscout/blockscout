@@ -2,11 +2,15 @@
     display: inline-block;
     padding: 0 5px;
     background: #f5f6fa;
-    color: #a3a9b5;
+    color: #77838f;
     border-radius: 5px;
+    &.large {
+        font-size: 14px;
+    }
     font-size: 12px;
-    height: 25px;
-    line-height: 25px;
+    padding: 5px;
+    line-height: normal;
+
     &.right {
         margin-left: auto;
         float: right;
@@ -15,16 +19,16 @@
         background: #6ca1e2;
         color: #fff;
     }
-    &.amb {
-        background: $secondary;
-        color: #fff;
-    }
     &.destination-eth {
         background: #253358;
         color: #fff;
     }
     &.destination-bsc {
         background: #e7b941;
+        color: #fff;
+    }
+    &.destination-rinkeby {
+        background: #153550;
         color: #fff;
     }
     &.bridge {
@@ -69,4 +73,24 @@
         background: rgba(40, 167, 69, 0.2);
         color: rgb(40, 167, 69);
     }
+}
+
+.confirmations-label {
+    position: relative;
+    padding-left: 1.15rem;
+    border-top-right-radius: .25rem;
+    border-bottom-right-radius: .25rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-right: 10px;
+}
+
+.confirmations-label:after {
+    position: absolute;
+    left: 0;
+    top: 0;
+    content: "";
+    border-top: .9rem solid transparent;
+    border-bottom: .9rem solid transparent;
+    border-left: .9rem solid #fff;
 }
