@@ -317,6 +317,10 @@ defmodule BlockScoutWeb.Chain do
     %{"address_hash" => address_hash, "total_gas" => Decimal.to_integer(total_gas)}
   end
 
+  defp paging_params(%{link: link, type: type}) do
+    %{"link" => link, type: type}
+  end
+
   defp block_or_transaction_from_param(param) do
     with {:error, :not_found} <- transaction_from_param(param) do
       hash_string_to_block(param)

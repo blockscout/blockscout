@@ -324,6 +324,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/transactions-csv", AddressTransactionController, :transactions_csv)
 
+    get("/search-results", SearchController, :search_results)
+
     get("/token-autocomplete", ChainController, :token_autocomplete)
 
     get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)

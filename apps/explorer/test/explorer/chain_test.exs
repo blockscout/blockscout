@@ -4634,7 +4634,7 @@ defmodule Explorer.ChainTest do
 
       [result] = Chain.search_token("magic")
 
-      assert result.contract_address_hash == token.contract_address_hash
+      assert result.link == token.contract_address_hash
     end
 
     test "finds multiple results in different columns" do

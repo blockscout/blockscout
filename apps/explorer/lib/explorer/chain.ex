@@ -1150,7 +1150,7 @@ defmodule Explorer.Chain do
           from(token in Token,
             where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
             select: %{
-              contract_address_hash: token.contract_address_hash,
+              link: token.contract_address_hash,
               symbol: token.symbol,
               name: token.name,
               holder_count: token.holder_count,
@@ -1176,7 +1176,7 @@ defmodule Explorer.Chain do
             on: smart_contract.address_hash == address.hash,
             where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
             select: %{
-              contract_address_hash: smart_contract.address_hash,
+              link: smart_contract.address_hash,
               name: smart_contract.name,
               inserted_at: address.inserted_at,
               type: "contract"
@@ -1198,7 +1198,7 @@ defmodule Explorer.Chain do
           from(transaction in Transaction,
             where: transaction.hash == ^tx_hash,
             select: %{
-              transaction_hash: transaction.hash,
+              link: transaction.hash,
               type: "transaction"
             }
           )
@@ -1215,9 +1215,12 @@ defmodule Explorer.Chain do
       {:ok, address_hash} ->
         query =
           from(address in Address,
+            left_join: address_name in Address.Name,
+            on: address.hash == address_name.address_hash,
             where: address.hash == ^address_hash,
             select: %{
-              address_hash: address.hash,
+              name: address_name.name,
+              link: address.hash,
               type: "address"
             }
           )
@@ -1236,7 +1239,8 @@ defmodule Explorer.Chain do
           from(block in Block,
             where: block.hash == ^block_hash,
             select: %{
-              block_hash: block.hash,
+              link: block.hash,
+              block_number: block.number,
               type: "block"
             }
           )
@@ -1244,7 +1248,23 @@ defmodule Explorer.Chain do
         Repo.all(query)
 
       _ ->
-        []
+        case Integer.parse(term) do
+          {block_number, _} ->
+            query =
+              from(block in Block,
+                where: block.number == ^block_number,
+                select: %{
+                  link: block.hash,
+                  block_number: block.number,
+                  type: "block"
+                }
+              )
+
+            Repo.all(query)
+
+          _ ->
+            []
+        end
     end
   end
 

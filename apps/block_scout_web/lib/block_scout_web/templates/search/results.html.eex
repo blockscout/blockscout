@@ -1,0 +1,35 @@
+<section class="container" data-page="search-results">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+  <div class="card">
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+	  <h1 class="card-title list-title-description"><%= gettext "Search Results" %> for <%= @query %></h1>
+
+        <div class="addresses-table-container">
+            <div class="stakes-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="stakes-table-th">
+                                <div class="stakes-table-th-content">&nbsp;</div>
+                            </th>
+                            <th class="stakes-table-th">
+                                <div class="stakes-table-th-content">Search Result</div>
+                            </th>
+                            <th class="stakes-table-th">
+                                <div class="stakes-table-th-content">Hash</div>
+                            </th>
+                            <th class="stakes-table-th">
+                                <div class="stakes-table-th-content">Category</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody data-items data-selector="search-results-list">
+                        <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html" %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+  </div>
+</section>
