@@ -1,0 +1,77 @@
+<tr>
+  <td class="stakes-td">
+      <!-- incremented number by order in the list -->
+      <span class="color-lighten">
+      </span>
+  </td>
+  <td class="stakes-td">
+    <%= case @result.type do %>
+        <% "token" -> %>
+            <% res = @result.name <> " (" <> @result.symbol <> ")" %>
+            <a href="<%= token_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+                <%= highlight_search_result(res, @query) %>
+            </a>
+        <% "address" -> %>
+            <%= if @result.name do %>
+                <a href="<%= address_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+                    <%= highlight_search_result(@result.name, @query) %>
+                </a>
+            <% end %>
+        <% "contract" -> %>
+            <%= if @result.name do %>
+                <a href="<%= address_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+                    <%= highlight_search_result(@result.name, @query) %>
+                </a>
+            <% end %>
+        <% "block" -> %>
+            <%= link(
+                highlight_search_result(to_string(@result.block_number), @query),
+                to: block_path(@conn, :show, @result.block_number)
+            ) %>
+        <% _ -> %>
+    <% end %>
+  </td>
+  <td class="stakes-td">
+    <%= case @result.type do %>
+        <% "token" -> %>
+            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
+                <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: address,
+                contract: false,
+                use_custom_tooltip: false
+                %>
+            <% end %>
+        <% "address" -> %>
+            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
+                <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: address,
+                contract: false,
+                use_custom_tooltip: false
+                %>
+            <% end %>
+        <% "contract" -> %>
+            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
+                <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: address,
+                contract: true,
+                use_custom_tooltip: false
+                %>
+            <% end %>
+        <% "transaction" -> %>
+            <%= render BlockScoutWeb.TransactionView,
+            "_link.html",
+            transaction_hash: "0x" <> Base.encode16(@result.tx_hash) %>
+        <% "block" -> %>
+            <%= link(
+                "0x" <> Base.encode16(@result.block_hash),
+                to: block_path(@conn, :show, @result.block_number)
+            ) %>
+    <% end %>
+  </td>
+  <td class="stakes-td">
+    <div class="bs-label <%= @result.type %>"><%= @result.type %></div>
+  </td>
+</tr>
