@@ -408,6 +408,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             error: Map.get(trace, :error),
             status: if(is_nil(Map.get(trace, :error)), do: :ok, else: :error)
           }
+          |> remove_nil_created_contract_address_hash()
         end)
         |> Enum.filter(fn transaction_hash -> transaction_hash != nil end)
 
@@ -419,19 +420,34 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       result =
         Enum.reduce_while(params, 0, fn first_trace, transaction_hashes_iterator ->
           update_query =
-            from(
-              t in Transaction,
-              where: t.hash == ^first_trace.transaction_hash,
-              # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
-              update: [
-                set: [
-                  created_contract_address_hash: ^first_trace.created_contract_address_hash,
-                  error: ^first_trace.error,
-                  status: ^first_trace.status,
-                  updated_at: ^timestamps.updated_at
+            if Map.has_key?(first_trace, :created_contract_address_hash) do
+              from(
+                t in Transaction,
+                where: t.hash == ^first_trace.transaction_hash,
+                # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
+                update: [
+                  set: [
+                    created_contract_address_hash: ^first_trace.created_contract_address_hash,
+                    error: ^first_trace.error,
+                    status: ^first_trace.status,
+                    updated_at: ^timestamps.updated_at
+                  ]
                 ]
-              ]
-            )
+              )
+            else
+              from(
+                t in Transaction,
+                where: t.hash == ^first_trace.transaction_hash,
+                # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
+                update: [
+                  set: [
+                    error: ^first_trace.error,
+                    status: ^first_trace.status,
+                    updated_at: ^timestamps.updated_at
+                  ]
+                ]
+              )
+            end
 
           transaction_hashes_iterator = transaction_hashes_iterator + 1
 
@@ -458,6 +474,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       end
     end
   end
+
+  defp remove_nil_created_contract_address_hash(%{created_contract_address_hash: nil} = options),
+    do: Map.drop(options, [:created_contract_address_hash])
+
+  defp remove_nil_created_contract_address_hash(options), do: options
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
     if Enum.count(invalid_block_numbers) > 0 do

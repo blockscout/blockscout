@@ -5,6 +5,7 @@
 - [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
 
 ### Fixes
+- [#4494](https://github.com/blockscout/blockscout/pull/4494) - Fix empty created_contract_address in transaction
 - [#4493](https://github.com/blockscout/blockscout/pull/4493) - Contract's code page: handle null contracts_creation_transaction
 - [#4488](https://github.com/blockscout/blockscout/pull/4488) - Tx page: handle empty to_address
 - [#4483](https://github.com/blockscout/blockscout/pull/4483) - Fix copy-paste typo in `token_transfers_counter.ex`
