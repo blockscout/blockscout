@@ -127,6 +127,10 @@ defmodule BlockScoutWeb.AddressContractView do
     address.contracts_creation_transaction.input
   end
 
+  def creation_code(%Address{contracts_creation_transaction: nil}) do
+    nil
+  end
+
   def sourcify_repo_url(address_hash, partial_match) do
     checksummed_hash = Address.checksum(address_hash)
     chain_id = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:chain_id]
