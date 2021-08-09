@@ -17,12 +17,12 @@ defmodule Explorer.Validator.MetadataRetriever do
 
   def fetch_validators_list do
     # b7ab4db5 = keccak256(getValidators())
-    %{"b7ab4db5" => {:ok, [validators]}} =
-      Reader.query_contract(config(:validators_contract_address), contract_abi("poa", "validators.json"), %{
-        "b7ab4db5" => []
-      })
-
-    validators
+    case Reader.query_contract(config(:validators_contract_address), contract_abi("poa", "validators.json"), %{
+           "b7ab4db5" => []
+         }) do
+      %{"b7ab4db5" => {:ok, [validators]}} -> validators
+      _ -> []
+    end
   end
 
   # deprecated
