@@ -5476,6 +5476,13 @@ defmodule Explorer.Chain do
     |> Repo.one() || Decimal.new(0)
   end
 
+  # @spec fetch_last_token_balance_1155(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
+  def fetch_last_token_balance_1155(address_hash, token_contract_address_hash, token_id) do
+    address_hash
+    |> CurrentTokenBalance.last_token_balance_1155(token_contract_address_hash, token_id)
+    |> Repo.one() || Decimal.new(0)
+  end
+
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -5596,9 +5603,34 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def fetch_token_holders_from_token_hash_and_token_id(contract_address_hash, token_id, options \\ []) do
+    contract_address_hash
+    |> CurrentTokenBalance.token_holders_1155_by_token_id(token_id, options)
+    |> Repo.all()
+  end
+
+  def token_id_1155_is_unique?(contract_address_hash, token_id) do
+    result = contract_address_hash |> CurrentTokenBalance.token_balances_by_id_limit_2(token_id) |> Repo.all()
+
+    if length(result) == 1 do
+      Decimal.cmp(Enum.at(result, 0), 1) == :eq
+    else
+      false
+    end
+  end
+
+  def get_token_ids_1155(contract_address_hash) do
+    contract_address_hash
+    |> CurrentTokenBalance.token_ids_query()
+    |> Repo.all()
+  end
+
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
-    query = from(ctb in CurrentTokenBalance.token_holders_query(contract_address_hash), select: fragment("COUNT(*)"))
+    query =
+      from(ctb in CurrentTokenBalance.token_holders_query_for_count(contract_address_hash),
+        select: fragment("COUNT(DISTINCT(address_hash))")
+      )
 
     Repo.one!(query, timeout: :infinity)
   end

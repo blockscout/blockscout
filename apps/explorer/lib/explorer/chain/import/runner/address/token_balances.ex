@@ -67,7 +67,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       changes_list
       |> Enum.reduce(%{changes_list_no_token_id: [], changes_list_with_token_id: []}, fn change, acc ->
         updated_change =
-          if Map.has_key?(change, :token_id) do
+          if Map.has_key?(change, :token_id) and Map.get(change, :token_type) == "ERC-1155" do
             change
           else
             Map.put(change, :token_id, nil)
