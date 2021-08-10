@@ -8,24 +8,24 @@
     <%= case @result.type do %>
         <% "token" -> %>
             <% res = @result.name <> " (" <> @result.symbol <> ")" %>
-            <a href="<%= token_path(@conn, :show, Address.checksum(@result.link)) %>">
+            <a href="<%= token_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
                 <%= highlight_search_result(res, @query) %>
             </a>
         <% "address" -> %>
             <%= if @result.name do %>
-                <a href="<%= address_path(@conn, :show, Address.checksum(@result.link)) %>">
-                    <%= @result.name %>
+                <a href="<%= address_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+                    <%= highlight_search_result(@result.name, @query) %>
                 </a>
             <% end %>
         <% "contract" -> %>
             <%= if @result.name do %>
-                <a href="<%= address_path(@conn, :show, Address.checksum(@result.link)) %>">
-                    <%= @result.name %>
+                <a href="<%= address_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+                    <%= highlight_search_result(@result.name, @query) %>
                 </a>
             <% end %>
         <% "block" -> %>
             <%= link(
-                @result.block_number,
+                highlight_search_result(to_string(@result.block_number), @query),
                 to: block_path(@conn, :show, @result.block_number)
             ) %>
         <% _ -> %>
@@ -34,7 +34,7 @@
   <td class="stakes-td">
     <%= case @result.type do %>
         <% "token" -> %>
-            <%= with {:ok, address} <- Chain.hash_to_address(@result.link) do %>
+            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
                 <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: address,
@@ -43,7 +43,7 @@
                 %>
             <% end %>
         <% "address" -> %>
-            <%= with {:ok, address} <- Chain.hash_to_address(@result.link) do %>
+            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
                 <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: address,
@@ -52,7 +52,7 @@
                 %>
             <% end %>
         <% "contract" -> %>
-            <%= with {:ok, address} <- Chain.hash_to_address(@result.link) do %>
+            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
                 <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: address,
@@ -63,10 +63,10 @@
         <% "transaction" -> %>
             <%= render BlockScoutWeb.TransactionView,
             "_link.html",
-            transaction_hash: @result.link %>
+            transaction_hash: "0x" <> Base.encode16(@result.tx_hash) %>
         <% "block" -> %>
             <%= link(
-                @result.link,
+                "0x" <> Base.encode16(@result.block_hash),
                 to: block_path(@conn, :show, @result.block_number)
             ) %>
     <% end %>

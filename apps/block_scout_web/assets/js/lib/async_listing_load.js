@@ -222,16 +222,26 @@ export const elements = {
 
       const urlParams = new URLSearchParams(window.location.search)
       const blockParam = urlParams.get('block_type')
+      const queryParam = urlParams.get('q')
       const firstPageHref = window.location.href.split('?')[0]
 
       $el.show()
       $el.attr('disabled', false)
 
+      var url
       if (blockParam !== null) {
-        $el.attr('href', firstPageHref + '?block_type=' + blockParam)
+        url = firstPageHref + '?block_type=' + blockParam
       } else {
-        $el.attr('href', firstPageHref)
+        url = firstPageHref
       }
+
+      if (queryParam !== null) {
+        url = firstPageHref + '?q=' + queryParam
+      } else {
+        url = firstPageHref
+      }
+
+      $el.attr('href', url)
     }
   },
   '[data-async-listing] [data-page-number]': {

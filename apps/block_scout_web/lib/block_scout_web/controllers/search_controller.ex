@@ -1,14 +1,32 @@
 defmodule BlockScoutWeb.SearchController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
   alias BlockScoutWeb.{ChainController, SearchView}
   alias Phoenix.View
 
-  def search_results(conn, %{"q" => query, "type" => "JSON"} = _params) do
-    search_results_plus_one = ChainController.search_by(query)
+  def search_results(conn, %{"q" => query, "type" => "JSON"} = params) do
+    [paging_options: paging_options] = paging_options(params)
+    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
+
+    search_results_plus_one =
+      paging_options
+      |> ChainController.search_by(offset, query)
+
+    {search_results, next_page} = split_list_by_page(search_results_plus_one)
+
+    next_page_url =
+      case next_page_params(next_page, search_results, params) do
+        nil ->
+          nil
+
+        next_page_params ->
+          search_path(conn, :search_results, next_page_params)
+      end
 
     items =
-      search_results_plus_one
+      search_results
       |> Enum.with_index(1)
       |> Enum.map(fn {result, _index} ->
         View.render_to_string(
@@ -23,7 +41,17 @@ defmodule BlockScoutWeb.SearchController do
     json(
       conn,
       %{
-        items: items
+        items: items,
+        next_page_path: next_page_url
+      }
+    )
+  end
+
+  def search_results(conn, %{"type" => "JSON"}) do
+    json(
+      conn,
+      %{
+        items: []
       }
     )
   end
@@ -33,6 +61,15 @@ defmodule BlockScoutWeb.SearchController do
       conn,
       "results.html",
       query: query,
+      current_path: current_path(conn)
+    )
+  end
+
+  def search_results(conn, %{}) do
+    render(
+      conn,
+      "results.html",
+      query: nil,
       current_path: current_path(conn)
     )
   end
