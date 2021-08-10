@@ -1285,15 +1285,16 @@ defmodule Explorer.Chain do
 
         query =
           cond do
-            address_query != nil ->
+            address_query ->
               basic_query
               |> union(^address_query)
 
-            tx_query != nil ->
+            tx_query ->
               basic_query
               |> union(^tx_query)
+              |> union(^block_query)
 
-            block_query != nil ->
+            block_query ->
               basic_query
               |> union(^block_query)
 
@@ -4338,15 +4339,18 @@ defmodule Explorer.Chain do
 
   defp page_search_results(query, %PagingOptions{key: nil}), do: query
 
+  # credo:disable-for-next-line
   defp page_search_results(query, %PagingOptions{
-         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, _type}
+         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
        }) do
     where(
       query,
       [item],
-      item.holder_count < ^holder_count or
-        (item.holder_count == ^holder_count and item.name >= ^name) or
-        (item.holder_count == ^holder_count and item.name == ^name and item.inserted_at < ^inserted_at)
+      (item.holder_count < ^holder_count and item.type == ^item_type) or
+        (item.holder_count == ^holder_count and item.name > ^name and item.type == ^item_type) or
+        (item.holder_count == ^holder_count and item.name == ^name and item.inserted_at < ^inserted_at and
+           item.type == ^item_type) or
+        item.type != ^item_type
     )
   end
 

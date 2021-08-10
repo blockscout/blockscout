@@ -1,4 +1,4 @@
-<tr>
+<tr data-identifier-hash="<%= @result.address_hash %>-<%= if @result.tx_hash, do: Base.encode16(@result.tx_hash, case: :lower), else: "" %>-<%= if @result.block_hash, do: Base.encode16(@result.block_hash, case: :lower), else: "" %>">
   <td class="stakes-td">
       <!-- incremented number by order in the list -->
       <span class="color-lighten">
@@ -63,10 +63,10 @@
         <% "transaction" -> %>
             <%= render BlockScoutWeb.TransactionView,
             "_link.html",
-            transaction_hash: "0x" <> Base.encode16(@result.tx_hash) %>
+            transaction_hash: "0x" <> Base.encode16(@result.tx_hash, case: :lower) %>
         <% "block" -> %>
             <%= link(
-                "0x" <> Base.encode16(@result.block_hash),
+                "0x" <> Base.encode16(@result.block_hash, case: :lower),
                 to: block_path(@conn, :show, @result.block_number)
             ) %>
     <% end %>

@@ -114,7 +114,13 @@ export function asyncReducer (state = asyncInitialState, action) {
       history.replaceState({}, null, state.nextPagePath)
 
       if (state.pagesStack.length === 0) {
-        state.pagesStack.push(window.location.href.split('?')[0])
+        if (window.location.pathname.includes('/search-results')) {
+          const urlParams = new URLSearchParams(window.location.search)
+          const queryParam = urlParams.get('q')
+          state.pagesStack.push(window.location.href.split('?')[0] + `?q=${queryParam}`)
+        } else {
+          state.pagesStack.push(window.location.href.split('?')[0])
+        }
       }
 
       if (state.pagesStack[state.pagesStack.length - 1] !== state.nextPagePath) {

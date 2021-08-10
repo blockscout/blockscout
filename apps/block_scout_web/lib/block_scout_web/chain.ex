@@ -127,12 +127,12 @@ defmodule BlockScoutWeb.Chain do
         "holder_count" => holder_count,
         "name" => name,
         "inserted_at" => inserted_at,
-        "type" => type
+        "item_type" => item_type
       }) do
     [
       paging_options: %{
         @default_paging_options
-        | key: {address_hash, tx_hash, block_hash, holder_count, name, inserted_at, type}
+        | key: {address_hash, tx_hash, block_hash, holder_count, name, inserted_at, item_type}
       }
     ]
   end
@@ -352,7 +352,7 @@ defmodule BlockScoutWeb.Chain do
       "holder_count" => holder_count,
       "name" => name,
       "inserted_at" => inserted_at_datetime,
-      "type" => type
+      "item_type" => type
     }
   end
 

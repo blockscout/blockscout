@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.SearchController do
           nil
 
         next_page_params ->
-          search_path(conn, :search_results, next_page_params)
+          search_path(conn, :search_results, Map.delete(next_page_params, "type"))
       end
 
     items =
