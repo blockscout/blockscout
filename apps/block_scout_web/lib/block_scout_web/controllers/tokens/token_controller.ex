@@ -12,11 +12,11 @@ defmodule BlockScoutWeb.Tokens.TokenController do
   end
 
   def token_counters(conn, %{"id" => address_hash_string}) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
-      {transfer_count, token_holder_count} = fetch_token_counters(address_hash, 200)
+    case Chain.string_to_address_hash(address_hash_string) do
+      {:ok, address_hash} ->
+        {transfer_count, token_holder_count} = fetch_token_counters(address_hash, 200)
 
-      json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
-    else
+        json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
       _ ->
         not_found(conn)
     end
