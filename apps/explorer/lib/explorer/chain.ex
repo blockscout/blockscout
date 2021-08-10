@@ -5609,6 +5609,8 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def token_id_1155_is_unique?(_, nil), do: false
+
   def token_id_1155_is_unique?(contract_address_hash, token_id) do
     result = contract_address_hash |> CurrentTokenBalance.token_balances_by_id_limit_2(token_id) |> Repo.all()
 
