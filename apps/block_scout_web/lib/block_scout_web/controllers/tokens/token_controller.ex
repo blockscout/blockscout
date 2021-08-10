@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.Tokens.TokenController do
         {transfer_count, token_holder_count} = fetch_token_counters(address_hash, 200)
 
         json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
+
       _ ->
         not_found(conn)
     end
