@@ -110,7 +110,8 @@ defmodule Explorer.Mixfile do
       {:con_cache, "~> 0.13"},
       {:tesla, "~> 1.3.3"},
       # Log json format
-      {:logger_json, "~> 3.2"}
+      {:logger_json, "~> 3.2"},
+      {:observer_cli, "~> 1.6"}
     ]
   end
 
