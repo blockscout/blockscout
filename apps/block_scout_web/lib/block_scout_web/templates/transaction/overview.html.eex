@@ -3,7 +3,6 @@
 <% to_address_hash = @transaction.to_address_hash %>
 <% created_address_hash = @transaction.created_contract_address_hash %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
-<% gas_currency_token_name = get_token_name(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
@@ -298,52 +297,16 @@
           </dl>
           <!-- Transaction Fee -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
-            <dd class="col-sm-9">
-              <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %>
-              <%= if gas_currency_token_name.name == "" do %>
-                <%= Gettext.gettext(BlockScoutWeb.Gettext, gas_currency_token_name.symbol) %>
-              <% else %>
-                <%= Gettext.gettext(BlockScoutWeb.Gettext, gas_currency_token_name.name) %> (<%= Gettext.gettext(BlockScoutWeb.Gettext, gas_currency_token_name.symbol) %>)
-              <% end %>
-            </dd>
-          </dl>
-          <!-- gasCurrency -->
-          <%= if @transaction.gas_currency_hash do %>
-            <dl class="row">
-              <dt class="col-sm-3 text-muted"><%= gettext "Gas Currency" %> </dt>
-              <dd class="col-sm-9" data-selector="gas-currency">
-                <%= link(
-                  @transaction.gas_currency_hash,
-                  class: "address__link",
-                  to: address_path(@conn, :show, @transaction.gas_currency_hash)
-                ) %>
-              </dd>
-            </dl>
-          <% end %>
-          <!-- feeRecipient -->
-          <dl class="row">
-            <dt class="col-sm-3 text-muted"><%= gettext "Fee Recipient" %> </dt>
-            <dd class="col-sm-9" data-selector="fee-recipient">
-              <%= if @transaction.gas_fee_recipient_hash do %>
-                <%= link(
-                      @transaction.gas_fee_recipient_hash,
-                      class: "address__link",
-                      to: address_path(@conn, :show, @transaction.gas_fee_recipient_hash)
-                    ) %>
-              <% else %>
-                None
-              <% end %>
-            </dd>
-          </dl>
-          <!-- gatewayFee -->
-          <dl class="row">
-            <dt class="col-sm-3 text-muted"><%= gettext "Gateway Fee" %> </dt>
-            <dd class="col-sm-9" data-selector="gateway-fee">
-              <%= if @transaction.gateway_fee do %>
-                <%= format_according_to_decimals(@transaction.gateway_fee.value, Decimal.new(18)) %>
-              <% else %>
-              0
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Amount paid to the miner for processing the transaction.") %>
+              <%= gettext "Transaction Fee" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <%= formatted_fee(@transaction, denomination: :ether) %>
+
+              <%= if !empty_exchange_rate?(@exchange_rate) do %>
+                (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
               <% end %>
             </dd>
           </dl>
@@ -440,101 +403,6 @@
               </dd>
             </dl>
           <% end %>
-        </div>
-      </div>
-    </div>
-
-    <%= case token_transfer_type(@transaction) do %>
-      <% {type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
-        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
-        <!-- Value -->
-        <div class="card card-background-1 mob-transaction flex-grow-1">
-          <div class="card-body card-body-flex-column-space-between">
-            <%= if @transaction.value && @transaction.value.value != Decimal.new(0) do %>
-              <h2 class="card-title balance-card-title"><%= gettext "CELO" %> <%= gettext "Value" %></h2>
-              <div class="text-right">
-                <h3 class="address-balance-text">
-                  <%= value(@transaction) %>
-                </h3>
-                <%= if !empty_exchange_rate?(@exchange_rate) do %>
-                  <p class="address-current-balance"
-                    data-wei-value=<%= @transaction.value.value %>
-                    data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
-                  </p>
-                <% end %>
-              </div>
-            <% end %>
-            <% token_transfers = aggregate_token_transfers(transaction_with_transfers.token_transfers) %>
-            <%= if Enum.count(token_transfers) > 0 do %>
-              <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
-              <div class="text-right">
-              <%= for transfer  <- token_transfers do %>
-                <h3 class="address-balance-text">
-                  <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
-                </h3>
-              <% end %>
-              </div>
-            <% end %>
-            <% mintings = aggregate_token_mintings(transaction_with_transfers.token_transfers) %>
-            <%= if Enum.count(mintings) > 0 do %>
-              <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Minting" %></h2>
-              <div class="text-right">
-              <%= for transfer  <- mintings do %>
-                <h3 class="address-balance-text">
-                  <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
-                </h3>
-              <% end %>
-              </div>
-            <% end %>
-            <% burnings = aggregate_token_burnings(transaction_with_transfers.token_transfers) %>
-            <%= if Enum.count(burnings) > 0 do %>
-              <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Burning" %></h2>
-              <div class="text-right">
-              <%= for transfer  <- burnings do %>
-                <h3 class="address-balance-text">
-                  <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
-                </h3>
-              <% end %>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% _ -> %>
-        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
-        <!-- Value -->
-        <div class="card card-background-1 mob-transaction flex-grow-1">
-          <div class="card-body card-body-flex-column-space-between">
-            <h2 class="card-title balance-card-title"><%= gettext "CELO" %> <%= gettext "Value" %></h2>
-            <div class="text-right">
-              <h3 class="address-balance-text">
-                <%= value(@transaction) %>
-              </h3>
-              <%= if !empty_exchange_rate?(@exchange_rate) do %>
-                <p class="address-current-balance"
-                  data-wei-value=<%= @transaction.value.value %>
-                  data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
-                </p>
-              <% end %>
-            </div>
-          </div>
-      </div>
-    <% end %>
-      <!-- Gas -->
-      <div class="card mob-transaction flex-grow-1 ml-0 ml-md-5 ml-lg-0">
-        <div class="card-body card-body-flex-column-space-between">
-          <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
-          <div class="text-right">
-            <!-- Gas Used -->
-            <h3 class="address-balance-text">
-              <%= gettext "Used" %>
-              <%= gas_used(@transaction) %> @
-              <%= gas_price(@transaction, :gwei) %>
-            </h3>
-            <!-- Gas Limit -->
-            <p class="address-current-balance">
-              <%= gettext "Limit" %> <%= format_gas_limit(@transaction.gas) %>
-            </p>
-          </div>
         </div>
       </div>
     </div>
