@@ -270,8 +270,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       ignore_proxy = Map.get(params, "ignoreProxy", "0")
       Logger.debug("Ignore proxy flag set to #{ignore_proxy} and #{is_integer(ignore_proxy)}}")
 
-    _ = VerificationController.check_and_verify(address_param)
-    address =
+      _ = VerificationController.check_and_verify(address_param)
+
+      address =
         if ignore_proxy == "1" do
           Logger.debug("Not checking if contract is proxied")
           Chain.address_hash_to_address_with_source_code(address_hash)
