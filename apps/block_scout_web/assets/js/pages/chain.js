@@ -172,7 +172,7 @@ const elements = {
     load () {
       chart = window.dashboardChart
     },
-    render ($el, state, oldState) {
+    render (_$el, state, oldState) {
       if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) || !state.availableSupply) return
 
       chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)

@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     token_contract_address_hash
     |> token_holders_query
     |> preload(:address)
-    |> order_by([tb], desc: :value)
+    |> order_by([tb], desc: :value, desc: :address_hash)
     |> page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
     |> offset(^offset)

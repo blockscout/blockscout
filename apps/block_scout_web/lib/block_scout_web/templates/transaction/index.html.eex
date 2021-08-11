@@ -6,6 +6,7 @@
   window.onload = ShowLayoutContainer()
 </script>
 <section class="container" data-page="transaction-list">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "Validated Transactions" %></h1>
@@ -44,4 +45,5 @@
 
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/validated-transactions.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
 </section>

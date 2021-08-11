@@ -4,7 +4,7 @@
     <div class="row footer-logo-row">
       <div class="col-md-12">
         <%= link to: webapp_url(@conn), class: "footer-brand" do %>
-          <img class="footer-logo" src="<%= logo_footer() %>" alt="<%= subnetwork_title() %>" />
+          <img class="footer-logo" src="<%= static_path(@conn, logo_footer()) %>" alt="<%= subnetwork_title() %>" />
           <%= if logo_text() do %>
             <span class="logo-text footer"> <%= logo_text() %> </span>
           <% end %>
@@ -20,10 +20,10 @@
         <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for the Celo Network.") %></p>
         <div class="footer-social-icons">
           <a href="https://github.com/celo-org/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
-            <i class="fab fa-github"></i>
+              <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
           <a href="https://www.twitter.com/CeloOrg/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
-            <i class="fab fa-twitter"></i>
+              <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
         </div>
       </div>
