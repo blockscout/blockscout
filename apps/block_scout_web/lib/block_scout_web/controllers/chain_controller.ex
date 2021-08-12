@@ -103,11 +103,11 @@ defmodule BlockScoutWeb.ChainController do
     [paging_options: paging_options] = paging_options(params)
     offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
-    result =
+    results =
       paging_options
       |> search_by(offset, term)
 
-    json(conn, result)
+    json(conn, results)
   end
 
   def token_autocomplete(conn, _) do

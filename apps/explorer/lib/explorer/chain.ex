@@ -1116,14 +1116,22 @@ defmodule Explorer.Chain do
     query =
       from(token in Token,
         where: ilike(token.symbol, ^name),
+        or_where: ilike(token.name, ^name),
         select: token.contract_address_hash
       )
 
     query
     |> Repo.all()
     |> case do
-      [] -> {:error, :not_found}
-      hashes -> {:ok, List.first(hashes)}
+      [] ->
+        {:error, :not_found}
+
+      hashes ->
+        if Enum.count(hashes) == 1 do
+          {:ok, List.first(hashes)}
+        else
+          {:error, :not_found}
+        end
     end
   end
 

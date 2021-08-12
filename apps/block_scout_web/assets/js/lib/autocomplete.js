@@ -123,13 +123,13 @@ const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
   if (selectionValue.type === 'contract' || selectionValue.type === 'address') {
-    window.location = `/address/${selectionValue.link}`
+    window.location = `/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {
-    window.location = `/tokens/${selectionValue.link}`
+    window.location = `/tokens/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'transaction') {
-    window.location = `/tx/${selectionValue.link}`
+    window.location = `/tx/${selectionValue.tx_hash}`
   } else if (selectionValue.type === 'block') {
-    window.location = `/blocks/${selectionValue.link}`
+    window.location = `/blocks/${selectionValue.block_hash}`
   }
 }
 
