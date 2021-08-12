@@ -18,8 +18,8 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "artillery": "^1.6.0",
-    "csv-parse": "^4.8.8",
-    "graphql": "^14.6.0"
+    "artillery": "^1.7.6",
+    "csv-parse": "^4.16.0",
+    "graphql": "^14.7.0"
   }
 }
