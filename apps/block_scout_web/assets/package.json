@@ -40,7 +40,7 @@
     "jquery": "^3.4.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
-    "nanomorph": "^5.4.0",
+    "nanomorph": "^5.4.3",
     "numeral": "^2.0.6",
     "os-browserify": "^0.3.0",
     "path-parser": "^4.2.0",
