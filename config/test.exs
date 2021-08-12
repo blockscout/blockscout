@@ -24,4 +24,6 @@ config :explorer, Explorer.Repo,
   hostname: "localhost",
   poolsize: 10,
   # Ensure async testing is possible:
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  # disable ecto logs during test
+  log: false
