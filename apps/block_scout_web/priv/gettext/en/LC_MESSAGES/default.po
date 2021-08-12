@@ -3105,8 +3105,3 @@ msgstr ""
 #: lib/block_scout_web/templates/search/results.html.eex:12
 msgid "Search Results"
 msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/search/results.html.eex:12
-msgid "Search Results"
-msgstr ""
