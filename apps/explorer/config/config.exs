@@ -21,7 +21,8 @@ config :explorer,
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    )
+    ),
+  enabled_1559_support: System.get_env("ENABLE_1559_SUPPORT") == "true"
 
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
@@ -103,6 +104,14 @@ config :explorer, Explorer.Counters.TokenTransfersCounter,
   enable_consolidation: true
 
 config :explorer, Explorer.Counters.AddressTransactionsCounter,
+  enabled: true,
+  enable_consolidation: true
+
+config :explorer, Explorer.Counters.BlockBurnedFeeCounter,
+  enabled: true,
+  enable_consolidation: true
+
+config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
   enabled: true,
   enable_consolidation: true
 
