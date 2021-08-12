@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Tokens.Instance.MetadataController do
   use BlockScoutWeb, :controller
 
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
 
   def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id}) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
@@ -15,7 +16,8 @@ defmodule BlockScoutWeb.Tokens.Instance.MetadataController do
           conn,
           "index.html",
           token_instance: token_transfer,
-          current_path: current_path(conn),
+          current_path:
+            token_instance_metadata_path(conn, :index, Address.checksum(token_address_hash), to_string(token_id)),
           token: Market.add_price(token),
           total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
         )

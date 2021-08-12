@@ -103,8 +103,13 @@ defmodule BlockScoutWeb.BlockController do
   end
 
   defp handle_render(full_options, conn, _params) do
+    options_map =
+      full_options
+      |> Enum.into(%{})
+      |> Map.delete(:necessity_by_association)
+
     render(conn, "index.html",
-      current_path: current_path(conn),
+      current_path: block_path(conn, :index, options_map),
       block_type: Keyword.get(full_options, :block_type, "Block")
     )
   end

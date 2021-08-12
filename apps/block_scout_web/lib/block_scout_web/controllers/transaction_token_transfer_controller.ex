@@ -101,7 +101,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
         "index.html",
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         block_height: Chain.block_height(),
-        current_path: current_path(conn),
+        current_path: transaction_token_transfer_path(conn, :index, transaction_hash),
         show_token_transfers: true,
         transaction: transaction
       )

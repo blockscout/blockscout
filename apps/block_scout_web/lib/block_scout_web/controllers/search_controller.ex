@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.SearchController do
       conn,
       "results.html",
       query: query,
-      current_path: current_path(conn)
+      current_path: search_path(conn, :search_results, q: query)
     )
   end
 
@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.SearchController do
       conn,
       "results.html",
       query: nil,
-      current_path: current_path(conn)
+      current_path: search_path(conn, :search_results, q: nil)
     )
   end
 end

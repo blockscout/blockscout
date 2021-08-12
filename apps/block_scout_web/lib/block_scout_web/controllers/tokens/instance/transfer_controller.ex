@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
         conn,
         "index.html",
         token_instance: token_transfer,
-        current_path: current_path(conn),
+        current_path: token_instance_transfer_path(conn, :index, Address.checksum(token_address_hash), token_id),
         token: Market.add_price(token),
         total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
       )

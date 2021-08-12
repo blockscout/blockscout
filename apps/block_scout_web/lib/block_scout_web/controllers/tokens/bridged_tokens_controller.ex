@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.BridgedTokensController do
 
   def show(conn, %{"id" => "eth"}) do
     render(conn, "index.html",
-      current_path: current_path(conn),
+      current_path: bridged_tokens_path(conn, :index),
       chain: "Ethereum",
       chain_id: 1,
       destination: :eth
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.BridgedTokensController do
 
   def show(conn, %{"id" => "bsc"}) do
     render(conn, "index.html",
-      current_path: current_path(conn),
+      current_path: bridged_tokens_path(conn, :index),
       chain: "Binance Smart Chain",
       chain_id: 56,
       destination: :bsc
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.BridgedTokensController do
 
   def index(conn, _params) do
     render(conn, "index.html",
-      current_path: current_path(conn),
+      current_path: bridged_tokens_path(conn, :index),
       chain: "Ethereum",
       chain_id: 1,
       destination: :eth

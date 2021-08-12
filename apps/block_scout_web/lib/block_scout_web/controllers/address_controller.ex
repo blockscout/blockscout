@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.AddressController do
     total_supply = Chain.total_supply()
 
     render(conn, "index.html",
-      current_path: current_path(conn),
+      current_path: address_path(conn, :index),
       address_count: Chain.address_estimated_count(),
       total_supply: total_supply
     )

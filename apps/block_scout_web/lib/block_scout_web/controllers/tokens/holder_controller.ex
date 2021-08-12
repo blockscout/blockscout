@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
       render(
         conn,
         "index.html",
-        current_path: current_path(conn),
+        current_path: token_holder_path(conn, :index, address_hash),
         token: Market.add_price(token),
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
       )

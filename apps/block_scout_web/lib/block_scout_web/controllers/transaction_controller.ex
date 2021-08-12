@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.TransactionController do
     render(
       conn,
       "index.html",
-      current_path: current_path(conn),
+      current_path: transaction_path(conn, :index),
       transaction_estimated_count: transaction_estimated_count
     )
   end

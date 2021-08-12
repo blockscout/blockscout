@@ -8,7 +8,7 @@
   <td class="stakes-td">
     <% token = token_display_name(@token) %>
     <%= link(token,
-      to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
+      to: token_path(BlockScoutWeb.Endpoint, :show, Address.checksum(@token.contract_address_hash)),
       "data-test": "token_link",
       class: "text-truncate") %>
   </td>

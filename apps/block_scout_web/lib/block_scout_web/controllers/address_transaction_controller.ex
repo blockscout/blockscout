@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.{AccessHelpers, TransactionView}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -100,6 +101,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      current_path = address_transactions_path_with_filter(conn, params, address_hash)
+
       render(
         conn,
         "index.html",
@@ -108,7 +111,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        current_path: current_path(conn)
+        current_path: current_path
       )
     else
       :error ->
@@ -123,6 +126,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->
+            current_path = address_transactions_path_with_filter(conn, params, address_hash)
+
             render(
               conn,
               "index.html",
@@ -131,12 +136,22 @@ defmodule BlockScoutWeb.AddressTransactionController do
               exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-              current_path: current_path(conn)
+              current_path: current_path
             )
 
           _ ->
             not_found(conn)
         end
+    end
+  end
+
+  defp address_transactions_path_with_filter(conn, params, address_hash) do
+    base_path = address_transaction_path(conn, :index, Address.checksum(address_hash))
+
+    if params["filter"] do
+      base_path <> "?filter=" <> params["filter"]
+    else
+      base_path
     end
   end
 end

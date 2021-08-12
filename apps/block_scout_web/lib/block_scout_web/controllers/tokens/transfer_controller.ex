@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
         conn,
         "index.html",
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
-        current_path: current_path(conn),
+        current_path: token_transfer_path(conn, :index, address_hash),
         token: Market.add_price(token),
         token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
       )

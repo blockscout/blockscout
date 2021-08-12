@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.AddressValidationController do
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        current_path: current_path(conn),
+        current_path: address_validation_path(conn, :index, address_hash),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       )

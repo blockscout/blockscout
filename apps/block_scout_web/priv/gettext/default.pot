@@ -6,7 +6,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_token_balance_view.ex:8
+#: lib/block_scout_web/views/address_token_balance_view.ex:9
 msgid "%{count} token"
 msgid_plural "%{count} tokens"
 msgstr[0] ""

@@ -97,7 +97,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         conn,
         "index.html",
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        current_path: current_path(conn),
+        current_path: transaction_internal_transaction_path(conn, :index, transaction_hash),
         block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
         transaction: transaction

@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        current_path: current_path(conn),
+        current_path: address_internal_transaction_path(conn, :index, address_hash),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})

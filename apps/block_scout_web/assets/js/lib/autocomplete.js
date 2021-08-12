@@ -122,7 +122,7 @@ const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-m
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
-  if (selectionValue.type === 'contract' || selectionValue.type === 'address') {
+  if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
     window.location = `/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {
     window.location = `/tokens/${selectionValue.address_hash}`

@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        current_path: current_path(conn),
+        current_path: address_token_transfers_path_with_filter(conn, params, address_hash, token_hash_string),
         token: token,
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
@@ -196,7 +196,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        current_path: current_path(conn),
+        current_path: address_token_transfers_path_with_filter(conn, params, address_hash, nil),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
@@ -208,6 +208,21 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
 
       {:error, :not_found} ->
         not_found(conn)
+    end
+  end
+
+  defp address_token_transfers_path_with_filter(conn, params, address_hash, token_hash) do
+    base_path =
+      if token_hash do
+        address_token_transfers_path(conn, :index, Address.checksum(address_hash), token_hash)
+      else
+        address_token_transfers_path(conn, :index, Address.checksum(address_hash))
+      end
+
+    if params["filter"] do
+      base_path <> "?filter=" <> params["filter"]
+    else
+      base_path
     end
   end
 end

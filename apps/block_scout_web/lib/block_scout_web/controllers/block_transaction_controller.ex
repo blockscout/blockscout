@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
           "index.html",
           block: block,
           block_transaction_count: block_transaction_count,
-          current_path: current_path(conn)
+          current_path: block_transaction_path(conn, :index, block)
         )
 
       {:error, {:invalid, :hash}} ->

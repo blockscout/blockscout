@@ -68,6 +68,6 @@ defmodule BlockScoutWeb.TokensController do
   end
 
   def index(conn, _params) do
-    render(conn, "index.html", current_path: current_path(conn))
+    render(conn, "index.html", current_path: tokens_path(conn, :index))
   end
 end
