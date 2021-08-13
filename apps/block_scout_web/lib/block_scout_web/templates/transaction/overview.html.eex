@@ -112,7 +112,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The number of the block in which the transaction was recorded. Block confirmation indicate how many blocks since the transaction is mined.") %>
+                text: gettext("The number of the block in which the transaction was recorded. Block confirmation indicate how many blocks since the transaction is validated.") %>
               <%= gettext "Block" %></dt>
             <dd class="col-sm-9 col-lg-10" data-selector="block-number">
               <%= if block do %>
@@ -131,7 +131,7 @@
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("The date and time at which a transaction is mined.") %>
+                  text: gettext("The date and time at which a transaction is validated.") %>
                 <%= gettext "Timestamp" %>
               </dt>
               <dd class="col-sm-9 col-lg-10" data-selector="block-timestamp">
@@ -283,7 +283,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The value being transacted in Ether and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction.") %>
+                text: gettext("The value being transacted in CELO and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction.") %>
               <%= gettext "Value" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
@@ -314,7 +314,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Cost per unit of gas specified for the transaction, in Ether and Gwei. The higher the gas price the higher chance of getting included in a block.") %>
+                text: gettext("Cost per unit of gas specified for the transaction, in CELO and Gwei. The higher the gas price the higher chance of getting included in a block.") %>
               <%= gettext "Gas Price" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= gas_price(@transaction, :gwei) %> </dd>
@@ -324,7 +324,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Maximum amount of gas provided for the transaction. For normal Eth transfers, the value is 21,000. For contract this value is higher and bound by block gas limit.") %>
+                text: gettext("Maximum amount of gas provided for the transaction.") %>
               <%= gettext "Gas Limit" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= format_gas_limit(@transaction.gas) %> </dd>
