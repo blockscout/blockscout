@@ -2,7 +2,7 @@
 DO $$
 DECLARE
    row_count integer := 1;
-   batch_size  integer := 500; -- HOW MANY ITEMS WILL BE UPDATED AT TIME
+   batch_size  integer := 128; -- HOW MANY ITEMS WILL BE UPDATED AT TIME
    iterator  integer := batch_size;
    max_row_number integer;
    next_iterator integer;
