@@ -274,6 +274,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       {:ok, :already_fully_verified}
     else
       Logger.info("!!! not fully verified")
+
       if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
         if Chain.smart_contract_verified?(address_hash_string) do
           case Sourcify.check_by_address(address_hash_string) do
@@ -286,6 +287,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           end
         else
           Logger.info("!!! not verified #{address_hash_string}")
+
           case Sourcify.check_by_address_any(address_hash_string) do
             {:ok, "full", metadata} ->
               Logger.info("!!! full publish")
