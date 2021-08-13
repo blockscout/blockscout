@@ -2768,11 +2768,6 @@ msgid "Copy Txn UTF-8 Input"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:317
-msgid "Cost per unit of gas specified for the transaction, in Ether and Gwei. The higher the gas price the higher chance of getting included in a block."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:318
 msgid "Gas Price"
 msgstr ""
@@ -2808,11 +2803,6 @@ msgid "List of token transferred in the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:327
-msgid "Maximum amount of gas provided for the transaction. For normal Eth transfers, the value is 21,000. For contract this value is higher and bound by block gas limit."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:68
 msgid "Result"
 msgstr ""
@@ -2828,18 +2818,8 @@ msgid "Status"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:134
-msgid "The date and time at which a transaction is mined."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:336
 msgid "The exact units of gas that was used for the transaction."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:115
-msgid "The number of the block in which the transaction was recorded. Block confirmation indicate how many blocks since the transaction is mined."
 msgstr ""
 
 #, elixir-format
@@ -2865,11 +2845,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:79
 msgid "The status of the transaction: confirmed, unconfirmed."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:286
-msgid "The value being transacted in Ether and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction."
 msgstr ""
 
 #, elixir-format
@@ -2927,7 +2902,7 @@ msgstr ""
 msgid " to help improve this website. Understand more in our "
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/chain/_metatags.html.eex:2
 msgid "%{network} Explorer"
 msgstr ""
@@ -2937,12 +2912,12 @@ msgstr ""
 msgid "Allow tracking of my activity on "
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:40
 msgid "Block Proposed, awaiting import..."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:20
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for the Celo Network."
 msgstr ""
@@ -2971,7 +2946,7 @@ msgstr ""
 msgid "Downtime"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:37
 msgid "Forum"
 msgstr ""
@@ -3009,29 +2984,29 @@ msgstr ""
 msgid "Signers"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_signed/index.html.eex:19
 msgid "There are no downtime blocks for this address."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:29
 msgid "There is no decompiled contracts for this address."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
 msgid "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:39
 #: lib/block_scout_web/templates/block/overview.html.eex:136
 #: lib/block_scout_web/templates/chain/_block.html.eex:15
 msgid "Validator"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/views/block_view.ex:89
 #: lib/block_scout_web/views/block_view.ex:94
 msgid "Validator Reward"
@@ -3040,4 +3015,29 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:6
 msgid "explorer.celo.org"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:317
+msgid "Cost per unit of gas specified for the transaction, in CELO and Gwei. The higher the gas price the higher chance of getting included in a block."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:327
+msgid "Maximum amount of gas provided for the transaction."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:134
+msgid "The date and time at which a transaction is validated."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:115
+msgid "The number of the block in which the transaction was recorded. Block confirmation indicate how many blocks since the transaction is validated."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:286
+msgid "The value being transacted in CELO and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction."
 msgstr ""

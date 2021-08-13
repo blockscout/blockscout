@@ -281,8 +281,6 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
               {:error, :not_verified}
           end
         else
-          Logger.info("!!! not verified #{address_hash_string}")
-
           case Sourcify.check_by_address_any(address_hash_string) do
             {:ok, "full", metadata} ->
               proccess_metadata_add_publish(address_hash_string, metadata, false)
