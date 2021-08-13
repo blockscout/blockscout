@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page
 - [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
 - [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
 
