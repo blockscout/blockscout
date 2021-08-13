@@ -9,8 +9,6 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   alias Explorer.SmartContract.{PublisherWorker, Solidity.CodeCompiler, Solidity.CompilerVersion}
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
-  require Logger
-
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
       redirect(conn, to: address_path(conn, :show, address_hash_string))
@@ -273,13 +271,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
       {:ok, :already_fully_verified}
     else
-      Logger.info("!!! not fully verified")
-
       if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
         if Chain.smart_contract_verified?(address_hash_string) do
           case Sourcify.check_by_address(address_hash_string) do
             {:ok, _verified_status} ->
-              Logger.info("!!! get_metadat and publish #{address_hash_string}")
               get_metadata_and_publish(address_hash_string, nil)
 
             _ ->
@@ -290,11 +285,9 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
 
           case Sourcify.check_by_address_any(address_hash_string) do
             {:ok, "full", metadata} ->
-              Logger.info("!!! full publish")
               proccess_metadata_add_publish(address_hash_string, metadata, false)
 
             {:ok, "partial", metadata} ->
-              Logger.info("!!! partial publish")
               proccess_metadata_add_publish(address_hash_string, metadata, true)
 
             _ ->
