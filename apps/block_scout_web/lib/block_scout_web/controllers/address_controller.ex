@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressView}
+  alias BlockScoutWeb.{AccessHelpers, AddressView, Controller}
   alias Explorer.Counters.{AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.AddressController do
     total_supply = Chain.total_supply()
 
     render(conn, "index.html",
-      current_path: current_path(conn),
+      current_path: Controller.current_full_path(conn),
       address_count: Chain.address_estimated_count(),
       total_supply: total_supply
     )

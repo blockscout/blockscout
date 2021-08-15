@@ -278,6 +278,72 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.internal_transactions(count: 3))
       |> assert_has(AddressPage.internal_transaction(internal_transaction))
     end
+
+    test "can filter to see internal transactions from an address only", %{
+      addresses: addresses,
+      session: session
+    } do
+      block = insert(:block, number: 7000)
+
+      from_lincoln =
+        :transaction
+        |> insert(from_address: addresses.lincoln)
+        |> with_block(block)
+
+      from_taft =
+        :transaction
+        |> insert(from_address: addresses.taft)
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: from_lincoln,
+        index: 2,
+        from_address: addresses.lincoln,
+        block_number: from_lincoln.block_number,
+        transaction_index: from_lincoln.index,
+        block_hash: from_lincoln.block_hash,
+        block_index: 2
+      )
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.apply_filter("From")
+      |> assert_has(AddressPage.transaction(from_lincoln))
+      |> refute_has(AddressPage.transaction(from_taft))
+    end
+
+    test "can filter to see internal transactions to an address only", %{
+      addresses: addresses,
+      session: session
+    } do
+      block = insert(:block, number: 7000)
+
+      from_lincoln =
+        :transaction
+        |> insert(to_address: addresses.lincoln)
+        |> with_block(block)
+
+      from_taft =
+        :transaction
+        |> insert(to_address: addresses.taft)
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: from_lincoln,
+        index: 2,
+        from_address: addresses.lincoln,
+        block_number: from_lincoln.block_number,
+        transaction_index: from_lincoln.index,
+        block_hash: from_lincoln.block_hash,
+        block_index: 2
+      )
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.apply_filter("To")
+      |> assert_has(AddressPage.transaction(from_lincoln))
+      |> refute_has(AddressPage.transaction(from_taft))
+    end
   end
 
   describe "viewing token transfers from a specific token" do
