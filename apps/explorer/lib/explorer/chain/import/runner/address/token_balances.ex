@@ -100,10 +100,12 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         {token_contract_address_hash, address_hash, block_number}
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
-        if Enum.count(grouped_address_token_balances) > 1 do
-          Enum.max_by(grouped_address_token_balances, fn %{value_fetched_at: value_fetched_at} -> value_fetched_at end)
+        dedup = Enum.dedup(grouped_address_token_balances)
+
+        if Enum.count(dedup) > 1 do
+          Enum.max_by(dedup, fn %{value_fetched_at: value_fetched_at} -> value_fetched_at end)
         else
-          Enum.at(grouped_address_token_balances, 0)
+          Enum.at(dedup, 0)
         end
       end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
