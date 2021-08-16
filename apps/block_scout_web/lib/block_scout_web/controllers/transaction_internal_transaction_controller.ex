@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, InternalTransactionView, TransactionController}
+  alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
@@ -97,7 +97,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         conn,
         "index.html",
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
         transaction: transaction
