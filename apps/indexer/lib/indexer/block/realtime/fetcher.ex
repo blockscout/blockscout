@@ -428,6 +428,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           end)
 
         Logger.debug("#blocks_importer#: Balances finished")
+
         {:ok,
          %{
            addresses_params: merged_addresses_params,

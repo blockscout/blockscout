@@ -452,7 +452,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
   # subtraces is an actual integer in JSON and not hex-encoded
   # traceAddress is a list of actual integers, not a list of hex-encoded
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(subtraces traceAddress transactionHash blockHash type output),
+       when key in ~w(subtraces traceAddress transactionHash blockHash type output transactionPosition),
        do: entry
 
   defp entry_to_elixir({"action" = key, action}) do

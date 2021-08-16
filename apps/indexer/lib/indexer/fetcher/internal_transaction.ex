@@ -105,6 +105,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
       EthereumJSONRPC.Parity ->
         EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
+      EthereumJSONRPC.Erigon ->
+        EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
+
       EthereumJSONRPC.Besu ->
         EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
