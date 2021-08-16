@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
 
   import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2, string_to_block_hash: 1]
 
-  alias BlockScoutWeb.TransactionView
+  alias BlockScoutWeb.{Controller, TransactionView}
   alias Explorer.Chain
   alias Phoenix.View
 
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
           "index.html",
           block: block,
           block_transaction_count: block_transaction_count,
-          current_path: current_path(conn)
+          current_path: Controller.current_full_path(conn)
         )
 
       {:error, {:invalid, :hash}} ->

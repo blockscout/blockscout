@@ -1,13 +1,19 @@
 defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.Controller
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{PublisherWorker, Solidity.CodeCompiler, Solidity.CompilerVersion}
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
-      redirect(conn, to: address_path(conn, :show, address_hash_string))
+      address_path =
+        conn
+        |> address_path(:show, address_hash_string)
+        |> Controller.full_path()
+
+      redirect(conn, to: address_path)
     else
       changeset =
         SmartContract.changeset(

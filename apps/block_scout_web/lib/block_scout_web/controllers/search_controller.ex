@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.SearchController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{ChainController, SearchView}
+  alias BlockScoutWeb.{ChainController, Controller, SearchView}
   alias Phoenix.View
 
   def search_results(conn, %{"q" => query, "type" => "JSON"} = params) do
@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.SearchController do
       conn,
       "results.html",
       query: query,
-      current_path: current_path(conn)
+      current_path: Controller.current_full_path(conn)
     )
   end
 
@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.SearchController do
       conn,
       "results.html",
       query: nil,
-      current_path: current_path(conn)
+      current_path: Controller.current_full_path(conn)
     )
   end
 end
