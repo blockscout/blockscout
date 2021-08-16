@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@analytics/segment": "^0.6.0",
-    "analytics": "^0.7.5",
+    "analytics": "^0.7.7",
     "@fortawesome/fontawesome-free": "^5.15.3",
     "assert": "^2.0.0",
     "awesomplete": "^1.1.5",
