@@ -24,7 +24,7 @@
     "@fortawesome/fontawesome-free": "^5.15.3",
     "assert": "^2.0.0",
     "awesomplete": "^1.1.5",
-    "bignumber.js": "^9.0.0",
+    "bignumber.js": "^9.0.1",
     "bootstrap": "^4.6.0",
     "chart.js": "^3.4.1",
     "chartjs-adapter-moment": "^1.0.0",
