@@ -35,11 +35,11 @@ defmodule BlockScoutWeb.ApiRouter do
 
       scope "/v1", as: :api_v1 do
         get("/supply", V1.SupplyController, :supply)
-        post("/eth_rpc", RPC.EthController, :eth_request)
+        post("/eth-rpc", RPC.EthController, :eth_request)
       end
 
       # For backward compatibility. Should be removed
-      post("/eth_rpc", RPC.EthController, :eth_request)
+      post("/eth-rpc", RPC.EthController, :eth_request)
     end
   end
 

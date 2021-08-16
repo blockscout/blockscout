@@ -1,0 +1,1 @@
+<%= render BlockScoutWeb.AddressView, "_metatags.html", conn: @conn, address: @address %>

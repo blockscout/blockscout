@@ -7,6 +7,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain.Block
+  alias Explorer.Repo
   alias Indexer.BoundInterval
   alias Indexer.Block.Catchup
 

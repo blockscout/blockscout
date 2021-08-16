@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Reward ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.address_type, &1.block_hash})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.address_hash, &1.address_type})
 
     Import.insert_changes_list(
       repo,

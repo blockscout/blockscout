@@ -10,6 +10,9 @@ import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 import '../lib/token_balance_dropdown_search'
 import '../lib/async_listing_load'
 import '../app'
+import {
+  openQrModal
+} from '../lib/modals'
 
 export const initialState = {
   channelDisconnected: false,
@@ -21,6 +24,7 @@ export const initialState = {
   balanceCard: null,
   fetchedCoinBalanceBlockNumber: null,
   transactionCount: null,
+  gasUsageCount: null,
   validationCount: null,
   countersFetched: false
 }
@@ -41,6 +45,7 @@ export function reducer (state = initialState, action) {
     case 'COUNTERS_FETCHED': {
       return Object.assign({}, state, {
         transactionCount: action.transactionCount,
+        gasUsageCount: action.gasUsageCount,
         validationCount: action.validationCount,
         countersFetched: true
       })
@@ -70,6 +75,14 @@ export function reducer (state = initialState, action) {
   }
 }
 
+let fetchedTokenBalanceBlockNumber = 0
+function loadTokenBalance (blockNumber) {
+  if (blockNumber >= fetchedTokenBalanceBlockNumber) {
+    fetchedTokenBalanceBlockNumber = blockNumber
+    setTimeout(loadTokenBalanceDropdown, 1000)
+  }
+}
+
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
@@ -81,9 +94,9 @@ const elements = {
       return { balanceCard: $el.html(), balance: parseFloat($el.find('.current-balance-in-wei').attr('data-wei-value')) }
     },
     render ($el, state, oldState) {
-      if (oldState.balance === state.balance) return
+      if (oldState.balance === state.balance || isNaN(state.balance)) return
       $el.empty().append(state.balanceCard)
-      loadTokenBalanceDropdown()
+      loadTokenBalance(state.fetchedCoinBalanceBlockNumber)
       updateAllCalculatedUsdValues()
     }
   },
@@ -94,7 +107,23 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.transactionCount) {
         if (oldState.transactionCount === state.transactionCount) return
-        $el.empty().append('>= ' + numeral(state.transactionCount).format() + ' Transactions')
+        $el.empty().append(numeral(state.transactionCount).format() + ' Transactions')
+        $el.show()
+        $el.parent('.address-detail-item').removeAttr('style')
+      } else {
+        $el.hide()
+        $el.parent('.address-detail-item').css('display', 'none')
+      }
+    }
+  },
+  '[data-selector="gas-usage-count"]': {
+    load ($el) {
+      return { gasUsageCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (state.countersFetched && state.gasUsageCount) {
+        if (oldState.gasUsageCount === state.gasUsageCount) return
+        $el.empty().append(numeral(state.gasUsageCount).format() + ' Gas used')
         $el.show()
         $el.parent('.address-detail-item').removeAttr('style')
       } else {
@@ -162,6 +191,9 @@ if ($addressDetailsPage.length) {
     type: 'RECEIVED_UPDATED_BALANCE',
     msg: humps.camelizeKeys(msg)
   }))
+  addressChannel.on('token_balance', (msg) => loadTokenBalance(
+    msg.block_number
+  ))
   addressChannel.on('transaction', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TRANSACTION',
@@ -186,4 +218,8 @@ if ($addressDetailsPage.length) {
     }))
 
   loadCounters(store)
+
+  $('.btn-qr-icon').click(_event => {
+    openQrModal()
+  })
 }

@@ -50,7 +50,7 @@ defmodule Indexer.Fetcher do
             end
           end
 
-          def disabled?() do
+          def disabled? do
             Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
           end
 

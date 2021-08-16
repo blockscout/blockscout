@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.BlockController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.BlockView
+  alias BlockScoutWeb.{BlockView, Controller}
   alias Explorer.Chain
   alias Phoenix.View
 
@@ -29,7 +29,12 @@ defmodule BlockScoutWeb.BlockController do
   end
 
   def show(conn, %{"hash_or_number" => hash_or_number}) do
-    redirect(conn, to: block_transaction_path(conn, :index, hash_or_number))
+    block_transaction_path =
+      conn
+      |> block_transaction_path(:index, hash_or_number)
+      |> Controller.full_path()
+
+    redirect(conn, to: block_transaction_path)
   end
 
   def reorg(conn, params) do
@@ -104,7 +109,7 @@ defmodule BlockScoutWeb.BlockController do
 
   defp handle_render(full_options, conn, _params) do
     render(conn, "index.html",
-      current_path: current_path(conn),
+      current_path: Controller.current_full_path(conn),
       block_type: Keyword.get(full_options, :block_type, "Block")
     )
   end

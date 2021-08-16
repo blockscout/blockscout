@@ -15,8 +15,8 @@ $modal-status-graph-question: #329ae9 !default;
 
 .modal-status-graph {
   align-items: center;
-  border-top-left-radius: $modal-border-radius;
-  border-top-right-radius: $modal-border-radius;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
   display: flex;
   height: 135px;
   justify-content: center;
@@ -66,6 +66,18 @@ $modal-status-graph-question: #329ae9 !default;
   line-height: 1.5;
   margin: 0 0 25px;
   text-align: center;
+
+  &.m-b-0 {
+    margin-bottom: 0;
+  }
+
+  .link-helptip {
+    border-bottom-width: 1px;
+    border-bottom-style: dotted;
+    color: inherit;
+    cursor: help;
+    text-decoration: none;
+  }
 }
 
 .modal-status-button-wrapper {
@@ -76,6 +88,13 @@ $modal-status-graph-question: #329ae9 !default;
   .btn-line {
     flex-grow: 1;
     margin-right: 20px;
+    border-color: $primary;
+    color: $primary;
+
+    &:hover {
+      background-color: $primary;
+      color: $additional-font;
+    }
 
     &:last-child {
       margin-right: 0;

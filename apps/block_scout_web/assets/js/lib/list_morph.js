@@ -29,14 +29,13 @@ import { updateAllAges } from './from_now'
 //               animations
 export default function (container, newElements, { key, horizontal } = {}) {
   if (!container) return
-  const oldElements = $(container).children().get()
+  const oldElements = $(container).children().not('.shrink-out').get()
   let currentList = map(oldElements, (el) => ({ id: get(el, key), el }))
   const newList = map(newElements, (el) => ({ id: get(el, key), el }))
   const overlap = intersectionBy(newList, currentList, 'id').map(({ id, el }) => ({ id, el: updateAllAges($(el))[0] }))
-
   // remove old items
   const removals = differenceBy(currentList, newList, 'id')
-  let canAnimate = !horizontal && removals.length <= 1
+  let canAnimate = !horizontal && newList.length > 0
   removals.forEach(({ el }) => {
     if (!canAnimate) return el.remove()
     const $el = $(el)
@@ -46,10 +45,17 @@ export default function (container, newElements, { key, horizontal } = {}) {
   currentList = differenceBy(currentList, removals, 'id')
 
   // update kept items
-  currentList = currentList.map(({ el }, i) => ({
-    id: overlap[i] && overlap[i].id,
-    el: el.outerHTML === overlap[i] && overlap[i].el && overlap[i].el.outerHTML ? el : morph(el, overlap[i].el)
-  }))
+  currentList = currentList.map(({ el }, i) => {
+    if (overlap[i]) {
+      return ({
+        id: overlap[i].id,
+        el: el.outerHTML === overlap[i].el && overlap[i].el.outerHTML ? el : morph(el, overlap[i].el)
+      })
+    } else {
+      return null
+    }
+  })
+    .filter(el => el !== null)
 
   // add new items
   const finalList = newList.map(({ id, el }) => get(find(currentList, { id }), 'el', el)).reverse()
@@ -57,7 +63,6 @@ export default function (container, newElements, { key, horizontal } = {}) {
   finalList.forEach((el, i) => {
     if (el.parentElement) return
     if (!canAnimate) return container.insertBefore(el, get(finalList, `[${i - 1}]`))
-    canAnimate = false
     if (!get(finalList, `[${i - 1}]`)) return slideDownAppend($(container), el)
     slideDownBefore($(get(finalList, `[${i - 1}]`)), el)
   })

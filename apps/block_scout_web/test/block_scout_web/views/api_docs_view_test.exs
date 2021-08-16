@@ -39,6 +39,14 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
   end
 
   describe "blockscout_url/2" do
+    setup do
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+          url: [scheme: "http", host: "localhost", api_path: nil, path: nil]
+        )
+      end)
+    end
+
     test "set_path = true returns url with path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
         url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/eth/mainnet"]
@@ -86,7 +94,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, api_path: "/chain/dog"]
       )
 
-      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/chain/dog/api/eth_rpc"
+      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/chain/dog/api/eth-rpc"
     end
 
     test "does not add slash to empty path" do
@@ -94,7 +102,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: ""]
       )
 
-      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/api/eth_rpc"
+      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/api/eth-rpc"
     end
 
     test "localhost return with port" do
@@ -103,7 +111,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         http: [port: 9999]
       )
 
-      assert APIDocsView.eth_rpc_api_url() == "http://localhost:9999/api/eth_rpc"
+      assert APIDocsView.eth_rpc_api_url() == "http://localhost:9999/api/eth-rpc"
     end
   end
 end

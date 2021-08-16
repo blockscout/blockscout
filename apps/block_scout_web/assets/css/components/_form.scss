@@ -1,4 +1,5 @@
 $form-control-border-color: #e2e5ec !default;
+$form-control-border-color-active: $primary !default;
 
 .form-control {
   border-color: $form-control-border-color;
@@ -10,7 +11,7 @@ $form-control-border-color: #e2e5ec !default;
   }
 
   &:focus {
-    border-color: $secondary;
+    border-color: $form-control-border-color-active;
     box-shadow: none;
   }
 
@@ -25,12 +26,28 @@ $form-control-border-color: #e2e5ec !default;
   font-weight: normal;
   line-height: 1.8;
 
+  .i-tooltip {
+    display: inline;
+    margin-left: 3px;
+  }
+
+  .link-dotted {
+    border-bottom-width: 1px;
+    border-bottom-style: dotted;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
   .text-dark {
     color: #333;
   }
 
   &.m-b-0 {
     margin-bottom: 0;
+  }
+
+  &.m-b-0-7 {
+    margin-bottom: 0.7rem;
   }
 }
 
@@ -41,6 +58,48 @@ $form-control-border-color: #e2e5ec !default;
     border-left: none;
     color: #a3a9b5;
     font-size: 14px;
+    transition: $input-transition;
+  }
+}
+
+.form-control:focus ~ .input-group-prepend.last {
+  .input-group-text {
+    border-color: $form-control-border-color-active;
+  }
+}
+
+
+.input-group.input-status-error  {
+  input {
+    border-color: #FF7884 !important;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .input-group-prepend {
+    margin-right: 0;
+  }
+
+  .input-group-prepend.last {
+    .input-group-text {
+      border-color: #FF7884;
+      border-radius: 0 2px 0 0;
+    }
+  }
+
+  .input-group-message {
+    width: 100%;
+    padding: 10px;
+    color: white;
+    background: #FF7884;
+    border-radius: 0 0 2px 2px;
+
+    .link-helptip {
+      border-bottom-width: 1px;
+      border-bottom-style: dotted;
+      color: inherit;
+      cursor: help;
+      text-decoration: none;
+    }
   }
 }
 
@@ -52,4 +111,42 @@ $form-control-border-color: #e2e5ec !default;
       margin-bottom: 0;
     }
   }
+}
+
+.tokens-list-search-input-outer-container {
+  display: flex;
+  @include media-breakpoint-down(md) {
+    display: block;
+  }
+}
+
+.tokens-list-search-input-container {
+  float: right;
+  margin-left: auto;
+  position: relative;
+  @include media-breakpoint-down(md) {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+.tokens-list-search-input-container.tokens:before {
+  bottom: 5px;
+}
+
+.search-input {
+  background: url("data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2016%2017%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2217%22%3E%0A%20%20%20%20%3Cpath%20fill%3D%22%237DD79F%22%20fill-rule%3D%22evenodd%22%20d%3D%22M15.713%2015.727a.982.982%200%200%201-1.388%200l-2.289-2.29C10.773%2014.403%209.213%2015%207.5%2015A7.5%207.5%200%201%201%2015%207.5c0%201.719-.602%203.284-1.575%204.55l2.288%202.288a.983.983%200%200%201%200%201.389zM7.5%202a5.5%205.5%200%201%200%200%2011%205.5%205.5%200%201%200%200-11z%22%2F%3E%0A%3C%2Fsvg%3E") no-repeat 20px 20px;
+  background-position: left;
+  background-position-x: 10px;
+  padding-left: 35px;
+}
+
+.tokens-list-search-input {
+  height: 40px;
+  width: 300px;
+  @include media-breakpoint-down(md) {
+    width: 100%;
+  }
+  padding: 10px 10px 10px 35px;
+  outline: none;
 }

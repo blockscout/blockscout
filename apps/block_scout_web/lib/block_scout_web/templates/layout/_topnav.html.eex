@@ -1,22 +1,13 @@
-<link rel="preload" href="<%= static_path(@conn, "/css/awesomplete.css") %>" as="style" onload="this.rel='stylesheet'">
-<link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>">
-<script src="<%= static_path(@conn, "/js/awesomplete.min.js") %>"></script>
-<script src="<%= static_path(@conn, "/js/awesomplete-util.min.js") %>"></script>
+<% staking_enabled_in_menu = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled_in_menu] %>
+<% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
-  <script>
-    if (localStorage.getItem("current-color-mode") === "dark") {
-      document.getElementById("top-navbar").style.backgroundColor = "#282945";
-    }
-  </script>
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
-    <% end %>   
-    <script>
-      if (localStorage.getItem("current-color-mode") === "dark") {
-        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
-      }
-    </script>
+      <img class="navbar-logo" id="navbar-logo" src="<%= static_path(@conn, logo()) %>" alt="<%= subnetwork_title() %>" />
+      <%= if logo_text() do %>
+        <span class="logo-text"> <%= logo_text() %> </span>
+      <% end %>
+    <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -60,7 +51,7 @@
               <%= if variant !== EthereumJSONRPC.Besu do %>
                 <%= link(
                       gettext("Pending"),
-                      class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
+                      class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
                       "data-test": "pending_transactions_link",
                       to: pending_transaction_path(@conn, :index)
                     ) %>
@@ -75,6 +66,42 @@
               <%= gettext("Accounts") %>
             <% end %>
           </li>
+          <%= if Chain.bridged_tokens_enabled?() do %>
+            <li class="nav-item dropdown">
+              <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="nav-link-icon">
+                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                </span>
+                <%= gettext("Tokens") %>
+              </a>
+              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+                <%= link(
+                      gettext("All"),
+                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
+                      to: tokens_path(@conn, :index)
+                    ) %>
+                <%= link(
+                      gettext("Bridged from Ethereum"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/eth", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :eth)
+                    ) %>
+                <%= link(
+                      gettext("Bridged from BSC"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/bsc", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :bsc)
+                    ) %>
+              </div>
+            </li>
+          <% else %>
+            <li class="nav-item">
+              <%= link to: tokens_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("tokens", @conn.request_path)}" do %>
+                <span class="nav-link-icon">
+                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                </span>
+                <%= gettext("Tokens") %>
+              <% end %>
+            </li>
+          <% end %>
         <% end %>
         <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
           <li class="nav-item dropdown">
@@ -92,14 +119,45 @@
                   ) %>
               <%= link(
                     gettext("RPC"),
-                    class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("api-docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :index)
                   ) %>
               <%= link(
                     gettext("Eth RPC"),
-                    class: "dropdown-item #{tab_status("eth_rpc_api_docs", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("eth-rpc-api-docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :eth_rpc)
                   ) %>
+            </div>
+          </li>
+        <% end %>
+        <%= if apps_menu == true || staking_enabled_in_menu do %>
+          <li class="nav-item dropdown">
+            <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+              </span>
+              <%= if apps_menu == true do %>
+                <%= gettext("Apps") %>
+              <% else %>
+                <%= gettext("Stakes") %>
+              <% end %>
+            </a>
+            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
+              <%= if staking_enabled_in_menu do %>
+                <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
+                  <%= gettext("Staking") %>
+                  <span class="bs-label secondary right from-dropdown">New</span>
+                </a>
+              <% end %>
+              <%= if apps_menu == true do %>
+                <%= for %{url: url, title: title} <- external_apps_list() do %> 
+                    <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
+                      <span class="external-link-icon">
+                        <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
+                      </span>
+                    </a>
+                <% end %>
+              <% end %>
             </div>
           </li>
         <% end %>
@@ -113,15 +171,15 @@
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">  
             <a class="dropdown-item header division">Mainnets</a> 
             <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>  
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
             <% end %> 
             <a class="dropdown-item header division">Testnets</a> 
             <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %> 
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
             <% end %> 
             <a class="dropdown-item header division">Other Networks</a> 
             <%= for %{url: url, title: title} <- dropdown_other_nets() do %>  
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
             <% end %> 
           </div>
         </li>
@@ -132,49 +190,8 @@
             <path fill="#9B62FF" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"/>
         </svg>
       </button>
-      <!-- Search navbar -->
-      <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
-        <div class="search-form d-lg-flex d-inline-block">
-          <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
-          <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
-                <%= awesomplete(f, :q,
-                    [
-                    class: "form-control me auto",
-                    placeholder: gettext("Search by address, token symbol name, transaction hash, or block number"),
-                    "aria-describedby": "search-icon",
-                    "aria-label": gettext("Search"),
-                    "data-test": "search_input"
-                    ],
-                    [ url: "#{chain_path(@conn, :token_autocomplete)}?q=",
-                    limit: 0,
-                    minChars: 2,
-                    value: "contract_address_hash",
-                    label: "contract_address_hash",
-                    descrSearch: true,
-                    descr: "symbol"
-                    ]) %>
-                <div class="input-group-append">
-                  <button class="input-group-text" id="search-icon">
-                    <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
-                  </button>
-                </div>
-            </div>
-            <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
-            <script>
-              if (localStorage.getItem("current-color-mode") === "dark") {
-                document.getElementById("q").style.backgroundColor = "#22223a";
-                document.getElementById("q").style.borderColor = "#22223a";
-              }
-            </script>
-          <% end %>
-        </div>
-      <% end %>
+      <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete", additional_classes: ["mobile-search-hide"] %>
     </div>
   </div>
+  <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete-mobile", additional_classes: ["mobile-search-show"] %>
 </nav>
-<script>
-  if (localStorage.getItem("current-color-mode") === "dark") {
-    var modeChanger = document.getElementById("dark-mode-changer");
-    modeChanger.className += " " + "dark-mode-changer--dark";
-  }
-</script> 

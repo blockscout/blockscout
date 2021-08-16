@@ -88,7 +88,8 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
         3,
         :token_transfer,
         transaction: transaction,
-        token_contract_address: contract_token_address
+        token_contract_address: contract_token_address,
+        block: block
       )
 
       session

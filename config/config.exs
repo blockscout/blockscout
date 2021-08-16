@@ -9,6 +9,8 @@ use Mix.Config
 # back to each application for organization purposes.
 import_config "../apps/*/config/config.exs"
 
+config :phoenix, :json_library, Jason
+
 config :logger,
   backends: [
     # all applications and all levels
@@ -27,7 +29,8 @@ config :logger,
     {LoggerFileBackend, :indexer},
     {LoggerFileBackend, :indexer_token_balances},
     {LoggerFileBackend, :token_instances},
-    {LoggerFileBackend, :reading_token_functions}
+    {LoggerFileBackend, :reading_token_functions},
+    {LoggerFileBackend, :pending_transactions_to_refetch}
   ]
 
 config :logger, :console,

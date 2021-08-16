@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.AddressLogsView
+  alias BlockScoutWeb.{AccessHelpers, AddressLogsView, Controller}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
@@ -15,7 +15,8 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         :ok <- Chain.check_address_exists(address_hash) do
+         :ok <- Chain.check_address_exists(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       logs_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
       {results, next_page} = split_list_by_page(logs_plus_one)
 
@@ -52,14 +53,15 @@ defmodule BlockScoutWeb.AddressLogsController do
     end
   end
 
-  def index(conn, %{"address_id" => address_hash_string}) do
+  def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
         address: address,
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})

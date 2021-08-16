@@ -1,0 +1,60 @@
+<div class="stakes-table-container">
+  <div class="stakes-table-head">
+    <div class="col-1"></div>
+    <div class="col-2">
+      <%
+        tooltip = cond do
+          @pools_type == :validator ->
+            gettext("Validator Pool Addresses.")
+          @pools_type == :active ->
+            gettext("Candidate and Validator Pool Addresses. Current validator pools are specified by a checkmark.")
+          @pools_type == :inactive ->
+            gettext("Inactive Pool Addresses. Current validator pools are specified by a checkmark.")
+        end
+      %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Pool"), tooltip: tooltip %>
+    </div>
+    <div class="col-2">
+      <%
+        tooltip = cond do
+          @pools_type == :validator ->
+            gettext("The first amount is the validator’s own stake, the second is the total amount staked into the pool by the validator and all delegators.")
+          @pools_type == :active ->
+            gettext("The first amount is the candidate’s own stake, the second is the total amount staked into the pool by the candidate and all delegators.")
+          @pools_type == :inactive ->
+            gettext("The first amount is the pool owner’s stake, the second is the total amount staked into the pool by the pool owner and all delegators.")
+        end
+      %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Staked Amount"), tooltip: tooltip %>
+    </div>
+    <div class="col-2">
+      <%= if @pools_type == :inactive do %>
+        <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Banned"), tooltip: gettext("Validator pools can be banned for misbehavior (such as not revealing secret numbers). Validator and delegator stake contained in a banned pool cannot be withdrawn until the ban is over.") %>
+      <% else %>
+        <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Stakes Ratio"), tooltip: gettext("The percentage of stake in a single pool relative to the total amount staked in all active pools. A higher ratio results in a greater likelihood of validator pool selection.") %>
+      <% end %>
+    </div>
+    <%= if @pools_type == :validator do %>
+      <div class="col-1">
+        <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("APY"), tooltip: gettext("Approximate Current Annual Percentage Yield. If you see N/A, please wait for a few blocks (APY cannot be calculated at the very beginning of a staking epoch).") %>
+      </div>
+    <% end %>
+    <div class="col-2">
+      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Delegators"), tooltip: gettext("The number of delegators providing stake to the pool. Click on the number to see more details.") %>
+    </div>
+    <div class="<%= if @pools_type == :validator do %>col-2<% else %>col-3<% end %>"></div>
+  </div>
+  <div class="stakes-table-body">
+    <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+      <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+    </button>
+
+    <div data-empty-response-message style="display: none;">
+      <%= render BlockScoutWeb.StakesView, "_stakes_empty_content.html" %>
+    </div>
+
+    <div data-items></div>
+
+    <div class="refresh-informer"><%= raw gettext("The table refreshed <span></span> block(s) ago.") %> <a href="#"><%= gettext("Refresh now") %></a></div>
+  </div>
+</div>

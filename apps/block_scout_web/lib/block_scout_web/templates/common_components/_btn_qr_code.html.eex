@@ -1,0 +1,17 @@
+<span
+    class="overview-title-item"
+    data-target="#qrModal"
+    data-toggle="modal"
+    >
+    <span
+        class="btn-qr-icon"
+        data-toggle="tooltip"
+        data-placement="top"
+        title='<%= gettext("QR Code") %>'
+        aria-label='<%= gettext("Show QR Code") %>'
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+        <path fill-rule="evenodd" d="M22.5 24.5v-2h2v2h-2zm-1-4v-1h1v1h-1zm1-3h2v2h-2v-2zm1-2h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm-8 14h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm1-4h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm6 9h-2v-2h2v2zm1 1h-1v-1h1v1zm0 1v1h-1v-1h1zm-1 3h-2v-2h2v2z"/>
+        </svg>
+    </span>
+</span>

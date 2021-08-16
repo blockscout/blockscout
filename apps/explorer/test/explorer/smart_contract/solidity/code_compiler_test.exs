@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
   doctest Explorer.SmartContract.Solidity.CodeCompiler
 
+  @moduletag timeout: :infinity
+
   alias Explorer.Factory
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
@@ -191,7 +193,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
           optimize: contract_code_info.optimized
         )
 
-      assert {:error, :compilation} = response
+      assert {:error, :compilation, "Expected pragma, import directive or contract/interface/library definition."} =
+               response
     end
 
     test "returns constructor in abi" do

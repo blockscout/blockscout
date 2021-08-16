@@ -435,7 +435,7 @@ defmodule Explorer.Factory do
     to_address_hash = address_hash_from_zero_padded_hash_string(log.third_topic)
     from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
 
-    # `to_address` is only the only thing that isn't created from the token_transfer_log_factory
+    # `to_address` is the only thing that isn't created from the token_transfer_log_factory
     to_address = build(:address, hash: to_address_hash)
     from_address = build(:address, hash: from_address_hash)
     contract_code = Map.fetch!(contract_code_info(), :bytecode)
@@ -663,8 +663,8 @@ defmodule Explorer.Factory do
       is_active: true,
       is_banned: false,
       is_validator: true,
-      staked_amount: wei_per_ether * 500,
-      self_staked_amount: wei_per_ether * 300,
+      total_staked_amount: wei_per_ether * 500,
+      self_staked_amount: wei_per_ether * 500,
       was_banned_count: 0,
       was_validator_count: 1
     }
@@ -674,8 +674,8 @@ defmodule Explorer.Factory do
     wei_per_ether = 1_000_000_000_000_000_000
 
     %StakingPoolsDelegator{
-      pool_address_hash: address_hash(),
-      delegator_address_hash: address_hash(),
+      staking_address_hash: address_hash(),
+      address_hash: address_hash(),
       max_ordered_withdraw_allowed: wei_per_ether * 100,
       max_withdraw_allowed: wei_per_ether * 50,
       ordered_withdraw: wei_per_ether * 600,

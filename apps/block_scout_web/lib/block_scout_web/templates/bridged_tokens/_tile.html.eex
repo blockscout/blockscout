@@ -1,0 +1,83 @@
+<tr data-identifier-hash="<%= @token.contract_address_hash %>">
+  <td class="stakes-td">
+      <!-- incremented number by order in the list -->
+      <span class="color-lighten">
+        <%= @index %>
+      </span>
+  </td>
+  <td class="stakes-td token-name">
+    <% token = token_display_name(@token) %>
+    <div class="centered-container">
+      <div>
+        <div style="display: table;">
+          <%= link(token,
+            to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
+            "data-test": "token_link",
+            class: "text-truncate pre-wrap") %>
+          <%= if owl_token_amb?(@token.contract_address.hash) do %>
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              data-html="true"
+              title="<%= owl_token_amb_info() %>">
+              <%= render BlockScoutWeb.CommonComponentsView, "_info.html", extra_class: "ml-1" %>
+            </span>
+          <% end %>
+          <%= if owl_token_omni?(@token.contract_address.hash) do %>
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              data-html="true"
+              title="<%= owl_token_omni_info() %>">
+              <%= render BlockScoutWeb.CommonComponentsView, "_info.html", extra_class: "ml-1" %>
+            </span>
+          <% end %>
+          <%= if @bridged_token.custom_metadata do %>
+            <div class="card-subtitle list-title-description" style="display: table-row; text-align: left"><%= @bridged_token.custom_metadata %></div>
+          <% end %>
+        </div>
+      </div>
+      <%= if @bridged_token && @bridged_token.type do %>
+        <div class="bs-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
+      <% end %>
+      <%= if @bridged_token && @bridged_token.foreign_chain_id do %>
+        <% tag = Chain.chain_id_display_name(@bridged_token.foreign_chain_id) %>
+        <div class="bs-label right ml-2 destination-<%= tag %>"><%= String.upcase(tag) %></div>
+      <% end %>
+    </div>
+  </td>
+  <td class="stakes-td">
+    <%= render BlockScoutWeb.AddressView,
+      "_link.html",
+      address: @token.contract_address,
+      contract: true,
+      use_custom_tooltip: false
+    %>
+  </td>
+  <td class="stakes-td token-total-supply">
+    <%= if decimals?(@token) do %>
+      <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>
+    <% else %>
+      <span data-test="token_supply"><%= format_integer_to_currency(@token.total_supply) %></span>
+    <% end %> <%= @token.symbol %>
+  </td>
+  <td class="stakes-td">
+    <span class="mr-4">
+      <span data-test="transaction_count">
+        <%= @token.holder_count %>
+      </span>
+    </span>
+  </td>
+  <%= if @destination == :eth do %>
+    <td class="stakes-td">
+      <span class="mr-4">
+        <span data-test="tvl">
+          <% usd_val = bridged_token_usd_cap(@bridged_token, @token) %>
+          <%= if Decimal.cmp(usd_val, 0) == :gt do %>
+            <%= ChainView.format_usd_value(usd_val) %>
+          <% end %>
+        </span>
+      </span>
+    </td>
+  <% end %>
+</tr>

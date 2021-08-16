@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.TransactionView
+  alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.Chain
   alias Phoenix.View
 
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.TransactionController do
     render(
       conn,
       "index.html",
-      current_path: current_path(conn),
+      current_path: Controller.current_full_path(conn),
       transaction_estimated_count: transaction_estimated_count
     )
   end
@@ -69,13 +69,30 @@ defmodule BlockScoutWeb.TransactionController do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
-        redirect(conn, to: transaction_token_transfer_path(conn, :index, id))
+        redirect(conn, to: AccessHelpers.get_path(conn, :transaction_token_transfer_path, :index, id))
       else
-        redirect(conn, to: transaction_internal_transaction_path(conn, :index, id))
+        redirect(conn, to: AccessHelpers.get_path(conn, :transaction_internal_transaction_path, :index, id))
       end
     else
-      :error -> conn |> put_status(422) |> render("invalid.html", transaction_hash: id)
-      :not_found -> conn |> put_status(404) |> render("not_found.html", transaction_hash: id)
+      :error ->
+        set_invalid_view(conn, id)
+
+      :not_found ->
+        set_not_found_view(conn, id)
     end
+  end
+
+  def set_not_found_view(conn, transaction_hash_string) do
+    conn
+    |> put_status(404)
+    |> put_view(TransactionView)
+    |> render("not_found.html", transaction_hash: transaction_hash_string)
+  end
+
+  def set_invalid_view(conn, transaction_hash_string) do
+    conn
+    |> put_status(422)
+    |> put_view(TransactionView)
+    |> render("invalid.html", transaction_hash: transaction_hash_string)
   end
 end

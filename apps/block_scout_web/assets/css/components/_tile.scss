@@ -77,7 +77,7 @@ $tile-body-a-color: #5959d8 !default;
   justify-content: center;
   margin-left: -1px;
   margin-top: -34px;
-  padding: 0;
+  padding: 0 5px;
   position: relative;
 
   @include media-breakpoint-down(sm) {
@@ -168,6 +168,10 @@ $tile-body-a-color: #5959d8 !default;
 
 .tile {
   span[data-address-hash] {
+    color: $tile-body-a-color;
+  }
+
+  a[data-test=token_link] {
     color: $tile-body-a-color;
   }
 
@@ -573,4 +577,31 @@ $cube-quantity: 5;
 
 .dark-theme-applied .dark-block-loader {
   background-color: #313355;
+}
+
+.title-with-label {
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: 3px;
+  @include media-breakpoint-down(sm) {
+    display: inline;
+  }
+}
+
+.view-original-token-container {
+  margin-top: 15px;
+  font-size: 12px;
+}
+
+.token-address-mobile {
+  @include media-breakpoint-down(sm) {
+    display: inline-block;
+    word-break: break-all;
+  }
+}
+
+.bridged-tokens-buttons-mobile {
+  @include media-breakpoint-down(sm) {
+    margin-top: 0.5em;
+  }
 }

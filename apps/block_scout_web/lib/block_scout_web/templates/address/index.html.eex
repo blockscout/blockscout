@@ -1,9 +1,12 @@
 <section class="container">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
-      <h1 class="card-title"><%= gettext "Addresses" %></h1>
+      <h1 class="card-title list-title-description"><%= gettext "Addresses" %></h1>
 
-    <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+	<div class="list-top-pagination-container-wrapper">
+    	<%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+	</div>
 
     <div class="addresses-table-container">
       <div class="stakes-table-container">
@@ -50,4 +53,5 @@
     </div>
   </div>
 	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/async-listing-load.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
 </section>

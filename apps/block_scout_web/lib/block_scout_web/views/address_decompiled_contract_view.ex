@@ -230,6 +230,10 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     end)
   end
 
+  def last_decompiled_contract_version(decompiled_contracts) when is_nil(decompiled_contracts), do: nil
+
+  def last_decompiled_contract_version(decompiled_contracts) when decompiled_contracts == [], do: nil
+
   def last_decompiled_contract_version(decompiled_contracts) do
     Enum.max_by(decompiled_contracts, & &1.decompiler_version)
   end

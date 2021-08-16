@@ -24,6 +24,8 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
+    StakingPool,
+    Token,
     TokenTransfer,
     Transaction,
     Wei
@@ -94,7 +96,18 @@ defmodule BlockScoutWeb.Chain do
   def next_page_params([], _list, _params), do: nil
 
   def next_page_params(_, list, params) do
-    Map.merge(params, paging_params(List.last(list)))
+    next_page_params = Map.merge(params, paging_params(List.last(list)))
+    current_items_count_str = Map.get(next_page_params, "items_count")
+
+    items_count =
+      if current_items_count_str do
+        {current_items_count, _} = Integer.parse(current_items_count_str)
+        current_items_count + Enum.count(list)
+      else
+        Enum.count(list)
+      end
+
+    Map.put(next_page_params, "items_count", items_count)
   end
 
   def paging_options(%{"hash" => hash, "fetched_coin_balance" => fetched_coin_balance}) do
@@ -102,6 +115,33 @@ defmodule BlockScoutWeb.Chain do
          {:ok, address_hash} <- string_to_address_hash(hash) do
       [paging_options: %{@default_paging_options | key: {%Wei{value: Decimal.new(coin_balance)}, address_hash}}]
     else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{
+        "address_hash" => address_hash,
+        "tx_hash" => tx_hash,
+        "block_hash" => block_hash,
+        "holder_count" => holder_count,
+        "name" => name,
+        "inserted_at" => inserted_at,
+        "item_type" => item_type
+      }) do
+    [
+      paging_options: %{
+        @default_paging_options
+        | key: {address_hash, tx_hash, block_hash, holder_count, name, inserted_at, item_type}
+      }
+    ]
+  end
+
+  def paging_options(%{"holder_count" => holder_count, "name" => token_name}) do
+    case Integer.parse(holder_count) do
+      {holder_count, ""} ->
+        [paging_options: %{@default_paging_options | key: {holder_count, token_name}}]
+
       _ ->
         [paging_options: @default_paging_options]
     end
@@ -159,7 +199,7 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {inserted_at, hash}}]
+      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -179,6 +219,28 @@ defmodule BlockScoutWeb.Chain do
     case Integer.parse(formatted_number) do
       {number, ""} -> {:ok, number}
       _ -> {:error, :invalid}
+    end
+  end
+
+  def param_to_block_timestamp(timestamp_string) when is_binary(timestamp_string) do
+    case Integer.parse(timestamp_string) do
+      {temstamp_int, ""} ->
+        timestamp =
+          temstamp_int
+          |> DateTime.from_unix!(:second)
+
+        {:ok, timestamp}
+
+      _ ->
+        {:error, :invalid_timestamp}
+    end
+  end
+
+  def param_to_block_closest(closest) when is_binary(closest) do
+    case closest do
+      "before" -> {:ok, :before}
+      "after" -> {:ok, :after}
+      _ -> {:error, :invalid_closest}
     end
   end
 
@@ -203,6 +265,14 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}) do
     %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
+  end
+
+  defp paging_params(%Token{holder_count: holder_count, name: token_name}) do
+    %{"holder_count" => holder_count, "name" => token_name}
+  end
+
+  defp paging_params([%Token{holder_count: holder_count, name: token_name}, _]) do
+    %{"holder_count" => holder_count, "name" => token_name}
   end
 
   defp paging_params({%Reward{block: %{number: number}}, _}) do
@@ -250,6 +320,32 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%CoinBalance{block_number: block_number}) do
     %{"block_number" => block_number}
+  end
+
+  defp paging_params(%StakingPool{staking_address_hash: address_hash, stakes_ratio: value}) do
+    %{"address_hash" => address_hash, "value" => Decimal.to_string(value)}
+  end
+
+  defp paging_params(%{
+         address_hash: address_hash,
+         tx_hash: tx_hash,
+         block_hash: block_hash,
+         holder_count: holder_count,
+         name: name,
+         inserted_at: inserted_at,
+         type: type
+       }) do
+    inserted_at_datetime = DateTime.to_iso8601(inserted_at)
+
+    %{
+      "address_hash" => address_hash,
+      "tx_hash" => tx_hash,
+      "block_hash" => block_hash,
+      "holder_count" => holder_count,
+      "name" => name,
+      "inserted_at" => inserted_at_datetime,
+      "item_type" => type
+    }
   end
 
   defp block_or_transaction_from_param(param) do

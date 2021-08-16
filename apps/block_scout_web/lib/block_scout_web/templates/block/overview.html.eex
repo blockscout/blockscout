@@ -1,8 +1,9 @@
 <section>
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="col-md-12 col-lg-8 pr-0-md">
+    <div class="col-md-12 col-lg-8 pr-0-md js-ad-dependant-mb-2">
       <!-- Block Details -->
-      <div class="card card-mr-50-md">
+      <div class="card card-mr-50-md js-ad-dependant-mb-2">
         <div class="card-body">
           <h1 class="card-title" data-test="detail_type">
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
@@ -57,7 +58,7 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
             <dd class="col-sm-9">
-              <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."><%= @block.difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span>
+              <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."><%= @block.difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></span>
             </dd>
           </dl>
 
@@ -65,7 +66,7 @@
             <!-- Total Difficulty -->
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Total Difficulty" %></dt>
-              <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="Integer of the total difficulty of the chain until this block."><%= @block.total_difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span></dd>
+              <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="Integer of the total difficulty of the chain until this block."><%= @block.total_difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></span></dd>
             </dl>
 
             <!-- Nonce -->
@@ -116,31 +117,35 @@
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
+    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md js-ad-dependant-mb-2">
 
       <!-- Validator -->
       <div class="card card-background-1 flex-grow-1">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
-          <div class="text-right tooltipCustom">
+          <div class="text-right">
             <!-- Validator's Name -->
-            <span class="tooltiptextTopMiner"> <%= @block.miner %></span>
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              data-template="<div class='tooltip tooltip-inversed-color tooltip-validator-details' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+              title="<%= @block.miner %>">
+              <h3 class="address-balance-text text-truncate" >
 
-            <h3 class="address-balance-text text-truncate" >
-
-              <%= render BlockScoutWeb.AddressView,
-                "_link.html",
-                address: @block.miner,
-                contract: false,
-                class: "",
-                use_custom_tooltip: true %>
-            </h3>
+                <%= render BlockScoutWeb.AddressView,
+                  "_link.html",
+                  address: @block.miner,
+                  contract: false,
+                  class: "",
+                  use_custom_tooltip: true %>
+              </h3>
+            </span>
           </div>
         </div>
       </div>
 
       <!-- Validator Reward or Gas-->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0 js-ad-dependant-mb-2">
         <div class="card-body card-body-flex-column-space-between">
           <%= if show_reward?(@block.rewards) do %>
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
@@ -166,3 +171,5 @@
     </div>
   </div>
 </section>
+
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 

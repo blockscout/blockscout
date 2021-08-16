@@ -209,7 +209,8 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
           Address.checksum(token.contract_address_hash),
           %{
             block_number: page_last_transfer.block_number,
-            index: page_last_transfer.index
+            index: page_last_transfer.index,
+            items_count: "50"
           }
         )
 

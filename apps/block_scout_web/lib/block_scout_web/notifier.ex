@@ -4,9 +4,15 @@ defmodule BlockScoutWeb.Notifier do
   """
 
   alias Absinthe.Subscription
-  alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
+
+  alias BlockScoutWeb.{
+    AddressContractVerificationViaFlattenedCodeView,
+    AddressContractVerificationViaJsonView,
+    Endpoint
+  }
+
   alias Explorer.{Chain, Market, Repo}
-  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
@@ -27,19 +33,46 @@ defmodule BlockScoutWeb.Notifier do
     Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
   end
 
+  def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
+      when type in [:realtime, :on_demand] do
+    Enum.each(address_token_balances, &broadcast_address_token_balance/1)
+  end
+
+  def handle_event({:chain_event, :address_current_token_balances, type, address_current_token_balances})
+      when type in [:realtime, :on_demand] do
+    Enum.each(address_current_token_balances, &broadcast_address_token_balance/1)
+  end
+
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
+    verification_from_json_upload? = Map.has_key?(conn.params, "file")
+
     contract_verification_result =
       case contract_verification_result do
         {:ok, _} = result ->
           result
 
         {:error, changeset} ->
-          {:ok, compiler_versions} = CompilerVersion.fetch_versions()
+          compiler_versions =
+            case CompilerVersion.fetch_versions() do
+              {:ok, compiler_versions} ->
+                compiler_versions
+
+              {:error, _} ->
+                []
+            end
+
+          view =
+            if verification_from_json_upload? do
+              AddressContractVerificationViaJsonView
+            else
+              AddressContractVerificationViaFlattenedCodeView
+            end
 
           result =
-            View.render_to_string(AddressContractVerificationView, "new.html",
+            view
+            |> View.render_to_string("new.html",
               changeset: changeset,
               compiler_versions: compiler_versions,
               evm_versions: CodeCompiler.allowed_evm_versions(),
@@ -112,6 +145,22 @@ defmodule BlockScoutWeb.Notifier do
         token_transfers,
         token_transfers: token_contract_address_hash
       )
+
+      token_transfers_full =
+        token_transfers
+        |> Stream.map(
+          &(TokenTransfer
+            |> Repo.get_by(
+              block_hash: &1.block_hash,
+              transaction_hash: &1.transaction_hash,
+              token_contract_address_hash: &1.token_contract_address_hash,
+              log_index: &1.log_index
+            )
+            |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
+        )
+
+      token_transfers_full
+      |> Enum.each(&broadcast_token_transfer/1)
     end
   end
 
@@ -123,10 +172,13 @@ defmodule BlockScoutWeb.Notifier do
         :block => :optional,
         [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
-        [to_address: :names] => :optional,
-        :token_transfers => :optional
+        [to_address: :names] => :optional
       }
     )
+    |> Enum.map(fn tx ->
+      # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab
+      Map.put(tx, :token_transfers, [])
+    end)
     |> Enum.each(&broadcast_transaction/1)
   end
 
@@ -158,6 +210,12 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
+      block_number: block_number
+    })
+  end
+
+  defp broadcast_address_token_balance(%{address_hash: address_hash, block_number: block_number}) do
+    Endpoint.broadcast("addresses:#{address_hash}", "token_balance", %{
       block_number: block_number
     })
   end
@@ -245,6 +303,35 @@ defmodule BlockScoutWeb.Notifier do
       Endpoint.broadcast("addresses:#{transaction.to_address_hash}", event, %{
         address: transaction.to_address,
         transaction: transaction
+      })
+    end
+  end
+
+  defp broadcast_token_transfer(token_transfer) do
+    broadcast_token_transfer(token_transfer, "token_transfers:new_token_transfer", "token_transfer")
+  end
+
+  defp broadcast_token_transfer(token_transfer, token_transfer_channel, event) do
+    Endpoint.broadcast("token_transfers:#{token_transfer.transaction_hash}", event, %{})
+
+    Endpoint.broadcast(token_transfer_channel, event, %{
+      token_transfer: token_transfer
+    })
+
+    Endpoint.broadcast("addresses:#{token_transfer.from_address_hash}", event, %{
+      address: token_transfer.from_address,
+      token_transfer: token_transfer
+    })
+
+    Endpoint.broadcast("tokens:#{token_transfer.token_contract_address_hash}", event, %{
+      address: token_transfer.token_contract_address_hash,
+      token_transfer: token_transfer
+    })
+
+    if token_transfer.to_address_hash != token_transfer.from_address_hash do
+      Endpoint.broadcast("addresses:#{token_transfer.to_address_hash}", event, %{
+        address: token_transfer.to_address,
+        token_transfer: token_transfer
       })
     end
   end

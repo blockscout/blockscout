@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Data, InternalTransaction, SmartContract}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, SmartContract, Transaction}
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
@@ -82,9 +82,10 @@ defmodule BlockScoutWeb.AddressContractView do
     |> TypeDecoder.decode_raw(types)
   end
 
-  def format_external_libraries(libraries) do
+  def format_external_libraries(libraries, conn) do
     Enum.reduce(libraries, "", fn %{name: name, address_hash: address_hash}, acc ->
-      "#{acc}<span class=\"hljs-title\">#{name}</span> : #{address_hash}  \n"
+      address = get_address(address_hash)
+      "#{acc}<span class=\"hljs-title\">#{name}</span> : #{get_formatted_address_data(address, address_hash, conn)}  \n"
     end)
   end
 
@@ -116,5 +117,25 @@ defmodule BlockScoutWeb.AddressContractView do
 
   def contract_creation_code(%Address{contract_code: contract_code}) do
     {:ok, contract_code}
+  end
+
+  def creation_code(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.input
+  end
+
+  def creation_code(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction.input
+  end
+
+  def creation_code(%Address{contracts_creation_transaction: nil}) do
+    nil
+  end
+
+  def sourcify_repo_url(address_hash, partial_match) do
+    checksummed_hash = Address.checksum(address_hash)
+    chain_id = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:chain_id]
+    repo_url = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:repo_url]
+    match = if partial_match, do: "/partial_match/", else: "/full_match/"
+    repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
   end
 end

@@ -115,6 +115,10 @@ $pagination-page-link-color-active: #fff !default;
   }
 }
 
+.top-pagination-outer-container {
+  display: flex;
+}
+
 .logs-topbar .pagination-container {
   @media (min-width: 600px) {
     margin-left: 80px;

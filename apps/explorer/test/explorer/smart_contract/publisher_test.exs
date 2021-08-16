@@ -5,6 +5,8 @@ defmodule Explorer.SmartContract.PublisherTest do
 
   doctest Explorer.SmartContract.Publisher
 
+  @moduletag timeout: :infinity
+
   alias Explorer.Chain.{ContractMethod, SmartContract}
   alias Explorer.{Factory, Repo}
   alias Explorer.SmartContract.Publisher
@@ -35,7 +37,7 @@ defmodule Explorer.SmartContract.PublisherTest do
       assert smart_contract.abi == contract_code_info.abi
     end
 
-    test "detects and adds contructor arguments if autodetection is checked" do
+    test "detects and adds constructor arguments if autodetection is checked" do
       path = File.cwd!() <> "/test/support/fixture/smart_contract/solidity_0.5.9_smart_contract.sol"
       contract = File.read!(path)
 
@@ -63,7 +65,7 @@ defmodule Explorer.SmartContract.PublisherTest do
         "evm_version" => "petersburg",
         "name" => "TestToken",
         "optimization" => false,
-        "autodetect_contructor_args" => "true"
+        "autodetect_constructor_args" => "true"
       }
 
       assert {:ok, result} = Publisher.publish(contract_address.hash, params)

@@ -1,5 +1,6 @@
 $stakes-table-th-background: #f5f6fa !default;
 $stakes-table-cell-separation: 25px !default;
+$stakes-link-color: $primary !default;
 
 .stakes-table-container {
   max-width: 100%;
@@ -68,6 +69,41 @@ $stakes-table-cell-separation: 25px !default;
   width: 100%;
 }
 
+.stakes-table-head {
+  display: flex;
+  width: 100%;
+  min-width: 930px;
+  padding: 0 15px;
+  background-color: $stakes-table-th-background;
+  color: #a3a9b5;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.stakes-table-body {
+  padding: 0 15px;
+  min-width: 930px;
+  min-height: 311px;
+
+  .refresh-informer {
+    text-align: right;
+    padding-top: 15px;
+    padding-right: 15px;
+    display: none;
+
+    a {
+      color: $primary;
+      text-decoration: underline;
+
+      &:hover {
+        text-decoration: none;
+      }
+    }
+  }
+}
+
 .stakes-table-th {
   background-color: $stakes-table-th-background;
   color: #a3a9b5;
@@ -88,11 +124,17 @@ $stakes-table-cell-separation: 25px !default;
   padding: 21px $stakes-table-cell-separation 21px 0;
   position: relative;
   z-index: 0;
+
+  .i-tooltip {
+    position: relative;
+    top: -2px;
+  }
 }
 
 .stakes-th-text {
   margin-right: 10px;
   white-space: nowrap;
+  text-align: center;
 }
 
 .stakes-td {
@@ -100,7 +142,7 @@ $stakes-table-cell-separation: 25px !default;
   font-size: 14px;
   font-weight: normal;
   height: 60px;
-  line-height: 1.2;
+  line-height: 1.5;
   padding-right: $stakes-table-cell-separation;
   text-align: left;
   vertical-align: middle;
@@ -114,6 +156,17 @@ $stakes-table-cell-separation: 25px !default;
     background-color: $stakes-banned-background;
     color: $stakes-banned-color;
   }
+
+  .stakes-td-banned-info {
+    display: block;
+    float: left;
+    padding-right: 30px;
+  }
+}
+
+.stakes-cell {
+  display: flex;
+  align-items: center;
 }
 
 .stakes-td-order {
@@ -123,9 +176,43 @@ $stakes-table-cell-separation: 25px !default;
 }
 
 .stakes-td-link-style {
-  color: $primary;
+  color: $stakes-link-color;
+  cursor: pointer;
 
   .stakes-tr-banned & {
     color: $stakes-banned-color;
+  }
+}
+
+.stakes-tr-banned td:last-child {
+  text-align: right;
+  padding-right: 30px;
+}
+
+.stakes-table {
+  .check-tooltip {
+    &:hover {
+      .check-tooltip-circle {
+        fill: $secondary;
+      }
+    }
+  }
+  .stakes-tr-banned {
+    .check-tooltip {
+      .check-tooltip-circle {
+        fill: rgba($stakes-banned-color, .15);
+      }
+      .check-tooltip-check {
+        fill: $stakes-banned-color;
+      }
+      &:hover {
+        .check-tooltip-circle {
+          fill: $stakes-banned-color;
+        }
+        .check-tooltip-check {
+          fill: #fff;
+        }
+      }
+    }
   }
 }

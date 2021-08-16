@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
 
       case Publisher.publish(hash, params, external_libraries) do
         {:ok, _} ->
-          send_resp(conn, :created, Jason.encode!(%{status: :success}))
+          send_resp(conn, :created, encode(%{status: :success}))
 
         {:error, changeset} ->
           errors =
@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
   end
 
   defp fetch_external_libraries(params) do
-    keys = Enum.flat_map(1..5, fn i -> ["library#{i}_name", "library#{i}_address"] end)
+    keys = Enum.flat_map(1..10, fn i -> ["library#{i}_name", "library#{i}_address"] end)
 
     Map.take(params, keys)
   end

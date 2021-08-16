@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTransactionView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.{Address}
+  alias BlockScoutWeb.AccessHelpers
 
   def format_current_filter(filter) do
     case filter do

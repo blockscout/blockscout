@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Tokens.HolderView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.Tokens.OverviewView
-  alias Explorer.Chain.{Token}
+  alias Explorer.Chain.Token
 
   @doc """
   Checks if the total supply percentage must be shown.
@@ -33,6 +33,10 @@ defmodule BlockScoutWeb.Tokens.HolderView do
     "20.0000%"
 
   """
+  def total_supply_percentage(_, 0), do: "N/A%"
+
+  def total_supply_percentage(_, %Decimal{coef: 0}), do: "N/A%"
+
   def total_supply_percentage(value, total_supply) do
     result =
       value

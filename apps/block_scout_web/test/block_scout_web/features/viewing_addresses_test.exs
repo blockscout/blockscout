@@ -278,6 +278,72 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.internal_transactions(count: 3))
       |> assert_has(AddressPage.internal_transaction(internal_transaction))
     end
+
+    test "can filter to see internal transactions from an address only", %{
+      addresses: addresses,
+      session: session
+    } do
+      block = insert(:block, number: 7000)
+
+      from_lincoln =
+        :transaction
+        |> insert(from_address: addresses.lincoln)
+        |> with_block(block)
+
+      from_taft =
+        :transaction
+        |> insert(from_address: addresses.taft)
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: from_lincoln,
+        index: 2,
+        from_address: addresses.lincoln,
+        block_number: from_lincoln.block_number,
+        transaction_index: from_lincoln.index,
+        block_hash: from_lincoln.block_hash,
+        block_index: 2
+      )
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.apply_filter("From")
+      |> assert_has(AddressPage.transaction(from_lincoln))
+      |> refute_has(AddressPage.transaction(from_taft))
+    end
+
+    test "can filter to see internal transactions to an address only", %{
+      addresses: addresses,
+      session: session
+    } do
+      block = insert(:block, number: 7000)
+
+      from_lincoln =
+        :transaction
+        |> insert(to_address: addresses.lincoln)
+        |> with_block(block)
+
+      from_taft =
+        :transaction
+        |> insert(to_address: addresses.taft)
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: from_lincoln,
+        index: 2,
+        from_address: addresses.lincoln,
+        block_number: from_lincoln.block_number,
+        transaction_index: from_lincoln.index,
+        block_hash: from_lincoln.block_hash,
+        block_index: 2
+      )
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.apply_filter("To")
+      |> assert_has(AddressPage.transaction(from_lincoln))
+      |> refute_has(AddressPage.transaction(from_taft))
+    end
   end
 
   describe "viewing token transfers from a specific token" do
@@ -321,7 +387,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   describe "viewing token balances" do
     setup do
       block = insert(:block)
-      lincoln = insert(:address, fetched_coin_balance: 5)
+      lincoln = insert(:address, fetched_coin_balance: 5, fetched_coin_balance_block_number: block.number)
       taft = insert(:address, fetched_coin_balance: 5)
 
       contract_address = insert(:contract_address)
@@ -364,28 +430,43 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     test "filter tokens balances by token name", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
-      |> assert_has(AddressPage.token_balance(count: 2))
-      |> assert_has(AddressPage.token_type(count: 2))
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-721", text: "1"))
     end
 
     test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("T2")
-      |> assert_has(AddressPage.token_balance(count: 2))
-      |> assert_has(AddressPage.token_type(count: 2))
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
     end
 
     test "reset token balances filter when dropdown closes", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> AddressPage.click_outside_of_the_dropdown()

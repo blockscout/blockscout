@@ -1,0 +1,40 @@
+<div class="modal modal-fullwidth-xs fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-become-candidate" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><%= gettext("Become a Candidate") %></h5>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-body">
+        <form>
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "candidate-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "candidate-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
+
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "mining-address", classes: "form-group", input_classes: "form-control", attributes: "mining-address", type: "text", placeholder: gettext("Your Mining Address") %>
+
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "pool-name", classes: "form-group", input_classes: "form-control", attributes: "pool-name", type: "text", placeholder: gettext("Your Pool Name") %>
+
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "pool-description", classes: "form-group", input_classes: "form-control", attributes: "pool-description", type: "text", placeholder: gettext("Your Pool Short Description (optional)") %>
+          <p class="form-p m-b-0"><%= gettext("Minimum Stake:") %>
+            <span class="text-dark">
+              <%= format_token_amount(@min_candidate_stake, @token) %>
+            </span>
+          </p>
+          <p class="form-p"><%= gettext("Your Balance:") %>
+            <%= if @balance >= @min_candidate_stake do %>
+              <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@balance, @token) %>">
+                <%= format_token_amount(@balance, @token) %>
+              </span>
+            <% else %>
+              <span class="text-dark">
+                <%= format_token_amount(@balance, @token) %>
+              </span>
+            <% end %>
+          </p>
+          <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "full-width" %></div>
+        </form>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>
+      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>", tokenSymbol: @token.symbol, coinSymbol: @coin.symbol) |> raw() %>
+    </div>
+  </div>
+</div>

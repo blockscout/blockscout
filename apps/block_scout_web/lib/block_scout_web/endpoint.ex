@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.Endpoint do
   end
 
   socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
-  socket("/wobserver", Wobserver.Web.PhoenixSocket)
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -48,6 +47,8 @@ defmodule BlockScoutWeb.Endpoint do
   plug(
     Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
+    length: 20_000_000,
+    query_string_length: 1_000_000,
     pass: ["*/*"],
     json_decoder: Poison
   )

@@ -1,0 +1,73 @@
+<div class="modal modal-fullwidth-xs fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered <%= if @pool_to do "modal-stake-move" else "modal-stake" end %>" role="document">
+    <div class="modal-content">
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-stake-three-cols">
+        <div class="modal-stake-left">
+          <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool_from, pool_label: gettext("Source Pool"), token: @token, extra_class: "js-pool-from-progress" %>
+        </div>
+        <div class="modal-header">
+          <h5 class="modal-title"><%= gettext("Move Stake") %></h5>
+        </div>
+        <div class="modal-body">
+          <form>
+            <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "move-amount", classes: "form-group", input_classes: "form-control n-b-r", attributes: "move-amount", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol, value: @amount %>
+            <p class="form-p"><%= gettext("You Staked:") %>
+              <span class="text-dark">
+                <%= format_token_amount(@delegator_from.stake_amount, @token) %>
+              </span>
+            </p>
+            <div class="input-group form-group">
+              <select pool-select class="form-control">
+                <option disabled <%= unless @pool_to do "selected" end %>><%= gettext("Choose Target Pool") %></option>
+                <%= for %{pool: pool} <- @pools,
+                      pool.staking_address_hash != @pool_from.staking_address_hash,
+                      Decimal.positive?(pool.self_staked_amount) or pool.staking_address_hash == @delegator_from.address_hash do %>
+                  <option
+                    value="<%= pool.staking_address_hash %>"
+                    <%= if @pool_to && pool.staking_address_hash == @pool_to.staking_address_hash do "selected" end %>
+                  >
+                    <%= if is_nil(pool.name), do: BlockScoutWeb.AddressView.trimmed_hash(pool.staking_address_hash), else: pool.name %>
+                  </option>
+                <% end %>
+              </select>
+            </div>
+            <%= if @delegator_to && Decimal.positive?(@delegator_to.stake_amount) do %>
+              <p class="form-p m-b-0"><%= gettext("Current Stake:") %>
+                <span class="text-dark">
+                  <%= format_token_amount(@delegator_to.stake_amount, @token) %>
+                </span>
+              </p>
+            <% end %>
+            <p class="form-p"><%= gettext("Max Amount to Move:") %>
+              <%= if @pool_to && Decimal.positive?(@delegator_from.max_withdraw_allowed) do %>
+                <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@delegator_from.max_withdraw_allowed, @token) %>">
+                  <%= format_token_amount(@delegator_from.max_withdraw_allowed, @token) %>
+                </span>
+              <% else %>
+                <span class="text-dark">
+                  <%= format_token_amount(@delegator_from.max_withdraw_allowed, @token) %>
+                </span>
+              <% end %>
+            </p>
+            <div class="form-buttons">
+              <%=
+                render BlockScoutWeb.StakesView,
+                "_stakes_btn_stake.html",
+                text: gettext("Move Stake"),
+                extra_class: "full-width btn-add-full",
+                disabled: true
+              %>
+            </div>
+          </form>
+        </div>
+        <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("Stake placed on a candidate pool or an active validator pool <strong>during the current staking epoch</strong> can be moved from one pool to another. Active stake cannot be moved. To re-delegate active stake: order a withdrawal, claim the amount on the next staking epoch, and stake the amount on a different pool.") |> raw(), extra_class: "b-b-l-0 #{if @pool_to do "b-b-r-0" end}" %>
+        <%= if @pool_to do %>
+          <div class="modal-stake-right">
+            <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool_to, pool_label: gettext("Target Pool"), token: @token, extra_class: "js-pool-to-progress" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

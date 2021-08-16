@@ -9,10 +9,10 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, order_by: 3, preload: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, where: 3]
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Block, Hash, Token}
+  alias Explorer.Chain.{Address, Block, BridgedToken, Hash, Token}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -85,13 +85,15 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   """
   def token_holders_ordered_by_value(token_contract_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
     token_contract_address_hash
     |> token_holders_query
     |> preload(:address)
-    |> order_by([tb], desc: :value)
+    |> order_by([tb], desc: :value, desc: :address_hash)
     |> page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
+    |> offset(^offset)
   end
 
   @doc """
@@ -99,11 +101,25 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   """
   def last_token_balances(address_hash) do
     from(
+      ctb in __MODULE__,
+      where: ctb.address_hash == ^address_hash,
+      where: ctb.value > 0,
+      left_join: bt in BridgedToken,
+      on: ctb.token_contract_address_hash == bt.home_token_contract_address_hash,
+      preload: :token,
+      select: {ctb, bt}
+    )
+  end
+
+  @doc """
+  Builds an `t:Ecto.Query.t/0` to fetch the current balance of the given address for the given token.
+  """
+  def last_token_balance(address_hash, token_contract_address_hash) do
+    from(
       tb in __MODULE__,
+      where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash == ^address_hash,
-      where: tb.value > 0,
-      where: not is_nil(tb.value),
-      preload: :token
+      select: tb.value
     )
   end
 

@@ -11,16 +11,16 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
          {:token, {:ok, token}} <- {:token, Chain.token_from_address_hash(address_hash)} do
-      render(conn, "tokensupply.json", token.total_supply)
+      render(conn, "tokensupply.json", total_supply: Decimal.to_string(token.total_supply))
     else
       {:contractaddress_param, :error} ->
-        render(conn, :error, error: "Query parameter contractaddress is required")
+        render(conn, :error, error: "Query parameter contract address is required")
 
       {:format, :error} ->
-        render(conn, :error, error: "Invalid contractaddress format")
+        render(conn, :error, error: "Invalid contract address format")
 
       {:token, {:error, :not_found}} ->
-        render(conn, :error, error: "contractaddress not found")
+        render(conn, :error, error: "contract address not found")
     end
   end
 
@@ -54,15 +54,16 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     cached_coin_total_supply =
       %Wei{value: Decimal.new(coin_total_supply_wei)}
       |> Wei.to(:ether)
+      |> Decimal.to_string(:normal)
 
-    render(conn, "coinsupply.json", cached_coin_total_supply)
+    render(conn, "coinsupply.json", total_supply: cached_coin_total_supply)
   end
 
-  def ethprice(conn, _params) do
+  def coinprice(conn, _params) do
     symbol = Application.get_env(:explorer, :coin)
     rates = ExchangeRates.lookup(symbol)
 
-    render(conn, "ethprice.json", rates: rates)
+    render(conn, "coinprice.json", rates: rates)
   end
 
   defp fetch_contractaddress(params) do
@@ -71,5 +72,18 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
 
   defp to_address_hash(address_hash_string) do
     {:format, Chain.string_to_address_hash(address_hash_string)}
+  end
+
+  def totalfees(conn, params) do
+    case Map.fetch(params, "date") do
+      {:ok, date} ->
+        case Chain.get_total_fees_per_day(date) do
+          {:ok, total_fees} -> render(conn, "totalfees.json", total_fees: total_fees)
+          {:error, error} -> render(conn, :error, error: error)
+        end
+
+      _ ->
+        render(conn, :error, error: "Required date input is missing.")
+    end
   end
 end

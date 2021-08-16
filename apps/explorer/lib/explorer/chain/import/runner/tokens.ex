@@ -59,35 +59,21 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             ^deltas
           ),
         on: token.contract_address_hash == deltas.contract_address_hash,
-        select: %{
-          contract_address_hash: token.contract_address_hash,
-          delta: deltas.delta
-        },
         where: not is_nil(token.holder_count),
-        # Enforce Token ShareLocks order (see docs: sharelocks.md)
-        order_by: token.contract_address_hash,
-        # NOTE: find a better way to know the alias that ecto gives to token
-        lock: "FOR UPDATE OF t0"
-      )
-
-    update_query =
-      from(
-        t in Token,
-        join: s in subquery(query),
-        on: t.contract_address_hash == s.contract_address_hash,
+        # ShareLocks order already enforced by `acquire_contract_address_tokens` (see docs: sharelocks.md)
         update: [
           set: [
-            holder_count: t.holder_count + s.delta,
+            holder_count: token.holder_count + deltas.delta,
             updated_at: ^updated_at
           ]
         ],
         select: %{
-          contract_address_hash: t.contract_address_hash,
-          holder_count: t.holder_count
+          contract_address_hash: token.contract_address_hash,
+          holder_count: token.holder_count
         }
       )
 
-    {_total, result} = repo.update_all(update_query, [], timeout: timeout)
+    {_total, result} = repo.update_all(query, [], timeout: timeout)
 
     {:ok, result}
   end

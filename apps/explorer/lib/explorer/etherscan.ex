@@ -7,7 +7,7 @@ defmodule Explorer.Etherscan do
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Address.TokenBalance
+  alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.{Block, Hash, InternalTransaction, TokenTransfer, Transaction}
 
   @default_options %{
@@ -271,8 +271,6 @@ defmodule Explorer.Etherscan do
         b in Block,
         where: b.miner_hash == ^address_hash,
         order_by: [desc: b.number],
-        group_by: b.number,
-        group_by: b.timestamp,
         limit: ^merged_options.page_size,
         offset: ^offset(merged_options),
         select: %{
@@ -295,12 +293,11 @@ defmodule Explorer.Etherscan do
       ) do
     query =
       from(
-        tb in TokenBalance,
-        where: tb.token_contract_address_hash == ^contract_address_hash,
-        where: tb.address_hash == ^address_hash,
-        order_by: [desc: :block_number],
+        ctb in CurrentTokenBalance,
+        where: ctb.token_contract_address_hash == ^contract_address_hash,
+        where: ctb.address_hash == ^address_hash,
         limit: 1,
-        select: tb
+        select: ctb
       )
 
     Repo.one(query)
@@ -314,14 +311,14 @@ defmodule Explorer.Etherscan do
   def list_tokens(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     query =
       from(
-        tb in TokenBalance,
-        inner_join: t in assoc(tb, :token),
-        where: tb.address_hash == ^address_hash,
+        ctb in CurrentTokenBalance,
+        inner_join: t in assoc(ctb, :token),
+        where: ctb.address_hash == ^address_hash,
+        where: ctb.value > 0,
         distinct: :token_contract_address_hash,
-        order_by: [desc: :block_number],
         select: %{
-          balance: tb.value,
-          contract_address_hash: tb.token_contract_address_hash,
+          balance: ctb.value,
+          contract_address_hash: ctb.token_contract_address_hash,
           name: t.name,
           decimals: t.decimals,
           symbol: t.symbol,
@@ -364,6 +361,7 @@ defmodule Explorer.Etherscan do
     nonce
     to_address_hash
     value
+    inserted_at
   )a
 
   defp list_pending_transactions_query(address_hash, options) do
@@ -462,6 +460,7 @@ defmodule Explorer.Etherscan do
         inner_join: t in Transaction,
         on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
         inner_join: b in assoc(t, :block),
+        order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
         select: %{
           token_contract_address_hash: tt.token_contract_address_hash,
           transaction_hash: tt.transaction_hash,

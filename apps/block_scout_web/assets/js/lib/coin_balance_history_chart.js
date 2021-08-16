@@ -1,6 +1,10 @@
 import $ from 'jquery'
-import Chart from 'chart.js'
+import { Chart, Filler, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
+import 'chartjs-adapter-moment'
 import humps from 'humps'
+
+Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
+Chart.register(Filler, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
 export function createCoinBalanceHistoryChart (el) {
   const $chartContainer = $('[data-chart-container]')
@@ -18,11 +22,11 @@ export function createCoinBalanceHistoryChart (el) {
           y: balance.value
         }))
 
-      var stepSize = 3
+      let stepSize = 3
 
       if (data.length > 1) {
-        var diff = Math.abs(new Date(data[data.length - 1].date) - new Date(data[data.length - 2].date))
-        var periodInDays = diff / (1000 * 60 * 60 * 24)
+        const diff = Math.abs(new Date(data[data.length - 1].date) - new Date(data[data.length - 2].date))
+        const periodInDays = diff / (1000 * 60 * 60 * 24)
 
         stepSize = periodInDays
       }
@@ -32,30 +36,40 @@ export function createCoinBalanceHistoryChart (el) {
           datasets: [{
             label: 'coin balance',
             data: coinBalanceHistoryData,
-            lineTension: 0
+            lineTension: 0,
+            cubicInterpolationMode: 'monotone',
+            fill: true
           }]
         },
-        options: {
+        plugins: {
           legend: {
             display: false
-          },
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        options: {
           scales: {
-            xAxes: [{
+            x: {
               type: 'time',
               time: {
                 unit: 'day',
+                tooltipFormat: 'YYYY-MM-DD',
                 stepSize: stepSize
               }
-            }],
-            yAxes: [{
+            },
+            y: {
+              type: 'linear',
               ticks: {
                 beginAtZero: true
               },
-              scaleLabel: {
+              title: {
                 display: true,
                 labelString: window.localized.Ether
               }
-            }]
+            }
           }
         }
       })

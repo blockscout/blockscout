@@ -1,3 +1,6 @@
+<%= if Decimal.cmp(@circles_total_balance, 0) == :gt do %>
+  <p class="address-current-balance"><%= format_according_to_decimals(@circles_total_balance, Decimal.new(18)) %> CRC</p>
+<% end %>
 <%= if Enum.any?(@token_balances) do %>
   <a
       href="#"
@@ -11,6 +14,9 @@
 
      <i class="fas fa-chevron-down mr-2"></i>
      <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
+     <%= if @token_balances && Decimal.cmp(address_tokens_usd_sum_cache(@address_hash, @token_balances), Decimal.new(0)) == :gt do %>
+      (<span data-usd-value=<%= address_tokens_usd_sum_cache(@address_hash, @token_balances) %> ></span>)
+    <% end %>
   </a>
 <% else %>
    <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
@@ -30,7 +36,7 @@
             placeholder: gettext("Search tokens")
           ) %>
     </div>
-    <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-721") do %>
+    <%= if Enum.any?(@token_balances, fn {token_balance, _} -> token_balance.token.type == "ERC-721" end) do %>
       <%= render(
             "_tokens.html",
             conn: @conn,
@@ -39,7 +45,7 @@
           ) %>
     <% end %>
 
-    <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-20") do %>
+    <%= if Enum.any?(@token_balances, fn {token_balance, _} -> token_balance.token.type == "ERC-20" end) do %>
       <%= render(
             "_tokens.html",
             conn: @conn,

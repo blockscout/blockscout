@@ -1,5 +1,5 @@
-<div class="text-nowrap row mt-3 mt-sm-0" data-test="token_transfer">
-  <span class="col-xs-12 col-lg-5">
+<div class="text-nowrap-small-screen row mt-3 mt-sm-0" data-test="token_transfer">
+  <span class="col-xs-12 col-lg-5" style="display: inline-table;">
     <%= if from_or_to_address?(@token_transfer, @address) do %>
       <%= if @token_transfer.from_address_hash == @address.hash do %>
         <span data-test="transaction_type" class="text-danger">
@@ -19,13 +19,7 @@
     <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:to, @address, true) |> BlockScoutWeb.RenderHelpers.render_partial() %>
     </span>
   </span>
-  <span class="col-xs-12 col-lg-4 ml-3 ml-sm-0 text-truncate">
-    <%= case token_transfer_amount(@token_transfer) do %>
-      <% {:ok, :erc721_instance} -> %>
-        <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(BlockScoutWeb.Endpoint, :show,  @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "] " %>
-      <% {:ok, value} -> %>
-        <%= "#{value} " %>
-    <% end %>
-    <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
+  <span class="col-xs-12 col-lg-4 ml-3 ml-sm-0">
+    <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, @token_transfer) %>
   </span>
 </div>

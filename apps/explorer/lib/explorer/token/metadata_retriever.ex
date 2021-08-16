@@ -86,11 +86,15 @@ defmodule Explorer.Token.MetadataRetriever do
     }
   ]
 
+  # 18160ddd = keccak256(totalSupply())
+  # 313ce567 = keccak256(decimals())
+  # 06fdde03 = keccak256(name())
+  # 95d89b41 = keccak256(symbol())
   @contract_functions %{
-    "totalSupply" => [],
-    "decimals" => [],
-    "name" => [],
-    "symbol" => []
+    "18160ddd" => [],
+    "313ce567" => [],
+    "06fdde03" => [],
+    "95d89b41" => []
   }
 
   @doc """
@@ -126,8 +130,8 @@ defmodule Explorer.Token.MetadataRetriever do
       hashes
       |> Enum.flat_map(fn hash ->
         @contract_functions
-        |> Enum.map(fn {function, args} ->
-          %{contract_address: hash, function_name: function, args: args}
+        |> Enum.map(fn {method_id, args} ->
+          %{contract_address: hash, method_id: method_id, args: args}
         end)
       end)
 
@@ -140,7 +144,7 @@ defmodule Explorer.Token.MetadataRetriever do
       |> Enum.zip(hashes)
       |> Enum.map(fn {result, hash} ->
         formatted_result =
-          ["decimals", "name", "symbol", "totalSupply"]
+          ["name", "totalSupply", "decimals", "symbol"]
           |> Enum.zip(result)
           |> format_contract_functions_result(hash)
 
@@ -227,8 +231,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp format_contract_functions_result(contract_functions, contract_address_hash) do
     contract_functions =
-      for {function_name, {:ok, [function_data]}} <- contract_functions, into: %{} do
-        {atomized_key(function_name), function_data}
+      for {method_id, {:ok, [function_data]}} <- contract_functions, into: %{} do
+        {atomized_key(method_id), function_data}
       end
 
     contract_functions
@@ -240,9 +244,13 @@ defmodule Explorer.Token.MetadataRetriever do
   defp atomized_key("name"), do: :name
   defp atomized_key("symbol"), do: :symbol
   defp atomized_key("totalSupply"), do: :total_supply
+  defp atomized_key("313ce567"), do: :decimals
+  defp atomized_key("06fdde03"), do: :name
+  defp atomized_key("95d89b41"), do: :symbol
+  defp atomized_key("18160ddd"), do: :total_supply
 
   # It's a temp fix to store tokens that have names and/or symbols with characters that the database
-  # doesn't accept. See https://github.com/poanetwork/blockscout/issues/669 for more info.
+  # doesn't accept. See https://github.com/blockscout/blockscout/issues/669 for more info.
   defp handle_invalid_strings(%{name: name, symbol: symbol} = contract_functions, contract_address_hash) do
     name = handle_invalid_name(name, contract_address_hash)
     symbol = handle_invalid_symbol(symbol)

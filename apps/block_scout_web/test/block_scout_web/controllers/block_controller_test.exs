@@ -101,7 +101,8 @@ defmodule BlockScoutWeb.BlockControllerTest do
       expected_path =
         block_path(conn, :index, %{
           block_number: number,
-          block_type: "Block"
+          block_type: "Block",
+          items_count: "50"
         })
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path

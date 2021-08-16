@@ -1,0 +1,8 @@
+<div class="stakes-address-container js-pool-info" data-address="<%= to_string(@pool.staking_address_hash) %>">
+  <span class="stakes-address stakes-address-active">
+    <%= if is_nil(@pool.name), do: BlockScoutWeb.AddressView.trimmed_hash(@pool.staking_address_hash), else: @pool.name %>
+  </span>
+  <%= if @tooltip do %>
+    <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: @tooltip %>
+  <% end %>
+</div>

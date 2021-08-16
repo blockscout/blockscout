@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block)
 
-      assert "1" == TransactionView.confirmations(transaction, block_height: block.number + 1)
+      assert "2" == TransactionView.confirmations(transaction, block_height: block.number + 1)
     end
   end
 
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
     end
   end
 
-  describe "formatted_status/1" do
+  describe "formatted_result/1" do
     test "without block" do
       transaction =
         :transaction
@@ -157,7 +157,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> Repo.preload(:block)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Pending"
+      assert TransactionView.formatted_result(status) == "Pending"
     end
 
     test "with block without status (pre-Byzantium/Ethereum Class)" do
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> with_block(block, status: nil)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "(Awaiting internal transactions for status)"
+      assert TransactionView.formatted_result(status) == "(Awaiting internal transactions for status)"
     end
 
     test "with receipt with status :ok" do
@@ -181,7 +181,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> with_block(gas_used: gas - 1, status: :ok)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Success"
+      assert TransactionView.formatted_result(status) == "Success"
     end
 
     test "with block with status :error without internal transactions indexed" do
@@ -195,7 +195,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
       insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Error: (Awaiting internal transactions for reason)"
+      assert TransactionView.formatted_result(status) == "Error: (Awaiting internal transactions for reason)"
     end
 
     test "with block with status :error with internal transactions indexed uses `error`" do
@@ -205,7 +205,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> with_block(status: :error, error: "Out of Gas")
 
       status = TransactionView.transaction_status(transaction)
-      assert TransactionView.formatted_status(status) == "Error: Out of Gas"
+      assert TransactionView.formatted_result(status) == "Error: Out of Gas"
     end
   end
 
@@ -243,8 +243,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
   describe "current_tab_name/1" do
     test "generates the correct tab name" do
-      token_transfers_path = "/page/0xSom3tH1ng/token_transfers/?additional_params=blah"
-      internal_transactions_path = "/page/0xSom3tH1ng/internal_transactions/?additional_params=blah"
+      token_transfers_path = "/page/0xSom3tH1ng/token-transfers/?additional_params=blah"
+      internal_transactions_path = "/page/0xSom3tH1ng/internal-transactions/?additional_params=blah"
       logs_path = "/page/0xSom3tH1ng/logs/?additional_params=blah"
 
       assert TransactionView.current_tab_name(token_transfers_path) == "Token Transfers"
@@ -264,8 +264,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 
-      assert Enum.count(result) == 1
-      assert List.first(result).amount == Decimal.new(3)
+      assert Enum.count(result.transfers) == 1
+      assert List.first(result.transfers).amount == Decimal.new(3)
     end
 
     test "does not aggregate NFT tokens" do
@@ -274,12 +274,16 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil)
+      token = insert(:token)
 
-      result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
+      token_transfer1 = insert(:token_transfer, transaction: transaction, token: token, token_id: 1, amount: nil)
+      token_transfer2 = insert(:token_transfer, transaction: transaction, token: token, token_id: 2, amount: nil)
+      token_transfer3 = insert(:token_transfer, transaction: transaction, token: token, token_id: 3, amount: nil)
 
-      assert Enum.count(result) == 3
-      assert List.first(result).amount == nil
+      result = TransactionView.aggregate_token_transfers([token_transfer1, token_transfer2, token_transfer3])
+
+      assert Enum.count(result.transfers) == 3
+      assert List.first(result.transfers).amount == nil
     end
   end
 end

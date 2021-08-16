@@ -63,6 +63,17 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     hex(value)
   end
 
+  defp do_copy_text({:tuple, types}, value) do
+    values =
+      value
+      |> Tuple.to_list()
+      |> Enum.with_index()
+      |> Enum.map(fn {val, ind} -> do_copy_text(Enum.at(types, ind), val) end)
+      |> Enum.intersperse(", ")
+
+    ~E|(<%= values %>)|
+  end
+
   defp do_copy_text(_type, value) do
     to_string(value)
   end
@@ -89,6 +100,19 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     ~E|<%= spacing %>[<%= "\n" %><%= delimited %><%= "\n" %><%= spacing %>]|
   end
 
+  defp do_value_html({:tuple, types}, values, _) do
+    values_list =
+      values
+      |> Tuple.to_list()
+      |> Enum.with_index()
+      |> Enum.map(fn {value, i} ->
+        do_value_html(Enum.at(types, i), value)
+      end)
+
+    delimited = Enum.intersperse(values_list, ",")
+    ~E|(<%= delimited %>)|
+  end
+
   defp do_value_html(type, value, depth) do
     spacing = String.duplicate(" ", depth * 2)
     ~E|<%= spacing %><%=base_value_html(type, value)%>|
@@ -96,7 +120,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp base_value_html(_, {:dynamic, value}) do
-    hex(value)
+    ~E|<%= hex(value) %>|
   end
 
   defp base_value_html(:address, value) do
@@ -105,8 +129,12 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     ~E|<a href="<%= address_path(BlockScoutWeb.Endpoint, :show, address) %>" target="_blank"><%= address %></a>|
   end
 
+  defp base_value_html(:address_text, value) do
+    ~E|<%= hex(value) %>|
+  end
+
   defp base_value_html(:bytes, value) do
-    hex(value)
+    ~E|<%= hex(value) %>|
   end
 
   defp base_value_html(_, value), do: HTML.html_escape(value)

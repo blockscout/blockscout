@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias EthereumJSONRPC.{FetchedBalances}
+  alias EthereumJSONRPC.FetchedBalances
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}

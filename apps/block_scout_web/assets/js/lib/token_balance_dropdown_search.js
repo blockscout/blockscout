@@ -29,7 +29,7 @@ const hideEmptyType = (container) => {
   }
 }
 
-const TokenBalanceDropdownSearch = (element, event) => {
+export function TokenBalanceDropdownSearch (element, event) {
   const $element = $(element)
   const $tokensCount = $element.find('[data-tokens-count]')
   const $tokens = $element.find('[data-token-name]')
@@ -41,11 +41,3 @@ const TokenBalanceDropdownSearch = (element, event) => {
 
   $tokensCount.html($tokensCount.html().replace(/\d+/g, $tokens.not('.d-none').length))
 }
-
-$('[data-token-balance-dropdown]').on('hidden.bs.dropdown', _event => {
-  $('[data-filter-dropdown-tokens]').val('').trigger('input')
-})
-
-$('[data-token-balance-dropdown]').on('input', function (event) {
-  TokenBalanceDropdownSearch(this, event)
-})

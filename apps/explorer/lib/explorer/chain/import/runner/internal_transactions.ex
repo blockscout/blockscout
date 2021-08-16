@@ -65,19 +65,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     |> Multi.run(:invalid_block_numbers, fn _, %{acquire_transactions: transactions} ->
       invalid_block_numbers(transactions, internal_transactions_params)
     end)
-    |> Multi.run(:valid_internal_transactions_without_first_traces_of_trivial_transactions, fn _,
-                                                                                               %{
-                                                                                                 acquire_transactions:
-                                                                                                   transactions,
-                                                                                                 invalid_block_numbers:
-                                                                                                   invalid_block_numbers
-                                                                                               } ->
-      valid_internal_transactions_without_first_trace(
-        transactions,
-        internal_transactions_params,
-        invalid_block_numbers
-      )
-    end)
     |> Multi.run(:valid_internal_transactions, fn _,
                                                   %{
                                                     acquire_transactions: transactions,
@@ -88,6 +75,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         internal_transactions_params,
         invalid_block_numbers
       )
+    end)
+    |> Multi.run(:valid_internal_transactions_without_first_traces_of_trivial_transactions, fn _,
+                                                                                               %{
+                                                                                                 valid_internal_transactions:
+                                                                                                   valid_internal_transactions
+                                                                                               } ->
+      valid_internal_transactions_without_first_trace(valid_internal_transactions)
     end)
     |> Multi.run(:remove_left_over_internal_transactions, fn repo,
                                                              %{valid_internal_transactions: valid_internal_transactions} ->
@@ -220,7 +214,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp acquire_blocks(repo, changes_list) do
-    block_numbers = Enum.map(changes_list, & &1.block_number)
+    block_numbers =
+      changes_list
+      |> Enum.map(& &1.block_number)
+      |> Enum.dedup()
 
     query =
       from(
@@ -267,91 +264,82 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp invalid_block_numbers(transactions, internal_transactions_params) do
     # Finds all mistmatches between transactions and internal transactions
     # for a block number:
-    # - there are no transactions for some internal transactions
+    # - there are no internal txs for some transactions
     # - there are internal txs with a different block number than their transactions
     # Returns block numbers where any of these issues is found
 
-    transaction_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
+    # Note: the case "# - there are no transactions for some internal transactions" was removed because it caused the issue https://github.com/blockscout/blockscout/issues/3367
+    # when the last block with transactions loses consensus in endless loop. In order to return this case:
+    # common_tuples = MapSet.intersection(required_tuples, candidate_tuples) #should be added
+    # |> MapSet.difference(internal_transactions_tuples) should be replaced with |> MapSet.difference(common_tuples)
 
-    Logger.info(fn ->
-      [
-        "consensus removing transaction_tuples: ",
-        inspect(transaction_tuples)
-      ]
-    end)
+    transactions_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
 
-    candidate_tuples = MapSet.new(internal_transactions_params, &{&1.transaction_hash, &1.block_number})
+    internal_transactions_tuples = MapSet.new(internal_transactions_params, &{&1.transaction_hash, &1.block_number})
 
-    Logger.info(fn ->
-      [
-        "consensus removing candidate_tuples: ",
-        inspect(candidate_tuples)
-      ]
-    end)
+    all_tuples = MapSet.union(transactions_tuples, internal_transactions_tuples)
 
-    common_tuples = MapSet.intersection(candidate_tuples, transaction_tuples)
-
-    invalid_numbers =
-      candidate_tuples
-      |> MapSet.difference(common_tuples)
+    invalid_block_numbers =
+      all_tuples
+      |> MapSet.difference(internal_transactions_tuples)
       |> MapSet.new(fn {_hash, block_number} -> block_number end)
       |> MapSet.to_list()
 
-    Logger.info(fn ->
-      [
-        "consensus removing invalid_numbers: ",
-        inspect(invalid_numbers)
-      ]
-    end)
-
-    {:ok, invalid_numbers}
+    {:ok, invalid_block_numbers}
   end
 
   defp valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
-    blocks_map = Map.new(transactions, &{&1.block_number, &1.block_hash})
+    if Enum.count(transactions) > 0 do
+      blocks_map = Map.new(transactions, &{&1.block_number, &1.block_hash})
 
-    valid_internal_txs =
-      internal_transactions_params
-      |> Enum.group_by(& &1.block_number)
-      |> Map.drop(invalid_block_numbers)
-      |> Enum.flat_map(fn {block_number, entries} ->
-        block_hash = Map.fetch!(blocks_map, block_number)
+      valid_internal_txs =
+        internal_transactions_params
+        |> Enum.group_by(& &1.block_number)
+        |> Map.drop(invalid_block_numbers)
+        |> Enum.flat_map(fn item ->
+          case item do
+            {block_number, entries} ->
+              if Map.has_key?(blocks_map, block_number) do
+                block_hash = Map.fetch!(blocks_map, block_number)
 
-        entries
-        |> Enum.sort_by(&{&1.transaction_hash, &1.index})
-        |> Enum.with_index()
-        |> Enum.map(fn {entry, index} ->
-          entry
-          |> Map.put(:block_hash, block_hash)
-          |> Map.put(:block_index, index)
+                entries
+                |> Enum.sort_by(&{&1.transaction_hash, &1.index})
+                |> Enum.with_index()
+                |> Enum.map(fn {entry, index} ->
+                  entry
+                  |> Map.put(:block_hash, block_hash)
+                  |> Map.put(:block_index, index)
+                end)
+              else
+                []
+              end
+
+            _ ->
+              []
+          end
         end)
-      end)
 
-    {:ok, valid_internal_txs}
+      {:ok, valid_internal_txs}
+    else
+      {:ok, []}
+    end
   end
 
-  defp valid_internal_transactions_without_first_trace(
-         transactions,
-         internal_transactions_params,
-         invalid_block_numbers
-       ) do
-    with {:ok, valid_internal_txs} <-
-           valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
-      json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
-      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+  defp valid_internal_transactions_without_first_trace(valid_internal_transactions) do
+    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-      # we exclude first traces from storing in the DB only in case of Parity variant (Parity/Nethermind). todo: to the same for Geth
-      if variant == EthereumJSONRPC.Parity do
-        valid_internal_txs_without_first_trace =
-          valid_internal_txs
-          |> Enum.reject(fn trace ->
-            trace[:index] == 0
-          end)
+    # we exclude first traces from storing in the DB only in case of Parity variant (Parity/Nethermind). Todo: implement the same for Geth
+    if variant == EthereumJSONRPC.Parity do
+      valid_internal_transactions_without_first_trace =
+        valid_internal_transactions
+        |> Enum.reject(fn trace ->
+          trace[:index] == 0
+        end)
 
-        {:ok, valid_internal_txs_without_first_trace}
-      else
-        {:ok, valid_internal_txs}
-      end
+      {:ok, valid_internal_transactions_without_first_trace}
+    else
+      {:ok, valid_internal_transactions}
     end
   end
 
@@ -472,38 +460,34 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
-    Logger.info(fn ->
-      [
-        "consensus removing from blocks with numbers: ",
-        inspect(invalid_block_numbers),
-        " because of mismatching transactions"
-      ]
-    end)
+    if Enum.count(invalid_block_numbers) > 0 do
+      update_query =
+        from(
+          b in Block,
+          where: b.number in ^invalid_block_numbers and b.consensus,
+          select: b.hash,
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [consensus: false]]
+        )
 
-    update_query =
-      from(
-        b in Block,
-        where: b.number in ^invalid_block_numbers and b.consensus,
-        select: b.hash,
-        # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-        update: [set: [consensus: false]]
-      )
+      try do
+        {_num, result} = repo.update_all(update_query, [])
 
-    try do
-      {_num, result} = repo.update_all(update_query, [])
+        Logger.debug(fn ->
+          [
+            "consensus removed from blocks with numbers: ",
+            inspect(invalid_block_numbers),
+            " because of mismatching transactions"
+          ]
+        end)
 
-      Logger.info(fn ->
-        [
-          "consensus removed from blocks with numbers: ",
-          inspect(invalid_block_numbers),
-          " because of mismatching transactions"
-        ]
-      end)
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, invalid_block_numbers: invalid_block_numbers}}
+        {:ok, result}
+      rescue
+        postgrex_error in Postgrex.Error ->
+          {:error, %{exception: postgrex_error, invalid_block_numbers: invalid_block_numbers}}
+      end
+    else
+      {:ok, []}
     end
   end
 

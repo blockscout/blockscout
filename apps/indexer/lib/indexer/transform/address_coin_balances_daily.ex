@@ -64,19 +64,26 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
 
     block_timestamp_map =
       Enum.reduce(block_numbers, %{}, fn block_number, map ->
-        {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+        case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
+          {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} ->
+            day = DateTime.to_date(timestamp)
+            Map.put(map, "#{block_number}", day)
 
-        day = DateTime.to_date(timestamp)
-        Map.put(map, "#{block_number}", day)
+          _ ->
+            map
+        end
       end)
 
     logs_params
     |> Enum.into(acc, fn
       %{address_hash: address_hash, block_number: block_number}
       when is_binary(address_hash) and is_integer(block_number) ->
-        day = Map.get(block_timestamp_map, "#{block_number}")
-        %{address_hash: address_hash, day: day}
+        if Map.has_key?(block_timestamp_map, "#{block_number}") do
+          day = Map.get(block_timestamp_map, "#{block_number}")
+          %{address_hash: address_hash, day: day}
+        else
+          nil
+        end
 
       %{type: "pending"} ->
         nil
@@ -137,19 +144,22 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
     # a transaction MUST have a `from_address_hash`
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    {:ok, %Blocks{blocks_params: [%{timestamp: block_timestamp}]}} =
-      EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+    case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
+      {:ok, %Blocks{blocks_params: [%{timestamp: block_timestamp}]}} ->
+        day = DateTime.to_date(block_timestamp)
+        acc = MapSet.put(initial, %{address_hash: from_address_hash, day: day})
 
-    day = DateTime.to_date(block_timestamp)
-    acc = MapSet.put(initial, %{address_hash: from_address_hash, day: day})
+        # `to_address_hash` is optional
+        case transaction_params do
+          %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
+            MapSet.put(acc, %{address_hash: to_address_hash, day: day})
 
-    # `to_address_hash` is optional
-    case transaction_params do
-      %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
-        MapSet.put(acc, %{address_hash: to_address_hash, day: day})
+          _ ->
+            acc
+        end
 
       _ ->
-        acc
+        initial
     end
   end
 end

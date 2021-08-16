@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.Tokens.InventoryController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.{AccessHelpers, Controller}
   alias BlockScoutWeb.Tokens.InventoryView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, TokenTransfer}
@@ -10,7 +11,8 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, token} <- Chain.token_from_address_hash(address_hash) do
+         {:ok, token} <- Chain.token_from_address_hash(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       unique_tokens =
         Chain.address_to_unique_tokens(
           token.contract_address_hash,
@@ -28,7 +30,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
             token_inventory_path(
               conn,
               :index,
-              Address.checksum(address_hash_string),
+              address_hash_string,
               Map.delete(next_page_params, "type")
             )
         end
@@ -53,6 +55,9 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
         }
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         not_found(conn)
 
@@ -61,19 +66,23 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
     end
   end
 
-  def index(conn, %{"token_id" => address_hash_string}) do
+  def index(conn, %{"token_id" => address_hash_string} = params) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, token} <- Chain.token_from_address_hash(address_hash, options) do
+         {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         not_found(conn)
 

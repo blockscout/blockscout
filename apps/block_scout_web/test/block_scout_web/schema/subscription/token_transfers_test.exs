@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.Schema.Subscription.TokenTransfersTest do
 
     setup do
       configuration = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
-      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, pubsub: [name: BlockScoutWeb.PubSub])
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, pubsub_server: BlockScoutWeb.PubSub)
 
       :ok
 

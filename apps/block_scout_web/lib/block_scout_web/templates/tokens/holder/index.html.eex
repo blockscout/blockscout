@@ -7,14 +7,21 @@
     conn: @conn
   ) %>
 
-  <section>
+  <section data-page="token-holders-list">
     <div class="card">
       <%= render OverviewView, "_tabs.html", assigns %>
       <!-- Token Holders -->
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
-        <h2 class="card-title"><%= gettext "Token Holders" %></h2>
+        <div data-selector="channel-disconnected-message" class="d-none">
+          <div data-selector="reload-button" class="alert alert-danger">
+            <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
+          </div>
+        </div>
+        <h2 class="card-title list-title-description"><%= gettext "Token Holders" %></h2>
 
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        <div class="list-top-pagination-container-wrapper">
+          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        </div>
 
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>

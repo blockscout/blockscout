@@ -95,6 +95,7 @@ $navbar-logo-width: auto !default;
   .navbar-toggler {
     outline: none;
     color: $primary;
+    padding-right: 0px;
 
     .navbar-toggler-icon {
       background-image: url($header-toggler-icon);
@@ -152,23 +153,38 @@ $navbar-logo-width: auto !default;
     }
 
     @include media-breakpoint-up(xl) {
-      width: 340px;
+      width: 290px;
     }
     @media (min-width: 1366px) {
-      width: 500px;
+      width: 380px;
     }
-    @media (min-width: 1440px) {
-      width: 580px;
+    @media (min-width: 1540px) {
+      width: 550px;
     }
   }
   .input-group-append {
     height: 38px;
-    left: 0;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     width: 38px;
     z-index: 5;
+
+    &.left {
+      left: 0px;
+    }
+
+    &.right {
+      right: 8px;
+      width: 25px;
+      height: 25px;
+    }
+
+    &.desktop-only {
+      @include media-breakpoint-down(md) {
+        display: none;
+      }
+    }
 
     * {
       fill: $header-textfield-magnifier-color;
@@ -183,6 +199,13 @@ $navbar-logo-width: auto !default;
     justify-content: center;
     padding: 0;
     width: 100%;
+
+    &.border {
+      border-color: $secondary !important;
+      border-radius: 5px;
+      color: $secondary;
+      background-color: $header-textfield-background-color;
+    }
   }
 }
 
@@ -203,12 +226,6 @@ $navbar-logo-width: auto !default;
   }
   .input-group {
     width: 100%;
-
-    .awesomplete {
-      @include media-breakpoint-down(lg) {
-        width: 100%;
-      }
-    }
   }
   .navbar-nav {
     white-space: nowrap;
@@ -227,6 +244,17 @@ $navbar-logo-width: auto !default;
 .navbar-logo {
   height: $navbar-logo-height;
   width: $navbar-logo-width;
+}
+
+.logo-text {
+  color: #333;
+  font-size: 0.7rem;
+  margin-left: 5px;
+  line-height: 28px;
+
+  &.footer {
+    color: #fff;
+  }
 }
 
 @include media-breakpoint-up(md) {
@@ -259,4 +287,8 @@ $navbar-logo-width: auto !default;
   .topnav-nav-link {
     transition: none !important;
   }
+}
+
+.visually-hidden {
+  display: block;
 }

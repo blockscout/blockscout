@@ -4,7 +4,10 @@ defmodule BlockScoutWeb.Router do
   alias BlockScoutWeb.Plug.GraphQL
   alias BlockScoutWeb.{ApiRouter, WebRouter}
 
-  forward("/wobserver", Wobserver.Web.Router)
+  if Application.get_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
+    forward("/wobserver", Wobserver.Web.Router)
+  end
+
   forward("/admin", BlockScoutWeb.AdminRouter)
 
   pipeline :browser do
@@ -42,16 +45,16 @@ defmodule BlockScoutWeb.Router do
   else
     scope "/", BlockScoutWeb do
       pipe_through(:browser)
-      get("/api_docs", PageNotFoundController, :index)
-      get("/eth_rpc_api_docs", PageNotFoundController, :index)
+      get("/api-docs", PageNotFoundController, :index)
+      get("/eth-rpc-api-docs", PageNotFoundController, :index)
     end
   end
 
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
 
-    get("/api_docs", APIDocsController, :index)
-    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
+    get("/api-docs", APIDocsController, :index)
+    get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
   end
 
   url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
@@ -71,6 +74,28 @@ defmodule BlockScoutWeb.Router do
       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
     end
   end
+
+  # if path != api_path do
+  #   scope to_string(api_path) <> "/verify_smart_contract" do
+  #     pipe_through(:api)
+
+  #     if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+  #     else
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController, :create)
+  #     end
+  #   end
+  # else
+  #   scope "/verify_smart_contract" do
+  #     pipe_through(:api)
+
+  #     if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+  #     else
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController, :create)
+  #     end
+  #   end
+  # end
 
   if Application.get_env(:block_scout_web, WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)

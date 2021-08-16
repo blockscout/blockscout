@@ -1,10 +1,23 @@
 .modal-validator-info {
-  max-width: 100%;
-  width: 660px;
+  max-width: 660px;
+  width: 100%;
 
   @include media-breakpoint-down(sm) {
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .modal-title {
+    margin-bottom: 10px;
+  }
+
+  #pool_name {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  #pool_description {
+    width: 100%;
   }
 }
 
@@ -46,4 +59,14 @@
     margin: 0;
     padding: 0;
   }
+}
+
+.modal-validator-alert {
+  padding: 10px 30px;
+  background-color: #fff3f7;
+  color: #ff7986;
+  border-top: 1px solid #fee6ef;
+  border-bottom: 1px solid #fee6ef;
+  line-height: 1.5;
+  font-size: 14px;
 }

@@ -1,0 +1,19 @@
+<div class="custom-dapp-header-container">
+    <img class="custom-address-icon"/>
+    <div class="custom-dapp-header-description-container">
+        <span class="address-detail-item custom-address-details">
+        <%= @title %>
+        </span>
+        <a href="https://zkga.me/" target="_blank" class="application-icon-link">
+            <span
+                aria-label='<%= gettext("Play") %>'
+                class="application-icon"
+                data-placement="top"
+                data-toggle="tooltip"
+                title='<%= gettext("Play") %>'
+            >
+                <img class="application-icon"/>
+            </span>
+        </a>
+    </div>
+</div>

@@ -1,0 +1,57 @@
+<section class="container" data-page="tokens">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+  <div class="card">
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+	  <h1 class="card-title list-title-description"><%= gettext "Tokens" %></h1>
+
+	<div class="list-top-pagination-container-wrapper tokens-list-search-input-outer-container" style="display: flex; float: right;">
+		<label class="tokens-list-search-input-container tokens mr-3">
+			<input data-search-field="" class="form-control tokens-list-search-input search-input" type="text" name="filter" placeholder="Token name or symbol" id="search-text-input" />
+		</label>
+    	<%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+	</div>
+
+    <div class="addresses-table-container">
+      <div class="stakes-table-container">
+	<table>
+	  <thead>
+	    <tr>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">&nbsp;</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">Token</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">Address</div>
+	      </th>
+		  <%= if Chain.bridged_tokens_enabled?() do %>
+			<th class="stakes-table-th">
+				<div class="stakes-table-th-content">Bridged?</div>
+			</th>
+		  <% end %>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">
+			Total Supply
+			</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">
+			Holders Count
+			</div>
+	      </th>
+	    </tr>
+	  </thead>
+	  <tbody data-items data-selector="top-tokens-list">
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_tokens_table: true %>
+	  </tbody>
+	</table>
+      </div>
+    </div>
+
+    <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+    </div>
+  </div>
+	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/tokens.js") %>"></script>
+	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
+</section>

@@ -14,6 +14,7 @@ $dashboard-banner-chart-legend-value-color: $dashboard-stats-item-value-color !d
 $dashboard-stats-item-border-color: $primary !default;
 $dashboard-banner-network-plain-container-height: 205px;
 $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !default;
+$dashboard-banner-chart-axis-font-color-alt: #333;
 
 .dashboard-banner-container {
   @include gradient-container();
@@ -149,6 +150,22 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     font-size: 12px;
     font-weight: normal;
     line-height: 1.2;
+
+    &.inline {
+      display: inline-block;
+    }
+  }
+
+  .dashboard-banner-chart-legend-value-container {
+    white-space: nowrap;
+  }
+
+  .gas-price-icon {
+    position: relative;
+    top: -2px;
+    path {
+      fill: $dashboard-line-color-price;
+    }
   }
 }
 

@@ -28,11 +28,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
-  # alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Events.Publisher
+  alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Transform.Addresses
-  # alias Timex.Duration
+  alias Timex.Duration
 
   @behaviour Block.Fetcher
 
@@ -85,6 +86,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
+
+    if number > 0 do
+      Publisher.broadcast([{:last_block_number, number}], :realtime)
+    end
+
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
     start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
@@ -134,6 +140,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
      }}
   end
 
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)
        when is_list(subscribe_named_arguments) do
     case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
@@ -153,11 +164,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
   defp schedule_polling do
-    polling_period = 1_000
-    # case AverageBlockTime.average_block_time() do
-    #   {:error, :disabled} -> 2_000
-    #   block_time -> round(Duration.to_milliseconds(block_time) * 2)
-    # end
+    polling_period =
+      case AverageBlockTime.average_block_time() do
+        {:error, :disabled} -> 2_000
+        block_time -> round(Duration.to_milliseconds(block_time) / 2)
+      end
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
 

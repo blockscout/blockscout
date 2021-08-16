@@ -1,0 +1,9 @@
+.modal-delegators-info {
+  max-width: map-get($container-max-widths, "lg");
+  min-width: map-get($container-max-widths, "lg");
+  width: 100%;
+
+  .modal-body {
+    padding: 0 0 25px;
+  }
+}

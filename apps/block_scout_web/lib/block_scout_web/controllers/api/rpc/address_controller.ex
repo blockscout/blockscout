@@ -174,7 +174,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         render(conn, :error, error: "Invalid address format")
 
       {:contract_address, :error} ->
-        render(conn, :error, error: "Invalid contractaddress format")
+        render(conn, :error, error: "Invalid contract address format")
 
       {:error, :not_found} ->
         render(conn, :error, error: "No token transfers found", data: [])

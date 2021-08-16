@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
 
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.{Accounts}
+  alias Explorer.Chain.Cache.Accounts
   alias Indexer.Fetcher.PendingTransaction
   alias Indexer.Transform.Addresses
 
@@ -133,6 +133,11 @@ defmodule Indexer.Fetcher.PendingTransaction do
 
       {:error, :timeout} ->
         Logger.error("timeout")
+
+        :ok
+
+      {:error, {:bad_gateway, _}} ->
+        Logger.error("bad_gateway")
 
         :ok
     end

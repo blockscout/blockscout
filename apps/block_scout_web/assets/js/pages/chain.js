@@ -29,6 +29,7 @@ export const initialState = {
   transactionsError: false,
   transactionsLoading: true,
   transactionCount: null,
+  totalGasUsageCount: null,
   usdMarketCap: null,
   blockCount: null
 }
@@ -123,6 +124,11 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
+    case 'TRANSACTION_BATCH_EXPANDED': {
+      return Object.assign({}, state, {
+        transactionsBatch: []
+      })
+    }
     case 'RECEIVED_UPDATED_TRANSACTION_STATS': {
       return Object.assign({}, state, {
         transactionStats: action.msg.stats
@@ -166,7 +172,7 @@ const elements = {
     load () {
       chart = window.dashboardChart
     },
-    render ($el, state, oldState) {
+    render (_$el, state, oldState) {
       if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) || !state.availableSupply) return
 
       chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
@@ -183,6 +189,15 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="total-gas-usage"]': {
+    load ($el) {
+      return { totalGasUsageCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.totalGasUsageCount === state.totalGasUsageCount) return
+      $el.empty().append(numeral(state.totalGasUsageCount).format())
     }
   },
   '[data-selector="block-count"]': {
@@ -272,7 +287,7 @@ const elements = {
     }
   },
   '[data-selector="channel-batching-count"]': {
-    render ($el, state, oldState) {
+    render ($el, state, _oldState) {
       const $channelBatching = $('[data-selector="channel-batching-message"]')
       if (!state.transactionsBatch.length) return $channelBatching.hide()
       $channelBatching.show()
@@ -329,6 +344,17 @@ if ($chainDetailsPage.length) {
     type: 'RECEIVED_UPDATED_TRANSACTION_STATS',
     msg: msg
   }))
+
+  const $txReloadButton = $('[data-selector="reload-transactions-button"]')
+  const $channelBatching = $('[data-selector="channel-batching-message"]')
+  $txReloadButton.on('click', (event) => {
+    event.preventDefault()
+    loadTransactions(store)
+    $channelBatching.hide()
+    store.dispatch({
+      type: 'TRANSACTION_BATCH_EXPANDED'
+    })
+  })
 }
 
 function loadTransactions (store) {

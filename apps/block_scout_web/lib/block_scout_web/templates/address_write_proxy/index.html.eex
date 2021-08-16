@@ -1,0 +1,22 @@
+<section class="container">
+
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
+
+  <div class="card">
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
+    <!-- loaded via AJAX -->
+    <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@address.hash) %>" data-type="<%= @type %>" data-action="<%= @action %>" data-url="<%= smart_contract_path(@conn, :index) %>">
+      <div>
+        <span class="loading-spinner-small mr-2">
+          <span class="loading-spinner-block-1"></span>
+          <span class="loading-spinner-block-2"></span>
+        </span>
+        <%= gettext("Loading...") %>
+      </div>
+    </div>
+  </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/smart-contract-helpers.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/write-contract.js") %>"></script>
+</section>

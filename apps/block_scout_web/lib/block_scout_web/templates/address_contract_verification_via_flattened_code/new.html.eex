@@ -1,0 +1,314 @@
+<% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
+<% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "" %>
+<% optimization_runs_value = if metadata_for_verification, do: metadata_for_verification.optimization_runs, else: "200" %>
+<% optimization = if metadata_for_verification, do: metadata_for_verification.optimization, else: true %>
+<% evm_version = if metadata_for_verification, do: metadata_for_verification.evm_version, else: "default" %>
+<% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
+<% contract_source_code_value = if metadata_for_verification, do: metadata_for_verification.contract_source_code, else: "" %>
+<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
+<% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
+<section data-page="contract-verification" class="container new-smart-contract-container">
+  <div data-selector="channel-disconnected-message" class="d-none">
+    <div data-selector="reload-button" class="alert alert-danger">
+      <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
+    </div>
+  </div>
+
+  <div class="new-smart-contract-form">
+      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
+
+      <%= form_for @changeset,
+          address_contract_verification_path(@conn, :create),
+          [],
+          fn f -> %>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :address_hash, gettext("Contract Address") %>
+            <div class="center-column">
+              <%= text_input f, :address_hash, class: "form-control border-rounded", "aria-describedby": "contract-address-help-block", readonly: true %>
+              <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :name, gettext("Contract Name") %>
+            <div class="center-column">
+              <%= text_input f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name", value: contract_name_value %>
+              <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">Must match the name specified in the code. For example, in <span class="tooltip-quote">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, "Include nightly builds" %>
+            <div class="center-column">
+              <div class="form-radios-group">
+                <div class="radio-big">
+                  <%= radio_button f, :nightly_builds, false, checked: true, class: "form-check-input nightly-builds-false" %>
+                  <div class="radio-icon"></div>
+                  <%= label :nightly_builds, :false, gettext("No"), class: "radio-text" %>
+                </div>
+                <div class="radio-big">
+                  <%= radio_button f, :nightly_builds, true, class: "form-check-input nightly-builds-true", "aria-describedby": "nightly_builds-help-block" %>
+                  <div class="radio-icon"></div>
+                  <%= label :nightly_builds, :true, gettext("Yes"), class: "radio-text" %>
+                </div>
+              </div>
+              <%= error_tag f, :nightly_builds, id: "nightly_builds-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">Select yes if you want to show nightly builds.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :compiler_version, gettext("Compiler") %>
+            <div class="center-column">
+              <%= select f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: compiler_version, "aria-describedby": "compiler-help-block" %>
+              <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">The compiler version is specified in <span class="tooltip-quote">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class="tooltip-quote">solc —version</span> to check.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label :evm_version, :evm_version, gettext("EVM Version") %>
+            <div class="center-column">
+              <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", selected: evm_version, "aria-describedby": "evm-version-help-block" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version. <a href="https://forum.poa.network/t/smart-contract-verification-evm-version-details/2318" target="_blank">EVM version details</a>.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, "Optimization" %>
+            <div class="center-column">
+              <div class="form-radios-group">
+                <div class="radio-big">
+                  <%= radio_button f, :optimization, false, checked: !optimization, class: "form-check-input optimization-false" %>
+                  <div class="radio-icon"></div>
+                  <%= label :smart_contract_optimization, :false, gettext("No"), class: "radio-text" %>
+                </div>
+                <div class="radio-big">
+                  <%= radio_button f, :optimization, true, checked: optimization, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
+                  <div class="radio-icon"></div>
+                  <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "radio-text" %>
+                </div>
+              </div>
+              <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">If you enabled optimization during compilation, select yes.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group optimization-runs">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :name, gettext("Optimization runs") %>
+            <div class="center-column">
+              <%= text_input f, :optimization_runs, value: 200, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs", value: optimization_runs_value %>
+            </div>
+            <div class="smart-contract-form-group-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :contract_source_code, gettext("Enter the Solidity Contract Code") %>
+            <div class="center-column">
+              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block", value: contract_source_code_value %>
+              <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger form-error", "data-test": "contract-source-code-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">We recommend using flattened code. This is necessary if your code utilizes a library or inherits dependencies. Use the <a href="https://github.com/poanetwork/solidity-flattener" target="_blank">POA solidity flattener or the <a href="https://www.npmjs.com/package/truffle-flattener" target="_blank">truffle flattener</a>.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, "Try to fetch constructor arguments automatically" %>
+            <div class="center-column">
+              <div class="form-radios-group">
+                <div class="radio-big">
+                  <%= radio_button f, :autodetect_constructor_args, false, checked: !fetch_constructor_arguments_automatically, class: "form-check-input autodetectfalse" %>
+                  <div class="radio-icon"></div>
+                  <%= label :autodetect_constructor_args, :false, gettext("No"), class: "radio-text" %>
+                </div>
+                <div class="radio-big">
+                  <%= radio_button f, :autodetect_constructor_args, true, checked: fetch_constructor_arguments_automatically, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_constructor_args-help-block" %>
+                  <div class="radio-icon"></div>
+                  <%= label :autodetect_constructor_args, :true, gettext("Yes"), class: "radio-text" %>
+                </div>
+              </div>
+              <%= error_tag f, :autodetect_constructor_args, id: "autodetect_constructor_args-help-block", class: "text-danger form-error" %>
+            </div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group constructor-arguments" style="display: <%= display_constructor_arguments_text_area %>">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :constructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
+            <div class="center-column">
+              <%= textarea f, :constructor_arguments, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-constructor-arguments-help-block" %>
+              <%= error_tag f, :constructor_arguments, id: "contract-constructor-arguments-help-block", class: "text-danger form-error", "data-test": "contract-constructor-arguments-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">Add arguments in <a href="https://solidity.readthedocs.io/en/develop/abi-spec.html" target="_blank">ABI hex encoded form</a>. Constructor arguments are written right to left, and will be found at the end of the input created bytecode. They may also be <a href="https://abi.hashex.org/" target="_blank">parsed here.</a></div>
+          </div>
+        </div>
+
+        <div class="add-contract-libraries-wrapper">
+          <span class="btn-line js-btn-add-contract-libraries">Add Contract Libraries</span>
+        </div>
+
+        <div class="smart-contract-libraries-wrapper js-smart-contract-libraries-wrapper">
+          <h2 class="smart-contract-title margin-bottom-md"><%= gettext "Contract Libraries" %></h2>
+
+          <div class="contract-library-form-group js-contract-library-form-group active">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library1, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library1_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip">A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one.</div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library1, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library1_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip">The 0x library address. This can be found in the generated json file or Truffle output (if using truffle).</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library2, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library2_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library2, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library2_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library3, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library3_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library3, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library3_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library4, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library4_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library4, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library4_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library5, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library5_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label f, :library5, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input f, :library5_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="add-contract-library-wrapper js-add-contract-library-wrapper">
+            <span class="btn-line js-btn-add-contract-library">Add Library</span>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-buttons">
+          <button
+            class="position-absolute w-118 btn-full-primary d-none mr-2"
+            disabled="true"
+            id="loading"
+            name="button"
+            type="button"
+          >
+            <span class="loading-spinner-small mr-2">
+              <span class="loading-spinner-block-1"></span>
+              <span class="loading-spinner-block-2"></span>
+            </span>
+            <%= gettext("Loading....") %>
+          </button>
+          <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation"  %>
+          <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
+          <%=
+            link(
+              gettext("Cancel"),
+              class: "btn-no-border",
+              to: address_contract_path(@conn, :index, @address_hash)
+              )
+          %>
+        </div>
+      <% end %>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
+</section>

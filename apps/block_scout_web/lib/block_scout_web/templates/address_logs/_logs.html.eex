@@ -6,7 +6,14 @@
         <%= gettext "To see accurate decoded input data, the contract must be verified." %>
         <%= case @log.transaction do %>
           <% %{to_address: %{hash: hash}} -> %>
-            <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
+            <% path = 
+              if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+                address_verify_contract_path(@conn, :new, hash)
+              else
+                address_verify_contract_via_flattened_code_path(@conn, :new, hash)
+              end
+            %>
+            <%= gettext "Verify the contract " %><a href="<%= path %>"><%= gettext "here" %></a>
           <% _ -> %>
             <%= nil %>
         <% end %>
@@ -46,45 +53,7 @@
               <td colspan="3"><code><%= text %></code></td>
             </tr>
           </table>
-          <div class="table-responsive text-center">
-            <table style="color: black;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered">
-              <tr>
-                <th scope="col"></th>
-                <th scope="col"><%= gettext "Name" %></th>
-                <th scope="col"><%= gettext "Type" %></th>
-                <th scope="col"><%= gettext "Indexed?" %></th>
-                <th scope="col"><%= gettext "Data" %></th>
-              <tr>
-            <%= for {name, type, indexed?, value} <- mapping do %>
-                <tr>
-                  <th scope="row">
-                    <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
-                      <% :error -> %>
-                        <%= nil %>
-                      <% copy_text -> %>
-                        <span
-                          aria-label='<%= gettext "Copy Value" %>'
-                          class="btn-copy-ico"
-                          data-clipboard-text="<%= copy_text %>"
-                          data-placement="top"
-                          data-toggle="tooltip"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                            <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-                          </svg>
-                        </span>
-                    <% end %>
-                  </th>
-                  <td><%= name %></td>
-                  <td><%= type %></td>
-                  <td><%= indexed? %></td>
-                  <td>
-                    <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
-                  </td>
-                </tr>
-            <% end %>
-         </table>
-        </div>
+          <%= render BlockScoutWeb.LogView, "_data_decoded_view.html", mapping: mapping %>
         <% {:error, :contract_not_verified, results} -> %>
            <%= for {:ok, method_id, text, mapping} <- results do %>
              <dt class="col-md-2"><%= gettext "Decoded" %></dt>
@@ -99,44 +68,7 @@
                  <td colspan="3"><code><%= text %></code></td>
                </tr>
              </table>
-             <div class="table-responsive text-center">
-               <table style="color: black;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered">
-                 <tr>
-                   <th scope="col"></th>
-                   <th scope="col"><%= gettext "Name" %></th>
-                   <th scope="col"><%= gettext "Type" %></th>
-                   <th scope="col"><%= gettext "Indexed?" %></th>
-                   <th scope="col"><%= gettext "Data" %></th>
-                 <tr>
-               <%= for {name, type, indexed?, value} <- mapping do %>
-                   <tr>
-                     <th scope="row">
-                       <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
-                         <% :error -> %>
-                           <%= nil %>
-                         <% copy_text -> %>
-                           <span
-                             aria-label='<%= gettext "Copy Value" %>'
-                             class="btn-copy-ico"
-                             data-clipboard-text="<%= copy_text %>"
-                             data-placement="top"
-                             data-toggle="tooltip"
-                           >
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                               <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-                             </svg>
-                           </span>
-                       <% end %>
-                     </th>
-                     <td><%= name %></td>
-                     <td><%= type %></td>
-                     <td><%= indexed? %></td>
-                     <td>
-                       <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
-                     </td>
-                   </tr>
-               <% end %>
-            </table>
+             <%= render BlockScoutWeb.LogView, "_data_decoded_view.html", mapping: mapping %>
          </div>
         <% end %>
        <% _ -> %>

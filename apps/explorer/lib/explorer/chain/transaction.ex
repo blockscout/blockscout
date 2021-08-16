@@ -182,7 +182,28 @@ defmodule Explorer.Chain.Transaction do
              :s,
              :v,
              :status,
-             :value
+             :value,
+             :revert_reason
+           ]}
+
+  @derive {Jason.Encoder,
+           only: [
+             :block_number,
+             :cumulative_gas_used,
+             :error,
+             :gas,
+             :gas_price,
+             :gas_used,
+             :index,
+             :created_contract_code_indexed_at,
+             :input,
+             :nonce,
+             :r,
+             :s,
+             :v,
+             :status,
+             :value,
+             :revert_reason
            ]}
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -207,7 +228,7 @@ defmodule Explorer.Chain.Transaction do
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated
-    # in a different block. See: https://github.com/poanetwork/blockscout/issues/1911
+    # in a different block. See: https://github.com/blockscout/blockscout/issues/1911
     field(:old_block_hash, Hash.Full)
 
     timestamps()
@@ -455,6 +476,42 @@ defmodule Explorer.Chain.Transaction do
          do: {:ok, identifier, text, mapping}
   end
 
+  def get_method_name(
+        %__MODULE__{
+          input: %{bytes: <<method_id::binary-size(4), _::binary>>}
+        } = transaction
+      ) do
+    if transaction.created_contract_address_hash do
+      nil
+    else
+      case Transaction.decoded_input_data(%__MODULE__{
+             to_address: %{smart_contract: nil},
+             input: transaction.input,
+             hash: transaction.hash
+           }) do
+        {:error, :contract_not_verified, [{:ok, _method_id, decoded_func, _}]} ->
+          parse_method_name(decoded_func)
+
+        {:error, :contract_not_verified, []} ->
+          "0x" <> Base.encode16(method_id, case: :lower)
+
+        _ ->
+          "Transfer"
+      end
+    end
+  end
+
+  def get_method_name(_), do: "Transfer"
+
+  defp parse_method_name(method_desc) do
+    method_desc
+    |> String.split("(")
+    |> Enum.at(0)
+    |> upcase_first
+  end
+
+  defp upcase_first(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
+
   defp function_call(name, mapping) do
     text =
       mapping
@@ -514,6 +571,10 @@ defmodule Explorer.Chain.Transaction do
 
   def not_pending_transactions(query) do
     where(query, [t], not is_nil(t.block_number))
+  end
+
+  def not_dropped_or_replaced_transacions(query) do
+    where(query, [t], is_nil(t.error) or t.error != "dropped/replaced")
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a

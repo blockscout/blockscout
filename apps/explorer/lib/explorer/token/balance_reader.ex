@@ -44,7 +44,7 @@ defmodule Explorer.Token.BalanceReader do
        }) do
     %{
       contract_address: token_contract_address_hash,
-      function_name: "balanceOf",
+      method_id: "70a08231",
       args: [address_hash],
       block_number: block_number
     }

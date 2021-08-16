@@ -35,6 +35,7 @@ defmodule Explorer.Chain.Token do
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
     `t:Explorer.Chain.CurrentTokenBalance.t/0` `value > 0`.  Can be `nil` when data not migrated.
+  * `bridged` - Flag for bridged tokens from other chain
   """
   @type t :: %Token{
           name: String.t(),
@@ -45,10 +46,19 @@ defmodule Explorer.Chain.Token do
           cataloged: boolean(),
           contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           contract_address_hash: Hash.Address.t(),
-          holder_count: non_neg_integer() | nil
+          holder_count: non_neg_integer() | nil,
+          bridged: boolean()
         }
 
   @derive {Poison.Encoder,
+           except: [
+             :__meta__,
+             :contract_address,
+             :inserted_at,
+             :updated_at
+           ]}
+
+  @derive {Jason.Encoder,
            except: [
              :__meta__,
              :contract_address,
@@ -65,6 +75,7 @@ defmodule Explorer.Chain.Token do
     field(:type, :string)
     field(:cataloged, :boolean)
     field(:holder_count, :integer)
+    field(:bridged, :boolean)
 
     belongs_to(
       :contract_address,
@@ -105,14 +116,14 @@ defmodule Explorer.Chain.Token do
 
   These are tokens with cataloged field set to true and updated_at is earlier or equal than an hour ago.
   """
-  def cataloged_tokens(hours \\ 48) do
+  def cataloged_tokens(minutes \\ 2880) do
     date_now = DateTime.utc_now()
-    hours_ago_date = DateTime.add(date_now, -:timer.hours(hours), :millisecond)
+    some_time_ago_date = DateTime.add(date_now, -:timer.minutes(minutes), :millisecond)
 
     from(
       token in __MODULE__,
       select: token.contract_address_hash,
-      where: token.cataloged == true and token.updated_at <= ^hours_ago_date
+      where: token.cataloged == true and token.updated_at <= ^some_time_ago_date
     )
   end
 end

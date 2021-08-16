@@ -1,61 +1,54 @@
 <section class="container">
-  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
   <section data-page="address-internal-transactions">
     <div class="card">
-      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
-        <div data-selector="channel-batching-message" style="display: none;">
+        <div data-selector="channel-batching-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-info">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More internal transactions have come in" %></a>
           </div>
         </div>
-        <div data-selector="channel-disconnected-message" style="display: none;">
+        <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer internal transactions" %></a>
           </div>
         </div>
         <div class="clearfix">
           <h2 class="card-title float-left"><%= gettext "Internal Transactions" %></h2>
-          <div class="dropdown float-right u-push-sm">
-            <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
-              id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Filter: <%= format_current_filter(@filter) %>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
-              <%= link(
-                gettext("All"),
-                to: address_internal_transaction_path(@conn, :index, @address.hash),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
-              <%= link(
-                gettext("To"),
-                to: address_internal_transaction_path(
-                  @conn,
-                  :index,
-                  @address.hash,
-                  filter: "to"
-                ),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
-              <%= link(
-                gettext("From"),
-                to: address_internal_transaction_path(
-                  @conn,
-                  :index,
-                  @address.hash,
-                  filter: "from"
-                ),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
+          <div class="top-pagination-outer-container float-right">
+            <div class="dropdown u-push-sm">
+              <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+                id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Filter: <%= format_current_filter(@filter) %>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+                <%= link(
+                  gettext("All"),
+                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+                <%= link(
+                  gettext("To"),
+                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "to"}),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+                <%= link(
+                  gettext("From"),
+                  to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash, %{:filter => "from"}),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+              </div>
             </div>
+            <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
           </div>
         </div>
-
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
@@ -75,5 +68,6 @@
       </div>
     </div>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address-internal-transactions.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
   </section>
 </section>

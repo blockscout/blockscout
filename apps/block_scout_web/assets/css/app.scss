@@ -10,50 +10,50 @@
 // Font Awesome
 $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "fontawesome";
-@import "fa-brands";
-@import "fa-regular";
-@import "fa-solid";
+@import "~@fortawesome/fontawesome-free/scss/brands";
+@import "~@fortawesome/fontawesome-free/scss/regular";
+@import "~@fortawesome/fontawesome-free/scss/solid";
 
 // Bootstrap Core CSS
-@import "node_modules/bootstrap/scss/functions";
-@import "node_modules/bootstrap/scss/variables";
-@import "node_modules/bootstrap/scss/mixins";
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
 
 @import "theme/variables";
 
-@import "node_modules/bootstrap/scss/root";
-@import "node_modules/bootstrap/scss/reboot";
-@import "node_modules/bootstrap/scss/grid";
-@import "node_modules/bootstrap/scss/code";
-@import "node_modules/bootstrap/scss/close";
-@import "node_modules/bootstrap/scss/buttons";
-@import "node_modules/bootstrap/scss/forms";
-@import "node_modules/bootstrap/scss/input-group";
-@import "node_modules/bootstrap/scss/utilities/spacing";
-@import "node_modules/bootstrap/scss/utilities/sizing";
-@import "node_modules/bootstrap/scss/utilities/display";
-@import "node_modules/bootstrap/scss/utilities/flex";
-@import "node_modules/bootstrap/scss/utilities/float";
-@import "node_modules/bootstrap/scss/utilities/text";
-@import "node_modules/bootstrap/scss/utilities/background";
-@import "node_modules/bootstrap/scss/utilities/position";
-@import "node_modules/bootstrap/scss/utilities/borders";
-@import "node_modules/bootstrap/scss/progress";
+@import "~bootstrap/scss/root";
+@import "~bootstrap/scss/reboot";
+@import "~bootstrap/scss/grid";
+@import "~bootstrap/scss/code";
+@import "~bootstrap/scss/close";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/input-group";
+@import "~bootstrap/scss/utilities/spacing";
+@import "~bootstrap/scss/utilities/sizing";
+@import "~bootstrap/scss/utilities/display";
+@import "~bootstrap/scss/utilities/flex";
+@import "~bootstrap/scss/utilities/float";
+@import "~bootstrap/scss/utilities/text";
+@import "~bootstrap/scss/utilities/background";
+@import "~bootstrap/scss/utilities/position";
+@import "~bootstrap/scss/utilities/borders";
+@import "~bootstrap/scss/progress";
 
 // Bootstrap Components
-@import "node_modules/bootstrap/scss/alert";
-@import "node_modules/bootstrap/scss/badge";
-@import "node_modules/bootstrap/scss/card";
-@import "node_modules/bootstrap/scss/dropdown";
-@import "node_modules/bootstrap/scss/forms";
-@import "node_modules/bootstrap/scss/nav";
-@import "node_modules/bootstrap/scss/navbar";
-@import "node_modules/bootstrap/scss/pagination";
-@import "node_modules/bootstrap/scss/tables";
-@import "node_modules/bootstrap/scss/transitions";
+@import "~bootstrap/scss/alert";
+@import "~bootstrap/scss/badge";
+@import "~bootstrap/scss/card";
+@import "~bootstrap/scss/dropdown";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/nav";
+@import "~bootstrap/scss/navbar";
+@import "~bootstrap/scss/pagination";
+@import "~bootstrap/scss/tables";
+@import "~bootstrap/scss/transitions";
 
 // Code highlight
-@import "node_modules/highlight.js/styles/default";
+@import "~highlight.js/styles/default";
 
 //Custom theme
 @import "theme/fonts";
@@ -113,11 +113,22 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/new_smart_contract";
 @import "components/radio_big";
 @import "components/btn_no_border";
-@import "components/custom_tooltips_block_details";
+@import "components/custom_tooltips";
 @import "components/_erc721_token_image_container";
 @import "components/_inventory_token_instance_image_container";
+@import "components/_external_link";
+@import "components/_label";
+@import "components/_token";
+@import "components/_dropzone";
+@import "components/_search";
+@import "components/_ad";
+// Font Awesome
+@import "components/_fontawesome_icon";
 
 @import "theme/dark-theme";
+
+@import "theme/custom_contracts/dark-forest-theme";
+@import "theme/custom_contracts/circles-theme";
 
 :export {
   dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;

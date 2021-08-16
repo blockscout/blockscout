@@ -14,6 +14,7 @@ defmodule EthereumJSONRPC.ContractTest do
           "constant" => false,
           "inputs" => [],
           "name" => "get1",
+          "method_id" => "054c1a75",
           "outputs" => [%{"name" => "", "type" => "uint256"}],
           "payable" => false,
           "stateMutability" => "nonpayable",
@@ -23,6 +24,7 @@ defmodule EthereumJSONRPC.ContractTest do
           "constant" => true,
           "inputs" => [],
           "name" => "get2",
+          "method_id" => "d2178b08",
           "outputs" => [%{"name" => "", "type" => "uint256"}],
           "payable" => false,
           "stateMutability" => "view",
@@ -32,6 +34,7 @@ defmodule EthereumJSONRPC.ContractTest do
           "constant" => true,
           "inputs" => [],
           "name" => "get3",
+          "method_id" => "8321045c",
           "outputs" => [%{"name" => "", "type" => "uint256"}],
           "payable" => false,
           "stateMutability" => "view",
@@ -42,9 +45,9 @@ defmodule EthereumJSONRPC.ContractTest do
       contract_address = "0x0000000000000000000000000000000000000000"
 
       functions = [
-        %{contract_address: contract_address, function_name: "get1", args: []},
-        %{contract_address: contract_address, function_name: "get2", args: [], block_number: 1000},
-        %{contract_address: contract_address, function_name: "get3", args: []}
+        %{contract_address: contract_address, method_id: "054c1a75", args: []},
+        %{contract_address: contract_address, method_id: "d2178b08", args: [], block_number: 1000},
+        %{contract_address: contract_address, method_id: "8321045c", args: []}
       ]
 
       expect(
@@ -79,7 +82,7 @@ defmodule EthereumJSONRPC.ContractTest do
       blockchain_result = [
         {:ok, [42]},
         {:ok, [52]},
-        {:error, "(-32015) Some error"}
+        {:error, "(-32015) Some error (something)"}
       ]
 
       assert EthereumJSONRPC.execute_contract_functions(
@@ -97,6 +100,7 @@ defmodule EthereumJSONRPC.ContractTest do
           "constant" => false,
           "inputs" => [],
           "name" => "get",
+          "method_id" => "6d4ce63c",
           "outputs" => [%{"name" => "", "type" => "uint256"}],
           "payable" => false,
           "stateMutability" => "nonpayable",
@@ -107,8 +111,8 @@ defmodule EthereumJSONRPC.ContractTest do
       contract_address = "0x0000000000000000000000000000000000000000"
 
       functions = [
-        %{contract_address: contract_address, function_name: "get", args: []},
-        %{contract_address: contract_address, function_name: "get", args: [], block_number: 1000}
+        %{contract_address: contract_address, method_id: "6d4ce63c", args: []},
+        %{contract_address: contract_address, method_id: "6d4ce63c", args: [], block_number: 1000}
       ]
 
       expect(

@@ -202,9 +202,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert from(i in InternalTransaction, where: i.transaction_hash == ^pending.hash) |> Repo.one() |> is_nil()
 
-      assert %{consensus: false} = Repo.get(Block, empty_block.hash)
-      assert not is_nil(Repo.get(PendingBlockOperation, empty_block.hash))
-
       assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash) |> Repo.one() |> is_nil() ==
                false
 

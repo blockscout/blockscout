@@ -1,55 +1,67 @@
-<section class="address-overview">
+<% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+<% address_hash_str = "0x" <> Base.encode16(@token.contract_address_hash.bytes, case: :lower) %>
+<% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
+<% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
+<section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="card-section col-md-12 col-lg-8 pr-0-md">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md js-ad-dependant-mb-2">
       <div class="card">
         <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title">
+            <%= cond do %>
+              <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
+                <div class="custom-dapp-header-container">
+                  <img class="custom-address-icon"/>
+                </div>
+              <% Enum.member?(circles_addresses_list, created_from_address_hash) -> %>
+                <div class="custom-dapp-header-container">
+                  <img class="custom-address-icon"/>
+                </div>
+              <% true -> %>
+                <%= nil %>
+            <% end %>
+            <% foreign_chain_id = if Map.has_key?(@token, :foreign_chain_id), do: @token.foreign_chain_id, else: nil %>
+            <% tag = Chain.chain_id_display_name(foreign_chain_id) %>
             <%= if token_name?(@token) do %>
-              <%= @token.name %>
+                <div class="title-with-label"><%= @token.name %></div>
+                <%= if tag !== "" do %>
+                  <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridged", "ml-1"] %>
+                  <%= render BlockScoutWeb.FormView, "_tag.html", text: String.upcase(tag), additional_classes: ["destination-#{tag}", "ml-1"] %>
+                <% end %>
             <% else %>
               <%= gettext("Token Details") %>
             <% end %>
             <!-- buttons -->
-            <span class="overview-title-buttons float-right">
-              <span class="overview-title-item" data-clipboard-text="<%= Address.checksum(@token.contract_address_hash) %>">
-                <span
-                  aria-label='<%= gettext("Copy Address") %>'
-                  class="btn-copy-icon"
-                  data-placement="top"
-                  data-toggle="tooltip"
-                  title='<%= gettext("Copy Address") %>'
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                    <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-                  </svg>
-                </span>
-              </span>
-              <span
-                class="overview-title-item"
-                data-target="#qrModal"
-                data-toggle="modal"
-              >
-                <span
-                  class="btn-qr-icon"
-                  data-toggle="tooltip"
-                  data-placement="top"
-                  title='<%= gettext("QR Code") %>'
-                  aria-label='<%= gettext("Show QR Code") %>'
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                    <path fill-rule="evenodd" d="M22.5 24.5v-2h2v2h-2zm-1-4v-1h1v1h-1zm1-3h2v2h-2v-2zm1-2h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm-8 14h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm1-4h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm6 9h-2v-2h2v2zm1 1h-1v-1h1v1zm0 1v1h-1v-1h1zm-1 3h-2v-2h2v2z"/>
-                  </svg>
-                </span>
-              </span>
+            <span class="overview-title-buttons token float-right <%= if @token.bridged, do: "bridged-tokens-buttons-mobile", else: "" %>">
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                  additional_classes: ["overview-title-item"],
+                  clipboard_text: Address.checksum(@token.contract_address_hash),
+                  aria_label: gettext("Copy Address"),
+                  title: gettext("Copy Address") %>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_qr_code.html" %>
             </span>
+            <!-- bridged token -->
+            <%= if @token.bridged do %>
+              <div class="view-original-token-container">
+                <%= if Map.has_key?(@token, :foreign_token_contract_address_hash) do %>
+                  <a data-test="original_token_contract_address" href=<%= foreign_bridged_token_explorer_link(@token) %> target="_blank">View Original Token <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span></a>
+                <% end %>
+              </div>
+              <%= if Map.has_key?(@token, :custom_metadata) do %>
+                <div style="margin-top: 15px; font-size: 12px;">
+                  <%= @token.custom_metadata %>
+                </div>
+              <% end %>
+            <% end %>
           </h1>
 
-          <h3><%= Address.checksum(@token.contract_address_hash) %></h3>
+          <h3 class="token-address-mobile"><%= Address.checksum(@token.contract_address_hash) %></h3>
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <span class="mr-4 mb-3 mb-md-0">
               <%= link to:
-                  address_path(@conn, :show, Address.checksum(@token.contract_address_hash)),
+                  AccessHelpers.get_path(@conn, :address_path, :show, Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
               do %>
                 <%=  gettext "View Contract" %>
@@ -69,7 +81,7 @@
     </div>
 
     <%= if total_supply?(@token) do %>
-      <div class="card-section col-md-12 col-lg-4 pl-0-md">
+      <div class="card-section col-md-12 col-lg-4 pl-0-md js-ad-dependant-mb-2">
         <div class="card card-background-1">
           <div class="card-body">
             <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
@@ -84,8 +96,10 @@
               <%= if @token.usd_value do %>
                 <div class="text-uppercase">
                   <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
-                  |
-                  <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"></span>
+                  <%= unless @token.custom_cap do %>
+                    |
+                    <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"></span>
+                  <% end %>
                 </div>
               <% else %>
                 <br />
@@ -97,22 +111,6 @@
     </div>
   <% end %>
 </section>
-<!-- Modal -->
-<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-sm" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title" id="qrModalLabel"><%= gettext "QR Code" %></h2>
-        <button type="button" class="close" data-dismiss="modal" aria-label="<%= gettext("Close") %>">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <img src="data:image/png;base64, <%= BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)) %> " class="qr-code" alt="qr_code" title="<%= @token.contract_address %>" />
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- Modal QR -->
+<%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)), title: @token.contract_address %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

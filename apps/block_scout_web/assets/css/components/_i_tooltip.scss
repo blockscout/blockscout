@@ -1,4 +1,5 @@
 $i-tooltip-background: #a3a9b5 !default;
+$i-tooltip-info: #fff !default;
 $i-tooltip-background-active: $primary !default;
 
 .i-tooltip {
@@ -6,13 +7,21 @@ $i-tooltip-background-active: $primary !default;
   height: 16px;
   width: 16px;
 
-  path {
+  .i-tooltip-circle  {
     fill: $i-tooltip-background;
   }
 
+  .i-tooltip-info  {
+    fill: $i-tooltip-info;
+  }
+
   &:hover {
-    path {
+    .i-tooltip-circle {
       fill: $i-tooltip-background-active;
     }
+  }
+
+  &.ds-inline {
+    display: inline;
   }
 }

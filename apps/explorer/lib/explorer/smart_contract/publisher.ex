@@ -5,6 +5,7 @@ defmodule Explorer.SmartContract.Publisher do
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
+  alias Explorer.SmartContract.Solidity.CompilerVersion
   alias Explorer.SmartContract.Verifier
 
   @doc """
@@ -27,34 +28,42 @@ defmodule Explorer.SmartContract.Publisher do
     params_with_external_libaries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity(address_hash, params_with_external_libaries) do
-      {:ok, %{abi: abi, contructor_arguments: contructor_arguments}} ->
-        params_with_contructor_arguments =
-          Map.put(params_with_external_libaries, "constructor_arguments", contructor_arguments)
+      {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
+        params_with_constructor_arguments =
+          Map.put(params_with_external_libaries, "constructor_arguments", constructor_arguments)
 
-        publish_smart_contract(address_hash, params_with_contructor_arguments, abi)
+        publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
 
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params_with_external_libaries, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error)}
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, nil)}
+
+      {:error, error, error_message} ->
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, error_message)}
     end
   end
 
-  defp publish_smart_contract(address_hash, params, abi) do
+  def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
-    Chain.create_smart_contract(attrs, attrs.external_libraries)
+    if Chain.smart_contract_verified?(address_hash) do
+      Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    else
+      Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    end
   end
 
-  defp unverified_smart_contract(address_hash, params, error) do
+  defp unverified_smart_contract(address_hash, params, error, error_message) do
     attrs = attributes(address_hash, params)
 
     changeset =
       SmartContract.invalid_contract_changeset(
         %SmartContract{address_hash: address_hash},
         attrs,
-        error
+        error,
+        error_message
       )
 
     %{changeset | action: :insert}
@@ -72,17 +81,22 @@ defmodule Explorer.SmartContract.Publisher do
 
     prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
 
+    compiler_version = CompilerVersion.get_strict_compiler_version(params["compiler_version"])
+
     %{
       address_hash: address_hash,
       name: params["name"],
-      compiler_version: params["compiler_version"],
+      compiler_version: compiler_version,
       evm_version: params["evm_version"],
       optimization_runs: params["optimization_runs"],
       optimization: params["optimization"],
       contract_source_code: params["contract_source_code"],
       constructor_arguments: clean_constructor_arguments,
       external_libraries: prepared_external_libraries,
-      abi: abi
+      secondary_sources: params["secondary_sources"],
+      abi: abi,
+      verified_via_sourcify: params["verified_via_sourcify"],
+      partially_verified: params["partially_verified"]
     }
   end
 
@@ -97,7 +111,7 @@ defmodule Explorer.SmartContract.Publisher do
 
   defp add_external_libraries(params, external_libraries) do
     clean_external_libraries =
-      Enum.reduce(1..5, %{}, fn number, acc ->
+      Enum.reduce(1..10, %{}, fn number, acc ->
         address_key = "library#{number}_address"
         name_key = "library#{number}_name"
 

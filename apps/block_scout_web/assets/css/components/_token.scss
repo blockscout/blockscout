@@ -1,0 +1,10 @@
+.stakes-td {
+    &.token-total-supply {
+        max-width: 150px;
+        white-space: normal;
+    }
+    &.token-name {
+        max-width: 270px;
+        white-space: normal;
+    }
+}

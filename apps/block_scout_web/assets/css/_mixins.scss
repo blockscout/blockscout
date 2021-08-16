@@ -95,6 +95,7 @@
   &:hover {
     background-color: darken($bg-color, 10%);
     border-color: darken($bg-color, 10%);
+    color: $text-color;
     text-decoration: none;
   }
 
@@ -119,9 +120,13 @@
       opacity: 0.5;
     }
   }
+
+  &.m-b-0-7 {
+    margin-bottom: 0.7rem;
+  }
 }
 
-@mixin btn-line($bg-color: #fff, $text-color: $secondary) {
+@mixin btn-line($bg-color: #fff, $text-color: $secondary, $font-size: 12px) {
   -webkit-appearance: none !important;
   align-items: center;
   background-color: $bg-color;
@@ -157,6 +162,7 @@
   }
 
   path {
+    transition: $transition-cont;
     fill: $text-color;
   }
 
@@ -167,8 +173,9 @@
   &[disabled] {
     &,
     &:hover {
-      background-color: $bg-color;
-      border-color: $text-color;
+      background-color: $bg-color!important;
+      border-color: $primary!important;
+      color: $primary!important;
       cursor: default;
       opacity: 0.5;
     }
