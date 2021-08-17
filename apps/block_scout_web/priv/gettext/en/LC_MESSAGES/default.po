@@ -689,8 +689,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:20
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:38
-#: lib/block_scout_web/templates/transaction/overview.html.eex:380
-#: lib/block_scout_web/templates/transaction/overview.html.eex:386
+#: lib/block_scout_web/templates/transaction/overview.html.eex:382
+#: lib/block_scout_web/templates/transaction/overview.html.eex:388
 msgid "Copy Value"
 msgstr ""
 
@@ -1068,8 +1068,8 @@ msgid "Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:363
-#: lib/block_scout_web/templates/transaction/overview.html.eex:367
+#: lib/block_scout_web/templates/transaction/overview.html.eex:365
+#: lib/block_scout_web/templates/transaction/overview.html.eex:369
 msgid "Hex (Default)"
 msgstr ""
 
@@ -1582,7 +1582,7 @@ msgid "RPC"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:356
+#: lib/block_scout_web/templates/transaction/overview.html.eex:358
 msgid "Raw Input"
 msgstr ""
 
@@ -2345,7 +2345,7 @@ msgid "Type"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:370
+#: lib/block_scout_web/templates/transaction/overview.html.eex:372
 msgid "UTF-8"
 msgstr ""
 
@@ -2750,23 +2750,12 @@ msgid "validator"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
-msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
-msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:47
 msgid "A TxHash or transaction hash is a unique 66 characters identifier that is generated whenever a transaction is executed."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:355
+#: lib/block_scout_web/templates/transaction/overview.html.eex:357
 msgid "Additional information that is required for the transaction."
 msgstr ""
 
@@ -2810,12 +2799,12 @@ msgid "Copy To Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:381
+#: lib/block_scout_web/templates/transaction/overview.html.eex:383
 msgid "Copy Txn Hex Input"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:387
+#: lib/block_scout_web/templates/transaction/overview.html.eex:389
 msgid "Copy Txn UTF-8 Input"
 msgstr ""
 
@@ -2977,4 +2966,25 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/search/results.html.eex:12
 msgid "Search Results"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:349
+msgid "Position"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:349
+msgid "Index position of Transaction in the block."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
+msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
+msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
 msgstr ""
