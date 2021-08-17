@@ -22,6 +22,7 @@
 
 ### Chore
 - [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transations in block's view
+- [#4521](https://github.com/blockscout/blockscout/pull/4521) - Rewrite transaction page tooltips
 - [#4516](https://github.com/blockscout/blockscout/pull/4516) - Add DB migrations step into Docker start script
 - [#4497](https://github.com/blockscout/blockscout/pull/4497) - Handle error in fetch_validators_list method
 - [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update
