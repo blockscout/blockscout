@@ -701,7 +701,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    |> fetch_transactions_in_ascending_order_by_index()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
@@ -4105,6 +4105,12 @@ defmodule Explorer.Chain do
   defp fetch_transactions(paging_options \\ nil) do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> handle_paging_options(paging_options)
+  end
+
+  defp fetch_transactions_in_ascending_order_by_index(paging_options) do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
     |> handle_paging_options(paging_options)
   end
 
