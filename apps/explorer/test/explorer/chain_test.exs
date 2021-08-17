@@ -921,7 +921,6 @@ defmodule Explorer.ChainTest do
                block.hash
                |> Chain.block_to_transactions(paging_options: %PagingOptions{key: {index}, page_size: 50})
                |> Enum.map(& &1.hash)
-               |> Enum.reverse()
     end
 
     test "returns transactions with token_transfers preloaded" do
