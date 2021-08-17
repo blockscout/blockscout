@@ -18,6 +18,7 @@
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
 
 ### Chore
+- [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transations in block's view
 - [#4516](https://github.com/blockscout/blockscout/pull/4516) - Add DB migrations step into Docker start script
 - [#4497](https://github.com/blockscout/blockscout/pull/4497) - Handle error in fetch_validators_list method
 - [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update
