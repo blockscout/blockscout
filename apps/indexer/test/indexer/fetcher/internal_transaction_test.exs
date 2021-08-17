@@ -102,7 +102,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     block = insert(:block, number: block_number)
     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
 
-    assert :ok = InternalTransaction.run([{block_number, block.hash}], json_rpc_named_arguments)
+    assert :ok = InternalTransaction.run([block_number], json_rpc_named_arguments)
 
     assert InternalTransaction.init(
              [],
@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
                [],
                fn block_number, acc -> [block_number | acc] end,
                json_rpc_named_arguments
-             ) == [{block.number, block.hash}]
+             ) == [block.number]
     end
 
     @tag :no_geth

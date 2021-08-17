@@ -13,7 +13,8 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.Cache.{Accounts, Uncles}
+  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -184,19 +185,31 @@ defmodule Indexer.Block.Fetcher do
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
-
-      Logger.debug("#blocks_importer#: Updating cache")
-
+      update_block_cache(inserted[:blocks])
+      update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
-
-      Logger.debug("#blocks_importer#: Cache updated")
-
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
+  end
+
+  defp update_block_cache([]), do: :ok
+
+  defp update_block_cache(blocks) when is_list(blocks) do
+    {min_block, max_block} = Enum.min_max_by(blocks, & &1.number)
+
+    BlockNumber.update_all(max_block.number)
+    BlockNumber.update_all(min_block.number)
+    BlocksCache.update(blocks)
+  end
+
+  defp update_block_cache(_), do: :ok
+
+  defp update_transactions_cache(transactions) do
+    Transactions.update(transactions)
   end
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
@@ -210,8 +223,6 @@ defmodule Indexer.Block.Fetcher do
         options
       )
       when is_map(options) do
-    Logger.debug("#blocks_importer#: Importing...")
-
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
@@ -224,7 +235,6 @@ defmodule Indexer.Block.Fetcher do
         }
       )
 
-    Logger.debug("#blocks_importer#: Just before import")
     callback_module.import(state, options_with_broadcast)
   end
 
@@ -329,8 +339,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp fetch_beneficiaries(blocks, json_rpc_named_arguments) do
-    Logger.debug("#blocks_importer#: Fetching beneficiaries")
-
     hash_string_by_number =
       Enum.into(blocks, %{}, fn %{number: number, hash: hash_string}
                                 when is_integer(number) and is_binary(hash_string) ->
@@ -343,8 +351,6 @@ defmodule Indexer.Block.Fetcher do
     |> case do
       {:ok, %FetchedBeneficiaries{params_set: params_set} = fetched_beneficiaries} ->
         consensus_params_set = consensus_params_set(params_set, hash_string_by_number)
-
-        Logger.debug("#blocks_importer#: Beneficiaries fetched")
 
         %FetchedBeneficiaries{fetched_beneficiaries | params_set: consensus_params_set}
 
@@ -414,7 +420,6 @@ defmodule Indexer.Block.Fetcher do
           reward_with_gas(block_miner_payout_address, beneficiary, transactions_by_block_number)
 
         _ ->
-          Logger.debug("#blocks_importer#: Gas payments added")
           beneficiary
       end
     end)

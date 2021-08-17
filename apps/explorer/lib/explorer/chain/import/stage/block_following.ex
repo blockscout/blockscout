@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Import.Stage.BlockFollowing do
   Imports any tables that follows and cannot be imported at the same time as
   those imported by `Explorer.Chain.Import.Stage.Addresses`,
   `Explorer.Chain.Import.Stage.AddressReferencing` and
-  `Explorer.Chain.Import.Stage.{Transactions, BlockLogs, BlockTokens, BlockTokenTransfers, BlockAddressTokenBalances}`
+  `Explorer.Chain.Import.Stage.BlockReferencing`
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
