@@ -102,7 +102,7 @@ defmodule Indexer.Fetcher.BlockReward do
       {:error, reason} ->
         Logger.error(
           fn ->
-            ["failed to fetch: ", inspect(reason)]
+            ["failed to fetch: ", inspect(reason), " hash: ", inspect(hash_string_by_number)]
           end,
           error_count: consensus_number_count
         )
