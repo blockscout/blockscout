@@ -16,16 +16,11 @@ defmodule Indexer.Transform.TokenTransfers do
   Returns a list of token transfers given a list of logs.
   """
   def parse(logs) do
-    Logger.debug("#blocks_importer#: Parsing logs for token transfers")
     initial_acc = %{tokens: [], token_transfers: []}
 
-    parsed_logs =
-      logs
-      |> Enum.filter(&(&1.first_topic == unquote(TokenTransfer.constant())))
-      |> Enum.reduce(initial_acc, &do_parse/2)
-
-    Logger.debug("#blocks_importer#: Logs for token transfers parsed")
-    parsed_logs
+    logs
+    |> Enum.filter(&(&1.first_topic == unquote(TokenTransfer.constant())))
+    |> Enum.reduce(initial_acc, &do_parse/2)
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc) do

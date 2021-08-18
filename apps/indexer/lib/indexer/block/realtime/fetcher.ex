@@ -37,7 +37,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(1)
+  @minimum_safe_polling_period :timer.seconds(5)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -212,8 +212,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
            |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], balances_daily_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
-      Logger.debug("#blocks_importer#: import from realtime start...")
-
       async_import_remaining_block_data(
         imported,
         %{block_rewards: %{errors: block_reward_errors}}
@@ -221,7 +219,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
       Accounts.drop(imported[:addresses])
 
-      Logger.debug("#blocks_importer#: import from realtime finished")
       ok
     end
   end
@@ -284,11 +281,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
-    Logger.debug("#blocks_importer#: Started fetching and importing...")
-
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
       {:ok, %{inserted: _, errors: []}} ->
-        Logger.debug("#blocks_importer#: Fetched and imported.")
+        Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
         Logger.error(fn ->
@@ -390,8 +385,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params} = options
        ) do
-    Logger.debug("#blocks_importer#: Balances starting...")
-
     case options
          |> fetch_balances_params_list()
          |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
@@ -427,8 +420,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
             Map.put(param, :day, day)
           end)
 
-        Logger.debug("#blocks_importer#: Balances finished")
-
         {:ok,
          %{
            addresses_params: merged_addresses_params,
@@ -437,11 +428,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
          }}
 
       {:error, _} = error ->
-        Logger.debug("#blocks_importer#: Balances finished")
         error
 
       {:ok, %FetchedBalances{errors: errors}} ->
-        Logger.debug("#blocks_importer#: Balances finished")
         {:error, errors}
     end
   end
@@ -451,24 +440,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
          address_hash_to_block_number: address_hash_to_block_number,
          balances_params: balances_params
        }) do
-    Logger.debug("#blocks_importer#: fetch_balances_params_list starting...")
-
-    balances =
-      addresses_params
-      |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})
-      |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
-      # stable order for easier moxing
-      |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
-
-    Logger.debug("#blocks_importer#: fetch_balances_params_list finished")
-    balances
+    addresses_params
+    |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})
+    |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
+    # stable order for easier moxing
+    |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
   end
 
   defp addresses_params_to_fetched_balances_params_set(addresses_params, %{
          address_hash_to_block_number: address_hash_to_block_number
        }) do
-    Logger.debug("#blocks_importer#: addresses_params_to_fetched_balances_params_set starting...")
-
     Enum.into(addresses_params, MapSet.new(), fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
       block_number =
         case address_params do
@@ -479,7 +460,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
             Map.fetch!(address_hash_to_block_number, address_hash)
         end
 
-      Logger.debug("#blocks_importer#: addresses_params_to_fetched_balances_params_set finished")
       %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
     end)
   end

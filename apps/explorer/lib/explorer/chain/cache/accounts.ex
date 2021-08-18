@@ -3,7 +3,6 @@ defmodule Explorer.Chain.Cache.Accounts do
   Caches the top Addresses
   """
 
-  require Logger
   alias Explorer.Chain.Address
 
   use Explorer.Chain.OrderedCache,
@@ -42,7 +41,6 @@ defmodule Explorer.Chain.Cache.Accounts do
     # The only thing we can safely do when an address in the cache changes its
     # `fetched_coin_balance` is to invalidate the whole cache and wait for it
     # to be filled again (by the query that it takes the place of when full).
-    Logger.debug("#blocks_importer#: accounts dropping from cache")
 
     ConCache.update(cache_name(), ids_list_key(), fn ids ->
       if drop_needed?(ids, addresses) do
