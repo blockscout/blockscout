@@ -3,12 +3,13 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 
+// TODO: handle indexing tokens
 function tryUpdateIndexedStatus (el, indexedRatio = el.dataset.indexedRatio, indexingFinished = false) {
   if (indexingFinished) return $("[data-selector='indexed-status']").remove()
   const blocksPercentComplete = numeral(indexedRatio).format('0%')
   let indexedText
   if (blocksPercentComplete === '100%') {
-    indexedText = window.localized['Indexing Tokens']
+    return $("[data-selector='indexed-status']").remove()
   } else {
     indexedText = `${blocksPercentComplete} ${window.localized['Blocks Indexed']}`
   }

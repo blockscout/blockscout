@@ -1,6 +1,6 @@
 SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
-DOCKER_IMAGE = blockscout_prod
+DOCKER_IMAGE = skale_blockscout
 BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:12.5
