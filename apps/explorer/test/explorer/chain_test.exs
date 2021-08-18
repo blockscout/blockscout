@@ -4877,16 +4877,12 @@ defmodule Explorer.ChainTest do
               gas_used: 0,
               index: 0
             ),
+          block: block,
           address_hash: address.hash
         )
 
-      block_number = log.transaction.block_number
+      block_number = log.block_number
       assert {:ok, [^block_number]} = Chain.uncataloged_token_transfer_block_numbers()
-    end
-
-    test "does not include transactions without a block_number" do
-      insert(:token_transfer_log)
-      assert {:ok, []} = Chain.uncataloged_token_transfer_block_numbers()
     end
   end
 
