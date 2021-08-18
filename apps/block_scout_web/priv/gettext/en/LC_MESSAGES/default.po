@@ -2719,11 +2719,6 @@ msgid "Additional information that is required for the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:302
-msgid "Amount paid to the miner for processing the transaction."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:349
 msgid "Confirmed"
 msgstr ""
@@ -3017,7 +3012,7 @@ msgstr ""
 msgid "explorer.celo.org"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:317
 msgid "Cost per unit of gas specified for the transaction, in CELO and Gwei. The higher the gas price the higher chance of getting included in a block."
 msgstr ""
@@ -3027,17 +3022,22 @@ msgstr ""
 msgid "Maximum amount of gas provided for the transaction."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:134
 msgid "The date and time at which a transaction is validated."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:115
 msgid "The number of the block in which the transaction was recorded. Block confirmation indicate how many blocks since the transaction is validated."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:286
 msgid "The value being transacted in CELO and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:302
+msgid "Amount paid to the validator for processing the transaction."
 msgstr ""

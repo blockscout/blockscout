@@ -2719,11 +2719,6 @@ msgid "Additional information that is required for the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:302
-msgid "Amount paid to the miner for processing the transaction."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:349
 msgid "Confirmed"
 msgstr ""
@@ -3040,4 +3035,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:286
 msgid "The value being transacted in CELO and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:302
+msgid "Amount paid to the validator for processing the transaction."
 msgstr ""
