@@ -6626,7 +6626,9 @@ defmodule Explorer.Chain do
   @spec fetch_number_of_dead_locks :: non_neg_integer()
   def fetch_number_of_dead_locks do
     database =
-      if System.get_env("DATABASE_URL"), do: extract_db_name(System.get_env("DATABASE_URL")), else: "explorer_dev"
+      :explorer
+      |> Application.get_env(Explorer.Repo)
+      |> Keyword.get(:database)
 
     result =
       SQL.query(
@@ -6656,32 +6658,6 @@ defmodule Explorer.Chain do
     case Map.fetch(longest_query_map, :rows) do
       {:ok, [[_, longest_query_duration]]} when not is_nil(longest_query_duration) -> longest_query_duration.secs
       _ -> 0
-    end
-  end
-
-  def extract_db_name(db_url) do
-    if db_url == nil do
-      ""
-    else
-      db_url
-      |> String.split("/")
-      |> Enum.take(-1)
-      |> Enum.at(0)
-      |> String.split("?")
-      |> Enum.at(0)
-    end
-  end
-
-  def extract_db_host(db_url) do
-    if db_url == nil do
-      ""
-    else
-      db_url
-      |> String.split("@")
-      |> Enum.take(-1)
-      |> Enum.at(0)
-      |> String.split(":")
-      |> Enum.at(0)
     end
   end
 
