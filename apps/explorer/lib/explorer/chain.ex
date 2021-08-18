@@ -683,6 +683,20 @@ defmodule Explorer.Chain do
     |> Enum.into(%{})
   end
 
+  def timestamp_by_block_hash(block_hashes) when is_list(block_hashes) do
+    query =
+      from(
+        block in Block,
+        where: block.hash in ^block_hashes and block.consensus == true,
+        group_by: block.hash,
+        select: {block.hash, block.timestamp}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s in the `t:Explorer.Chain.Block.t/0`.
 
@@ -4406,7 +4420,6 @@ defmodule Explorer.Chain do
       from(l in Log,
         as: :log,
         where: l.first_topic == unquote(TokenTransfer.constant()),
-        where: not is_nil(l.block_hash),
         where:
           not exists(
             from(tf in TokenTransfer,
