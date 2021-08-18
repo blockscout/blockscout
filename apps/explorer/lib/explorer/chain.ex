@@ -703,7 +703,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    |> fetch_transactions_in_ascending_order_by_index()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
@@ -4123,6 +4123,12 @@ defmodule Explorer.Chain do
     |> handle_paging_options(paging_options)
   end
 
+  defp fetch_transactions_in_ascending_order_by_index(paging_options) do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
+    |> handle_paging_options(paging_options)
+  end
+
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
     from(
       child in query,
@@ -4401,14 +4407,18 @@ defmodule Explorer.Chain do
   def uncataloged_token_transfer_block_numbers do
     query =
       from(l in Log,
-        join: t in assoc(l, :transaction),
-        left_join: tf in TokenTransfer,
-        on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
+        as: :log,
         where: l.first_topic == unquote(TokenTransfer.constant()),
-        where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
-        where: not is_nil(t.block_hash),
-        select: t.block_number,
-        distinct: t.block_number
+        where: not is_nil(l.block_hash),
+        where:
+          not exists(
+            from(tf in TokenTransfer,
+              where: tf.transaction_hash == parent_as(:log).transaction_hash,
+              where: tf.log_index == parent_as(:log).index
+            )
+          ),
+        select: l.block_number,
+        distinct: l.block_number
       )
 
     Repo.stream_reduce(query, [], &[&1 | &2])

@@ -6,6 +6,7 @@
 - [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
 
 ### Fixes
+- [#4525](https://github.com/blockscout/blockscout/pull/4525) - Uncataloged token transfers query performance improvement
 - [#4513](https://github.com/blockscout/blockscout/pull/4513) - Fix installation with custom default path: add NETWORK_PATH variable to the current_path
 - [#4500](https://github.com/blockscout/blockscout/pull/4500) - `/tokens/{addressHash}/instance/{id}/token-transfers`: fix incorrect next page url
 - [#4493](https://github.com/blockscout/blockscout/pull/4493) - Contract's code page: handle null contracts_creation_transaction
@@ -18,6 +19,7 @@
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
 
 ### Chore
+- [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transations in block's view
 - [#4516](https://github.com/blockscout/blockscout/pull/4516) - Add DB migrations step into Docker start script
 - [#4497](https://github.com/blockscout/blockscout/pull/4497) - Handle error in fetch_validators_list method
 - [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update
