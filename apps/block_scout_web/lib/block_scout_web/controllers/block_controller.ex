@@ -8,55 +8,21 @@ defmodule BlockScoutWeb.BlockController do
   alias Phoenix.View
 
   def index(conn, params) do
-    case params["block_type"] do
-      "Uncle" ->
-        uncle(conn, params)
-
-      "Reorg" ->
-        reorg(conn, params)
-
-      _ ->
-        [
-          necessity_by_association: %{
-            :transactions => :optional,
-            [miner: :names] => :optional,
-            :celo_delegator => :optional,
-            [celo_delegator: :celo_account] => :optional,
-            :rewards => :optional
-          },
-          block_type: "Block"
-        ]
-        |> handle_render(conn, params)
-    end
+    [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional,
+        :celo_delegator => :optional,
+        [celo_delegator: :celo_account] => :optional,
+        :rewards => :optional
+      },
+      block_type: "Block"
+    ]
+    |> handle_render(conn, params)
   end
 
   def show(conn, %{"hash_or_number" => hash_or_number}) do
     redirect(conn, to: block_transaction_path(conn, :index, hash_or_number))
-  end
-
-  def reorg(conn, params) do
-    [
-      necessity_by_association: %{
-        :transactions => :optional,
-        [miner: :names] => :optional,
-        :rewards => :optional
-      },
-      block_type: "Reorg"
-    ]
-    |> handle_render(conn, params)
-  end
-
-  def uncle(conn, params) do
-    [
-      necessity_by_association: %{
-        :transactions => :optional,
-        [miner: :names] => :optional,
-        :nephews => :required,
-        :rewards => :optional
-      },
-      block_type: "Uncle"
-    ]
-    |> handle_render(conn, params)
   end
 
   defp handle_render(full_options, conn, %{"type" => "JSON"} = params) do
