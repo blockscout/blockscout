@@ -13,7 +13,6 @@ defmodule Explorer.Chain.Address do
     Address,
     Block,
     CeloAccount,
-    CeloAttestationStats,
     CeloClaims,
     CeloSigners,
     CeloValidator,
@@ -87,7 +86,6 @@ defmodule Explorer.Chain.Address do
              :__meta__,
              :smart_contract,
              :celo_account,
-             :celo_attestation_stats,
              :celo_validator,
              :celo_validator_group,
              :celo_delegator,
@@ -120,7 +118,6 @@ defmodule Explorer.Chain.Address do
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
     has_one(:celo_account, CeloAccount, foreign_key: :address)
-    has_one(:celo_attestation_stats, CeloAttestationStats, foreign_key: :address_hash)
     has_one(:celo_validator, CeloValidator, foreign_key: :address)
     has_one(:celo_validator_group, CeloValidatorGroup, foreign_key: :address)
 
