@@ -8,7 +8,7 @@
       class="border-bottom"
       data-dropdown-token-balance-test
       data-token-name="<%= token_name(token_balance.token) %>"
-      data-token-symbol="<%= token_balance.token.symbol %>"
+      data-token-symbol="<%= token_symbol(token_balance.token) %>"
     >
       <%= link(
             to: token_path(@conn, :show, to_string(token_balance.token.contract_address_hash)),
@@ -36,7 +36,7 @@
         <div class="row">
           <% col_md = if token_balance.token.usd_value, do: "col-md-6", else: "col-md-12" %>
           <p class="mb-0 <%= col_md %> ">
-            <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
+            <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_symbol(token_balance.token) %>
           </p>
           <%= if token_balance.token.usd_value do %>
             <p class="mb-0 col-md-6 text-right text-muted">
