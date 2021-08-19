@@ -293,6 +293,7 @@ endif
 ifdef CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN=$(CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN)'
 endif
+BLOCKSCOUT_CONTAINER_PARAMS += -e 'PORT=$(PORT)'
 
 HAS_BLOCKSCOUT_IMAGE = $(shell docker images -q $(DOCKER_IMAGE))
 build:
@@ -310,6 +311,7 @@ migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
+					-p $(PORT):$(PORT) \
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
 migrate: build postgres
@@ -345,7 +347,7 @@ start: build postgres
 	@echo "==> Starting blockscout on $(PORT) port"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					-p $(PORT):4000 \
+					-p $(PORT):$(PORT) \
 					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
 
 run: start
