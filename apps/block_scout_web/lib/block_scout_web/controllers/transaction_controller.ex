@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias BlockScoutWeb.{
     AccessHelpers,
+    Controller,
     TransactionInternalTransactionController,
     TransactionTokenTransferController,
     TransactionView
@@ -76,7 +77,7 @@ defmodule BlockScoutWeb.TransactionController do
     render(
       conn,
       "index.html",
-      current_path: current_path(conn),
+      current_path: Controller.current_full_path(conn),
       transaction_estimated_count: transaction_estimated_count
     )
   end
