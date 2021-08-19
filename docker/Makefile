@@ -1,10 +1,19 @@
 SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
-DOCKER_IMAGE = skale_blockscout
 BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
+
+ifndef BLOCKSCOUT_VERSION
+	BLOCKSCOUT_VERSION = latest
+endif
+
+DOCKER_IMAGE = skalenetwork/skale_blockscout:$(BLOCKSCOUT_VERSION)
+LOGO = /images/skale_logo.png
+SUBNETWORK = SKALE
+ETHEREUM_JSONRPC_VARIANT = geth
+NETWORK = ''
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
@@ -279,8 +288,8 @@ ifdef CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN=$(CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
-build: 
+HAS_BLOCKSCOUT_IMAGE = $(shell docker images -q $(DOCKER_IMAGE))
+build:
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
