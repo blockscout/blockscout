@@ -1,0 +1,55 @@
+.fontawesome-icon {
+    background-color: $footer-text-color;
+  
+    &.github {
+      -webkit-mask: url(/images/icons/fontawesome/github.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/github.svg) no-repeat center;
+      height: 22px;
+      width: 22px;
+      mask-size: 22px !important;
+      -webkit-mask-size: 22px !important;
+    }
+    &.twitter {
+      -webkit-mask: url(/images/icons/fontawesome/twitter.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/twitter.svg) no-repeat center;
+      height: 22px;
+      width: 22px;
+      mask-size: 22px !important;
+      -webkit-mask-size: 22px !important;
+    }
+    &.telegram {
+      -webkit-mask: url(/images/icons/fontawesome/telegram.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/telegram.svg) no-repeat center;
+      height: 22px;
+      width: 22px;
+      mask-size: 22px !important;
+      -webkit-mask-size: 22px !important;
+    }
+    &.bar-chart {
+      -webkit-mask: url(/images/icons/fontawesome/bar-chart.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/bar-chart.svg) no-repeat center;
+      height: 22px;
+      width: 22px;
+      mask-size: 22px !important;
+      -webkit-mask-size: 22px !important;
+    }
+    &.info-circle {
+      -webkit-mask: url(/images/icons/fontawesome/info-circle.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/info-circle.svg) no-repeat center;
+      height: 12px;
+      width: 12px;
+      mask-size: 12px !important;
+      -webkit-mask-size: 12px !important;
+    }
+    &.tag {
+      -webkit-mask: url(/images/icons/fontawesome/tag.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/tag.svg) no-repeat center;
+      height: 12px;
+      width: 12px;
+      mask-size: 12px !important;
+      -webkit-mask-size: 12px !important;
+      display: inline-block;
+      background-color: #212121;
+      margin-bottom: -2px;
+    }
+}

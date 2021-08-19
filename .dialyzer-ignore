@@ -18,13 +18,17 @@ lib/block_scout_web/views/layout_view.ex:145: The call 'Elixir.Poison.Parser':'p
 lib/block_scout_web/views/layout_view.ex:237: The call 'Elixir.Poison.Parser':'parse!'
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
-lib/explorer/smart_contract/reader.ex:348
+lib/explorer/smart_contract/reader.ex:344
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:110
 lib/explorer/exchange_rates/source.ex:113
 lib/explorer/smart_contract/verifier.ex:89
-lib/block_scout_web/templates/address_contract/index.html.eex:162
+lib/block_scout_web/templates/address_contract/index.html.eex:150
+lib/block_scout_web/templates/address_contract/index.html.eex:193
 lib/explorer/staking/stake_snapshotting.ex:15: Function do_snapshotting/7 has no local return
 lib/explorer/staking/stake_snapshotting.ex:147
-lib/explorer/third_party_integrations/sourcify.ex:65
-lib/explorer/third_party_integrations/sourcify.ex:68
+lib/explorer/third_party_integrations/sourcify.ex:70
+lib/explorer/third_party_integrations/sourcify.ex:73
+lib/block_scout_web/views/transaction_view.ex:137
+lib/block_scout_web/views/transaction_view.ex:152
+lib/block_scout_web/views/transaction_view.ex:197

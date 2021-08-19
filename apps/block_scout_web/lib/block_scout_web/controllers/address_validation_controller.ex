@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressValidationController do
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, BlockView}
+  alias BlockScoutWeb.{AccessHelpers, BlockView, Controller}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.CoinBalanceOnDemand
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.AddressValidationController do
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       )

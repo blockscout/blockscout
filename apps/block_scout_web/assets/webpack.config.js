@@ -32,40 +32,6 @@ const jsOptimizationParams = {
   parallel: true
 }
 
-const awesompleteJs = {
-  entry: {
-    awesomplete: './js/lib/awesomplete.js',
-    'awesomplete-util': './js/lib/awesomplete-util.js',
-  },
-  output: {
-    filename: '[name].min.js',
-    path: path.resolve(__dirname, '../priv/static/js')
-  },
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader',
-          }
-        ]
-      }
-    ]
-  },
-  optimization: {
-    minimizer: [
-      new TerserJSPlugin(jsOptimizationParams),
-    ]
-  },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: '../css/awesomplete.css'
-    })
-  ]
-}
-
 const dropzoneJs = {
   entry: {
     dropzone: './js/lib/dropzone.js',
@@ -124,8 +90,13 @@ const appJs =
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
+      'main-page': './css/main-page.scss',
       'tokens': './js/pages/token/search.js',
-      'ad': './js/lib/ad.js'
+      'ad': './js/lib/ad.js',
+      'text_ad': './js/lib/text_ad.js',
+      'banner': './js/lib/banner.js',
+      'autocomplete': './js/lib/autocomplete.js',
+      'search-results': './js/pages/search-results/search.js'
     },
     output: {
       filename: '[name].js',
@@ -212,4 +183,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, awesompleteJs, dropzoneJs)
+module.exports = viewScripts.concat(appJs, dropzoneJs)

@@ -114,7 +114,13 @@ export function asyncReducer (state = asyncInitialState, action) {
       history.replaceState({}, null, state.nextPagePath)
 
       if (state.pagesStack.length === 0) {
-        state.pagesStack.push(window.location.href.split('?')[0])
+        if (window.location.pathname.includes('/search-results')) {
+          const urlParams = new URLSearchParams(window.location.search)
+          const queryParam = urlParams.get('q')
+          state.pagesStack.push(window.location.href.split('?')[0] + `?q=${queryParam}`)
+        } else {
+          state.pagesStack.push(window.location.href.split('?')[0])
+        }
       }
 
       if (state.pagesStack[state.pagesStack.length - 1] !== state.nextPagePath) {
@@ -222,16 +228,26 @@ export const elements = {
 
       const urlParams = new URLSearchParams(window.location.search)
       const blockParam = urlParams.get('block_type')
+      const queryParam = urlParams.get('q')
       const firstPageHref = window.location.href.split('?')[0]
 
       $el.show()
       $el.attr('disabled', false)
 
+      var url
       if (blockParam !== null) {
-        $el.attr('href', firstPageHref + '?block_type=' + blockParam)
+        url = firstPageHref + '?block_type=' + blockParam
       } else {
-        $el.attr('href', firstPageHref)
+        url = firstPageHref
       }
+
+      if (queryParam !== null) {
+        url = firstPageHref + '?q=' + queryParam
+      } else {
+        url = firstPageHref
+      }
+
+      $el.attr('href', url)
     }
   },
   '[data-async-listing] [data-page-number]': {
@@ -307,7 +323,7 @@ export function refreshPage (store) {
   loadPage(store, store.getState().currentPagePath)
 }
 
-function loadPage (store, path) {
+export function loadPage (store, path) {
   store.dispatch({ type: 'START_REQUEST', path })
   $.getJSON(path, merge({ type: 'JSON' }, store.getState().additionalParams))
     .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))

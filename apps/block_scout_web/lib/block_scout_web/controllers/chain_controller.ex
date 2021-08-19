@@ -1,7 +1,9 @@
 defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.ChainView
+  import BlockScoutWeb.Chain, only: [paging_options: 1]
+
+  alias BlockScoutWeb.{ChainView, Controller}
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Chain.Supply.{RSK, TokenBridge}
@@ -78,6 +80,10 @@ defmodule BlockScoutWeb.ChainController do
     %{earliest: x_days_back, latest: latest}
   end
 
+  def search(conn, %{"q" => ""}) do
+    show(conn, [])
+  end
+
   def search(conn, %{"q" => query}) do
     query
     |> String.trim()
@@ -87,22 +93,59 @@ defmodule BlockScoutWeb.ChainController do
         redirect_search_results(conn, item)
 
       {:error, :not_found} ->
-        not_found(conn)
+        search_path =
+          conn
+          |> search_path(:search_results, q: query)
+          |> Controller.full_path()
+
+        redirect(conn, to: search_path)
     end
   end
 
   def search(conn, _), do: not_found(conn)
 
-  def token_autocomplete(conn, %{"q" => term}) when is_binary(term) do
-    result_tokens = Chain.search_token(term)
-    result_contracts = Chain.search_contract(term)
-    result = result_tokens ++ result_contracts
+  def token_autocomplete(conn, %{"q" => term} = params) when is_binary(term) do
+    [paging_options: paging_options] = paging_options(params)
+    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
-    json(conn, result)
+    results =
+      paging_options
+      |> search_by(offset, term)
+
+    encoded_results =
+      results
+      |> Enum.map(fn item ->
+        tx_hash_bytes = Map.get(item, :tx_hash)
+        block_hash_bytes = Map.get(item, :block_hash)
+
+        item =
+          if tx_hash_bytes do
+            item
+            |> Map.replace(:tx_hash, "0x" <> Base.encode16(tx_hash_bytes, case: :lower))
+          else
+            item
+          end
+
+        item =
+          if block_hash_bytes do
+            item
+            |> Map.replace(:block_hash, "0x" <> Base.encode16(block_hash_bytes, case: :lower))
+          else
+            item
+          end
+
+        item
+      end)
+
+    json(conn, encoded_results)
   end
 
   def token_autocomplete(conn, _) do
     json(conn, "{}")
+  end
+
+  def search_by(paging_options, offset, term) do
+    Chain.joint_search(paging_options, offset, term)
   end
 
   def chain_blocks(conn, _params) do
@@ -130,22 +173,29 @@ defmodule BlockScoutWeb.ChainController do
   end
 
   defp redirect_search_results(conn, %Address{} = item) do
-    redirect(conn, to: address_path(conn, :show, item))
+    address_path =
+      conn
+      |> address_path(:show, item)
+      |> Controller.full_path()
+
+    redirect(conn, to: address_path)
   end
 
   defp redirect_search_results(conn, %Block{} = item) do
-    redirect(conn, to: block_path(conn, :show, item))
+    block_path =
+      conn
+      |> block_path(:show, item)
+      |> Controller.full_path()
+
+    redirect(conn, to: block_path)
   end
 
   defp redirect_search_results(conn, %Transaction{} = item) do
-    redirect(
-      conn,
-      to:
-        transaction_path(
-          conn,
-          :show,
-          item
-        )
-    )
+    transaction_path =
+      conn
+      |> transaction_path(:show, item)
+      |> Controller.full_path()
+
+    redirect(conn, to: transaction_path)
   end
 end

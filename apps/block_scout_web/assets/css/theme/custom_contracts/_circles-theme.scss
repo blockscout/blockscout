@@ -376,29 +376,6 @@ $c-dark-text-color: #8a8dba;
 		}
 	}
 
-	.awesomplete {
-		& > ul {
-			background: $c-primary;
-			&:before {
-				background: $c-primary;
-			}
-			li {
-				&:hover {
-					background-color: $c-primary;
-					color: #fff;
-					mark {
-						background: darken($c-primary, 10);
-						color: #fff;
-					}
-				}
-			}
-		}
-		mark {
-			background: $c-primary;
-			color: #fff;
-		}
-	}
-
 	#qrModal {
 		.modal-content {
 

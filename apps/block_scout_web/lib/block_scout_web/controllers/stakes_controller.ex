@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.StakesController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.StakesView
+  alias BlockScoutWeb.{Controller, StakesView}
   alias Explorer.Chain
   alias Explorer.Chain.{Cache.BlockNumber, Hash, Token}
   alias Explorer.Counters.AverageBlockTime
@@ -172,7 +172,7 @@ defmodule BlockScoutWeb.StakesController do
       top: render_top(conn),
       token: token,
       pools_type: filter,
-      current_path: current_path(conn),
+      current_path: Controller.current_full_path(conn),
       average_block_time: AverageBlockTime.average_block_time(),
       refresh_interval: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_pool_list_refresh_interval]
     )
