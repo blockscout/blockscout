@@ -13,14 +13,14 @@
             <span class="loading-spinner-block-2"></span>
           </div>
         <% end %>
-        <%= formatted_status(status) %>
+        <%= formatted_result(status) %>
       </span>
     </div>
     <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <span>
       <div class="text-truncate d-flex">
-        <%= render "_link.html", transaction_hash: @transaction.hash %>
+        <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %>
         <% method_name = Transaction.get_method_name(@transaction) %>
         <%= if method_name do %>
           <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>

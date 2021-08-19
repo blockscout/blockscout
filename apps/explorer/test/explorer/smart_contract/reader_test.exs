@@ -357,6 +357,12 @@ defmodule Explorer.SmartContract.ReaderTest do
                }
              ] = Reader.link_outputs_and_values(blockchain_values, outputs, function_name)
     end
+
+    test "save error message" do
+      blockchain_values = %{"check" => {:error, "Reverted"}}
+
+      assert {:error, "Reverted"} == Reader.link_outputs_and_values(blockchain_values, [], "check")
+    end
   end
 
   defp blockchain_get_function_mock do

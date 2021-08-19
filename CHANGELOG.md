@@ -1,10 +1,37 @@
 ## Current
 
 ### Features
+- [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
+- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
+
+### Fixes
+- [#4488](https://github.com/blockscout/blockscout/pull/4488) - Tx page: handle empty to_address
+- [#4483](https://github.com/blockscout/blockscout/pull/4483) - Fix copy-paste typo in `token_transfers_counter.ex`
+- [#4473](https://github.com/blockscout/blockscout/pull/4473), [#4481](https://github.com/blockscout/blockscout/pull/4481) - Search autocomplete: fix for address/block/tx hash
+- [#4472](https://github.com/blockscout/blockscout/pull/4472) - Search autocomplete: fix Cannot read property toLowerCase of undefined 
+- [#4456](https://github.com/blockscout/blockscout/pull/4456) - URL encoding for NFT media files URLs
+- [#4453](https://github.com/blockscout/blockscout/pull/4453) - Unescape characters for string output type in the contract response
+- [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
+
+### Chore
+- [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update
+- [#4439](https://github.com/blockscout/blockscout/pull/4439), - [#4465](https://github.com/blockscout/blockscout/pull/4465) - Fix revert response in contract's output
+
+
+## 3.7.2-beta
+
+### Features
+- [#4424](https://github.com/blockscout/blockscout/pull/4424) - Display search results categories
+- [#4423](https://github.com/blockscout/blockscout/pull/4423) - Add creation time of contract in the results of the search
 - [#4391](https://github.com/blockscout/blockscout/pull/4391) - Add batched transactions on the `address/{addressHash}/transactions` page
 - [#4353](https://github.com/blockscout/blockscout/pull/4353) - Added live-reload on the token holders page
 
 ### Fixes
+- [#4437](https://github.com/blockscout/blockscout/pull/4437) - Fix `PendingTransactionsSanitizer` for non-consensus blocks
+- [#4430](https://github.com/blockscout/blockscout/pull/4430) - Fix current token balance on-demand fetcher
+- [#4429](https://github.com/blockscout/blockscout/pull/4429), [#4431](https://github.com/blockscout/blockscout/pull/4431) - Fix 500 response on `/tokens/{addressHash}/token-holders?type=JSON` when total supply is zero
+- [#4419](https://github.com/blockscout/blockscout/pull/4419) - Order contracts in the search by inserted_at in descending order
+- [#4418](https://github.com/blockscout/blockscout/pull/4418) - Fix empty search results for the full-word search criteria
 - [#4406](https://github.com/blockscout/blockscout/pull/4406) - Fix internal server error on the validator's txs page
 - [#4360](https://github.com/blockscout/blockscout/pull/4360) - Fix false-pending transactions in reorg blocks
 - [#4388](https://github.com/blockscout/blockscout/pull/4388) - Fix internal server error on contract page for insctances without sourcify envs
@@ -15,7 +42,7 @@
 - [#4398](https://github.com/blockscout/blockscout/pull/4398) - Speed up the transactions loading on the front-end
 - [#4384](https://github.com/blockscout/blockscout/pull/4384) - Fix Elixir version in `.tool-versions`
 - [#4382](https://github.com/blockscout/blockscout/pull/4382) - Replace awesomplete with autocomplete.js
-- [#4371] - (https://github.com/blockscout/blockscout/pull/4371) - Place search outside of burger in mobile view
+- [#4371](https://github.com/blockscout/blockscout/pull/4371) - Place search outside of burger in mobile view
 - [#4355](https://github.com/blockscout/blockscout/pull/4355) - Do not redirect to 404 page with empty string in the search field
 
 

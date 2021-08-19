@@ -32,39 +32,6 @@ const jsOptimizationParams = {
   parallel: true
 }
 
-const autocompleteJs = {
-  entry: {
-    autocomplete: './js/lib/autocomplete.js',
-  },
-  output: {
-    filename: '[name].min.js',
-    path: path.resolve(__dirname, '../priv/static/js')
-  },
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader',
-          }
-        ]
-      }
-    ]
-  },
-  optimization: {
-    minimizer: [
-      new TerserJSPlugin(jsOptimizationParams),
-    ]
-  },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: '../css/autocomplete.css'
-    })
-  ]
-}
-
 const dropzoneJs = {
   entry: {
     dropzone: './js/lib/dropzone.js',
@@ -123,9 +90,13 @@ const appJs =
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
+      'main-page': './css/main-page.scss',
       'tokens': './js/pages/token/search.js',
       'faucet': './js/pages/faucet.js',
-      'ad': './js/lib/ad.js'
+      'ad': './js/lib/ad.js',
+      'text_ad': './js/lib/text_ad.js',
+      'banner': './js/lib/banner.js',
+      'autocomplete': './js/lib/autocomplete.js'
     },
     output: {
       filename: '[name].js',
@@ -216,4 +187,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, autocompleteJs, dropzoneJs)
+module.exports = viewScripts.concat(appJs, dropzoneJs)

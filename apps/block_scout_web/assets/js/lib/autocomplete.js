@@ -1,5 +1,6 @@
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
 import { getTextAdData, fetchTextAdData } from './ad.js'
+import { DateTime } from 'luxon'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
@@ -27,8 +28,8 @@ const dataSrc = async (query, id) => {
 const resultsListElement = (list, data) => {
   const info = document.createElement('p')
   const adv = `
-  <div class="ad mb-3 d-none">
-    Sponsored: <img class="ad-img-url" width=20 height=20 /> <b><span class="ad-name"></span></b> - <span class="ad-short-description"></span> <a class="ad-url"><b><span class="ad-cta-button"></span></a></b>
+  <div class="ad mb-3" style="display: none;">
+  <span class='ad-prefix'></span>: <img class="ad-img-url" width=20 height=20 /> <b><span class="ad-name"></span></b> - <span class="ad-short-description"></span> <a class="ad-url"><b><span class="ad-cta-button"></span></a></b>
   </div>`
   info.innerHTML = adv
   if (data.results.length > 0) {
@@ -42,15 +43,41 @@ const resultsListElement = (list, data) => {
   fetchTextAdData()
 }
 const searchEngine = (query, record) => {
-  if (record.name.toLowerCase().includes(query.toLowerCase()) ||
-        record.symbol.toLowerCase().includes(query.toLowerCase()) ||
-        record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) {
-    var searchResult = `${record.contract_address_hash}<br/><b>${record.name}</b>`
-    if (record.symbol) {
-      searchResult = searchResult + ` (${record.symbol})`
+  if (record && (
+    (record.name && record.name.toLowerCase().includes(query.toLowerCase())) ||
+      (record.symbol && record.symbol.toLowerCase().includes(query.toLowerCase())) ||
+      (record.contract_address_hash && record.contract_address_hash.toLowerCase().includes(query.toLowerCase())) ||
+      (record.transaction_hash && record.transaction_hash.toLowerCase().includes(query.toLowerCase())) ||
+      (record.address_hash && record.address_hash.toLowerCase().includes(query.toLowerCase())) ||
+      (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
+  )
+  ) {
+    var searchResult = ''
+    if (record.type === 'transaction') {
+      searchResult += `${record.transaction_hash}<br/>`
+    } else if (record.type === 'address') {
+      searchResult += `${record.address_hash}<br/>`
+    } else if (record.type === 'block') {
+      searchResult += `${record.block_hash}<br/>`
+    } else {
+      searchResult += `${record.contract_address_hash}<br/>`
     }
-    if (record.holder_count) {
-      searchResult = searchResult + ` <i>${record.holder_count} holder(s)</i>`
+
+    if (record.type === 'label') {
+      searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
+    } else {
+      if (record.name) {
+        searchResult += `<b>${record.name}</b>`
+      }
+      if (record.symbol) {
+        searchResult += ` (${record.symbol})`
+      }
+      if (record.holder_count) {
+        searchResult += ` <i>${record.holder_count} holder(s)</i>`
+      }
+      if (record.inserted_at) {
+        searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
+      }
     }
     var re = new RegExp(query, 'ig')
     searchResult = searchResult.replace(re, '<mark class=\'autoComplete_highlight\'>$&</mark>')
@@ -64,6 +91,9 @@ const resultItemElement = (item, data) => {
   item.innerHTML = `
   <span style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
+  </span>
+  <span class="autocomplete-category">
+    ${data.value.type}
   </span>`
 }
 const config = (id) => {
@@ -105,7 +135,15 @@ const selection = (event) => {
   if (selectionValue.symbol) {
     window.location = `/tokens/${selectionValue.contract_address_hash}`
   } else {
-    window.location = `/address/${selectionValue.contract_address_hash}`
+    if (selectionValue.contract_address_hash) {
+      window.location = `/address/${selectionValue.contract_address_hash}`
+    } else if (selectionValue.address_hash) {
+      window.location = `/address/${selectionValue.address_hash}`
+    } else if (selectionValue.transaction_hash) {
+      window.location = `/tx/${selectionValue.transaction_hash}`
+    } else if (selectionValue.block_hash) {
+      window.location = `/blocks/${selectionValue.block_hash}`
+    }
   }
 }
 
@@ -126,7 +164,7 @@ const openOnFocus = (event, type) => {
     }
   } else {
     getTextAdData()
-      .then(adData => {
+      .then(({ data: adData, inHouse: _inHouse }) => {
         if (adData) {
           if (type === 'desktop') {
             autoCompleteJS.start('###')

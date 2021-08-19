@@ -1,9 +1,9 @@
 <section>
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="col-md-12 col-lg-8 pr-0-md mb-2">
+    <div class="col-md-12 col-lg-8 pr-0-md js-ad-dependant-mb-2">
       <!-- Block Details -->
-      <div class="card card-mr-50-md mb-2">
+      <div class="card card-mr-50-md js-ad-dependant-mb-2">
         <div class="card-body">
           <h1 class="card-title" data-test="detail_type">
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
@@ -117,7 +117,7 @@
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md mb-2">
+    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md js-ad-dependant-mb-2">
 
       <!-- Validator -->
       <div class="card card-background-1 flex-grow-1">
@@ -145,7 +145,7 @@
       </div>
 
       <!-- Validator Reward or Gas-->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0 mb-2">
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0 js-ad-dependant-mb-2">
         <div class="card-body card-body-flex-column-space-between">
           <%= if show_reward?(@block.rewards) do %>
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
@@ -172,4 +172,4 @@
   </div>
 </section>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 

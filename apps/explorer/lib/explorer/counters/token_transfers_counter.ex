@@ -6,7 +6,7 @@ defmodule Explorer.Counters.TokenTransfersCounter do
 
   alias Explorer.Chain
 
-  @cache_name :token_holders_counter
+  @cache_name :token_transfers_counter
   @last_update_key "last_update"
 
   @ets_opts [

@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.Reader do
   [wiki](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
   """
 
-  alias EthereumJSONRPC.Contract
+  alias EthereumJSONRPC.{Contract, Encoder}
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.Helper
@@ -317,6 +317,12 @@ defmodule Explorer.SmartContract.Reader do
     Map.replace!(function, "outputs", values)
   end
 
+  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, function_name) do
+    outputs = query_function(contract_address_hash, %{method_id: method_id, args: args}, type)
+    names = parse_names_from_abi(get_abi(contract_address_hash, type), function_name)
+    %{output: outputs, names: names}
+  end
+
   @doc """
   Fetches the blockchain value of a function that requires arguments.
   """
@@ -327,20 +333,10 @@ defmodule Explorer.SmartContract.Reader do
 
   @spec query_function(Hash.t(), %{method_id: String.t(), args: [term()]}, atom()) :: [%{}]
   def query_function(contract_address_hash, %{method_id: method_id, args: args}, type) do
-    abi =
-      contract_address_hash
-      |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi)
-
-    final_abi =
-      if type == :proxy do
-        Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
-      else
-        abi
-      end
+    abi = get_abi(contract_address_hash, type)
 
     parsed_final_abi =
-      final_abi
+      abi
       |> ABI.parse_specification()
 
     %{outputs: outputs, method_id: method_id} =
@@ -359,9 +355,45 @@ defmodule Explorer.SmartContract.Reader do
       end
 
     contract_address_hash
-    |> query_verified_contract(%{method_id => normalize_args(args)}, final_abi)
+    |> query_verified_contract(%{method_id => normalize_args(args)}, abi)
     |> link_outputs_and_values(outputs, method_id)
   end
+
+  defp get_abi(contract_address_hash, type) do
+    abi =
+      contract_address_hash
+      |> Chain.address_hash_to_smart_contract()
+      |> Map.get(:abi)
+
+    if type == :proxy do
+      Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
+    else
+      abi
+    end
+  end
+
+  defp parse_names_from_abi(abi, function_name) do
+    function = Enum.find(abi, fn el -> el["type"] == "function" and el["name"] == function_name end)
+    outputs_to_list(function["outputs"])
+  end
+
+  defp outputs_to_list(nil), do: []
+
+  defp outputs_to_list([]), do: []
+
+  defp outputs_to_list(outputs) do
+    for el <- outputs do
+      name = if validate_name(el["name"]), do: el["name"], else: el["internalType"]
+
+      if Map.has_key?(el, "components") do
+        [name] ++ [outputs_to_list(el["components"])]
+      else
+        name
+      end
+    end
+  end
+
+  defp validate_name(name), do: not is_nil(name) and String.length(name) > 0
 
   defp find_function_by_method(parsed_abi, method_id) do
     parsed_abi
@@ -450,10 +482,15 @@ defmodule Explorer.SmartContract.Reader do
 
   def link_outputs_and_values(blockchain_values, outputs, method_id) do
     default_value = Enum.map(outputs, fn _ -> "" end)
-    {_, value} = Map.get(blockchain_values, method_id, {:ok, default_value})
 
-    for {output, index} <- Enum.with_index(outputs) do
-      new_value(output, List.wrap(value), index)
+    case Map.get(blockchain_values, method_id, {:ok, default_value}) do
+      {:ok, value} ->
+        for {output, index} <- Enum.with_index(outputs) do
+          new_value(output, List.wrap(value), index)
+        end
+
+      {:error, message} ->
+        {:error, message}
     end
   end
 
@@ -496,6 +533,14 @@ defmodule Explorer.SmartContract.Reader do
 
   defp new_value(%{"type" => :bytes} = output, values, index) do
     Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => :string} = output, [value], _index) do
+    Map.put_new(output, "value", Encoder.unescape(value))
+  end
+
+  defp new_value(%{"type" => "string"} = output, [value], _index) do
+    Map.put_new(output, "value", Encoder.unescape(value))
   end
 
   defp new_value(output, [value], _index) do

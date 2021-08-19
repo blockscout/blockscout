@@ -99,6 +99,8 @@ defmodule Explorer.Chain do
   # keccak256("Error(string)")
   @revert_error_method_id "08c379a0"
 
+  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -1107,12 +1109,13 @@ defmodule Explorer.Chain do
       {:some, term} ->
         query =
           from(token in Token,
-            where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+            where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
             select: %{
               contract_address_hash: token.contract_address_hash,
               symbol: token.symbol,
               name: token.name,
-              holder_count: token.holder_count
+              holder_count: token.holder_count,
+              type: "token"
             },
             order_by: [desc: token.holder_count]
           )
@@ -1130,8 +1133,73 @@ defmodule Explorer.Chain do
       {:some, term} ->
         query =
           from(smart_contract in SmartContract,
-            where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
-            select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
+            left_join: address in Address,
+            on: smart_contract.address_hash == address.hash,
+            where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
+            select: %{
+              contract_address_hash: smart_contract.address_hash,
+              name: smart_contract.name,
+              inserted_at: address.inserted_at,
+              type: "contract"
+            },
+            order_by: [desc: smart_contract.inserted_at]
+          )
+
+        Repo.all(query)
+
+      _ ->
+        []
+    end
+  end
+
+  def search_tx(term) do
+    case Chain.string_to_transaction_hash(term) do
+      {:ok, tx_hash} ->
+        query =
+          from(transaction in Transaction,
+            where: transaction.hash == ^tx_hash,
+            select: %{
+              transaction_hash: transaction.hash,
+              type: "transaction"
+            }
+          )
+
+        Repo.all(query)
+
+      _ ->
+        []
+    end
+  end
+
+  def search_address(term) do
+    case Chain.string_to_address_hash(term) do
+      {:ok, address_hash} ->
+        query =
+          from(address in Address,
+            where: address.hash == ^address_hash,
+            select: %{
+              address_hash: address.hash,
+              type: "address"
+            }
+          )
+
+        Repo.all(query)
+
+      _ ->
+        []
+    end
+  end
+
+  def search_block(term) do
+    case Chain.string_to_block_hash(term) do
+      {:ok, block_hash} ->
+        query =
+          from(block in Block,
+            where: block.hash == ^block_hash,
+            select: %{
+              block_hash: block.hash,
+              type: "block"
+            }
           )
 
         Repo.all(query)
@@ -1653,7 +1721,7 @@ defmodule Explorer.Chain do
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
   def fetch_sum_coin_total_supply_minus_burnt do
-    {:ok, burn_address_hash} = string_to_address_hash("0x0000000000000000000000000000000000000000")
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
 
     query =
       from(
@@ -6507,6 +6575,26 @@ defmodule Explorer.Chain do
 
       _ ->
         {:error, "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd)."}
+    end
+  end
+
+  @spec get_token_transfer_type(TokenTransfer.t()) ::
+          :token_burning | :token_minting | :token_spawning | :token_transfer
+  def get_token_transfer_type(transfer) do
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
+
+    cond do
+      transfer.to_address_hash == burn_address_hash && transfer.from_address_hash !== burn_address_hash ->
+        :token_burning
+
+      transfer.to_address_hash !== burn_address_hash && transfer.from_address_hash == burn_address_hash ->
+        :token_minting
+
+      transfer.to_address_hash == burn_address_hash && transfer.from_address_hash == burn_address_hash ->
+        :token_spawning
+
+      true ->
+        :token_transfer
     end
   end
 end
