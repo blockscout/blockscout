@@ -5,12 +5,28 @@ defmodule Explorer.Repo do
 
   require Logger
 
+  alias Explorer.Repo.ConfigHelper
+
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    {:ok, Keyword.put(opts, :url, System.get_env("DATABASE_URL"))}
+    db_url = System.get_env("DATABASE_URL")
+    repo_conf = Application.get_env(:explorer, Explorer.Repo)
+
+    merged =
+      %{url: db_url}
+      |> ConfigHelper.get_db_config()
+      |> Keyword.merge(repo_conf, fn
+        _key, v1, nil -> v1
+        _key, nil, v2 -> v2
+        _, _, v2 -> v2
+      end)
+
+    Application.put_env(:explorer, Explorer.Repo, merged)
+
+    {:ok, Keyword.put(opts, :url, db_url)}
   end
 
   def logged_transaction(fun_or_multi, opts \\ []) do

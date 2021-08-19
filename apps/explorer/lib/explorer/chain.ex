@@ -976,35 +976,19 @@ defmodule Explorer.Chain do
     Wei.to(gas_price, unit)
   end
 
+  defp augment_celo_address(nil), do: {:error, :not_found}
+
   defp augment_celo_address(orig_address) do
-    case orig_address do
-      nil ->
-        {:error, :not_found}
+    augmented =
+      if Ecto.assoc_loaded?(orig_address.celo_delegator) and orig_address.celo_delegator != nil do
+        orig_address
+        |> Map.put(:celo_account, orig_address.celo_delegator.celo_account)
+        |> Map.put(:celo_validator, orig_address.celo_delegator.celo_validator)
+      else
+        orig_address
+      end
 
-      address ->
-        address2 =
-          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-            Map.put(address, :celo_account, address.celo_delegator.celo_account)
-          else
-            address
-          end
-
-        address3 =
-          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-            Map.put(address2, :celo_validator, address.celo_delegator.celo_validator)
-          else
-            address2
-          end
-
-        address4 =
-          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-            Map.put(address3, :celo_attestation_stats, address.celo_delegator.celo_attestation_stats)
-          else
-            address3
-          end
-
-        {:ok, address4}
-    end
+    {:ok, augmented}
   end
 
   @doc """
@@ -1045,13 +1029,11 @@ defmodule Explorer.Chain do
             :smart_contract => :optional,
             :token => :optional,
             :celo_account => :optional,
-            :celo_attestation_stats => :optional,
             :celo_delegator => :optional,
             :celo_signers => :optional,
             :celo_claims => :optional,
             :celo_members => :optional,
             [{:celo_delegator, :celo_account}] => :optional,
-            [{:celo_delegator, :celo_attestation_stats}] => :optional,
             [{:celo_delegator, :celo_validator}] => :optional,
             [{:celo_delegator, :celo_validator, :group_address}] => :optional,
             [{:celo_delegator, :celo_validator, :signer}] => :optional,
@@ -6171,7 +6153,6 @@ defmodule Explorer.Chain do
       v in CeloValidator,
       left_join: t in assoc(v, :status),
       inner_join: a in assoc(v, :celo_account),
-      inner_join: stat in assoc(v, :celo_attestation_stats),
       left_join: data in subquery(compute_votes()),
       on: v.address == data.address,
       select_merge: %{
@@ -6181,8 +6162,8 @@ defmodule Explorer.Chain do
         url: a.url,
         locked_gold: a.locked_gold,
         nonvoting_locked_gold: a.nonvoting_locked_gold,
-        attestations_requested: stat.requested,
-        attestations_fulfilled: stat.fulfilled,
+        attestations_requested: a.attestations_requested,
+        attestations_fulfilled: a.attestations_fulfilled,
         active_gold: %{value: data.result},
         usd: a.usd
       }
@@ -6817,7 +6798,9 @@ defmodule Explorer.Chain do
   @spec fetch_number_of_dead_locks :: non_neg_integer()
   def fetch_number_of_dead_locks do
     database =
-      if System.get_env("DATABASE_URL"), do: extract_db_name(System.get_env("DATABASE_URL")), else: "explorer_dev"
+      :explorer
+      |> Application.get_env(Explorer.Repo)
+      |> Keyword.get(:database)
 
     result =
       SQL.query(
@@ -6847,32 +6830,6 @@ defmodule Explorer.Chain do
     case Map.fetch(longest_query_map, :rows) do
       {:ok, [[_, longest_query_duration]]} when not is_nil(longest_query_duration) -> longest_query_duration.secs
       _ -> 0
-    end
-  end
-
-  def extract_db_name(db_url) do
-    if db_url == nil do
-      ""
-    else
-      db_url
-      |> String.split("/")
-      |> Enum.take(-1)
-      |> Enum.at(0)
-      |> String.split("?")
-      |> Enum.at(0)
-    end
-  end
-
-  def extract_db_host(db_url) do
-    if db_url == nil do
-      ""
-    else
-      db_url
-      |> String.split("@")
-      |> Enum.take(-1)
-      |> Enum.at(0)
-      |> String.split(":")
-      |> Enum.at(0)
     end
   end
 

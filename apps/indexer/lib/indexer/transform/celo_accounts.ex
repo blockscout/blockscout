@@ -6,7 +6,7 @@ defmodule Indexer.Transform.CeloAccounts do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Explorer.Chain.{CeloAccount, CeloSigners, CeloVoters}
+  alias Explorer.Celo.Events
 
   @doc """
   Returns a list of account addresses given a list of logs.
@@ -14,24 +14,23 @@ defmodule Indexer.Transform.CeloAccounts do
   def parse(logs, oracle_address) do
     %{
       # Add special items for voter epoch rewards
-      accounts: get_addresses(logs, CeloAccount.account_events()),
+      accounts: get_addresses(logs, Events.account_events()),
       # Adding a group to updated validators means to update all members of the group
       validators:
-        get_addresses(logs, CeloAccount.validator_events()) ++
-          get_addresses(logs, CeloAccount.membership_events()) ++
-          get_addresses(logs, CeloAccount.membership_events(), fn a -> a.third_topic end),
+        get_addresses(logs, Events.validator_events()) ++
+          get_addresses(logs, Events.membership_events()) ++
+          get_addresses(logs, Events.membership_events(), fn a -> a.third_topic end),
       account_names: get_names(logs),
       validator_groups:
-        get_addresses(logs, CeloAccount.validator_group_events()) ++
-          get_addresses(logs, CeloAccount.vote_events(), fn a -> a.third_topic end),
-      withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
-      signers: get_signers(logs, CeloSigners.signer_events()),
-      voter_rewards: get_rewards(logs, CeloAccount.validator_group_voter_reward_events()),
-      voters: get_voters(logs, CeloVoters.voter_events()),
-      attestations_fulfilled:
-        get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
+        get_addresses(logs, Events.validator_group_events()) ++
+          get_addresses(logs, Events.vote_events(), fn a -> a.third_topic end),
+      withdrawals: get_addresses(logs, Events.withdrawal_events()),
+      signers: get_signers(logs, Events.signer_events()),
+      voter_rewards: get_rewards(logs, Events.validator_group_voter_reward_events()),
+      voters: get_voters(logs, Events.voter_events()),
+      attestations_fulfilled: get_addresses(logs, [Events.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
-        get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
+        get_addresses(logs, [Events.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
       exchange_rates: get_rates(logs, oracle_address),
       wallets: get_wallets(logs)
     }
@@ -40,22 +39,16 @@ defmodule Indexer.Transform.CeloAccounts do
   defp get_rates(logs, oracle_address) do
     logs
     |> Enum.filter(fn log -> log.address_hash == oracle_address end)
-    |> Enum.filter(fn log -> log.first_topic == CeloAccount.oracle_reported_event() end)
+    |> Enum.filter(fn log -> log.first_topic == Events.oracle_reported_event() end)
     |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
   end
 
   def get_names(logs) do
     logs
-    |> Enum.filter(fn log -> log.first_topic == CeloAccount.account_name_event() end)
+    |> Enum.filter(fn log -> log.first_topic == Events.account_name_event() end)
     |> Enum.reduce([], fn log, names -> do_parse_name(log, names) end)
     |> Enum.filter(fn %{name: name} -> String.length(name) > 0 end)
   end
-
-  #    defp get_rates(logs) do
-  #    logs
-  #    |> Enum.filter(fn log -> log.first_topic == CeloAccount.median_updated_event() end)
-  #    |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
-  #  end
 
   defp get_addresses(logs, topics, get_topic \\ fn a -> a.second_topic end) do
     logs
@@ -78,7 +71,7 @@ defmodule Indexer.Transform.CeloAccounts do
 
   def get_wallets(logs) do
     logs
-    |> Enum.filter(fn log -> log.first_topic == CeloAccount.account_wallet_address_set_event() end)
+    |> Enum.filter(fn log -> log.first_topic == Events.account_wallet_address_set_event() end)
     |> Enum.reduce([], fn log, wallets -> do_parse_wallets(log, wallets) end)
   end
 

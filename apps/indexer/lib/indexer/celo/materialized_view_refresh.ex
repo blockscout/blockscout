@@ -40,7 +40,6 @@ defmodule Indexer.Fetcher.CeloMaterializedViewRefresh do
   defp refresh_views(timeout) do
     Repo.query!("refresh materialized view celo_wallet_accounts;", [], timeout: timeout)
     Repo.query!("refresh materialized view celo_accumulated_rewards;", [], timeout: timeout)
-    Repo.query!("refresh materialized view celo_attestation_stats;", [], timeout: timeout)
 
     Logger.info(fn ->
       ["Refreshed material views."]
