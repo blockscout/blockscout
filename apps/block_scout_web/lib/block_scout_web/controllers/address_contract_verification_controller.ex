@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
-    if Chain.smart_contract_verified?(address_hash_string) do
+    if Chain.smart_contract_fully_verified?(address_hash_string) do
       redirect(conn, to: address_path(conn, :show, address_hash_string))
     else
       changeset =
@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     json_file = json_files |> Enum.at(0)
 
     if json_file do
-      if Chain.smart_contract_verified?(address_hash_string) do
+      if Chain.smart_contract_fully_verified?(address_hash_string) do
         EventsPublisher.broadcast(
           prepare_verification_error(
             "This contract already verified in Blockscout.",
@@ -125,18 +125,20 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     end
   end
 
+  def get_metadata_and_publish(address_hash_string, nil) do
+    case Sourcify.get_metadata(address_hash_string) do
+      {:ok, verification_metadata} ->
+        proccess_metadata_add_publish(address_hash_string, verification_metadata, false)
+
+      {:error, %{"error" => error}} ->
+        {:error, error: error}
+    end
+  end
+
   def get_metadata_and_publish(address_hash_string, conn) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
-        %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
-          parse_params_from_sourcify(address_hash_string, verification_metadata)
-
-        ContractController.publish(conn, %{
-          "addressHash" => address_hash_string,
-          "params" => params_to_publish,
-          "abi" => abi,
-          "secondarySources" => secondary_sources
-        })
+        proccess_metadata_add_publish(address_hash_string, verification_metadata, false, conn)
 
       {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
@@ -144,6 +146,18 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           :on_demand
         )
     end
+  end
+
+  defp proccess_metadata_add_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
+    %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
+      parse_params_from_sourcify(address_hash_string, verification_metadata)
+
+    ContractController.publish(conn, %{
+      "addressHash" => address_hash_string,
+      "params" => Map.put(params_to_publish, "partially_verified", is_partial),
+      "abi" => abi,
+      "secondarySources" => secondary_sources
+    })
   end
 
   def prepare_files_array(files) do
@@ -167,10 +181,9 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   end
 
   def parse_params_from_sourcify(address_hash_string, verification_metadata) do
-    verification_metadata_json =
+    [verification_metadata_json] =
       verification_metadata
-      |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".json" end)
-      |> Enum.at(0)
+      |> Enum.filter(&(Map.get(&1, "name") == "metadata.json"))
 
     full_params_initial = parse_json_from_sourcify_for_insertion(verification_metadata_json)
 
@@ -178,34 +191,31 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       verification_metadata
       |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".sol" end)
 
-    full_params =
-      verification_metadata_sol
-      |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
-                                             full_params_acc ->
-        compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
+    verification_metadata_sol
+    |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
+                                           full_params_acc ->
+      compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
 
-        if String.downcase(name) == String.downcase(compilation_target_file_name) do
-          %{
-            "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-            "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
-          }
-        else
-          secondary_sources = [
-            prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
-          ]
+      if String.downcase(name) == String.downcase(compilation_target_file_name) do
+        %{
+          "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
+          "abi" => Map.get(full_params_acc, "abi"),
+          "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
+          "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
+        }
+      else
+        secondary_sources = [
+          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
+        ]
 
-          %{
-            "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => secondary_sources,
-            "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
-          }
-        end
-      end)
-
-    full_params
+        %{
+          "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
+          "abi" => Map.get(full_params_acc, "abi"),
+          "secondary_sources" => secondary_sources,
+          "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
+        }
+      end
+    end)
   end
 
   defp prepare_additional_source(address_hash_string, %{"name" => name, "content" => content, "path" => _path}) do
@@ -254,6 +264,37 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     case Integer.parse(runs) do
       {integer, ""} -> integer
       _ -> 200
+    end
+  end
+
+  def check_and_verify(address_hash_string) do
+    if Chain.smart_contract_fully_verified?(address_hash_string) do
+      {:ok, :already_fully_verified}
+    else
+      if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+        if Chain.smart_contract_verified?(address_hash_string) do
+          case Sourcify.check_by_address(address_hash_string) do
+            {:ok, _verified_status} ->
+              get_metadata_and_publish(address_hash_string, nil)
+
+            _ ->
+              {:error, :not_verified}
+          end
+        else
+          case Sourcify.check_by_address_any(address_hash_string) do
+            {:ok, "full", metadata} ->
+              proccess_metadata_add_publish(address_hash_string, metadata, false)
+
+            {:ok, "partial", metadata} ->
+              proccess_metadata_add_publish(address_hash_string, metadata, true)
+
+            _ ->
+              {:error, :not_verified}
+          end
+        end
+      else
+        {:error, :sourcify_disabled}
+      end
     end
   end
 end

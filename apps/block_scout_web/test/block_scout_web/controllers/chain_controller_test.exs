@@ -128,6 +128,38 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
       assert Enum.count(json_response(conn, 200)) == 4
     end
+
+    test "find by several words" do
+      insert(:token, name: "first Token")
+      insert(:token, name: "second Token")
+
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=fir+tok")
+
+      assert Enum.count(json_response(conn, 200)) == 1
+    end
+
+    test "find by empty query" do
+      insert(:token, name: "MaGiCt0k3n")
+      insert(:smart_contract, name: "MagicContract")
+
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=")
+
+      assert Enum.count(json_response(conn, 200)) == 0
+    end
+
+    test "find by non-latin characters" do
+      insert(:token, name: "someToken")
+
+      conn =
+        build_conn()
+        |> get("/token-autocomplete?q=%E0%B8%B5%E0%B8%AB")
+
+      assert Enum.count(json_response(conn, 200)) == 0
+    end
   end
 
   describe "GET search/2" do

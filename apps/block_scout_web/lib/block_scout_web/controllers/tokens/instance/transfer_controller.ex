@@ -27,8 +27,8 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
             token_instance_transfer_path(
               conn,
               :index,
-              token_id,
               Address.checksum(token.contract_address_hash),
+              token_id,
               Map.delete(next_page_params, "type")
             )
         end

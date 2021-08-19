@@ -4,11 +4,12 @@ defmodule Explorer.PagingOptions do
   number and index.
   """
 
-  @type t :: %__MODULE__{key: key, page_size: page_size, page_number: page_number}
+  @type t :: %__MODULE__{key: key, page_size: page_size, page_number: page_number, is_pending_tx: is_pending_tx}
 
   @typep key :: any()
   @typep page_size :: non_neg_integer()
   @typep page_number :: pos_integer()
+  @typep is_pending_tx :: atom()
 
-  defstruct [:key, :page_size, page_number: 1]
+  defstruct [:key, :page_size, page_number: 1, is_pending_tx: false]
 end

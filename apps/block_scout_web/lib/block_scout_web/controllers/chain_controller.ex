@@ -79,6 +79,10 @@ defmodule BlockScoutWeb.ChainController do
     %{earliest: x_days_back, latest: latest}
   end
 
+  def search(conn, %{"q" => ""}) do
+    show(conn, [])
+  end
+
   def search(conn, %{"q" => query}) do
     query
     |> String.trim()
@@ -95,23 +99,14 @@ defmodule BlockScoutWeb.ChainController do
   def search(conn, _), do: not_found(conn)
 
   def token_autocomplete(conn, %{"q" => term}) when is_binary(term) do
-    if term == "" do
-      json(conn, "{}")
-    else
-      result_tokens =
-        term
-        |> String.trim()
-        |> Chain.search_token()
+    result_tokens = Chain.search_token(term)
+    result_contracts = Chain.search_contract(term)
+    result_transactions = Chain.search_tx(term)
+    result_addresses = Chain.search_address(term)
+    result_blocks = Chain.search_block(term)
+    result = result_tokens ++ result_contracts ++ result_transactions ++ result_addresses ++ result_blocks
 
-      result_contracts =
-        term
-        |> String.trim()
-        |> Chain.search_contract()
-
-      result = result_tokens ++ result_contracts
-
-      json(conn, result)
-    end
+    json(conn, result)
   end
 
   def token_autocomplete(conn, _) do

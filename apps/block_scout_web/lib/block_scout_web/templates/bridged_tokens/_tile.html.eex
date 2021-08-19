@@ -1,4 +1,4 @@
-<tr>
+<tr data-identifier-hash="<%= @token.contract_address_hash %>">
   <td class="stakes-td">
       <!-- incremented number by order in the list -->
       <span class="color-lighten">

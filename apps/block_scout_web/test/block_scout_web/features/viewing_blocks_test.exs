@@ -92,9 +92,16 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
         block: block
       )
 
-      session
-      |> BlockPage.visit_page(block)
-      |> BlockPage.accept_cookies_click()
+      visited_page_session =
+        session
+        |> BlockPage.visit_page(block)
+        |> BlockPage.accept_cookies_click()
+
+      # token transfers are loaded in defer tags - https://github.com/blockscout/blockscout/pull/4398
+      # sleep here to ensure js is loaded before assertion
+      Process.sleep(:timer.seconds(1))
+
+      visited_page_session
       |> assert_has(BlockPage.token_transfers(transaction, count: 1))
       |> click(BlockPage.token_transfers_expansion(transaction))
       |> assert_has(BlockPage.token_transfers(transaction, count: 3))
