@@ -19,6 +19,9 @@ ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
+ifndef PORT
+	PORT = 4000
+endif
 ifndef DB_PORT
 	DB_PORT = 5432
 endif
@@ -291,19 +294,16 @@ ifdef CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN=$(CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN)'
 endif
 
-ifndef PORT
-	PORT = 4000
-endif
-BLOCKSCOUT_CONTAINER_PARAMS += -e 'PORT=$(PORT)'
-
 HAS_BLOCKSCOUT_IMAGE = $(shell docker images -q $(DOCKER_IMAGE))
 build:
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifneq ($(HAS_BLOCKSCOUT_IMAGE),)
 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
 else
+ifdef DEV_MODE
 	@echo "==> No image found trying to build one..."
 	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+endif
 endif
 
 migrate_only:
@@ -330,7 +330,7 @@ else
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
 else
-	@echo "==> Creating new PostgreSQL container on $(DB_PORT) $(DB_URL)"
+	@echo "==> Creating new PostgreSQL container on $(DB_PORT) port"
 	@docker run -d --name $(PG_CONTAINER_NAME) \
 					-e POSTGRES_PASSWORD="" \
 					-e POSTGRES_USER="postgres" \
@@ -345,7 +345,7 @@ start: build postgres
 	@echo "==> Starting blockscout on $(PORT) port"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					-p $(PORT):$(PORT) \
+					-p $(PORT):4000 \
 					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
 
 run: start
