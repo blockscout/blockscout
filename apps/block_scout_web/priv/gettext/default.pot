@@ -2750,21 +2750,6 @@ msgid "validator"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:47
-msgid "A TxHash or transaction hash is a unique 66 characters identifier that is generated whenever a transaction is executed."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:357
-msgid "Additional information that is required for the transaction."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:302
-msgid "Amount paid to the miner for processing the transaction."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:349
 msgid "Confirmed"
 msgstr ""
@@ -2809,11 +2794,6 @@ msgid "Copy Txn UTF-8 Input"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:317
-msgid "Cost per unit of gas specified for the transaction, in Ether and Gwei. The higher the gas price the higher chance of getting included in a block."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:318
 msgid "Gas Price"
 msgstr ""
@@ -2849,18 +2829,8 @@ msgid "List of token transferred in the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:327
-msgid "Maximum amount of gas provided for the transaction. For normal Eth transfers, the value is 21,000. For contract this value is higher and bound by block gas limit."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:68
 msgid "Result"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:346
-msgid "Sequential running number for an address, beginning with 0 for the first transaction. For example, if the nonce of a transaction is 10, it would be the 11th transaction sent from the sender's address."
 msgstr ""
 
 #, elixir-format
@@ -2869,48 +2839,8 @@ msgid "Status"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:134
-msgid "The date and time at which a transaction is mined."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:336
-msgid "The exact units of gas that was used for the transaction."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:115
-msgid "The number of the block in which the transaction was recorded. Block confirmation indicate how many blocks since the transaction is mined."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:179
-msgid "The receiving party of the transaction (could be a contract address)."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:67
-msgid "The result of the transaction: success, error, pending, awaiting internal transactions."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:104
 msgid "The revert reason of the transaction."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:157
-msgid "The sending party of the transaction (could be from a contract address)."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:79
-msgid "The status of the transaction: confirmed, unconfirmed."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:286
-msgid "The value being transacted in Ether and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction."
 msgstr ""
 
 #, elixir-format
@@ -2969,13 +2899,73 @@ msgid "Search Results"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:349
-msgid "Position"
+#: lib/block_scout_web/templates/transaction/overview.html.eex:336
+msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:349
-msgid "Index position of Transaction in the block."
+#: lib/block_scout_web/templates/transaction/overview.html.eex:179
+msgid "Address (external or contract) receiving the transaction."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:157
+msgid "Address (external or contract) sending the transaction."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:357
+msgid "Binary data included with the transaction. See input / logs below for additional info."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:115
+msgid "Block number containing the transaction."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:67
+msgid "Current transaction state: Success, Failed (Error), or Pending (In Process)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:134
+msgid "Date & time of transaction inclusion, including length of time for confirmation."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:327
+msgid "Maximum gas amount approved for the transaction."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:317
+msgid "Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:79
+msgid "The status of the transaction: Confirmed or Unconfirmed."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:302
+msgid "Total transaction fee."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:346
+msgid "Transaction number from the sending address. Each transaction sent from an address increments the nonce by 1."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:47
+msgid "Unique character string (TxID) assigned to every verified transaction."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:286
+msgid "Value sent in the native token (and USD) if applicable."
 msgstr ""
 
 #, elixir-format
@@ -2987,4 +2977,14 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
 msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:349
+msgid "Position"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:349
+msgid "Index position of Transaction in the block."
 msgstr ""
