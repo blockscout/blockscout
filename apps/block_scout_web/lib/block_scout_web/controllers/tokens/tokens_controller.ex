@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TokensController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.TokensView
+  alias BlockScoutWeb.{Controller, TokensView}
   alias Explorer.Chain
   alias Phoenix.View
 
@@ -68,6 +68,6 @@ defmodule BlockScoutWeb.TokensController do
   end
 
   def index(conn, _params) do
-    render(conn, "index.html", current_path: current_path(conn))
+    render(conn, "index.html", current_path: Controller.current_full_path(conn))
   end
 end

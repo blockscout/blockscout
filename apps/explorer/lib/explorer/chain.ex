@@ -683,6 +683,20 @@ defmodule Explorer.Chain do
     |> Enum.into(%{})
   end
 
+  def timestamp_by_block_hash(block_hashes) when is_list(block_hashes) do
+    query =
+      from(
+        block in Block,
+        where: block.hash in ^block_hashes and block.consensus == true,
+        group_by: block.hash,
+        select: {block.hash, block.timestamp}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s in the `t:Explorer.Chain.Block.t/0`.
 
@@ -701,7 +715,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    |> fetch_transactions_in_ascending_order_by_index()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
@@ -1077,14 +1091,22 @@ defmodule Explorer.Chain do
     query =
       from(token in Token,
         where: ilike(token.symbol, ^name),
+        or_where: ilike(token.name, ^name),
         select: token.contract_address_hash
       )
 
     query
     |> Repo.all()
     |> case do
-      [] -> {:error, :not_found}
-      hashes -> {:ok, List.first(hashes)}
+      [] ->
+        {:error, :not_found}
+
+      hashes ->
+        if Enum.count(hashes) == 1 do
+          {:ok, List.first(hashes)}
+        else
+          {:error, :not_found}
+        end
     end
   end
 
@@ -1103,6 +1125,184 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp search_token_query(term) do
+    from(token in Token,
+      where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+      select: %{
+        address_hash: token.contract_address_hash,
+        tx_hash: fragment("CAST(NULL AS bytea)"),
+        block_hash: fragment("CAST(NULL AS bytea)"),
+        type: "token",
+        name: token.name,
+        symbol: token.symbol,
+        holder_count: token.holder_count,
+        inserted_at: token.inserted_at,
+        block_number: 0
+      }
+    )
+  end
+
+  defp search_contract_query(term) do
+    from(smart_contract in SmartContract,
+      left_join: address in Address,
+      on: smart_contract.address_hash == address.hash,
+      where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
+      select: %{
+        address_hash: smart_contract.address_hash,
+        tx_hash: fragment("CAST(NULL AS bytea)"),
+        block_hash: fragment("CAST(NULL AS bytea)"),
+        type: "contract",
+        name: smart_contract.name,
+        symbol: ^nil,
+        holder_count: ^nil,
+        inserted_at: address.inserted_at,
+        block_number: 0
+      }
+    )
+  end
+
+  defp search_address_query(term) do
+    case Chain.string_to_address_hash(term) do
+      {:ok, address_hash} ->
+        from(address in Address,
+          left_join: address_name in Address.Name,
+          on: address.hash == address_name.address_hash,
+          where: address.hash == ^address_hash,
+          select: %{
+            address_hash: address.hash,
+            tx_hash: fragment("CAST(NULL AS bytea)"),
+            block_hash: fragment("CAST(NULL AS bytea)"),
+            type: "address",
+            name: address_name.name,
+            symbol: ^nil,
+            holder_count: ^nil,
+            inserted_at: address.inserted_at,
+            block_number: 0
+          }
+        )
+
+      _ ->
+        nil
+    end
+  end
+
+  defp search_tx_query(term) do
+    case Chain.string_to_transaction_hash(term) do
+      {:ok, tx_hash} ->
+        from(transaction in Transaction,
+          where: transaction.hash == ^tx_hash,
+          select: %{
+            address_hash: fragment("CAST(NULL AS bytea)"),
+            tx_hash: transaction.hash,
+            block_hash: fragment("CAST(NULL AS bytea)"),
+            type: "transaction",
+            name: ^nil,
+            symbol: ^nil,
+            holder_count: ^nil,
+            inserted_at: transaction.inserted_at,
+            block_number: 0
+          }
+        )
+
+      _ ->
+        nil
+    end
+  end
+
+  defp search_block_query(term) do
+    case Chain.string_to_block_hash(term) do
+      {:ok, block_hash} ->
+        from(block in Block,
+          where: block.hash == ^block_hash,
+          select: %{
+            address_hash: fragment("CAST(NULL AS bytea)"),
+            tx_hash: fragment("CAST(NULL AS bytea)"),
+            block_hash: block.hash,
+            type: "block",
+            name: ^nil,
+            symbol: ^nil,
+            holder_count: ^nil,
+            inserted_at: block.inserted_at,
+            block_number: block.number
+          }
+        )
+
+      _ ->
+        case Integer.parse(term) do
+          {block_number, _} ->
+            from(block in Block,
+              where: block.number == ^block_number,
+              select: %{
+                address_hash: fragment("CAST(NULL AS bytea)"),
+                tx_hash: fragment("CAST(NULL AS bytea)"),
+                block_hash: block.hash,
+                type: "block",
+                name: ^nil,
+                symbol: ^nil,
+                holder_count: ^nil,
+                inserted_at: block.inserted_at,
+                block_number: block.number
+              }
+            )
+
+          _ ->
+            nil
+        end
+    end
+  end
+
+  def joint_search(paging_options, offset, string) do
+    case prepare_search_term(string) do
+      {:some, term} ->
+        tokens_query = search_token_query(term)
+        contracts_query = search_contract_query(term)
+        tx_query = search_tx_query(string)
+        address_query = search_address_query(string)
+        block_query = search_block_query(string)
+
+        basic_query =
+          from(
+            tokens in subquery(tokens_query),
+            union: ^contracts_query
+          )
+
+        query =
+          cond do
+            address_query ->
+              basic_query
+              |> union(^address_query)
+
+            tx_query ->
+              basic_query
+              |> union(^tx_query)
+              |> union(^block_query)
+
+            block_query ->
+              basic_query
+              |> union(^block_query)
+
+            true ->
+              basic_query
+          end
+
+        ordered_query =
+          from(items in subquery(query),
+            order_by: [desc_nulls_last: items.holder_count, asc: items.name, desc: items.inserted_at],
+            limit: ^paging_options.page_size,
+            offset: ^offset
+          )
+
+        paginated_ordered_query =
+          ordered_query
+          |> page_search_results(paging_options)
+
+        Repo.all(paginated_ordered_query)
+
+      _ ->
+        []
+    end
+  end
+
   @spec search_token(String.t()) :: [Token.t()]
   def search_token(string) do
     case prepare_search_term(string) do
@@ -1111,7 +1311,7 @@ defmodule Explorer.Chain do
           from(token in Token,
             where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
             select: %{
-              contract_address_hash: token.contract_address_hash,
+              link: token.contract_address_hash,
               symbol: token.symbol,
               name: token.name,
               holder_count: token.holder_count,
@@ -1137,7 +1337,7 @@ defmodule Explorer.Chain do
             on: smart_contract.address_hash == address.hash,
             where: fragment("to_tsvector(name ) @@ to_tsquery(?)", ^term),
             select: %{
-              contract_address_hash: smart_contract.address_hash,
+              link: smart_contract.address_hash,
               name: smart_contract.name,
               inserted_at: address.inserted_at,
               type: "contract"
@@ -1159,7 +1359,7 @@ defmodule Explorer.Chain do
           from(transaction in Transaction,
             where: transaction.hash == ^tx_hash,
             select: %{
-              transaction_hash: transaction.hash,
+              link: transaction.hash,
               type: "transaction"
             }
           )
@@ -1176,9 +1376,12 @@ defmodule Explorer.Chain do
       {:ok, address_hash} ->
         query =
           from(address in Address,
+            left_join: address_name in Address.Name,
+            on: address.hash == address_name.address_hash,
             where: address.hash == ^address_hash,
             select: %{
-              address_hash: address.hash,
+              name: address_name.name,
+              link: address.hash,
               type: "address"
             }
           )
@@ -1197,7 +1400,8 @@ defmodule Explorer.Chain do
           from(block in Block,
             where: block.hash == ^block_hash,
             select: %{
-              block_hash: block.hash,
+              link: block.hash,
+              block_number: block.number,
               type: "block"
             }
           )
@@ -1205,7 +1409,23 @@ defmodule Explorer.Chain do
         Repo.all(query)
 
       _ ->
-        []
+        case Integer.parse(term) do
+          {block_number, _} ->
+            query =
+              from(block in Block,
+                where: block.number == ^block_number,
+                select: %{
+                  link: block.hash,
+                  block_number: block.number,
+                  type: "block"
+                }
+              )
+
+            Repo.all(query)
+
+          _ ->
+            []
+        end
     end
   end
 
@@ -3902,6 +4122,12 @@ defmodule Explorer.Chain do
     |> handle_paging_options(paging_options)
   end
 
+  defp fetch_transactions_in_ascending_order_by_index(paging_options) do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
+    |> handle_paging_options(paging_options)
+  end
+
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
     from(
       child in query,
@@ -4031,6 +4257,23 @@ defmodule Explorer.Chain do
 
   defp page_transaction(query, %PagingOptions{key: {index}}) do
     where(query, [transaction], transaction.index < ^index)
+  end
+
+  defp page_search_results(query, %PagingOptions{key: nil}), do: query
+
+  # credo:disable-for-next-line
+  defp page_search_results(query, %PagingOptions{
+         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+       }) do
+    where(
+      query,
+      [item],
+      (item.holder_count < ^holder_count and item.type == ^item_type) or
+        (item.holder_count == ^holder_count and item.name > ^name and item.type == ^item_type) or
+        (item.holder_count == ^holder_count and item.name == ^name and item.inserted_at < ^inserted_at and
+           item.type == ^item_type) or
+        item.type != ^item_type
+    )
   end
 
   @doc """
@@ -4163,14 +4406,17 @@ defmodule Explorer.Chain do
   def uncataloged_token_transfer_block_numbers do
     query =
       from(l in Log,
-        join: t in assoc(l, :transaction),
-        left_join: tf in TokenTransfer,
-        on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
+        as: :log,
         where: l.first_topic == unquote(TokenTransfer.constant()),
-        where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
-        where: not is_nil(t.block_hash),
-        select: t.block_number,
-        distinct: t.block_number
+        where:
+          not exists(
+            from(tf in TokenTransfer,
+              where: tf.transaction_hash == parent_as(:log).transaction_hash,
+              where: tf.log_index == parent_as(:log).index
+            )
+          ),
+        select: l.block_number,
+        distinct: l.block_number
       )
 
     Repo.stream_reduce(query, [], &[&1 | &2])

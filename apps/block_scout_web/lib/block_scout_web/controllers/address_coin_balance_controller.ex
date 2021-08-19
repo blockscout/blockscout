@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressCoinBalanceView}
+  alias BlockScoutWeb.{AccessHelpers, AddressCoinBalanceView, Controller}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else

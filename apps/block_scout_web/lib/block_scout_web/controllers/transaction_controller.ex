@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, TransactionView}
+  alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.Chain
   alias Phoenix.View
 
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.TransactionController do
     render(
       conn,
       "index.html",
-      current_path: current_path(conn),
+      current_path: Controller.current_full_path(conn),
       transaction_estimated_count: transaction_estimated_count
     )
   end

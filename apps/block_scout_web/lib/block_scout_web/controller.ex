@@ -34,4 +34,25 @@ defmodule BlockScoutWeb.Controller do
       [] -> false
     end
   end
+
+  def current_full_path(conn) do
+    current_path = current_path(conn)
+
+    full_path(current_path)
+  end
+
+  def full_path(path) do
+    url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
+    network_path = url_params[:path]
+
+    if network_path do
+      if path =~ network_path do
+        path
+      else
+        network_path <> path
+      end
+    else
+      path
+    end
+  end
 end
