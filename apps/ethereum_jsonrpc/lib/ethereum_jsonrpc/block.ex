@@ -516,5 +516,4 @@ defmodule EthereumJSONRPC.Block do
   defp entry_to_elixir({"l1BlockNumber", _}) do
     {:ignore, :ignore}
   end
-
 end
