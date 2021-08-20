@@ -10,10 +10,6 @@ ifndef BLOCKSCOUT_VERSION
 endif
 
 DOCKER_IMAGE = skalenetwork/skale_blockscout:$(BLOCKSCOUT_VERSION)
-LOGO = /images/skale_logo.png
-SUBNETWORK = SKALE
-ETHEREUM_JSONRPC_VARIANT = geth
-NETWORK = ''
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
