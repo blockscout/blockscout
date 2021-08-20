@@ -88,6 +88,7 @@ defmodule EthereumJSONRPC.Log do
           "blockNumber" => block_number,
           "blockHash" => block_hash,
           "data" => data,
+          "polarity" => polarity,
           "logIndex" => index,
           "topics" => topics,
           "transactionHash" => transaction_hash
@@ -98,6 +99,7 @@ defmodule EthereumJSONRPC.Log do
       block_number: block_number,
       block_hash: block_hash,
       data: data,
+      polarity: polarity,
       index: index,
       transaction_hash: transaction_hash
     }
@@ -171,7 +173,7 @@ defmodule EthereumJSONRPC.Log do
     Enum.into(log, %{}, &entry_to_elixir/1)
   end
 
-  defp entry_to_elixir({key, _} = entry) when key in ~w(address blockHash data removed topics transactionHash type),
+  defp entry_to_elixir({key, _} = entry) when key in ~w(polarity address blockHash data removed topics transactionHash type),
     do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber logIndex transactionIndex transactionLogIndex) do

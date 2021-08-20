@@ -1,16 +1,27 @@
 SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
-DOCKER_IMAGE = blockscout_prod
-BS_CONTAINER_NAME = blockscout
-PG_CONTAINER_NAME = postgres
+BS_CONTAINER_NAME = blockscout_$(SCHAIN_NAME)
+PG_CONTAINER_NAME = postgres_$(SCHAIN_NAME)
 PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
+
+ifndef BLOCKSCOUT_VERSION
+	BLOCKSCOUT_VERSION = latest
+endif
+
+DOCKER_IMAGE = skalenetwork/skale_blockscout:$(BLOCKSCOUT_VERSION)
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
+ifndef PORT
+	PORT = 4000
+endif
+ifndef DB_PORT
+	DB_PORT = 5432
+endif
+DB_URL = postgresql://postgres:@$(HOST):$(DB_PORT)/explorer?ssl=false
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															 -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
@@ -278,21 +289,25 @@ endif
 ifdef CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN=$(CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN)'
 endif
+BLOCKSCOUT_CONTAINER_PARAMS += -e 'PORT=$(PORT)'
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
-build: 
+HAS_BLOCKSCOUT_IMAGE = $(shell docker images -q $(DOCKER_IMAGE))
+build:
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
-ifdef HAS_BLOCKSCOUT_IMAGE
+ifneq ($(HAS_BLOCKSCOUT_IMAGE),)
 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
 else
+ifdef DEV_MODE
 	@echo "==> No image found trying to build one..."
 	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+endif
 endif
 
 migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
+					-p $(PORT):$(PORT) \
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
 migrate: build postgres
@@ -313,22 +328,22 @@ else
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
 else
-	@echo "==> Creating new PostgreSQL container"
+	@echo "==> Creating new PostgreSQL container on $(DB_PORT) port"
 	@docker run -d --name $(PG_CONTAINER_NAME) \
 					-e POSTGRES_PASSWORD="" \
 					-e POSTGRES_USER="postgres" \
 					-e POSTGRES_HOST_AUTH_METHOD="trust" \
-					-p 5432:5432 \
+					-p $(DB_PORT):5432 \
 					$(PG_CONTAINER_IMAGE)
 	@sleep 1
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
 
 start: build postgres 
-	@echo "==> Starting blockscout"
+	@echo "==> Starting blockscout on $(PORT) port"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					-p 4000:4000 \
+					-p $(PORT):$(PORT) \
 					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
 
 run: start

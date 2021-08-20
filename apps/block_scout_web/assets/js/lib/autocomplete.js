@@ -135,7 +135,11 @@ const selection = (event) => {
   if (selectionValue.symbol) {
     window.location = `/tokens/${selectionValue.contract_address_hash}`
   } else {
-    window.location = `/address/${selectionValue.contract_address_hash}`
+    if (selectionValue.type === "transaction") {
+      window.location = `/tx/${selectionValue.transaction_hash}`
+    } else {
+      window.location = `/address/${selectionValue.address_hash}`
+    }
   }
 }
 
