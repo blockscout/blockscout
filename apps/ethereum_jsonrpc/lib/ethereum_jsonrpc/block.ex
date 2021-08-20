@@ -505,4 +505,9 @@ defmodule EthereumJSONRPC.Block do
   defp entry_to_elixir({"transactions" = key, transactions}) do
     {key, Transactions.to_elixir(transactions)}
   end
+
+  # Arbitrum fields
+  defp entry_to_elixir({"l1BlockNumber", _}) do
+    {:ignore, :ignore}
+  end
 end
