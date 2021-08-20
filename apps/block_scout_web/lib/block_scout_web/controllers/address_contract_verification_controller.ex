@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   def get_metadata_and_publish(address_hash_string, nil) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
-        proccess_metadata_add_publish(address_hash_string, verification_metadata, false)
+        process_metadata_and_publish(address_hash_string, verification_metadata, false)
 
       {:error, %{"error" => error}} ->
         {:error, error: error}
@@ -144,7 +144,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   def get_metadata_and_publish(address_hash_string, conn) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
-        proccess_metadata_add_publish(address_hash_string, verification_metadata, false, conn)
+        process_metadata_and_publish(address_hash_string, verification_metadata, false, conn)
 
       {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
@@ -154,7 +154,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     end
   end
 
-  defp proccess_metadata_add_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
+  defp process_metadata_and_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
     %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
       parse_params_from_sourcify(address_hash_string, verification_metadata)
 
@@ -289,10 +289,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         else
           case Sourcify.check_by_address_any(address_hash_string) do
             {:ok, "full", metadata} ->
-              proccess_metadata_add_publish(address_hash_string, metadata, false)
+              process_metadata_and_publish(address_hash_string, metadata, false)
 
             {:ok, "partial", metadata} ->
-              proccess_metadata_add_publish(address_hash_string, metadata, true)
+              process_metadata_and_publish(address_hash_string, metadata, true)
 
             _ ->
               {:error, :not_verified}
