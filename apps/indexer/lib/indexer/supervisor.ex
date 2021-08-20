@@ -21,15 +21,15 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
-    CoinBalanceOnDemand,
+    # CoinBalanceOnDemand,
     ContractCode,
     InternalTransaction,
     PendingTransaction,
-    ReplacedTransaction,
+    # ReplacedTransaction,
     Token,
     TokenBalance,
-    TokenInstance,
-    TokenTotalSupplyOnDemand,
+    # TokenInstance,
+    # TokenTotalSupplyOnDemand,
     TokenUpdater,
     UncleBlock
   }
@@ -117,16 +117,16 @@ defmodule Indexer.Supervisor do
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {CoinBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {TokenInstance.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+      # {TokenInstance.Supervisor,
+      #  [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {ContractCode.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {TokenBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {TokenUpdater.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+      # {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
 
       # Out-of-band fetchers
-      {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
+      # {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+      # {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
       {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers

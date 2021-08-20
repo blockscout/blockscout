@@ -13,10 +13,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 1,
       async_import_internal_transactions: 1,
-      async_import_replaced_transactions: 1,
+      # async_import_replaced_transactions: 1,
       async_import_tokens: 1,
       async_import_token_balances: 1,
-      async_import_token_instances: 1,
+      # async_import_token_instances: 1,
       async_import_uncles: 1,
       fetch_and_import_range: 2
     ]
@@ -33,7 +33,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   # DO NOT use them directly in the code.  Get options from `state`.
 
   @blocks_batch_size 8
-  @blocks_concurrency 100
+  @blocks_concurrency 50
   @sequence_name :block_catchup_sequencer
 
   defstruct blocks_batch_size: @blocks_batch_size,
@@ -162,8 +162,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_uncles(imported)
-    async_import_replaced_transactions(imported)
-    async_import_token_instances(imported)
+    # async_import_replaced_transactions(imported)
+    # async_import_token_instances(imported)
   end
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
