@@ -38,7 +38,7 @@ defmodule Explorer.Repo do
     returning = opts[:returning]
 
     elements
-    |> Enum.chunk_every(500)
+    |> Enum.chunk_every(100)
     |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->
       {count, inserted} =
         try do
