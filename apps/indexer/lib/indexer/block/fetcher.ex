@@ -121,10 +121,12 @@ defmodule Indexer.Block.Fetcher do
         _.._ = range
       )
       when callback_module != nil do
-    # range_list = Enum.to_list(range)
-    # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-    #   Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
-    # end
+    range_list = Enum.to_list(range)
+
+    if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+      Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
+    end
+
     with {:blocks,
           {:ok,
            %Blocks{
@@ -186,9 +188,54 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-      #   Logger.info(["### fetch_and_import_range FINISHED ", inspect(range), " ###"])
-      # end
+      if Enum.at(range_list, 0) == 13_075_176 do
+        IO.inspect("Gimme count 1:")
+        IO.inspect(Enum.count(address_token_balances))
+        dedup = address_token_balances |> Enum.dedup()
+        IO.inspect("Gimme count 1':")
+        IO.inspect(Enum.count(dedup))
+
+        IO.inspect("Gimme count 2:")
+        IO.inspect(Enum.count(coin_balances_params_set))
+        dedup = coin_balances_params_set |> Enum.dedup()
+        IO.inspect("Gimme count 2':")
+        IO.inspect(Enum.count(dedup))
+
+        IO.inspect("Gimme count 3:")
+        IO.inspect(Enum.count(coin_balances_params_daily_set))
+        dedup = coin_balances_params_daily_set |> Enum.dedup()
+        IO.inspect("Gimme count 3':")
+        IO.inspect(Enum.count(dedup))
+
+        IO.inspect("Gimme count 4:")
+        IO.inspect(Enum.count(addresses))
+        dedup = addresses |> Enum.dedup()
+        IO.inspect("Gimme count 4':")
+        IO.inspect(Enum.count(dedup))
+
+        IO.inspect("Gimme count 5:")
+        IO.inspect(Enum.count(tokens))
+        dedup = tokens |> Enum.dedup()
+        IO.inspect("Gimme count 5':")
+        IO.inspect(Enum.count(dedup))
+
+        IO.inspect("Gimme count 6:")
+        IO.inspect(Enum.count(token_transfers))
+        dedup = token_transfers |> Enum.dedup()
+        IO.inspect("Gimme count 6':")
+        IO.inspect(Enum.count(dedup))
+
+        IO.inspect("Gimme count 7:")
+        IO.inspect(Enum.count(logs))
+        dedup = logs |> Enum.dedup()
+        IO.inspect("Gimme count 7':")
+        IO.inspect(Enum.count(dedup))
+      end
+
+      if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+        Logger.info(["### fetch_and_import_range FINISHED ", inspect(range), " ###"])
+      end
+
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
       update_transactions_cache(inserted[:transactions])
