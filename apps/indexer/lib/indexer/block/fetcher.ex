@@ -121,11 +121,11 @@ defmodule Indexer.Block.Fetcher do
         _.._ = range
       )
       when callback_module != nil do
-    # range_list = Enum.to_list(range)
+    range_list = Enum.to_list(range)
 
-    # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-    #   Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
-    # end
+    if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+      Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
+    end
 
     with {:blocks,
           {:ok,
@@ -188,9 +188,9 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-      #   Logger.info(["### fetch_and_import_range FINISHED ", inspect(range), " ###"])
-      # end
+      if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+        Logger.info(["### fetch_and_import_range FINISHED ", inspect(range), " ###"])
+      end
 
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
