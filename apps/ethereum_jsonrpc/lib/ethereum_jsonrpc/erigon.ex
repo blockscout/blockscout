@@ -14,7 +14,7 @@ defmodule EthereumJSONRPC.Erigon do
   @impl EthereumJSONRPC.Variant
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
       when is_list(block_numbers) and is_list(json_rpc_named_arguments) do
-    Logger.info(["### Beneficiaries STARTED ###"])
+    # Logger.info(["### Beneficiaries STARTED ###"])
 
     id_to_params =
       block_numbers
@@ -25,7 +25,7 @@ defmodule EthereumJSONRPC.Erigon do
            id_to_params
            |> FetchedBeneficiaries.requests()
            |> json_rpc(json_rpc_named_arguments) do
-      Logger.info(["### Beneficiaries fetched ###"])
+      # Logger.info(["### Beneficiaries fetched ###"])
       {:ok, FetchedBeneficiaries.from_responses(responses, id_to_params)}
     end
   end
