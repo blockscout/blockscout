@@ -121,7 +121,7 @@ defmodule Indexer.Block.Fetcher do
         _.._ = range
       )
       when callback_module != nil do
-    range_list = Enum.to_list(range)
+    # range_list = Enum.to_list(range)
 
     # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
     #   Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
