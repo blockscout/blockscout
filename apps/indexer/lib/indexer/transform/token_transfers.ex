@@ -38,7 +38,14 @@ defmodule Indexer.Transform.TokenTransfers do
     |> Enum.dedup()
     |> Enum.each(&update_token/1)
 
-    token_transfers_from_logs
+    tokens_dedup = token_transfers_from_logs.tokens |> Enum.dedup()
+
+    token_transfers_from_logs_dedup = %{
+      tokens: tokens_dedup,
+      token_transfers: token_transfers_from_logs.token_transfers
+    }
+
+    token_transfers_from_logs_dedup
   end
 
   def parse_tx(txs, gold_token) do
