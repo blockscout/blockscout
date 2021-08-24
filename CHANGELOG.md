@@ -24,6 +24,7 @@
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
 
 ### Chore
+- [#4550](https://github.com/blockscout/blockscout/pull/4550) - Update con_cache package to 1.0
 - [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transations in block's view
 - [#4521](https://github.com/blockscout/blockscout/pull/4521) - Rewrite transaction page tooltips
 - [#4516](https://github.com/blockscout/blockscout/pull/4516) - Add DB migrations step into Docker start script
