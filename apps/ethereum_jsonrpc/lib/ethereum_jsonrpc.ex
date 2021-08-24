@@ -249,9 +249,9 @@ defmodule EthereumJSONRPC do
   @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
     res =
-    range
-    |> Enum.map(fn number -> %{number: number} end)
-    |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
+      range
+      |> Enum.map(fn number -> %{number: number} end)
+      |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
 
     range_list = Enum.to_list(range)
 

@@ -5,9 +5,10 @@
 - [#4524](https://github.com/blockscout/blockscout/pull/4524) - Add index position of transaction in the block
 - [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page
 - [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
-- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
+- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-contract's function response
 
 ### Fixes
+- [#4546](https://github.com/blockscout/blockscout/pull/4546) - Indexer performance update: async get block rewards
 - [#4544](https://github.com/blockscout/blockscout/pull/4544) - Indexer performance update: Add skip_metadata flag for token if indexer failed to get any of [name, symbol, decimals, totalSupply]
 - [#4542](https://github.com/blockscout/blockscout/pull/4542) - Indexer performance update: Deduplicate tokens in the indexer token transfers transformer
 - [#4535](https://github.com/blockscout/blockscout/pull/4535) - Indexer performance update:: Eliminate multiple updates of the same token while parsing mint/burn token transfers batch
