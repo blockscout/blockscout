@@ -8,7 +8,7 @@
       class="border-bottom"
       data-dropdown-token-balance-test
       data-token-name="<%= token_name(token_balance.token) %>"
-      data-token-symbol="<%= token_balance.token.symbol %>"
+      data-token-symbol="<%= token_symbol(token_balance.token) %>"
     >
       <% path = case token_balance.token_type do
           "ERC-721" -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
@@ -45,7 +45,7 @@
             <%= if token_balance.token_type == "ERC-721" do %>
               1
             <% else %>
-              <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
+              <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_symbol(token_balance.token) %>
             <% end %>
             <%= if token_balance.token_type == "ERC-721" or token_balance.token_type == "ERC-1155" do %>
               <%= " TokenID " <> to_string(token_balance.token_id) %>

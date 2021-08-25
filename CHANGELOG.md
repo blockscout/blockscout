@@ -1,11 +1,15 @@
 ## Current
 
 ### Features
+- [#4531](https://github.com/blockscout/blockscout/pull/4531) - Add Arbitrum support
+- [#4524](https://github.com/blockscout/blockscout/pull/4524) - Add index position of transaction in the block
 - [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page
 - [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
 - [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
 
 ### Fixes
+- [#4542](https://github.com/blockscout/blockscout/pull/4542) - Indexer performance update: Deduplicate tokens in the indexer token transfers transformer
+- [#4535](https://github.com/blockscout/blockscout/pull/4535) - Indexer performance update:: Eliminate multiple updates of the same token while parsing mint/burn token transfers batch
 - [#4527](https://github.com/blockscout/blockscout/pull/4527) - Indexer performance update: refactor coin balance daily fetcher
 - [#4525](https://github.com/blockscout/blockscout/pull/4525) - Uncataloged token transfers query performance improvement
 - [#4513](https://github.com/blockscout/blockscout/pull/4513) - Fix installation with custom default path: add NETWORK_PATH variable to the current_path
@@ -20,7 +24,9 @@
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
 
 ### Chore
+- [#4550](https://github.com/blockscout/blockscout/pull/4550) - Update con_cache package to 1.0
 - [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transations in block's view
+- [#4521](https://github.com/blockscout/blockscout/pull/4521) - Rewrite transaction page tooltips
 - [#4516](https://github.com/blockscout/blockscout/pull/4516) - Add DB migrations step into Docker start script
 - [#4497](https://github.com/blockscout/blockscout/pull/4497) - Handle error in fetch_validators_list method
 - [#4444](https://github.com/blockscout/blockscout/pull/4444) - Main page performance cumulative update

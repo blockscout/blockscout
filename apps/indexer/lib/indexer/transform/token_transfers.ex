@@ -31,10 +31,27 @@ defmodule Indexer.Transform.TokenTransfers do
       end)
       |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc1155))
 
-    %{
-      tokens: erc1155_token_transfers.tokens ++ erc20_and_erc721_token_transfers.tokens,
-      token_transfers: erc1155_token_transfers.token_transfers ++ erc20_and_erc721_token_transfers.token_transfers
+    tokens = erc1155_token_transfers.tokens ++ erc20_and_erc721_token_transfers.tokens
+    token_transfers = erc1155_token_transfers.token_transfers ++ erc20_and_erc721_token_transfers.token_transfers
+
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
+    end)
+    |> Enum.map(fn token_transfer ->
+      token_transfer.token_contract_address_hash
+    end)
+    |> Enum.dedup()
+    |> Enum.each(&update_token/1)
+
+    tokens_dedup = tokens |> Enum.dedup()
+
+    token_transfers_from_logs_dedup = %{
+      tokens: tokens_dedup,
+      token_transfers: token_transfers_from_logs.token_transfers
     }
+
+    token_transfers_from_logs_dedup
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type \\ :erc20_erc721) do
@@ -78,8 +95,6 @@ defmodule Indexer.Transform.TokenTransfers do
       type: "ERC-20"
     }
 
-    update_token(log.address_hash, token_transfer)
-
     {token, token_transfer}
   end
 
@@ -104,8 +119,6 @@ defmodule Indexer.Transform.TokenTransfers do
       contract_address_hash: log.address_hash,
       type: "ERC-721"
     }
-
-    update_token(log.address_hash, token_transfer)
 
     {token, token_transfer}
   end
@@ -139,28 +152,26 @@ defmodule Indexer.Transform.TokenTransfers do
       type: "ERC-721"
     }
 
-    update_token(log.address_hash, token_transfer)
-
     {token, token_transfer}
   end
 
-  defp update_token(address_hash_string, token_transfer) do
-    if token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address do
-      {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+  defp update_token(nil), do: :ok
 
-      token_params =
-        address_hash_string
-        |> MetadataRetriever.get_functions_of()
+  defp update_token(address_hash_string) do
+    {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
 
-      token = Repo.get_by(Token, contract_address_hash: address_hash)
+    token_params =
+      address_hash_string
+      |> MetadataRetriever.get_functions_of()
 
-      if token do
-        token_to_update =
-          token
-          |> Repo.preload([:contract_address])
+    token = Repo.get_by(Token, contract_address_hash: address_hash)
 
-        {:ok, _} = Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
-      end
+    if token do
+      token_to_update =
+        token
+        |> Repo.preload([:contract_address])
+
+      {:ok, _} = Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
     end
 
     :ok
