@@ -158,12 +158,11 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "preloads to_address smart contract verified", %{conn: conn} do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-        {:ok, "100"}
-      end)
-
       transaction = insert(:transaction_to_verified_contract)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _options ->
+        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+      end)
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
 

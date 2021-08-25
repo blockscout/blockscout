@@ -1,5 +1,6 @@
 defmodule Explorer.Chain.LogTest do
   use Explorer.DataCase
+  import Mox
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Log, SmartContract}
@@ -92,6 +93,10 @@ defmodule Explorer.Chain.LogTest do
         :transaction_to_verified_contract
         |> insert(to_address: to_address)
         |> Repo.preload(to_address: :smart_contract)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _options ->
+        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+      end)
 
       log =
         insert(:log,
