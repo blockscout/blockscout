@@ -181,7 +181,7 @@ defmodule Indexer.Block.Fetcher do
              }
            ) do
       if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-        Logger.info(["### fetch_and_import_range FINISHED ", inspect(range), " ###"])
+        Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
       end
 
       Task.async(fn ->

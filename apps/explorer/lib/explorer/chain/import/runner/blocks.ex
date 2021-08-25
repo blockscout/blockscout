@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2, subquery: 1]
 
@@ -37,6 +38,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info(["### Blocks run STARTED ###"])
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -48,74 +51,80 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    multi
-    |> Multi.run(:lose_consensus, fn repo, _ ->
-      lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
-    end)
-    |> Multi.run(:blocks, fn repo, _ ->
-      # Note, needs to be executed after `lose_consensus` for lock acquisition
-      insert(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
-      new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
-    end)
-    |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
-      update_block_second_degree_relations(repo, hashes, %{
-        timeout:
-          options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
-            Runner.Block.SecondDegreeRelations.timeout(),
-        timestamps: timestamps
-      })
-    end)
-    |> Multi.run(:delete_rewards, fn repo, _ ->
-      delete_rewards(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:fork_transactions, fn repo, _ ->
-      fork_transactions(%{
-        repo: repo,
-        timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
-        timestamps: timestamps,
-        blocks_changes: changes_list
-      })
-    end)
-    |> Multi.run(:derive_transaction_forks, fn repo, %{fork_transactions: transactions} ->
-      derive_transaction_forks(%{
-        repo: repo,
-        timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
-        timestamps: timestamps,
-        transactions: transactions
-      })
-    end)
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      acquire_contract_address_tokens(repo, consensus_block_numbers)
-    end)
-    |> Multi.run(:delete_address_token_balances, fn repo, _ ->
-      delete_address_token_balances(repo, consensus_block_numbers, insert_options)
-    end)
-    |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
-      delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
-    end)
-    |> Multi.run(:derive_address_current_token_balances, fn repo,
-                                                            %{
-                                                              delete_address_current_token_balances:
-                                                                deleted_address_current_token_balances
-                                                            } ->
-      derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
-    end)
-    |> Multi.run(:blocks_update_token_holder_counts, fn repo,
-                                                        %{
-                                                          delete_address_current_token_balances: deleted,
-                                                          derive_address_current_token_balances: inserted
-                                                        } ->
-      deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
-      Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
-    end)
+    res =
+      multi
+      |> Multi.run(:lose_consensus, fn repo, _ ->
+        lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+      end)
+      |> Multi.run(:blocks, fn repo, _ ->
+        # Note, needs to be executed after `lose_consensus` for lock acquisition
+        insert(repo, changes_list, insert_options)
+      end)
+      |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
+        new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
+      end)
+      |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
+        update_block_second_degree_relations(repo, hashes, %{
+          timeout:
+            options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
+              Runner.Block.SecondDegreeRelations.timeout(),
+          timestamps: timestamps
+        })
+      end)
+      |> Multi.run(:delete_rewards, fn repo, _ ->
+        delete_rewards(repo, changes_list, insert_options)
+      end)
+      |> Multi.run(:fork_transactions, fn repo, _ ->
+        fork_transactions(%{
+          repo: repo,
+          timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
+          timestamps: timestamps,
+          blocks_changes: changes_list
+        })
+      end)
+      |> Multi.run(:derive_transaction_forks, fn repo, %{fork_transactions: transactions} ->
+        derive_transaction_forks(%{
+          repo: repo,
+          timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
+          timestamps: timestamps,
+          transactions: transactions
+        })
+      end)
+      |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+        acquire_contract_address_tokens(repo, consensus_block_numbers)
+      end)
+      |> Multi.run(:delete_address_token_balances, fn repo, _ ->
+        delete_address_token_balances(repo, consensus_block_numbers, insert_options)
+      end)
+      |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
+        delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
+      end)
+      |> Multi.run(:derive_address_current_token_balances, fn repo,
+                                                              %{
+                                                                delete_address_current_token_balances:
+                                                                  deleted_address_current_token_balances
+                                                              } ->
+        derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
+      end)
+      |> Multi.run(:blocks_update_token_holder_counts, fn repo,
+                                                          %{
+                                                            delete_address_current_token_balances: deleted,
+                                                            derive_address_current_token_balances: inserted
+                                                          } ->
+        deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
+        Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
+      end)
+
+    Logger.info(["### Blocks multi.run FINISHED ###"])
+    res
   end
 
   @impl Runner
   def timeout, do: @timeout
 
   defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
+    Logger.info(["### Blocks acquire_contract_address_tokens started ###"])
+
     query =
       from(ctb in Address.CurrentTokenBalance,
         where: ctb.block_number in ^consensus_block_numbers,
@@ -125,7 +134,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     contract_address_hashes = repo.all(query)
 
-    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+    res = Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+
+    Logger.info(["### Blocks acquire_contract_address_tokens FINISHED ###"])
+
+    res
   end
 
   defp fork_transactions(%{
@@ -134,6 +147,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{updated_at: updated_at},
          blocks_changes: blocks_changes
        }) do
+    Logger.info(["### Blocks fork_transactions started ###"])
+
     query =
       from(
         transaction in where_forked(blocks_changes),
@@ -165,9 +180,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     {_num, transactions} = repo.update_all(update_query, [], timeout: timeout)
 
+    Logger.info(["### Blocks fork_transactions FINISHED ###"])
+
     {:ok, transactions}
   rescue
     postgrex_error in Postgrex.Error ->
+      Logger.info(["### Blocks fork_transactions ERROR ###"])
       {:error, %{exception: postgrex_error}}
   end
 
@@ -177,6 +195,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{inserted_at: inserted_at, updated_at: updated_at},
          transactions: transactions
        }) do
+    Logger.info(["### Blocks derive_transaction_forks started ###"])
+
     transaction_forks =
       transactions
       |> Enum.map(fn transaction ->
@@ -206,6 +226,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout
       )
 
+    Logger.info(["### Blocks derive_transaction_forks FINISHED ###"])
+
     {:ok, Enum.map(forked_transaction, & &1.hash)}
   end
 
@@ -215,6 +237,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Block.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    Logger.info(["### Blocks insert started ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Block ShareLocks order (see docs: sharelocks.md)
@@ -223,16 +246,21 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Enum.sort_by(& &1.hash)
       |> Enum.dedup_by(& &1.hash)
 
-    Import.insert_changes_list(
-      repo,
-      ordered_changes_list,
-      conflict_target: :hash,
-      on_conflict: on_conflict,
-      for: Block,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+    res =
+      Import.insert_changes_list(
+        repo,
+        ordered_changes_list,
+        conflict_target: :hash,
+        on_conflict: on_conflict,
+        for: Block,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    Logger.info(["### Blocks insert FINISHED ###"])
+
+    res
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
@@ -277,6 +305,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout,
         timestamps: %{updated_at: updated_at}
       }) do
+    Logger.info(["### Blocks lose_consensus started ###"])
+
     acquire_query =
       from(
         block in where_invalid_neighbour(changes_list),
@@ -303,13 +333,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout
       )
 
+    Logger.info(["### Blocks lose_consensus FINISHED ###"])
+
     {:ok, removed_consensus_block_hashes}
   rescue
     postgrex_error in Postgrex.Error ->
+      Logger.info(["### Blocks lose_consensus ERROR ###"])
       {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
   end
 
   defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
+    Logger.info(["### Blocks new_pending_operations started ###"])
+
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
       {:ok, []}
     else
@@ -322,22 +357,29 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           %{block_hash: hash, fetch_internal_transactions: true}
         end)
 
-      Import.insert_changes_list(
-        repo,
-        sorted_pending_ops,
-        conflict_target: :block_hash,
-        on_conflict: PendingBlockOperation.default_on_conflict(),
-        for: PendingBlockOperation,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
+      res =
+        Import.insert_changes_list(
+          repo,
+          sorted_pending_ops,
+          conflict_target: :block_hash,
+          on_conflict: PendingBlockOperation.default_on_conflict(),
+          for: PendingBlockOperation,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+
+      Logger.info(["### Blocks new_pending_operations FINISHED ###"])
+
+      res
     end
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
 
   defp delete_address_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
+    Logger.info(["### Blocks delete_address_token_balances started ###"])
+
     ordered_query =
       from(tb in Address.TokenBalance,
         where: tb.block_number in ^consensus_block_numbers,
@@ -365,9 +407,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     try do
       {_count, deleted_address_token_balances} = repo.delete_all(query, timeout: timeout)
 
+      Logger.info(["### Blocks delete_address_token_balances FINISHED ###"])
+
       {:ok, deleted_address_token_balances}
     rescue
       postgrex_error in Postgrex.Error ->
+        Logger.info(["### Blocks delete_address_token_balances ERROR ###"])
         {:error, %{exception: postgrex_error, block_numbers: consensus_block_numbers}}
     end
   end
@@ -375,6 +420,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp delete_address_current_token_balances(_, [], _), do: {:ok, []}
 
   defp delete_address_current_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
+    Logger.info(["### Blocks delete_address_current_token_balances started ###"])
+
     ordered_query =
       from(ctb in Address.CurrentTokenBalance,
         where: ctb.block_number in ^consensus_block_numbers,
@@ -408,9 +455,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     try do
       {_count, deleted_address_current_token_balances} = repo.delete_all(query, timeout: timeout)
 
+      Logger.info(["### Blocks delete_address_current_token_balances FINISHED ###"])
       {:ok, deleted_address_current_token_balances}
     rescue
       postgrex_error in Postgrex.Error ->
+        Logger.info(["### Blocks delete_address_current_token_balances ERROR ###"])
         {:error, %{exception: postgrex_error, block_numbers: consensus_block_numbers}}
     end
   end
@@ -419,6 +468,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp derive_address_current_token_balances(repo, deleted_address_current_token_balances, %{timeout: timeout})
        when is_list(deleted_address_current_token_balances) do
+    Logger.info(["### Blocks derive_address_current_token_balances started ###"])
+
     initial_query =
       from(tb in Address.TokenBalance,
         select: %{
@@ -482,12 +533,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     derived_address_current_token_balances =
       Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :block_number, :value]))
 
+    Logger.info(["### Blocks derive_address_current_token_balances FINISHED ###"])
     {:ok, derived_address_current_token_balances}
   end
 
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
   # inserted, the old block rewards need to be deleted, so that the old and new rewards aren't combined.
   defp delete_rewards(repo, blocks_changes, %{timeout: timeout}) do
+    Logger.info(["### Blocks delete_rewards started ###"])
+
     {hashes, numbers} =
       Enum.reduce(blocks_changes, {[], []}, fn
         %{consensus: false, hash: hash}, {acc_hashes, acc_numbers} ->
@@ -519,9 +573,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     try do
       {count, nil} = repo.delete_all(delete_query, timeout: timeout)
 
+      Logger.info(["### Blocks delete_rewards FINISHED ###"])
       {:ok, count}
     rescue
       postgrex_error in Postgrex.Error ->
+        Logger.info(["### Blocks delete_rewards ERROR ###"])
         {:error, %{exception: postgrex_error, blocks_changes: blocks_changes}}
     end
   end
@@ -531,6 +587,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{updated_at: updated_at}
        })
        when is_list(uncle_hashes) do
+    Logger.info(["### Blocks update_block_second_degree_relations started ###"])
+
     query =
       from(
         bsdr in Block.SecondDegreeRelation,
@@ -552,9 +610,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     try do
       {_, result} = repo.update_all(update_query, [], timeout: timeout)
 
+      Logger.info(["### Blocks update_block_second_degree_relations FINISHED ###"])
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
+        Logger.info(["### Blocks update_block_second_degree_relations ERROR ###"])
         {:error, %{exception: postgrex_error, uncle_hashes: uncle_hashes}}
     end
   end
