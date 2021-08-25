@@ -117,9 +117,8 @@ config :logger_json, :block_scout_web,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :block_scout_web]
 
-config :logger, :block_scout_web, backends: [LoggerJSON, {LoggerBackend, :logger_backend}]
+config :logger, :block_scout_web, backends: [LoggerJSON]
 
-config :logger, :logger_backend, level: :error
 # config :logger, :block_scout_web,
 #  # keep synced with `config/config.exs`
 #  format: "$dateT$time $metadata[$level] $message\n",
