@@ -629,6 +629,20 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CURVE", "")) =~ address_hash_str
   end
 
+  def is_useless_mev_machine?(nil), do: false
+
+  def is_useless_mev_machine?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_USELESS_MEV_MACHINE", "")) =~ address_hash_str
+  end
+
+  def is_tornado_cash?(nil), do: false
+
+  def is_tornado_cash?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_TORNADO_CASH", "")) =~ address_hash_str
+  end
+
   def is_chainlink_oracle?(nil), do: false
 
   def is_chainlink_oracle?(address_hash) do

@@ -66,6 +66,12 @@
 <%= if is_curve?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Curve", additional_classes: ["curve", "ml-1"] %>
 <% end %>
+<%= if is_useless_mev_machine?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "USELESS MEV MACHINE", additional_classes: ["useless-mev-machine", "ml-1"] %>
+<% end %>
+<%= if is_tornado_cash?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "Tornado.Cash", additional_classes: ["tornado-cash", "ml-1"] %>
+<% end %>
 <%= if is_test?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-1"] %>
 <% end %>

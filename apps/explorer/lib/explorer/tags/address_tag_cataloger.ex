@@ -87,6 +87,12 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set Curve tags
     AddressTag.set_tag("curve")
 
+    # set USELESS MEV MACHINE tags
+    AddressTag.set_tag("useless mev machine")
+
+    # set Tornado.Cash tags
+    AddressTag.set_tag("tornado cash")
+
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
 
@@ -157,6 +163,12 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set Curve tag
     set_curve_tag()
+
+    # set USELESS MEV MACHINE tag
+    set_useless_mev_machine_tag()
+
+    # set Tornado.Cash tag
+    set_tornado_cash_tag()
 
     {:noreply, state}
   end
@@ -327,6 +339,14 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_curve_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_CURVE", "curve")
+  end
+
+  defp set_useless_mev_machine_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_USELESS_MEV_MACHINE", "useless mev machine")
+  end
+
+  defp set_tornado_cash_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_TORNADO_CASH", "tornado cash")
   end
 
   defp chainlink_oracles_list do

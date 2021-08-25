@@ -4,7 +4,8 @@ defmodule Explorer.Faucet do
   """
   require Logger
 
-  alias ETH
+  # todo: return again when new version of ETH will be issued
+  # alias ETH
   alias Explorer.Faucet.FaucetRequest
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Transaction
@@ -199,7 +200,7 @@ defmodule Explorer.Faucet do
         gas_limit_str
         |> Integer.parse()
 
-      raw_tx = %{
+      _raw_tx = %{
         from: Application.get_env(:block_scout_web, :faucet)[:address],
         nonce: nonce_hex,
         gas_price: gas_price_hex,
@@ -209,25 +210,27 @@ defmodule Explorer.Faucet do
         data: "0x"
       }
 
-      faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
+      _faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
 
-      signed_tx =
-        try do
-          raw_tx
-          |> ETH.build()
-          |> ETH.sign_transaction(faucet_address_pk)
-          |> Base.encode16(case: :lower)
-        rescue
-          error ->
-            Logger.error(inspect(error))
-            nil
-        end
+      # todo: return again when new version of ETH will be issued
+      # signed_tx =
+      #   try do
+      #     raw_tx
+      #     |> ETH.build()
+      #     |> ETH.sign_transaction(faucet_address_pk)
+      #     |> Base.encode16(case: :lower)
+      #   rescue
+      #     error ->
+      #       Logger.error(inspect(error))
+      #       nil
+      #   end
 
-      if signed_tx do
-        {:ok, signed_tx}
-      else
-        {:error}
-      end
+      # if signed_tx do
+      #   {:ok, signed_tx}
+      # else
+      #   {:error}
+      # end
+      {:error}
     end
   end
 

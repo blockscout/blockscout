@@ -48,7 +48,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
     token_transfers_from_logs_dedup = %{
       tokens: tokens_dedup,
-      token_transfers: token_transfers_from_logs.token_transfers
+      token_transfers: token_transfers
     }
 
     token_transfers_from_logs_dedup
