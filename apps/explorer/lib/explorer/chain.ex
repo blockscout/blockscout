@@ -1412,23 +1412,7 @@ defmodule Explorer.Chain do
         Repo.all(query)
 
       _ ->
-        case Integer.parse(term) do
-          {block_number, _} ->
-            query =
-              from(block in Block,
-                where: block.number == ^block_number,
-                select: %{
-                  link: block.hash,
-                  block_number: block.number,
-                  type: "block"
-                }
-              )
-
-            Repo.all(query)
-
-          _ ->
-            []
-        end
+        []
     end
   end
 

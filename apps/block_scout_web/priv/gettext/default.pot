@@ -1435,7 +1435,7 @@ msgid "Type"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:370
+#: lib/block_scout_web/templates/transaction/overview.html.eex:372
 msgid "UTF-8"
 msgstr ""
 
@@ -2380,11 +2380,6 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:372
-msgid "UTF-8"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_rows.html.eex:52
 msgid "Withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})"
 msgstr ""
@@ -3038,17 +3033,6 @@ msgid "Value sent in CELO (and USD) if applicable."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
-msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
-msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:349
 msgid "Position"
 msgstr ""
@@ -3056,4 +3040,20 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:349
 msgid "Index position of Transaction in the block."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:191
+#: lib/block_scout_web/templates/address_contract/index.html.eex:199
+msgid "Deployed ByteCode"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:33
+msgid "This contract has been partially verified via Sourcify."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:70
+msgid "Withdraw Now"
 msgstr ""
