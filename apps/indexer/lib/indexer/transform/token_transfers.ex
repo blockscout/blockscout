@@ -21,7 +21,8 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfers_from_logs =
       logs
       |> Enum.filter(
-        &(&1.first_topic == unquote(TokenTransfer.constant()) or &1.first_topic == unquote(TokenTransfer.comment_event()))
+        &(&1.first_topic == unquote(TokenTransfer.constant()) or
+            &1.first_topic == unquote(TokenTransfer.comment_event()))
       )
       |> combine_comments()
       |> Enum.reduce(initial_acc, &do_parse/2)
