@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - upstream/bugfix/mix_compile_tests
   pull_request:
     branches:
       - master
