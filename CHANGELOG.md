@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.7.2-beta
+
+### Features
 - [#4569](https://github.com/blockscout/blockscout/pull/4569) - Smart-Contract: remove comment with the submission date
 - [#4568](https://github.com/blockscout/blockscout/pull/4568) - TX page: Token transfer and minting section improvements
 - [#4540](https://github.com/blockscout/blockscout/pull/4540) - Allign copy buttons for `Block Details` and `Transaction Details` pages
