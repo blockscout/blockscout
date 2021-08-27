@@ -4156,12 +4156,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp format_source_code_output(smart_contract) do
-    SmartContract.add_submitted_comment(
-      smart_contract.contract_source_code,
-      smart_contract.inserted_at
-    )
-  end
+  defp format_source_code_output(smart_contract), do: smart_contract.contract_source_code
 
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
