@@ -7,7 +7,7 @@
 ### Chore
 
 
-## 3.7.2-beta
+## 3.7.3-beta
 
 ### Features
 - [#4569](https://github.com/blockscout/blockscout/pull/4569) - Smart-Contract: remove comment with the submission date
