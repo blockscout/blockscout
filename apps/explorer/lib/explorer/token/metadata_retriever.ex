@@ -5,7 +5,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.Chain.Hash
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Hash, Token}
   alias Explorer.SmartContract.Reader
 
   @contract_abi [
@@ -97,6 +98,11 @@ defmodule Explorer.Token.MetadataRetriever do
     "95d89b41" => []
   }
 
+  # 18160ddd = keccak256(totalSupply())
+  @total_supply_function %{
+    "18160ddd" => []
+  }
+
   @doc """
   Read functions below in the Smart Contract given the Contract's address hash.
 
@@ -163,8 +169,30 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   def get_functions_of(contract_address_hash) when is_binary(contract_address_hash) do
+    res =
+      contract_address_hash
+      |> fetch_functions_from_contract(@contract_functions)
+      |> format_contract_functions_result(contract_address_hash)
+
+    if res == %{} do
+      token_to_update =
+        Token
+        |> Repo.get_by(contract_address_hash: contract_address_hash)
+        |> Repo.preload([:contract_address])
+
+      set_skip_metadata(token_to_update)
+    end
+
+    res
+  end
+
+  def set_skip_metadata(token_to_update) do
+    Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, %{skip_metadata: true})
+  end
+
+  def get_total_supply_of(contract_address_hash) when is_binary(contract_address_hash) do
     contract_address_hash
-    |> fetch_functions_from_contract(@contract_functions)
+    |> fetch_functions_from_contract(@total_supply_function)
     |> format_contract_functions_result(contract_address_hash)
   end
 
