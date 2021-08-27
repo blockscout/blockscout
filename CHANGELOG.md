@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4528](https://github.com/blockscout/blockscout/pull/4528) - Block Details page: rework view
 - [#4531](https://github.com/blockscout/blockscout/pull/4531) - Add Arbitrum support
 - [#4524](https://github.com/blockscout/blockscout/pull/4524) - Add index position of transaction in the block
 - [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page
