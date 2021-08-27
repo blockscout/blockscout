@@ -47,15 +47,13 @@
               text: gettext("Unique character string (TxID) assigned to every verified transaction.") %>
               <%= gettext "Transaction Hash" %>
             </dt>
-            <dd class="col-sm-9 col-lg-10 d-flex" style="word-break: break-all;">
+            <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
               <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction %> </span>
-              <span>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @transaction,
                   aria_label: gettext("Copy Transaction Hash"),
                   title: gettext("Copy Txn Hash") %>
-              </span>
             </dd>
           </dl>
           <!-- Verify in other explorers -->
@@ -156,18 +154,16 @@
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("Address (external or contract) sending the transaction.") %>
               <%= gettext "From" %></dt>
-            <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container">
+            <dd class="col-sm-9 col-lg-10">
               <%= link(
                 from_address_hash,
                 to: address_path(@conn, :show, from_address_hash)
               ) %>
-              <span class="float-right">
-                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                  clipboard_text: from_address_hash,
-                  aria_label: gettext("Copy From Address"),
-                  title: gettext("Copy From Address") %>
-              </span>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                clipboard_text: from_address_hash,
+                aria_label: gettext("Copy From Address"),
+                title: gettext("Copy From Address") %>
             </dd>
           </dl>
           <!-- To -->
@@ -183,7 +179,7 @@
                 <%= gettext "To" %>
               <% end %>
             </dt>
-            <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container">
+            <dd class="col-sm-9 col-lg-10">
               <%= cond do %>
                 <% created_address_hash -> %>
                   [<%= gettext("Contract") %>&nbsp;
@@ -192,27 +188,21 @@
                     to: address_path(@conn, :show, recipient_address_hash)
                   ) %> 
                   &nbsp;<%= gettext("created") %>]
-
-                  <span class="float-right">
-                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                      additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                      clipboard_text: recipient_address_hash,
-                      aria_label: gettext("Copy To Address"),
-                      title: gettext("Copy To Address") %>
-                  </span>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: recipient_address_hash,
+                    aria_label: gettext("Copy To Address"),
+                    title: gettext("Copy To Address") %>
                 <% recipient_address_hash -> %>
                   <%= link(
                     recipient_address_hash,
                     to: address_path(@conn, :show, recipient_address_hash)
                   ) %>
-
-                  <span class="float-right">
-                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                      additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                      clipboard_text: recipient_address_hash,
-                      aria_label: gettext("Copy To Address"),
-                      title: gettext("Copy To Address") %>
-                  </span>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: recipient_address_hash,
+                    aria_label: gettext("Copy To Address"),
+                    title: gettext("Copy To Address") %>
                 <% true -> %>
               <% end %>
             </dd>
@@ -228,9 +218,11 @@
                       text: gettext("List of token transferred in the transaction.") %>
                     <%= gettext "Tokens Transferred" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
-                  <%= for transfer <- transfers do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
-                  <% end %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= for transfer <- transfers do %>
+                        <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
+                      <% end %>
+                    </table>
                   </dd>
                 </dl>
               <% end %>
@@ -243,9 +235,11 @@
                     <%= gettext "Tokens Minted" %>
                   </dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
-                  <%= for minting <- mintings do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, minting) %>
-                  <% end %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= for minting <- mintings do %>
+                        <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, minting) %>
+                      <% end %>
+                    </table>
                   </dd>
                 </dl>
               <% end %>
@@ -258,7 +252,9 @@
                     <%= gettext "Tokens Burnt" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for burning  <- burnings do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
+                    </table>
                   <% end %>
                   </dd>
                 </dl>
@@ -337,7 +333,7 @@
               <%= gettext "Gas Used by Transaction" %>
             </dt>
             <% gas_used_perc = gas_used_perc(@transaction) %>
-            <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "(#{gas_used_perc} %)" %></dd>
+            <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
           </dl>
           <!-- Nonce -->
           <dl class="row">

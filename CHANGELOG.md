@@ -1,6 +1,9 @@
 ## Current
 
 ### Features
+- [#4568](https://github.com/blockscout/blockscout/pull/4568) - TX page: Token transfer and minting section improvements
+- [#4540](https://github.com/blockscout/blockscout/pull/4540) - Allign copy buttons for `Block Details` and `Transaction Details` pages
+- [#4528](https://github.com/blockscout/blockscout/pull/4528) - Block Details page: rework view
 - [#4531](https://github.com/blockscout/blockscout/pull/4531) - Add Arbitrum support
 - [#4524](https://github.com/blockscout/blockscout/pull/4524) - Add index position of transaction in the block
 - [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page
@@ -8,6 +11,7 @@
 - [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
 
 ### Fixes
+- [#4553](https://github.com/blockscout/blockscout/pull/4553) - Indexer performance update: skip genesis block in requesting of trace_block API endpoint
 - [#4544](https://github.com/blockscout/blockscout/pull/4544) - Indexer performance update: Add skip_metadata flag for token if indexer failed to get any of [name, symbol, decimals, totalSupply]
 - [#4542](https://github.com/blockscout/blockscout/pull/4542) - Indexer performance update: Deduplicate tokens in the indexer token transfers transformer
 - [#4535](https://github.com/blockscout/blockscout/pull/4535) - Indexer performance update:: Eliminate multiple updates of the same token while parsing mint/burn token transfers batch
@@ -25,6 +29,7 @@
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
 
 ### Chore
+- [#4550](https://github.com/blockscout/blockscout/pull/4550) - Update con_cache package to 1.0
 - [#4523](https://github.com/blockscout/blockscout/pull/4523) - Change order of transations in block's view
 - [#4521](https://github.com/blockscout/blockscout/pull/4521) - Rewrite transaction page tooltips
 - [#4516](https://github.com/blockscout/blockscout/pull/4516) - Add DB migrations step into Docker start script
