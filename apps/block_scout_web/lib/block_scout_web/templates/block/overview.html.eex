@@ -86,14 +86,12 @@
               text: gettext("A block producer who successfully included the block onto the blockchain.") %>
               <%= gettext("Miner") %>
             </dt>
-            <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container"><%= render BlockScoutWeb.AddressView, "_link.html", address: @block.miner, contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
-              <span class="float-right">
-                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                  clipboard_text: @block.miner,
-                  aria_label: gettext("Copy Address"),
-                  title: gettext("Copy Address") %>
-              </span>
+            <dd class="col-sm-9 col-lg-10"><%= render BlockScoutWeb.AddressView, "_link.html", address: @block.miner, contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                clipboard_text: @block.miner,
+                aria_label: gettext("Copy Address"),
+                title: gettext("Copy Address") %>
               </dd>
           </dl>
           <!-- Size -->
@@ -112,13 +110,13 @@
               text: gettext("The SHA256 hash of the block.") %>
               <%= gettext("Hash") %>
             </dt>
-            <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container"><%= to_string(@block.hash) %><span class="float-right">
+            <dd class="col-sm-9 col-lg-10"><%= to_string(@block.hash) %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: to_string(@block.hash),
                   aria_label: gettext("Copy Hash"),
                   title: gettext("Copy Hash") %>
-              </span></dd>
+            </dd>
           </dl>
           <%= unless @block.number == 0 do %>
             <!-- Parent Hash -->
@@ -128,17 +126,17 @@
                 text: gettext("The hash of the block from which this block was generated.") %>
                 <%= gettext("Parent Hash") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container"><%= link(
-                                                                                  @block.parent_hash,
-                                                                                  class: "transaction__link",
-                                                                                  to: block_path(@conn, :show, @block.number - 1)
-                                                                                ) %><span class="float-right">
+              <dd class="col-sm-9 col-lg-10"><%= link(
+                                                        @block.parent_hash,
+                                                        class: "transaction__link",
+                                                        to: block_path(@conn, :show, @block.number - 1)
+                                                      ) %>
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                     clipboard_text: to_string(@block.parent_hash),
                     aria_label: gettext("Copy Parent Hash"),
                     title: gettext("Copy Parent Hash") %>
-                </span></dd>
+              </dd>
             </dl>
           <% end %>
           <!-- Difficulty -->
