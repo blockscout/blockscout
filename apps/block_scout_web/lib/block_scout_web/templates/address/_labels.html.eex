@@ -72,6 +72,9 @@
 <%= if is_tornado_cash?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Tornado.Cash", additional_classes: ["tornado-cash", "ml-1"] %>
 <% end %>
+<%= if is_sana?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "SANA", additional_classes: ["sana", "ml-1"] %>
+<% end %>
 <%= if is_test?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-1"] %>
 <% end %>

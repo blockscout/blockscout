@@ -93,6 +93,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set Tornado.Cash tags
     AddressTag.set_tag("tornado cash")
 
+    # set SANA tags
+    AddressTag.set_tag("sana")
+
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
 
@@ -169,6 +172,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set Tornado.Cash tag
     set_tornado_cash_tag()
+
+    # set SANA tag
+    set_sana_tag()
 
     {:noreply, state}
   end
@@ -347,6 +353,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_tornado_cash_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_TORNADO_CASH", "tornado cash")
+  end
+
+  defp set_sana_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_SANA", "sana")
   end
 
   defp chainlink_oracles_list do
