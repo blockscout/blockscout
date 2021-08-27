@@ -337,7 +337,7 @@
               <%= gettext "Gas Used by Transaction" %>
             </dt>
             <% gas_used_perc = gas_used_perc(@transaction) %>
-            <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "(#{gas_used_perc} %)" %></dd>
+            <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
           </dl>
           <!-- Nonce -->
           <dl class="row">
