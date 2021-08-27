@@ -77,7 +77,7 @@
             <% else %>
               <%= gettext "%{count} Transactions", count: @block_transaction_count %>
             <% end %>
-            <a href="#txs"><i class="fas fa-eye" style="padding: 5px;"></i></a></dd>
+            <a href="#txs"><i class="fas fa-eye" style="font-size: 9.8px; position: absolute; bottom: 4.6px; margin-left: 5px;"></i></a></dd>
           </dl>
           <!-- Miner/Validator -->
           <dl class="row">
