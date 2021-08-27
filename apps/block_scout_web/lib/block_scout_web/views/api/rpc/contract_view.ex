@@ -160,7 +160,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
           Enum.map(additional_sources, fn src ->
             %{
               Filename: src.file_name,
-              SourceCode: SmartContract.add_submitted_comment(src.contract_source_code, src.inserted_at)
+              SourceCode: src.contract_source_code
             }
           end),
         else: []
