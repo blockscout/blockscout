@@ -9,7 +9,6 @@
             <span><%= gettext("There was a problem loading the chart.") %></span>
           </button>
           <canvas data-chart="historyChart"
-
                   data-history_chart_paths=
                   '{<%= for {{key, value}, x} <- Enum.with_index(@chart_data_paths) do %>
                         "<%= key %>":"<%= value %>"
@@ -17,10 +16,10 @@
                         ,
                         <% end %>
                   <% end %>}'
-
                   data-history_chart_config = '<%= @chart_config_json %>'
-
-                  width="350" height="152" style="display: none;"></canvas>
+                  width="350" height="152">
+          </canvas>
+          <script data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
         </div>
         <!-- Legend -->
         <script>
@@ -170,11 +169,10 @@
       </div>
     </div>
   </div>
-  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
 </div>
 <section class="container">
-  <div class="card card-chain-blocks">
+  <div class="card card-chain-blocks js-ad-dependant-mb-3">
     <div class="card-body">
       <%= link(gettext("View All Blocks"), to: block_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
@@ -232,12 +230,14 @@
     </div>
   </div>
 
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
+
   <div class="card card-chain-transactions">
     <div class="card-body">
       <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <h2 class="card-title lg-card-title"><%= gettext "Transactions" %></h2>
-      <div data-selector="channel-batching-message" class="d-none">
-        <div data-selector="reload-button" class="alert alert-info">
+      <div data-selector="channel-batching-message" style="display: none;">
+        <div data-selector="reload-transactions-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
@@ -253,4 +253,5 @@
       </span>
     </div>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
 </section>

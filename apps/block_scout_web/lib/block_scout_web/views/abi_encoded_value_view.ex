@@ -63,6 +63,17 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     hex(value)
   end
 
+  defp do_copy_text({:tuple, types}, value) do
+    values =
+      value
+      |> Tuple.to_list()
+      |> Enum.with_index()
+      |> Enum.map(fn {val, ind} -> do_copy_text(Enum.at(types, ind), val) end)
+      |> Enum.intersperse(", ")
+
+    ~E|(<%= values %>)|
+  end
+
   defp do_copy_text(_type, value) do
     to_string(value)
   end
@@ -95,48 +106,17 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       |> Tuple.to_list()
       |> Enum.with_index()
       |> Enum.map(fn {value, i} ->
-        type = Enum.at(types, i)
-
-        case type do
-          {:tuple, types} ->
-            do_value_html_from_tuple(types, value)
-
-          _ ->
-            res = do_value_html(type, value)
-            [_, {:safe, html_val}] = res
-            html_val
-        end
+        do_value_html(Enum.at(types, i), value)
       end)
 
-    "(" <> Enum.join(values_list, ",") <> ")"
+    delimited = Enum.intersperse(values_list, ",")
+    ~E|(<%= delimited %>)|
   end
 
   defp do_value_html(type, value, depth) do
     spacing = String.duplicate(" ", depth * 2)
     ~E|<%= spacing %><%=base_value_html(type, value)%>|
     [spacing, base_value_html(type, value)]
-  end
-
-  defp do_value_html_from_tuple(types, values) do
-    values_list =
-      values
-      |> Tuple.to_list()
-      |> Enum.with_index()
-      |> Enum.map(fn {value, i} ->
-        type = Enum.at(types, i)
-
-        case type do
-          :address ->
-            [_, {:safe, html_val}] = do_value_html(:address_text, value)
-            html_val
-
-          _ ->
-            [_, {:safe, html_val}] = do_value_html(type, value)
-            html_val
-        end
-      end)
-
-    Enum.join(values_list, ",")
   end
 
   defp base_value_html(_, {:dynamic, value}) do

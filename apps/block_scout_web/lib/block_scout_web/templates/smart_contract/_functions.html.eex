@@ -98,35 +98,35 @@
             <% end %>
           </div>
         <% end %>
-
         <div data-function-response></div>
       </div>
     <% else %>
-      <span class="py-2 word-break-all">
-        <%= if outputs?(function["outputs"]) do %>
-          <%= for output <- function["outputs"] do %>
-            <%= if address?(output["type"]) do %>
+      <%= if outputs?(function["outputs"]) do %>
+        <%= for output <- function["outputs"] do %>
+          <%= if address?(output["type"]) do %>
+            <div class="py-2 word-break-all">
               <%= link(
                 output["value"],
-                to: address_path(@conn, :show, output["value"])
-              ) %>
+                to: address_path(@conn, :show, output["value"])) %>
+            </div>
+          <% else %>
+            <%= if output["type"] == "uint256" do %>
+              <div class="py-2 word-break-all">
+                <div data-wei-ether-converter>
+                  <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
+                  <span class="py-2 px-2">
+                    <input class="wei-ether" type="checkbox" autocomplete="off">
+                    <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
+                    <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
+                  </span>
+                </div>
+              </div> 
             <% else %>
-                <%= if output["type"] == "uint256" do %>
-                  <div data-wei-ether-converter>
-                    <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
-                    <span class="py-2 px-2">
-                      <input class="wei-ether" type="checkbox" autocomplete="off">
-                      <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                      <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
-                    </span>
-                  </div>
-                <% else %>
-                  <%= raw(values_only(output["value"], output["type"], output["components"])) %>
-                <% end %>
+              <%= raw(values_only(output["value"], output["type"], output["components"])) %>
             <% end %>
           <% end %>
         <% end %>
-      </span>
+      <% end %>
     <% end %>
   </div>
 <% end %>

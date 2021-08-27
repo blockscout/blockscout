@@ -1,7 +1,9 @@
 defmodule BlockScoutWeb.API.RPC.ContractView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.RPC.RPCView
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, DecompiledSmartContract, SmartContract}
 
   defguardp is_empty_string(input) when input == "" or input == nil
@@ -140,7 +142,32 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       |> Map.put_new(:CompilerVersion, Map.get(contract, :compiler_version, ""))
       |> Map.put_new(:OptimizationUsed, contract_optimization)
       |> Map.put_new(:EVMVersion, Map.get(contract, :evm_version, ""))
+      |> insert_additional_sources(address)
     end
+  end
+
+  defp insert_additional_sources(output, address) do
+    additional_sources_from_twin = Chain.get_address_verified_twin_contract(address.hash).additional_sources
+
+    additional_sources =
+      if AddressView.smart_contract_verified?(address),
+        do: address.smart_contract_additional_sources,
+        else: additional_sources_from_twin
+
+    additional_sources_array =
+      if additional_sources,
+        do:
+          Enum.map(additional_sources, fn src ->
+            %{
+              Filename: src.file_name,
+              SourceCode: SmartContract.add_submitted_comment(src.contract_source_code, src.inserted_at)
+            }
+          end),
+        else: []
+
+    if additional_sources_array == [],
+      do: output,
+      else: Map.put_new(output, :AdditionalSources, additional_sources_array)
   end
 
   defp prepare_contract(%Address{

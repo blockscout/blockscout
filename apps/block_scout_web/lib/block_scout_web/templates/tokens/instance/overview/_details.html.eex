@@ -1,6 +1,6 @@
 <section class="address-overview">
   <div class="row">
-    <div class="card-section col-md-12 col-lg-7 pr-0-md">
+    <div class="card-section col-md-12 col-lg-7 pr-0-md js-ad-dependant-mb-2">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title">
@@ -35,7 +35,7 @@
             </span>
           </h1>
 
-          <h3><%= to_string(@token_id) %></h3>
+          <h3><%= gettext "Token ID" %>: <%= to_string(@token_id) %></h3>
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <div class="d-flex flex-row justify-content-start text-muted">
@@ -57,12 +57,12 @@
       </div>
     </div>
 
-    <div class="card-section col-md-12 col-lg-5 pl-0-md">
+    <div class="card-section col-md-12 col-lg-5 pl-0-md js-ad-dependant-mb-2">
       <div class="card">
         <div class="card-body">
           <div class="erc721-media" >
-            <%= if media_type(media_src(@token_instance.instance)) == "mp4" do %>
-              <video autoplay>
+            <%= if media_type(media_src(@token_instance.instance)) == "video" do %>
+              <video autoplay style="width: 100%;">
                 <source src=<%= media_src(@token_instance.instance) %> type="video/mp4">
               </video>
             <% else %>
@@ -94,3 +94,4 @@
     </div>
   </div>
 </div>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

@@ -6,11 +6,12 @@
 <% address_hash_str = if @transaction.to_address_hash, do: "0x" <> Base.encode16(@transaction.to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
+<%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12 col-lg-8 pr-0-md">
       <!-- Transaction Details -->
-      <div class="card card-mr-50-md">
+      <div class="card card-mr-50-md js-ad-dependant-mb-3">
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
@@ -174,11 +175,12 @@
                   <!-- Copy -->
                   <span
                     aria-label="Copy Value"
-                    class="btn-copy-icon tx-utf8-input transaction-input d-none"
+                    class="btn-copy-icon tx-utf8-input transaction-input"
                     data-clipboard-text="<%= @transaction.input.bytes %>"
                     data-placement="top"
                     data-toggle="tooltip"
-                    title='<%= gettext("Copy Txn Input") %>'
+                    title='<%= gettext("Copy Txn Input") %>',
+                    style="display: none;"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
                       <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
@@ -192,7 +194,7 @@
                   </div>
                 </div>
                 <!-- Textfield -->
-                <div class="transaction-input tx-utf8-input d-none">
+                <div class="transaction-input tx-utf8-input" style="display: none;">
                   <div class="tile tile-muted">
                     <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input.bytes %></code></pre>
                   </div>
@@ -280,7 +282,7 @@
       </div>
     <% end %>
       <!-- Gas -->
-      <div class="card mob-transaction flex-grow-1 ml-0 ml-md-5 ml-lg-0">
+      <div class="card mob-transaction flex-grow-1 ml-0 ml-md-5 ml-lg-0 js-ad-dependant-mb-3">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
           <div class="text-right">
@@ -299,6 +301,8 @@
       </div>
     </div>
   </div>
+
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">
