@@ -135,11 +135,8 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
-         %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
-           fetch_beneficiaries(blocks, json_rpc_named_arguments),
          addresses =
            Addresses.extract_addresses(%{
-             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
@@ -148,7 +145,6 @@ defmodule Indexer.Block.Fetcher do
            }),
          coin_balances_params_set =
            %{
-             beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
              transactions_params: transactions_with_receipts
@@ -160,10 +156,6 @@ defmodule Indexer.Block.Fetcher do
              blocks: blocks
            }
            |> AddressCoinBalancesDaily.params_set(),
-         beneficiaries_with_gas_payment <-
-           beneficiary_params_set
-           |> add_gas_payments(transactions_with_receipts, blocks)
-           |> BlockReward.reduce_uncle_rewards(),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -175,13 +167,66 @@ defmodule Indexer.Block.Fetcher do
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
-               block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
+               block_rewards: %{errors: [], params: []},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
            ) do
+      Task.async(fn ->
+        %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
+          fetch_beneficiaries(blocks, json_rpc_named_arguments)
+
+        addresses_from_block_rewards =
+          Addresses.extract_addresses(%{
+            block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set)
+          })
+
+        coin_balances_params_set_from_block_rewards =
+          %{
+            beneficiary_params: MapSet.to_list(beneficiary_params_set)
+          }
+          |> AddressCoinBalances.params_set()
+
+        coin_balances_params_daily_set_from_block_rewards =
+          %{
+            coin_balances_params: coin_balances_params_set_from_block_rewards,
+            blocks: blocks
+          }
+          |> AddressCoinBalancesDaily.params_set()
+
+        beneficiaries_with_gas_payment =
+          beneficiary_params_set
+          |> add_gas_payments(transactions_with_receipts, blocks)
+          |> BlockReward.reduce_uncle_rewards()
+
+        insert_params = %{
+          addresses: %{params: addresses_from_block_rewards},
+          address_coin_balances: %{params: coin_balances_params_set_from_block_rewards},
+          blocks: %{params: []},
+          block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment}
+        }
+
+        %MapSet{map: map} = coin_balances_params_daily_set_from_block_rewards
+
+        insert_params =
+          if map_size(map) == 0 do
+            insert_params
+          else
+            insert_params
+            |> Map.put(:address_coin_balances_daily, %{params: coin_balances_params_daily_set_from_block_rewards})
+          end
+
+        {:ok, inserted_from_rewards} =
+          __MODULE__.import(
+            state,
+            insert_params
+          )
+
+        update_addresses_cache(inserted_from_rewards[:addresses])
+      end)
+
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
       update_transactions_cache(inserted[:transactions])

@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#4546](https://github.com/blockscout/blockscout/pull/4546) - Indexer performance update: async get block rewards
 
 ### Chore
 
@@ -18,7 +19,7 @@
 - [#4524](https://github.com/blockscout/blockscout/pull/4524) - Add index position of transaction in the block
 - [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page
 - [#4475](https://github.com/blockscout/blockscout/pull/4475) - Tx page facelifting
-- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
+- [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-contract's function response
 
 ### Fixes
 - [#4553](https://github.com/blockscout/blockscout/pull/4553) - Indexer performance update: skip genesis block in requesting of trace_block API endpoint
