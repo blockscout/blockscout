@@ -96,7 +96,8 @@ const appJs =
       'ad': './js/lib/ad.js',
       'text_ad': './js/lib/text_ad.js',
       'banner': './js/lib/banner.js',
-      'autocomplete': './js/lib/autocomplete.js'
+      'autocomplete': './js/lib/autocomplete.js',
+      'search-results': './js/pages/search-results/search.js'
     },
     output: {
       filename: '[name].js',

@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressTokenController do
 
   import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressTokenView}
+  alias BlockScoutWeb.{AccessHelpers, AddressTokenView, Controller}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.AddressTokenController do
         conn,
         "index.html",
         address: address,
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})

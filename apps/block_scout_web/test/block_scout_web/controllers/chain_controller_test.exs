@@ -170,12 +170,12 @@ defmodule BlockScoutWeb.ChainControllerTest do
       assert redirected_to(conn) == block_path(conn, :show, "37")
     end
 
-    test "does not find non-consensus block by number", %{conn: conn} do
+    test "redirects to search results page even for  searching non-consensus block by number", %{conn: conn} do
       %Block{number: number} = insert(:block, consensus: false)
 
       conn = get(conn, "/search?q=#{number}")
 
-      assert conn.status == 404
+      assert conn.status == 302
     end
 
     test "finds non-consensus block by hash", %{conn: conn} do
@@ -233,9 +233,9 @@ defmodule BlockScoutWeb.ChainControllerTest do
       assert redirected_to(conn) == address_path(conn, :show, address)
     end
 
-    test "redirects to 404 when it finds nothing", %{conn: conn} do
+    test "redirects to result page when it finds nothing", %{conn: conn} do
       conn = get(conn, "search?q=zaphod")
-      assert conn.status == 404
+      assert conn.status == 302
     end
   end
 end

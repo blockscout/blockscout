@@ -286,6 +286,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-logs", AddressLogsController, :search_logs)
 
+    get("/search-results", SearchController, :search_results)
+
     get("/token-autocomplete", ChainController, :token_autocomplete)
 
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)

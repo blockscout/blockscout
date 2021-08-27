@@ -205,7 +205,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
-        |> expect(:json_rpc, 5, fn
+        |> expect(:json_rpc, 4, fn
           [
             %{id: 0, jsonrpc: "2.0", method: "trace_block", params: ["0x3C365F"]},
             %{id: 1, jsonrpc: "2.0", method: "trace_block", params: ["0x3C3660"]}

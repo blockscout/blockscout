@@ -350,9 +350,11 @@
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("Sequential running number for an address, beginning with 0 for the first transaction. For example, if the nonce of a transaction is 10, it would be the 11th transaction sent from the sender's address.") %>
-              <%= gettext "Nonce" %>
+              <%= gettext "Nonce" %><span class="index-label ml-2"
+                                          data-toggle="tooltip"
+                                          title="<%= gettext("Index position of Transaction in the block.") %>"><%= gettext "Position" %></span>
             </dt>
-            <dd class="col-sm-9 col-lg-10"> <%= @transaction.nonce %> </dd>
+            <dd class="col-sm-9 col-lg-10"> <%= @transaction.nonce %><span class="index-label ml-2"><%= @transaction.index %></span> </dd>
           </dl>
           <%= unless value_transfer?(@transaction) do %>
             <dl class="row">
