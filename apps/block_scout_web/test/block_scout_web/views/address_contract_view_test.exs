@@ -38,25 +38,22 @@ defmodule BlockScoutWeb.AddressContractViewTest do
       result = AddressContractView.contract_lines_with_index(code)
 
       assert result == [
-               {"/**", " 1"},
-               {"* Submitted for verification at blockscout.com on ", " 2"},
-               {"*/", " 3"},
-               {"pragma solidity >=0.4.22 <0.6.0;", " 4"},
-               {"", " 5"},
-               {"struct Proposal {", " 6"},
-               {"  uint voteCount;", " 7"},
-               {"}", " 8"},
-               {"", " 9"},
-               {"address chairperson;", "10"},
-               {"mapping(address => Voter) voters;", "11"},
-               {"Proposal[] proposals;", "12"},
-               {"", "13"},
-               {"constructor(uint8 _numProposals) public {", "14"},
-               {"  chairperson = msg.sender;", "15"},
-               {"  voters[chairperson].weight = 1;", "16"},
-               {"  proposals.length = _numProposals;", "17"},
-               {"}", "18"},
-               {"", "19"}
+               {"pragma solidity >=0.4.22 <0.6.0;", " 1"},
+               {"", " 2"},
+               {"struct Proposal {", " 3"},
+               {"  uint voteCount;", " 4"},
+               {"}", " 5"},
+               {"", " 6"},
+               {"address chairperson;", " 7"},
+               {"mapping(address => Voter) voters;", " 8"},
+               {"Proposal[] proposals;", " 9"},
+               {"", "10"},
+               {"constructor(uint8 _numProposals) public {", "11"},
+               {"  chairperson = msg.sender;", "12"},
+               {"  voters[chairperson].weight = 1;", "13"},
+               {"  proposals.length = _numProposals;", "14"},
+               {"}", "15"},
+               {"", "16"}
              ]
     end
 
@@ -71,9 +68,6 @@ defmodule BlockScoutWeb.AddressContractViewTest do
       result = AddressContractView.contract_lines_with_index("a\nb\nc\nd\ne")
 
       assert Enum.map(result, fn {line, _number} -> line end) == [
-               "/**",
-               "* Submitted for verification at blockscout.com on ",
-               "*/",
                "a",
                "b",
                "c",
