@@ -160,18 +160,20 @@ defmodule Indexer.Transform.TokenTransfers do
   defp update_token(address_hash_string) do
     {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
 
-    token_params =
-      address_hash_string
-      |> MetadataRetriever.get_functions_of()
-
     token = Repo.get_by(Token, contract_address_hash: address_hash)
 
-    if token do
+    if token && !token.skip_metadata do
+      token_params =
+        address_hash_string
+        |> MetadataRetriever.get_total_supply_of()
+
       token_to_update =
         token
         |> Repo.preload([:contract_address])
 
-      {:ok, _} = Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
+      if token_params !== %{} do
+        {:ok, _} = Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
+      end
     end
 
     :ok

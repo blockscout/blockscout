@@ -201,6 +201,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           decimals: fragment("EXCLUDED.decimals"),
           type: fragment("EXCLUDED.type"),
           cataloged: fragment("EXCLUDED.cataloged"),
+          bridged: fragment("EXCLUDED.bridged"),
+          skip_metadata: fragment("EXCLUDED.skip_metadata"),
           # `holder_count` is not updated as a pre-existing token means the `holder_count` is already initialized OR
           #   need to be migrated with `priv/repo/migrations/scripts/update_new_tokens_holder_count_in_batches.sql.exs`
           # Don't update `contract_address_hash` as it is the primary key and used for the conflict target
@@ -210,13 +212,15 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       ],
       where:
         fragment(
-          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals, EXCLUDED.type, EXCLUDED.cataloged) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals, EXCLUDED.type, EXCLUDED.cataloged, EXCLUDED.bridged, EXCLUDED.skip_metadata) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
           token.name,
           token.symbol,
           token.total_supply,
           token.decimals,
           token.type,
-          token.cataloged
+          token.cataloged,
+          token.bridged,
+          token.skip_metadata
         )
     )
   end
