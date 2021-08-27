@@ -1,11 +1,45 @@
 <%= with {:ok, from_address} <- Chain.hash_to_address(@transfer.from_address_hash),
         {:ok, to_address} <- Chain.hash_to_address(@transfer.to_address_hash) do %>
-<dl class="row mb-2" style="margin-left: 0px;">
-<dt style="width: auto;"><b>From</b></dt><dd class="col-sm-1 col-md-4 address-mobile" style="padding-right: 0px; min-width: 100px; max-width: 335px; word-break: break-all;"><%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false, trimmed: false %></dd>
-<dt style="width: auto; padding-left: 10px;"><b>To</b></dt><dd class="col-sm-1 col-md-4 address-mobile" style="padding-right: 0px; min-width: 100px; max-width: 335px; word-break: break-all;"><%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %></dd>
-<dt style="width: auto; padding-left: 10px;"><b>For</b></dt>
-<% end %>
-<dd class="col-sm-12 col-md-12 col-lg-3 address-mobile" style="width: auto;">
-<%= render BlockScoutWeb.TransactionView, "_total_transfers.html", transfer: @transfer %>
-</dd>
-</dl>
+<tr>
+        <td>
+                <b style="margin-right: 15px;">From</b>
+        </td>
+        <td class="address-mobile" style="word-break: break-all;">
+                <%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false, trimmed: false %>
+        </td>
+        <td class="address-mobile" style="word-break: break-all">
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                        additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders", "btn-copy-token-transfer"],
+                        clipboard_text: from_address,
+                        aria_label: gettext("Copy From Address"),
+                        title: gettext("Copy From Address"),
+                        style: "position: relative;" %>
+        </td>
+</tr>
+<tr>
+        <td>
+                <b>To</b>
+        </td>
+        <td class="address-mobile" style="word-break: break-all;">
+                <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                
+        </td>
+        <td class="address-mobile" style="word-break: break-all;">
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders", "btn-copy-token-transfer"],
+                clipboard_text: to_address,
+                aria_label: gettext("Copy From Address"),
+                title: gettext("Copy From Address"),
+                style: "position: relative;"%>
+        </td>
+</tr>
+<tr style="margin-bottom: 15px;">
+        <td valign="top">
+                <b>For</b>
+        </td>
+        <% end %>       
+        <td class="address-mobile" style="width: auto;">
+                <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", transfer: @transfer %>
+        </td>
+</tr>
+<tr><td style="height: 10px;"></td></tr>
