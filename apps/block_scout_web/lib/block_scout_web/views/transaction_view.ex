@@ -16,16 +16,15 @@ defmodule BlockScoutWeb.TransactionView do
 
   @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace"]
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
-  @burn_address_hash burn_address_hash
-
   @token_burning_title "Token Burning"
   @token_minting_title "Token Minting"
   @token_transfer_title "Token Transfer"
+  @token_creation_title "Token Creation"
 
-  @token_burning_type "token-burning"
-  @token_minting_type "token-minting"
-  @token_transfer_type "token-transfer"
+  @token_burning_type :token_burning
+  @token_minting_type :token_minting
+  @token_creation_type :token_spawning
+  @token_transfer_type :token_transfer
 
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
@@ -63,59 +62,101 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def aggregate_token_transfers(token_transfers) do
-    {transfers, nft_transfers} =
+    %{
+      transfers: {ft_transfers, nft_transfers},
+      mintings: {ft_mintings, nft_mintings},
+      burnings: {ft_burnings, nft_burnings},
+      creations: {ft_creations, nft_creations}
+    } =
       token_transfers
-      |> Enum.reduce({%{}, []}, fn token_transfer, acc ->
-        if token_transfer.to_address_hash != @burn_address_hash &&
-             token_transfer.from_address_hash != @burn_address_hash do
-          aggregate_reducer(token_transfer, acc)
-        else
-          acc
+      |> Enum.reduce(
+        %{
+          transfers: {[], []},
+          mintings: {[], []},
+          burnings: {[], []},
+          creations: {[], []}
+        },
+        fn token_transfer, acc ->
+          token_transfer_type = Chain.get_token_transfer_type(token_transfer)
+
+          case token_transfer_type do
+            :token_transfer ->
+              transfers = aggregate_reducer(token_transfer, acc.transfers)
+
+              %{
+                transfers: transfers,
+                mintings: acc.mintings,
+                burnings: acc.burnings,
+                creations: acc.creations
+              }
+
+            :token_burning ->
+              burnings = aggregate_reducer(token_transfer, acc.burnings)
+
+              %{
+                transfers: acc.transfers,
+                mintings: acc.mintings,
+                burnings: burnings,
+                creations: acc.creations
+              }
+
+            :token_minting ->
+              mintings = aggregate_reducer(token_transfer, acc.mintings)
+
+              %{
+                transfers: acc.transfers,
+                mintings: mintings,
+                burnings: acc.burnings,
+                creations: acc.creations
+              }
+
+            :token_spawning ->
+              creations = aggregate_reducer(token_transfer, acc.creations)
+
+              %{
+                transfers: acc.transfers,
+                mintings: acc.mintings,
+                burnings: acc.burnings,
+                creations: creations
+              }
+          end
         end
-      end)
+      )
 
-    final_transfers = Map.values(transfers)
+    transfers = ft_transfers ++ nft_transfers
 
-    final_transfers ++ nft_transfers
+    mintings = ft_mintings ++ nft_mintings
+
+    burnings = ft_burnings ++ nft_burnings
+
+    creations = ft_creations ++ nft_creations
+
+    %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations}
   end
 
-  def aggregate_token_mintings(token_transfers) do
-    {transfers, nft_transfers} =
-      token_transfers
-      |> Enum.reduce({%{}, []}, fn token_transfer, acc ->
-        if token_transfer.from_address_hash == @burn_address_hash do
-          aggregate_reducer(token_transfer, acc)
-        else
-          acc
-        end
-      end)
-
-    final_transfers = Map.values(transfers)
-
-    final_transfers ++ nft_transfers
-  end
-
-  def aggregate_token_burnings(token_transfers) do
-    {transfers, nft_transfers} =
-      token_transfers
-      |> Enum.reduce({%{}, []}, fn token_transfer, acc ->
-        if token_transfer.to_address_hash == @burn_address_hash do
-          aggregate_reducer(token_transfer, acc)
-        else
-          acc
-        end
-      end)
-
-    final_transfers = Map.values(transfers)
-
-    final_transfers ++ nft_transfers
-  end
-
-  defp aggregate_reducer(%{amount: amount} = token_transfer, {acc1, acc2}) when is_nil(amount) do
+  defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
+       when is_nil(amount) and is_nil(amounts) do
     new_entry = %{
       token: token_transfer.token,
       amount: nil,
+      amounts: [],
       token_id: token_transfer.token_id,
+      token_ids: [],
+      to_address_hash: token_transfer.to_address_hash,
+      from_address_hash: token_transfer.from_address_hash
+    }
+
+    {acc1, [new_entry | acc2]}
+  end
+
+  defp aggregate_reducer(%{amount: amount, amounts: amounts} = token_transfer, {acc1, acc2})
+       when is_nil(amount) and not is_nil(amounts) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: nil,
+      amounts: amounts,
+      token_id: nil,
+      token_ids: token_transfer.token_ids,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -127,18 +168,50 @@ defmodule BlockScoutWeb.TransactionView do
     new_entry = %{
       token: token_transfer.token,
       amount: token_transfer.amount,
+      amounts: [],
       token_id: token_transfer.token_id,
+      token_ids: [],
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
 
-    existing_entry = Map.get(acc1, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
+    existing_entry =
+      acc1
+      |> Enum.find(fn entry ->
+        entry.to_address_hash == token_transfer.to_address_hash &&
+          entry.from_address_hash == token_transfer.from_address_hash &&
+          entry.token == token_transfer.token
+      end)
 
     new_acc1 =
-      Map.put(acc1, token_transfer.token_contract_address, %{
-        new_entry
-        | amount: Decimal.add(new_entry.amount, existing_entry.amount)
-      })
+      if token_transfer.token_id do
+        [new_entry | acc1]
+      else
+        if existing_entry do
+          acc1
+          |> Enum.map(fn entry ->
+            if entry.to_address_hash == token_transfer.to_address_hash &&
+                 entry.from_address_hash == token_transfer.from_address_hash &&
+                 entry.token == token_transfer.token do
+              updated_entry =
+                if new_entry.amount do
+                  %{
+                    entry
+                    | amount: Decimal.add(new_entry.amount, entry.amount)
+                  }
+                else
+                  entry
+                end
+
+              updated_entry
+            else
+              entry
+            end
+          end)
+        else
+          [new_entry | acc1]
+        end
+      end
 
     {new_acc1, acc2}
   end
@@ -218,6 +291,20 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def confirmations_ds_name(blocks_amount_str) do
+    case Integer.parse(blocks_amount_str) do
+      {blocks_amount, ""} ->
+        if rem(blocks_amount, 10) == 1 do
+          "block"
+        else
+          "blocks"
+        end
+
+      _ ->
+        ""
+    end
+  end
+
   def contract_creation?(%Transaction{to_address: nil}), do: true
 
   def contract_creation?(_), do: false
@@ -257,6 +344,13 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def formatted_status(status) do
+    case status do
+      :pending -> gettext("Unconfirmed")
+      _ -> gettext("Confirmed")
+    end
+  end
+
+  def formatted_result(status) do
     case status do
       :pending -> gettext("Pending")
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
@@ -298,6 +392,20 @@ defmodule BlockScoutWeb.TransactionView do
     Number.to_string!(gas_used)
   end
 
+  def gas_used_perc(%Transaction{gas_used: nil}), do: nil
+
+  def gas_used_perc(%Transaction{gas_used: gas_used, gas: gas}) do
+    if Decimal.cmp(gas, 0) == :gt do
+      gas_used
+      |> Decimal.div(gas)
+      |> Decimal.mult(100)
+      |> Decimal.round(2)
+      |> Number.to_string!()
+    else
+      nil
+    end
+  end
+
   def hash(%Transaction{hash: hash}) do
     to_string(hash)
   end
@@ -336,11 +444,12 @@ defmodule BlockScoutWeb.TransactionView do
   def transaction_display_type(%Transaction{} = transaction) do
     cond do
       involves_token_transfers?(transaction) ->
-        token_transfer_type = get_token_transfer_type(transaction.token_transfers)
+        token_transfer_type = get_transaction_type_from_token_transfers(transaction.token_transfers)
 
         case token_transfer_type do
           @token_minting_type -> gettext(@token_minting_title)
           @token_burning_type -> gettext(@token_burning_title)
+          @token_creation_type -> gettext(@token_creation_title)
           @token_transfer_type -> gettext(@token_transfer_title)
         end
 
@@ -407,35 +516,27 @@ defmodule BlockScoutWeb.TransactionView do
   defp tab_name(["logs"]), do: gettext("Logs")
   defp tab_name(["raw-trace"]), do: gettext("Raw Trace")
 
-  defp get_token_transfer_type(token_transfers) do
-    token_transfers
-    |> Enum.reduce("", fn token_transfer, type ->
-      cond do
-        token_transfer.to_address_hash == @burn_address_hash ->
-          update_transfer_type_if_burning(type)
+  defp get_transaction_type_from_token_transfers(token_transfers) do
+    token_transfers_types =
+      token_transfers
+      |> Enum.map(fn token_transfer ->
+        Chain.get_token_transfer_type(token_transfer)
+      end)
 
-        token_transfer.from_address_hash == @burn_address_hash ->
-          update_transfer_type_if_minting(type)
+    burnings_count =
+      Enum.count(token_transfers_types, fn token_transfers_type -> token_transfers_type == @token_burning_type end)
 
-        true ->
-          @token_transfer_type
-      end
-    end)
-  end
+    mintings_count =
+      Enum.count(token_transfers_types, fn token_transfers_type -> token_transfers_type == @token_minting_type end)
 
-  defp update_transfer_type_if_minting(type) do
-    case type do
-      "" -> @token_minting_type
-      @token_burning_type -> @token_transfer_type
-      _ -> type
-    end
-  end
+    creations_count =
+      Enum.count(token_transfers_types, fn token_transfers_type -> token_transfers_type == @token_creation_type end)
 
-  defp update_transfer_type_if_burning(type) do
-    case type do
-      "" -> @token_burning_type
-      @token_minting_type -> @token_transfer_type
-      _ -> type
+    cond do
+      Enum.count(token_transfers_types) == burnings_count -> @token_burning_type
+      Enum.count(token_transfers_types) == mintings_count -> @token_minting_type
+      Enum.count(token_transfers_types) == creations_count -> @token_creation_type
+      true -> @token_transfer_type
     end
   end
 end

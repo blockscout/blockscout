@@ -480,7 +480,7 @@ defmodule EthereumJSONRPC.Block do
   end
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size cumulativeDifficulty totalDifficulty paidFees) and
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size cumulativeDifficulty totalDifficulty paidFees) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
   end
@@ -504,5 +504,10 @@ defmodule EthereumJSONRPC.Block do
 
   defp entry_to_elixir({"transactions" = key, transactions}) do
     {key, Transactions.to_elixir(transactions)}
+  end
+
+  # Arbitrum fields
+  defp entry_to_elixir({"l1BlockNumber", _}) do
+    {:ignore, :ignore}
   end
 end
