@@ -38,6 +38,8 @@ defmodule BlockScoutWeb.WebRouter do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
 
+    get("/block/:hash_or_number", BlockController, :show_block)
+
     get("/reorgs", BlockController, :reorg, as: :reorg)
 
     get("/uncles", BlockController, :uncle, as: :uncle)

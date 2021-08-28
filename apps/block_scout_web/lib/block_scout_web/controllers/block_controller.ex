@@ -28,6 +28,8 @@ defmodule BlockScoutWeb.BlockController do
     end
   end
 
+  def show_block(conn, params), do: show(conn, params)
+
   def show(conn, %{"hash_or_number" => hash_or_number}) do
     block_transaction_path =
       conn
