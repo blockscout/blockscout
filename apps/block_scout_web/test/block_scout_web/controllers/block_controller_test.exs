@@ -26,6 +26,21 @@ defmodule BlockScoutWeb.BlockControllerTest do
     end
   end
 
+  describe "GET show_block/2" do
+    test "with block redirects to blocks transactions route", %{conn: conn} do
+      insert(:block, number: 3)
+      conn = get(conn, "/block/3")
+      assert redirected_to(conn) =~ "/blocks/3/transactions"
+    end
+
+    test "with uncle block redirects to block_hash route", %{conn: conn} do
+      uncle = insert(:block, consensus: false)
+
+      conn = get(conn, block_path(conn, :show_block, uncle))
+      assert redirected_to(conn) =~ "/blocks/#{to_string(uncle.hash)}/transactions"
+    end
+  end
+
   describe "GET index/2" do
     test "returns all blocks", %{conn: conn} do
       4
