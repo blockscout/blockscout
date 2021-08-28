@@ -9,6 +9,7 @@
 - [#4452](https://github.com/blockscout/blockscout/pull/4452) - Add names for smart-conrtact's function response
 
 ### Fixes
+- [#4576](https://github.com/blockscout/blockscout/pull/4576) - Add temp /block route
 - [#4553](https://github.com/blockscout/blockscout/pull/4553) - Indexer performance update: skip genesis block in requesting of trace_block API endpoint
 - [#4542](https://github.com/blockscout/blockscout/pull/4542) - Indexer performance update: Deduplicate tokens in the indexer token transfers transformer
 - [#4535](https://github.com/blockscout/blockscout/pull/4535) - Indexer performance update:: Eliminate multiple updates of the same token while parsing mint/burn token transfers batch
