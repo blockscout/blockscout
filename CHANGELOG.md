@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
 - [#4587](https://github.com/blockscout/blockscout/pull/4587) - Enable navbar menu on Search results page

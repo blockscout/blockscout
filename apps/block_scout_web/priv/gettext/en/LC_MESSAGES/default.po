@@ -1003,8 +1003,9 @@ msgid "ERC-721 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:85
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:120
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
 msgid "ETH"
 msgstr ""
 
@@ -1765,7 +1766,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
 msgid "Query"
 msgstr ""
 
@@ -2839,7 +2840,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:119
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:124
 msgid "WEI"
 msgstr ""
 
@@ -2893,7 +2894,7 @@ msgid "Working Stake Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
 msgid "Write"
 msgstr ""
 
