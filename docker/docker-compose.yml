@@ -2,7 +2,6 @@ version: "3"
 
 services:
 
-  # this is a helper service used because there's no official hardhat image
   postgres:
     image: omgx/blockexplorer-postgres:production-v1
     command: -p 5433
@@ -13,10 +12,8 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     ports:
-        # expose the service to the host for integration testing
       - 5433:5433
 
-  # base service builder
   blockscout:
     image: omgx/blockexplorer-blockscout:production-v1
     restart: always
