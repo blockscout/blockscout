@@ -737,8 +737,6 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:14
 #: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:15
-#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:31
-#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:32
 #: lib/block_scout_web/templates/transaction/overview.html.eex:165
 #: lib/block_scout_web/templates/transaction/overview.html.eex:166
 msgid "Copy From Address"
@@ -773,6 +771,9 @@ msgid "Copy Source Code"
 msgstr ""
 
 #, elixir-format
+#:
+#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:31
+#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:32
 #: lib/block_scout_web/templates/transaction/overview.html.eex:194
 #: lib/block_scout_web/templates/transaction/overview.html.eex:195
 #: lib/block_scout_web/templates/transaction/overview.html.eex:204
