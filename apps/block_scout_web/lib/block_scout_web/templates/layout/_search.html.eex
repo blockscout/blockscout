@@ -4,7 +4,7 @@
 		<div class="form-control search-control me auto <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>">
 			<input id="<%= @id %>" class="main-search-autocomplete" data-test="search_input" type="text" tabindex="1">
 		</div>
-		<div class="input-group-append left">
+		<div class="input-group-append left search-icon">
 			<button class="input-group-text" id="search-icon">
 			<%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
 			</button>

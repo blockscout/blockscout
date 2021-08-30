@@ -7,3 +7,10 @@ $alert-danger-color: #ff7986 !default;
     border-color: $alert-danger-border-color;
     color: $alert-danger-color;
 }
+
+.alert-warning {
+    background-color: #000 !important;
+    border-color: #000 !important;
+    color: #ffffff !important;
+    border-radius: 0px !important;
+}

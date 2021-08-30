@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+
+  # this is a helper service used because there's no official hardhat image
+  postgres:
+    image: omgx/blockexplorer-postgres:production-v1
+    command: -p 5433
+    environment:
+      POSTGRES_PASSWORD: ""
+      POSTGRES_USER: 'postgres'
+      POSTGRES_HOST_AUTH_METHOD: 'trust'
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+        # expose the service to the host for integration testing
+      - 5433:5433
+
+  # base service builder
+  blockscout:
+    image: omgx/blockexplorer-blockscout:production-v1
+    restart: always
+    command:
+      /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
+    environment:
+      COIN: 'ETH'
+      NETWORK: 'Boba'
+      SUBNETWORK: 'Rinkeby'
+      DATABASE_URL: 'postgresql://postgres:@postgres:5433/explorer?ssl=false'
+      MIX_ENV: 'prod'
+      ETHEREUM_JSONRPC_VARIANT: 'geth'
+      LOGO: '/images/boba_logo.svg'
+      SUPPORTED_CHAINS: '[{"title":"Boba Mainnet","url":"https://blockexplorer.boba.network","hide_in_dropdown?": false},{"title":"Boba Rinkeby","url":"https://blockexplorer.rinkeby.boba.network","test_net?":true},{"title":"Boba Rinkeby Integration","url":"https://blockexplorer.rinkeby-integration.boba.network","test_net?":true,"hide_in_dropdown?": true}]'
+      ETHEREUM_JSONRPC_HTTP_URL: 'http://host.docker.internal:8545'
+      ETHEREUM_JSONRPC_WS_URL: 'ws://host.docker.internal:8546'
+      BLOCKSCOUT_VERSION: '1.0.0'
+    ports:
+      - 4000:4000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

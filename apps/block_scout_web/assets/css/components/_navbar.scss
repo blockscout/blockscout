@@ -1,7 +1,7 @@
 // Default variables
-$header-background-color: #fff !default;
-$header-links-color: #828ba0 !default;
-$header-links-color-active: #333 !default;
+$header-background-color: #000 !default;
+$header-links-color: #fff !default;
+$header-links-color-active: #fff !default;
 $header-icon-color: $header-links-color !default;
 $header-icon-color-hover: $secondary !default;
 $header-icon-border-color-hover: $secondary !default;
@@ -34,7 +34,7 @@ $navbar-logo-width: auto !default;
       transition: $transition-cont;
 
       &:before {
-        background-color: $header-icon-border-color-hover;
+        // background-color: $header-icon-border-color-hover;
         border-radius: 0 0 4px 4px;
         content: "";
         display: block;
@@ -187,7 +187,7 @@ $navbar-logo-width: auto !default;
     }
 
     * {
-      fill: $header-textfield-magnifier-color;
+      fill: #828ba0;
     }
   }
   .input-group-text {
