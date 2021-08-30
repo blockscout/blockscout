@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
 
