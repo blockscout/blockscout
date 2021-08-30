@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#4586](https://github.com/blockscout/blockscout/pull/4586) - Fix floating tooltips on the token transfer family blocks
 - [#4587](https://github.com/blockscout/blockscout/pull/4587) - Enable navbar menu on Search results page
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
