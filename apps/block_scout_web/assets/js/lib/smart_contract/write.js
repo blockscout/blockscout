@@ -151,5 +151,5 @@ function getTxValue ($functionInputs) {
   const $txValue = $functionInputs.filter('[tx-value]:first')
   const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
   const txValueStr = txValue && txValue.toString(16)
-  return txValueStr
+  return '0x' + txValueStr
 }
