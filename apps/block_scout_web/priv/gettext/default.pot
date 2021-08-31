@@ -2134,6 +2134,11 @@ msgid "Telegram"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:31
+msgid "Discord"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:60
 msgid "Test Networks"
 msgstr ""

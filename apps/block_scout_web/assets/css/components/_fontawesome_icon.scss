@@ -25,6 +25,14 @@
       mask-size: 22px !important;
       -webkit-mask-size: 22px !important;
     }
+    &.discord {
+      -webkit-mask: url(/images/icons/fontawesome/discord.svg) no-repeat center;
+      mask: url(/images/icons/fontawesome/discord.svg) no-repeat center;
+      height: 22px;
+      width: 22px;
+      mask-size: 22px !important;
+      -webkit-mask-size: 22px !important;
+    }
     &.bar-chart {
       -webkit-mask: url(/images/icons/fontawesome/bar-chart.svg) no-repeat center;
       mask: url(/images/icons/fontawesome/bar-chart.svg) no-repeat center;
