@@ -150,6 +150,9 @@ function getTxValue ($functionInputs) {
   const WEI_MULTIPLIER = 10 ** 18
   const $txValue = $functionInputs.filter('[tx-value]:first')
   const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
-  const txValueStr = txValue && txValue.toString(16)
+  var txValueStr = txValue && txValue.toString(16)
+  if (!txValueStr) {
+    txValueStr = '0'
+  }
   return '0x' + txValueStr
 }
