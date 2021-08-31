@@ -430,9 +430,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       expected_result = [
         %{
           "Address" => to_string(contract.address_hash),
-          "SourceCode" =>
-            "/**\n* Submitted for verification at blockscout.com on #{contract.inserted_at}\n*/\n" <>
-              contract.contract_source_code,
+          "SourceCode" => contract.contract_source_code,
           "ABI" => Jason.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
@@ -475,9 +473,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       expected_result = [
         %{
           "Address" => to_string(contract.address_hash),
-          "SourceCode" =>
-            "/**\n* Submitted for verification at blockscout.com on #{contract.inserted_at}\n*/\n" <>
-              contract.contract_source_code,
+          "SourceCode" => contract.contract_source_code,
           "ABI" => Jason.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
@@ -575,9 +571,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       expected_result = [
         %{
           "Address" => to_string(contract.address_hash),
-          "SourceCode" =>
-            "/**\n* Submitted for verification at blockscout.com on #{contract.inserted_at}\n*/\n" <>
-              contract.contract_source_code,
+          "SourceCode" => contract.contract_source_code,
           "ABI" => Jason.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
