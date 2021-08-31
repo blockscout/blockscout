@@ -32,7 +32,7 @@ lib/explorer/third_party_integrations/sourcify.ex:73
 lib/block_scout_web/views/transaction_view.ex:137
 lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197
-lib/block_scout_web/templates/address_contract/index.html.eex:162
-lib/block_scout_web/templates/address_contract/index.html.eex:205
+lib/block_scout_web/templates/address_contract/index.html.eex:168
+lib/block_scout_web/templates/address_contract/index.html.eex:211
 lib/explorer/smart_contract/reader.ex:379
 
