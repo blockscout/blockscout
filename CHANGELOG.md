@@ -1,8 +1,15 @@
 ## Current
 
 ### Features
+- [#4593](https://github.com/blockscout/blockscout/pull/4593) - Add status in `Position` pane for txs have no block
+- [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4591](https://github.com/blockscout/blockscout/pull/4591) - Add step and min value for txValue input field
+- [#4589](https://github.com/blockscout/blockscout/pull/4589) - Fix solid outputs on contract read page
+- [#4586](https://github.com/blockscout/blockscout/pull/4586) - Fix floating tooltips on the token transfer family blocks
+- [#4587](https://github.com/blockscout/blockscout/pull/4587) - Enable navbar menu on Search results page
+- [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
 
