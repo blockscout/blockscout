@@ -1006,7 +1006,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:126
 msgid "ETH"
 msgstr ""
 
@@ -2841,7 +2841,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:124
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
 msgid "WEI"
 msgstr ""
 
