@@ -737,8 +737,6 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:14
 #: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:15
-#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:31
-#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:32
 #: lib/block_scout_web/templates/transaction/overview.html.eex:165
 #: lib/block_scout_web/templates/transaction/overview.html.eex:166
 msgid "Copy From Address"
@@ -773,6 +771,9 @@ msgid "Copy Source Code"
 msgstr ""
 
 #, elixir-format
+#:
+#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:31
+#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:32
 #: lib/block_scout_web/templates/transaction/overview.html.eex:194
 #: lib/block_scout_web/templates/transaction/overview.html.eex:195
 #: lib/block_scout_web/templates/transaction/overview.html.eex:204
@@ -1003,8 +1004,9 @@ msgid "ERC-721 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:85
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:120
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:126
 msgid "ETH"
 msgstr ""
 
@@ -1765,7 +1767,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
 msgid "Query"
 msgstr ""
 
@@ -2844,7 +2846,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:119
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
 msgid "WEI"
 msgstr ""
 
@@ -2898,7 +2900,7 @@ msgid "Working Stake Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
 msgid "Write"
 msgstr ""
 
