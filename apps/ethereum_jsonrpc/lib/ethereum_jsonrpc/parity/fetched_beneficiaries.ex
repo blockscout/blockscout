@@ -83,9 +83,11 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
   `trace_block` requests for `id_to_params`.
   """
   def requests(id_to_params) when is_map(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{block_quantity: block_quantity}} ->
+    id_to_params
+    |> Enum.map(fn {id, %{block_quantity: block_quantity}} ->
       request(%{id: id, block_quantity: block_quantity})
     end)
+    |> Enum.filter(&(!is_nil(&1)))
   end
 
   @spec response_to_params_set(%{id: id, result: nil}, %{id => %{block_quantity: block_quantity}}) ::
@@ -121,7 +123,11 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
   end
 
   defp request(%{id: id, block_quantity: block_quantity}) when is_integer(id) and is_binary(block_quantity) do
-    EthereumJSONRPC.request(%{id: id, method: "trace_block", params: [block_quantity]})
+    if block_quantity == "0x0" do
+      nil
+    else
+      EthereumJSONRPC.request(%{id: id, method: "trace_block", params: [block_quantity]})
+    end
   end
 
   defp traces_to_params_set(traces, block_number) when is_list(traces) and is_integer(block_number) do

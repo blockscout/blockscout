@@ -63,12 +63,18 @@
               <dd class="col-md-4"><%= target_contract.optimization_runs %></dd>
             <% end %>
           </dl>
-          <%= if smart_contract_verified && target_contract.evm_version do %>
-            <dl class="row">
-              <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "EVM Version" %></dt>
-              <dd class="col-sm-8 col-md-10"><%= target_contract.evm_version %></dd>
-            </dl>
-          <% end %>
+          <dl class="row">
+            <%= if smart_contract_verified && target_contract.evm_version do %>
+              <dt class="col-md-2 text-muted"><%= gettext "EVM Version" %></dt>
+              <dd class="col-md-4"><%= target_contract.evm_version %></dd>
+              <div class="d-none d-sm-block d-md-none"></br></br></div>
+              <div class="d-block d-sm-none"></br></br></div>
+            <% end %>
+            <%= if target_contract.inserted_at do %>
+              <dt class="col-md-2 text-muted"><%= gettext "Verified at" %></dt>
+              <dd class="col-md-4"><%= target_contract.inserted_at %></dd>
+            <% end %>
+          </dl>
         <hr/>
         <%= if smart_contract_verified && target_contract.constructor_arguments do %>
           <section>
@@ -89,7 +95,7 @@
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(target_contract.contract_source_code, target_contract.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(target_contract.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
           </div>
         </section>
 
@@ -103,7 +109,7 @@
                 </button>
               </div>
               <div class="tile tile-muted mb-4">
-                <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(additional_source.contract_source_code, additional_source.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+                <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(additional_source.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
               </div>
             </section>
           <% end)%>

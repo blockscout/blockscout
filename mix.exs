@@ -10,11 +10,7 @@ defmodule BlockScout.Mixfile do
       version: "2.0",
       apps_path: "apps",
       deps: deps(),
-      dialyzer: [
-        plt_add_deps: :transitive,
-        plt_add_apps: ~w(ex_unit mix)a,
-        ignore_warnings: ".dialyzer-ignore"
-      ],
+      dialyzer: dialyzer(),
       elixir: "~> 1.10",
       preferred_cli_env: [
         credo: :test,
@@ -35,6 +31,16 @@ defmodule BlockScout.Mixfile do
   end
 
   ## Private Functions
+
+  defp dialyzer() do
+    [
+      plt_add_deps: :transitive,
+      plt_add_apps: ~w(ex_unit mix)a,
+      ignore_warnings: ".dialyzer-ignore",
+      plt_core_path: "priv/plts",
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+    ]
+  end
 
   defp aliases(env) do
     [

@@ -954,7 +954,7 @@ defmodule Explorer.Chain do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
     variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-    if variant == EthereumJSONRPC.Ganache do
+    if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
       true
     else
       with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
@@ -3925,12 +3925,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp format_source_code_output(smart_contract) do
-    SmartContract.add_submitted_comment(
-      smart_contract.contract_source_code,
-      smart_contract.inserted_at
-    )
-  end
+  defp format_source_code_output(smart_contract), do: smart_contract.contract_source_code
 
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
