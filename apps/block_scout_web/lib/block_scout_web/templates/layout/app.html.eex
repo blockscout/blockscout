@@ -243,7 +243,8 @@
       @view_module != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
-      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView
+      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
+      @view_module != Elixir.BlockScoutWeb.SearchView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
