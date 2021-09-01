@@ -107,12 +107,13 @@
       </div>
     <% else %>
       <%= if outputs?(function["outputs"]) do %>
-        <%= for output <- function["outputs"] do %>
+        <% length = Enum.count(function["outputs"]) %>
+        <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>
           <%= if address?(output["type"]) do %>
             <div class="py-2 word-break-all">
               <%= link(
                 output["value"],
-                to: address_path(@conn, :show, output["value"])) %>
+                to: address_path(@conn, :show, output["value"])) %><%= if length > 1 and index < length - 1 do %>,&#160;<% end %>
             </div>
           <% else %>
             <%= if output["type"] == "uint256" do %>
