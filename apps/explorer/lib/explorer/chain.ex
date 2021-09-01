@@ -722,6 +722,20 @@ defmodule Explorer.Chain do
     |> Enum.into(%{})
   end
 
+  def timestamp_by_block_hash(block_hashes) when is_list(block_hashes) do
+    query =
+      from(
+        block in Block,
+        where: block.hash in ^block_hashes and block.consensus == true,
+        group_by: block.hash,
+        select: {block.hash, block.timestamp}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s in the `t:Explorer.Chain.Block.t/0`.
 
@@ -740,7 +754,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    |> fetch_transactions_in_ascending_order_by_index()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
@@ -979,7 +993,7 @@ defmodule Explorer.Chain do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
     variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-    if variant == EthereumJSONRPC.Ganache do
+    if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
       true
     else
       with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
@@ -4009,12 +4023,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp format_source_code_output(smart_contract) do
-    SmartContract.add_submitted_comment(
-      smart_contract.contract_source_code,
-      smart_contract.inserted_at
-    )
-  end
+  defp format_source_code_output(smart_contract), do: smart_contract.contract_source_code
 
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
@@ -4203,6 +4212,12 @@ defmodule Explorer.Chain do
   defp fetch_transactions(paging_options \\ nil) do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> handle_paging_options(paging_options)
+  end
+
+  defp fetch_transactions_in_ascending_order_by_index(paging_options) do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, asc: transaction.index)
     |> handle_paging_options(paging_options)
   end
 
@@ -4492,14 +4507,17 @@ defmodule Explorer.Chain do
   def uncataloged_token_transfer_block_numbers do
     query =
       from(l in Log,
-        join: t in assoc(l, :transaction),
-        left_join: tf in TokenTransfer,
-        on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
+        as: :log,
         where: l.first_topic == unquote(TokenTransfer.constant()),
-        where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
-        where: not is_nil(t.block_hash),
-        select: t.block_number,
-        distinct: t.block_number
+        where:
+          not exists(
+            from(tf in TokenTransfer,
+              where: tf.transaction_hash == parent_as(:log).transaction_hash,
+              where: tf.log_index == parent_as(:log).index
+            )
+          ),
+        select: l.block_number,
+        distinct: l.block_number
       )
 
     Repo.stream_reduce(query, [], &[&1 | &2])

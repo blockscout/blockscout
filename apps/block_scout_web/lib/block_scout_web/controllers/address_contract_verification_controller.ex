@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.RPC.ContractController
+  alias BlockScoutWeb.Controller
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
@@ -13,7 +14,12 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
-      redirect(conn, to: address_path(conn, :show, address_hash_string))
+      address_path =
+        conn
+        |> address_path(:show, address_hash_string)
+        |> Controller.full_path()
+
+      redirect(conn, to: address_path)
     else
       changeset =
         SmartContract.changeset(
@@ -141,7 +147,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   def get_metadata_and_publish(address_hash_string, nil) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
-        proccess_metadata_add_publish(address_hash_string, verification_metadata, false)
+        process_metadata_and_publish(address_hash_string, verification_metadata, false)
 
       {:error, %{"error" => error}} ->
         {:error, error: error}
@@ -151,7 +157,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   def get_metadata_and_publish(address_hash_string, conn) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
-        proccess_metadata_add_publish(address_hash_string, verification_metadata, false, conn)
+        process_metadata_and_publish(address_hash_string, verification_metadata, false, conn)
 
       {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
@@ -161,7 +167,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     end
   end
 
-  defp proccess_metadata_add_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
+  defp process_metadata_and_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
     %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
       parse_params_from_sourcify(address_hash_string, verification_metadata)
 
@@ -194,10 +200,9 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   end
 
   def parse_params_from_sourcify(address_hash_string, verification_metadata) do
-    verification_metadata_json =
+    [verification_metadata_json] =
       verification_metadata
-      |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".json" end)
-      |> Enum.at(0)
+      |> Enum.filter(&(Map.get(&1, "name") == "metadata.json"))
 
     full_params_initial = parse_json_from_sourcify_for_insertion(verification_metadata_json)
 
@@ -205,34 +210,31 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       verification_metadata
       |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".sol" end)
 
-    full_params =
-      verification_metadata_sol
-      |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
-                                             full_params_acc ->
-        compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
+    verification_metadata_sol
+    |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
+                                           full_params_acc ->
+      compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
 
-        if String.downcase(name) == String.downcase(compilation_target_file_name) do
-          %{
-            "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-            "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
-          }
-        else
-          secondary_sources = [
-            prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
-          ]
+      if String.downcase(name) == String.downcase(compilation_target_file_name) do
+        %{
+          "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
+          "abi" => Map.get(full_params_acc, "abi"),
+          "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
+          "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
+        }
+      else
+        secondary_sources = [
+          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
+        ]
 
-          %{
-            "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => secondary_sources,
-            "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
-          }
-        end
-      end)
-
-    full_params
+        %{
+          "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
+          "abi" => Map.get(full_params_acc, "abi"),
+          "secondary_sources" => secondary_sources,
+          "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
+        }
+      end
+    end)
   end
 
   defp prepare_additional_source(address_hash_string, %{"name" => name, "content" => content, "path" => _path}) do
@@ -300,10 +302,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         else
           case Sourcify.check_by_address_any(address_hash_string) do
             {:ok, "full", metadata} ->
-              proccess_metadata_add_publish(address_hash_string, metadata, false)
+              process_metadata_and_publish(address_hash_string, metadata, false)
 
             {:ok, "partial", metadata} ->
-              proccess_metadata_add_publish(address_hash_string, metadata, true)
+              process_metadata_and_publish(address_hash_string, metadata, true)
 
             _ ->
               {:error, :not_verified}

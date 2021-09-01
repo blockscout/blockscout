@@ -232,12 +232,25 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiariesTest do
   describe "requests/1" do
     test "maps multiple ids to request params map" do
       input = %{
+        0 => %{block_quantity: EthereumJSONRPC.integer_to_quantity(1)},
+        1 => %{block_quantity: EthereumJSONRPC.integer_to_quantity(2)}
+      }
+
+      expected_output = [
+        %{id: 0, jsonrpc: "2.0", method: "trace_block", params: [EthereumJSONRPC.integer_to_quantity(1)]},
+        %{id: 1, jsonrpc: "2.0", method: "trace_block", params: [EthereumJSONRPC.integer_to_quantity(2)]}
+      ]
+
+      assert FetchedBeneficiaries.requests(input) == expected_output
+    end
+
+    test "skips Genesis block" do
+      input = %{
         0 => %{block_quantity: EthereumJSONRPC.integer_to_quantity(0)},
         1 => %{block_quantity: EthereumJSONRPC.integer_to_quantity(1)}
       }
 
       expected_output = [
-        %{id: 0, jsonrpc: "2.0", method: "trace_block", params: [EthereumJSONRPC.integer_to_quantity(0)]},
         %{id: 1, jsonrpc: "2.0", method: "trace_block", params: [EthereumJSONRPC.integer_to_quantity(1)]}
       ]
 

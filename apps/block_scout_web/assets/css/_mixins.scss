@@ -213,6 +213,37 @@
   }
 }
 
+@mixin square-icon-button-inline($color, $dimensions) {
+  align-items: center;
+  border: 1px solid $color;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline;
+  height: $dimensions;
+  justify-content: center;
+  transition: $transition-cont;
+  width: $dimensions;
+
+  svg {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  path {
+    fill: $color;
+    transition: $transition-cont;
+  }
+
+  &:hover {
+    background-color: $color;
+
+    path {
+      fill: #fff;
+    }
+  }
+}
+
 @mixin image-2x($image, $width: 100%, $height: 100%) {
   @media (min--moz-device-pixel-ratio: 1.3),
          (-o-min-device-pixel-ratio: 2.6/2),
