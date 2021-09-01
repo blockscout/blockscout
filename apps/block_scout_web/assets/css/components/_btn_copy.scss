@@ -19,8 +19,10 @@ $btn-copy-small-dimensions: 22px !default;
   }
   &.btn-copy-icon-small {
     &.btn-copy-icon-custom {
-      position: absolute;
-      top: -1.2px;
+      display: inline-block;
+      vertical-align: top;
+      // position: absolute;
+      // top: -1.2px;
     }
     @include square-icon-button($btn-copy-color, $btn-copy-small-dimensions);
     &.btn-copy-icon-no-borders {
