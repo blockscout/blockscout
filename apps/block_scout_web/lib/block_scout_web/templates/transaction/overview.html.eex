@@ -2,6 +2,13 @@
 <% from_address_hash = @transaction.from_address_hash %>
 <% to_address_hash = @transaction.to_address_hash %>
 <% created_address_hash = @transaction.created_contract_address_hash %>
+<% type = if @transaction.type == 2, do: "2 (EIP-1559)", else: @transaction.type %>
+<% base_fee_per_gas = if block, do: block.base_fee_per_gas, else: nil %>
+<% max_priority_fee_per_gas = @transaction.max_priority_fee_per_gas %>
+<% max_fee_per_gas = @transaction.max_fee_per_gas %>
+<% burned_fee = if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas), do: Wei.mult(base_fee_per_gas, @transaction.gas_used), else: nil %>
+<% priority_fee_per_gas = if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas), do: nil, else: Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x -> Wei.to(x, :wei) end) %>
+<% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
@@ -307,8 +314,7 @@
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
             <%= if !empty_exchange_rate?(@exchange_rate) do %>
-              (<span class="address-current-balance large"
-                data-wei-value=<%= @transaction.value.value %>
+              (<span data-wei-value=<%= @transaction.value.value %>
                 data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
               </span>)
             <% end %>
@@ -338,6 +344,16 @@
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= gas_price(@transaction, :gwei) %> </dd>
           </dl>
+          <%= if !is_nil(type) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Transaction type, introduced in EIP-2718.") %>
+                <%= gettext "Transaction Type" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= type %> </dd>
+            </dl>
+          <% end %>
           <hr>
           <!-- Gas Limit -->
           <dl class="row">
@@ -348,6 +364,46 @@
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= format_gas_limit(@transaction.gas) %> </dd>
           </dl>
+          <%= if !is_nil(max_fee_per_gas) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Maximum total amount per unit of gas a user is willing to pay for a transaction, including base fee and priority fee.") %>
+                <%= gettext "Max Fee per Gas" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(max_fee_per_gas, :gwei) %> </dd>
+            </dl>
+          <% end %>
+          <%= if !is_nil(max_priority_fee_per_gas) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("User defined maximum fee (tip) per unit of gas paid to validator for transaction prioritization.") %>
+                <%= gettext "Max Priority Fee per Gas" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(max_priority_fee_per_gas, :gwei) %> </dd>
+            </dl>
+          <% end %>
+          <%= if !is_nil(priority_fee) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("User-defined tip sent to validator for transaction priority/inclusion.") %>
+                <%= gettext "Priority Fee / Tip" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(priority_fee, :ether) %> </dd>
+            </dl>
+          <% end %> 
+           <%= if !is_nil(burned_fee) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Amount of xDai burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
+                <%= gettext "Transaction Burned Fee" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <s><%= format_wei_value(burned_fee, :gwei) %></s></dd>
+            </dl>
+          <% end %>
           <!-- Gas Used by Transaction -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">
