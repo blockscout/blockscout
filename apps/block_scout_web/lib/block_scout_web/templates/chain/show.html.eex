@@ -114,7 +114,7 @@
       <!-- Stats -->
       <div class="dashboard-banner-network-plain-container">
         <div class="dashboard-banner-network-stats">
-          <%= case @average_block_time do %>
+          <!-- <%= case @average_block_time do %>
             <% {:error, :disabled} -> %>
               <%= nil %>
             <% average_block_time -> %>
@@ -126,7 +126,7 @@
                   <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
                 </span>
               </div>
-          <% end %>
+          <% end %> -->
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-2">
             <span class="dashboard-banner-network-stats-label">
               <%= gettext "Total transactions" %>
