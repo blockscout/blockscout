@@ -172,7 +172,9 @@ const appJs =
       ),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
-        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
+        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
+        'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
+        'process.env.DISPLAY_TOKEN_ICONS': JSON.stringify(process.env.DISPLAY_TOKEN_ICONS)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

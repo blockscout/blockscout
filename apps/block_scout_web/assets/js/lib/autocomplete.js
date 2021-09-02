@@ -1,4 +1,5 @@
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
+import identicon from 'identicon'
 import { getTextAdData, fetchTextAdData } from './ad.js'
 import { DateTime } from 'luxon'
 
@@ -51,11 +52,13 @@ const searchEngine = (query, record) => {
       (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
   )
   ) {
-    var searchResult = `${record.address_hash || record.tx_hash || record.block_hash}<br/>`
+    var searchResult = '<div>'
+    searchResult += `<div>${record.address_hash || record.tx_hash || record.block_hash}</div>`
 
     if (record.type === 'label') {
       searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
     } else {
+      searchResult += '<div>'
       if (record.name) {
         searchResult += `<b>${record.name}</b>`
       }
@@ -68,23 +71,59 @@ const searchEngine = (query, record) => {
       if (record.inserted_at) {
         searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
       }
+      searchResult += '</div>'
     }
+    searchResult += '</div>'
     var re = new RegExp(query, 'ig')
     searchResult = searchResult.replace(re, '<mark class=\'autoComplete_highlight\'>$&</mark>')
     return searchResult
   }
 }
-const resultItemElement = (item, data) => {
+const resultItemElement = async (item, data) => {
   // Modify Results Item Style
-  item.style = 'display: flex; justify-content: space-between;'
+  item.style = 'display: flex;'
   // Modify Results Item Content
-  item.innerHTML = `
-  <span style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+
+  var innerHTML = ''
+  if (process.env.DISPLAY_TOKEN_ICONS === 'true') {
+    var checkTokenIconLink = null
+    if (data.value.foreign_token_hash) {
+      const tokenIconURL = getTokenIconUrl(data.value.foreign_chain_id, data.value.foreign_token_hash)
+      innerHTML = `
+        <img height="40px" width="40px" src="${tokenIconURL}" />
+      `
+    } else if (data.value.type === 'token') {
+      const tokenIconURL = getTokenIconUrl(process.env.CHAIN_ID.toString(), data.value.address_hash)
+
+      const checkTokenIconLink = await checkLink(tokenIconURL)
+      if (checkTokenIconLink) {
+        innerHTML = `<img height="40px" width="40px" src="${tokenIconURL}" />`
+      } else {
+        innerHTML = `<div id='identicon_${data.value.address_hash}'></div>`
+      }
+    }
+  }
+  innerHTML += `
+  <div style="padding-left: 10px; padding-right: 10px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
-  </span>
-  <span class="autocomplete-category">
+  </div>
+  <div class="autocomplete-category">
     ${data.value.type}
-  </span>`
+  </div>`
+  item.innerHTML = innerHTML
+
+  if (process.env.DISPLAY_TOKEN_ICONS === 'true' && data.value.type === 'token' && !data.value.foreign_token_hash && !checkTokenIconLink) {
+    identicon.generate({ id: data.value.address_hash, size: 40 }, function (err, buffer) {
+      if (err) throw err
+
+      var img = new Image()
+      img.src = buffer
+      const identiconTarget = item.querySelector(`#identicon_${data.value.address_hash}`)
+      if (identiconTarget) {
+        identiconTarget.appendChild(img)
+      }
+    })
+  }
 }
 const config = (id) => {
   return {
@@ -169,3 +208,28 @@ document.querySelector('#main-search-autocomplete').addEventListener('focus', fu
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
   openOnFocus(event, 'mobile')
 })
+
+async function checkLink (url) {
+  try {
+    const res = await fetch(url)
+    return res.ok
+  } catch (_error) {
+    return false
+  }
+}
+
+function getTokenIconUrl (chainID, addressHash) {
+  var chainName = ''
+  switch (chainID) {
+    case '1':
+      chainName = 'ethereum'
+      break
+    case '99':
+      chainName = 'poa'
+      break
+    case '100':
+      chainName = 'xdai'
+      break
+  }
+  return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainName}/assets/${addressHash}/logo.png`
+}
