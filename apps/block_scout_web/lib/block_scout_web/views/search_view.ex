@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.SearchView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
   alias Floki
 
   def highlight_search_result(result, query) do
