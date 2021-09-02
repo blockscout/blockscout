@@ -29,11 +29,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Counters.AverageBlockTime
+  # alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Transform.Addresses
-  alias Timex.Duration
+  # alias Timex.Duration
 
   @behaviour Block.Fetcher
 
