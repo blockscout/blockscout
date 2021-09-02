@@ -34,7 +34,8 @@
   <td class="stakes-td">
     <%= case @result.type do %>
         <% "token" -> %>
-            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
+            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
+            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
                 <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: address,
@@ -43,7 +44,8 @@
                 %>
             <% end %>
         <% "address" -> %>
-            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
+            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
+            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
                 <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: address,
@@ -52,7 +54,8 @@
                 %>
             <% end %>
         <% "contract" -> %>
-            <%= with {:ok, address} <- Chain.hash_to_address(@result.address_hash) do %>
+            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
+            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
                 <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: address,

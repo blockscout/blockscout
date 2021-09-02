@@ -96,7 +96,8 @@ const appJs =
       'text_ad': './js/lib/text_ad.js',
       'banner': './js/lib/banner.js',
       'autocomplete': './js/lib/autocomplete.js',
-      'search-results': './js/pages/search-results/search.js'
+      'search-results': './js/pages/search-results/search.js',
+      'token-overview': './js/pages/token/overview.js'
     },
     output: {
       filename: '[name].js',
@@ -172,7 +173,9 @@ const appJs =
       ),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
-        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
+        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
+        'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
+        'process.env.DISPLAY_TOKEN_ICONS': JSON.stringify(process.env.DISPLAY_TOKEN_ICONS)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
