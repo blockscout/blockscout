@@ -5,11 +5,8 @@ from contextlib import closing
 
 import docker as docker
 
-NGINX_CONFIG_PATH = ''
-NGINX_TEMP_CONFIG_PATH = ''
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-PROJECT_PATH = os.path.join(DIR_PATH, os.pardir)
-EXPLORER_SCRIPT_PATH = os.path.join(PROJECT_PATH, 'docker', 'run_schain_explorer.sh')
+from server import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
+from server.endpoints import read_json, get_all_names, get_schain_endpoint
 
 dutils = docker.DockerClient()
 
@@ -46,6 +43,10 @@ def get_container_host_port(container):
     return ports[0][0]['HostPort']
 
 
+def add_explorer_meta(schain_name):
+    pass
+
+
 def run_explorer(schain_name, endpoint):
     explorer_port = get_free_port()
     db_port = get_db_port(schain_name)
@@ -57,4 +58,13 @@ def run_explorer(schain_name, endpoint):
     }
     print(f'Running explorer for {schain_name}, port: {explorer_port}, db port: {db_port}')
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
+
+
+def run():
+    explorers = read_json(EXPLORERS_META_DATA_PATH)
+    schains = get_all_names()
+    for schain_name in schains:
+        if schain_name not in explorers:
+            endpoint = get_schain_endpoint(schain_name)
+            run_explorer(schain_name, endpoint)
 

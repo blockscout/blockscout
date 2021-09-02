@@ -6,15 +6,14 @@ from enum import Enum
 from web3 import Web3, HTTPProvider
 from Crypto.Hash import keccak
 
-
-ENDPOINT = os.environ['ETH_ENDPOINT']
+from server import ENDPOINT, ABI_FILEPATH, PROXY_DOMAIN_NAME
 
 if ENDPOINT is None:
     print("Fatal error: ETH main net endpoint not set. Exiting")
     exit(-5)
 
 
-ABI_FILEPATH = "/tmp/abi.json"
+# ABI_FILEPATH = "/tmp/abi.json"
 
 if not os.path.exists(ABI_FILEPATH):
     print("Fatal error: could not find ABI. Exiting")
@@ -120,14 +119,42 @@ def endpoints_for_schain(schains_internal_contract, nodes_contract, schain_id):
     }
 
 
-def endpoints_for_all_schains():
+def get_all_names():
     provider = HTTPProvider(ENDPOINT)
     web3 = Web3(provider)
     sm_abi = read_json(ABI_FILEPATH)
 
     schains_internal_contract = web3.eth.contract(address=sm_abi['schains_internal_address'], abi=sm_abi['schains_internal_abi'])
-    nodes_contract = web3.eth.contract(address=sm_abi['nodes_address'], abi=sm_abi['nodes_abi'])
     schain_ids = schains_internal_contract.functions.getSchains().call()
+    return [schains_internal_contract.functions.schains(id).call()[0] for id in schain_ids]
 
-    all_endpoints = [endpoints_for_schain(schains_internal_contract, nodes_contract, schain_id) for schain_id in schain_ids]
-    write_json(RESULTS_PATH, all_endpoints)
+
+def check_endpoint(endpoint):
+    try:
+        w3 = Web3(HTTPProvider(endpoint))
+        w3.eth.get_block_number()
+        return True
+    except:
+        return False
+
+
+def get_proxy_endpoint(schain_name):
+    return f'https://{PROXY_DOMAIN_NAME}/v1/{schain_name}'
+
+
+def get_schain_endpoint(schain_name):
+    proxy = get_proxy_endpoint(schain_name)
+    if check_endpoint(proxy):
+        return proxy
+
+    provider = HTTPProvider(ENDPOINT)
+    web3 = Web3(provider)
+    sm_abi = read_json(ABI_FILEPATH)
+    schains_internal_contract = web3.eth.contract(address=sm_abi['schains_internal_address'], abi=sm_abi['schains_internal_abi'])
+    nodes_contract = web3.eth.contract(address=sm_abi['nodes_address'], abi=sm_abi['nodes_abi'])
+    schain_id = bytes.fromhex(schain_name_to_id(schain_name)[2:])
+    endpoints = endpoints_for_schain(schains_internal_contract, nodes_contract, schain_id)
+    for node in endpoints['nodes']:
+        endpoint = f'http://{node["ip"]}:{node["httpRpcPort"]}'
+        if check_endpoint(endpoint):
+            return endpoint

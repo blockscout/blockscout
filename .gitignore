@@ -46,3 +46,4 @@ screenshots/
 .idea
 venv
 erlang-solutions_2.0_all.deb
+__pycache__
