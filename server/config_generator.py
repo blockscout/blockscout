@@ -6,7 +6,7 @@ from contextlib import closing
 import docker as docker
 
 from server import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
-from server.endpoints import read_json, get_all_names, get_schain_endpoint
+from server.endpoints import read_json, get_all_names, get_schain_endpoint, write_json
 
 dutils = docker.DockerClient()
 
@@ -58,6 +58,23 @@ def run_explorer(schain_name, endpoint):
     }
     print(f'Running explorer for {schain_name}, port: {explorer_port}, db port: {db_port}')
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
+    update_meta_data(schain_name, explorer_port, db_port, endpoint)
+
+
+def update_meta_data(schain_name, port, db_port, endpoint):
+    if not os.path.isfile(EXPLORERS_META_DATA_PATH):
+        explorers = {}
+    else:
+        explorers = read_json(EXPLORERS_META_DATA_PATH)
+    new_schain = {
+        schain_name: {
+            'port': port,
+            'db_port': db_port,
+            'endpoint': endpoint
+        }
+    }
+    explorers.update(new_schain)
+    write_json(EXPLORERS_META_DATA_PATH, explorers)
 
 
 def run():
@@ -68,3 +85,5 @@ def run():
             endpoint = get_schain_endpoint(schain_name)
             run_explorer(schain_name, endpoint)
 
+
+run()
