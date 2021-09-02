@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4520](https://github.com/blockscout/blockscout/pull/4520) - Add support for EIP-1559
 - [#4593](https://github.com/blockscout/blockscout/pull/4593) - Add status in `Position` pane for txs have no block
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
@@ -17,7 +18,6 @@
 ## 3.7.3-beta
 
 ### Features
-- [#4520](https://github.com/blockscout/blockscout/pull/4520) - Add support for EIP-1559
 - [#4569](https://github.com/blockscout/blockscout/pull/4569) - Smart-Contract: remove comment with the submission date
 - [#4568](https://github.com/blockscout/blockscout/pull/4568) - TX page: Token transfer and minting section improvements
 - [#4540](https://github.com/blockscout/blockscout/pull/4540) - Allign copy buttons for `Block Details` and `Transaction Details` pages
