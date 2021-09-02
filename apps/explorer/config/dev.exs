@@ -2,12 +2,13 @@ use Mix.Config
 
 database = if System.get_env("DATABASE_URL"), do: nil, else: "explorer_dev"
 hostname = if System.get_env("DATABASE_URL"), do: nil, else: "localhost"
+username = if System.get_env("DATABASE_URL"), do: nil, else: "postgres"
 
 # Configure your database
 config :explorer, Explorer.Repo,
   database: database,
   hostname: hostname,
-  username: "postgres",
+  username: username,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
   timeout: :timer.seconds(80)

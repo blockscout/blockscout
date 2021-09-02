@@ -4,6 +4,7 @@ defmodule Indexer.Prometheus.MetricsCron do
   """
   use GenServer
   alias EthereumJSONRPC.HTTP.RpcResponseEts
+  alias Explorer.Celo.Metrics.BlockchainMetrics
   alias Explorer.Chain
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.Prometheus.RPCInstrumenter
@@ -46,6 +47,9 @@ defmodule Indexer.Prometheus.MetricsCron do
 
     average_block_time = AverageBlockTime.average_block_time()
     :telemetry.execute([:indexer, :blocks, :average_time], %{value: Duration.to_seconds(average_block_time)})
+
+    pending_block_count = BlockchainMetrics.pending_blockcount()
+    :telemetry.execute([:indexer, :blocks, :pending_blockcount], %{value: pending_block_count})
 
     number_of_locks = Chain.fetch_number_of_locks()
     :telemetry.execute([:indexer, :db, :locks], %{value: number_of_locks})
