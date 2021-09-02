@@ -1,3 +1,5 @@
+<% burned_fee = if !is_nil(@block.base_fee_per_gas), do: Wei.mult(@block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(@block.hash)), else: nil %>
+<% priority_fee = if !is_nil(@block.base_fee_per_gas), do: BlockPriorityFeeCounter.fetch(@block.hash), else: nil %>
 <div class="tile tile-type-<%= String.downcase(@block_type) %> fade-up" data-selector="block-tile" data-block-number="<%= to_string(@block.number) %>" data-block-hash="<%= @block.hash %>">
   <div class="row">
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
@@ -53,6 +55,12 @@
       <% end %>
     </div>
     <div class="col-md-4 col-lg-3 text-md-right d-flex flex-column align-items-md-end justify-content-md-end mt-3 mt-md-0">
+      <%= if !is_nil(@block.base_fee_per_gas) do %>
+        <!-- Priority Fee -->
+        <span> <%= format_wei_value(%Wei{value: priority_fee}, :ether) %> <%= gettext "Priority Fees" %> </span>
+        <!-- Burnt Fees -->
+        <span> <%= format_wei_value(burned_fee, :ether) %> <%= gettext "Burnt Fees" %> </span>
+      <% end %>
       <!-- Gas Limit -->
       <span> <%= formatted_gas(@block.gas_limit) %> <%= gettext "Gas Limit" %> </span>
       <!-- Gas Used -->
