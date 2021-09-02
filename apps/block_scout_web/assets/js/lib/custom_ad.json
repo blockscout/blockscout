@@ -38,4 +38,20 @@
         "name": "Perpetual Protocol",
         "url": "https://www.perp.fi/"
     }
+},{
+    "ad": {
+        "thumbnail": "/images/in-house-ad/tornado.svg",
+        "description_short": "A fully decentralized multi-chain protocol for private transactions.",
+        "cta_button": "Launch app",
+        "name": "Tornado Cash",
+        "url": "https://app.tornado.cash/"
+    }
+},{
+    "ad": {
+        "thumbnail": "https://gblobscdn.gitbook.com/assets%2F-Lpi9AHj62wscNlQjI-l%2F-LsI4cyo_805A73-h--i%2F-LsI8IfCk8qZrHalGx_E%2Fxdai_alternative.png?alt=media&token=27c4995e-eefe-4bc6-9529-424ced6ff8ef",
+        "description_short": "Test your dApp with a new shiny deployment of Arbitrum on xDai!",
+        "cta_button": "Test now",
+        "name": "AoX: Arbitrum on xDai",
+        "url": "https://www.xdaichain.com/for-developers/developer-resources/aox-arbitrum-on-xdai"
+    }
 }]
