@@ -13,7 +13,8 @@ defmodule Indexer.Prometheus.BlockInstrumenter do
       [:pending],
       [:average_time],
       [:last_block_age],
-      [:last_block_number]
+      [:last_block_number],
+      [:pending_blockcount]
     ]
 
     Enum.each(counter_events, &setup_counter/1)
@@ -60,5 +61,9 @@ defmodule Indexer.Prometheus.BlockInstrumenter do
 
   def handle_set_event([:indexer, :blocks, :last_block_number], %{value: val}, _metadata, _config) do
     Gauge.set([name: :indexer_blocks_last_block_number_current], val)
+  end
+
+  def handle_set_event([:indexer, :blocks, :pending_blockcount], %{value: val}, _metadata, _config) do
+    Gauge.set([name: :indexer_blocks_pending_blockcount_current], val)
   end
 end
