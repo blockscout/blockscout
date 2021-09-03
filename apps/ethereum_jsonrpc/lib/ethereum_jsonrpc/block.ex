@@ -19,7 +19,6 @@ defmodule EthereumJSONRPC.Block do
           miner_hash: EthereumJSONRPC.hash(),
           mix_hash: EthereumJSONRPC.hash(),
           nonce: EthereumJSONRPC.hash(),
-          base_fee_per_gas: non_neg_integer(),
           number: non_neg_integer(),
           parent_hash: EthereumJSONRPC.hash(),
           receipts_root: EthereumJSONRPC.hash(),
@@ -47,7 +46,6 @@ defmodule EthereumJSONRPC.Block do
    * `"mixHash"` - Generated from [DAG](https://ethereum.stackexchange.com/a/10353) as part of Proof-of-Work for EthHash
      algorithm.  **[Geth](https://github.com/ethereum/go-ethereum/wiki/geth) + Proof-of-Work-only**
    * `"nonce"` -  `t:EthereumJSONRPC.nonce/0`. `nil` when its pending block.
-   * `"baseFeePerGas"` -  `t:EthereumJSONRPC.quantity/0` EIP1559 base fee for this block.
    * `"number"` - the block number `t:EthereumJSONRPC.quantity/0`. `nil` when block is pending.
    * `"parentHash" - the `t:EthereumJSONRPC.hash/0` of the parent block.
    * `"receiptsRoot"` - `t:EthereumJSONRPC.hash/0` of the root of the receipts.
@@ -204,97 +202,6 @@ defmodule EthereumJSONRPC.Block do
           "hash" => hash,
           "logsBloom" => logs_bloom,
           "miner" => miner_hash,
-          "baseFeePerGas" => base_fee_per_gas,
-          "number" => number,
-          "parentHash" => parent_hash,
-          "receiptsRoot" => receipts_root,
-          "sha3Uncles" => sha3_uncles,
-          "size" => size,
-          "stateRoot" => state_root,
-          "timestamp" => timestamp,
-          "totalDifficulty" => total_difficulty,
-          "transactionsRoot" => transactions_root,
-          "uncles" => uncles,
-          "baseFeePerGas" => base_fee_per_gas
-        } = elixir
-      ) do
-    %{
-      difficulty: difficulty,
-      extra_data: extra_data,
-      gas_limit: gas_limit,
-      gas_used: gas_used,
-      hash: hash,
-      logs_bloom: logs_bloom,
-      miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"),
-      nonce: Map.get(elixir, "nonce", 0),
-      number: number,
-      parent_hash: parent_hash,
-      receipts_root: receipts_root,
-      sha3_uncles: sha3_uncles,
-      size: size,
-      state_root: state_root,
-      timestamp: timestamp,
-      total_difficulty: total_difficulty,
-      transactions_root: transactions_root,
-      uncles: uncles,
-      base_fee_per_gas: base_fee_per_gas
-    }
-  end
-
-  def elixir_to_params(
-        %{
-          "difficulty" => difficulty,
-          "extraData" => extra_data,
-          "gasLimit" => gas_limit,
-          "gasUsed" => gas_used,
-          "hash" => hash,
-          "logsBloom" => logs_bloom,
-          "miner" => miner_hash,
-          "number" => number,
-          "parentHash" => parent_hash,
-          "receiptsRoot" => receipts_root,
-          "sha3Uncles" => sha3_uncles,
-          "size" => size,
-          "stateRoot" => state_root,
-          "timestamp" => timestamp,
-          "transactionsRoot" => transactions_root,
-          "uncles" => uncles,
-          "baseFeePerGas" => base_fee_per_gas
-        } = elixir
-      ) do
-    %{
-      difficulty: difficulty,
-      extra_data: extra_data,
-      gas_limit: gas_limit,
-      gas_used: gas_used,
-      hash: hash,
-      logs_bloom: logs_bloom,
-      miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"),
-      nonce: Map.get(elixir, "nonce", 0),
-      number: number,
-      parent_hash: parent_hash,
-      receipts_root: receipts_root,
-      sha3_uncles: sha3_uncles,
-      size: size,
-      state_root: state_root,
-      timestamp: timestamp,
-      transactions_root: transactions_root,
-      uncles: uncles,
-      base_fee_per_gas: base_fee_per_gas
-    }
-  end
-
-  def elixir_to_params(
-        %{
-          "difficulty" => difficulty,
-          "extraData" => extra_data,
-          "gasLimit" => gas_limit,
-          "gasUsed" => gas_used,
-          "hash" => hash,
-          "logsBloom" => logs_bloom,
-          "miner" => miner_hash,
           "number" => number,
           "parentHash" => parent_hash,
           "receiptsRoot" => receipts_root,
@@ -407,7 +314,6 @@ defmodule EthereumJSONRPC.Block do
       miner_hash: miner_hash,
       mix_hash: Map.get(elixir, "mixHash", "0x0"),
       nonce: Map.get(elixir, "nonce", 0),
-      base_fee_per_gas: base_fee_per_gas,
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
@@ -430,7 +336,6 @@ defmodule EthereumJSONRPC.Block do
           "gasUsed" => gas_used,
           "hash" => hash,
           "logsBloom" => logs_bloom,
-          "baseFeePerGas" => base_fee_per_gas,
           "miner" => miner_hash,
           "number" => number,
           "parentHash" => parent_hash,
@@ -453,7 +358,6 @@ defmodule EthereumJSONRPC.Block do
       miner_hash: miner_hash,
       mix_hash: Map.get(elixir, "mixHash", "0x0"),
       nonce: Map.get(elixir, "nonce", 0),
-      base_fee_per_gas: base_fee_per_gas,
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
