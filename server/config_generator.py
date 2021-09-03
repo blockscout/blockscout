@@ -2,6 +2,7 @@ import os
 import socket
 import subprocess
 from contextlib import closing
+from time import sleep
 
 import docker as docker
 
@@ -77,7 +78,7 @@ def update_meta_data(schain_name, port, db_port, endpoint):
     write_json(EXPLORERS_META_DATA_PATH, explorers)
 
 
-def run():
+def run_iteration():
     explorers = read_json(EXPLORERS_META_DATA_PATH)
     schains = get_all_names()
     for schain_name in schains:
@@ -86,4 +87,16 @@ def run():
             run_explorer(schain_name, endpoint)
 
 
-run()
+def main():
+    if not os.path.isfile(EXPLORERS_META_DATA_PATH):
+        with open(EXPLORERS_META_DATA_PATH, 'w') as f:
+            f.write('{}')
+    while True:
+        print('Running new iteration...')
+        run_iteration()
+        sleep_time = 600
+        print(f'Sleeping {sleep_time}s')
+        sleep(sleep_time)
+
+
+main()
