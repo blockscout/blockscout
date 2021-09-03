@@ -1020,9 +1020,9 @@ msgid "ERC-721 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:90
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:126
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:95
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:95
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:131
 msgid "ETH"
 msgstr ""
 
@@ -1814,7 +1814,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:99
 msgid "Query"
 msgstr ""
 
@@ -2213,6 +2213,11 @@ msgid "The block height of a particular block is defined as the number of blocks
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
+msgid "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable."
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:23
 msgid "The first amount is the candidate’s own stake, the second is the total amount staked into the pool by the candidate and all delegators."
 msgstr ""
@@ -2245,6 +2250,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:34
 msgid "The percentage of stake in a single pool relative to the total amount staked in all active pools. A higher ratio results in a greater likelihood of validator pool selection."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:45
+msgid "The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception."
 msgstr ""
 
 #, elixir-format
@@ -2918,7 +2928,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:130
 msgid "WEI"
 msgstr ""
 
@@ -2972,7 +2982,7 @@ msgid "Working Stake Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:99
 msgid "Write"
 msgstr ""
 
@@ -3098,6 +3108,11 @@ msgid "custom RPC"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
+msgid "fallback"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/views/address_contract_view.ex:24
 msgid "false"
 msgstr ""
@@ -3134,6 +3149,11 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:20
 msgid "pool owner"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:45
+msgid "receive"
 msgstr ""
 
 #, elixir-format
