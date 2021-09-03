@@ -20,6 +20,8 @@ config:
       target: 'https://baklava-blockscout.celo-testnet.org'
     mainnet:
       target: 'https://rc1-blockscout.celo-testnet.org'
+    stagingrc1:
+      target: 'https://blockscoutstagingrc1-blockscout3.celo-testnet.org'
 scenarios:
   - name: 'GraphQL Query load test'
     flow:
