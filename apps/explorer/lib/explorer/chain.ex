@@ -1212,11 +1212,15 @@ defmodule Explorer.Chain do
 
   defp search_token_query(term) do
     from(token in Token,
+      left_join: bridged in BridgedToken,
+      on: token.contract_address_hash == bridged.home_token_contract_address_hash,
       where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
       select: %{
         address_hash: token.contract_address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
         block_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_token_hash: bridged.foreign_token_contract_address_hash,
+        foreign_chain_id: bridged.foreign_chain_id,
         type: "token",
         name: token.name,
         symbol: token.symbol,
@@ -1236,6 +1240,8 @@ defmodule Explorer.Chain do
         address_hash: smart_contract.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
         block_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_chain_id: ^nil,
         type: "contract",
         name: smart_contract.name,
         symbol: ^nil,
@@ -1257,6 +1263,8 @@ defmodule Explorer.Chain do
             address_hash: address.hash,
             tx_hash: fragment("CAST(NULL AS bytea)"),
             block_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_chain_id: ^nil,
             type: "address",
             name: address_name.name,
             symbol: ^nil,
@@ -1280,6 +1288,8 @@ defmodule Explorer.Chain do
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: transaction.hash,
             block_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_chain_id: ^nil,
             type: "transaction",
             name: ^nil,
             symbol: ^nil,
@@ -1303,6 +1313,8 @@ defmodule Explorer.Chain do
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: fragment("CAST(NULL AS bytea)"),
             block_hash: block.hash,
+            foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_chain_id: ^nil,
             type: "block",
             name: ^nil,
             symbol: ^nil,
@@ -1321,6 +1333,8 @@ defmodule Explorer.Chain do
                 address_hash: fragment("CAST(NULL AS bytea)"),
                 tx_hash: fragment("CAST(NULL AS bytea)"),
                 block_hash: block.hash,
+                foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+                foreign_chain_id: ^nil,
                 type: "block",
                 name: ^nil,
                 symbol: ^nil,
@@ -1381,7 +1395,28 @@ defmodule Explorer.Chain do
           ordered_query
           |> page_search_results(paging_options)
 
-        Repo.all(paginated_ordered_query)
+        search_results = Repo.all(paginated_ordered_query)
+
+        search_results
+        |> Enum.map(fn result ->
+          result_checksummed_address_hash =
+            if result.address_hash do
+              result
+              |> Map.put(:address_hash, Address.checksum(result.address_hash))
+            else
+              result
+            end
+
+          result_checksummed =
+            if result_checksummed_address_hash.foreign_token_hash do
+              result_checksummed_address_hash
+              |> Map.put(:foreign_token_hash, Address.checksum(result_checksummed_address_hash.foreign_token_hash))
+            else
+              result_checksummed_address_hash
+            end
+
+          result_checksummed
+        end)
 
       _ ->
         []
