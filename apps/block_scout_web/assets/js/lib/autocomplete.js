@@ -86,17 +86,26 @@ const resultItemElement = async (item, data) => {
 
   var innerHTML = ''
   var checkTokenIconLink = null
+  var bridgedTokenIconURL = null
   if (data.value.foreign_token_hash) {
-    const tokenIconURL = getTokenIconUrl(data.value.foreign_chain_id, data.value.foreign_token_hash)
-    innerHTML = `
-      <img height="40px" width="40px" src="${tokenIconURL}" />
-    `
+    bridgedTokenIconURL = getTokenIconUrl(data.value.foreign_chain_id, data.value.foreign_token_hash)
+    if (bridgedTokenIconURL) {
+      innerHTML = `
+        <img height="40px" width="40px" src="${bridgedTokenIconURL}" />
+      `
+    } else {
+      innerHTML = `<div id='identicon_${data.value.address_hash}'></div>`
+    }
   } else if (data.value.type === 'token') {
     const tokenIconURL = getTokenIconUrl('77', data.value.address_hash)
 
-    const checkTokenIconLink = await checkLink(tokenIconURL)
-    if (checkTokenIconLink) {
-      innerHTML = `<img height="40px" width="40px" src="${tokenIconURL}" />`
+    if (tokenIconURL) {
+      const checkTokenIconLink = await checkLink(tokenIconURL)
+      if (checkTokenIconLink) {
+        innerHTML = `<img height="40px" width="40px" src="${tokenIconURL}" />`
+      } else {
+        innerHTML = `<div id='identicon_${data.value.address_hash}'></div>`
+      }
     } else {
       innerHTML = `<div id='identicon_${data.value.address_hash}'></div>`
     }
@@ -110,7 +119,7 @@ const resultItemElement = async (item, data) => {
   </div>`
   item.innerHTML = innerHTML
 
-  if (data.value.type === 'token' && !data.value.foreign_token_hash && !checkTokenIconLink) {
+  if (data.value.type === 'token' && ((!data.value.foreign_token_hash && !checkTokenIconLink) || (data.value.foreign_token_hash && !bridgedTokenIconURL))) {
     identicon.generate({ id: data.value.address_hash, size: 40 }, function (err, buffer) {
       if (err) throw err
 
@@ -217,7 +226,7 @@ async function checkLink (url) {
 }
 
 function getTokenIconUrl (chainID, addressHash) {
-  var chainName = ''
+  var chainName = null
   switch (chainID) {
     case '1':
       chainName = 'ethereum'
@@ -228,6 +237,13 @@ function getTokenIconUrl (chainID, addressHash) {
     case '100':
       chainName = 'xdai'
       break
+    default:
+      chainName = null
+      break
   }
-  return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainName}/assets/${addressHash}/logo.png`
+  if (chainName) {
+    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainName}/assets/${addressHash}/logo.png`
+  } else {
+    return null
+  }
 }
