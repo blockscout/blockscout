@@ -1150,30 +1150,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec address_from_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
-  def address_from_name(name) when is_binary(name) do
-    token_query =
-      from(token in Token,
-        where: ilike(token.symbol, ^name),
-        select: token.contract_address_hash
-      )
-
-    name_query =
-      from(it in Address.Name,
-        where: ilike(it.name, ^name),
-        select: it.address_hash
-      )
-
-    query = union(token_query, ^name_query)
-
-    query
-    |> Repo.all()
-    |> case do
-      [] -> {:error, :not_found}
-      hashes -> {:ok, List.first(hashes)}
-    end
-  end
-
   defp prepare_search_term(string) do
     case Regex.scan(~r/[a-zA-Z0-9]+/, string) do
       [_ | _] = words ->
@@ -1473,7 +1449,23 @@ defmodule Explorer.Chain do
         Repo.all(query)
 
       _ ->
-        []
+        case Integer.parse(term) do
+          {block_number, _} ->
+            query =
+              from(block in Block,
+                where: block.number == ^block_number,
+                select: %{
+                  link: block.hash,
+                  block_number: block.number,
+                  type: "block"
+                }
+              )
+
+            Repo.all(query)
+
+          _ ->
+            []
+        end
     end
   end
 
@@ -4151,12 +4143,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp format_source_code_output(smart_contract) do
-    SmartContract.add_submitted_comment(
-      smart_contract.contract_source_code,
-      smart_contract.inserted_at
-    )
-  end
+  defp format_source_code_output(smart_contract), do: smart_contract.contract_source_code
 
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
