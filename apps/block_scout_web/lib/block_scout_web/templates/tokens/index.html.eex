@@ -1,4 +1,9 @@
-<section class="container" data-page="tokens">
+<section
+	class="container"
+	data-page="tokens"
+	data-chain-id="<%= System.get_env("CHAIN_ID") %>"
+	data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
+>
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
@@ -25,11 +30,6 @@
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">Address</div>
 	      </th>
-		  <%= if Chain.bridged_tokens_enabled?() do %>
-			<th class="stakes-table-th">
-				<div class="stakes-table-th-content">Bridged?</div>
-			</th>
-		  <% end %>
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">
 			Total Supply
@@ -52,6 +52,6 @@
     <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
     </div>
   </div>
-	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/tokens.js") %>"></script>
-	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/tokens.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
 </section>

@@ -1,3 +1,5 @@
+<% foreign_chain_id = if Map.has_key?(@token, :foreign_chain_id), do: @token.foreign_chain_id, else: nil %>
+<% foreign_token_contract_address_hash =if Map.has_key?(@token, :foreign_token_contract_address_hash), do: Address.checksum(@token.foreign_token_contract_address_hash), else: "" %>
 <tr data-identifier-hash="<%= @token.contract_address_hash %>">
   <td class="stakes-td">
       <!-- incremented number by order in the list -->
@@ -6,6 +8,12 @@
       </span>
   </td>
   <td class="stakes-td">
+    <span
+      class="token-icon"
+      data-address-hash="<%= Address.checksum(@token.contract_address_hash) %>"
+      data-foreign-chain-id="<%= foreign_chain_id %>"
+      data-foreign-address-hash="<%= foreign_token_contract_address_hash %>">
+    </span>
     <% token = token_display_name(@token) %>
     <%= link(token,
       to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
@@ -20,17 +28,6 @@
       use_custom_tooltip: false
     %>
   </td>
-  <%= if Chain.bridged_tokens_enabled?() do %>
-    <td class="stakes-td">
-      <%= case @token.bridged do %>
-      <% nil -> %>
-        <i style="color: #f7b32b; font-size: 20px;" class="far fa-question-circle"></i>
-      <% true -> %>
-        <i style="color: #20b760; font-size: 20px;" class="far fa-check-circle"></i>
-      <% false -> %>
-      <% end %>
-    </td>
-  <% end %>
   <td class="stakes-td">
     <%= if decimals?(@token) do %>
       <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>

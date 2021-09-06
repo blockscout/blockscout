@@ -1,7 +1,7 @@
-import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
-import identicon from 'identicon'
-import { getTextAdData, fetchTextAdData } from './ad.js'
+import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete'
+import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
+import { appendTokenIcon } from './token_icon'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
@@ -80,57 +80,19 @@ const searchEngine = (query, record) => {
   }
 }
 const resultItemElement = async (item, data) => {
-  // Modify Results Item Style
   item.style = 'display: flex;'
-  // Modify Results Item Content
 
-  var innerHTML = ''
-  var checkTokenIconLink = null
-  var bridgedTokenIconURL = null
-  if (data.value.foreign_token_hash) {
-    bridgedTokenIconURL = getTokenIconUrl(data.value.foreign_chain_id, data.value.foreign_token_hash)
-    if (bridgedTokenIconURL) {
-      innerHTML = `
-        <img height="40px" width="40px" src="${bridgedTokenIconURL}" />
-      `
-    } else {
-      innerHTML = `<div id='identicon_${data.value.address_hash}'></div>`
-    }
-  } else if (data.value.type === 'token') {
-    const tokenIconURL = getTokenIconUrl('77', data.value.address_hash)
-
-    if (tokenIconURL) {
-      const checkTokenIconLink = await checkLink(tokenIconURL)
-      if (checkTokenIconLink) {
-        innerHTML = `<img height="40px" width="40px" src="${tokenIconURL}" />`
-      } else {
-        innerHTML = `<div id='identicon_${data.value.address_hash}'></div>`
-      }
-    } else {
-      innerHTML = `<div id='identicon_${data.value.address_hash}'></div>`
-    }
-  }
-  innerHTML += `
+  item.innerHTML = `
+  <div id='token-icon-${data.value.address_hash}'></div>
   <div style="padding-left: 10px; padding-right: 10px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
   </div>
   <div class="autocomplete-category">
     ${data.value.type}
   </div>`
-  item.innerHTML = innerHTML
 
-  if (data.value.type === 'token' && ((!data.value.foreign_token_hash && !checkTokenIconLink) || (data.value.foreign_token_hash && !bridgedTokenIconURL))) {
-    identicon.generate({ id: data.value.address_hash, size: 40 }, function (err, buffer) {
-      if (err) throw err
-
-      var img = new Image()
-      img.src = buffer
-      const identiconTarget = item.querySelector(`#identicon_${data.value.address_hash}`)
-      if (identiconTarget) {
-        identiconTarget.appendChild(img)
-      }
-    })
-  }
+  const $tokenIconContainer = item.querySelector(`#token-icon-${data.value.address_hash}`)
+  appendTokenIcon($tokenIconContainer, process.env.CHAIN_ID, data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, process.env.DISPLAY_TOKEN_ICONS)
 }
 const config = (id) => {
   return {
