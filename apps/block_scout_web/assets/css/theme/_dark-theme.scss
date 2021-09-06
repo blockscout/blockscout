@@ -44,6 +44,9 @@ $dark-stakes-banned-background: #3e314c;
 			}
 		}
 	}
+	.navbar-brand .navbar-logo {
+		filter: brightness(0) invert(1);
+	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
 		color: $labels-dark;
 		.nav-link-icon {
