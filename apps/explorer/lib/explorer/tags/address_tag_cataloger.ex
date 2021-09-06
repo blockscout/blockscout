@@ -99,6 +99,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set Rarible Protocol tags
     AddressTag.set_tag("rarible")
 
+    # set Cryptopunks tags
+    AddressTag.set_tag("xdai punks")
+
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
 
@@ -181,6 +184,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set Rarible Protocol tag
     set_rarible_tag()
+
+    # set Cryptopunks tag
+    set_cryptopunks_tag()
 
     {:noreply, state}
   end
@@ -367,6 +373,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_rarible_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_RARIBLE", "rarible")
+  end
+
+  defp set_cryptopunks_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_CRYPTOPUNKS", "xdai punks")
   end
 
   defp chainlink_oracles_list do

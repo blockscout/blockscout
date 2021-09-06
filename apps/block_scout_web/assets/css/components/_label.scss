@@ -139,6 +139,10 @@
         background: #f9d534;
         color: #000;
     }
+    &.cryptopunks {
+        background: linear-gradient(to bottom, #6820f7, #60edf2);
+        color: #fff;
+    }
     &.secondary {
         background: $secondary;
         color: #fff;
