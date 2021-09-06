@@ -6,6 +6,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4592](https://github.com/blockscout/blockscout/pull/4592) - Add `type` field for `receive` and `fallback` entities of a Smart Contract
 - [#4601](https://github.com/blockscout/blockscout/pull/4601) - Fix endless Fetching tokens... message on empty addresses
 - [#4591](https://github.com/blockscout/blockscout/pull/4591) - Add step and min value for txValue input field
 - [#4589](https://github.com/blockscout/blockscout/pull/4589) - Fix solid outputs on contract read page
