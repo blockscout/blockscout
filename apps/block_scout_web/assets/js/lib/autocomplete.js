@@ -92,7 +92,7 @@ const resultItemElement = async (item, data) => {
   </div>`
 
   const $tokenIconContainer = item.querySelector(`#token-icon-${data.value.address_hash}`)
-  appendTokenIcon($tokenIconContainer, process.env.CHAIN_ID, data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, process.env.DISPLAY_TOKEN_ICONS)
+  appendTokenIcon($tokenIconContainer, '77', data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, true)
 }
 const config = (id) => {
   return {
@@ -177,35 +177,3 @@ document.querySelector('#main-search-autocomplete').addEventListener('focus', fu
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
   openOnFocus(event, 'mobile')
 })
-
-async function checkLink (url) {
-  try {
-    const res = await fetch(url)
-    return res.ok
-  } catch (_error) {
-    return false
-  }
-}
-
-function getTokenIconUrl (chainID, addressHash) {
-  var chainName = null
-  switch (chainID) {
-    case '1':
-      chainName = 'ethereum'
-      break
-    case '99':
-      chainName = 'poa'
-      break
-    case '100':
-      chainName = 'xdai'
-      break
-    default:
-      chainName = null
-      break
-  }
-  if (chainName) {
-    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainName}/assets/${addressHash}/logo.png`
-  } else {
-    return null
-  }
-}
