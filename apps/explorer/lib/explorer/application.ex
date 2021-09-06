@@ -89,6 +89,8 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AddressTokenUsdSum),
       configure(Explorer.Counters.TokenHoldersCounter),
       configure(Explorer.Counters.TokenTransfersCounter),
+      configure(Explorer.Counters.BlockBurnedFeeCounter),
+      configure(Explorer.Counters.BlockPriorityFeeCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),

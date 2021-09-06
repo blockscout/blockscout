@@ -763,6 +763,52 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds sum of gas_used for new (EIP-1559) txs belongs to block
+  """
+  @spec block_to_gas_used_by_1559_txs(Hash.Full.t()) :: non_neg_integer()
+  def block_to_gas_used_by_1559_txs(block_hash) do
+    query =
+      from(
+        tx in Transaction,
+        where: tx.block_hash == ^block_hash,
+        where: not is_nil(tx.max_priority_fee_per_gas),
+        select: sum(tx.gas_used)
+      )
+
+    result = Repo.one(query)
+    if result, do: result, else: 0
+  end
+
+  @doc """
+  Finds sum of priority fee for new (EIP-1559) txs belongs to block
+  """
+  @spec block_to_priority_fee_of_1559_txs(Hash.Full.t()) :: Decimal.t()
+  def block_to_priority_fee_of_1559_txs(block_hash) do
+    block = Repo.get_by(Block, hash: block_hash)
+    %Wei{value: base_fee_per_gas} = block.base_fee_per_gas
+
+    query =
+      from(
+        tx in Transaction,
+        where: tx.block_hash == ^block_hash,
+        where: not is_nil(tx.max_priority_fee_per_gas),
+        select:
+          sum(
+            fragment(
+              "Case When ? < ? Then ? Else ? End",
+              tx.max_fee_per_gas - ^base_fee_per_gas,
+              tx.max_priority_fee_per_gas,
+              (tx.max_fee_per_gas - ^base_fee_per_gas) * tx.gas_used,
+              tx.max_priority_fee_per_gas * tx.gas_used
+            )
+          )
+      )
+
+    result = Repo.one(query)
+    if result, do: result, else: 0
+  end
+
+  @doc """
   Counts the number of `t:Explorer.Chain.Transaction.t/0` in the `block`.
   """
   @spec block_to_transaction_count(Hash.Full.t()) :: non_neg_integer()
