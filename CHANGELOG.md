@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4608](https://github.com/blockscout/blockscout/pull/4608) - Block Details page: Improved style of transactions button
 - [#4520](https://github.com/blockscout/blockscout/pull/4520) - Add support for EIP-1559
 - [#4593](https://github.com/blockscout/blockscout/pull/4593) - Add status in `Position` pane for txs have no block
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
