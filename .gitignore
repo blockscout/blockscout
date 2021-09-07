@@ -47,5 +47,4 @@ screenshots/
 venv
 erlang-solutions_2.0_all.deb
 __pycache__
-server/data/abi.json
-server/data/meta.json
+server/data

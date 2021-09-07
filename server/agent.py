@@ -8,6 +8,7 @@ import docker as docker
 
 from server import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
 from server.endpoints import read_json, get_all_names, get_schain_endpoint, write_json
+from server.nginx import add_schain_to_nginx
 
 dutils = docker.DockerClient()
 
@@ -41,14 +42,24 @@ def run_explorer(schain_name, endpoint):
         'DB_PORT': str(db_port),
         'ENDPOINT': endpoint
     }
-    print(f'Running explorer for {schain_name}, port: {explorer_port}, db port: {db_port}')
+    print(f'Running explorer with {env}')
     print('=' * 100)
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
     print('=' * 100)
     update_meta_data(schain_name, explorer_port, db_port, endpoint)
+    add_schain_to_nginx(schain_name, f'http://127.0.0.1:{explorer_port}')
+    restart_nginx()
+    print(f'sChain explorer is running on {schain_name}. subdomain')
+
+
+def restart_nginx():
+    nginx = dutils.containers.get('nginx')
+    print('Restarting nginx container...')
+    nginx.restart()
 
 
 def update_meta_data(schain_name, port, db_port, endpoint):
+    print(f'Updating meta data for {schain_name}')
     if not os.path.isfile(EXPLORERS_META_DATA_PATH):
         explorers = {}
     else:

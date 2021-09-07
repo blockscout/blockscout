@@ -10,7 +10,7 @@ def generate_schain_config(schain_name, explorer_endpoint):
             {
                 "directive": "server_name",
                 "args": [
-                    f"{schain_name}"
+                    f"{schain_name}.*"
                 ]
             },
             {
