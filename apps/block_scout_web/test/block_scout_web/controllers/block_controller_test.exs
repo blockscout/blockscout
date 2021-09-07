@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
       |> Stream.map(& &1.number)
       |> Enum.reverse()
 
-      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
+      conn = get(conn, blocks_path(conn, :index), %{"type" => "JSON"})
 
       items = Map.get(json_response(conn, 200), "items")
 
@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
         insert(:block_second_degree_relation, uncle_hash: uncle.hash, nephew: Enum.at(blocks, index))
       end
 
-      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
+      conn = get(conn, blocks_path(conn, :index), %{"type" => "JSON"})
 
       items = Map.get(json_response(conn, 200), "items")
 
@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
       |> insert_list(:transaction)
       |> with_block(block)
 
-      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
+      conn = get(conn, blocks_path(conn, :index), %{"type" => "JSON"})
 
       items = Map.get(json_response(conn, 200), "items")
 
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
       block = insert(:block)
 
       conn =
-        get(conn, block_path(conn, :index), %{
+        get(conn, blocks_path(conn, :index), %{
           "type" => "JSON",
           "block_number" => Integer.to_string(block.number)
         })
@@ -111,10 +111,10 @@ defmodule BlockScoutWeb.BlockControllerTest do
         |> insert_list(:block)
         |> Enum.fetch!(10)
 
-      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
+      conn = get(conn, blocks_path(conn, :index), %{"type" => "JSON"})
 
       expected_path =
-        block_path(conn, :index, %{
+        blocks_path(conn, :index, %{
           block_number: number,
           block_type: "Block",
           items_count: "50"
@@ -126,7 +126,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
     test "next_page_path is empty if on last page", %{conn: conn} do
       insert(:block)
 
-      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
+      conn = get(conn, blocks_path(conn, :index), %{"type" => "JSON"})
 
       refute conn |> json_response(200) |> Map.get("next_page_path")
     end
@@ -137,7 +137,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
       insert(:block, miner: miner_address, miner_hash: nil)
 
-      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
+      conn = get(conn, blocks_path(conn, :index), %{"type" => "JSON"})
 
       items = Map.get(json_response(conn, 200), "items")
 

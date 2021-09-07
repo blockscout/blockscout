@@ -34,11 +34,13 @@ defmodule BlockScoutWeb.WebRouter do
       singleton: true
     )
 
-    resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
+    resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number", as: :blocks do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
 
-    get("/block/:hash_or_number", BlockController, :show_block)
+    resources "/block", BlockController, only: [:show], param: "hash_or_number" do
+      resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
+    end
 
     get("/reorgs", BlockController, :reorg, as: :reorg)
 
