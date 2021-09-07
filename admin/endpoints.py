@@ -1,3 +1,4 @@
+import logging
 import os
 import json
 import socket
@@ -7,6 +8,9 @@ from web3 import Web3, HTTPProvider
 from Crypto.Hash import keccak
 
 from admin import ENDPOINT, ABI_FILEPATH, PROXY_DOMAIN_NAME
+
+logger = logging.getLogger(__name__)
+
 
 if ENDPOINT is None:
     print("Fatal error: ETH main net endpoint not set. Exiting")
@@ -134,7 +138,8 @@ def check_endpoint(endpoint):
         w3 = Web3(HTTPProvider(endpoint))
         w3.eth.get_block_number()
         return True
-    except:
+    except Exception as e:
+        logger.warning(f'Check {endpoint} endpoint fail with {e}')
         return False
 
 

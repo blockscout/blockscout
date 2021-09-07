@@ -1,3 +1,4 @@
+import logging
 import os
 import socket
 import subprocess
@@ -8,8 +9,11 @@ import docker as docker
 
 from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
 from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json
+from admin.logger import init_logger
 from admin.nginx import add_schain_to_nginx
 
+init_logger()
+logger = logging.getLogger(__name__)
 dutils = docker.DockerClient()
 
 
@@ -42,24 +46,24 @@ def run_explorer(schain_name, endpoint):
         'DB_PORT': str(db_port),
         'ENDPOINT': endpoint
     }
-    print(f'Running explorer with {env}')
-    print('=' * 100)
+    logger.info(f'Running explorer with {env}')
+    logger.info('=' * 100)
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
-    print('=' * 100)
+    logger.info('=' * 100)
     update_meta_data(schain_name, explorer_port, db_port, endpoint)
     add_schain_to_nginx(schain_name, f'http://127.0.0.1:{explorer_port}')
     restart_nginx()
-    print(f'sChain explorer is running on {schain_name}. subdomain')
+    logger.info(f'sChain explorer is running on {schain_name}. subdomain')
 
 
 def restart_nginx():
     nginx = dutils.containers.get('nginx')
-    print('Restarting nginx container...')
+    logger.info('Restarting nginx container...')
     nginx.restart()
 
 
 def update_meta_data(schain_name, port, db_port, endpoint):
-    print(f'Updating meta data for {schain_name}')
+    logger.info(f'Updating meta data for {schain_name}')
     if not os.path.isfile(EXPLORERS_META_DATA_PATH):
         explorers = {}
     else:
@@ -89,10 +93,10 @@ def main():
         with open(EXPLORERS_META_DATA_PATH, 'w') as f:
             f.write('{}')
     while True:
-        print('Running new iteration...')
+        logger.info('Running new iteration...')
         run_iteration()
         sleep_time = 600
-        print(f'Sleeping {sleep_time}s')
+        logger.info(f'Sleeping {sleep_time}s')
         sleep(sleep_time)
 
 
