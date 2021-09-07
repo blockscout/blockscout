@@ -6,9 +6,9 @@ from time import sleep
 
 import docker as docker
 
-from server import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
-from server.endpoints import read_json, get_all_names, get_schain_endpoint, write_json
-from server.nginx import add_schain_to_nginx
+from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
+from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json
+from admin.nginx import add_schain_to_nginx
 
 dutils = docker.DockerClient()
 

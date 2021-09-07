@@ -1,0 +1,14 @@
+version: '3.4'
+services:
+  explorer-admin:
+    container_name: explorer_admin
+    image: "explorer-admin:${TAG:-latest}"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ETH_ENDPOINT: ${ENDPOINT}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/admin/data
+      - ../docker:/docker

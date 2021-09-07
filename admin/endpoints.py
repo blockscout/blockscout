@@ -6,7 +6,7 @@ from enum import Enum
 from web3 import Web3, HTTPProvider
 from Crypto.Hash import keccak
 
-from server import ENDPOINT, ABI_FILEPATH, PROXY_DOMAIN_NAME
+from admin import ENDPOINT, ABI_FILEPATH, PROXY_DOMAIN_NAME
 
 if ENDPOINT is None:
     print("Fatal error: ETH main net endpoint not set. Exiting")

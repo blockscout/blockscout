@@ -1,4 +1,4 @@
-from server import NGINX_CONFIG_PATH
+from admin import NGINX_CONFIG_PATH
 import crossplane
 
 
