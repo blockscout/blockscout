@@ -55,10 +55,14 @@ function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChai
 }
 
 async function checkLink (url) {
-  try {
-    const res = await fetch(url)
-    return res.ok
-  } catch (_error) {
+  if (url) {
+    try {
+      const res = await fetch(url)
+      return res.ok
+    } catch (_error) {
+      return false
+    }
+  } else {
     return false
   }
 }
