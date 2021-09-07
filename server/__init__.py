@@ -10,5 +10,7 @@ EXPLORERS_META_DATA_PATH = os.path.join(SERVER_DATA_DIR, 'meta.json')
 NGINX_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.conf')
 NGINX_TEMP_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.temp.conf')
 
-ENDPOINT = os.environ['ETH_ENDPOINT']
+ENDPOINT = os.environ['ENDPOINT']
 PROXY_DOMAIN_NAME = os.environ.get('PROXY_DOMAIN')
+
+assert os.path.isfile(ABI_FILEPATH), "ABI not found"

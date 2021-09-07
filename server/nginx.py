@@ -10,7 +10,7 @@ def generate_schain_config(schain_name, explorer_endpoint):
             {
                 "directive": "server_name",
                 "args": [
-                    f"{schain_name}.localhost"
+                    f"{schain_name}"
                 ]
             },
             {
@@ -29,19 +29,6 @@ def generate_schain_config(schain_name, explorer_endpoint):
             }
         ]
     }
-
-
-def delete_keys_from_dict(dict_del, lst_keys):
-    for k in lst_keys:
-        try:
-            del dict_del[k]
-        except KeyError:
-            pass
-    for v in dict_del.values():
-        if isinstance(v, dict):
-            delete_keys_from_dict(v, lst_keys)
-
-    return dict_del
 
 
 def parse_nginx_conf(cfg_path):
