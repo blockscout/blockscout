@@ -7,6 +7,10 @@
   <td class="stakes-td">
     <%= case @result.type do %>
         <% "token" -> %>
+            <span
+                class="token-icon mr-1"
+                data-address-hash="<%= Address.checksum(@result.address_hash) %>"
+            ></span>
             <% res = @result.name <> " (" <> @result.symbol <> ")" %>
             <a href="<%= token_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
                 <%= highlight_search_result(res, @query) %>

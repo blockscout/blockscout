@@ -1,3 +1,4 @@
+import $ from 'jquery'
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete'
 import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
@@ -92,7 +93,10 @@ const resultItemElement = async (item, data) => {
   </div>`
 
   const $tokenIconContainer = item.querySelector(`#token-icon-${data.value.address_hash}`)
-  appendTokenIcon($tokenIconContainer, '77', data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, true)
+  const $searchInput = $('#main-search-autocomplete')
+  const chainID = $searchInput.data('chain-id')
+  const displayTokenIcons = $searchInput.data('display-token-icons')
+  appendTokenIcon($tokenIconContainer, chainID, data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, displayTokenIcons)
 }
 const config = (id) => {
   return {
