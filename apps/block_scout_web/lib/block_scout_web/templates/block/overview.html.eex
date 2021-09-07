@@ -82,20 +82,22 @@
             <a href="#txs"><i class="fas fa-eye" style="font-size: 9.8px; position: absolute; bottom: 4.6px; margin-left: 5px;"></i></a></dd>
           </dl>
           <!-- Miner/Validator -->
-          <dl class="row">
-            <dt class="col-sm-3 col-lg-2 text-muted">
-              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("A block producer who successfully included the block onto the blockchain.") %>
-              <%= gettext("Miner") %>
-            </dt>
-            <dd class="col-sm-9 col-lg-10"><%= render BlockScoutWeb.AddressView, "_link.html", address: @block.miner, contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
-              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                clipboard_text: @block.miner,
-                aria_label: gettext("Copy Address"),
-                title: gettext("Copy Address") %>
-              </dd>
-          </dl>
+          <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("A block producer who successfully included the block onto the blockchain.") %>
+                <%= gettext("Miner") %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"><%= render BlockScoutWeb.AddressView, "_link.html", address: @block.miner, contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                  clipboard_text: @block.miner,
+                  aria_label: gettext("Copy Address"),
+                  title: gettext("Copy Address") %>
+                </dd>
+            </dl>
+          <% end %>
           <!-- Size -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
