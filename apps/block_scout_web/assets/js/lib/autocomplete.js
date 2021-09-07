@@ -84,7 +84,7 @@ const resultItemElement = async (item, data) => {
   item.style = 'display: flex;'
 
   item.innerHTML = `
-  <div id='token-icon-${data.value.address_hash}'></div>
+  <div id='token-icon-${data.value.address_hash}' style='margin-top: -1px;'></div>
   <div style="padding-left: 10px; padding-right: 10px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
   </div>
@@ -96,7 +96,7 @@ const resultItemElement = async (item, data) => {
   const $searchInput = $('#main-search-autocomplete')
   const chainID = $searchInput.data('chain-id')
   const displayTokenIcons = $searchInput.data('display-token-icons')
-  appendTokenIcon($tokenIconContainer, chainID, data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, displayTokenIcons)
+  appendTokenIcon($tokenIconContainer, chainID, data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, displayTokenIcons, 15)
 }
 const config = (id) => {
   return {

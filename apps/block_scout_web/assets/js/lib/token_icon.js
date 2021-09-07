@@ -23,7 +23,8 @@ function getTokenIconUrl (chainID, addressHash) {
   }
 }
 
-function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons) {
+function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons, size) {
+  const iconSize = size || 20
   var tokenIconURL = null
   if (chainID) {
     tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
@@ -35,12 +36,12 @@ function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChai
       .then(checkTokenIconLink => {
         if (checkTokenIconLink) {
           if ($tokenIconContainer) {
-            var img = new Image(20, 20)
+            var img = new Image(iconSize, iconSize)
             img.src = tokenIconURL
             $tokenIconContainer.append(img)
           }
         } else {
-          identicon.generate({ id: addressHash, size: 20 }, function (err, buffer) {
+          identicon.generate({ id: addressHash, size: iconSize }, function (err, buffer) {
             if (err) throw err
 
             var img = new Image()
