@@ -26,11 +26,14 @@ defmodule BlockScoutWeb.SmartContractController do
 
       functions =
         if action == "write" do
-          if contract_type == "proxy" do
-            Writer.write_functions_proxy(implementation_address_hash_string)
-          else
-            Writer.write_functions(address_hash)
-          end
+          write_functions =
+            if contract_type == "proxy" do
+              Writer.write_functions_proxy(implementation_address_hash_string)
+            else
+              Writer.write_functions(address_hash)
+            end
+
+          Enum.filter(write_functions, fn x -> x["type"] != "error" end)
         else
           if contract_type == "proxy" do
             Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
