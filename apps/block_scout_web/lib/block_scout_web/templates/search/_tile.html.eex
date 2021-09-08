@@ -43,6 +43,12 @@
                 highlight_search_result(to_string(@result.block_number), @query),
                 to: block_path(@conn, :show, @result.block_number)
             ) %>
+        <% "label" -> %>
+            <%= if @result.name do %>
+                <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
+                    <%= highlight_search_result(@result.name, @query) %>
+                </a>
+            <% end %>
         <% _ -> %>
     <% end %>
   </td>
@@ -87,6 +93,17 @@
                 "0x" <> Base.encode16(@result.block_hash, case: :lower),
                 to: block_path(@conn, :show, @result.block_number)
             ) %>
+        <% "label" -> %>
+            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
+            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
+                <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: address,
+                contract: false,
+                use_custom_tooltip: false
+                %>
+            <% end %>
+        <% _ -> %>
     <% end %>
   </td>
   <td class="stakes-td">
