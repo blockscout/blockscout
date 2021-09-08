@@ -9,6 +9,7 @@ services:
     network_mode: host
     environment:
       ETH_ENDPOINT: ${ENDPOINT}
+      PROXY_DOMAIN: ${SCHAIN_PROXY_DOMAIN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/admin/data
