@@ -341,7 +341,7 @@ endif
 
 start: build postgres 
 	@echo "==> Starting blockscout on $(PORT) port"
-	@docker run --rm --name $(BS_CONTAINER_NAME) \
+	@docker run -d --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p $(PORT):$(PORT) \
 					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"

@@ -1,0 +1,22 @@
+version: '3.4'
+services:
+  explorer-admin:
+    container_name: explorer_admin
+    image: "explorer-admin:${TAG:-latest}"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    environment:
+      ETH_ENDPOINT: ${ENDPOINT}
+      PROXY_DOMAIN: ${SCHAIN_PROXY_DOMAIN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/admin/data
+      - ../docker:/docker
+  nginx:
+    image: nginx:1.19.6
+    container_name: nginx
+    network_mode: host
+    volumes:
+      - ./data/nginx.conf:/etc/nginx/conf.d/default.conf:ro

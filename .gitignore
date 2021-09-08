@@ -42,3 +42,9 @@ screenshots/
 
 # mix phx.gen.cert self-signed certs for dev
 /apps/block_scout_web/priv/cert
+
+.idea
+venv
+erlang-solutions_2.0_all.deb
+__pycache__
+admin/data/*
