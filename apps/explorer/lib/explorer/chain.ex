@@ -7411,10 +7411,6 @@ defmodule Explorer.Chain do
 
   @spec get_token_icon_url_by(String.t(), String.t()) :: String.t() | nil
   def get_token_icon_url_by(chain_id, address_hash) do
-    IO.inspect("Gimme chain_id")
-    IO.inspect(chain_id)
-    IO.inspect("Gimme address_hash")
-    IO.inspect(address_hash)
     chain_name =
       case chain_id do
         "1" ->
