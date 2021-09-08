@@ -107,7 +107,7 @@ msgid "- We're indexing this chain right now. Some of the counts may be inaccura
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:185
+#: lib/block_scout_web/templates/block/overview.html.eex:187
 msgid "64-bit hash of value verifying proof-of-work (note: null for POA chains)."
 msgstr ""
 
@@ -123,7 +123,7 @@ msgid "<p>To become a candidate, your staking address must be funded with %{toke
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:88
+#: lib/block_scout_web/templates/block/overview.html.eex:89
 msgid "A block producer who successfully included the block onto the blockchain."
 msgstr ""
 
@@ -260,7 +260,7 @@ msgid "Amount of %{symbol} placed by an address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:226
+#: lib/block_scout_web/templates/block/overview.html.eex:228
 msgid "Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees."
 msgstr ""
 
@@ -328,7 +328,7 @@ msgid "Banned until block #%{banned_until} (%{estimated_unban_day})"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:197
+#: lib/block_scout_web/templates/block/overview.html.eex:199
 msgid "Base Fee per Gas"
 msgstr ""
 
@@ -391,7 +391,7 @@ msgid "Block Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:148
+#: lib/block_scout_web/templates/block/overview.html.eex:150
 msgid "Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."
 msgstr ""
 
@@ -460,8 +460,8 @@ msgid "Bridged from Ethereum"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:62
-#: lib/block_scout_web/templates/block/overview.html.eex:206
+#: lib/block_scout_web/templates/block/_tile.html.eex:64
+#: lib/block_scout_web/templates/block/overview.html.eex:208
 msgid "Burnt Fees"
 msgstr ""
 
@@ -725,8 +725,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:37
 #: lib/block_scout_web/templates/address/overview.html.eex:38
-#: lib/block_scout_web/templates/block/overview.html.eex:95
 #: lib/block_scout_web/templates/block/overview.html.eex:96
+#: lib/block_scout_web/templates/block/overview.html.eex:97
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:40
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:41
 msgid "Copy Address"
@@ -759,8 +759,8 @@ msgid "Copy From Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:119
-#: lib/block_scout_web/templates/block/overview.html.eex:120
+#: lib/block_scout_web/templates/block/overview.html.eex:121
+#: lib/block_scout_web/templates/block/overview.html.eex:122
 msgid "Copy Hash"
 msgstr ""
 
@@ -770,8 +770,8 @@ msgid "Copy Metadata"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:139
-#: lib/block_scout_web/templates/block/overview.html.eex:140
+#: lib/block_scout_web/templates/block/overview.html.eex:141
+#: lib/block_scout_web/templates/block/overview.html.eex:142
 msgid "Copy Parent Hash"
 msgstr ""
 
@@ -983,7 +983,7 @@ msgid "Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:149
+#: lib/block_scout_web/templates/block/overview.html.eex:151
 msgid "Difficulty"
 msgstr ""
 
@@ -1179,8 +1179,8 @@ msgid "GET"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:65
-#: lib/block_scout_web/templates/block/overview.html.eex:177
+#: lib/block_scout_web/templates/block/_tile.html.eex:67
+#: lib/block_scout_web/templates/block/overview.html.eex:179
 #: lib/block_scout_web/templates/transaction/overview.html.eex:340
 msgid "Gas Limit"
 msgstr ""
@@ -1191,8 +1191,8 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:70
-#: lib/block_scout_web/templates/block/overview.html.eex:168
+#: lib/block_scout_web/templates/block/_tile.html.eex:72
+#: lib/block_scout_web/templates/block/overview.html.eex:170
 msgid "Gas Used"
 msgstr ""
 
@@ -1224,7 +1224,7 @@ msgid "Gwei"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:113
+#: lib/block_scout_web/templates/block/overview.html.eex:115
 msgid "Hash"
 msgstr ""
 
@@ -1281,7 +1281,7 @@ msgid "Index position of Transaction in the block."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:239
+#: lib/block_scout_web/templates/block/overview.html.eex:241
 msgid "Index position(s) of referenced stale blocks."
 msgstr ""
 
@@ -1520,9 +1520,9 @@ msgid "Method Id"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:40
-#: lib/block_scout_web/templates/block/overview.html.eex:89
-#: lib/block_scout_web/templates/chain/_block.html.eex:15
+#: lib/block_scout_web/templates/block/_tile.html.eex:41
+#: lib/block_scout_web/templates/block/overview.html.eex:90
+#: lib/block_scout_web/templates/chain/_block.html.eex:16
 msgid "Miner"
 msgstr ""
 
@@ -1550,7 +1550,7 @@ msgid "Minimum Stake:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:196
+#: lib/block_scout_web/templates/block/overview.html.eex:198
 msgid "Minimum fee required per unit of gas. Fee adjusts based on network congestion."
 msgstr ""
 
@@ -1641,7 +1641,7 @@ msgid "No Information"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:186
+#: lib/block_scout_web/templates/block/overview.html.eex:188
 #: lib/block_scout_web/templates/transaction/overview.html.eex:399
 msgid "Nonce"
 msgstr ""
@@ -1703,7 +1703,7 @@ msgid "Parameters"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:129
+#: lib/block_scout_web/templates/block/overview.html.eex:131
 msgid "Parent Hash"
 msgstr ""
 
@@ -1763,7 +1763,7 @@ msgid "Position"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:244
+#: lib/block_scout_web/templates/block/overview.html.eex:246
 msgid "Position %{index}"
 msgstr ""
 
@@ -1796,13 +1796,13 @@ msgid "Price per unit of gas specified by the sender. Higher gas prices can prio
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:215
+#: lib/block_scout_web/templates/block/overview.html.eex:217
 #: lib/block_scout_web/templates/transaction/overview.html.eex:369
 msgid "Priority Fee / Tip"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:60
+#: lib/block_scout_web/templates/block/_tile.html.eex:62
 msgid "Priority Fees"
 msgstr ""
 
@@ -1911,8 +1911,8 @@ msgid "Revert reason"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:50
-#: lib/block_scout_web/templates/chain/_block.html.eex:24
+#: lib/block_scout_web/templates/block/_tile.html.eex:52
+#: lib/block_scout_web/templates/chain/_block.html.eex:26
 #: lib/block_scout_web/views/internal_transaction_view.ex:28
 msgid "Reward"
 msgstr ""
@@ -2013,12 +2013,12 @@ msgid "Show only those I have stake in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:104
+#: lib/block_scout_web/templates/block/overview.html.eex:106
 msgid "Size"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:103
+#: lib/block_scout_web/templates/block/overview.html.eex:105
 msgid "Size of the block in bytes."
 msgstr ""
 
@@ -2198,7 +2198,7 @@ msgid "The Number of Delegators in the Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:112
+#: lib/block_scout_web/templates/block/overview.html.eex:114
 msgid "The SHA256 hash of the block."
 msgstr ""
 
@@ -2233,7 +2233,7 @@ msgid "The first amount is the validator’s own stake, the second is the total 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:128
+#: lib/block_scout_web/templates/block/overview.html.eex:130
 msgid "The hash of the block from which this block was generated."
 msgstr ""
 
@@ -2285,7 +2285,7 @@ msgid "The table refreshed <span></span> block(s) ago."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:167
+#: lib/block_scout_web/templates/block/overview.html.eex:169
 msgid "The total gas amount used in the block and its percentage of gas filled in the block."
 msgstr ""
 
@@ -2586,7 +2586,7 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:159
+#: lib/block_scout_web/templates/block/overview.html.eex:161
 msgid "Total Difficulty"
 msgstr ""
 
@@ -2601,12 +2601,12 @@ msgid "Total blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:158
+#: lib/block_scout_web/templates/block/overview.html.eex:160
 msgid "Total difficulty of the chain until this block."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:176
+#: lib/block_scout_web/templates/block/overview.html.eex:178
 msgid "Total gas limit provided by all transactions in the block."
 msgstr ""
 
@@ -2749,7 +2749,7 @@ msgid "Uncle Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:240
+#: lib/block_scout_web/templates/block/overview.html.eex:242
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:29
 msgid "Uncles"
 msgstr ""
@@ -2802,7 +2802,7 @@ msgid "User-defined tip sent to validator for transaction priority/inclusion."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:214
+#: lib/block_scout_web/templates/block/overview.html.eex:216
 msgid "User-defined tips sent to validator for transaction priority/inclusion."
 msgstr ""
 
@@ -3188,6 +3188,6 @@ msgid "validator"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:205
+#: lib/block_scout_web/templates/block/overview.html.eex:207
 msgid "xDai burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
 msgstr ""
