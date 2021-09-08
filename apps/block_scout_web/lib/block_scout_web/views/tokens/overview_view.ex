@@ -87,15 +87,6 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     end
   end
 
-  def honey_token?(contract_address) do
-    contract_address_lower = "0x" <> Base.encode16(contract_address.bytes, case: :lower)
-
-    case contract_address_lower do
-      @honey_token -> true
-      _ -> false
-    end
-  end
-
   def custom_token_icon(contract_address) do
     contract_address_lower = "0x" <> Base.encode16(contract_address.bytes, case: :lower)
 

@@ -55,7 +55,8 @@ defmodule BlockScoutWeb.TokensController do
           "_tile.html",
           token: token,
           bridged_token: bridged_token,
-          index: items_count + index
+          index: items_count + index,
+          conn: conn
         )
       end)
 
