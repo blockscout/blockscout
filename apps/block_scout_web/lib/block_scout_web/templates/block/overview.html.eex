@@ -74,12 +74,14 @@
               <%= gettext("Transactions") %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
-            <%= if @block_transaction_count == 1 do %>
-              <%= gettext "%{count} Transaction", count: @block_transaction_count %>
-            <% else %>
-              <%= gettext "%{count} Transactions", count: @block_transaction_count %>
-            <% end %>
-            <a href="#txs"><i class="fas fa-eye" style="font-size: 9.8px; position: absolute; bottom: 4.6px; margin-left: 5px;"></i></a></dd>
+              <a href="#txs" class="page-link bs-label large btn-no-border-transactions">
+                <%= if @block_transaction_count == 1 do %>
+                  <%= gettext "%{count} Transaction", count: @block_transaction_count %>
+                <% else %>
+                  <%= gettext "%{count} Transactions", count: @block_transaction_count %>
+                <% end %>
+              </a>
+            </dd>
           </dl>
           <!-- Miner/Validator -->
           <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
