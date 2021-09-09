@@ -21,7 +21,7 @@
   "dependencies": {
     "@analytics/segment": "^0.6.0",
     "analytics": "^0.7.13",
-    "@fortawesome/fontawesome-free": "^5.15.3",
+    "@fortawesome/fontawesome-free": "^5.15.4",
     "@tarekraafat/autocomplete.js": "^10.2.5",
     "assert": "^2.0.0",
     "awesomplete": "^1.1.5",
@@ -35,12 +35,12 @@
     "dropzone": "^5.7.2",
     "eth-net-props": "^1.0.40",
     "highlight.js": "^10.7.3",
-    "highlightjs-solidity": "^1.2.0",
+    "highlightjs-solidity": "^1.2.2",
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
     "jquery": "^3.6.0",
     "lodash": "^4.17.21",
-    "luxon": "^2.0.1",
+    "luxon": "^2.0.2",
     "moment": "^2.29.1",
     "nanomorph": "^5.4.3",
     "numeral": "^2.0.6",
@@ -58,7 +58,7 @@
     "urijs": "^1.19.7",
     "url": "^0.11.0",
     "util": "^0.12.3",
-    "web3": "^1.5.0"
+    "web3": "^1.5.2"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
