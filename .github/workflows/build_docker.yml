@@ -1,0 +1,27 @@
+name: build and push to Docker Hub
+
+on: push
+
+
+jobs:
+  push2docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_ACCESS_TOKEN_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN_SECRET }}
+
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+
+    - name: Build and push docker images to Docker Hub
+      run: |
+            cd docker
+            docker build --build-arg COIN="ETH" -f ./Dockerfile -t omgx/blockexplorer-blockscout:${{ steps.extract_branch.outputs.branch }} ../
+            docker push omgx/blockexplorer-blockscout:${{ steps.extract_branch.outputs.branch }}
