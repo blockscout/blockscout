@@ -20,9 +20,9 @@ defmodule BlockScoutWeb.Resolvers.CeloParameters do
            ceur: eur
          },
          total_locked_gold: locked,
-         min_electable_validators: min_validators.value,
-         max_electable_validators: max_validators.value,
-         num_registered_validators: validators.value,
+         min_electable_validators: min_validators.value |> Decimal.to_integer(),
+         max_electable_validators: max_validators.value |> Decimal.to_integer(),
+         num_registered_validators: validators.value |> Decimal.to_integer(),
 
          # deprecated
          gold_token: celo,
