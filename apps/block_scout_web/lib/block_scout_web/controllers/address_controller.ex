@@ -92,12 +92,7 @@ defmodule BlockScoutWeb.AddressController do
         validation_count: validation_count
       })
     else
-      _ ->
-        json(conn, %{
-          transaction_count: 0,
-          gas_usage_count: 0,
-          validation_count: 0
-        })
+      _ -> not_found(conn)
     end
   end
 
