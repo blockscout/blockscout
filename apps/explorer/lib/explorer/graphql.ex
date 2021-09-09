@@ -379,7 +379,7 @@ defmodule Explorer.GraphQL do
       inner_join: b in Block,
       on: cb.block_number == b.number,
       order_by: [desc: :block_number],
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
+      select_merge: %{delta: %{value: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")}},
       select_merge: %{block_timestamp: b.timestamp}
     )
   end
