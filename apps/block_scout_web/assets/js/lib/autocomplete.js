@@ -1,6 +1,8 @@
-import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
-import { getTextAdData, fetchTextAdData } from './ad.js'
+import $ from 'jquery'
+import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete'
+import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
+import { appendTokenIcon } from './token_icon'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
@@ -13,7 +15,7 @@ const dataSrc = async (query, id) => {
 
     // Fetch External Data Source
     const source = await fetch(
-      `/token-autocomplete?q=${query}`
+      `/poa/core/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
@@ -51,11 +53,13 @@ const searchEngine = (query, record) => {
       (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
   )
   ) {
-    var searchResult = `${record.address_hash || record.tx_hash || record.block_hash}<br/>`
+    var searchResult = '<div>'
+    searchResult += `<div>${record.address_hash || record.tx_hash || record.block_hash}</div>`
 
     if (record.type === 'label') {
       searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`
     } else {
+      searchResult += '<div>'
       if (record.name) {
         searchResult += `<b>${record.name}</b>`
       }
@@ -68,23 +72,31 @@ const searchEngine = (query, record) => {
       if (record.inserted_at) {
         searchResult += ` (${DateTime.fromISO(record.inserted_at).toLocaleString(DateTime.DATETIME_SHORT)})`
       }
+      searchResult += '</div>'
     }
+    searchResult += '</div>'
     var re = new RegExp(query, 'ig')
     searchResult = searchResult.replace(re, '<mark class=\'autoComplete_highlight\'>$&</mark>')
     return searchResult
   }
 }
-const resultItemElement = (item, data) => {
-  // Modify Results Item Style
-  item.style = 'display: flex; justify-content: space-between;'
-  // Modify Results Item Content
+const resultItemElement = async (item, data) => {
+  item.style = 'display: flex;'
+
   item.innerHTML = `
-  <span style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+  <div id='token-icon-${data.value.address_hash}' style='margin-top: -1px;'></div>
+  <div style="padding-left: 10px; padding-right: 10px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
     ${data.match}
-  </span>
-  <span class="autocomplete-category">
+  </div>
+  <div class="autocomplete-category">
     ${data.value.type}
-  </span>`
+  </div>`
+
+  const $tokenIconContainer = $(item).find(`#token-icon-${data.value.address_hash}`)
+  const $searchInput = $('#main-search-autocomplete')
+  const chainID = $searchInput.data('chain-id')
+  const displayTokenIcons = $searchInput.data('display-token-icons')
+  appendTokenIcon($tokenIconContainer, chainID, data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, displayTokenIcons, 15)
 }
 const config = (id) => {
   return {
@@ -122,14 +134,15 @@ const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-m
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
+  const commonPath = '/poa/core'
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
-    window.location = `/address/${selectionValue.address_hash}`
+    window.location = `${commonPath}/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {
-    window.location = `/tokens/${selectionValue.address_hash}`
+    window.location = `${commonPath}/tokens/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'transaction') {
-    window.location = `/tx/${selectionValue.tx_hash}`
+    window.location = `${commonPath}/tx/${selectionValue.tx_hash}`
   } else if (selectionValue.type === 'block') {
-    window.location = `/blocks/${selectionValue.block_hash}`
+    window.location = `${commonPath}/blocks/${selectionValue.block_hash}`
   }
 }
 
