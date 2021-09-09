@@ -1,0 +1,33 @@
+name: build and push to AWS ECR and Docker Hub
+
+on: push
+
+
+jobs:
+  push2docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_ACCESS_TOKEN_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN_SECRET }}
+
+    - name: Build and push docker images to AWS ECR and Docker Hub
+    - uses: nelonoel/branch-name@v1.0.1
+      run: |
+            cd docker
+            ${{ secrets.AWS_ECR }}
+            docker build --build-arg COIN="ETH" -f ./Dockerfile -t omgx/blockexplorer-blockscout:${BRANCH_NAME} ../
+            docker push omgx/blockexplorer-blockscout:${BRANCH_NAME}
+            docker tag omgx/blockexplorer-blockscout:${BRANCH_NAME} 942431445534.dkr.ecr.us-east-1.amazonaws.com/omgx/blockexplorer-blockscout:${BRANCH_NAME}
+            docker push ${{ secrets.AWS_ECR }}/blockexplorer-blockscout:${BRANCH_NAME}
