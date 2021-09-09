@@ -8,6 +8,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4612](https://github.com/blockscout/blockscout/pull/4612) - Hide error selector in the contract's functions list
 - [#4615](https://github.com/blockscout/blockscout/pull/4615) - Fix broken style for `View more transfers` button
 - [#4592](https://github.com/blockscout/blockscout/pull/4592) - Add `type` field for `receive` and `fallback` entities of a Smart Contract
 - [#4601](https://github.com/blockscout/blockscout/pull/4601) - Fix endless Fetching tokens... message on empty addresses
