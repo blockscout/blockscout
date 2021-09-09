@@ -13,7 +13,7 @@
                 data-address-hash="<%= address_hash_checksummed %>"
             >
             <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
-                <% chain_id_for_token_icon = if @result.foreign_chain_id, do: @result.foreign_chain_id, else: System.get_env("CHAIN_ID") %>
+                <% chain_id_for_token_icon = if @result.foreign_chain_id, do: @result.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
                 <% address_hash = if @result.foreign_token_hash, do: @result.foreign_token_hash, else: @result.address_hash %>
                 <% token_icon_url = Chain.get_token_icon_url_by(chain_id_for_token_icon, address_hash) %>
 
