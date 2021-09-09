@@ -1,12 +1,15 @@
 ## Current
 
 ### Features
+- [#4608](https://github.com/blockscout/blockscout/pull/4608), [#4622](https://github.com/blockscout/blockscout/pull/4622) - Block Details page: Improved style of transactions button
 - [#4596](https://github.com/blockscout/blockscout/pull/4596) - Display token icon for bridged with Mainnet tokens or identicons for other tokens
 - [#4520](https://github.com/blockscout/blockscout/pull/4520) - Add support for EIP-1559
 - [#4593](https://github.com/blockscout/blockscout/pull/4593) - Add status in `Position` pane for txs have no block
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4612](https://github.com/blockscout/blockscout/pull/4612) - Hide error selector in the contract's functions list
+- [#4615](https://github.com/blockscout/blockscout/pull/4615) - Fix broken style for `View more transfers` button
 - [#4592](https://github.com/blockscout/blockscout/pull/4592) - Add `type` field for `receive` and `fallback` entities of a Smart Contract
 - [#4601](https://github.com/blockscout/blockscout/pull/4601) - Fix endless Fetching tokens... message on empty addresses
 - [#4591](https://github.com/blockscout/blockscout/pull/4591) - Add step and min value for txValue input field
@@ -16,6 +19,7 @@
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
+- [#4611](https://github.com/blockscout/blockscout/pull/4611) - Ability to hide miner in block views
 
 
 ## 3.7.3-beta

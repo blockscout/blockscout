@@ -1,5 +1,3 @@
-import identicon from 'identicon'
-
 function getTokenIconUrl (chainID, addressHash) {
   var chainName = null
   switch (chainID) {
@@ -26,10 +24,10 @@ function getTokenIconUrl (chainID, addressHash) {
 function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons, size) {
   const iconSize = size || 20
   var tokenIconURL = null
-  if (chainID) {
-    tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
-  } else if (foreignChainID) {
+  if (foreignChainID) {
     tokenIconURL = getTokenIconUrl(foreignChainID.toString(), foreignAddressHash)
+  } else if (chainID) {
+    tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
   }
   if (displayTokenIcons) {
     checkLink(tokenIconURL)
@@ -40,16 +38,6 @@ function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChai
             img.src = tokenIconURL
             $tokenIconContainer.append(img)
           }
-        } else {
-          identicon.generate({ id: addressHash, size: iconSize }, function (err, buffer) {
-            if (err) throw err
-
-            var img = new Image()
-            img.src = buffer
-            if ($tokenIconContainer) {
-              $tokenIconContainer.append(img)
-            }
-          })
         }
       })
   }

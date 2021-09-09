@@ -92,7 +92,7 @@ const resultItemElement = async (item, data) => {
     ${data.value.type}
   </div>`
 
-  const $tokenIconContainer = item.querySelector(`#token-icon-${data.value.address_hash}`)
+  const $tokenIconContainer = $(item).find(`#token-icon-${data.value.address_hash}`)
   const $searchInput = $('#main-search-autocomplete')
   const chainID = $searchInput.data('chain-id')
   const displayTokenIcons = $searchInput.data('display-token-icons')

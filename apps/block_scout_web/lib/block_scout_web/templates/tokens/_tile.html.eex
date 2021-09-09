@@ -1,5 +1,3 @@
-<% foreign_chain_id = if Map.has_key?(@token, :foreign_chain_id), do: @token.foreign_chain_id, else: nil %>
-<% foreign_token_contract_address_hash =if Map.has_key?(@token, :foreign_token_contract_address_hash), do: Address.checksum(@token.foreign_token_contract_address_hash), else: "" %>
 <tr data-identifier-hash="<%= @token.contract_address_hash %>">
   <td class="stakes-td">
       <!-- incremented number by order in the list -->
@@ -8,12 +6,26 @@
       </span>
   </td>
   <td class="stakes-td">
-    <span
-      class="token-icon"
-      data-address-hash="<%= Address.checksum(@token.contract_address_hash) %>"
-      data-foreign-chain-id="<%= foreign_chain_id %>"
-      data-foreign-address-hash="<%= foreign_token_contract_address_hash %>">
-    </span>
+    <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+      <% foreign_chain_id = 
+        if @bridged_token do
+          if Map.has_key?(@bridged_token, :foreign_chain_id), do: @bridged_token.foreign_chain_id, else: nil
+        else
+          nil 
+        end %>
+      <% chain_id_for_token_icon = if foreign_chain_id, do: foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
+      <% foreign_token_contract_address_hash = 
+        if @bridged_token do
+          if Map.has_key?(@bridged_token, :foreign_token_contract_address_hash), do: Address.checksum(@bridged_token.foreign_token_contract_address_hash), else: nil
+        else
+          nil 
+        end %>
+      <% token_hash_for_token_icon = if foreign_token_contract_address_hash, do: foreign_token_contract_address_hash, else: Address.checksum(@token.contract_address_hash) %>
+      <% token_icon_url = Explorer.Chain.get_token_icon_url_by(chain_id_for_token_icon, token_hash_for_token_icon) %>
+      <%= if token_icon_url do %>
+          <img heigth=15 width=15 src="<%= token_icon_url %>" style="margin-top: -3px;"/>
+      <% end %>
+    <% end %>
     <% token = token_display_name(@token) %>
     <%= link(token,
       to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),

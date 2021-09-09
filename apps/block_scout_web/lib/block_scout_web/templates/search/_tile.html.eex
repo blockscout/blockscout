@@ -1,3 +1,4 @@
+<% address_hash_checksummed = @result.address_hash %>
 <tr data-identifier-hash="<%= @result.address_hash %>-<%= if @result.tx_hash, do: Base.encode16(@result.tx_hash, case: :lower), else: "" %>-<%= if @result.block_hash, do: Base.encode16(@result.block_hash, case: :lower), else: "" %>">
   <td class="stakes-td">
       <!-- incremented number by order in the list -->
@@ -9,21 +10,31 @@
         <% "token" -> %>
             <span
                 class="token-icon mr-1"
-                data-address-hash="<%= Address.checksum(@result.address_hash) %>"
-            ></span>
+                data-address-hash="<%= address_hash_checksummed %>"
+            >
+            <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+                <% chain_id_for_token_icon = if @result.foreign_chain_id, do: @result.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
+                <% address_hash = if @result.foreign_token_hash, do: @result.foreign_token_hash, else: @result.address_hash %>
+                <% token_icon_url = Chain.get_token_icon_url_by(chain_id_for_token_icon, address_hash) %>
+
+                <%= if token_icon_url do %>
+                    <img heigth=15 width=15 src="<%= token_icon_url %>" style="margin-top: -2px;"/>
+                <% end %>
+            <% end %>
+            </span>
             <% res = @result.name <> " (" <> @result.symbol <> ")" %>
-            <a href="<%= token_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+            <a href="<%= token_path(@conn, :show, address_hash_checksummed) %>">
                 <%= highlight_search_result(res, @query) %>
             </a>
         <% "address" -> %>
             <%= if @result.name do %>
-                <a href="<%= address_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+                <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
                     <%= highlight_search_result(@result.name, @query) %>
                 </a>
             <% end %>
         <% "contract" -> %>
             <%= if @result.name do %>
-                <a href="<%= address_path(@conn, :show, Address.checksum(@result.address_hash)) %>">
+                <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
                     <%= highlight_search_result(@result.name, @query) %>
                 </a>
             <% end %>
@@ -82,3 +93,7 @@
     <div class="bs-label <%= @result.type %>"><%= @result.type %></div>
   </td>
 </tr>
+<script src="https://cdn.jsdelivr.net/npm/jdenticon@3.1.1/dist/jdenticon.min.js"
+        integrity="sha384-l0/0sn63N3mskDgRYJZA6Mogihu0VY3CusdLMiwpJ9LFPklOARUcOiWEIGGmFELx"
+        crossorigin="anonymous">
+</script>
