@@ -931,20 +931,20 @@ defmodule Explorer.Chain do
       gas_price
       |> Wei.to(unit)
       |> Decimal.mult(gas)
-
-    {:maximum, fee}
     {:actual, fee}
+    {:maximum, fee}
   end
 
-  # @spec fee(%Transaction{gas_used: Decimal.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
-  # def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
-  #   fee =
-  #     gas_price
-  #     |> Wei.to(unit)
-  #     |> Decimal.mult(gas_used)
+  @spec fee(%Transaction{gas_used: Decimal.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: gas_used}, unit) do
+    fee =
+      gas_price
+      |> Wei.to(unit)
+      |> Decimal.mult(gas)
 
-  #   {:actual, fee}
-  # end
+    {:ok, gas_used}
+    {:actual, fee}
+  end
 
   @doc """
   Checks to see if the chain is down indexing based on the transaction from the
