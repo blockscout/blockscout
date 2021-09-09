@@ -95,6 +95,41 @@
                     <%=  gettext "View Contract" %>
                   <% end %>
                 </span>
+                <%= if @token.bridged do %>
+                  <a class="dropdown-toggle swap ml-3" type="button" id="swapDropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <%= gettext "Swap" %>
+                  </a>
+                  <div class="dropdown-menu" style="width: 130px; min-width: 130px;" aria-labelledby="swapDropdownMenu">
+                    <%= render BlockScoutWeb.CommonComponentsView,
+                      "_btn_swap_token_honey.html",
+                      contract_address: @token.contract_address,
+                      symbol: @token.symbol
+                    %>
+                    <%= render BlockScoutWeb.CommonComponentsView,
+                      "_btn_swap_token_sushi.html",
+                      contract_address: @token.contract_address,
+                      symbol: @token.symbol
+                    %>
+                    <%= render BlockScoutWeb.CommonComponentsView,
+                      "_btn_swap_token_swapr.html",
+                      contract_address: @token.contract_address,
+                      symbol: @token.symbol
+                    %>
+
+                      <%= render BlockScoutWeb.CommonComponentsView,
+                        "_btn_swap_token_curve.html",
+                        contract_address: @token.contract_address,
+                        symbol: @token.symbol
+                      %>
+
+                      <%= render BlockScoutWeb.CommonComponentsView,
+                        "_btn_swap_token_component.html",
+                        contract_address: @token.contract_address,
+                        symbol: @token.symbol
+                      %>
+
+                  </div>
+                <% end %>
               </div>
               <%= if Map.has_key?(@token, :custom_metadata) do %>
                 <div style="margin-top: 15px; font-size: 12px;">
@@ -122,23 +157,6 @@
               decimals: @token.decimals,
               symbol: @token.symbol
             %>
-            <%= if @token.bridged do %>
-              <%= render BlockScoutWeb.CommonComponentsView,
-                "_btn_swap_token_honey.html",
-                contract_address: @token.contract_address,
-                symbol: @token.symbol
-              %>
-              <%= render BlockScoutWeb.CommonComponentsView,
-                "_btn_swap_token_sushi.html",
-                contract_address: @token.contract_address,
-                symbol: @token.symbol
-              %>
-              <%= render BlockScoutWeb.CommonComponentsView,
-                "_btn_swap_token_swapr.html",
-                contract_address: @token.contract_address,
-                symbol: @token.symbol
-              %>
-            <% end %>
           </h3>
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">

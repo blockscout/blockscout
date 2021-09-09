@@ -1,11 +1,12 @@
-<a class="ml-1"
+<a class="dropdown-item"
     href="https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=<%= @contract_address %>&exactField=input"
     target="_blank"
 >
-<div class="btn-swap honeypot"
-    aria-label='<%= gettext "Swap Token to WXDai through HoneySwap" %>'
-    data-token-symbol="<%= @symbol %>"
-    data-placement="top"
-    data-toggle="tooltip"
-></div>
+    <div class="btn-swap honeypot mr-1"
+        aria-label='<%= gettext "Swap Token to WXDai through HoneySwap" %>'
+        data-token-symbol="<%= @symbol %>"
+        data-placement="top"
+        data-toggle="tooltip"
+    ></div>
+    <%= gettext "Honeyswap" %>
 </a>

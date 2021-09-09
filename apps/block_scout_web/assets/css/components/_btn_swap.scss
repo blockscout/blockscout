@@ -9,12 +9,18 @@
     cursor: pointer;
 
     &.honeypot {
-        background-image: url("/images/icons/exchanges/honeyswap.png");
+        background-image: url("/images/icons/swap/honeyswap.png");
     }
     &.sushi {
-        margin-top: -14px;
+        background-image: url("/images/icons/swap/sushi.svg");
     }
     &.swapr {
-        background-image: url("/images/icons/exchanges/swapr.png");
+        background-image: url("/images/icons/swap/swapr.svg");
+    }
+    &.curve {
+        background-image: url("/images/icons/swap/curve.svg");
+    }
+    &.component {
+        background-image: url("/images/icons/swap/component.png");
     }
 }

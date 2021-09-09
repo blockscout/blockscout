@@ -1,0 +1,11 @@
+<a class="dropdown-item"
+    href="https://xdai.component.finance/?tab=swap&token1=1"
+    target="_blank"
+>
+    <div class="btn-swap component mr-1"
+        aria-label='<%= gettext "Swap token through Component" %>'
+        data-placement="top"
+        data-toggle="tooltip"
+    ></div>
+    <%= gettext "Component" %>
+</a>

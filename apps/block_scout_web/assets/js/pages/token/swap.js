@@ -35,3 +35,23 @@ $(document.body)
       placement: 'top'
     }).tooltip('show')
   })
+  .on('mouseover', '.btn-swap.curve', event => {
+    const $btn = $(event.target)
+
+    $btn.tooltip('dispose')
+    $btn.tooltip({
+      title: `Swap token through Curve`,
+      trigger: 'hover',
+      placement: 'top'
+    }).tooltip('show')
+  })
+  .on('mouseover', '.btn-swap.component', event => {
+    const $btn = $(event.target)
+
+    $btn.tooltip('dispose')
+    $btn.tooltip({
+      title: `Swap token through Component`,
+      trigger: 'hover',
+      placement: 'top'
+    }).tooltip('show')
+  })
