@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4624](https://github.com/blockscout/blockscout/pull/4624) - Support HTML tags in alert message
 - [#4608](https://github.com/blockscout/blockscout/pull/4608), [#4622](https://github.com/blockscout/blockscout/pull/4622) - Block Details page: Improved style of transactions button
 - [#4596](https://github.com/blockscout/blockscout/pull/4596) - Display token icon for bridged with Mainnet tokens or identicons for other tokens
 - [#4520](https://github.com/blockscout/blockscout/pull/4520) - Add support for EIP-1559
