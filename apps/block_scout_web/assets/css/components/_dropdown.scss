@@ -122,4 +122,16 @@ $dropdown-menu-item-hover-background: rgba($secondary, 0.1) !default;
 
 .dropdown-toggle.swap::after {
   margin-left: 0.255em;
+  vertical-align: 0.05em;
+  @include media-breakpoint-down(sm) {
+    width: 0; 
+    height: 0; 
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 3px solid;
+  }
+}
+
+#swapDropdownMenu {
+  -webkit-appearance: caret;
 }

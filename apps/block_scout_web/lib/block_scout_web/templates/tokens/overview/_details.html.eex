@@ -99,7 +99,7 @@
                   <a class="dropdown-toggle swap ml-3" type="button" id="swapDropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <%= gettext "Swap" %>
                   </a>
-                  <div class="dropdown-menu" style="width: 130px; min-width: 130px;" aria-labelledby="swapDropdownMenu">
+                  <div class="dropdown-menu" style="width: 140px; min-width: 140px;" aria-labelledby="swapDropdownMenu">
                     <%= render BlockScoutWeb.CommonComponentsView,
                       "_btn_swap_token_honey.html",
                       contract_address: @token.contract_address,
