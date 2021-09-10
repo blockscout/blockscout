@@ -23,5 +23,5 @@ jobs:
     - name: Build and push docker images to Docker Hub
       run: |
             cd docker
-            docker build --build-arg COIN="ETH" -f ./Dockerfile -t omgx/blockexplorer-blockscout:${{ steps.extract_branch.outputs.branch }} ../
-            docker push omgx/blockexplorer-blockscout:${{ steps.extract_branch.outputs.branch }}
+            docker build --build-arg COIN="ETH" -f ./Dockerfile -t omgx/blockexplorer-blockscout:latest ../
+            docker push omgx/blockexplorer-blockscout:latest
