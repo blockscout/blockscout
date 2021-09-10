@@ -3,7 +3,11 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
   Extracts `Explorer.Chain.Address.CoinBalanceDaily` params from other schema's params.
   """
 
+  alias EthereumJSONRPC.Blocks
+
   def params_set(%{coin_balances_params: coin_balances_params_set, blocks: blocks}) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
     coin_balances_params =
       coin_balances_params_set
       |> MapSet.to_list()
@@ -19,7 +23,15 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
             block.number == block_number
           end)
 
-        day = DateTime.to_date(block.timestamp)
+        day =
+          if block do
+            DateTime.to_date(block.timestamp)
+          else
+            {:ok, %Blocks{blocks_params: [%{timestamp: block_timestamp}]}} =
+              EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+
+            DateTime.to_date(block_timestamp)
+          end
 
         [%{address_hash: address_hash, day: day} | acc]
       end)
