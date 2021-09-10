@@ -842,7 +842,7 @@ msgid "Create2"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:99
+#: lib/block_scout_web/templates/address/overview.html.eex:111
 msgid "Created by"
 msgstr ""
 
@@ -1090,7 +1090,7 @@ msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:112
+#: lib/block_scout_web/templates/address/overview.html.eex:124
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
@@ -1349,7 +1349,7 @@ msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:84
+#: lib/block_scout_web/templates/address/overview.html.eex:96
 msgid "Last Balance Update: Block #"
 msgstr ""
 
@@ -3082,7 +3082,7 @@ msgid "all epochs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:104
+#: lib/block_scout_web/templates/address/overview.html.eex:116
 msgid "at"
 msgstr ""
 
@@ -3190,4 +3190,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:209
 msgid "xDai burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address/overview.html.eex:65
+msgid "Implementation:"
 msgstr ""
