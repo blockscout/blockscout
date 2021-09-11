@@ -57,7 +57,7 @@
     "sweetalert2": "^10.16.9",
     "urijs": "^1.19.7",
     "url": "^0.11.0",
-    "util": "^0.12.3",
+    "util": "^0.12.4",
     "web3": "^1.5.2"
   },
   "devDependencies": {
