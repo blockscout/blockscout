@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4641](https://github.com/blockscout/blockscout/pull/4641) - Improve categorization of smart-contracts' methods
 - [#4660](https://github.com/blockscout/blockscout/pull/4660) - Save Sourcify path instead of filename
 - [#4655](https://github.com/blockscout/blockscout/pull/4655) - EIP-3091 support
 - [#4621](https://github.com/blockscout/blockscout/pull/4621) - Add beacon contract address slot for proxy
