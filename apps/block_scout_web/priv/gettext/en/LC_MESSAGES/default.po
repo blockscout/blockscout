@@ -727,8 +727,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:38
 #: lib/block_scout_web/templates/block/overview.html.eex:98
 #: lib/block_scout_web/templates/block/overview.html.eex:99
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:48
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:49
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:50
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:51
 msgid "Copy Address"
 msgstr ""
 
@@ -906,7 +906,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:52
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:83
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:85
 msgid "Decimals"
 msgstr ""
 
@@ -2491,7 +2491,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:10
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:41
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:42
 msgid "Token Details"
 msgstr ""
 
@@ -2591,7 +2591,7 @@ msgid "Total Difficulty"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:95
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
 msgid "Total Supply"
 msgstr ""
 
@@ -2898,7 +2898,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:16
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:20
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:75
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:77
 msgid "View Contract"
 msgstr ""
 
@@ -3192,7 +3192,7 @@ msgstr ""
 msgid "xDai burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:65
 msgid "Implementation:"
 msgstr ""
