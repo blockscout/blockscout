@@ -10,3 +10,21 @@ $btn-no-border-color: $primary !default;
     border-color: $btn-no-border-color;
   }
 }
+
+.btn-no-border-transactions {
+  background-color: rgba($primary, 0.1) !important;
+  border-color: $btn-no-border-bg;
+  align-items: center;
+  border-radius: 2px;
+  display: flex;
+  font-size: 12px;
+  position: relative;
+  user-select: none;
+  text-align: center;
+  white-space: nowrap;
+  color: $primary !important;
+
+  &:hover {
+    border-color: #f5f6fa;
+  }
+}
