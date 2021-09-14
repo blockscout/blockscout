@@ -22,6 +22,7 @@
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
+- [#4646](https://github.com/blockscout/blockscout/pull/4646) - Transaction page: Rename burned to burnt
 - [#4611](https://github.com/blockscout/blockscout/pull/4611) - Ability to hide miner in block views
 
 
