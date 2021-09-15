@@ -10,6 +10,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4626](https://github.com/blockscout/blockscout/pull/4626) - Refine view of popup for reverted tx
 - [#4640](https://github.com/blockscout/blockscout/pull/4640) - Token page: fixes in mobile view
 - [#4612](https://github.com/blockscout/blockscout/pull/4612) - Hide error selector in the contract's functions list
 - [#4615](https://github.com/blockscout/blockscout/pull/4615) - Fix broken style for `View more transfers` button
