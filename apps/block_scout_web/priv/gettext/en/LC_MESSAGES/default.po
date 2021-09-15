@@ -2642,11 +2642,6 @@ msgid "Transaction %{transaction}, %{subnetwork} %{transaction}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:379
-msgid "Transaction Burned Fee"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:39
 msgid "Transaction Details"
 msgstr ""
@@ -3195,4 +3190,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:65
 msgid "Implementation:"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:379
+msgid "Transaction Burnt Fee"
 msgstr ""
