@@ -360,12 +360,6 @@ jobs:
           cd apps/ethereum_jsonrpc
           mix compile
           mix test --no-start --exclude no_parity
-      - name: Upload Unit Test Results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: EthereumJSONRPC Test Results
-          path: _build/test/junit/ethereum_jsonrpc/*.xml
         env:
           MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
@@ -374,6 +368,12 @@ jobs:
           PGUSER: postgres
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: EthereumJSONRPC Test Results
+          path: _build/test/junit/ethereum_jsonrpc/*.xml
   test_parity_mox_explorer:
     name: Explorer Tests
     runs-on: ubuntu-18.04
@@ -434,12 +434,6 @@ jobs:
           cd apps/explorer
           mix compile
           mix test --no-start --exclude no_parity --exclude smart_contract_compiler
-      - name: Upload Unit Test Results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: Explorer Test Results
-          path: _build/test/junit/explorer/*.xml
         env:
           MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
@@ -448,6 +442,12 @@ jobs:
           PGUSER: postgres
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Explorer Test Results
+          path: _build/test/junit/explorer/*.xml
   test_parity_mox_indexer:
     name: Indexer Tests
     runs-on: ubuntu-18.04
@@ -501,12 +501,6 @@ jobs:
           cd apps/indexer
           mix compile
           mix test --no-start --exclude no_parity
-      - name: Upload Unit Test Results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: Indexer Test Results
-          path: _build/test/junit/indexer/*.xml
         env:
           MIX_ENV: "test"
           # match POSTGRES_PASSWORD for postgres image below
@@ -515,6 +509,12 @@ jobs:
           PGUSER: postgres
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Indexer Test Results
+          path: _build/test/junit/indexer/*.xml
 
   test_parity_mox_block_scout_web:
     name: Blockscout Web Tests
@@ -594,12 +594,6 @@ jobs:
           cd apps/block_scout_web
           mix compile
           mix test --no-start --exclude no_parity
-      - name: Upload Unit Test Results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: Blockscout Web Test Results
-          path: _build/test/junit/block_scout_web/*.xml
         env:
           # match POSTGRES_PASSWORD for postgres image below
           MIX_ENV: "test"
@@ -609,6 +603,12 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_ID: "77"
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Blockscout Web Test Results
+          path: _build/test/junit/block_scout_web/*.xml
   publish-test-results:
     name: "Publish Unit Tests Results"
     runs-on: ubuntu-18.04
