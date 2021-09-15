@@ -8,7 +8,6 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   require Logger
 
-  alias Explorer.Repo
   alias Indexer.{Block, BoundInterval}
   alias Indexer.Block.Catchup
 

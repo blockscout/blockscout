@@ -174,6 +174,8 @@ defmodule Explorer.Chain.ImportTest do
       gas_limit = Decimal.new(6_946_336)
       gas_used = Decimal.new(50450)
 
+      import_result = Import.all(@import_data)
+
       assert {:ok,
               %{
                 addresses: [
@@ -350,7 +352,7 @@ defmodule Explorer.Chain.ImportTest do
                     updated_at: %{}
                   }
                 ]
-              }} = Import.all(@import_data)
+              }} = import_result
     end
 
     test "inserts a token_balance" do

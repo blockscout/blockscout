@@ -7,7 +7,8 @@ defmodule Indexer.Celo.Util do
   def set_internal_transaction_batch_size(size) do
     internal_transaction_fetcher_pid()
     |> :sys.replace_state(fn state ->
-      Logger.info("Setting internal transaction batch size from #{state[:max_batch_size]} to #{size}")
+      batch_size = Map.get(state, :max_batch_size)
+      Logger.info("Setting internal transaction batch size from #{batch_size} to #{size}")
       %{state | max_batch_size: size}
     end)
   end
@@ -15,7 +16,8 @@ defmodule Indexer.Celo.Util do
   def set_internal_transaction_concurrency(size) do
     internal_transaction_fetcher_pid()
     |> :sys.replace_state(fn state ->
-      Logger.info("Setting internal transaction concurrency from #{state[:max_concurrency]} to #{size}")
+      concurrency = Map.get(state, :max_concurrency)
+      Logger.info("Setting internal transaction concurrency from #{concurrency} to #{size}")
       %{state | max_concurrency: size}
     end)
   end

@@ -308,5 +308,111 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
     end
+
+    test "handles problematic blocks correctly" do
+      valid_block = insert(:block)
+      transaction = insert(:transaction) |> with_block(valid_block)
+      valid_block_hash = valid_block.hash
+      transaction_hash = transaction.hash
+
+      invalid_block = insert(:block)
+      transaction2 = insert(:transaction) |> with_block(invalid_block)
+      invalid_block_hash = invalid_block.hash
+      transaction_hash2 = transaction2.hash
+
+      valid_block2 = insert(:block)
+      transaction3 = insert(:transaction) |> with_block(valid_block2)
+      valid_block_hash2 = valid_block2.hash
+      transaction_hash3 = transaction3.hash
+
+      empty_block = insert(:block, gas_used: 0)
+      empty_block_hash = empty_block.hash
+
+      insert(:pending_block_operation, block_hash: valid_block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: invalid_block_hash, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: valid_block_hash2, fetch_internal_transactions: true)
+      insert(:pending_block_operation, block_hash: empty_block_hash, fetch_internal_transactions: true)
+
+      assert %{block_hash: ^valid_block_hash} = Repo.get(PendingBlockOperation, valid_block_hash)
+      assert %{block_hash: ^invalid_block_hash} = Repo.get(PendingBlockOperation, invalid_block_hash)
+      assert %{block_hash: ^valid_block_hash2} = Repo.get(PendingBlockOperation, valid_block_hash2)
+      assert %{block_hash: ^empty_block_hash} = Repo.get(PendingBlockOperation, empty_block_hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             result: [
+               %{
+                 "blockNumber" => valid_block.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction.hash,
+                 "index" => 0,
+                 "traceAddress" => [],
+                 "type" => "call",
+                 "callType" => "call",
+                 "from" => "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
+                 "to" => "0x1469b17ebf82fedf56f04109e5207bdc4554288c",
+                 "gas" => "0x8600",
+                 "gasUsed" => "0x7d37",
+                 "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+                 "output" => "0x",
+                 "value" => "0x174876e800"
+               }
+             ]
+           }
+         ]}
+      end)
+      |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+        {:error, :closed}
+      end)
+      |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             result: [
+               %{
+                 "blockNumber" => valid_block2.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction2.hash,
+                 "index" => 0,
+                 "traceAddress" => [],
+                 "type" => "call",
+                 "callType" => "call",
+                 "from" => "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
+                 "to" => "0x1469b17ebf82fedf56f04109e5207bdc4554288c",
+                 "gas" => "0x8600",
+                 "gasUsed" => "0x7d37",
+                 "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+                 "output" => "0x",
+                 "value" => "0x174876e800"
+               }
+             ]
+           }
+         ]}
+      end)
+
+      json_rpc_named_arguments = [
+        transport: EthereumJSONRPC.Mox,
+        transport_options: [],
+        variant: EthereumJSONRPC.Geth
+      ]
+
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      assert :ok ==
+               InternalTransaction.run(
+                 [valid_block.number, invalid_block.number, valid_block2.number, empty_block.number],
+                 json_rpc_named_arguments
+               )
+
+      assert nil == Repo.get(PendingBlockOperation, valid_block_hash)
+      assert nil != Repo.get(PendingBlockOperation, invalid_block_hash)
+      assert nil == Repo.get(PendingBlockOperation, valid_block_hash2)
+      assert nil == Repo.get(PendingBlockOperation, empty_block_hash)
+    end
   end
 end
