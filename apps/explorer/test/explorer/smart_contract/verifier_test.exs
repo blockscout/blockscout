@@ -3,6 +3,7 @@ defmodule Explorer.SmartContract.VerifierTest do
   use Explorer.DataCase
 
   @moduletag timeout: :infinity
+  @moduletag :smart_contract_compiler
 
   doctest Explorer.SmartContract.Verifier
 

@@ -11,6 +11,7 @@ defmodule Explorer.SmartContract.PublisherTest do
   alias Explorer.{Factory, Repo}
   alias Explorer.SmartContract.Publisher
 
+  @moduletag :smart_contract_compiler
   describe "publish/2" do
     test "with valid data creates a smart_contract" do
       contract_code_info = Factory.contract_code_info()

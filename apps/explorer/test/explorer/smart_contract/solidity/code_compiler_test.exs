@@ -12,6 +12,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
                   |> File.read!()
                   |> Jason.decode!()
 
+  @moduletag :smart_contract_compiler
   describe "run/2" do
     setup do
       {:ok, contract_code_info: Factory.contract_code_info()}
