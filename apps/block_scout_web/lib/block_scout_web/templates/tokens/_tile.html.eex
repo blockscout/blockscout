@@ -6,6 +6,15 @@
       </span>
   </td>
   <td class="stakes-td">
+    <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+      <% chain_id_for_token_icon = System.get_env("CHAIN_ID") %>
+      <% foreign_token_contract_address_hash = nil %>
+      <% token_hash_for_token_icon = if foreign_token_contract_address_hash, do: foreign_token_contract_address_hash, else: Address.checksum(@token.contract_address_hash) %>
+      <% token_icon_url = Explorer.Chain.get_token_icon_url_by(chain_id_for_token_icon, token_hash_for_token_icon) %>
+      <%= if token_icon_url do %>
+          <img heigth=15 width=15 src="<%= token_icon_url %>" style="margin-top: -3px;"/>
+      <% end %>
+    <% end %>
     <% token = token_display_name(@token) %>
     <%= link(token,
       to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
@@ -20,17 +29,6 @@
       use_custom_tooltip: false
     %>
   </td>
-  <%= if Chain.bridged_tokens_enabled?() do %>
-    <td class="stakes-td">
-      <%= case @token.bridged do %>
-      <% nil -> %>
-        <i style="color: #f7b32b; font-size: 20px;" class="far fa-question-circle"></i>
-      <% true -> %>
-        <i style="color: #20b760; font-size: 20px;" class="far fa-check-circle"></i>
-      <% false -> %>
-      <% end %>
-    </td>
-  <% end %>
   <td class="stakes-td">
     <%= if decimals?(@token) do %>
       <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>

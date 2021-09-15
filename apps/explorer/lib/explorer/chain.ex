@@ -724,6 +724,52 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds sum of gas_used for new (EIP-1559) txs belongs to block
+  """
+  @spec block_to_gas_used_by_1559_txs(Hash.Full.t()) :: non_neg_integer()
+  def block_to_gas_used_by_1559_txs(block_hash) do
+    query =
+      from(
+        tx in Transaction,
+        where: tx.block_hash == ^block_hash,
+        where: not is_nil(tx.max_priority_fee_per_gas),
+        select: sum(tx.gas_used)
+      )
+
+    result = Repo.one(query)
+    if result, do: result, else: 0
+  end
+
+  @doc """
+  Finds sum of priority fee for new (EIP-1559) txs belongs to block
+  """
+  @spec block_to_priority_fee_of_1559_txs(Hash.Full.t()) :: Decimal.t()
+  def block_to_priority_fee_of_1559_txs(block_hash) do
+    block = Repo.get_by(Block, hash: block_hash)
+    %Wei{value: base_fee_per_gas} = block.base_fee_per_gas
+
+    query =
+      from(
+        tx in Transaction,
+        where: tx.block_hash == ^block_hash,
+        where: not is_nil(tx.max_priority_fee_per_gas),
+        select:
+          sum(
+            fragment(
+              "Case When ? < ? Then ? Else ? End",
+              tx.max_fee_per_gas - ^base_fee_per_gas,
+              tx.max_priority_fee_per_gas,
+              (tx.max_fee_per_gas - ^base_fee_per_gas) * tx.gas_used,
+              tx.max_priority_fee_per_gas * tx.gas_used
+            )
+          )
+      )
+
+    result = Repo.one(query)
+    if result, do: result, else: 0
+  end
+
+  @doc """
   Counts the number of `t:Explorer.Chain.Transaction.t/0` in the `block`.
   """
   @spec block_to_transaction_count(Hash.Full.t()) :: non_neg_integer()
@@ -1127,11 +1173,15 @@ defmodule Explorer.Chain do
 
   defp search_token_query(term) do
     from(token in Token,
+      left_join: bridged in BridgedToken,
+      on: token.contract_address_hash == bridged.home_token_contract_address_hash,
       where: fragment("to_tsvector(symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
       select: %{
         address_hash: token.contract_address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
         block_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_token_hash: bridged.foreign_token_contract_address_hash,
+        foreign_chain_id: bridged.foreign_chain_id,
         type: "token",
         name: token.name,
         symbol: token.symbol,
@@ -1151,6 +1201,8 @@ defmodule Explorer.Chain do
         address_hash: smart_contract.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
         block_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_chain_id: ^nil,
         type: "contract",
         name: smart_contract.name,
         symbol: ^nil,
@@ -1172,6 +1224,8 @@ defmodule Explorer.Chain do
             address_hash: address.hash,
             tx_hash: fragment("CAST(NULL AS bytea)"),
             block_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_chain_id: ^nil,
             type: "address",
             name: address_name.name,
             symbol: ^nil,
@@ -1195,6 +1249,8 @@ defmodule Explorer.Chain do
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: transaction.hash,
             block_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_chain_id: ^nil,
             type: "transaction",
             name: ^nil,
             symbol: ^nil,
@@ -1218,6 +1274,8 @@ defmodule Explorer.Chain do
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: fragment("CAST(NULL AS bytea)"),
             block_hash: block.hash,
+            foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+            foreign_chain_id: ^nil,
             type: "block",
             name: ^nil,
             symbol: ^nil,
@@ -1236,6 +1294,8 @@ defmodule Explorer.Chain do
                 address_hash: fragment("CAST(NULL AS bytea)"),
                 tx_hash: fragment("CAST(NULL AS bytea)"),
                 block_hash: block.hash,
+                foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+                foreign_chain_id: ^nil,
                 type: "block",
                 name: ^nil,
                 symbol: ^nil,
@@ -1296,7 +1356,28 @@ defmodule Explorer.Chain do
           ordered_query
           |> page_search_results(paging_options)
 
-        Repo.all(paginated_ordered_query)
+        search_results = Repo.all(paginated_ordered_query)
+
+        search_results
+        |> Enum.map(fn result ->
+          result_checksummed_address_hash =
+            if result.address_hash do
+              result
+              |> Map.put(:address_hash, Address.checksum(result.address_hash))
+            else
+              result
+            end
+
+          result_checksummed =
+            if result_checksummed_address_hash.foreign_token_hash do
+              result_checksummed_address_hash
+              |> Map.put(:foreign_token_hash, Address.checksum(result_checksummed_address_hash.foreign_token_hash))
+            else
+              result_checksummed_address_hash
+            end
+
+          result_checksummed
+        end)
 
       _ ->
         []
@@ -3937,12 +4018,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp format_source_code_output(smart_contract) do
-    SmartContract.add_submitted_comment(
-      smart_contract.contract_source_code,
-      smart_contract.inserted_at
-    )
-  end
+  defp format_source_code_output(smart_contract), do: smart_contract.contract_source_code
 
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
@@ -6511,17 +6587,40 @@ defmodule Explorer.Chain do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     # https://eips.ethereum.org/EIPS/eip-1967
-    eip_1967_implementation_storage_pointer = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+    storage_slot_logic_contract_address = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
 
-    {:ok, implementation_address} =
-      Contract.eth_get_storage_at_request(
-        proxy_address_hash,
-        eip_1967_implementation_storage_pointer,
-        nil,
-        json_rpc_named_arguments
-      )
+    {status, implementation_address} =
+      case Contract.eth_get_storage_at_request(
+             proxy_address_hash,
+             storage_slot_logic_contract_address,
+             nil,
+             json_rpc_named_arguments
+           ) do
+        {:ok, "0x"} ->
+          Contract.eth_get_storage_at_request(
+            proxy_address_hash,
+            storage_slot_beacon_contract_address,
+            nil,
+            json_rpc_named_arguments
+          )
 
-    abi_decode_address_output(implementation_address)
+        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"} ->
+          Contract.eth_get_storage_at_request(
+            proxy_address_hash,
+            storage_slot_beacon_contract_address,
+            nil,
+            json_rpc_named_arguments
+          )
+
+        {:ok, implementation_logic_address} ->
+          {:ok, implementation_logic_address}
+
+        {:error, _} ->
+          {:ok, "0x"}
+      end
+
+    abi_decode_address_output(if status == :ok, do: implementation_address, else: "0x")
   end
 
   defp get_implementation_address_hash_basic(proxy_address_hash, abi) do
@@ -6575,6 +6674,8 @@ defmodule Explorer.Chain do
   end
 
   defp abi_decode_address_output(address) when is_nil(address), do: nil
+
+  defp abi_decode_address_output("0x"), do: @burn_address_hash_str
 
   defp abi_decode_address_output(address) do
     if String.length(address) > 42 do
@@ -6842,6 +6943,39 @@ defmodule Explorer.Chain do
 
       true ->
         :token_transfer
+    end
+  end
+
+  @spec get_token_icon_url_by(String.t(), String.t()) :: String.t() | nil
+  def get_token_icon_url_by(chain_id, address_hash) do
+    chain_name =
+      case chain_id do
+        "1" ->
+          "ethereum"
+
+        "99" ->
+          "poa"
+
+        "100" ->
+          "xdai"
+
+        _ ->
+          nil
+      end
+
+    if chain_name do
+      try_url =
+        "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/#{chain_name}/assets/#{address_hash}/logo.png"
+
+      %HTTPoison.Response{status_code: status_code} = HTTPoison.get!(try_url)
+
+      if status_code == 200 do
+        try_url
+      else
+        nil
+      end
+    else
+      nil
     end
   end
 end

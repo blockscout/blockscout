@@ -59,6 +59,18 @@
             </span>
           </h1>
           <h3 class="address-detail-hash-title <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
+          <%= if @is_proxy do %>
+            <% implementation_address = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || @burn_address %>
+            <br>
+              <%= gettext("Implementation:") %>
+              <%= link(
+                        implementation_address,
+                        to: address_path(@conn, :show, implementation_address),
+                        class: "contract-address mb-2",
+                        style: "margin-top: 0.5rem;"
+                      ) 
+                %>
+          <% end %>
           <div class="d-flex flex-column flex-lg-row justify-content-start text-muted">
             <%= if address_name = primary_name(@address) do %>
               <strong class="mr-4 mb-2 text-dark" title="<%= address_name %>">

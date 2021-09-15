@@ -38,9 +38,14 @@
   <div class="d-flex py-2 border-bottom" data-function>
     <div class="py-2 pr-2 text-nowrap">
       <%= counter %>.
-
-      <%= function["name"] %>
-
+      <%= case function["type"] do %>
+        <% "fallback" -> %>
+          <%= gettext "fallback" %><%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", text: gettext("The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable.") %>
+        <% "receive" -> %>
+          <%= gettext "receive" %><%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", text: gettext("The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception.") %>
+        <% _ -> %>
+          <%= function["name"] %>
+      <% end %>
       &#8594;
     </div>
 
@@ -60,7 +65,9 @@
             <%= for input <- function["inputs"] do %>
               <div class="form-group pr-3">
                 <%= if int?(input["type"]) do %>
-                  <input type="number" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+                  <input type="number" name="function_input" class="form-control form-control-sm address-input-sm mt-2"
+                  placeholder='<%= input["name"] %>(<%= input["type"] %>)'
+                  style="width: <%= (String.length(input["name"]) + String.length(input["type"]) + 2) * 10 %>px;"/>
                   <span data-dropdown-toggle="" data-toggle="dropdown">
                     <span class="button btn-line button-xs contract-plus-btn-container ml-1 mt-2">
                       <i class="fa fa-plus contract-plus-btn"></i>
@@ -69,12 +76,14 @@
                       <div class="dropdown-item contract-exponentiation-btn" data-power=6>10<sup>6</sup></div>
                       <div class="dropdown-item contract-exponentiation-btn" data-power=8>10<sup>8</sup></div>
                       <div class="dropdown-item contract-exponentiation-btn" data-power=18>10<sup>18</sup></div>
-                      <div class="dropdown-item contract-exponentiation-btn" data-power>10<input type="number" name="custom_power" class="form-control form-control-sm address-input-sm ml-1 custom-power-input" /></div> 
+                      <div class="dropdown-item contract-exponentiation-btn" data-power><input type="number" name="custom_power" class="form-control form-control-sm address-input-sm ml-1 custom-power-input" />10</div> 
                     </div>
                   </span>
 
                 <% else %>
-                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" 
+                  placeholder='<%= input["name"] %>(<%= input["type"] %>)' 
+                  size="<%= String.length(input["name"]) + String.length(input["type"]) + 2 %>" />
                 <% end %>
               </div>
             <% end %>
@@ -82,7 +91,8 @@
 
           <%= if Helper.payable?(function) do %>
             <div class="form-group pr-3">
-              <input type="text" name="function_input" tx-value class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)'  />
+              <input type="number" name="function_input" tx-value
+              data-toggle="tooltip" title='Amount in native token <<%= gettext("ETH")%>>' class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)' min="0" step="1e-18" />
             </div>
           <% end %>
 
@@ -102,12 +112,13 @@
       </div>
     <% else %>
       <%= if outputs?(function["outputs"]) do %>
-        <%= for output <- function["outputs"] do %>
+        <% length = Enum.count(function["outputs"]) %>
+        <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>
           <%= if address?(output["type"]) do %>
             <div class="py-2 word-break-all">
               <%= link(
                 output["value"],
-                to: address_path(@conn, :show, output["value"])) %>
+                to: address_path(@conn, :show, output["value"])) %><%= if length > 1 and index < length - 1 do %>,&#160;<% end %>
             </div>
           <% else %>
             <%= if output["type"] == "uint256" do %>

@@ -1,6 +1,41 @@
 ## Current
 
 ### Features
+- [#4621](https://github.com/blockscout/blockscout/pull/4621) - Add beacon contract address slot for proxy
+- [#4625](https://github.com/blockscout/blockscout/pull/4625) - Contract address page: Add implementation link to the overview of proxy contracts
+- [#4624](https://github.com/blockscout/blockscout/pull/4624) - Support HTML tags in alert message
+- [#4608](https://github.com/blockscout/blockscout/pull/4608), [#4622](https://github.com/blockscout/blockscout/pull/4622) - Block Details page: Improved style of transactions button
+- [#4596](https://github.com/blockscout/blockscout/pull/4596) - Display token icon for bridged with Mainnet tokens or identicons for other tokens
+- [#4520](https://github.com/blockscout/blockscout/pull/4520) - Add support for EIP-1559
+- [#4593](https://github.com/blockscout/blockscout/pull/4593) - Add status in `Position` pane for txs have no block
+- [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
+
+### Fixes
+- [#4626](https://github.com/blockscout/blockscout/pull/4626) - Refine view of popup for reverted tx
+- [#4640](https://github.com/blockscout/blockscout/pull/4640) - Token page: fixes in mobile view
+- [#4612](https://github.com/blockscout/blockscout/pull/4612) - Hide error selector in the contract's functions list
+- [#4615](https://github.com/blockscout/blockscout/pull/4615) - Fix broken style for `View more transfers` button
+- [#4592](https://github.com/blockscout/blockscout/pull/4592) - Add `type` field for `receive` and `fallback` entities of a Smart Contract
+- [#4601](https://github.com/blockscout/blockscout/pull/4601) - Fix endless Fetching tokens... message on empty addresses
+- [#4591](https://github.com/blockscout/blockscout/pull/4591) - Add step and min value for txValue input field
+- [#4589](https://github.com/blockscout/blockscout/pull/4589) - Fix solid outputs on contract read page
+- [#4586](https://github.com/blockscout/blockscout/pull/4586) - Fix floating tooltips on the token transfer family blocks
+- [#4587](https://github.com/blockscout/blockscout/pull/4587) - Enable navbar menu on Search results page
+- [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
+
+### Chore
+- [#4649](https://github.com/blockscout/blockscout/pull/4649) - 1559 Transaction Page: Convert Burnt Fee to ether and add price in USD
+- [#4646](https://github.com/blockscout/blockscout/pull/4646) - Transaction page: Rename burned to burnt
+- [#4611](https://github.com/blockscout/blockscout/pull/4611) - Ability to hide miner in block views
+
+
+## 3.7.3-beta
+
+### Features
+- [#4569](https://github.com/blockscout/blockscout/pull/4569) - Smart-Contract: remove comment with the submission date
+- [#4568](https://github.com/blockscout/blockscout/pull/4568) - TX page: Token transfer and minting section improvements
+- [#4540](https://github.com/blockscout/blockscout/pull/4540) - Allign copy buttons for `Block Details` and `Transaction Details` pages
+- [#4528](https://github.com/blockscout/blockscout/pull/4528) - Block Details page: rework view
 - [#4531](https://github.com/blockscout/blockscout/pull/4531) - Add Arbitrum support
 - [#4524](https://github.com/blockscout/blockscout/pull/4524) - Add index position of transaction in the block
 - [#4489](https://github.com/blockscout/blockscout/pull/4489) - Search results page

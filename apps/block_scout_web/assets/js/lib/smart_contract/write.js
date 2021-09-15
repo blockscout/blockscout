@@ -1,6 +1,6 @@
 import Web3 from 'web3'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals'
-import { compareChainIDs, formatError, getContractABI, getCurrentAccount, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { compareChainIDs, formatError, formatTitleAndError, getContractABI, getCurrentAccount, getMethodInputs, prepareMethodArgs } from './common_helpers'
 
 export const walletEnabled = () => {
   return new Promise((resolve) => {
@@ -100,7 +100,8 @@ export function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $
         const methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
         methodToCall
           .on('error', function (error) {
-            openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
+            var titleAndError = formatTitleAndError(error)
+            openErrorModal(titleAndError.title.length ? titleAndError.title : `Error in sending transaction for method "${functionName}"`, titleAndError.message, false)
           })
           .on('transactionHash', function (txHash) {
             onTransactionHash(txHash, $element, functionName)
@@ -150,6 +151,9 @@ function getTxValue ($functionInputs) {
   const WEI_MULTIPLIER = 10 ** 18
   const $txValue = $functionInputs.filter('[tx-value]:first')
   const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
-  const txValueStr = txValue && txValue.toString(16)
-  return txValueStr
+  var txValueStr = txValue && txValue.toString(16)
+  if (!txValueStr) {
+    txValueStr = '0'
+  }
+  return '0x' + txValueStr
 }
