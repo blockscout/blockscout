@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4655](https://github.com/blockscout/blockscout/pull/4655) - EIP-3091 support
 - [#4621](https://github.com/blockscout/blockscout/pull/4621) - Add beacon contract address slot for proxy
 - [#4625](https://github.com/blockscout/blockscout/pull/4625) - Contract address page: Add implementation link to the overview of proxy contracts
 - [#4624](https://github.com/blockscout/blockscout/pull/4624) - Support HTML tags in alert message
