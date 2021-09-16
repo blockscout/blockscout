@@ -81,6 +81,12 @@
 <%= if is_cryptopunks?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "xDaiPunks", additional_classes: ["cryptopunks", "ml-1"] %>
 <% end %>
+<%= if is_aox?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "Arbitrum on xDai", additional_classes: ["aox", "ml-1"] %>
+<% end %>
+<%= if is_l2?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "L2", additional_classes: ["l2", "ml-1"] %>
+<% end %>
 <%= if is_test?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-1"] %>
 <% end %>

@@ -78,29 +78,35 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     AddressTag.set_tag("lewinswap farm")
     AddressTag.set_tag("lewinswap stake")
 
-    # set Swarm tags
+    # set Swarm tag
     AddressTag.set_tag("swarm")
 
-    # set CryptoStamps tags
+    # set CryptoStamps tag
     AddressTag.set_tag("cryptostamps")
 
-    # set Curve tags
+    # set Curve tag
     AddressTag.set_tag("curve")
 
-    # set USELESS MEV MACHINE tags
+    # set USELESS MEV MACHINE tag
     AddressTag.set_tag("useless mev machine")
 
-    # set Tornado.Cash tags
+    # set Tornado.Cash tag
     AddressTag.set_tag("tornado cash")
 
-    # set SANA tags
+    # set SANA tag
     AddressTag.set_tag("sana")
 
-    # set Rarible Protocol tags
+    # set Rarible Protocol tag
     AddressTag.set_tag("rarible")
 
-    # set Cryptopunks tags
+    # set Cryptopunks tag
     AddressTag.set_tag("xdai punks")
+
+    # set AoX tag
+    AddressTag.set_tag("arbitrum on xdai")
+
+    # set L2 tag
+    AddressTag.set_tag("l2")
 
     # set tag for every chainlink oracle
     create_chainlink_oracle_tag()
@@ -187,6 +193,12 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set Cryptopunks tag
     set_cryptopunks_tag()
+
+    # set AoX tag
+    set_aox_tag()
+
+    # set L2 tag
+    set_l2_tag()
 
     {:noreply, state}
   end
@@ -377,6 +389,14 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_cryptopunks_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_CRYPTOPUNKS", "xdai punks")
+  end
+
+  defp set_aox_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_AOX", "arbitrum on xdai")
+  end
+
+  defp set_l2_tag do
+    set_tag_for_multiple_env_var_addresses(["CUSTOM_CONTRACT_ADDRESSES_AOX"], "l2")
   end
 
   defp chainlink_oracles_list do

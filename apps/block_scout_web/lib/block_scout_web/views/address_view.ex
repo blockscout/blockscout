@@ -664,6 +664,19 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CRYPTOPUNKS", "")) =~ address_hash_str
   end
 
+  def is_aox?(nil), do: false
+
+  def is_aox?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_AOX", "")) =~ address_hash_str
+  end
+
+  def is_l2?(nil), do: false
+
+  def is_l2?(address_hash) do
+    is_aox?(address_hash)
+  end
+
   def is_chainlink_oracle?(nil), do: false
 
   def is_chainlink_oracle?(address_hash) do
