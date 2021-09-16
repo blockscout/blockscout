@@ -1,6 +1,8 @@
 ## Current
 
 ### Features
+- [#4655](https://github.com/blockscout/blockscout/pull/4655) - EIP-3091 support
+- [#4621](https://github.com/blockscout/blockscout/pull/4621) - Add beacon contract address slot for proxy
 - [#4625](https://github.com/blockscout/blockscout/pull/4625) - Contract address page: Add implementation link to the overview of proxy contracts
 - [#4624](https://github.com/blockscout/blockscout/pull/4624) - Support HTML tags in alert message
 - [#4608](https://github.com/blockscout/blockscout/pull/4608), [#4622](https://github.com/blockscout/blockscout/pull/4622) - Block Details page: Improved style of transactions button
@@ -10,7 +12,9 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
-- [#4640](https://github.com/blockscout/blockscout/pull/4640) - Token address line height fix in mobile view
+- [#4654](https://github.com/blockscout/blockscout/pull/4654) - AddressView: Change `@burn_address` to string `0x0000000000000000000000000000000000000000`
+- [#4626](https://github.com/blockscout/blockscout/pull/4626) - Refine view of popup for reverted tx
+- [#4640](https://github.com/blockscout/blockscout/pull/4640) - Token page: fixes in mobile view
 - [#4612](https://github.com/blockscout/blockscout/pull/4612) - Hide error selector in the contract's functions list
 - [#4615](https://github.com/blockscout/blockscout/pull/4615) - Fix broken style for `View more transfers` button
 - [#4592](https://github.com/blockscout/blockscout/pull/4592) - Add `type` field for `receive` and `fallback` entities of a Smart Contract
@@ -23,6 +27,8 @@
 - [#4546](https://github.com/blockscout/blockscout/pull/4546) - Indexer performance update: async get block rewards
 
 ### Chore
+- [#4649](https://github.com/blockscout/blockscout/pull/4649) - 1559 Transaction Page: Convert Burnt Fee to ether and add price in USD
+- [#4646](https://github.com/blockscout/blockscout/pull/4646) - Transaction page: Rename burned to burnt
 - [#4611](https://github.com/blockscout/blockscout/pull/4611) - Ability to hide miner in block views
 
 

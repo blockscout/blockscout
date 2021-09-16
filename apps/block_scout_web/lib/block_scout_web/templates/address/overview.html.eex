@@ -95,7 +95,7 @@
             </span>
           <% end %>
           <%= if @is_proxy do %>
-            <% implementation_address = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || @burn_address %>
+            <% implementation_address = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || "0x0000000000000000000000000000000000000000" %>
             <br>
               <%= gettext("Implementation:") %>
               <%= link(
