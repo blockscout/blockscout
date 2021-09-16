@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.BlockController do
             |> Map.delete("type")
             |> Map.put("block_type", block_type)
 
-          block_path(
+          blocks_path(
             conn,
             :index,
             params_with_block_type
