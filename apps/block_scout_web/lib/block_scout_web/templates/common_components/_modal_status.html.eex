@@ -11,7 +11,7 @@
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body modal-status-body">
         <h2 class="modal-status-title"><%= if assigns[:title] do @title end %></h2>
-        <p class="modal-status-text"><%= if assigns[:text] do @text end %></p>
+        <p class="modal-status-text" style="<%= if @status == "error", do: "word-break: break-all;" %>"><%= if assigns[:text] do @text end %></p>
         <div class="modal-status-button-wrapper">
           <%= if @status !== "question" do %>
             <button class="btn-line" type="button" data-dismiss="modal">
