@@ -34,7 +34,13 @@ defmodule BlockScoutWeb.WebRouter do
       singleton: true
     )
 
-    resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
+    resources "/block", BlockController, only: [:show], param: "hash_or_number" do
+      resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
+    end
+
+    resources("/blocks", BlockController, as: :blocks, only: [:index])
+
+    resources "/blocks", BlockController, as: :block_secondary, only: [:show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
 
@@ -222,7 +228,58 @@ defmodule BlockScoutWeb.WebRouter do
       )
     end
 
-    resources "/tokens", Tokens.TokenController, only: [:show], as: :token do
+    resources "/token", Tokens.TokenController, only: [:show], as: :token do
+      resources(
+        "/token-transfers",
+        Tokens.TransferController,
+        only: [:index],
+        as: :transfer
+      )
+
+      resources(
+        "/read-contract",
+        Tokens.ReadContractController,
+        only: [:index],
+        as: :read_contract
+      )
+
+      resources(
+        "/token-holders",
+        Tokens.HolderController,
+        only: [:index],
+        as: :holder
+      )
+
+      resources(
+        "/inventory",
+        Tokens.InventoryController,
+        only: [:index],
+        as: :inventory
+      )
+
+      resources(
+        "/instance",
+        Tokens.InstanceController,
+        only: [:show],
+        as: :instance
+      ) do
+        resources(
+          "/token-transfers",
+          Tokens.Instance.TransferController,
+          only: [:index],
+          as: :transfer
+        )
+
+        resources(
+          "/metadata",
+          Tokens.Instance.MetadataController,
+          only: [:index],
+          as: :metadata
+        )
+      end
+    end
+
+    resources "/tokens", Tokens.TokenController, only: [:show], as: :token_secondary do
       resources(
         "/token-transfers",
         Tokens.TransferController,

@@ -1,0 +1,4 @@
+<% tenderly_link = "https://dashboard.tenderly.co/tx#{@tenderly_chain_path}/" <> "0x" <> Base.encode16(@transaction_hash.bytes, case: :lower) %>
+<a data-test="external_url" href="<%= tenderly_link %>" target="_blank" class="d-flex flex-row">
+    Open in Tenderly <span class="external-link-icon-2"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+</a>

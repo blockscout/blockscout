@@ -539,4 +539,12 @@ defmodule BlockScoutWeb.TransactionView do
       true -> @token_transfer_type
     end
   end
+
+  defp show_tenderly_link? do
+    System.get_env("SHOW_TENDERLY_LINK") == "true"
+  end
+
+  defp tenderly_chain_path do
+    System.get_env("TENDERLY_CHAIN_PATH") || "/"
+  end
 end
