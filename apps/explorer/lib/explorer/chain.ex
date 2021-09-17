@@ -2977,18 +2977,18 @@ defmodule Explorer.Chain do
 
     ordered_block_ranges =
       final_block_ranges
-      |> Enum.sort(fn %Range{first: first1, last: _}, %Range{first: first2, last: _} ->
+      |> Enum.sort(fn %Range{first: first1, last: _, step: 1}, %Range{first: first2, last: _, step: 1} ->
         if range_start <= range_end do
           first1 <= first2
         else
           first1 >= first2
         end
       end)
-      |> Enum.map(fn %Range{first: first, last: last} = range ->
+      |> Enum.map(fn %Range{first: first, last: last, step: 1} = range ->
         if range_start <= range_end do
           range
         else
-          %Range{first: last, last: first}
+          %Range{first: last, last: first, step: -1}
         end
       end)
 

@@ -6,9 +6,14 @@
 FROM ethereum/client-go:latest as builder
 
 # Build postgres && blockscout
-FROM bitwalker/alpine-elixir-phoenix:1.11.4
+FROM sidhujag/alpine-elixir-phoenix:1.12.3
 
-# postgres 13 build with llvm10 - alpine3.13
+# Important!  Update this no-op ENV variable when this Dockerfile
+# is updated with the current date. It will force refresh of all
+# of the base images and things like `apt-get update` won't be using
+# old cached versions when the Dockerfile is built.
+ENV REFRESHED_AT=2021-09-16
+
 # 70 is the standard uid/gid for "postgres" in Alpine
 # https://git.alpinelinux.org/aports/tree/main/postgresql/postgresql.pre-install?h=3.12-stable
 RUN set -eux; \
@@ -25,9 +30,9 @@ ENV LANG en_US.utf8
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-ENV PG_MAJOR 13
-ENV PG_VERSION 13.3
-ENV PG_SHA256 3cd9454fa8c7a6255b6743b767700925ead1b9ab0d7a0f9dcb1151010f8eb4a1
+ENV PG_MAJOR 14
+ENV PG_VERSION 14beta3
+ENV PG_SHA256 2ea265980193db70106576201a2fee5b2d72bf9890d3911ddd374d4830624bfa
 
 RUN set -eux; \
 	\
@@ -54,7 +59,7 @@ RUN set -eux; \
 		libxml2-dev \
 		libxslt-dev \
 		linux-headers \
-		llvm10-dev clang g++ \
+		llvm11-dev clang g++ \
 		make \
 #		openldap-dev \
 		openssl-dev \
@@ -70,6 +75,8 @@ RUN set -eux; \
 		zlib-dev \
 # https://www.postgresql.org/docs/10/static/release-10.html#id-1.11.6.9.5.13
 		icu-dev \
+# https://www.postgresql.org/docs/14/release-14.html#id-1.11.6.5.5.3.7
+		lz4-dev \
 	; \
 	\
 	cd /usr/src/postgresql; \
@@ -115,6 +122,7 @@ RUN set -eux; \
 		--with-libxslt \
 		--with-icu \
 		--with-llvm \
+		--with-lz4 \
 	; \
 	make -j "$(nproc)" world; \
 	make install-world; \
@@ -159,6 +167,27 @@ VOLUME /var/lib/postgresql/data
 
 RUN wget https://raw.githubusercontent.com/docker-library/postgres/master/$PG_MAJOR/alpine/docker-entrypoint.sh -O /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# We set the default STOPSIGNAL to SIGINT, which corresponds to what PostgreSQL
+# calls "Fast Shutdown mode" wherein new connections are disallowed and any
+# in-progress transactions are aborted, allowing PostgreSQL to stop cleanly and
+# flush tables to disk, which is the best compromise available to avoid data
+# corruption.
+#
+# Users who know their applications do not keep open long-lived idle connections
+# may way to use a value of SIGTERM instead, which corresponds to "Smart
+# Shutdown mode" in which any existing sessions are allowed to finish and the
+# server stops when all sessions are terminated.
+#
+# See https://www.postgresql.org/docs/12/server-shutdown.html for more details
+# about available PostgreSQL server shutdown signals.
+#
+# See also https://www.postgresql.org/docs/12/server-start.html for further
+# justification of this as the default value, namely that the example (and
+# shipped) systemd service files use the "Fast Shutdown mode" for service
+# termination.
+#
+STOPSIGNAL SIGINT
 
 # Get Rust - mix build requires rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y

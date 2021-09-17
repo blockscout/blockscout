@@ -23,9 +23,7 @@ defmodule BlockScoutWeb.Gettext do
   use Gettext, otp_app: :block_scout_web
 
   @dialyzer [
-    {:nowarn_function, "MACRO-dgettext": 3},
-    {:nowarn_function, "MACRO-dgettext": 4},
-    {:nowarn_function, "MACRO-dngettext": 5},
-    {:nowarn_function, "MACRO-dngettext": 6}
+    {:nowarn_function, dgettext: 3},
+    {:nowarn_function, dngettext: 5}
   ]
 end
