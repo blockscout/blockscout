@@ -236,7 +236,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp handle_transaction_fetch_results({:error, e, _block}, block_number, acc) do
-    Logger.error("Failed to fetch internal transactions for block #{block_number} - error=#{inspect(e)}")
+    Logger.error("failed to fetch internal transactions for block #{block_number} - error=#{inspect(e)}")
 
     {:ok, acc}
   end
