@@ -212,7 +212,7 @@ defmodule Explorer.Chain.Hash.Address do
   @spec is_checksummed?(String.t()) :: boolean()
   defp is_checksummed?(original_hash) do
     lowercase_hash = String.downcase(original_hash)
-    {:ok, sha3_hash} = ExKeccak.hash_256(lowercase_hash)
+    sha3_hash = ExKeccak.hash_256(lowercase_hash)
 
     do_checksum_check(sha3_hash, original_hash)
   end
