@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.Mixfile do
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.31"},
       {:flow, "~> 0.12"},
-      {:gettext, "~> 0.16.1"},
+      {:gettext, "~> 0.18.2"},
       {:httpoison, "~> 1.6"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator

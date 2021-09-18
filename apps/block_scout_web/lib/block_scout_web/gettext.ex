@@ -22,8 +22,4 @@ defmodule BlockScoutWeb.Gettext do
   """
   use Gettext, otp_app: :block_scout_web
 
-  @dialyzer [
-    {:nowarn_function, dgettext: 3},
-    {:nowarn_function, dngettext: 5}
-  ]
 end
