@@ -25,7 +25,7 @@
           <a href="https://twitter.com/bobanetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
-          <a href="https://t.me/omgnetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
+          <a href="https://t.me/bobanetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
             <div class="footer-social-icon-container fontawesome-icon telegram"></div>
           </a>
           <a href="https://discord.com/invite/m7NysJjKhm" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Discord") %>'>
@@ -39,8 +39,8 @@
         <ul>
           <li><a href="https://github.com/omgnetwork/optimism/issues" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
           <li><a href="https://github.com/omgnetwork/optimism" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
-          <li><a href="https://t.me/omgnetwork" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
-          <li><a href="https://t.me/omgnetwork" rel="noreferrer" class="footer-link"><%= gettext("Support") %></a></li>
+          <li><a href="https://t.me/bobanetwork" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
+          <li><a href="https://t.me/bobanetwork" rel="noreferrer" class="footer-link"><%= gettext("Support") %></a></li>
         </ul>
       </div>
       <% main_nets = main_nets(other_networks()) %>
