@@ -56,8 +56,8 @@ defmodule Indexer.Transform.Blocks do
       decode(block.nonce)
     ]
 
-    hash = ExKeccak.hash_256(ExRLP.encode(header_data))
-    hash
+    ExKeccak.hash_256(ExRLP.encode(header_data))
+
   end
 
   defp trim_prefix("0x" <> rest), do: rest
