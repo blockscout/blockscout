@@ -32,3 +32,6 @@ lib/explorer/third_party_integrations/sourcify.ex:73
 lib/block_scout_web/views/transaction_view.ex:137
 lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197
+lib/indexer/buffered_task.ex:402
+lib/indexer/buffered_task.ex:451
+lib/indexer/memory/monitor.ex:161

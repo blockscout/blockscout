@@ -3023,7 +3023,11 @@ defmodule Explorer.Chain do
         if range_start <= range_end do
           range
         else
-          %Range{first: last, last: first}
+          if last > first do
+            %Range{first: last, last: first, step: -1}
+          else
+            %Range{first: last, last: first, step: 1}
+          end
         end
       end)
 
