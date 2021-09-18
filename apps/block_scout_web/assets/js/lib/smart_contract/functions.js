@@ -120,10 +120,12 @@ const readWriteFunction = (element) => {
       const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
       const args = prepareMethodArgs($functionInputs, inputs)
+      const type = $('[data-smart-contract-functions]').data('type')
 
       const data = {
         function_name: functionName,
         method_id: $methodId.val(),
+        type: type,
         args
       }
 
