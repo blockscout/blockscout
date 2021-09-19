@@ -90,17 +90,38 @@ defmodule BlockScoutWeb.SmartContractController do
   def index(conn, _), do: not_found(conn)
 
   def show(conn, params) do
+    address_options = [
+      necessity_by_association: %{
+        :contracts_creation_internal_transaction => :optional,
+        :names => :optional,
+        :smart_contract => :optional,
+        :token => :optional,
+        :contracts_creation_transaction => :optional
+      }
+    ]
+
     with true <- ajax?(conn),
-         {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]) do
+         {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
+         {:ok, _address} <- Chain.find_contract_address(address_hash, address_options, true) do
       contract_type = if params["method_id"] == "proxy", do: :proxy, else: :regular
 
       %{output: outputs, names: names} =
-        Reader.query_function_with_names(
-          address_hash,
-          %{method_id: params["method_id"], args: params["args"]},
-          contract_type,
-          params["function_name"]
-        )
+        if params["from"] do
+          Reader.query_function_with_names(
+            address_hash,
+            %{method_id: params["method_id"], args: params["args"]},
+            contract_type,
+            params["function_name"],
+            params["from"]
+          )
+        else
+          Reader.query_function_with_names(
+            address_hash,
+            %{method_id: params["method_id"], args: params["args"]},
+            contract_type,
+            params["function_name"]
+          )
+        end
 
       conn
       |> put_status(200)
