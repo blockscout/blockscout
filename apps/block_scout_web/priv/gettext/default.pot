@@ -769,7 +769,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:20
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:38 lib/block_scout_web/templates/transaction/overview.html.eex:448
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:39 lib/block_scout_web/templates/transaction/overview.html.eex:448
 #: lib/block_scout_web/templates/transaction/overview.html.eex:454
 msgid "Copy Value"
 msgstr ""
@@ -828,7 +828,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:107
-#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7 lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
+#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7 lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:110
 msgid "Data"
 msgstr ""
@@ -1000,7 +1000,7 @@ msgid "Epochs range(s) or enum, e.g.:   5-9,23-27,47,50"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:30
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:31
 msgid "Error rendering value"
 msgstr ""
 
@@ -1514,7 +1514,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59 lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:18
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
 msgid "Name"
 msgstr ""
 
@@ -2527,7 +2527,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:2
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:16
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:17
 msgid "Transaction Inputs"
 msgstr ""
 
@@ -2588,7 +2588,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:5
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
 msgid "Type"
 msgstr ""
 
@@ -3033,4 +3033,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
 msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:53
+msgid "Collapse"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:53
+msgid "Expand"
 msgstr ""
