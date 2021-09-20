@@ -236,6 +236,10 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
+  @doc """
+    Returns abi for not queriable functions of proxy's implementation which can be considered as read-only
+  """
+  @spec read_functions_required_wallet_proxy(String.t()) :: [%{}]
   def read_functions_required_wallet_proxy(implementation_address_hash_string) do
     implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
 
@@ -251,6 +255,9 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
+  @doc """
+    Returns abi for not queriable functions of the smart contract which can be considered as read-only
+  """
   @spec read_functions_required_wallet(Hash.t()) :: [%{}]
   def read_functions_required_wallet(contract_address_hash) do
     abi =
@@ -362,12 +369,32 @@ defmodule Explorer.SmartContract.Reader do
     Map.replace!(function, "outputs", values)
   end
 
+  @doc """
+    Method performs query of read functions of a smart contract.
+    `type` could be :proxy or :reqular
+  """
+  @spec query_function_with_names(Hash.t(), %{method_id: String.t(), args: [term()] | nil}, atom(), String.t()) :: %{
+          :names => [any()],
+          :output => [%{}]
+        }
   def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, function_name) do
     outputs = query_function(contract_address_hash, %{method_id: method_id, args: args}, type)
     names = parse_names_from_abi(get_abi(contract_address_hash, type), function_name)
     %{output: outputs, names: names}
   end
 
+  @doc """
+    Method performs query of read functions of a smart contract.
+    `type` could be :proxy or :reqular
+    `from` is a address of a function caller
+  """
+  @spec query_function_with_names(
+          Hash.t(),
+          %{method_id: String.t(), args: [term()] | nil},
+          atom(),
+          String.t(),
+          String.t()
+        ) :: %{:names => [any()], :output => [%{}]}
   def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, function_name, from) do
     outputs = query_function(contract_address_hash, %{method_id: method_id, args: args}, type, from)
     names = parse_names_from_abi(get_abi(contract_address_hash, type), function_name)
