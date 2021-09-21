@@ -163,52 +163,52 @@ defmodule Explorer.Faucet do
     |> json_rpc(json_rpc_named_arguments)
   end
 
-  defp eth_sign_transaction_request(id, address_hash_str) do
+  defp eth_sign_transaction_request(id, _address_hash_str) do
     res = eth_get_transaction_count_request(id)
 
-    with {:ok, nonce_hex} <- res do
-      value_to_send_int = faucet_value_to_send_int()
+    with {:ok, _nonce_hex} <- res do
+      # value_to_send_int = faucet_value_to_send_int()
 
-      value_to_send =
-        value_to_send_int
-        |> Integer.to_string(16)
+      # value_to_send =
+      #   value_to_send_int
+      #   |> Integer.to_string(16)
 
-      value_to_send_hex = "0x" <> value_to_send
+      # value_to_send_hex = "0x" <> value_to_send
 
-      gas_price_str = Application.get_env(:block_scout_web, :faucet)[:gas_price]
+      # gas_price_str = Application.get_env(:block_scout_web, :faucet)[:gas_price]
 
-      gas_price_dec =
-        1_000_000_000
-        |> Decimal.new()
-        |> Decimal.mult(Decimal.new(gas_price_str))
+      # gas_price_dec =
+      #   1_000_000_000
+      #   |> Decimal.new()
+      #   |> Decimal.mult(Decimal.new(gas_price_str))
 
-      gas_price_int =
-        gas_price_dec
-        |> Decimal.to_integer()
+      # gas_price_int =
+      #   gas_price_dec
+      #   |> Decimal.to_integer()
 
-      gas_price =
-        gas_price_int
-        |> Integer.to_string(16)
+      # gas_price =
+      #   gas_price_int
+      #   |> Integer.to_string(16)
 
-      gas_price_hex = "0x" <> gas_price
+      # gas_price_hex = "0x" <> gas_price
 
-      gas_limit_str = Application.get_env(:block_scout_web, :faucet)[:gas_limit]
+      # gas_limit_str = Application.get_env(:block_scout_web, :faucet)[:gas_limit]
 
-      {gas_limit, _} =
-        gas_limit_str
-        |> Integer.parse()
+      # {gas_limit, _} =
+      #   gas_limit_str
+      #   |> Integer.parse()
 
-      raw_tx = %{
-        from: Application.get_env(:block_scout_web, :faucet)[:address],
-        nonce: nonce_hex,
-        gas_price: gas_price_hex,
-        gas_limit: gas_limit,
-        to: address_hash_str,
-        value: value_to_send_hex,
-        data: "0x"
-      }
+      # raw_tx = %{
+      #   from: Application.get_env(:block_scout_web, :faucet)[:address],
+      #   nonce: nonce_hex,
+      #   gas_price: gas_price_hex,
+      #   gas_limit: gas_limit,
+      #   to: address_hash_str,
+      #   value: value_to_send_hex,
+      #   data: "0x"
+      # }
 
-      faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
+      # faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
 
       # signed_tx =
       #   try do
