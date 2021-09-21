@@ -210,23 +210,25 @@ defmodule Explorer.Faucet do
 
       faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
 
-      signed_tx =
-        try do
-          raw_tx
-          |> ETH.build()
-          |> ETH.sign_transaction(faucet_address_pk)
-          |> Base.encode16(case: :lower)
-        rescue
-          error ->
-            Logger.error(inspect(error))
-            nil
-        end
+      # signed_tx =
+      #   try do
+      #     raw_tx
+      #     |> ETH.build()
+      #     |> ETH.sign_transaction(faucet_address_pk)
+      #     |> Base.encode16(case: :lower)
+      #   rescue
+      #     error ->
+      #       Logger.error(inspect(error))
+      #       nil
+      #   end
 
-      if signed_tx do
-        {:ok, signed_tx}
-      else
-        {:error}
-      end
+      # if signed_tx do
+      #   {:ok, signed_tx}
+      # else
+      #   {:error}
+      # end
+
+      :error
     end
   end
 

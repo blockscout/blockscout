@@ -165,8 +165,8 @@ defmodule BlockScoutWeb.FaucetController do
   end
 
   defp parse_enough_coins(conn) do
-    faucet_address_hash_str = Application.get_env(:block_scout_web, :faucet)[:address]
-    faucet_balance = ETH.get_balance!(faucet_address_hash_str, :wei)
+    # faucet_address_hash_str = Application.get_env(:block_scout_web, :faucet)[:address]
+    faucet_balance = 0 #ETH.get_balance!(faucet_address_hash_str, :wei)
 
     faucet_value_to_send = Faucet.faucet_value_to_send_int()
 
