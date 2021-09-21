@@ -244,8 +244,20 @@ defmodule Indexer.Block.Fetcher do
       update_uncles_cache(inserted[:block_second_degree_relations])
       result
     else
-      {step, {:error, reason}} -> {:error, {step, reason}}
-      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+      {step, {:error, reason}} -> 
+        if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+          Logger.info(["### fetch_and_import_range FAILED #1 ", inspect(range), " ###"])
+        end
+        {:error, {step, reason}}
+      {:import, {:error, step, failed_value, changes_so_far}} -> 
+        if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+          Logger.info(["### fetch_and_import_range FAILED #2 ", inspect(range), step, failed_value, changes_so_far, " ###"])
+        end
+        {:error, {step, failed_value, changes_so_far}}
+      _ ->
+        if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+          Logger.info(["### fetch_and_import_range FAILED #3 ", inspect(range), " ###"])
+        end
     end
   end
 
