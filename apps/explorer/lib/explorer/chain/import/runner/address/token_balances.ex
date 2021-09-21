@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
 
     # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
-      Enum.sort_by(changes_list, &{&1.address_hash, &1.token_contract_address_hash, &1.block_number})
+      Enum.sort_by(changes_list, &{&1.token_contract_address_hash, &1.address_hash, &1.block_number})
 
     {:ok, _} =
       Import.insert_changes_list(
