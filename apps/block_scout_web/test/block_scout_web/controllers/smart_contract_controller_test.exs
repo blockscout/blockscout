@@ -232,8 +232,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       address = insert(:contract_address)
       smart_contract = insert(:smart_contract, address_hash: address.hash)
 
-      get_eip1967_implementation()
-
       blockchain_get_function_mock()
 
       path =

@@ -48,6 +48,16 @@ defmodule Explorer.SmartContract.Publisher do
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
+    create_or_update_smart_contract(address_hash, attrs)
+  end
+
+  def publish_smart_contract(address_hash, params, abi, file_path) do
+    attrs = address_hash |> attributes(params, file_path, abi)
+
+    create_or_update_smart_contract(address_hash, attrs)
+  end
+
+  defp create_or_update_smart_contract(address_hash, attrs) do
     if Chain.smart_contract_verified?(address_hash) do
       Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     else
@@ -67,6 +77,10 @@ defmodule Explorer.SmartContract.Publisher do
       )
 
     %{changeset | action: :insert}
+  end
+
+  defp attributes(address_hash, params, file_path, abi) do
+    Map.put(attributes(address_hash, params, abi), :file_path, file_path)
   end
 
   defp attributes(address_hash, params, abi \\ %{}) do
