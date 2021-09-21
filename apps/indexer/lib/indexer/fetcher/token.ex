@@ -74,7 +74,7 @@ defmodule Indexer.Fetcher.Token do
       |> MetadataRetriever.get_functions_of()
       |> Map.put(:cataloged, true)
 
-    {:ok, _} = Chain.update_token(%{token | updated_at: DateTime.utc_now()}, token_params)
+    Chain.update_token(%{token | updated_at: DateTime.utc_now()}, token_params)
     :ok
   end
 end

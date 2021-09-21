@@ -5534,10 +5534,24 @@ defmodule Explorer.Chain do
         end
       )
       |> Multi.run(:token, fn repo, _ ->
-        with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} <-
-               repo.insert(token_changeset, token_opts) do
-          # the original token passed into `update_token/2` as stale error means it is unchanged
-          {:ok, token}
+        res = repo.insert(token_changeset, token_opts)
+
+        case res do
+          {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} ->
+            # the original token passed into `update_token/2` as stale error means it is unchanged
+            {:ok, token}
+
+          {:error, error} ->
+            Logger.debug([
+              "### Token update failed",
+              inspect(token_changeset),
+              inspect(error)
+            ])
+
+            res
+
+          _ ->
+            res
         end
       end)
       |> Repo.transaction()
