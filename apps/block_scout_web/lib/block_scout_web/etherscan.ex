@@ -505,7 +505,8 @@ defmodule BlockScoutWeb.Etherscan do
       """,
       "ContractName" => "Test",
       "CompilerVersion" => "v0.2.1-2016-01-30-91a6b35",
-      "OptimizationUsed" => "1"
+      "OptimizationUsed" => "1",
+      "FileName" => "{sourcify path or empty}"
     }
   }
 

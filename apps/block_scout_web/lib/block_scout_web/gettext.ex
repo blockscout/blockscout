@@ -21,11 +21,4 @@ defmodule BlockScoutWeb.Gettext do
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
   use Gettext, otp_app: :block_scout_web
-
-  @dialyzer [
-    {:nowarn_function, "MACRO-dgettext": 3},
-    {:nowarn_function, "MACRO-dgettext": 4},
-    {:nowarn_function, "MACRO-dngettext": 5},
-    {:nowarn_function, "MACRO-dngettext": 6}
-  ]
 end
