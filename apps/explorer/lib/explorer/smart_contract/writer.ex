@@ -38,7 +38,7 @@ defmodule Explorer.SmartContract.Writer do
   end
 
   def write_function?(function) do
-    !Helper.event?(function) && !Helper.constructor?(function) &&
+    !Helper.error?(function) && !Helper.event?(function) && !Helper.constructor?(function) &&
       (Helper.payable?(function) || Helper.nonpayable?(function))
   end
 
