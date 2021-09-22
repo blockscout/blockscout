@@ -61,16 +61,16 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   end
 
   def format_according_to_decimals(value, decimals, symbol) when (is_integer(value) and is_binary(symbol)) do
-    if symbol == "USDC" do
-      format_according_to_decimals(Decimal.new(6), decimals, "USDC")
+    if symbol == "USDC" || symbol === "USDT" do
+      format_according_to_decimals(Decimal.new(6), decimals, symbol)
     else
-      format_according_to_decimals(Decimal.new(value), decimals, "TOKEN")
+      format_according_to_decimals(Decimal.new(value), decimals, symbol)
     end
   end
 
   @spec format_according_to_decimals(Decimal.t(), Decimal.t(), String.t()) :: String.t()
   def format_according_to_decimals(value, decimals, symbol) do
-    if symbol == "USDC" do 
+    if symbol == "USDC" || symbol === "USDT" do 
       value
       |> divide_decimals(Decimal.new(6))
       |> thousands_separator()
