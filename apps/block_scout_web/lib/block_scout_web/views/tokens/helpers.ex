@@ -16,27 +16,31 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   When the token's type is ERC-721, the function will return a string with the token_id that
   represents the ERC-721 token since this kind of token doesn't have amount and decimals.
   """
-  def token_transfer_amount(%{token: token, amount: amount, token_id: token_id}) do
-    do_token_transfer_amount(token, amount, token_id)
+  def token_transfer_amount(%{token: token, amount: amount, token_id: token_id, symbol: symbol}) do
+    do_token_transfer_amount(token, amount, token_id, symbol)
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20"}, nil, _token_id) do
+  defp do_token_transfer_amount(%Token{type: "ERC-20"}, nil, _token_id, nil) do
     {:ok, "--"}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: nil}, amount, _token_id) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, Decimal.new(0))}
+  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: nil}, amount, _token_id, %Token{type: "ERC-20", symbol: nil}) do
+    {:ok, CurrencyHelpers.format_according_to_decimals(amount, Decimal.new(0), "TOKEN")}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _token_id) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals)}
+  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _token_id, %Token{type: "ERC-20", symbol: nil}) do
+    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals, "TOKEN")}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, _token_id) do
+  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _token_id, %Token{type: "ERC-20", symbol: symbol}) do
+    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals, symbol)}
+  end
+
+  defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, _token_id, _symbol) do
     {:ok, :erc721_instance}
   end
 
-  defp do_token_transfer_amount(_token, _amount, _token_id) do
+  defp do_token_transfer_amount(_token, _amount, _token_id, _symbol) do
     nil
   end
 

@@ -25,44 +25,60 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   ## Examples
 
-      iex> format_according_to_decimals(nil, Decimal.new(5))
+      iex> format_according_to_decimals(nil, Decimal.new(5), "USDC")
       "-"
 
-      iex> format_according_to_decimals(Decimal.new(20500000), Decimal.new(5))
+      iex> format_according_to_decimals(Decimal.new(20500000), Decimal.new(5), "USDC")
       "205"
 
-      iex> format_according_to_decimals(Decimal.new(20500000), Decimal.new(7))
+      iex> format_according_to_decimals(Decimal.new(20500000), Decimal.new(7), "USDC")
       "2.05"
 
-      iex> format_according_to_decimals(Decimal.new(205000), Decimal.new(12))
+      iex> format_according_to_decimals(Decimal.new(205000), Decimal.new(12), "USDC")
       "0.000000205"
 
-      iex> format_according_to_decimals(Decimal.new(205000), Decimal.new(2))
+      iex> format_according_to_decimals(Decimal.new(205000), Decimal.new(2), "USDC")
       "2,050"
 
-      iex> format_according_to_decimals(205000, Decimal.new(2))
+      iex> format_according_to_decimals(205000, Decimal.new(2), "USDC")
       "2,050"
   """
-  @spec format_according_to_decimals(non_neg_integer() | nil, nil) :: String.t()
-  def format_according_to_decimals(nil, _) do
+  @spec format_according_to_decimals(non_neg_integer() | nil, nil, nil) :: String.t()
+  def format_according_to_decimals(nil, _, _) do
     "-"
   end
 
-  def format_according_to_decimals(value, nil) do
-    format_according_to_decimals(value, Decimal.new(0))
+  def format_according_to_decimals(value, nil, nil) do
+    format_according_to_decimals(value, Decimal.new(0), "TOKEN")
+  end
+  
+  def format_according_to_decimals(value, nil, symbol) when is_binary(symbol) do
+    format_according_to_decimals(value, Decimal.new(0), symbol)
   end
 
-  def format_according_to_decimals(value, decimals) when is_integer(value) do
-    value
-    |> Decimal.new()
-    |> format_according_to_decimals(decimals)
+  def format_according_to_decimals(value, decimals, nil) when is_integer(value) do
+    format_according_to_decimals(Decimal.new(value), decimals, "TOKEN")
   end
 
-  @spec format_according_to_decimals(Decimal.t(), Decimal.t()) :: String.t()
-  def format_according_to_decimals(value, decimals) do
-    value
-    |> divide_decimals(decimals)
-    |> thousands_separator()
+  def format_according_to_decimals(value, decimals, symbol) when (is_integer(value) and is_binary(symbol)) do
+    if symbol == "USDC" do
+      format_according_to_decimals(Decimal.new(6), decimals, "USDC")
+    else
+      format_according_to_decimals(Decimal.new(value), decimals, "TOKEN")
+    end
+  end
+
+  @spec format_according_to_decimals(Decimal.t(), Decimal.t(), String.t()) :: String.t()
+  def format_according_to_decimals(value, decimals, symbol) do
+    if symbol == "USDC" do 
+      value
+      |> divide_decimals(Decimal.new(6))
+      |> thousands_separator()
+    else
+      value
+      |> divide_decimals(decimals)
+      |> thousands_separator()
+    end
   end
 
   defp thousands_separator(value) do
