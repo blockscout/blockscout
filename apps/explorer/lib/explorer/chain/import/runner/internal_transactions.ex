@@ -403,6 +403,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         end)
         |> Enum.map(fn trace ->
           %{
+            block_hash: Map.get(trace, :block_hash),
+            block_number: Map.get(trace, :block_number),
             transaction_hash: Map.get(trace, :transaction_hash),
             created_contract_address_hash: Map.get(trace, :created_contract_address_hash),
             error: Map.get(trace, :error),
@@ -425,6 +427,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
               update: [
                 set: [
+                  block_hash: ^first_trace.block_hash,
+                  block_number: ^first_trace.block_number,
                   created_contract_address_hash: ^first_trace.created_contract_address_hash,
                   error: ^first_trace.error,
                   status: ^first_trace.status,

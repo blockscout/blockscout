@@ -26,15 +26,15 @@ defmodule Indexer.Transform.TokenTransfers do
 
     token_transfers = token_transfers_from_logs.token_transfers
 
-    _unique_tokens = 
-    token_transfers
-    |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
-    end)
-    |> Enum.map(fn token_transfer ->
-      token_transfer.token_contract_address_hash
-    end)
-    |> Enum.dedup()
+    _unique_tokens =
+      token_transfers
+      |> Enum.filter(fn token_transfer ->
+        token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
+      end)
+      |> Enum.map(fn token_transfer ->
+        token_transfer.token_contract_address_hash
+      end)
+      |> Enum.dedup()
 
     # _unique_tokens
     # |> Enum.each(&update_token/1)
