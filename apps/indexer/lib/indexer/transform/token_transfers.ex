@@ -6,9 +6,10 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Token, TokenTransfer}
-  alias Explorer.Token.MetadataRetriever
+  # alias Explorer.{Chain, Repo}
+  # alias Explorer.Chain.{Token, TokenTransfer}
+  alias Explorer.Chain.TokenTransfer
+  # alias Explorer.Token.MetadataRetriever
 
   @burn_address "0x0000000000000000000000000000000000000000"
 
@@ -25,6 +26,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
     token_transfers = token_transfers_from_logs.token_transfers
 
+    _unique_tokens = 
     token_transfers
     |> Enum.filter(fn token_transfer ->
       token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
@@ -33,7 +35,9 @@ defmodule Indexer.Transform.TokenTransfers do
       token_transfer.token_contract_address_hash
     end)
     |> Enum.dedup()
-    |> Enum.each(&update_token/1)
+
+    # _unique_tokens
+    # |> Enum.each(&update_token/1)
 
     tokens_dedup = token_transfers_from_logs.tokens |> Enum.dedup()
 
@@ -133,29 +137,29 @@ defmodule Indexer.Transform.TokenTransfers do
     {token, token_transfer}
   end
 
-  defp update_token(nil), do: :ok
+  # defp update_token(nil), do: :ok
 
-  defp update_token(address_hash_string) do
-    {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+  # defp update_token(address_hash_string) do
+  #   {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
 
-    token = Repo.get_by(Token, contract_address_hash: address_hash)
+  #   token = Repo.get_by(Token, contract_address_hash: address_hash)
 
-    if token && !token.skip_metadata do
-      token_params =
-        address_hash_string
-        |> MetadataRetriever.get_total_supply_of()
+  #   if token && !token.skip_metadata do
+  #     token_params =
+  #       address_hash_string
+  #       |> MetadataRetriever.get_total_supply_of()
 
-      token_to_update =
-        token
-        |> Repo.preload([:contract_address])
+  #     token_to_update =
+  #       token
+  #       |> Repo.preload([:contract_address])
 
-      if token_params !== %{} do
-        Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
-      end
-    end
+  #     if token_params !== %{} do
+  #       Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
+  #     end
+  #   end
 
-    :ok
-  end
+  #   :ok
+  # end
 
   defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
 
