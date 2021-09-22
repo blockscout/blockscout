@@ -16,11 +16,11 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   When the token's type is ERC-721, the function will return a string with the token_id that
   represents the ERC-721 token since this kind of token doesn't have amount and decimals.
   """
-  def token_transfer_amount(%{token: token, amount: amount, token_id: token_id, symbol: symbol}) do
-    do_token_transfer_amount(token, amount, token_id, symbol)
+  def token_transfer_amount(%{token: token, amount: amount, token_id: token_id}) do
+    do_token_transfer_amount(token, amount, token_id, token)
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20"}, nil, _token_id, nil) do
+  defp do_token_transfer_amount(%Token{type: "ERC-20"}, nil, _token_id, %Token{type: "ERC-20"}) do
     {:ok, "--"}
   end
 
