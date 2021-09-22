@@ -423,6 +423,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         |> MapSet.new(& &1.transaction_hash)
         |> MapSet.to_list()
 
+      json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+
       result =
         Enum.reduce_while(params, 0, fn first_trace, transaction_hashes_iterator ->
           target_transaction =
@@ -433,6 +435,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
           cond do
             !target_transaction ->
+              transaction_receipt = fetch_transaction_receipt_from_node(Map.get(first_trace, :transaction_hash), json_rpc_named_arguments)
+
               update_transactions_inner(
                 repo,
                 valid_internal_transactions_count,
@@ -441,7 +445,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                 timeout,
                 timestamps,
                 first_trace,
-                nil
+                transaction_receipt.cumulative_gas_used
               )
 
             target_transaction && Map.get(target_transaction, :cumulative_gas_used) ->
@@ -457,29 +461,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               )
 
             true ->
-              json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
-
-              transaction_receipt =
-                case EthereumJSONRPC.fetch_transaction_receipts(
-                       [
-                         %{
-                           :hash => to_string(target_transaction.hash),
-                           :gas => "0x0"
-                         }
-                       ],
-                       json_rpc_named_arguments
-                     ) do
-                  {:ok,
-                   %{
-                     :receipts => [
-                       receipt
-                     ]
-                   }} ->
-                    receipt
-
-                  _ ->
-                    %{:cumulative_gas_used => nil}
-                end
+              transaction_receipt = fetch_transaction_receipt_from_node(target_transaction.hash, json_rpc_named_arguments)
 
               update_transactions_inner(
                 repo,
@@ -501,6 +483,29 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         _ ->
           {:ok, result}
       end
+    end
+  end
+
+  defp fetch_transaction_receipt_from_node(transaction_hash, json_rpc_named_arguments) do
+    case EthereumJSONRPC.fetch_transaction_receipts(
+      [
+        %{
+          :hash => to_string(transaction_hash),
+          :gas => "0x0"
+        }
+      ],
+      json_rpc_named_arguments
+    ) do
+      {:ok,
+        %{
+          :receipts => [
+            receipt
+          ]
+        }} ->
+        receipt
+
+      _ ->
+        %{:cumulative_gas_used => nil}
     end
   end
 
