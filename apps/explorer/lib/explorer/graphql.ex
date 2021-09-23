@@ -175,79 +175,45 @@ defmodule Explorer.GraphQL do
   end
 
   def list_gold_transfers_query do
-    tt_query =
-      from(
-        tt in TokenTransfer,
-        join: t in CeloParams,
-        where: tt.token_contract_address_hash == t.address_value,
-        where: t.name == "goldToken",
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          from_address_hash: tt.from_address_hash,
-          to_address_hash: tt.to_address_hash,
-          log_index: tt.log_index,
-          tx_index: 0 - tt.log_index,
-          index: 0 - tt.log_index,
-          value: tt.amount,
-          comment: tt.comment,
-          block_number: tt.block_number
-        }
-      )
+    token_contract_names = ["goldToken"]
+    token_symbols = ["cGLD"]
 
-    tx_query =
-      from(
-        tx in Transaction,
-        where: tx.value > ^0,
-        select: %{
-          transaction_hash: tx.hash,
-          from_address_hash: tx.from_address_hash,
-          to_address_hash: tx.to_address_hash,
-          log_index: 0 - tx.index,
-          tx_index: tx.index,
-          index: 0 - tx.index,
-          value: tx.value,
-          comment: fragment("encode(?::bytea, 'hex')", tx.hash),
-          block_number: tx.block_number
-        }
-      )
-
-    internal_query =
-      from(
-        tx in InternalTransaction,
-        where: tx.value > ^0,
-        where: tx.call_type != fragment("'delegatecall'"),
-        where: tx.index != 0,
-        select: %{
-          transaction_hash: tx.transaction_hash,
-          from_address_hash: tx.from_address_hash,
-          to_address_hash: tx.to_address_hash,
-          log_index: 0 - tx.index,
-          tx_index: 0 - tx.index,
-          index: tx.index,
-          value: tx.value,
-          comment: fragment("encode(?::bytea, 'hex')", tx.transaction_hash),
-          block_number: tx.block_number
-        }
-      )
-
-    query =
-      tt_query
-      |> union_all(^tx_query)
-      |> union_all(^internal_query)
-
-    from(tt in subquery(query),
+    from(
+      tt in TokenTransfer,
+      join: t in CeloParams,
+      where: tt.token_contract_address_hash == t.address_value,
+      where: t.name == "goldToken",
+      inner_join:
+        tkn in fragment(
+          """
+          (
+            WITH token_names AS (
+              SELECT contract_name, token_symbol FROM unnest(?::text[], ?::text[]) t (contract_name, token_symbol)
+            ) SELECT * FROM token_names
+          )
+          """,
+          ^token_contract_names,
+          ^token_symbols
+        ),
+      on: t.name == tkn.contract_name,
+      inner_join: tx in Transaction,
+      as: :transaction,
+      on: tx.hash == tt.transaction_hash,
+      inner_join: b in Block,
+      on: tt.block_number == b.number,
+      left_join: wf in CeloWalletAccounts,
+      on: tt.from_address_hash == wf.wallet_address_hash,
+      left_join: wt in CeloWalletAccounts,
+      on: tt.to_address_hash == wt.wallet_address_hash,
       select: %{
         transaction_hash: tt.transaction_hash,
         from_address_hash: tt.from_address_hash,
         to_address_hash: tt.to_address_hash,
-        log_index: tt.log_index,
-        tx_index: tt.tx_index,
-        index: tt.index,
-        value: tt.value,
+        value: tt.amount,
         comment: tt.comment,
         block_number: tt.block_number
       },
-      order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
+      order_by: [desc: tt.block_number, desc: tt.amount, desc: tt.log_index]
     )
   end
 
