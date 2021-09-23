@@ -75,7 +75,7 @@ defmodule EthereumJsonrpc.MixProject do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
-      {:timex, "~> 3.6"},
+      {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments
       {:ex_abi, "~> 0.4"},
       # `:verify_fun` for `Socket.Web.connect`
@@ -83,7 +83,7 @@ defmodule EthereumJsonrpc.MixProject do
       # `EthereumJSONRPC.WebSocket`
       {:websocket_client, "~> 1.3"},
       {:decimal, "~> 1.9"},
-      {:decorator, "~> 1.3.2"},
+      {:decorator, "~> 1.4"},
       {:hackney, "~> 1.17.4"},
       {:poolboy, "~> 1.5.2"}
     ]
