@@ -2,8 +2,8 @@ import { connectElements, createStore } from './redux_helpers.js'
 
 import $ from 'jquery'
 import Analytics from 'analytics'
-import segmentPlugin from '@analytics/segment'
 import omit from 'lodash/omit'
+import segmentPlugin from '@analytics/segment'
 import uniqid from 'uniqid'
 
 let analytics
@@ -97,7 +97,7 @@ function getPageName (path) {
       return 'transactionInternalTransaction'
     case path.includes('/tx') && path.includes('/logs'):
       return 'transactionLogs'
-    case path.includes('/tx') && path.includes('/raw_trace'):
+    case path.includes('/tx') && path.includes('/raw-trace'):
       return 'transactionRawTrace'
     case path.includes('/tx') && path.includes('/token_transfers'):
       return 'transactionTokenTransfers'
