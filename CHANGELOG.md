@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 - [#5090](https://github.com/blockscout/blockscout/pull/5090) - Allotted rate limit by IP
 - [#5080](https://github.com/blockscout/blockscout/pull/5080) - Alloted rate limit by a global API key
 
