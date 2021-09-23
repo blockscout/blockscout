@@ -189,7 +189,7 @@ RUN wget https://raw.githubusercontent.com/docker-library/postgres/master/$PG_MA
 #
 STOPSIGNAL SIGINT
 
-# Get Rust - mix build requires rust
+# Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 ENV PATH="$HOME/.cargo/bin:${PATH}"
@@ -211,6 +211,8 @@ ADD . .
 # Run forderground build and phoenix digest
 RUN mix compile
 
+RUN npm install npm@latest
+
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
@@ -220,7 +222,6 @@ RUN cd apps/block_scout_web/assets/ && \
 RUN cd apps/explorer/ && \
     npm install && \
     apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
-
 RUN mix phx.digest
 
 ENV PORT=4000 \
