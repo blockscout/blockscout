@@ -4,7 +4,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { connectElements } from '../lib/redux_helpers'
-import { createAsyncLoadStore } from '../lib/async_listing_load'
+import { createAsyncLoadStore } from '../lib/random_access_pagination'
 import { batchChannel } from '../lib/utils'
 import '../app'
 
@@ -91,8 +91,12 @@ if ($transactionListPage.length) {
   transactionsChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
   }))
-  transactionsChannel.on('transaction', batchChannel((msgs) => store.dispatch({
-    type: 'RECEIVED_NEW_TRANSACTION_BATCH',
-    msgs: humps.camelizeKeys(msgs)
-  })))
+  transactionsChannel.on('transaction', batchChannel((msgs) => {
+    if (!store.getState().beyondPageOne) {
+      store.dispatch({
+        type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+        msgs: humps.camelizeKeys(msgs)
+      })
+    }
+  }))
 }
