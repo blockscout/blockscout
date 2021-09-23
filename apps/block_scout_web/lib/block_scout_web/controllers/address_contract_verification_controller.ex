@@ -168,14 +168,19 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   end
 
   defp process_metadata_and_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
-    %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
-      parse_params_from_sourcify(address_hash_string, verification_metadata)
+    %{
+      "params_to_publish" => params_to_publish,
+      "abi" => abi,
+      "secondary_sources" => secondary_sources,
+      "compilation_target_file_path" => compilation_target_file_path
+    } = parse_params_from_sourcify(address_hash_string, verification_metadata)
 
     ContractController.publish(conn, %{
       "addressHash" => address_hash_string,
       "params" => Map.put(params_to_publish, "partially_verified", is_partial),
       "abi" => abi,
-      "secondarySources" => secondary_sources
+      "secondarySources" => secondary_sources,
+      "compilationTargetFilePath" => compilation_target_file_path
     })
   end
 
@@ -220,7 +225,8 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
           "abi" => Map.get(full_params_acc, "abi"),
           "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-          "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
+          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+          "compilation_target_file_name" => compilation_target_file_name
         }
       else
         secondary_sources = [
@@ -231,16 +237,26 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
           "abi" => Map.get(full_params_acc, "abi"),
           "secondary_sources" => secondary_sources,
-          "compilation_target_file_name" => Map.get(full_params_acc, "compilation_target_file_name")
+          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+          "compilation_target_file_name" => compilation_target_file_name
         }
       end
     end)
   end
 
-  defp prepare_additional_source(address_hash_string, %{"name" => name, "content" => content, "path" => _path}) do
+  defp prepare_additional_source(address_hash_string, %{"name" => _name, "content" => content, "path" => path}) do
+    splitted_path =
+      path
+      |> String.split("/")
+
+    trimmed_path =
+      splitted_path
+      |> Enum.slice(9..Enum.count(splitted_path))
+      |> Enum.join("/")
+
     %{
       "address_hash" => address_hash_string,
-      "file_name" => name,
+      "file_name" => "/" <> trimmed_path,
       "contract_source_code" => content
     }
   end
@@ -274,6 +290,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     %{
       "params_to_publish" => params,
       "abi" => abi,
+      "compilation_target_file_path" => compilation_target_file_path,
       "compilation_target_file_name" => compilation_target_file_name,
       "secondary_sources" => []
     }

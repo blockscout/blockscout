@@ -196,7 +196,7 @@ defmodule Explorer.Faucet do
         gas_limit_str
         |> Integer.parse()
 
-      raw_tx = %{
+      _raw_tx = %{
         from: Application.get_env(:block_scout_web, :faucet)[:address],
         nonce: nonce_hex,
         gas_price: gas_price_hex,
@@ -206,15 +206,16 @@ defmodule Explorer.Faucet do
         data: "0x"
       }
 
-      faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
+      _faucet_address_pk = Application.get_env(:block_scout_web, :faucet)[:address_pk]
 
-      signed_tx =
-        raw_tx
-        |> ETH.build()
-        |> ETH.sign_transaction(faucet_address_pk)
-        |> Base.encode16(case: :lower)
+      # signed_tx =
+      #   raw_tx
+      #   |> ETH.build()
+      #   |> ETH.sign_transaction(faucet_address_pk)
+      #   |> Base.encode16(case: :lower)
 
-      {:ok, signed_tx}
+      # {:ok, signed_tx}
+      {:error}
     end
   end
 
