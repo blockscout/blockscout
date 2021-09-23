@@ -11,7 +11,7 @@
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "Validated Transactions" %></h1>
       <div class="list-top-pagination-container-wrapper">
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.transactions_available_count() == Chain.limit_shownig_transactions(), do: Chain.limit_shownig_transactions(), else: nil %>
       </div>
 
       <div data-selector="channel-batching-message" class="d-none">
@@ -41,7 +41,7 @@
         <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
       </div>
 
-      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "bottom" %>
 
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/validated-transactions.js") %>"></script>
