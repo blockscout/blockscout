@@ -427,15 +427,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
       result =
         Enum.reduce_while(params, 0, fn first_trace, transaction_hashes_iterator ->
-          target_transaction =
+          transaction_hash = Map.get(first_trace, :transaction_hash)
+
+          transaction_from_db =
             transactions
             |> Enum.find(fn transaction ->
-              transaction.hash == Map.get(first_trace, :transaction_hash)
+              transaction.hash == transaction_hash
             end)
 
           cond do
-            !target_transaction ->
-              transaction_receipt = fetch_transaction_receipt_from_node(Map.get(first_trace, :transaction_hash), json_rpc_named_arguments)
+            !transaction_from_db ->
+              transaction_receipt_from_node =
+                fetch_transaction_receipt_from_node(transaction_hash, json_rpc_named_arguments)
 
               update_transactions_inner(
                 repo,
@@ -445,10 +448,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                 timeout,
                 timestamps,
                 first_trace,
-                transaction_receipt.cumulative_gas_used
+                transaction_receipt_from_node
               )
 
-            target_transaction && Map.get(target_transaction, :cumulative_gas_used) ->
+            transaction_from_db && Map.get(transaction_from_db, :cumulative_gas_used) ->
               update_transactions_inner(
                 repo,
                 valid_internal_transactions_count,
@@ -456,12 +459,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                 transaction_hashes_iterator,
                 timeout,
                 timestamps,
-                first_trace,
-                Map.get(target_transaction, :cumulative_gas_used)
+                first_trace
               )
 
             true ->
-              transaction_receipt = fetch_transaction_receipt_from_node(target_transaction.hash, json_rpc_named_arguments)
+              transaction_receipt_from_node =
+                fetch_transaction_receipt_from_node(transaction_hash, json_rpc_named_arguments)
 
               update_transactions_inner(
                 repo,
@@ -471,7 +474,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                 timeout,
                 timestamps,
                 first_trace,
-                transaction_receipt.cumulative_gas_used
+                transaction_receipt_from_node
               )
           end
         end)
@@ -487,21 +490,24 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp fetch_transaction_receipt_from_node(transaction_hash, json_rpc_named_arguments) do
-    case EthereumJSONRPC.fetch_transaction_receipts(
-      [
-        %{
-          :hash => to_string(transaction_hash),
-          :gas => "0x0"
-        }
-      ],
-      json_rpc_named_arguments
-    ) do
+    receipt_response =
+      EthereumJSONRPC.fetch_transaction_receipts(
+        [
+          %{
+            :hash => to_string(transaction_hash),
+            :gas => 0
+          }
+        ],
+        json_rpc_named_arguments
+      )
+
+    case receipt_response do
       {:ok,
-        %{
-          :receipts => [
-            receipt
-          ]
-        }} ->
+       %{
+         :receipts => [
+           receipt
+         ]
+       }} ->
         receipt
 
       _ ->
@@ -517,23 +523,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
          timeout,
          timestamps,
          first_trace,
-         cumulative_gas_used
+         transaction_receipt_from_node \\ nil
        ) do
-    set = [
-      created_contract_address_hash: first_trace.created_contract_address_hash,
-      error: first_trace.error,
-      status: first_trace.status,
-      updated_at: timestamps.updated_at
-    ]
-
-    set = if first_trace.block_hash, do: Keyword.put_new(set, :block_hash, first_trace.block_hash), else: set
-    set = if first_trace.block_number, do: Keyword.put_new(set, :block_number, first_trace.block_number), else: set
-    set = if first_trace.gas_used, do: Keyword.put_new(set, :gas_used, first_trace.gas_used), else: set
-
-    set =
-      if cumulative_gas_used,
-        do: Keyword.put_new(set, :cumulative_gas_used, cumulative_gas_used),
-        else: set
+    set = generate_transaction_set_to_update(first_trace, transaction_receipt_from_node, timestamps)
 
     update_query =
       from(
@@ -559,6 +551,40 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       postgrex_error in Postgrex.Error ->
         {:halt, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
     end
+  end
+
+  def generate_transaction_set_to_update(first_trace, transaction_receipt_from_node, timestamps) do
+    default_set = [
+      created_contract_address_hash: first_trace.created_contract_address_hash,
+      error: first_trace.error,
+      status: first_trace.status,
+      updated_at: timestamps.updated_at
+    ]
+
+    set =
+      default_set
+      |> Keyword.put_new(:block_hash, first_trace.block_hash)
+      |> Keyword.put_new(:block_number, first_trace.block_number)
+      |> Keyword.put_new(:index, transaction_receipt_from_node && transaction_receipt_from_node.transaction_index)
+      |> Keyword.put_new(
+        :cumulative_gas_used,
+        transaction_receipt_from_node && transaction_receipt_from_node.cumulative_gas_used
+      )
+
+    set_with_gas_used =
+      if first_trace.gas_used do
+        Keyword.put_new(set, :gas_used, first_trace.gas_used)
+      else
+        if transaction_receipt_from_node && transaction_receipt_from_node.gas_used do
+          Keyword.put_new(set, :gas_used, transaction_receipt_from_node.gas_used)
+        else
+          set
+        end
+      end
+
+    filtered_set = Enum.reject(set_with_gas_used, fn {_key, value} -> is_nil(value) end)
+
+    filtered_set
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
