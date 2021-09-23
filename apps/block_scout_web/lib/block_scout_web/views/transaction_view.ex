@@ -492,15 +492,18 @@ defmodule BlockScoutWeb.TransactionView do
   defp fee_to_denomination({fee_type, fee}, opts) do
     denomination = Keyword.get(opts, :denomination)
     include_label? = Keyword.get(opts, :include_label, true)
-    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, include_unit_label: include_label?)}
+    currency = Keyword.get(opts, :currency)
+
+    {fee_type,
+     format_wei_value(Wei.from(fee, :wei), denomination, include_unit_label: include_label?, currency: currency)}
   end
 
-  def get_token_name(transaction) do
-    token = Transaction.get_token_name(transaction)
+  def get_fee_token_name(transaction) do
+    token = Transaction.get_fee_token_name(transaction)
 
     case token do
       {:ok, address} -> address
-      {:error, :not_found} -> %{name: "", symbol: " #{gettext("CELO")}"}
+      {:error, :not_found} -> %{name: "", symbol: "#{gettext("CELO")}"}
     end
   end
 

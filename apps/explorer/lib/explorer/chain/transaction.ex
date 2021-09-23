@@ -763,15 +763,18 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
-  def get_token_name(%__MODULE__{gas_currency_hash: nil}), do: {:error, :not_found}
+  def get_fee_token_name(%__MODULE__{gas_currency_hash: nil}), do: {:error, :not_found}
 
-  def get_token_name(%__MODULE__{
+  def get_fee_token_name(%__MODULE__{
         gas_currency_hash: gas_currency_hash
       }) do
     query =
       from(token in Token,
         where: token.contract_address_hash == ^gas_currency_hash,
-        #        select: {token, %{"name" => token.name, "symbol" => token.symbol}},
+        select: %{
+          name: token.name,
+          symbol: token.symbol
+        },
         limit: 1
       )
 

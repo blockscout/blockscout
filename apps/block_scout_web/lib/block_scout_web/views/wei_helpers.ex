@@ -10,9 +10,9 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   @valid_units ~w(wei gwei ether)a
 
-  @type format_option :: {:include_unit_label, boolean()}
-
-  @type format_options :: [format_option()]
+  @type format_options :: [
+          {:include_unit_label, boolean()} | {:currency, String.t() | nil}
+        ]
 
   @doc """
   Converts a `t:Explorer.Wei.t/0` value to the specified unit including a
@@ -66,7 +66,9 @@ defmodule BlockScoutWeb.WeiHelpers do
       end
 
     if Keyword.get(options, :include_unit_label, true) do
-      display_unit = display_unit(unit)
+      currency = Keyword.get(options, :currency)
+      display_unit = currency || display_unit(unit)
+
       "#{formatted_value} #{display_unit}"
     else
       formatted_value
