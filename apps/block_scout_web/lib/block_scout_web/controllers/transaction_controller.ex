@@ -5,9 +5,9 @@ defmodule BlockScoutWeb.TransactionController do
     only: [
       fetch_page_number: 1,
       paging_options: 1,
-      next_page_params: 3,
-      update_page_parameters: 3,
-      split_list_by_page: 1
+      next_page_params: 4,
+      split_list_by_page: 1,
+      supplement_page_options: 2
     ]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
@@ -31,14 +31,7 @@ defmodule BlockScoutWeb.TransactionController do
       @default_options
       |> Keyword.merge(paging_options(params))
 
-    full_options =
-      options
-      |> Keyword.put(
-        :paging_options,
-        params
-        |> fetch_page_number()
-        |> update_page_parameters(Chain.default_page_size(), Keyword.get(options, :paging_options))
-      )
+    full_options = supplement_page_options(options, params)
 
     %{total_transactions_count: transactions_count, transactions: transactions_plus_one} =
       Chain.recent_collated_transactions_for_rap(full_options)
@@ -50,27 +43,7 @@ defmodule BlockScoutWeb.TransactionController do
         {transactions_plus_one, nil}
       end
 
-    next_page_params =
-      if fetch_page_number(params) == 1 do
-        page_size = Chain.default_page_size()
-
-        pages_limit = transactions_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
-
-        case next_page_params(next_page, transactions, params) do
-          nil ->
-            nil
-
-          next_page_params ->
-            next_page_params
-            |> Map.delete("type")
-            |> Map.delete("items_count")
-            |> Map.put("pages_limit", pages_limit)
-            |> Map.put("page_size", page_size)
-            |> Map.put("page_number", 1)
-        end
-      else
-        Map.delete(params, "type")
-      end
+    next_page_params = next_page_params(params, transactions_count, next_page, transactions)
 
     json(
       conn,

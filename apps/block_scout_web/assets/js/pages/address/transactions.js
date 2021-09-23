@@ -5,7 +5,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
-import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import { createAsyncLoadStore, loadPageByNumber } from '../../lib/random_access_pagination'
 import { batchChannel } from '../../lib/utils'
 import '../address'
 import { isFiltered } from './utils'
@@ -26,14 +26,12 @@ export function reducer (state, action) {
       return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
-      if (state.beyondPageOne) return state
+      if (state.beyondPageOne || state.loading) return state
 
       return Object.assign({}, state, { channelDisconnected: true })
     }
     case 'RECEIVED_NEW_TRANSACTION': {
-      if (state.channelDisconnected) return state
-
-      if (state.beyondPageOne ||
+      if (state.channelDisconnected || state.beyondPageOne || state.loading ||
         (state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
         (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
         return state
@@ -42,7 +40,7 @@ export function reducer (state, action) {
       return Object.assign({}, state, { items: [action.msg.transactionHtml, ...state.items] })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected || state.beyondPageOne || state.loading) return state
 
       const transactionCount = state.transactionCount + action.msgs.length
 
@@ -65,7 +63,7 @@ export function reducer (state, action) {
       }
     }
     case 'RECEIVED_NEW_REWARD': {
-      if (state.channelDisconnected) return state
+      if (state.channelDisconnected || state.loading || state.beyondPageOne) return state
 
       return Object.assign({}, state, { items: [action.msg.rewardHtml, ...state.items] })
     }
@@ -150,32 +148,14 @@ if ($('[data-page="address-transactions"]').length) {
     })
   ))
 
-  const rewardsChannel = subscribeChannel(`rewards:${addressHash}`)
-  rewardsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-  rewardsChannel.on('new_reward', (msg) => {
-    store.dispatch({
-      type: 'RECEIVED_NEW_REWARD',
-      msg: humps.camelizeKeys(msg)
-    })
-  })
-
   const $txReloadButton = $('[data-selector="reload-transactions-button"]')
   const $channelBatching = $('[data-selector="channel-batching-message"]')
   $txReloadButton.on('click', (event) => {
     event.preventDefault()
-    loadTransactions(store)
+    loadPageByNumber(store, 1)
     $channelBatching.hide()
     store.dispatch({
       type: 'TRANSACTION_BATCH_EXPANDED'
     })
   })
-}
-
-function loadTransactions (store) {
-  const path = $('[class="card-body"]')[1].dataset.asyncListing
-  store.dispatch({ type: 'START_TRANSACTIONS_FETCH' })
-  $.getJSON(path, { type: 'JSON' })
-    .done(response => store.dispatch({ type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response) }))
-    .fail(() => store.dispatch({ type: 'TRANSACTIONS_FETCH_ERROR' }))
-    .always(() => store.dispatch({ type: 'FINISH_TRANSACTIONS_FETCH' }))
 }
