@@ -1,3 +1,4 @@
+<% txs_limit = Chain.limit_showing_address_transaсtions() %>
 <section class="container">
 
   <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
@@ -9,11 +10,11 @@
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
         <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost, click to load newer transactions") %>
-        <div class="clearfix">
+        <div class="clearfix transactions-header">
           <h2 class="card-title float-left"><%= gettext "Transactions" %></h2>
-          <div class="top-pagination-outer-container float-right">
-            <div class="dropdown u-push-sm">
-              <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+          <div class="top-pagination-outer-container float-right d-tc-sm-sc">
+            <div class="dropdown u-push-sm mrm18 js-end">
+              <button data-test="filter_dropdown" class="btn-dropdown-line addr-txs dropdown-toggle" type="button"
                 id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Filter: <%= format_current_filter(@filter) %>
               </button>
@@ -38,7 +39,8 @@
                 ) %>
               </div>
             </div>
-            <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+            <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: txs_limit %>
+            <% # todo: add counting total txs count %>
           </div>
         </div>
         <div data-selector="channel-batching-message" style="display: none;">
@@ -62,7 +64,7 @@
 
         <div class="transaction-bottom-panel">
           <%= render BlockScoutWeb.CommonComponentsView, "_csv_export_button.html", address: Address.checksum(@address.hash), type: "transactions", conn: @conn %>
-          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "bottom" %>
         </div>
 
       </div>
