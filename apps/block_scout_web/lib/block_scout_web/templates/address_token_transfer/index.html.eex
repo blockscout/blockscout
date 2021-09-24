@@ -3,7 +3,7 @@
 
   <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
-  <section data-page="address-token-transfers">
+  <section data-page="address-token-transfers" id="transfers">
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div data-async-load data-async-listing="<%= @current_path %>" class="card-body">

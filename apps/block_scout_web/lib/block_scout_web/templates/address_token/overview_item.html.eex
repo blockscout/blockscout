@@ -1,0 +1,14 @@
+<div class="d-flex mr-4" style="padding: 10px;">
+    <div>
+        <div class="d-flex">
+            <h1 class="card-title mb-2"><%= @title %></h1>
+            <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip.html",
+                text: @tooltip,
+                additional_classes: ["ml-2"]
+            %>
+        </div>
+        <div data-test="<%= if assigns[:data_test], do: @data_test %>">
+            <%= @value %>
+        </div>
+    </div>
+</div>

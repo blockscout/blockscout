@@ -1,0 +1,16 @@
+<div
+    class="address-current-balance"
+    data-token-balance-dropdown
+    data-api_path="<%= AccessHelpers.get_path(@conn, :address_token_balance_path, :index, Address.checksum(@address.hash)) %>"
+>
+    <span data-loading class="mb-0" style="line-height: 36px;">
+        <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+        </span>
+        <%= gettext("Fetching tokens...") %>
+    </span>
+    <span data-error-message class="mb-0" style="display: none;">
+    <%= gettext("Error trying to fetch balances.") %>
+    </span>
+</div>
