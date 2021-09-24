@@ -1,57 +1,74 @@
-<%= if Decimal.cmp(@circles_total_balance, 0) == :gt do %>
-  <p class="address-current-balance"><%= format_according_to_decimals(@circles_total_balance, Decimal.new(18)) %> CRC</p>
-<% end %>
-<%= if Enum.any?(@token_balances) do %>
-  <a
-      href="#"
-      data-dropdown-toggle
-      data-toggle="dropdown"
-      role="button"
-      id="dropdown-tokens"
-      aria-haspopup="true"
-      aria-expanded="false"
-      style="text-decoration: none;">
+<div class="d-flex">
+  <%= if Decimal.cmp(@circles_total_balance, 0) == :gt do %>
+    <p class="address-current-balance"><%= format_according_to_decimals(@circles_total_balance, Decimal.new(18)) %> CRC</p>
+  <% end %>
+  <%= if Enum.any?(@token_balances) do %>
+    <a
+        href="#"
+        data-dropdown-toggle
+        data-toggle="dropdown"
+        role="button"
+        id="dropdown-tokens"
+        aria-haspopup="true"
+        aria-expanded="false"
+        class="btn-dropdown-line basic dropdown-toggle"
+        style="text-decoration: none; height: 31px; padding: 0 10px;">
 
-     <i class="fas fa-chevron-down mr-2"></i>
-     <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
-     <%= if @token_balances && Decimal.cmp(address_tokens_usd_sum_cache(@address_hash, @token_balances), Decimal.new(0)) == :gt do %>
-      (<span data-usd-value=<%= address_tokens_usd_sum_cache(@address_hash, @token_balances) %> ></span>)
+      <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
+    </a>
+    <%= if @token_balances do %>
+        <div class="mr-2" style="line-height: 31px;">
+          (<span data-test="address-tokens-worth" data-usd-value=<%= address_tokens_usd_sum_cache(@address_hash, @token_balances) %>></span>)
+        </div>
+    <% end %>  
+    <%= if @conn.request_path |> String.contains?("/tokens") do %>
+      <a href="#tokens" style="text-decoration: none;">
+        <span class="btn-wallet-icon">
+          <i class="fas fa-wallet " style="line-height: 31px;"></i>
+        </span>
+      </a>
+    <% else %>
+      <a href="<%= AccessHelpers.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens" style="text-decoration: none;">
+        <span class="btn-wallet-icon">
+          <i class="fas fa-wallet" style="line-height: 31px;"></i>
+        </span>
+      </a>
     <% end %>
-  </a>
-<% else %>
-   <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
-<% end %>
+  <% else %>
+    <span data-tokens-count style="line-height: 31px;"><%= tokens_count_title(@token_balances) %></span>
+  <% end %>
 
-<div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">
-  <div data-dropdown-items class="dropdown-items">
-    <div class="position-relative">
-      <svg class="position-absolute dropdown-search-icon" viewBox="0 0 16 17" xmlns="http://www.w3.org/2000/svg" width="16" height="17" class="dropdown-search-icon position-absolute">
-        <path fill="#7DD79F" fill-rule="evenodd" d="M15.713 15.727a.982.982 0 0 1-1.388 0l-2.289-2.29C10.773 14.403 9.213 15 7.5 15A7.5 7.5 0 1 1 15 7.5c0 1.719-.602 3.284-1.575 4.55l2.288 2.288a.983.983 0 0 1 0 1.389zM7.5 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 1 0 0-11z"></path>
-      </svg>
-      <%= text_input(
-            :token_search,
-            :name,
-            class: "w-100 dropdown-search-field",
-            'data-filter-dropdown-tokens': true,
-            placeholder: gettext("Search tokens")
-          ) %>
+  <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">
+    <div data-dropdown-items class="dropdown-items">
+      <div class="position-relative">
+        <svg class="position-absolute dropdown-search-icon" viewBox="0 0 16 17" xmlns="http://www.w3.org/2000/svg" width="16" height="17" class="dropdown-search-icon position-absolute">
+          <path fill="#7DD79F" fill-rule="evenodd" d="M15.713 15.727a.982.982 0 0 1-1.388 0l-2.289-2.29C10.773 14.403 9.213 15 7.5 15A7.5 7.5 0 1 1 15 7.5c0 1.719-.602 3.284-1.575 4.55l2.288 2.288a.983.983 0 0 1 0 1.389zM7.5 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 1 0 0-11z"></path>
+        </svg>
+        <%= text_input(
+              :token_search,
+              :name,
+              class: "w-100 dropdown-search-field",
+              'data-filter-dropdown-tokens': true,
+              placeholder: gettext("Search tokens")
+            ) %>
+      </div>
+      <%= if Enum.any?(@token_balances, fn {token_balance, _, _} -> token_balance.token.type == "ERC-721" end) do %>
+        <%= render(
+              "_tokens.html",
+              conn: @conn,
+              token_balances: filter_by_type(@token_balances, "ERC-721"),
+              type: "ERC-721"
+            ) %>
+      <% end %>
+
+      <%= if Enum.any?(@token_balances, fn {token_balance, _, _} -> token_balance.token.type == "ERC-20" end) do %>
+        <%= render(
+              "_tokens.html",
+              conn: @conn,
+              token_balances: filter_by_type(@token_balances, "ERC-20"),
+              type: "ERC-20"
+            ) %>
+      <% end %>
     </div>
-    <%= if Enum.any?(@token_balances, fn {token_balance, _} -> token_balance.token.type == "ERC-721" end) do %>
-      <%= render(
-            "_tokens.html",
-            conn: @conn,
-            token_balances: filter_by_type(@token_balances, "ERC-721"),
-            type: "ERC-721"
-          ) %>
-    <% end %>
-
-    <%= if Enum.any?(@token_balances, fn {token_balance, _} -> token_balance.token.type == "ERC-20" end) do %>
-      <%= render(
-            "_tokens.html",
-            conn: @conn,
-            token_balances: filter_by_type(@token_balances, "ERC-20"),
-            type: "ERC-20"
-          ) %>
-    <% end %>
   </div>
 </div>

@@ -84,6 +84,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AddressTransactionsCounter),
+      configure(Explorer.Counters.AddressTokenTransfersCounter),
       configure(Explorer.Counters.AddressTransactionsGasUsageCounter),
       configure(Explorer.Counters.AddressTokenUsdSum),
       configure(Explorer.Counters.TokenHoldersCounter),

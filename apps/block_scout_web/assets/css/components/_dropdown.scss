@@ -102,3 +102,10 @@ $dropdown-menu-item-hover-background: rgba($secondary, 0.1) !default;
 .dropdown-toggle::after {
   margin-left: 0.71em;
 }
+
+.token-balance-dropdown {
+  transform: none !important;
+  top: 20px !important;
+  left: unset !important;
+  width: 300px !important;
+}
