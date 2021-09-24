@@ -1115,7 +1115,7 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:72
+#: lib/block_scout_web/templates/block/_tile.html.eex:73
 #: lib/block_scout_web/templates/block/overview.html.eex:172
 msgid "Gas Used"
 msgstr ""
