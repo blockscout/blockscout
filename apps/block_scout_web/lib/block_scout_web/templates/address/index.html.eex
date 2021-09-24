@@ -14,36 +14,37 @@
 	  <thead>
 	    <tr>
 	      <th class="stakes-table-th">
-		<div class="stakes-table-th-content">
-		  &nbsp;
-		</div>
+			<div class="stakes-table-th-content">
+			&nbsp;
+			</div>
 	      </th>
 	      <th class="stakes-table-th">
-		<div class="stakes-table-th-content">
-		  Address
-		</div>
+			<div class="stakes-table-th-content">
+			Address
+			</div>
 	      </th>
 	      <th class="stakes-table-th">
-		<div class="stakes-table-th-content">
-		  Balance
-		</div>
+			<div class="stakes-table-th-content">
+			Balance
+			</div>
 	      </th>
-              <%= if balance_percentage_enabled?(@total_supply) do %>
-              <th class="stakes-table-th">
-                <div class="stakes-table-th-content">
-                  Percentage
-                </div>
-              </th>
-              <% end %>
+		  <%= if balance_percentage_enabled?(@total_supply) do %>
+			<th class="stakes-table-th">
+				<div class="stakes-table-th-content">
+					Percentage
+				</div>
+			</th>
+		  <% end %>
 	      <th class="stakes-table-th">
-		<div class="stakes-table-th-content">
-		  Txn Count
-		</div>
+			<div class="stakes-table-th-content">
+			Txn Count
+			</div>
 	      </th>
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-addresses-list">
-	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", total_supply: @total_supply %>
+	  	<% columns_num = if balance_percentage_enabled?(@total_supply), do: 5, else: 4 %>
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: columns_num %>
 	  </tbody>
 	</table>
       </div>

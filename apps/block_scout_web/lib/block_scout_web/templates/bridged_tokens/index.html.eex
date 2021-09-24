@@ -51,9 +51,9 @@
 	  </thead>
 	  <tbody data-items data-selector="top-bridged-tokens-list">
 	    <%= if @destination == :eth do %>
-	    	<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_eth_bridged_tokens_table: true %>
+	    	<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 6 %>
 		<% else %>
-			<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_bsc_bridged_tokens_table: true %>
+			<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 5 %>
 		<% end %>
 	  </tbody>
 	</table>
