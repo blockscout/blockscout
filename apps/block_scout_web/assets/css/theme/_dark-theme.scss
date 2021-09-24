@@ -1167,5 +1167,14 @@ $dark-stakes-banned-background: #3e314c;
 	}
 }
 .dark-theme-applied .confirmations-label:after {
-    background: .7rem solid $dark-light-bg;
+    border-left: .9rem solid $dark-light-bg;
+}
+
+.dark-theme-applied .i-tooltip-2:hover{
+	color: $labels-dark;
+}
+
+.dark-theme-applied .btn-no-border-transactions {
+	border-color: $dark-primary !important;
+	color: $dark-primary !important;
 }

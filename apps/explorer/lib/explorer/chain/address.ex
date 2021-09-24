@@ -216,7 +216,7 @@ defmodule Explorer.Chain.Address do
   end
 
   defp stream_every_four_bytes_of_sha256(value) do
-    {:ok, hash} = ExKeccak.hash_256(value)
+    hash = ExKeccak.hash_256(value)
 
     hash
     |> stream_binary()

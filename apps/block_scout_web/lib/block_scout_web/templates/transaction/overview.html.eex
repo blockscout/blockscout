@@ -67,10 +67,13 @@
                 </a>
               </div>
             <% end %>
-            <div class="mr-4 mb-4">
-              <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
-                  transaction_hash: @transaction.hash %>
-            </div>
+            <%= if show_tenderly_link?() do %>
+              <div class="mr-4 mb-4">
+                <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
+                    transaction_hash: @transaction.hash,
+                    tenderly_chain_path: tenderly_chain_path() %>
+              </div>
+            <% end %>
           </div>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">

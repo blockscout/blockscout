@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import { getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
-import { walletEnabled, connectToWallet, shouldHideConnectButton, callMethod } from './write'
+import { walletEnabled, connectToWallet, shouldHideConnectButton, callMethod, queryMethod } from './write'
 import '../../pages/address'
 import * as Sentry from '@sentry/browser'
 
@@ -121,14 +121,10 @@ const readWriteFunction = (element) => {
       const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
       const args = prepareMethodArgs($functionInputs, inputs)
+      const type = $('[data-smart-contract-functions]').data('type')
 
-      const data = {
-        function_name: functionName,
-        method_id: $methodId.val(),
-        args
-      }
-
-      $.get(url, data, response => $responseContainer.html(response))
+      walletEnabled()
+        .then((isWalletEnabled) => queryMethod(isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer))
     } else if (action === 'write') {
       const explorerChainId = $form.data('chainId')
       walletEnabled()

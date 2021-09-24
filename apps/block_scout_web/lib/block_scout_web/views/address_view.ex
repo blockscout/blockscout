@@ -242,10 +242,12 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(address.smart_contract.abi, &Helper.queriable_method?(&1))
+    Enum.any?(address.smart_contract.abi, &is_read_function?(&1))
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+
+  def is_read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
   def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
     Chain.proxy_contract?(address.hash, address.smart_contract.abi)

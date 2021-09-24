@@ -133,3 +133,34 @@ if ($transactionDetailsPage.length) {
       })
   })
 }
+
+$(function () {
+  const $collapseButton = $('[button-collapse-input]')
+  const $expandButton = $('[button-expand-input]')
+
+  $collapseButton.on('click', event => {
+    const $button = event.target
+    const $parent = $button.parentElement
+    const $collapseButton = $parent.querySelector('[button-collapse-input]')
+    const $expandButton = $parent.querySelector('[button-expand-input]')
+    const $hiddenText = $parent.querySelector('[data-hidden-text]')
+    const $placeHolder = $parent.querySelector('[data-placeholder-dots]')
+    $collapseButton.classList.add('d-none')
+    $expandButton.classList.remove('d-none')
+    $hiddenText.classList.add('d-none')
+    $placeHolder.classList.remove('d-none')
+  })
+
+  $expandButton.on('click', event => {
+    const $button = event.target
+    const $parent = $button.parentElement
+    const $collapseButton = $parent.querySelector('[button-collapse-input]')
+    const $expandButton = $parent.querySelector('[button-expand-input]')
+    const $hiddenText = $parent.querySelector('[data-hidden-text]')
+    const $placeHolder = $parent.querySelector('[data-placeholder-dots]')
+    $expandButton.classList.add('d-none')
+    $collapseButton.classList.remove('d-none')
+    $hiddenText.classList.remove('d-none')
+    $placeHolder.classList.add('d-none')
+  })
+})

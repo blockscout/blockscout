@@ -231,6 +231,16 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+  def publish_without_broadcast(
+        %{"addressHash" => address_hash, "abi" => abi, "compilationTargetFilePath" => file_path} = input
+      ) do
+    params = proccess_params(input)
+
+    address_hash
+    |> Publisher.publish_smart_contract(params, abi, file_path)
+    |> proccess_response()
+  end
+
   def publish_without_broadcast(%{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
     params =
       if Map.has_key?(input, "secondarySources") do
@@ -240,13 +250,17 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         params
       end
 
-    case Publisher.publish_smart_contract(address_hash, params, abi) do
-      {:ok, _contract} = result ->
-        result
-
-      {:error, changeset} ->
-        {:error, changeset}
+      address_hash
+      |> Publisher.publish_smart_contract(params, abi)
+      |> proccess_response()
     end
+
+  def publish_without_broadcast(%{"addressHash" => address_hash, "abi" => abi} = input) do
+    params = proccess_params(input)
+
+    address_hash
+    |> Publisher.publish_smart_contract(params, abi)
+    |> proccess_response()
   end
 
   def publish(nil, %{"addressHash" => _address_hash} = input) do
@@ -257,6 +271,25 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     result = publish_without_broadcast(input)
 
     EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
+  end
+
+  def proccess_params(input) do
+    if Map.has_key?(input, "secondarySources") do
+      input["params"]
+      |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
+    else
+      input["params"]
+    end
+  end
+
+  def proccess_response(response) do
+    case response do
+      {:ok, _contract} = result ->
+        result
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   def listcontracts(conn, params) do

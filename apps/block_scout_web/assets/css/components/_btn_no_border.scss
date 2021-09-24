@@ -12,8 +12,8 @@ $btn-no-border-color: $primary !default;
 }
 
 .btn-no-border-transactions {
-  background-color: rgba($secondary, 0.1) !important;
-  border-color: $btn-no-border-bg;
+  background-color: rgba($primary, 0.1) !important;
+  border-color: #00000000 !important;
   align-items: center;
   border-radius: 2px;
   display: flex;

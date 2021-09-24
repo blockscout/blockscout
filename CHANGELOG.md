@@ -1,17 +1,23 @@
 ## Current
 
 ### Features
-- [#4655](https://github.com/blockscout/blockscout/pull/4655) - EIP-3091 support
+- [#4667](https://github.com/blockscout/blockscout/pull/4667) - Transaction Page: Add expand/collapse button for long contract method data
+- [#4641](https://github.com/blockscout/blockscout/pull/4641) - Improve Read Contract page logic
+- [#4660](https://github.com/blockscout/blockscout/pull/4660) - Save Sourcify path instead of filename
+- [#4656](https://github.com/blockscout/blockscout/pull/4656) - Open in Tenderly button
+- [#4655](https://github.com/blockscout/blockscout/pull/4655), [#4676](https://github.com/blockscout/blockscout/pull/4676) - EIP-3091 support
 - [#4621](https://github.com/blockscout/blockscout/pull/4621) - Add beacon contract address slot for proxy
 - [#4625](https://github.com/blockscout/blockscout/pull/4625) - Contract address page: Add implementation link to the overview of proxy contracts
 - [#4624](https://github.com/blockscout/blockscout/pull/4624) - Support HTML tags in alert message
 - [#4608](https://github.com/blockscout/blockscout/pull/4608), [#4622](https://github.com/blockscout/blockscout/pull/4622) - Block Details page: Improved style of transactions button
-- [#4596](https://github.com/blockscout/blockscout/pull/4596) - Display token icon for bridged with Mainnet tokens or identicons for other tokens
+- [#4596](https://github.com/blockscout/blockscout/pull/4596), [#4681](https://github.com/blockscout/blockscout/pull/4681) - Display token icon for bridged with Mainnet tokens or identicons for other tokens
 - [#4520](https://github.com/blockscout/blockscout/pull/4520) - Add support for EIP-1559
 - [#4593](https://github.com/blockscout/blockscout/pull/4593) - Add status in `Position` pane for txs have no block
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4686](https://github.com/blockscout/blockscout/pull/4686) - Block page: check gas limit value before division
+- [#4668](https://github.com/blockscout/blockscout/pull/4668) - Fix css for dark theme
 - [#4654](https://github.com/blockscout/blockscout/pull/4654) - AddressView: Change `@burn_address` to string `0x0000000000000000000000000000000000000000`
 - [#4626](https://github.com/blockscout/blockscout/pull/4626) - Refine view of popup for reverted tx
 - [#4640](https://github.com/blockscout/blockscout/pull/4640) - Token page: fixes in mobile view
@@ -27,6 +33,9 @@
 - [#4546](https://github.com/blockscout/blockscout/pull/4546) - Indexer performance update: async get block rewards
 
 ### Chore
+- [#4682](https://github.com/blockscout/blockscout/pull/4682) - Update all possible outdated mix dependencies
+- [#4663](https://github.com/blockscout/blockscout/pull/4663) - Migrate to Elixir 1.12.x
+- [#4661](https://github.com/blockscout/blockscout/pull/4661) - Update NPM packages to resolve vulnerabilities
 - [#4649](https://github.com/blockscout/blockscout/pull/4649) - 1559 Transaction Page: Convert Burnt Fee to ether and add price in USD
 - [#4646](https://github.com/blockscout/blockscout/pull/4646) - Transaction page: Rename burned to burnt
 - [#4611](https://github.com/blockscout/blockscout/pull/4611) - Ability to hide miner in block views

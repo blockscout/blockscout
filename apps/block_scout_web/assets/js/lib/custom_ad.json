@@ -54,4 +54,12 @@
         "name": "AoX: Arbitrum on xDai",
         "url": "https://www.xdaichain.com/for-developers/developer-resources/aox-arbitrum-on-xdai"
     }
+},{
+    "ad": {
+        "thumbnail": "https://assets.coingecko.com/coins/images/17666/small/20210811154811.png",
+        "description_short": "An Encrypted Storage Area Node Network!",
+        "cta_button": "Learn more",
+        "name": "SANA",
+        "url": "https://www.ethsana.org/"
+    }
 }]
