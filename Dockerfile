@@ -6,7 +6,7 @@
 FROM ethereum/client-go:latest as builder
 
 # Build postgres && blockscout
-FROM sidhujag/alpine-elixir-phoenix:1.12.3
+FROM bitwalker/alpine-elixir-phoenix:1.12.2
 
 # Important!  Update this no-op ENV variable when this Dockerfile
 # is updated with the current date. It will force refresh of all
