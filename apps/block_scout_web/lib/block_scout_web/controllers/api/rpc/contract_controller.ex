@@ -241,20 +241,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> proccess_response()
   end
 
-  def publish_without_broadcast(%{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
-    params =
-      if Map.has_key?(input, "secondarySources") do
-        params
-        |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
-      else
-        params
-      end
-
-      address_hash
-      |> Publisher.publish_smart_contract(params, abi)
-      |> proccess_response()
-    end
-
   def publish_without_broadcast(%{"addressHash" => address_hash, "abi" => abi} = input) do
     params = proccess_params(input)
 
