@@ -26,20 +26,28 @@ defmodule BlockScoutWeb.SmartContractController do
 
       functions =
         if action == "write" do
-          write_functions =
-            if contract_type == "proxy" do
-              Writer.write_functions_proxy(implementation_address_hash_string)
-            else
-              Writer.write_functions(address_hash)
-            end
-
-          Enum.filter(write_functions, fn x -> x["type"] != "error" end)
+          if contract_type == "proxy" do
+            Writer.write_functions_proxy(implementation_address_hash_string)
+          else
+            Writer.write_functions(address_hash)
+          end
         else
           if contract_type == "proxy" do
             Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
           else
             Reader.read_only_functions(address_hash)
           end
+        end
+
+      read_functions_required_wallet =
+        if action == "read" do
+          if contract_type == "proxy" do
+            Reader.read_functions_required_wallet_proxy(implementation_address_hash_string)
+          else
+            Reader.read_functions_required_wallet(address_hash)
+          end
+        else
+          []
         end
 
       contract_abi = Poison.encode!(address.smart_contract.abi)
@@ -58,6 +66,7 @@ defmodule BlockScoutWeb.SmartContractController do
       |> put_layout(false)
       |> render(
         "_functions.html",
+        read_functions_required_wallet: read_functions_required_wallet,
         read_only_functions: functions,
         address: address,
         contract_abi: contract_abi,
@@ -93,16 +102,26 @@ defmodule BlockScoutWeb.SmartContractController do
 
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      contract_type = if Chain.proxy_contract?(address.hash, address.smart_contract.abi), do: :proxy, else: :regular
+         {:ok, _address} <- Chain.find_contract_address(address_hash, address_options, true) do
+      contract_type = if params["method_id"] == "proxy", do: :proxy, else: :regular
 
       %{output: outputs, names: names} =
-        Reader.query_function_with_names(
-          address_hash,
-          %{method_id: params["method_id"], args: params["args"]},
-          contract_type,
-          params["function_name"]
-        )
+        if params["from"] do
+          Reader.query_function_with_names(
+            address_hash,
+            %{method_id: params["method_id"], args: params["args"]},
+            contract_type,
+            params["function_name"],
+            params["from"]
+          )
+        else
+          Reader.query_function_with_names(
+            address_hash,
+            %{method_id: params["method_id"], args: params["args"]},
+            contract_type,
+            params["function_name"]
+          )
+        end
 
       conn
       |> put_status(200)

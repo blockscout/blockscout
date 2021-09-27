@@ -547,4 +547,25 @@ defmodule BlockScoutWeb.TransactionView do
   defp tenderly_chain_path do
     System.get_env("TENDERLY_CHAIN_PATH") || "/"
   end
+
+  def get_max_length do
+    string_value = Application.get_env(:block_scout_web, :max_length_to_show_string_without_trimming)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 0
+    end
+  end
+
+  def trim(length, string) do
+    %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..String.length(string))}
+  end
+
+  defp template_to_string(template) when is_list(template) do
+    template_to_string(Enum.at(template, 1))
+  end
+
+  defp template_to_string(template) when is_tuple(template) do
+    safe_to_string(template)
+  end
 end
