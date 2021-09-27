@@ -37,20 +37,21 @@ def get_container_host_port(container):
     return ports[0][0]['HostPort']
 
 
-def run_explorer(schain_name, endpoint):
+def run_explorer(schain_name, endpoint, ws_endpoint):
     explorer_port = get_free_port()
     db_port = get_db_port(schain_name)
     env = {
         'SCHAIN_NAME': schain_name,
         'PORT': str(explorer_port),
         'DB_PORT': str(db_port),
-        'ENDPOINT': endpoint
+        'ENDPOINT': endpoint,
+        'WS_ENDPOINT': ws_endpoint
     }
     logger.info(f'Running explorer with {env}')
     logger.info('=' * 100)
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
     logger.info('=' * 100)
-    update_meta_data(schain_name, explorer_port, db_port, endpoint)
+    update_meta_data(schain_name, explorer_port, db_port, endpoint, ws_endpoint)
     add_schain_to_nginx(schain_name, f'http://127.0.0.1:{explorer_port}')
     restart_nginx()
     logger.info(f'sChain explorer is running on {schain_name}. subdomain')
@@ -62,7 +63,7 @@ def restart_nginx():
     nginx.restart()
 
 
-def update_meta_data(schain_name, port, db_port, endpoint):
+def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint):
     logger.info(f'Updating meta data for {schain_name}')
     if not os.path.isfile(EXPLORERS_META_DATA_PATH):
         explorers = {}
@@ -72,7 +73,8 @@ def update_meta_data(schain_name, port, db_port, endpoint):
         schain_name: {
             'port': port,
             'db_port': db_port,
-            'endpoint': endpoint
+            'endpoint': endpoint,
+            'ws_endpoint': ws_endpoint
         }
     }
     explorers.update(new_schain)
@@ -85,7 +87,8 @@ def run_iteration():
     for schain_name in schains:
         if schain_name not in explorers:
             endpoint = get_schain_endpoint(schain_name)
-            run_explorer(schain_name, endpoint)
+            ws_endpoint = get_schain_endpoint(schain_name, ws=True)
+            run_explorer(schain_name, endpoint, ws_endpoint)
 
 
 def main():

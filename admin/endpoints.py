@@ -1,27 +1,14 @@
 import logging
-import os
 import json
 import socket
 from enum import Enum
 
-from web3 import Web3, HTTPProvider
+from web3 import Web3, HTTPProvider, WebsocketProvider
 from Crypto.Hash import keccak
 
 from admin import ENDPOINT, ABI_FILEPATH, PROXY_DOMAIN_NAME
 
 logger = logging.getLogger(__name__)
-
-
-if ENDPOINT is None:
-    print("Fatal error: ETH main net endpoint not set. Exiting")
-    exit(-5)
-
-
-# ABI_FILEPATH = "/tmp/abi.json"
-
-if not os.path.exists(ABI_FILEPATH):
-    print("Fatal error: could not find ABI. Exiting")
-    exit(-6)
 
 
 RESULTS_PATH = "/tmp/chains.json"
@@ -133,9 +120,12 @@ def get_all_names():
     return [schains_internal_contract.functions.schains(id).call()[0] for id in schain_ids]
 
 
-def check_endpoint(endpoint):
+def check_endpoint(endpoint, ws=False):
     try:
-        w3 = Web3(HTTPProvider(endpoint))
+        if ws:
+            w3 = Web3(WebsocketProvider(endpoint))
+        else:
+            w3 = Web3(HTTPProvider(endpoint))
         w3.eth.get_block_number()
         return True
     except Exception as e:
@@ -145,13 +135,13 @@ def check_endpoint(endpoint):
 
 def get_proxy_endpoint(schain_name, ws=False):
     if ws:
-        f'ws://{PROXY_DOMAIN_NAME}/v1/ws/{schain_name}'
+        return f'ws://{PROXY_DOMAIN_NAME}/v1/ws/{schain_name}'
     return f'https://{PROXY_DOMAIN_NAME}/v1/{schain_name}'
 
 
 def get_schain_endpoint(schain_name, ws=False):
     proxy = get_proxy_endpoint(schain_name, ws)
-    if check_endpoint(proxy):
+    if check_endpoint(proxy, ws):
         return proxy
 
     provider = HTTPProvider(ENDPOINT)
@@ -166,5 +156,5 @@ def get_schain_endpoint(schain_name, ws=False):
             endpoint = node['ws_endpoint_domain']
         else:
             endpoint = node['https_endpoint_domain']
-        if check_endpoint(endpoint):
+        if check_endpoint(endpoint, ws):
             return endpoint
