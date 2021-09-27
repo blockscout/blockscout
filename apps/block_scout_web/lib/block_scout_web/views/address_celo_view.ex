@@ -35,6 +35,10 @@ defmodule BlockScoutWeb.AddressCeloView do
     Decimal.new(0)
   end
 
+  def compute_active_votes(%{group: nil}) do
+    Decimal.new(0)
+  end
+
   def compute_active_votes(member) do
     units = member.units.value
     total_units = member.group.total_units.value
