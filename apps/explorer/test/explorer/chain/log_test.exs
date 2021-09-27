@@ -76,9 +76,9 @@ defmodule Explorer.Chain.LogTest do
         address_hash: to_address.hash
       )
 
-      {:ok, topic1_bytes} = ExKeccak.hash_256("WantsPets(string,uint256,bool)")
+      topic1_bytes = ExKeccak.hash_256("WantsPets(string,uint256,bool)")
       topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
-      {:ok, topic2_bytes} = ExKeccak.hash_256("bob")
+      topic2_bytes = ExKeccak.hash_256("bob")
       topic2 = "0x" <> Base.encode16(topic2_bytes, case: :lower)
       topic3 = "0x0000000000000000000000000000000000000000000000000000000000000001"
       data = "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -133,9 +133,9 @@ defmodule Explorer.Chain.LogTest do
       |> SmartContract.changeset(params)
       |> Repo.insert!()
 
-      {:ok, topic1_bytes} = ExKeccak.hash_256("WantsPets(string,uint256,bool)")
+      topic1_bytes = ExKeccak.hash_256("WantsPets(string,uint256,bool)")
       topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
-      {:ok, topic2_bytes} = ExKeccak.hash_256("bob")
+      topic2_bytes = ExKeccak.hash_256("bob")
       topic2 = "0x" <> Base.encode16(topic2_bytes, case: :lower)
       topic3 = "0x0000000000000000000000000000000000000000000000000000000000000001"
       data = "0x0000000000000000000000000000000000000000000000000000000000000000"

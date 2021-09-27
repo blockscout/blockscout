@@ -7,11 +7,11 @@ config :logger, :console, level: :info
 config :logger, :ecto,
   level: :info,
   path: Path.absname("logs/prod/ecto.log"),
-  rotate: %{max_bytes: 52_428_800, keep: 5}
+  rotate: %{max_bytes: 52_428_800, keep: 2}
 
 config :logger, :error,
   path: Path.absname("logs/prod/error.log"),
-  rotate: %{max_bytes: 52_428_800, keep: 5}
+  rotate: %{max_bytes: 52_428_800, keep: 2}
 
 # System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
 config :ethereumex, url: System.get_env("FAUCET_JSONRPC_HTTP_URL")
