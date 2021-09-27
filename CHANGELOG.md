@@ -17,6 +17,7 @@
 
 ### Fixes
 - [#4686](https://github.com/blockscout/blockscout/pull/4686) - Block page: check gas limit value before division
+- [#4678](https://github.com/blockscout/blockscout/pull/4678) - Internal transactions indexer: fix issue of some pending transactions never become confirmed
 - [#4668](https://github.com/blockscout/blockscout/pull/4668) - Fix css for dark theme
 - [#4654](https://github.com/blockscout/blockscout/pull/4654) - AddressView: Change `@burn_address` to string `0x0000000000000000000000000000000000000000`
 - [#4626](https://github.com/blockscout/blockscout/pull/4626) - Refine view of popup for reverted tx
