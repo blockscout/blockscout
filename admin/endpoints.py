@@ -143,12 +143,14 @@ def check_endpoint(endpoint):
         return False
 
 
-def get_proxy_endpoint(schain_name):
+def get_proxy_endpoint(schain_name, ws=False):
+    if ws:
+        f'ws://{PROXY_DOMAIN_NAME}/v1/ws/{schain_name}'
     return f'https://{PROXY_DOMAIN_NAME}/v1/{schain_name}'
 
 
-def get_schain_endpoint(schain_name):
-    proxy = get_proxy_endpoint(schain_name)
+def get_schain_endpoint(schain_name, ws=False):
+    proxy = get_proxy_endpoint(schain_name, ws)
     if check_endpoint(proxy):
         return proxy
 
@@ -160,6 +162,9 @@ def get_schain_endpoint(schain_name):
     schain_id = bytes.fromhex(schain_name_to_id(schain_name)[2:])
     endpoints = endpoints_for_schain(schains_internal_contract, nodes_contract, schain_id)
     for node in endpoints['nodes']:
-        endpoint = f'http://{node["ip"]}:{node["httpRpcPort"]}'
+        if ws:
+            endpoint = node['ws_endpoint_domain']
+        else:
+            endpoint = node['https_endpoint_domain']
         if check_endpoint(endpoint):
             return endpoint
