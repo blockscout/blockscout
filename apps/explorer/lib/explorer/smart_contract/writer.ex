@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Writer do
   """
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Helper
 
   @spec write_functions(Hash.t()) :: [%{}]
@@ -23,7 +24,7 @@ defmodule Explorer.SmartContract.Writer do
     end
   end
 
-  @spec write_functions_proxy(Hash.t()) :: [%{}]
+  @spec write_functions_proxy(Hash.t() | String.t()) :: [%{}]
   def write_functions_proxy(implementation_address_hash_string) do
     implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
 
