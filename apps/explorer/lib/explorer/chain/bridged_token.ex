@@ -8,7 +8,7 @@ defmodule Explorer.Chain.BridgedToken do
 
   import Ecto.Changeset
 
-  alias Explorer.Chain.{BridgedToken, Hash, Token}
+  alias Explorer.Chain.{Address, BridgedToken, Hash, Token}
   alias Explorer.Repo
 
   @typedoc """
