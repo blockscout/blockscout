@@ -285,7 +285,9 @@
                     <%= gettext "Tokens Created" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for creation  <- creations do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                    </table>
                   <% end %>
                   </dd>
                 </dl>
