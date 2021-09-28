@@ -169,7 +169,7 @@ msgid "Action"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:402
+#: lib/block_scout_web/templates/transaction/overview.html.eex:404
 msgid "Actual gas amount used by the transaction."
 msgstr ""
 
@@ -240,7 +240,7 @@ msgid "Amount of distributed reward. Miners receive a static block reward + Tx f
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:388
+#: lib/block_scout_web/templates/transaction/overview.html.eex:390
 msgid "Amount of xDai burned for this transaction. Equals Block Base Fee per Gas * Gas Used."
 msgstr ""
 
@@ -319,7 +319,7 @@ msgid "Become a Candidate"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:423
+#: lib/block_scout_web/templates/transaction/overview.html.eex:425
 msgid "Binary data included with the transaction. See input / logs below for additional info."
 msgstr ""
 
@@ -758,19 +758,19 @@ msgid "Copy Txn Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:449
+#: lib/block_scout_web/templates/transaction/overview.html.eex:451
 msgid "Copy Txn Hex Input"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:455
+#: lib/block_scout_web/templates/transaction/overview.html.eex:457
 msgid "Copy Txn UTF-8 Input"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:20
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:39 lib/block_scout_web/templates/transaction/overview.html.eex:448
-#: lib/block_scout_web/templates/transaction/overview.html.eex:454
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:39 lib/block_scout_web/templates/transaction/overview.html.eex:450
+#: lib/block_scout_web/templates/transaction/overview.html.eex:456
 msgid "Copy Value"
 msgstr ""
 
@@ -1105,23 +1105,23 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:67
-#: lib/block_scout_web/templates/block/overview.html.eex:181 lib/block_scout_web/templates/transaction/overview.html.eex:350
+#: lib/block_scout_web/templates/block/overview.html.eex:181 lib/block_scout_web/templates/transaction/overview.html.eex:352
 msgid "Gas Limit"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:330
+#: lib/block_scout_web/templates/transaction/overview.html.eex:332
 msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:72
+#: lib/block_scout_web/templates/block/_tile.html.eex:73
 #: lib/block_scout_web/templates/block/overview.html.eex:172
 msgid "Gas Used"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:403
+#: lib/block_scout_web/templates/transaction/overview.html.eex:405
 msgid "Gas Used by Transaction"
 msgstr ""
 
@@ -1152,8 +1152,8 @@ msgid "Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:431
-#: lib/block_scout_web/templates/transaction/overview.html.eex:435
+#: lib/block_scout_web/templates/transaction/overview.html.eex:433
+#: lib/block_scout_web/templates/transaction/overview.html.eex:437
 msgid "Hex (Default)"
 msgstr ""
 
@@ -1204,7 +1204,7 @@ msgid "Inactive Pool Addresses. Current validator pools are specified by a check
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:415
+#: lib/block_scout_web/templates/transaction/overview.html.eex:417
 msgid "Index position of Transaction in the block."
 msgstr ""
 
@@ -1399,12 +1399,12 @@ msgid "Max Amount to Move:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:359
+#: lib/block_scout_web/templates/transaction/overview.html.eex:361
 msgid "Max Fee per Gas"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:369
+#: lib/block_scout_web/templates/transaction/overview.html.eex:371
 msgid "Max Priority Fee per Gas"
 msgstr ""
 
@@ -1414,12 +1414,12 @@ msgid "Max of"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:349
+#: lib/block_scout_web/templates/transaction/overview.html.eex:351
 msgid "Maximum gas amount approved for the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:358
+#: lib/block_scout_web/templates/transaction/overview.html.eex:360
 msgid "Maximum total amount per unit of gas a user is willing to pay for a transaction, including base fee and priority fee."
 msgstr ""
 
@@ -1550,7 +1550,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:190
-#: lib/block_scout_web/templates/transaction/overview.html.eex:413
+#: lib/block_scout_web/templates/transaction/overview.html.eex:415
 msgid "Nonce"
 msgstr ""
 
@@ -1664,7 +1664,7 @@ msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:415
+#: lib/block_scout_web/templates/transaction/overview.html.eex:417
 msgid "Position"
 msgstr ""
 
@@ -1696,13 +1696,13 @@ msgid "Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:329
+#: lib/block_scout_web/templates/transaction/overview.html.eex:331
 msgid "Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage."
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:219
-#: lib/block_scout_web/templates/transaction/overview.html.eex:379
+#: lib/block_scout_web/templates/transaction/overview.html.eex:381
 msgid "Priority Fee / Tip"
 msgstr ""
 
@@ -1728,7 +1728,7 @@ msgid "RPC"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:424
+#: lib/block_scout_web/templates/transaction/overview.html.eex:426
 msgid "Raw Input"
 msgstr ""
 
@@ -2475,7 +2475,7 @@ msgid "Total gas limit provided by all transactions in the block."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:314
+#: lib/block_scout_web/templates/transaction/overview.html.eex:316
 msgid "Total transaction fee."
 msgstr ""
 
@@ -2506,7 +2506,7 @@ msgid "Transaction %{transaction}, %{subnetwork} %{transaction}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:389
+#: lib/block_scout_web/templates/transaction/overview.html.eex:391
 msgid "Transaction Burnt Fee"
 msgstr ""
 
@@ -2516,7 +2516,7 @@ msgid "Transaction Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:315
+#: lib/block_scout_web/templates/transaction/overview.html.eex:317
 msgid "Transaction Fee"
 msgstr ""
 
@@ -2532,17 +2532,17 @@ msgid "Transaction Inputs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:339
+#: lib/block_scout_web/templates/transaction/overview.html.eex:341
 msgid "Transaction Type"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:412
+#: lib/block_scout_web/templates/transaction/overview.html.eex:414
 msgid "Transaction number from the sending address. Each transaction sent from an address increments the nonce by 1."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:338
+#: lib/block_scout_web/templates/transaction/overview.html.eex:340
 msgid "Transaction type, introduced in EIP-2718."
 msgstr ""
 
@@ -2593,7 +2593,7 @@ msgid "Type"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:438
+#: lib/block_scout_web/templates/transaction/overview.html.eex:440
 msgid "UTF-8"
 msgstr ""
 
@@ -2651,12 +2651,12 @@ msgid "Use the search box to find a hosted network, or select from the list of a
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:368
+#: lib/block_scout_web/templates/transaction/overview.html.eex:370
 msgid "User defined maximum fee (tip) per unit of gas paid to validator for transaction prioritization."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:378
+#: lib/block_scout_web/templates/transaction/overview.html.eex:380
 msgid "User-defined tip sent to validator for transaction priority/inclusion."
 msgstr ""
 
@@ -2701,12 +2701,12 @@ msgid "Validator pools can be banned for misbehavior (such as not revealing secr
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:300
+#: lib/block_scout_web/templates/transaction/overview.html.eex:302
 msgid "Value"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:299
+#: lib/block_scout_web/templates/transaction/overview.html.eex:301
 msgid "Value sent in the native token (and USD) if applicable."
 msgstr ""
 
@@ -3025,17 +3025,17 @@ msgstr ""
 msgid "xDai burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
 msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:53
 msgid "Collapse"
 msgstr ""
