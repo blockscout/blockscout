@@ -7,7 +7,7 @@ from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
 from admin.containers import get_free_port, get_db_port, restart_nginx, is_explorer_found
 from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json
 from admin.logger import init_logger
-from admin.nginx import add_schain_to_nginx
+from admin.nginx import regenerate_nginx_config
 
 init_logger()
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def run_explorer(schain_name, endpoint, ws_endpoint):
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
     logger.info('=' * 100)
     update_meta_data(schain_name, explorer_port, db_port, endpoint, ws_endpoint)
-    add_schain_to_nginx(schain_name, f'http://127.0.0.1:{explorer_port}')
+    regenerate_nginx_config()
     restart_nginx()
     logger.info(f'sChain explorer is running on {schain_name}. subdomain')
 
