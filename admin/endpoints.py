@@ -1,27 +1,14 @@
 import logging
-import os
 import json
 import socket
 from enum import Enum
 
-from web3 import Web3, HTTPProvider
+from web3 import Web3, HTTPProvider, WebsocketProvider
 from Crypto.Hash import keccak
 
 from admin import ENDPOINT, ABI_FILEPATH, PROXY_DOMAIN_NAME
 
 logger = logging.getLogger(__name__)
-
-
-if ENDPOINT is None:
-    print("Fatal error: ETH main net endpoint not set. Exiting")
-    exit(-5)
-
-
-# ABI_FILEPATH = "/tmp/abi.json"
-
-if not os.path.exists(ABI_FILEPATH):
-    print("Fatal error: could not find ABI. Exiting")
-    exit(-6)
 
 
 RESULTS_PATH = "/tmp/chains.json"
@@ -133,9 +120,12 @@ def get_all_names():
     return [schains_internal_contract.functions.schains(id).call()[0] for id in schain_ids]
 
 
-def check_endpoint(endpoint):
+def check_endpoint(endpoint, ws=False):
     try:
-        w3 = Web3(HTTPProvider(endpoint))
+        if ws:
+            w3 = Web3(WebsocketProvider(endpoint))
+        else:
+            w3 = Web3(HTTPProvider(endpoint))
         w3.eth.get_block_number()
         return True
     except Exception as e:
@@ -143,13 +133,15 @@ def check_endpoint(endpoint):
         return False
 
 
-def get_proxy_endpoint(schain_name):
+def get_proxy_endpoint(schain_name, ws=False):
+    if ws:
+        return f'ws://{PROXY_DOMAIN_NAME}/v1/ws/{schain_name}'
     return f'https://{PROXY_DOMAIN_NAME}/v1/{schain_name}'
 
 
-def get_schain_endpoint(schain_name):
-    proxy = get_proxy_endpoint(schain_name)
-    if check_endpoint(proxy):
+def get_schain_endpoint(schain_name, ws=False):
+    proxy = get_proxy_endpoint(schain_name, ws)
+    if check_endpoint(proxy, ws):
         return proxy
 
     provider = HTTPProvider(ENDPOINT)
@@ -160,6 +152,9 @@ def get_schain_endpoint(schain_name):
     schain_id = bytes.fromhex(schain_name_to_id(schain_name)[2:])
     endpoints = endpoints_for_schain(schains_internal_contract, nodes_contract, schain_id)
     for node in endpoints['nodes']:
-        endpoint = f'http://{node["ip"]}:{node["httpRpcPort"]}'
-        if check_endpoint(endpoint):
+        if ws:
+            endpoint = node['ws_endpoint_domain']
+        else:
+            endpoint = node['https_endpoint_domain']
+        if check_endpoint(endpoint, ws):
             return endpoint
