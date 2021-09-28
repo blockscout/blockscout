@@ -8,6 +8,7 @@
 - [#5160](https://github.com/blockscout/blockscout/pull/5160) - Fix blocks validated hint
 - [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
+- [#4701](https://github.com/blockscout/blockscout/pull/4701) - Reduced the size of js bundles
 
 ### Chore
 - [#5170](https://github.com/blockscout/blockscout/pull/5170) - Token price row name fix
