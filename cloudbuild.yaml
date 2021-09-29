@@ -2,6 +2,7 @@ steps:
   - name: "gcr.io/kaniko-project/executor:latest"
     args: [
           "--cache=true",
+          "--build-arg", "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA",
           "--destination=gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA",
           "--dockerfile", "docker/Dockerfile",
           "--context", "dir://."]
@@ -11,8 +12,8 @@ steps:
     args: [
           "--cache=true",
           "--destination=gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA",
-
           "--dockerfile", "docker/Dockerfile",
+          "--build-arg", "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA",
           "--build-arg", "DISABLE_WRITE_API=true",
           "--build-arg", "DISABLE_INDEXER=true",
           "--build-arg", "DISABLE_WEBAPP=true",

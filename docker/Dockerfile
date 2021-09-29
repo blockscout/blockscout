@@ -23,7 +23,11 @@ ADD apps/indexer/mix.exs ./apps/indexer/
 
 RUN mix do deps.get, local.rebar --force, deps.compile
 
+# Update base image npm
+RUN npm install -g npm@7.24.1
+
 # Cache npm deps before application code
+
 ADD apps/block_scout_web/assets/ ./apps/block_scout_web/assets/
 ADD apps/explorer/package*.json ./apps/explorer/
 
@@ -56,7 +60,6 @@ ENV DISABLE_WRITE_API=${DISABLE_WRITE_API} \
 
 RUN if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
-# Run foreground build and phoenix digest
+# Invalidate cache via modifying build args on compilation
+ARG FORCE_MIX_COMPILE_CACHE_MISS
 RUN mix compile && mix phx.digest
-
-RUN mix phx.digest
