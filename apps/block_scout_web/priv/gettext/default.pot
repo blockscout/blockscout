@@ -144,7 +144,7 @@ msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:112
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:122
 msgid "APIs"
 msgstr ""
 
@@ -156,11 +156,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:79
 msgid "APY & Predicted Reward"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:66
-msgid "Accounts"
 msgstr ""
 
 #, elixir-format
@@ -197,9 +192,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:30
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:28 lib/block_scout_web/templates/address_transaction/index.html.eex:26
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:21 lib/block_scout_web/templates/layout/_topnav.html.eex:79
-#: lib/block_scout_web/views/address_internal_transaction_view.ex:10 lib/block_scout_web/views/address_token_transfer_view.ex:10
-#: lib/block_scout_web/views/address_transaction_view.ex:10
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:21 lib/block_scout_web/templates/layout/_topnav.html.eex:71
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:103 lib/block_scout_web/views/address_internal_transaction_view.ex:10
+#: lib/block_scout_web/views/address_token_transfer_view.ex:10 lib/block_scout_web/views/address_transaction_view.ex:10
 msgid "All"
 msgstr ""
 
@@ -260,7 +255,7 @@ msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:140
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:150
 msgid "Apps"
 msgstr ""
 
@@ -418,12 +413,12 @@ msgid "Bridged Tokens from "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:89
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:82
 msgid "Bridged from BSC"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:84
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:76
 msgid "Bridged from Ethereum"
 msgstr ""
 
@@ -1025,15 +1020,16 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:126
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:136
 msgid "Eth RPC"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:18
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20 lib/block_scout_web/templates/layout/app.html.eex:45
-#: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20 lib/block_scout_web/templates/transaction/_tile.html.eex:37
-#: lib/block_scout_web/views/wei_helpers.ex:78
+#: lib/block_scout_web/templates/address/index.html.eex:5 lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:87 lib/block_scout_web/templates/layout/_topnav.html.eex:108
+#: lib/block_scout_web/templates/layout/app.html.eex:45 lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:37 lib/block_scout_web/views/wei_helpers.ex:78
 msgid "Ether"
 msgstr ""
 
@@ -1136,7 +1132,7 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:116
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:126
 msgid "GraphQL"
 msgstr ""
 
@@ -1723,7 +1719,7 @@ msgid "Query"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:121
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:131
 msgid "RPC"
 msgstr ""
 
@@ -1994,7 +1990,7 @@ msgid "Staker's Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:142
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:152
 msgid "Stakes"
 msgstr ""
 
@@ -2005,7 +2001,7 @@ msgid "Stakes Ratio"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:148
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:158
 msgid "Staking"
 msgstr ""
 
@@ -2408,7 +2404,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:21
 #: lib/block_scout_web/templates/address_token/index.html.eex:10 lib/block_scout_web/templates/address_token_transfer/index.html.eex:13
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:75 lib/block_scout_web/templates/layout/_topnav.html.eex:101
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:67 lib/block_scout_web/templates/layout/_topnav.html.eex:99
 #: lib/block_scout_web/templates/tokens/index.html.eex:10 lib/block_scout_web/views/address_view.ex:345
 msgid "Tokens"
 msgstr ""
