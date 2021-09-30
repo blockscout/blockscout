@@ -33,6 +33,7 @@
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
+- [#4707](https://github.com/blockscout/blockscout/pull/4707) - Top navigation: Move Accounts tab to Tokens
 - [#4704](https://github.com/blockscout/blockscout/pull/4704) - Update to Erlang/OTP 24
 - [#4682](https://github.com/blockscout/blockscout/pull/4682) - Update all possible outdated mix dependencies
 - [#4663](https://github.com/blockscout/blockscout/pull/4663) - Migrate to Elixir 1.12.x
