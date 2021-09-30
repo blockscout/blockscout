@@ -1,0 +1,51 @@
+<% native_coin = gettext("ETH") %>
+<!-- USD value of the balance -->
+<% wei_value = if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>
+<% raw_usd_value =
+    case @exchange_rate.usd_value do
+        %Decimal{} ->
+            if wei_value do
+                %Wei{value: Decimal.new(wei_value)}
+                |> Wei.to(:ether)
+                |> Decimal.mult(@exchange_rate.usd_value)
+            else
+                Decimal.new(0)
+            end
+        _ -> Decimal.new(0)
+    end
+%>
+<% data_usd_exchange_rate = 
+    unless AddressView.empty_exchange_rate?(@exchange_rate) do
+        "data-usd-exchange-rate='#{@exchange_rate.usd_value}' data-raw-usd-value='#{raw_usd_value}'"
+    end
+%>
+<% native_coin_balance_token = AddressView.balance(@address)
+%>
+<% native_coin_balance_usd =
+    "<span
+        data-wei-value='#{wei_value}'
+        #{data_usd_exchange_rate}
+    >
+    </span>"
+%>
+<% native_coin_balance = native_coin_balance_usd <> " | " <> native_coin_balance_token %>
+<div class="d-md-flex">
+    <%= render BlockScoutWeb.AddressTokenView, "overview_item.html",
+        title: "Net Worth",
+        tooltip: "Shows total assets held in the address",
+        value: "N/A",
+        data_test: "address-tokens-panel-net-worth"
+    %>
+    <%= render BlockScoutWeb.AddressTokenView, "overview_item.html",
+        title: "#{native_coin} Worth",
+        tooltip: "Shows the current #{native_coin} balance of the address",
+        value: raw(native_coin_balance),
+        data_test: "address-tokens-panel-native-worth"
+    %>
+    <%= render BlockScoutWeb.AddressTokenView, "overview_item.html",
+        title: "Tokens",
+        tooltip: "Shows the tokens held in the address (includes ERC-20, ERC-721 and ERC-1155).",
+        value: "N/A",
+        data_test: "address-tokens-panel-tokens-worth"
+    %>
+</div>

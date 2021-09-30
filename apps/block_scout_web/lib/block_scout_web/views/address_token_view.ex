@@ -1,5 +1,7 @@
 defmodule BlockScoutWeb.AddressTokenView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.Address
+  alias BlockScoutWeb.{AddressView, ChainView}
+  alias Explorer.Chain
+  alias Explorer.Chain.Wei
 end
