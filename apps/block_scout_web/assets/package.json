@@ -35,7 +35,6 @@
     "highlight.js": "^10.4.0",
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
-    "identicon": "^3.0.1",
     "intl-tel-input": "^17.0.12",
     "jquery": "^3.4.0",
     "lodash": "^4.17.19",
