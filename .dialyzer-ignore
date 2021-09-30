@@ -5,14 +5,12 @@
 :0: Unknown type 'Elixir.Address':t/0
 apps/ethereum_jsonrpc/lib/ethereum_jsonrpc.ex:400: Function timestamp_to_datetime/1 has no local return
 lib/explorer/repo/prometheus_logger.ex:8
-apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: Function microseconds_time/1 has no local return
-apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: The call 'Elixir.System':convert_time_unit(__@1::any(),'native','microseconds') breaks the contract (integer(),time_unit() | 'native',time_unit() | 'native') -> integer()
+lib/explorer/smart_contract/solidity/publisher_worker.ex:1
+lib/explorer/smart_contract/vyper/publisher_worker.ex:1
 lib/explorer/smart_contract/solidity/publisher_worker.ex:6
 lib/explorer/smart_contract/vyper/publisher_worker.ex:6
-apps/explorer/lib/explorer/smart_contract/solidity/publisher_worker.ex:6:pattern_match
-apps/explorer/lib/explorer/smart_contract/solidity/publisher_worker.ex:6: The test 5 == :infinity can never evaluate to 'true'
-apps/explorer/lib/explorer/smart_contract/vyper/publisher_worker.ex:6:pattern_match
-apps/explorer/lib/explorer/smart_contract/vyper/publisher_worker.ex:6: The test 5 == :infinity can never evaluate to 'true'
+apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: Function microseconds_time/1 has no local return
+apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: The call 'Elixir.System':convert_time_unit(__@1::any(),'native','microseconds') breaks the contract (integer(),time_unit() | 'native',time_unit() | 'native') -> integer()
 lib/block_scout_web/router.ex:1
 lib/block_scout_web/schema/types.ex:31
 lib/phoenix/router.ex:324
