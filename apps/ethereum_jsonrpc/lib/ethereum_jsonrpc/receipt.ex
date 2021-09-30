@@ -255,6 +255,7 @@ defmodule EthereumJSONRPC.Receipt do
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash revertReason type effectiveGasPrice),
        do: {:ok, entry}
+
   # l1GasUsed l1GasPrice l1Fee are from Optimstic Rollups l2Geth
   defp entry_to_elixir({key, quantity})
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex l1GasUsed l1GasPrice l1Fee) do

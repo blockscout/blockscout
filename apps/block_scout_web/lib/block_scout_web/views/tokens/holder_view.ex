@@ -62,7 +62,10 @@ defmodule BlockScoutWeb.Tokens.HolderView do
     1
 
   """
-  def format_token_balance_value(value, %Token{type: "ERC-20", decimals: decimals}, %Token{type: "ERC-20", symbol: symbol}) do
+  def format_token_balance_value(value, %Token{type: "ERC-20", decimals: decimals}, %Token{
+        type: "ERC-20",
+        symbol: symbol
+      }) do
     format_according_to_decimals(value, decimals, symbol)
   end
 
