@@ -931,6 +931,7 @@ defmodule Explorer.Chain do
       gas_price
       |> Wei.to(unit)
       |> Decimal.mult(gas)
+
     {:actual, fee}
     {:maximum, fee}
   end

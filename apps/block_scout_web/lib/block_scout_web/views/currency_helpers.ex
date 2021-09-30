@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   def format_according_to_decimals(value, nil, nil) do
     format_according_to_decimals(value, Decimal.new(0), "TOKEN")
   end
-  
+
   def format_according_to_decimals(value, nil, symbol) when is_binary(symbol) do
     format_according_to_decimals(value, Decimal.new(0), symbol)
   end
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.CurrencyHelpers do
     format_according_to_decimals(Decimal.new(value), decimals, "TOKEN")
   end
 
-  def format_according_to_decimals(value, decimals, symbol) when (is_integer(value) and is_binary(symbol)) do
+  def format_according_to_decimals(value, decimals, symbol) when is_integer(value) and is_binary(symbol) do
     if symbol == "USDC" || symbol === "USDT" do
       format_according_to_decimals(Decimal.new(6), decimals, symbol)
     else
@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   @spec format_according_to_decimals(Decimal.t(), Decimal.t(), String.t()) :: String.t()
   def format_according_to_decimals(value, decimals, symbol) do
-    if symbol == "USDC" || symbol === "USDT" do 
+    if symbol == "USDC" || symbol === "USDT" do
       value
       |> divide_decimals(Decimal.new(6))
       |> thousands_separator()
