@@ -130,7 +130,7 @@ defmodule Explorer.Token.MetadataRetriever do
   It will retry to fetch each function in the Smart Contract according to :token_functions_reader_max_retries
   configured in the application env case one of them raised error.
   """
-  @spec get_functions_of([String.t()] | Hash.t() | String.t()) :: Map.t() | {:ok, [Map.t()]}
+  @spec get_functions_of([String.t()] | Hash.t() | String.t()) :: map() | {:ok, [map()]}
   def get_functions_of(hashes) when is_list(hashes) do
     requests =
       hashes

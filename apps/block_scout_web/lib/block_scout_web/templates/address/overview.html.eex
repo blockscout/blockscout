@@ -5,6 +5,7 @@
   <% dark_forest_addresses_list_0_6 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_6) %>
   <% dark_forest_addresses_list_0_6_r2 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r2) %>
   <% dark_forest_addresses_list_0_6_r3 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r3) %>
+  <% dark_forest_addresses_list_0_6_r4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r4) %>
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
@@ -24,6 +25,8 @@
               <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.6-r2)" %>
             <% Enum.member?(dark_forest_addresses_list_0_6_r3, current_address) -> %>
               <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.6-r3)" %>
+            <% Enum.member?(dark_forest_addresses_list_0_6_r4, current_address) -> %>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.6-r4)" %>
             <% Enum.member?(circles_addresses_list, current_address) -> %>
               <div class="custom-dapp-header-container">
                 <img class="custom-address-icon"/>

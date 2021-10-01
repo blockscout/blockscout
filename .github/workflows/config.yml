@@ -11,7 +11,7 @@ on:
 
 env:
   MIX_ENV: test
-  OTP_VERSION: '23.3.4.7'
+  OTP_VERSION: '24.1'
   ELIXIR_VERSION: '1.12.3'
 
 jobs:
