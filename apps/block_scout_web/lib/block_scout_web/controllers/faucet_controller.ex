@@ -148,9 +148,7 @@ defmodule BlockScoutWeb.FaucetController do
         json(conn, %{
           success: false,
           message:
-            "You requested #{System.get_env("FAUCET_VALUE")} #{System.get_env("FAUCET_COIN")} within the last 24 hours. Next claim is in #{
-              dur_to_next_available_request
-            }"
+            "You requested #{System.get_env("FAUCET_VALUE")} #{System.get_env("FAUCET_COIN")} within the last 24 hours. Next claim is in #{dur_to_next_available_request}"
         })
 
       :wrong_captcha_response ->
@@ -166,7 +164,8 @@ defmodule BlockScoutWeb.FaucetController do
 
   defp parse_enough_coins(conn) do
     _faucet_address_hash_str = Application.get_env(:block_scout_web, :faucet)[:address]
-    faucet_balance = 0 #ETH.get_balance!(faucet_address_hash_str, :wei)
+    # ETH.get_balance!(faucet_address_hash_str, :wei)
+    faucet_balance = 0
 
     faucet_value_to_send = Faucet.faucet_value_to_send_int()
 
