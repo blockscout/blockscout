@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.WebRouter do
   Router for web app
   """
   use BlockScoutWeb, :router
+  require Ueberauth
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -11,6 +12,15 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
+  end
+
+  scope "/auth", BlockScoutWeb do
+    pipe_through(:browser)
+
+    get("/logout", AuthController, :logout)
+    get("/:provider", AuthController, :request)
+    get("/:provider/callback", AuthController, :callback)
+    post("/:provider/callback", AuthController, :callback)
   end
 
   # Disallows Iframes (write routes)

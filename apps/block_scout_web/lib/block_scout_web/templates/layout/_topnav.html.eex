@@ -36,172 +36,185 @@
             </div>
           </li>
           <li class="nav-item dropdown">            <li class="nav-item dropdown" id="activeTransactions">
-            <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
-              </span>
-              <%= gettext("Transactions") %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
-              <%= link(
-                    gettext("Validated"),
-                    class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
-                    to: transaction_path(@conn, :index)
-                  ) %>
-              <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
-              <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
-              <%= if variant !== EthereumJSONRPC.Besu do %>
-                <%= link(
-                      gettext("Pending"),
-                      class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
-                      "data-test": "pending_transactions_link",
-                      to: pending_transaction_path(@conn, :index)
-                    ) %>
-              <% end %>
-            </div>
-          </li>
-          <%= if Chain.bridged_tokens_enabled?() do %>
-            <li class="nav-item dropdown">
-              <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                  <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
                 </span>
-                <%= gettext("Tokens") %>
+                <%= gettext("Transactions") %>
               </a>
-              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
                 <%= link(
-                      gettext("All"),
-                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
-                      to: tokens_path(@conn, :index)
-                    ) %>
-                <%= link(
-                      gettext("Bridged from Ethereum"),
-                      class: "dropdown-item #{tab_status("bridged-tokens/eth", @conn.request_path)}",
-                      to: bridged_tokens_path(@conn, :show, :eth),
-                      style: "white-space: nowrap;"
-                    ) %>
-                <%= link(
-                      gettext("Bridged from BSC"),
-                      class: "dropdown-item #{tab_status("bridged-tokens/bsc", @conn.request_path)}",
-                      to: bridged_tokens_path(@conn, :show, :bsc)
-                    ) %>
-                <%= link(
-                      gettext("Ether"),
-                      class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
-                      to: address_path(@conn, :index)
-                    ) %>
+gettext("Validated"),
+class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
+to: transaction_path(@conn, :index)
+) %>
+<% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
+<% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
+<%= if variant !== EthereumJSONRPC.Besu do %>
+  <%= link(
+gettext("Pending"),
+class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
+"data-test": "pending_transactions_link",
+to: pending_transaction_path(@conn, :index)
+) %>
+              <% end %>
               </div>
             </li>
-          <% else %>
+            <%= if Chain.bridged_tokens_enabled?() do %>
+              <li class="nav-item dropdown">
+                <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <span class="nav-link-icon">
+                    <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                  </span>
+                  <%= gettext("Tokens") %>
+                </a>
+                <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+                  <%= link(
+gettext("All"),
+class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
+to: tokens_path(@conn, :index)
+) %>
+<%= link(
+gettext("Bridged from Ethereum"),
+class: "dropdown-item #{tab_status("bridged-tokens/eth", @conn.request_path)}",
+to: bridged_tokens_path(@conn, :show, :eth),
+style: "white-space: nowrap;"
+) %>
+<%= link(
+gettext("Bridged from BSC"),
+class: "dropdown-item #{tab_status("bridged-tokens/bsc", @conn.request_path)}",
+to: bridged_tokens_path(@conn, :show, :bsc)
+) %>
+<%= link(
+gettext("Ether"),
+class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
+to: address_path(@conn, :index)
+) %>
+                </div>
+              </li>
+            <% else %>
+              <li class="nav-item dropdown">
+                <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <span class="nav-link-icon">
+                    <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                  </span>
+                  <%= gettext("Tokens") %>
+                </a>
+                <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+                  <%= link(
+gettext("All"),
+class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
+to: tokens_path(@conn, :index)
+) %>
+<%= link(
+gettext("Ether"),
+class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
+to: address_path(@conn, :index)
+) %>
+                </div>
+              </li>
+            <% end %>
+          <% end %>
+          <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
             <li class="nav-item dropdown">
-              <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                  <%= render BlockScoutWeb.IconsView, "_api_icon.html" %>
                 </span>
-                <%= gettext("Tokens") %>
+                <%= gettext("APIs") %>
               </a>
               <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
                 <%= link(
-                      gettext("All"),
-                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
-                      to: tokens_path(@conn, :index)
-                    ) %>
-                <%= link(
-                      gettext("Ether"),
-                      class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
-                      to: address_path(@conn, :index)
-                    ) %>
+gettext("GraphQL"),
+class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
+to: api_url() <> "/graphiql"
+) %>
+<%= link(
+gettext("RPC"),
+class: "dropdown-item #{tab_status("api-docs", @conn.request_path)}",
+to: api_url() <> api_docs_path(@conn, :index)
+) %>
+<%= link(
+gettext("Eth RPC"),
+class: "dropdown-item #{tab_status("eth-rpc-api-docs", @conn.request_path)}",
+to: api_url() <> api_docs_path(@conn, :eth_rpc)
+) %>
               </div>
             </li>
           <% end %>
-        <% end %>
-        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
-          <li class="nav-item dropdown">
-            <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_api_icon.html" %>
-              </span>
-              <%= gettext("APIs") %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
-              <%= link(
-                    gettext("GraphQL"),
-                    class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
-                    to: api_url() <> "/graphiql"
-                  ) %>
-              <%= link(
-                    gettext("RPC"),
-                    class: "dropdown-item #{tab_status("api-docs", @conn.request_path)}",
-                    to: api_url() <> api_docs_path(@conn, :index)
-                  ) %>
-              <%= link(
-                    gettext("Eth RPC"),
-                    class: "dropdown-item #{tab_status("eth-rpc-api-docs", @conn.request_path)}",
-                    to: api_url() <> api_docs_path(@conn, :eth_rpc)
-                  ) %>
-            </div>
-          </li>
-        <% end %>
-        <%= if apps_menu == true || staking_enabled_in_menu do %>
-          <li class="nav-item dropdown">
-            <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
-              </span>
-              <%= if apps_menu == true do %>
-                <%= gettext("Apps") %>
-              <% else %>
-                <%= gettext("Stakes") %>
-              <% end %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
-              <%= if staking_enabled_in_menu do %>
-                <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                  <%= gettext("Staking") %>
-                  <span class="bs-label secondary right from-dropdown">New</span>
-                </a>
-              <% end %>
-              <%= if apps_menu == true do %>
-                <%= for %{url: url, title: title} <- external_apps_list() do %> 
+          <%= if apps_menu == true || staking_enabled_in_menu do %>
+            <li class="nav-item dropdown">
+              <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="nav-link-icon">
+                  <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+                </span>
+                <%= if apps_menu == true do %>
+                  <%= gettext("Apps") %>
+                <% else %>
+                  <%= gettext("Stakes") %>
+                <% end %>
+              </a>
+              <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
+                <%= if staking_enabled_in_menu do %>
+                  <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
+                    <%= gettext("Staking") %>
+                    <span class="bs-label secondary right from-dropdown">New</span>
+                  </a>
+                <% end %>
+                <%= if apps_menu == true do %>
+                  <%= for %{url: url, title: title} <- external_apps_list() do %> 
                     <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
                       <span class="external-link-icon">
                         <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
                       </span>
                     </a>
+                  <% end %>
                 <% end %>
-              <% end %>
+              </div>
+            </li>
+          <% end %>
+          <li class="nav-item dropdown">
+            <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
+              </span>
+              <%= subnetwork_title() %>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">  
+              <a class="dropdown-item header division">Mainnets</a> 
+              <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>  
+                <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+              <% end %> 
+              <a class="dropdown-item header division">Testnets</a> 
+              <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %> 
+                <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+              <% end %> 
+              <a class="dropdown-item header division">Other Networks</a> 
+              <%= for %{url: url, title: title} <- dropdown_other_nets() do %>  
+                <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+              <% end %> 
             </div>
           </li>
-        <% end %>
-        <li class="nav-item dropdown">
-          <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
-            </span>
-            <%= subnetwork_title() %>
-          </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">  
-            <a class="dropdown-item header division">Mainnets</a> 
-            <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>  
-              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
-            <% end %> 
-            <a class="dropdown-item header division">Testnets</a> 
-            <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %> 
-              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
-            <% end %> 
-            <a class="dropdown-item header division">Other Networks</a> 
-            <%= for %{url: url, title: title} <- dropdown_other_nets() do %>  
-              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
-            <% end %> 
-          </div>
-        </li>
       </ul>
       <!-- Dark mode changer -->
       <button class="dark-mode-changer" id="dark-mode-changer">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
-            <path fill="#9B62FF" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"/>
+          <path fill="#9B62FF" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"/>
         </svg>
       </button>
+      <li class="nav-item dropdown">
+        <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span class="nav-link-icon">
+            <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
+          </span>
+          <%= gettext("Blocks") %>
+        </a>
+      </li>
+      <%= if @current_user do %>
+        <li class="active"><a href="/auth/logout">Logout</a></li>
+      <% else %>
+        <li><a href="/auth/auth0">Login</a></li>
+      <% end %>
       <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete", additional_classes: ["mobile-search-hide"] %>
     </div>
   </div>

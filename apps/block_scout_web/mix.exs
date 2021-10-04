@@ -45,6 +45,7 @@ defmodule BlockScoutWeb.Mixfile do
 
   defp extra_applications,
     do: [
+      :ueberauth_auth0,
       :logger,
       :runtime_tools
     ]
@@ -126,7 +127,9 @@ defmodule BlockScoutWeb.Mixfile do
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:websocket_client, "== 1.3.0"},
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:ex_json_schema, "~> 0.6.2"}
+      {:ex_json_schema, "~> 0.6.2"},
+      {:ueberauth, "~> 0.7"},
+      {:ueberauth_auth0, "~> 2.0"}
     ]
   end
 
