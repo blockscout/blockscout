@@ -26,7 +26,7 @@
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title lg-card-title mb-1">
+          <h1 class="card-title lg-card-title mb-2">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
             <% validator_metadata = primary_validator_metadata(@address) %>
             <%= if contract?(@address) do %>
@@ -84,7 +84,7 @@
               <% end %>
             </span>
           </h1>
-          <h3 class="address-detail-hash-title mb-3 <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
+          <h3 class="address-detail-hash-title mb-4 <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <!-- Verify in other explorers -->
           <!--
           <%# <%= render "_verify_other_explorers.html", hash: @address.hash, type: "address" %> %>
