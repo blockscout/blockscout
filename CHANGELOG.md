@@ -18,6 +18,7 @@
 
 ### Fixes
 - [#4713](https://github.com/blockscout/blockscout/pull/4713) - Search input field: sanitize input
+- [#4712](https://github.com/blockscout/blockscout/pull/4712) - Migrate :nonce field type: `int4 -> int8` in `addresses` and `transactions` tables
 - [#4703](https://github.com/blockscout/blockscout/pull/4703) - Block Details page: Fix pagination on the Transactions tab
 - [#4686](https://github.com/blockscout/blockscout/pull/4686) - Block page: check gas limit value before division
 - [#4678](https://github.com/blockscout/blockscout/pull/4678) - Internal transactions indexer: fix issue of some pending transactions never become confirmed
