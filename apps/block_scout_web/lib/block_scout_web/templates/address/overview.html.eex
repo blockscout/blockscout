@@ -9,7 +9,7 @@
     <!-- Address details -->
     <div class="col-md-12 js-ad-dependant-mb-2">
       <div class="card js-ad-dependant-mb-2">
-        <div class="card-body fs-14" style="line-height: 36px;">
+        <div class="card-body fs-14" style="line-height: 31px;">
           <%= cond do %>
             <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
               <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.4)" %>
@@ -26,7 +26,7 @@
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title lg-card-title mb-3">
+          <h1 class="card-title lg-card-title mb-1">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
             <% validator_metadata = primary_validator_metadata(@address) %>
             <%= if contract?(@address) do %>

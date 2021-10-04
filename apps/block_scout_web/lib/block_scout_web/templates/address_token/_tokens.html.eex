@@ -43,11 +43,13 @@
     <% end %>
   </td>
   <td class="stakes-td">
-    <%= link(
-          to: address_transaction_path(@conn, :index, to_string(@token.contract_address_hash)),
-          class: "tile-title-lg"
-      ) do %>
-      <%= @token.contract_address_hash %>
-    <% end %>
+    <%= with {:ok, address} <- Chain.hash_to_address(@token.contract_address_hash) do
+      render BlockScoutWeb.AddressView,
+      "_link.html",
+      address: address,
+      contract: false,
+      use_custom_tooltip: false
+    end
+    %>
   </td>
 </tr>

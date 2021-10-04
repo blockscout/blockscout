@@ -11,27 +11,31 @@
         id="dropdown-tokens"
         aria-haspopup="true"
         aria-expanded="false"
-        class="btn-dropdown-line basic dropdown-toggle"
-        style="text-decoration: none;">
+        class="btn-dropdown-line large dropdown-toggle"
+        style="text-decoration: none; height: 31px; padding: 0 10px;">
 
       <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
     </a>
-    <%= if @conn.request_path |> String.contains?("/tokens") do %>
-      <a href="#tokens">
-        <i class="fas fa-wallet" style="line-height: 36px;"></i>
-      </a>
-    <% else %>
-      <a href="<%= AccessHelpers.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens">
-        <i class="fas fa-wallet" style="line-height: 36px;"></i>
-      </a>
-    <% end %>
     <%= if @token_balances do %>
-        <div class="ml-2" style="line-height: 36px;">
+        <div class="mr-2" style="line-height: 31px;">
           (<span data-test="address-tokens-worth" data-usd-value=<%= address_tokens_usd_sum_cache(@address_hash, @token_balances) %>></span>)
         </div>
     <% end %>  
+    <%= if @conn.request_path |> String.contains?("/tokens") do %>
+      <a href="#tokens" style="text-decoration: none;">
+        <span class="btn-wallet-icon">
+          <i class="fas fa-wallet " style="line-height: 31px;"></i>
+        </span>
+      </a>
+    <% else %>
+      <a href="<%= AccessHelpers.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens" style="text-decoration: none;">
+        <span class="btn-wallet-icon">
+          <i class="fas fa-wallet" style="line-height: 31px;"></i>
+        </span>
+      </a>
+    <% end %>
   <% else %>
-    <span data-tokens-count style="line-height: 36px;"><%= tokens_count_title(@token_balances) %></span>
+    <span data-tokens-count style="line-height: 31px;"><%= tokens_count_title(@token_balances) %></span>
   <% end %>
 
   <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">

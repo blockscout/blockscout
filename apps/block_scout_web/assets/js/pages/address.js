@@ -118,7 +118,8 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.transactionCount) {
         if (oldState.transactionCount === state.transactionCount) return
-        $el.empty().append(numeral(state.transactionCount).format() + ' Transaction(s)')
+        const transactionsDSName = (state.transactionCount > 1) ? ' Transactions' : ' Transaction'
+        $el.empty().append(numeral(state.transactionCount).format() + transactionsDSName)
         $el.show()
         $('.address-transactions-count-item').removeAttr('style')
       } else {
@@ -134,7 +135,8 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.tokenTransferCount) {
         if (oldState.tokenTransferCount === state.tokenTransferCount) return
-        $el.empty().append(numeral(state.tokenTransferCount).format() + ' Transfer(s)')
+        const transfersDSName = (state.transactionCount > 1) ? ' Transfers' : ' Transfer'
+        $el.empty().append(numeral(state.tokenTransferCount).format() + transfersDSName)
         $el.show()
         $('.address-transfers-count-item').removeAttr('style')
       } else {

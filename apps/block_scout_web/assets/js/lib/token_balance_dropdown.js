@@ -14,7 +14,8 @@ const tokenBalanceDropdown = (element) => {
       $element.html(responseHtml)
       const tokensCount = $('[data-dropdown-token-balance-test]').length
       const $addressTokenWorth = $('[data-test="address-tokens-worth"]')
-      $('[data-test="address-tokens-panel-tokens-worth"]').text(`${$addressTokenWorth.text()} | ${tokensCount} token(s)`)
+      const tokensDsName = (tokensCount > 1) ? ' tokens' : ' token'
+      $('[data-test="address-tokens-panel-tokens-worth"]').text(`${$addressTokenWorth.text()} | ${tokensCount} ${tokensDsName}`)
       const $addressTokensPanelNativeWorth = $('[data-test="address-tokens-panel-native-worth"]')
       const rawUsdValue = $addressTokensPanelNativeWorth.children('span').data('raw-usd-value')
       const rawUsdTokensValue = $addressTokenWorth.data('usd-value')
