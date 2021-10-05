@@ -16,6 +16,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4718](https://github.com/blockscout/blockscout/pull/4718) - Lose block consensus if related token balance update failed
 - [#4717](https://github.com/blockscout/blockscout/pull/4717) - Contract verification fix: check only success creation tx
 - [#4713](https://github.com/blockscout/blockscout/pull/4713) - Search input field: sanitize input
 - [#4703](https://github.com/blockscout/blockscout/pull/4703) - Block Details page: Fix pagination on the Transactions tab
