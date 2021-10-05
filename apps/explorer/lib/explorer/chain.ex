@@ -3665,6 +3665,7 @@ defmodule Explorer.Chain do
       from(
         tx in Transaction,
         where: tx.created_contract_address_hash == ^address_hash,
+        where: tx.status == ^1,
         select: tx.input
       )
 
