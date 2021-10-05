@@ -5,6 +5,8 @@ defmodule Explorer.Repo do
 
   require Logger
 
+  alias Explorer.Chain.Import.Runner.Blocks
+
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.
@@ -45,6 +47,17 @@ defmodule Explorer.Repo do
           insert_all(kind, chunk, opts)
         rescue
           exception ->
+            if kind == Explorer.Chain.Address.TokenBalance do
+              block_numbers =
+                elements
+                |> Enum.map(fn element ->
+                  element.block_number
+                end)
+                |> Enum.dedup()
+
+              Blocks.invalidate_consensus_blocks(block_numbers)
+            end
+
             old_truncate = Application.get_env(:logger, :truncate)
             Logger.configure(truncate: :infinity)
 
