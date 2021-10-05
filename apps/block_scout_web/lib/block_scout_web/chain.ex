@@ -215,6 +215,10 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
+  def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
+    [paging_options: Map.put(paging_options, key, value)]
+  end
+
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
     case Integer.parse(formatted_number) do
       {number, ""} -> {:ok, number}

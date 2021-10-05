@@ -16,6 +16,9 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4717](https://github.com/blockscout/blockscout/pull/4717) - Contract verification fix: check only success creation tx
+- [#4713](https://github.com/blockscout/blockscout/pull/4713) - Search input field: sanitize input
+- [#4703](https://github.com/blockscout/blockscout/pull/4703) - Block Details page: Fix pagination on the Transactions tab
 - [#4686](https://github.com/blockscout/blockscout/pull/4686) - Block page: check gas limit value before division
 - [#4678](https://github.com/blockscout/blockscout/pull/4678) - Internal transactions indexer: fix issue of some pending transactions never become confirmed
 - [#4668](https://github.com/blockscout/blockscout/pull/4668) - Fix css for dark theme
@@ -33,6 +36,8 @@
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
+- [#4707](https://github.com/blockscout/blockscout/pull/4707) - Top navigation: Move Accounts tab to Tokens
+- [#4704](https://github.com/blockscout/blockscout/pull/4704) - Update to Erlang/OTP 24
 - [#4682](https://github.com/blockscout/blockscout/pull/4682) - Update all possible outdated mix dependencies
 - [#4663](https://github.com/blockscout/blockscout/pull/4663) - Migrate to Elixir 1.12.x
 - [#4661](https://github.com/blockscout/blockscout/pull/4661) - Update NPM packages to resolve vulnerabilities
