@@ -659,6 +659,13 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SANA", "")) =~ address_hash_str
   end
 
+  def is_black_hole?(nil), do: false
+
+  def is_black_hole?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_BLACK_HOLE", "")) =~ address_hash_str
+  end
+
   def is_rarible?(nil), do: false
 
   def is_rarible?(address_hash) do

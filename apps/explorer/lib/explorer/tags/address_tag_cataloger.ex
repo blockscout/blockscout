@@ -99,6 +99,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set SANA tag
     AddressTag.set_tag("sana")
 
+    # set Black hole tag
+    AddressTag.set_tag("black hole")
+
     # set Rarible Protocol tag
     AddressTag.set_tag("rarible")
 
@@ -193,6 +196,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set SANA tag
     set_sana_tag()
+
+    # set Black hole tag
+    set_black_hole_tag()
 
     # set Rarible Protocol tag
     set_rarible_tag()
@@ -391,6 +397,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_sana_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_SANA", "sana")
+  end
+
+  defp set_black_hole_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_BLACK_HOLE", "black hole")
   end
 
   defp set_rarible_tag do

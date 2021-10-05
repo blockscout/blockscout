@@ -78,6 +78,9 @@
 <%= if is_sana?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "SANA", additional_classes: ["sana", "ml-1"] %>
 <% end %>
+<%= if is_black_hole?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "Black hole", additional_classes: ["ml-1"] %>
+<% end %>
 <%= if is_rarible?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Rarible Protocol", additional_classes: ["rarible", "ml-1"] %>
 <% end %>
