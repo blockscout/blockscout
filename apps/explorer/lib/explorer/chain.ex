@@ -3891,6 +3891,7 @@ defmodule Explorer.Chain do
         left_join: a in Address,
         on: tx.created_contract_address_hash == a.hash,
         where: tx.created_contract_address_hash == ^address_hash,
+        where: tx.status == ^1,
         select: %{init: tx.input, created_contract_code: a.contract_code}
       )
 
