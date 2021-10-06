@@ -235,11 +235,6 @@ msgid "Amount of distributed reward. Miners receive a static block reward + Tx f
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:390
-msgid "Amount of xDai burned for this transaction. Equals Block Base Fee per Gas * Gas Used."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:15
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
 msgstr ""
@@ -1026,10 +1021,11 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:18
-#: lib/block_scout_web/templates/address/index.html.eex:5 lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:87 lib/block_scout_web/templates/layout/_topnav.html.eex:108
-#: lib/block_scout_web/templates/layout/app.html.eex:45 lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:37 lib/block_scout_web/views/wei_helpers.ex:78
+#: lib/block_scout_web/templates/address/index.html.eex:5 lib/block_scout_web/templates/block/overview.html.eex:209
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20 lib/block_scout_web/templates/layout/_topnav.html.eex:87
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:108 lib/block_scout_web/templates/layout/app.html.eex:45
+#: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20 lib/block_scout_web/templates/transaction/_tile.html.eex:37
+#: lib/block_scout_web/templates/transaction/overview.html.eex:390 lib/block_scout_web/views/wei_helpers.ex:78
 msgid "Ether"
 msgstr ""
 
@@ -3017,11 +3013,6 @@ msgid "validator"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:209
-msgid "xDai burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
@@ -3039,4 +3030,19 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:53
 msgid "Expand"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:390
+msgid "Amount of"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:390
+msgid "burned for this transaction. Equals Block Base Fee per Gas * Gas Used."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/block/overview.html.eex:209
+msgid "burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
 msgstr ""
