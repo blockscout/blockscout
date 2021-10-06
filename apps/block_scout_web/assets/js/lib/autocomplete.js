@@ -1,6 +1,7 @@
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete.js'
 import { getTextAdData, fetchTextAdData } from './ad.js'
 import { DateTime } from 'luxon'
+import xss from 'xss'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {
@@ -105,6 +106,9 @@ const config = (id) => {
     resultItem: {
       element: (item, data) => resultItemElement(item, data),
       highlight: 'autoComplete_highlight'
+    },
+    query: (input) => {
+      return xss(input)
     },
     events: {
       input: {

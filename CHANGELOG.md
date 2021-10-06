@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#4713](https://github.com/blockscout/blockscout/pull/4713) - Search input field: sanitize input
 
 ### Chore
 
