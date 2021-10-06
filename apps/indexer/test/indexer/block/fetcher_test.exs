@@ -282,6 +282,10 @@ defmodule Indexer.Block.FetcherTest do
     test "can import range with all synchronous imported schemas", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
+      celo_token_address = insert(:contract_address)
+      insert(:token, contract_address: celo_token_address)
+      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+
       block_number = @first_full_block_number
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
@@ -409,12 +413,23 @@ defmodule Indexer.Block.FetcherTest do
                  }
                ]}
             end)
+            # read_addresses for 4 smart contracts in the fetcher
+            |> expect(:json_rpc, 4, fn [%{id: id, method: "eth_call"}], _options ->
+              {:ok,
+               [
+                 %{
+                   jsonrpc: "2.0",
+                   id: id,
+                   result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
+                 }
+               ]}
+            end)
             |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
               {:ok, [%{id: id, result: []}]}
             end)
             # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
             # calls on the same name/arity are used in order
-            |> expect(:json_rpc, 11, fn json, _options ->
+            |> expect(:json_rpc, 18, fn json, _options ->
               [request] = json
 
               case request do
@@ -501,7 +516,7 @@ defmodule Indexer.Block.FetcherTest do
                      %{
                        id: id,
                        jsonrpc: "2.0",
-                       result: "0x0000000000000000000000005765cd49b3da3942ea4a4fdb6d7bf257239fe182"
+                       result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
                      }
                    ]}
 
@@ -723,7 +738,7 @@ defmodule Indexer.Block.FetcherTest do
           wait_for_tasks(CoinBalance)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
-          assert Repo.aggregate(Address, :count, :hash) == 3
+          assert Repo.aggregate(Address, :count, :hash) == 4
           assert Chain.log_count() == 1
           assert Repo.aggregate(Transaction, :count, :hash) == 1
 
@@ -746,11 +761,15 @@ defmodule Indexer.Block.FetcherTest do
     test "correctly imports blocks with multiple uncle rewards for the same address", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
+      celo_token_address = insert(:contract_address)
+      insert(:token, contract_address: celo_token_address)
+      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+
       block_number = 7_374_455
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 3, fn requests, _options ->
+        |> expect(:json_rpc, 7, fn requests, _options ->
           {:ok,
            Enum.map(requests, fn
              %{id: id, method: "eth_getBlockByNumber", params: ["0x708677", true]} ->
@@ -788,6 +807,14 @@ defmodule Indexer.Block.FetcherTest do
 
              %{id: id, jsonrpc: "2.0", method: "eth_getLogs"} ->
                %{id: id, jsonrpc: "2.0", result: []}
+
+             # read_addresses for 4 smart contracts in the fetcher
+             %{id: id, jsonrpc: "2.0", method: "eth_call"} ->
+               %{
+                 jsonrpc: "2.0",
+                 id: id,
+                 result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
+               }
 
              %{id: id, method: "trace_block"} ->
                block_quantity = integer_to_quantity(block_number)

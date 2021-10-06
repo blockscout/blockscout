@@ -15,6 +15,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     ReplacedTransaction,
     Token,
     TokenBalance,
+    TokenInstance,
     UncleBlock,
     CeloAccount,
     CeloValidator,
@@ -60,10 +61,15 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       block_fetcher: %Indexer.Block.Fetcher{} = block_fetcher,
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      celo_token_address = insert(:contract_address)
+      insert(:token, contract_address: celo_token_address)
+      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+
       {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
       Sequence.cap(sequence)
 
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenInstance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -230,6 +236,17 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                  "transactionHash" => "0xd3937e70fab3fb2bfe8feefac36815408bf07de3b9e09fe81114b9a6b17f55c8",
                  "transactionIndex" => "0x0"
                }
+             }
+           ]}
+        end)
+        # read_addresses for 4 smart contracts in the fetcher
+        |> expect(:json_rpc, 4, fn [%{id: id, method: "eth_call"}], _ ->
+          {:ok,
+           [
+             %{
+               jsonrpc: "2.0",
+               id: id,
+               result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
              }
            ]}
         end)
@@ -510,22 +527,28 @@ defmodule Indexer.Block.Realtime.FetcherTest do
               id: 1,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
+              params: ["0x" <> unprefixed_celo_token_address_hash, "0x3C3660"]
             },
             %{
               id: 2,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
             },
             %{
               id: 3,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
             },
             %{
               id: 4,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+            },
+            %{
+              id: 5,
               jsonrpc: "2.0",
               method: "eth_getBalance",
               params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
@@ -535,10 +558,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
             {:ok,
              [
                %{id: 0, jsonrpc: "2.0", result: "0x1"},
-               %{id: 1, jsonrpc: "2.0", result: "0x148adc763b603291685"},
-               %{id: 2, jsonrpc: "2.0", result: "0x53474fa377a46000"},
-               %{id: 3, jsonrpc: "2.0", result: "0x53507afe51f28000"},
-               %{id: 4, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
+               %{id: 1, jsonrpc: "2.0", result: "0x0"},
+               %{id: 2, jsonrpc: "2.0", result: "0x148adc763b603291685"},
+               %{id: 3, jsonrpc: "2.0", result: "0x53474fa377a46000"},
+               %{id: 4, jsonrpc: "2.0", result: "0x53507afe51f28000"},
+               %{id: 5, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
              ]}
         end)
       end
@@ -548,6 +572,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 inserted: %{
                   addresses: [
                     %Address{hash: zero_address_hash, fetched_coin_balance_block_number: 3_946_079},
+                    %Address{hash: celo_token_address_hash, fetched_coin_balance_block_number: 3_946_080},
                     %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080},
@@ -557,6 +582,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     %{
                       address_hash: zero_address_hash,
                       block_number: 3_946_079
+                    },
+                    %{
+                      address_hash: celo_token_address_hash,
+                      block_number: 3_946_080
                     },
                     %{
                       address_hash: first_address_hash,

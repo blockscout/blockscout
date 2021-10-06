@@ -86,6 +86,7 @@ defmodule Indexer.Transform.TokenTransfers do
     txs
     |> Enum.filter(fn a -> a.value > 0 end)
     |> Enum.filter(fn a -> a.index > 0 end)
+    |> Enum.filter(fn a -> not Map.has_key?(a, :error) end)
     |> Enum.filter(fn a -> not Map.has_key?(a, :call_type) || a.call_type != "delegatecall" end)
     |> Enum.reduce(initial_acc, &do_parse_itx/2)
   end

@@ -5,8 +5,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   import Mox
 
   alias Explorer.Chain
-  alias Explorer.Chain.PendingBlockOperation
-  alias Indexer.Fetcher.{CoinBalance, InternalTransaction, PendingTransaction}
+  alias Explorer.Chain.{PendingBlockOperation, TokenTransfer}
+  alias Indexer.Fetcher.{CoinBalance, InternalTransaction, PendingTransaction, TokenBalance}
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
   # it to use expectations and stubs from test's pid.
@@ -306,24 +306,21 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert :ok == InternalTransaction.run([block.number, block.number], json_rpc_named_arguments)
 
-      assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
+      assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
     end
 
     test "handles problematic blocks correctly" do
       valid_block = insert(:block)
       transaction = insert(:transaction) |> with_block(valid_block)
       valid_block_hash = valid_block.hash
-      transaction_hash = transaction.hash
 
       invalid_block = insert(:block)
       transaction2 = insert(:transaction) |> with_block(invalid_block)
       invalid_block_hash = invalid_block.hash
-      transaction_hash2 = transaction2.hash
 
       valid_block2 = insert(:block)
-      transaction3 = insert(:transaction) |> with_block(valid_block2)
+      insert(:transaction) |> with_block(valid_block2)
       valid_block_hash2 = valid_block2.hash
-      transaction_hash3 = transaction3.hash
 
       empty_block = insert(:block, gas_used: 0)
       empty_block_hash = empty_block.hash
@@ -365,7 +362,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
            }
          ]}
       end)
-      |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+      |> expect(:json_rpc, fn [%{id: _id, method: "debug_traceTransaction"}], _options ->
         {:error, :closed}
       end)
       |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
@@ -413,6 +410,225 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert nil != Repo.get(PendingBlockOperation, invalid_block_hash)
       assert nil == Repo.get(PendingBlockOperation, valid_block_hash2)
       assert nil == Repo.get(PendingBlockOperation, empty_block_hash)
+    end
+
+    test "reverted internal transfers are not indexed" do
+      celo_token_address = insert(:contract_address)
+      insert(:token, contract_address: celo_token_address)
+      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block)
+      block_hash = block.hash
+
+      insert(:pending_block_operation, block_hash: block_hash, fetch_internal_transactions: true)
+
+      assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             result: [
+               %{
+                 "blockNumber" => block.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction.hash,
+                 "index" => 0,
+                 "type" => "call",
+                 "callType" => "call",
+                 "from" => "0x0b48321965eb8a982dec25b43542e07a202d931a",
+                 "to" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "input" =>
+                   "0x1638eb6600000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000044a3d7bd43000000000000000000000000410353b1548263f94b447db3e78b50c016d02d3100000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000",
+                 "output" => "0x",
+                 "traceAddress" => [],
+                 "value" => "0x0",
+                 "gas" => "0x74ac0",
+                 "gasUsed" => "0x24df"
+               },
+               %{
+                 "blockNumber" => block.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction.hash,
+                 "index" => 1,
+                 "type" => "call",
+                 "callType" => "delegatecall",
+                 "from" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "to" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "input" =>
+                   "0xa3d7bd43000000000000000000000000410353b1548263f94b447db3e78b50c016d02d3100000000000000000000000000000000000000000000021e19e0c9bab2400000",
+                 "output" => "0x",
+                 "traceAddress" => [0],
+                 "value" => "0x0",
+                 "gas" => "0x72745",
+                 "gasUsed" => "0x1e38"
+               },
+               %{
+                 "blockNumber" => block.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction.hash,
+                 "index" => 2,
+                 "type" => "call",
+                 "callType" => "call",
+                 "from" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "to" => "0x410353b1548263f94b447db3e78b50c016d02d31",
+                 "input" => "0x",
+                 "error" => "internal failure",
+                 "traceAddress" => [0, 0],
+                 "value" => "0x21e19e0c9bab2400000",
+                 "gas" => "0x0",
+                 "gasUsed" => "0x0"
+               }
+             ]
+           }
+         ]}
+      end)
+      |> expect(:json_rpc, fn [%{id: id, method: "eth_call"}], _options ->
+        # Utils.get_address("GoldToken") query
+        {:ok,
+         [
+           %{
+             jsonrpc: "2.0",
+             id: id,
+             result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
+           }
+         ]}
+      end)
+
+      json_rpc_named_arguments = [
+        transport: EthereumJSONRPC.Mox,
+        transport_options: [],
+        variant: EthereumJSONRPC.Geth
+      ]
+
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      assert :ok ==
+               InternalTransaction.run(
+                 [block.number],
+                 json_rpc_named_arguments
+               )
+
+      assert nil == Repo.get(PendingBlockOperation, block_hash)
+      assert nil == TokenTransfer |> Repo.get_by(transaction_hash: transaction.hash)
+    end
+
+    test "successful internal transfers are indexed" do
+      transfer_amount_in_wei = 10_000_000_000_000_000_000_000
+      celo_token_address = insert(:contract_address)
+      insert(:token, contract_address: celo_token_address)
+      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block)
+      block_hash = block.hash
+
+      insert(:pending_block_operation, block_hash: block_hash, fetch_internal_transactions: true)
+
+      assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             result: [
+               %{
+                 "blockNumber" => block.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction.hash,
+                 "index" => 0,
+                 "type" => "call",
+                 "callType" => "call",
+                 "from" => "0x0b48321965eb8a982dec25b43542e07a202d931a",
+                 "to" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "input" =>
+                   "0x1638eb6600000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000044a3d7bd43000000000000000000000000410353b1548263f94b447db3e78b50c016d02d3100000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000",
+                 "output" => "0x",
+                 "traceAddress" => [],
+                 "value" => "0x0",
+                 "gas" => "0x74ac0",
+                 "gasUsed" => "0x24df"
+               },
+               %{
+                 "blockNumber" => block.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction.hash,
+                 "index" => 1,
+                 "type" => "call",
+                 "callType" => "delegatecall",
+                 "from" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "to" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "input" =>
+                   "0xa3d7bd43000000000000000000000000410353b1548263f94b447db3e78b50c016d02d3100000000000000000000000000000000000000000000021e19e0c9bab2400000",
+                 "output" => "0x",
+                 "traceAddress" => [0],
+                 "value" => "0x0",
+                 "gas" => "0x72745",
+                 "gasUsed" => "0x1e38"
+               },
+               %{
+                 "blockNumber" => block.number,
+                 "transactionIndex" => 0,
+                 "transactionHash" => transaction.hash,
+                 "index" => 2,
+                 "type" => "call",
+                 "callType" => "call",
+                 "from" => "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5",
+                 "to" => "0x410353b1548263f94b447db3e78b50c016d02d31",
+                 "input" => "0x",
+                 "output" => "0x",
+                 "traceAddress" => [],
+                 "value" => "0x" <> Integer.to_string(transfer_amount_in_wei, 16),
+                 "gas" => "0x0",
+                 "gasUsed" => "0x0"
+               }
+             ]
+           }
+         ]}
+      end)
+      |> expect(:json_rpc, fn [%{id: id, method: "eth_call"}], _options ->
+        # Utils.get_address("GoldToken") query
+        {:ok,
+         [
+           %{
+             jsonrpc: "2.0",
+             id: id,
+             result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
+           }
+         ]}
+      end)
+
+      json_rpc_named_arguments = [
+        transport: EthereumJSONRPC.Mox,
+        transport_options: [],
+        variant: EthereumJSONRPC.Geth
+      ]
+
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      assert :ok ==
+               InternalTransaction.run(
+                 [block.number],
+                 json_rpc_named_arguments
+               )
+
+      assert nil == Repo.get(PendingBlockOperation, block_hash)
+
+      token_transfer = TokenTransfer |> Repo.get_by(transaction_hash: transaction.hash)
+      from_address_hash = to_string(token_transfer.from_address_hash)
+      to_address_hash = to_string(token_transfer.to_address_hash)
+
+      assert token_transfer.block_hash == block_hash
+      assert token_transfer.amount == Decimal.new(transfer_amount_in_wei)
+      assert from_address_hash == "0x9b7100bf1b5c32f89c0eeca036e377e0fd0789d5"
+      assert to_address_hash == "0x410353b1548263f94b447db3e78b50c016d02d31"
     end
   end
 end

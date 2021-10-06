@@ -4,9 +4,7 @@ config :indexer, Indexer.Tracer, disabled?: false
 
 config :indexer, Indexer.Fetcher.CeloValidatorHistory.Supervisor, disabled?: true
 
-# Disable reading native coin to gold token
-# TODO: write a test where gold token is in
-config :indexer, Indexer.Block.Fetcher, enable_gold_token: false
+config :indexer, Indexer.Block.Fetcher, enable_gold_token: true
 
 config :indexer,
   block_transformer: Indexer.Transform.Blocks.Base
