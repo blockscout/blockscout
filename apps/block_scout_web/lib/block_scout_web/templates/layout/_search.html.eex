@@ -2,7 +2,15 @@
 <div class="search-form d-lg-flex d-inline-block <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>">
 	<div class="input-group" style="width: 100%;" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
 		<div class="form-control search-control me auto <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>">
-			<input id="<%= @id %>" class="main-search-autocomplete" data-test="search_input" type="text" tabindex="1">
+			<input
+				id="<%= @id %>"
+				class="main-search-autocomplete"
+				data-test="search_input"
+				data-chain-id="<%= System.get_env("CHAIN_ID") %>"
+				data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
+				type="text"
+				tabindex="1"
+			>
 		</div>
 		<div class="input-group-append left">
 			<button class="input-group-text" id="search-icon">

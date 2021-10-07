@@ -20,5 +20,5 @@ steps:
           "--context", "dir://."]
     waitFor: ["-"]
 options:
-    machineType: 'E2_HIGHCPU_32'
+    machineType: 'N1_HIGHCPU_8'
 timeout: 1200s

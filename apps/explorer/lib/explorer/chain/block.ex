@@ -7,10 +7,21 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, CeloSigners, CeloValidatorHistory, Data, Gas, Hash, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{
+    Address,
+    CeloSigners,
+    CeloValidatorHistory,
+    Data,
+    Gas,
+    Hash,
+    PendingBlockOperation,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(size refetch_needed total_difficulty difficulty extra_data round)a
+  @optional_attrs ~w(size refetch_needed total_difficulty difficulty extra_data round base_fee_per_gas)a
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -46,6 +57,7 @@ defmodule Explorer.Chain.Block do
    * `timestamp` - When the block was collated
    * `total_difficulty` - the total `difficulty` of the chain until this block.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
+   * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
   """
   @type t :: %__MODULE__{
           consensus: boolean(),
@@ -65,10 +77,10 @@ defmodule Explorer.Chain.Block do
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
           refetch_needed: boolean(),
           signers: %Ecto.Association.NotLoaded{} | [Address.t()],
-          refetch_needed: boolean(),
           round: non_neg_integer(),
           extra_data: Data.t(),
-          online: %Ecto.Association.NotLoaded{} | boolean()
+          online: %Ecto.Association.NotLoaded{} | boolean(),
+          base_fee_per_gas: Wei.t()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -86,6 +98,7 @@ defmodule Explorer.Chain.Block do
     field(:refetch_needed, :boolean)
     field(:round, :integer)
     field(:extra_data, Data)
+    field(:base_fee_per_gas, Wei)
 
     timestamps()
 
