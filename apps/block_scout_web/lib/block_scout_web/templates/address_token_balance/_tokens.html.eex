@@ -11,8 +11,8 @@
       data-token-symbol="<%= token_symbol(token_balance.token) %>"
     >
       <% path = cond do
-          token_balance.token_type == "ERC-721" && token_balance.token_id -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
-          token_balance.token_type == "ERC-1155" && token_balance.token_id -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          token_balance.token_type == "ERC-1155" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
           true -> token_path(@conn, :show, to_string(token_balance.token.contract_address_hash))
         end
       %>
@@ -42,12 +42,12 @@
         <div class="row">
           <% col_md = if token_balance.token.usd_value, do: "col-md-6", else: "col-md-12" %>
           <p class="mb-0 <%= col_md %> ">
-            <%= if token_balance.token_type == "ERC-721" && token_balance.token_id do %>
+            <%= if token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) do %>
               1
             <% else %>
               <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_symbol(token_balance.token) %>
             <% end %>
-            <%= if (token_balance.token_type == "ERC-721" && token_balance.token_id) or token_balance.token_type == "ERC-1155" do %>
+            <%= if (token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id)) or token_balance.token_type == "ERC-1155" do %>
               <%= " TokenID " <> to_string(token_balance.token_id) %>
             <% end %>
           </p>
