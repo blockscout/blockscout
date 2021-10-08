@@ -18,6 +18,7 @@
 
 ### Fixes
 - [#4725](https://github.com/blockscout/blockscout/pull/4725) - Fix hardcoded coin name on transaction's and block's page
+- [#4724](https://github.com/blockscout/blockscout/pull/4724) - An empty blocks sanitizer
 - [#4717](https://github.com/blockscout/blockscout/pull/4717) - Contract verification fix: check only success creation tx
 - [#4713](https://github.com/blockscout/blockscout/pull/4713) - Search input field: sanitize input
 - [#4712](https://github.com/blockscout/blockscout/pull/4712) - Migrate :nonce field type: `int4 -> int8` in `addresses` and `transactions` tables
