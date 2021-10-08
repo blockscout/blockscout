@@ -7321,6 +7321,7 @@ defmodule Explorer.Chain do
     case chain_id_int do
       1 -> "eth"
       56 -> "bsc"
+      99 -> "poa"
       _ -> ""
     end
   end
