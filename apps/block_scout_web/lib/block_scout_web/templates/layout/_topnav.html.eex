@@ -84,6 +84,11 @@
                       to: bridged_tokens_path(@conn, :show, :bsc)
                     ) %>
                 <%= link(
+                      gettext("Bridged from POA"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/poa", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :poa)
+                    ) %>
+                <%= link(
                       gettext("Ether"),
                       class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
                       to: address_path(@conn, :index)

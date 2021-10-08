@@ -292,7 +292,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
   end
 
   defp set_omni_tag do
-    set_tag_for_multiple_env_var_addresses(["ETH_OMNI_BRIDGE_MEDIATOR", "BSC_OMNI_BRIDGE_MEDIATOR"], "omni bridge")
+    set_tag_for_multiple_env_var_addresses(
+      ["ETH_OMNI_BRIDGE_MEDIATOR", "BSC_OMNI_BRIDGE_MEDIATOR", "POA_OMNI_BRIDGE_MEDIATOR"],
+      "omni bridge"
+    )
   end
 
   defp set_amb_tag do

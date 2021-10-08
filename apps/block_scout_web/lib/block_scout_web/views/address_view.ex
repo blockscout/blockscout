@@ -494,6 +494,15 @@ defmodule BlockScoutWeb.AddressView do
       address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE", ""))
   end
 
+  def is_omni_poa_bridge?(nil), do: false
+
+  def is_omni_poa_bridge?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+
+    address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE_MEDIATOR", "")) ||
+      address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE", ""))
+  end
+
   def is_xmoon_token?(nil), do: false
 
   def is_xmoon_token?(address_hash) do

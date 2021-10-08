@@ -11,6 +11,9 @@
 <%= if is_omni_bsc_bridge?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "BSC", additional_classes: ["destination-bsc", "ml-1"] %>
 <% end %>
+<%= if is_omni_poa_bridge?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "POA", additional_classes: ["destination-poa", "ml-1"] %>
+<% end %>
 <%= if is_xmoon_token?(@address_hash) || is_xbrick_token?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridge", "ml-1"] %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Rinkeby", additional_classes: ["destination-rinkeby", "ml-1"] %>

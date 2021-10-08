@@ -2464,6 +2464,7 @@ defmodule Explorer.Chain do
     case destination do
       :eth -> 1
       :bsc -> 56
+      :poa -> 99
       _ -> 1
     end
   end
@@ -4826,6 +4827,8 @@ defmodule Explorer.Chain do
   Fetches bridged tokens metadata from OmniBridge.
   """
   def fetch_omni_bridged_tokens_metadata(token_addresses) do
+    IO.inspect("Gimme fetch_omni_bridged_tokens_metadata")
+
     Enum.each(token_addresses, fn token_address_hash ->
       created_from_int_tx_success_query =
         from(
@@ -4839,6 +4842,11 @@ defmodule Explorer.Chain do
         created_from_int_tx_success_query
         |> Repo.one()
 
+      if to_string(token_address_hash) == "0x9fe3864f9ae7cfb5668dae90c0e20c4c3d437664" do
+        IO.inspect("Gimme created_from_int_tx_success")
+        IO.inspect(created_from_int_tx_success)
+      end
+
       created_from_tx_query =
         from(
           t in Transaction,
@@ -4850,6 +4858,11 @@ defmodule Explorer.Chain do
         |> Repo.all()
         |> Enum.count() > 0
 
+      if to_string(token_address_hash) == "0x9fe3864f9ae7cfb5668dae90c0e20c4c3d437664" do
+        IO.inspect("Gimme created_from_tx")
+        IO.inspect(created_from_tx)
+      end
+
       created_from_int_tx_query =
         from(
           it in InternalTransaction,
@@ -4860,6 +4873,11 @@ defmodule Explorer.Chain do
         created_from_int_tx_query
         |> Repo.all()
         |> Enum.count() > 0
+
+      if to_string(token_address_hash) == "0x9fe3864f9ae7cfb5668dae90c0e20c4c3d437664" do
+        IO.inspect("Gimme created_from_int_tx")
+        IO.inspect(created_from_int_tx)
+      end
 
       cond do
         created_from_tx ->
@@ -4898,7 +4916,23 @@ defmodule Explorer.Chain do
         )
       end
 
-    if !eth_omni_status && !bsc_omni_status do
+    {:ok, poa_omni_status} =
+      if eth_omni_status || bsc_omni_status do
+        {:ok, false}
+      else
+        extract_omni_bridged_token_metadata_wrapper(
+          token_address_hash,
+          created_from_int_tx_success,
+          :poa_omni_bridge_mediator
+        )
+      end
+
+    IO.inspect("Gimme token_address_hash")
+    IO.inspect(token_address_hash)
+    IO.inspect("Gimme poa_omni_status")
+    IO.inspect(poa_omni_status)
+
+    if !eth_omni_status && !bsc_omni_status && !poa_omni_status do
       set_token_bridged_status(token_address_hash, false)
     end
   end
@@ -7262,21 +7296,11 @@ defmodule Explorer.Chain do
   def bridged_tokens_enabled? do
     eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
     bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
+    poa_omni_bridge_mediator = Application.get_env(:block_scout_web, :poa_omni_bridge_mediator)
 
     (eth_omni_bridge_mediator && eth_omni_bridge_mediator !== "") ||
-      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "")
-  end
-
-  def bridged_tokens_eth_enabled? do
-    eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
-
-    eth_omni_bridge_mediator && eth_omni_bridge_mediator !== ""
-  end
-
-  def bridged_tokens_bsc_enabled? do
-    bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
-
-    bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== ""
+      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "") ||
+      (poa_omni_bridge_mediator && poa_omni_bridge_mediator !== "")
   end
 
   def chain_id_display_name(nil), do: ""
@@ -7333,6 +7357,7 @@ defmodule Explorer.Chain do
     case chain_id_int do
       1 -> "Ethereum"
       56 -> "BSC"
+      99 -> "POA"
       _ -> ""
     end
   end
@@ -7390,6 +7415,26 @@ defmodule Explorer.Chain do
           where: l.transaction_hash == ^hash,
           where: fragment("first_topic like '0x59a9a802%'"),
           where: l.address_hash == ^bsc_omni_bridge_mediator
+        )
+      )
+    end
+  end
+
+  @spec amb_bsc_tx?(Address.t()) :: boolean()
+  def amb_poa_tx?(hash) do
+    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
+
+    poa_omni_bridge_mediator = String.downcase(System.get_env("POA_OMNI_BRIDGE_MEDIATOR", ""))
+
+    if poa_omni_bridge_mediator == "" do
+      false
+    else
+      Repo.exists?(
+        from(
+          l in Log,
+          where: l.transaction_hash == ^hash,
+          where: fragment("first_topic like '0x59a9a802%'"),
+          where: l.address_hash == ^poa_omni_bridge_mediator
         )
       )
     end

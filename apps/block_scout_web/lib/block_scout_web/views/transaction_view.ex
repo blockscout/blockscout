@@ -533,7 +533,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   defp amb_tx?(hash) do
-    Chain.amb_eth_tx?(hash) || Chain.amb_bsc_tx?(hash)
+    Chain.amb_eth_tx?(hash) || Chain.amb_bsc_tx?(hash) || Chain.amb_poa_tx?(hash)
   end
 
   defp show_alm_link?(hash) do
@@ -544,9 +544,11 @@ defmodule BlockScoutWeb.TransactionView do
     cond do
       Chain.amb_eth_tx?(hash) == true -> "alm-xdai.herokuapp.com"
       Chain.amb_bsc_tx?(hash) == true -> "alm-bsc-xdai.herokuapp.com"
+      Chain.amb_poa_tx?(hash) == true -> "alm-poa-xdai.herokuapp.com"
       true -> nil
     end
   end
+
   defp show_tenderly_link? do
     System.get_env("SHOW_TENDERLY_LINK") == "true"
   end
