@@ -18,7 +18,7 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "artillery": "^1.7.7",
+    "artillery": "^1.7.8",
     "csv-parse": "^4.16.0",
     "graphql": "^14.7.0"
   }
