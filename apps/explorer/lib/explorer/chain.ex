@@ -4686,7 +4686,18 @@ defmodule Explorer.Chain do
         )
       end
 
-    if !eth_omni_status && !bsc_omni_status do
+    {:ok, xdai_omni_status} =
+      if eth_omni_status || bsc_omni_status do
+        {:ok, false}
+      else
+        extract_omni_bridged_token_metadata_wrapper(
+          token_address_hash,
+          created_from_int_tx_success,
+          :xdai_omni_bridge_mediator
+        )
+      end
+
+    if !eth_omni_status && !bsc_omni_status && !xdai_omni_status do
       set_token_bridged_status(token_address_hash, false)
     end
   end
@@ -6911,9 +6922,11 @@ defmodule Explorer.Chain do
   def bridged_tokens_enabled? do
     eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
     bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
+    xdai_omni_bridge_mediator = Application.get_env(:block_scout_web, :xdai_omni_bridge_mediator)
 
     (eth_omni_bridge_mediator && eth_omni_bridge_mediator !== "") ||
-      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "")
+      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "") ||
+      (xdai_omni_bridge_mediator && xdai_omni_bridge_mediator !== "")
   end
 
   def bridged_tokens_eth_enabled? do
@@ -6965,6 +6978,26 @@ defmodule Explorer.Chain do
 
       _ ->
         {:error, "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd)."}
+    end
+  end
+
+  @spec amb_xdai_tx?(Address.t()) :: boolean()
+  def amb_xdai_tx?(hash) do
+    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
+
+    xdai_omni_bridge_mediator = String.downcase(System.get_env("XDAI_OMNI_BRIDGE_MEDIATOR", ""))
+
+    if xdai_omni_bridge_mediator == "" do
+      false
+    else
+      Repo.exists?(
+        from(
+          l in Log,
+          where: l.transaction_hash == ^hash,
+          where: fragment("first_topic like '0x59a9a802%'"),
+          where: l.address_hash == ^xdai_omni_bridge_mediator
+        )
+      )
     end
   end
 
