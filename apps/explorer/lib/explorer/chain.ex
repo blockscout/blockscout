@@ -4827,8 +4827,6 @@ defmodule Explorer.Chain do
   Fetches bridged tokens metadata from OmniBridge.
   """
   def fetch_omni_bridged_tokens_metadata(token_addresses) do
-    IO.inspect("Gimme fetch_omni_bridged_tokens_metadata")
-
     Enum.each(token_addresses, fn token_address_hash ->
       created_from_int_tx_success_query =
         from(
@@ -4842,11 +4840,6 @@ defmodule Explorer.Chain do
         created_from_int_tx_success_query
         |> Repo.one()
 
-      if to_string(token_address_hash) == "0x9fe3864f9ae7cfb5668dae90c0e20c4c3d437664" do
-        IO.inspect("Gimme created_from_int_tx_success")
-        IO.inspect(created_from_int_tx_success)
-      end
-
       created_from_tx_query =
         from(
           t in Transaction,
@@ -4858,11 +4851,6 @@ defmodule Explorer.Chain do
         |> Repo.all()
         |> Enum.count() > 0
 
-      if to_string(token_address_hash) == "0x9fe3864f9ae7cfb5668dae90c0e20c4c3d437664" do
-        IO.inspect("Gimme created_from_tx")
-        IO.inspect(created_from_tx)
-      end
-
       created_from_int_tx_query =
         from(
           it in InternalTransaction,
@@ -4873,11 +4861,6 @@ defmodule Explorer.Chain do
         created_from_int_tx_query
         |> Repo.all()
         |> Enum.count() > 0
-
-      if to_string(token_address_hash) == "0x9fe3864f9ae7cfb5668dae90c0e20c4c3d437664" do
-        IO.inspect("Gimme created_from_int_tx")
-        IO.inspect(created_from_int_tx)
-      end
 
       cond do
         created_from_tx ->
@@ -4926,11 +4909,6 @@ defmodule Explorer.Chain do
           :poa_omni_bridge_mediator
         )
       end
-
-    IO.inspect("Gimme token_address_hash")
-    IO.inspect(token_address_hash)
-    IO.inspect("Gimme poa_omni_status")
-    IO.inspect(poa_omni_status)
 
     if !eth_omni_status && !bsc_omni_status && !poa_omni_status do
       set_token_bridged_status(token_address_hash, false)
@@ -7420,7 +7398,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec amb_bsc_tx?(Address.t()) :: boolean()
+  @spec amb_poa_tx?(Address.t()) :: boolean()
   def amb_poa_tx?(hash) do
     # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
 
