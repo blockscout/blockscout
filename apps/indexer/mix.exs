@@ -38,7 +38,7 @@ defmodule Indexer.MixProject do
   defp deps do
     [
       # Optional dependency of `:spandex` for `Spandex.Decorators`
-      {:decorator, "~> 1.2"},
+      {:decorator, "~> 1.4"},
       # JSONRPC access to Parity for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
       # RLP encoding

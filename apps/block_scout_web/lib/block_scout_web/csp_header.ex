@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.CSPHeader do
   def call(conn, _opts) do
     Controller.put_secure_browser_headers(conn, %{
       "content-security-policy" => "\
-        connect-src 'self' #{websocket_endpoints(conn)} *.poa.network/ https://request-global.czilladx.com/ https://raw.githubusercontent.com/; \
+        connect-src 'self' #{websocket_endpoints(conn)} *.poa.network/ https://request-global.czilladx.com/ https://raw.githubusercontent.com/trustwallet/assets/; \
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval' https://hcaptcha.com https://assets.hcaptcha.com https://newassets.hcaptcha.com https://coinzillatag.com;;\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\

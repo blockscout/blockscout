@@ -89,14 +89,14 @@ defmodule BlockScoutWeb.Mixfile do
       {:httpoison, "~> 1.6"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator
-      {:jason, "~> 1.0"},
+      {:jason, "~> 1.2.2"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.5.6"},
+      {:phoenix, "== 1.5.13"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
@@ -123,9 +123,10 @@ defmodule BlockScoutWeb.Mixfile do
       {:spandex_datadog, "~> 1.0"},
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 1.0"},
-      {:timex, "~> 3.6"},
+      {:timex, "~> 3.7.1"},
       {:wallaby, "~> 0.28", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
+      {:websocket_client, "== 1.3.0"},
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
       {:ex_json_schema, "~> 0.6.2"}
     ]

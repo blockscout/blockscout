@@ -23,7 +23,7 @@
     <% end %>
   <% end %>
 <% end %>
-<%= if @action== "write" do %>
+<%= if @action == "write" or (@read_functions_required_wallet && @read_functions_required_wallet != []) do %>
   <%= render BlockScoutWeb.SmartContractView, "_connect_container.html" %>
 <% end %>
 <%= if @contract_type == "proxy" do %>
@@ -34,7 +34,7 @@
                 ) %></h3>
 </div>
 <% end %>
-<%= for {function, counter} <- Enum.with_index(@read_only_functions, 1) do %>
+<%= for {function, counter} <- Enum.with_index(@read_only_functions ++ @read_functions_required_wallet, 1) do %>
   <div class="d-flex py-2 border-bottom" data-function>
     <div class="py-2 pr-2 text-nowrap">
       <%= counter %>.
@@ -49,7 +49,7 @@
       &#8594;
     </div>
 
-    <%= if queryable?(function["inputs"]) || writable?(function) do %>
+    <%= if queryable?(function["inputs"]) || writable?(function) || Helper.read_with_wallet_method?(function) do %>
       <div style="width: 100%; overflow: hidden;">
         <%=
           for status <- ["error", "warning", "success", "question"] do
@@ -57,7 +57,7 @@
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if writable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
@@ -96,7 +96,7 @@
             </div>
           <% end %>
 
-          <input type="submit" value='<%= if writable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
+          <input type="submit" value='<%= if @action == "write", do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
         </form>
 
         <%= if outputs?(function["outputs"]) do %>
