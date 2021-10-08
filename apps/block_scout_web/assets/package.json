@@ -26,7 +26,7 @@
     "assert": "^2.0.0",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.3.1",
-    "chart.js": "^3.3.2",
+    "chart.js": "^3.5.1",
     "chartjs-adapter-luxon": "^1.0.0",
     "clipboard": "^2.0.4",
     "core-js": "^2.6.12",
