@@ -51,7 +51,7 @@
     "popper.js": "^1.14.7",
     "reduce-reducers": "^0.4.3",
     "uniqid": "^5.4.0",
-    "redux": "^4.0.5",
+    "redux": "^4.1.0",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "sweetalert2": "^10.16.9",
