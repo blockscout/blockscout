@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@analytics/segment": "^0.6.0",
-    "analytics": "^0.7.13",
+    "analytics": "^0.7.14",
     "@fortawesome/fontawesome-free": "^5.15.4",
     "@tarekraafat/autocomplete.js": "^10.2.6",
     "assert": "^2.0.0",
@@ -51,7 +51,7 @@
     "popper.js": "^1.14.7",
     "reduce-reducers": "^0.4.3",
     "uniqid": "^5.4.0",
-    "redux": "^4.0.5",
+    "redux": "^4.1.0",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "sweetalert2": "^10.16.9",
