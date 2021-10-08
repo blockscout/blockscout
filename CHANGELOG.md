@@ -2,7 +2,7 @@
 
 ### Features
 - [#4667](https://github.com/blockscout/blockscout/pull/4667) - Transaction Page: Add expand/collapse button for long contract method data
-- [#4641](https://github.com/blockscout/blockscout/pull/4641) - Improve Read Contract page logic
+- [#4641](https://github.com/blockscout/blockscout/pull/4641), [#4733](https://github.com/blockscout/blockscout/pull/4733) - Improve Read Contract page logic
 - [#4660](https://github.com/blockscout/blockscout/pull/4660) - Save Sourcify path instead of filename
 - [#4656](https://github.com/blockscout/blockscout/pull/4656) - Open in Tenderly button
 - [#4655](https://github.com/blockscout/blockscout/pull/4655), [#4676](https://github.com/blockscout/blockscout/pull/4676) - EIP-3091 support
