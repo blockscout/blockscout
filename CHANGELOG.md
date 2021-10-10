@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4739](https://github.com/blockscout/blockscout/pull/4739) - Improve logs and inputs decoding
 - [#4747](https://github.com/blockscout/blockscout/pull/4747) - Advanced CSV export
 - [#4745](https://github.com/blockscout/blockscout/pull/4745) - Vyper contracts verification
 - [#4699](https://github.com/blockscout/blockscout/pull/4699) - Address page facelifting
