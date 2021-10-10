@@ -251,4 +251,27 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   defp validate_url(_), do: :error
+
+  @logout_url "https://blockscoutcom.us.auth0.com/v2/logout"
+
+  def logout_link do
+    params = [
+      client_id: client_id(),
+      returnTo: host() <> "/auth/logout"
+    ]
+
+    [@logout_url, "?", URI.encode_query(params)]
+  end
+
+  # defp auth_domain do
+  #   Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:domain]
+  # end
+
+  defp client_id do
+    Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
+  end
+
+  defp host do
+    "http://" <> Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] <> ":4000"
+  end
 end
