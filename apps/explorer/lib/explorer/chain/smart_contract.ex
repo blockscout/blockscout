@@ -194,6 +194,7 @@ defmodule Explorer.Chain.SmartContract do
     contract.
   * `verified_via_sourcify` - whether contract verified through Sourcify utility or not.
   * `partially_verified` - whether contract verified using partial matched source code or not.
+  * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -207,7 +208,8 @@ defmodule Explorer.Chain.SmartContract do
           abi: [function_description],
           verified_via_sourcify: boolean | nil,
           partially_verified: boolean | nil,
-          file_path: String.t()
+          file_path: String.t(),
+          is_vyper_contract: boolean | nil
         }
 
   schema "smart_contracts" do
@@ -223,6 +225,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:verified_via_sourcify, :boolean)
     field(:partially_verified, :boolean)
     field(:file_path, :string)
+    field(:is_vyper_contract, :boolean)
 
     has_many(
       :decompiled_smart_contracts,
@@ -259,7 +262,8 @@ defmodule Explorer.Chain.SmartContract do
       :optimization_runs,
       :verified_via_sourcify,
       :partially_verified,
-      :file_path
+      :file_path,
+      :is_vyper_contract
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
@@ -280,7 +284,8 @@ defmodule Explorer.Chain.SmartContract do
         :constructor_arguments,
         :verified_via_sourcify,
         :partially_verified,
-        :file_path
+        :file_path,
+        :is_vyper_contract
       ])
       |> validate_required([:name, :compiler_version, :optimization, :address_hash])
 

@@ -2505,6 +2505,76 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @contract_verify_vyper_contract_action %{
+    name: "verify_vyper_contract",
+    description: """
+    Verify a vyper contract with its source code and contract creation information.
+    <br/>
+    <br/>
+    <p class="api-doc-list-item-text">curl POST example:</p>
+    <br/>
+    <div class='tab-content'>
+    <div class='tab-pane fade show active'>
+    <div class="tile tile-muted p-1">
+    <div class="m-2">
+    curl --location --request POST 'http://localhost:4000/api?module=contract&action=verify_vyper_contract' \
+    --form 'contractSourceCode="SOURCE_CODE"' \
+    --form 'name="Vyper_contract"' \
+    --form 'addressHash="0xE60B1B8bD493569a3E945be50A6c89d29a560Fa1"' \
+    --form 'compilerVersion="v0.2.12"'
+    </pre>
+    </div>
+    </div>
+    </div>
+    """,
+    required_params: [
+      %{
+        key: "addressHash",
+        placeholder: "addressHash",
+        type: "string",
+        description: "The address of the contract."
+      },
+      %{
+        key: "name",
+        placeholder: "name",
+        type: "string",
+        description: "The name of the contract."
+      },
+      %{
+        key: "compilerVersion",
+        placeholder: "compilerVersion",
+        type: "string",
+        description: "The compiler version for the contract."
+      },
+      %{
+        key: "contractSourceCode",
+        placeholder: "contractSourceCode",
+        type: "string",
+        description: "The source code of the contract."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "constructorArguments",
+        type: "string",
+        description: "The constructor argument data provided."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_verify_example_value),
+        type: "model",
+        model: @contract_model
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@contract_verify_example_value_error)
+      }
+    ]
+  }
   @contract_getabi_action %{
     name: "getabi",
     description: "Get ABI for verified contract. Also available through a GraphQL 'addresses' query.",
@@ -2750,7 +2820,8 @@ defmodule BlockScoutWeb.Etherscan do
       @contract_getabi_action,
       @contract_getsourcecode_action,
       @contract_verify_action,
-      @contract_verify_via_sourcify_action
+      @contract_verify_via_sourcify_action,
+      @contract_verify_vyper_contract_action
     ]
   }
 
