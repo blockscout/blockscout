@@ -336,7 +336,19 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-results", SearchController, :search_results)
 
+    get("/csv-export", CsvExportController, :index)
+
+    post("/captcha", CaptchaController, :index)
+
+    get("/transactions-csv", AddressTransactionController, :transactions_csv)
+
     get("/token-autocomplete", ChainController, :token_autocomplete)
+
+    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
+
+    get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
+
+    get("/logs-csv", AddressTransactionController, :logs_csv)
 
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)
 

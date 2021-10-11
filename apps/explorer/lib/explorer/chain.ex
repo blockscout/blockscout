@@ -221,24 +221,34 @@ defmodule Explorer.Chain do
   def address_to_internal_transactions(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
+
+    from_block = from_block(options)
+    to_block = to_block(options)
+
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if direction == nil do
       query_to_address_hash_wrapped =
         InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
         |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
 
       query_from_address_hash_wrapped =
         InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
         |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
 
       query_created_contract_address_hash_wrapped =
         InternalTransaction
+        |> InternalTransaction.where_nonpending_block()
         |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
+        |> InternalTransaction.where_block_number_in_period(from_block, to_block)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
 
@@ -262,6 +272,7 @@ defmodule Explorer.Chain do
       InternalTransaction
       |> InternalTransaction.where_nonpending_block()
       |> InternalTransaction.where_address_fields_match(hash, direction)
+      |> InternalTransaction.where_block_number_in_period(from_block, to_block)
       |> common_where_limit_order(paging_options)
       |> preload(transaction: :block)
       |> join_associations(necessity_by_association)
@@ -417,9 +428,12 @@ defmodule Explorer.Chain do
   end
 
   defp address_to_transactions_tasks_query(options) do
+    from_block = from_block(options)
+    to_block = to_block(options)
+
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    |> fetch_transactions(from_block, to_block)
   end
 
   defp transactions_block_numbers_at_address(address_hash, options) do
@@ -436,9 +450,13 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
+    from_block = from_block(options)
+    to_block = to_block(options)
+
     options
     |> address_to_transactions_tasks_query()
     |> Transaction.not_dropped_or_replaced_transacions()
+    |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
@@ -535,6 +553,9 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
+    from_block = from_block(options)
+    to_block = to_block(options)
+
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
@@ -566,6 +587,7 @@ defmodule Explorer.Chain do
 
     wrapped_query
     |> filter_topic(options)
+    |> where_block_number_in_period(from_block, to_block)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
   end
@@ -579,6 +601,30 @@ defmodule Explorer.Chain do
   end
 
   defp filter_topic(base_query, _), do: base_query
+
+  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and not is_nil(to_block) do
+    from(q in base_query,
+      where: q.block_number <= ^to_block
+    )
+  end
+
+  def where_block_number_in_period(base_query, from_block, to_block) when not is_nil(from_block) and is_nil(to_block) do
+    from(q in base_query,
+      where: q.block_number > ^from_block
+    )
+  end
+
+  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
+    from(q in base_query,
+      where: 1
+    )
+  end
+
+  def where_block_number_in_period(base_query, from_block, to_block) do
+    from(q in base_query,
+      where: q.block_number > ^from_block and q.block_number <= ^to_block
+    )
+  end
 
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
@@ -4207,9 +4253,10 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
-  defp fetch_transactions(paging_options \\ nil) do
+  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
 
@@ -6989,5 +7036,39 @@ defmodule Explorer.Chain do
     else
       nil
     end
+  end
+
+  defp from_block(options) do
+    Keyword.get(options, :from_block) || nil
+  end
+
+  def to_block(options) do
+    Keyword.get(options, :to_block) || nil
+  end
+
+  def convert_date_to_min_block(date_str) do
+    date_format = "%Y-%m-%d"
+
+    {:ok, date} =
+      date_str
+      |> Timex.parse(date_format, :strftime)
+
+    {:ok, day_before} =
+      date
+      |> Timex.shift(days: -1)
+      |> Timex.format(date_format, :strftime)
+
+    convert_date_to_max_block(day_before)
+  end
+
+  def convert_date_to_max_block(date) do
+    query =
+      from(block in Block,
+        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
+        select: max(block.number)
+      )
+
+    query
+    |> Repo.one()
   end
 end
