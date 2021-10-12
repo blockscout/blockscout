@@ -4,21 +4,8 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, AddressTransactionCsvExporter, TokenTransfer}
   alias NimbleCSV.RFC4180
-
-  @necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [token_transfers: :token] => :optional,
-      [token_transfers: :to_address] => :optional,
-      [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
-    }
-  ]
 
   @page_size 150
   @paging_options %PagingOptions{page_size: @page_size + 1}
@@ -29,34 +16,10 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
     to_block = Chain.convert_date_to_max_block(to_period)
 
     address.hash
-    |> fetch_all_transactions(from_block, to_block, @paging_options)
+    |> AddressTransactionCsvExporter.fetch_all_transactions(from_block, to_block, @paging_options)
     |> to_token_transfers()
     |> to_csv_format(address)
     |> dump_to_stream()
-  end
-
-  defp fetch_all_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
-    options =
-      @necessity_by_association
-      |> Keyword.merge(paging_options: paging_options)
-      |> Keyword.put(:from_block, from_block)
-      |> Keyword.put(:to_block, to_block)
-
-    transactions =
-      address_hash
-      |> Chain.address_to_transactions_with_rewards(options)
-      |> Enum.filter(fn transaction -> Enum.count(transaction.token_transfers) > 0 end)
-
-    new_acc = transactions ++ acc
-
-    case Enum.split(transactions, @page_size) do
-      {_transactions, [%Transaction{block_number: block_number, index: index}]} ->
-        new_paging_options = %{@paging_options | key: {block_number, index}}
-        fetch_all_transactions(address_hash, from_block, to_block, new_paging_options, new_acc)
-
-      {_, []} ->
-        new_acc
-    end
   end
 
   defp to_token_transfers(transactions) do

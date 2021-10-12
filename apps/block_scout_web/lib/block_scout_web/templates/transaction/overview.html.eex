@@ -6,7 +6,16 @@
 <% base_fee_per_gas = if block, do: block.base_fee_per_gas, else: nil %>
 <% max_priority_fee_per_gas = @transaction.max_priority_fee_per_gas %>
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
-<% burned_fee = if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas), do: Wei.mult(base_fee_per_gas, @transaction.gas_used), else: nil %>
+<% burned_fee = 
+  if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
+    if Decimal.cmp(max_fee_per_gas.value, 0) == :eq do
+      %Wei{value: Decimal.new(0)}
+    else
+      Wei.mult(base_fee_per_gas, @transaction.gas_used)
+    end
+  else
+    nil
+  end %>
 <% %Wei{value: burned_fee_decimal} = if is_nil(burned_fee), do: %Wei{value: Decimal.new(0)}, else: burned_fee %>
 <% priority_fee_per_gas = if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas), do: nil, else: Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x -> Wei.to(x, :wei) end) %>
 <% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>

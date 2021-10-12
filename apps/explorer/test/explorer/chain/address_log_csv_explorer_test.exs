@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.AddressLogCsvExporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{AddressLogCsvExporter, Wei}
+  alias Explorer.Chain.AddressLogCsvExporter
 
   describe "export/3" do
     test "exports address logs to csv" do
@@ -26,8 +26,8 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
           fourth_topic: "0x16"
         )
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       [result] =
         address
@@ -74,7 +74,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
       assert result.index == to_string(log.index)
       assert result.block_number == to_string(log.block_number)
       assert result.block_hash == to_string(log.block_hash)
-      assert result.address == to_string(log.address)
+      assert result.address == String.downcase(to_string(log.address))
       assert result.data == to_string(log.data)
       assert result.first_topic == to_string(log.first_topic)
       assert result.second_topic == to_string(log.second_topic)
@@ -102,8 +102,8 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
       end)
       |> Enum.count()
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       result =
         address

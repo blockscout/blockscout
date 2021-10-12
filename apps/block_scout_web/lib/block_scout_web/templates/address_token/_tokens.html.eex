@@ -5,6 +5,19 @@
       </span>
   </td>
   <td class="stakes-td">
+    <span
+        class="token-icon mr-1"
+    >
+    <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+      <% chain_id_for_token_icon = if @bridged_token && @bridged_token.foreign_chain_id, do: @bridged_token.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
+      <% address_hash = if @bridged_token && @bridged_token.foreign_token_contract_address_hash, do: @bridged_token.foreign_token_contract_address_hash, else: @token.contract_address_hash %>
+      <% token_icon_url = Chain.get_token_icon_url_by(chain_id_for_token_icon, Address.checksum(address_hash)) %>
+
+      <%= if token_icon_url do %>
+          <img heigth=15 width=15 src="<%= token_icon_url %>" style="margin-top: -2px;"/>
+      <% end %>
+    <% end %>
+    </span>
     <%= link(
           to: address_token_transfers_path(@conn, :index, to_string(@address.hash), to_string(@token.contract_address_hash)),
           class: "tile-title-lg",

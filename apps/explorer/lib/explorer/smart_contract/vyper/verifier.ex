@@ -54,8 +54,9 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
         _ ->
           nil
       end
+      |> String.trim()
 
-    if bytecode <> arguments_data == blockchain_bytecode do
+    if String.trim(bytecode <> arguments_data) == blockchain_bytecode do
       {:ok, %{abi: abi}}
     else
       {:error, :generated_bytecode}

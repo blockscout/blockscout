@@ -76,6 +76,11 @@ defmodule BlockScoutWeb.ChainView do
     "#{number_to_currency(value, unit: symbol)}"
   end
 
+  def format_currency_value(value, _symbol) when value >= 1_000_000 and value <= 999_000_000 do
+    {:ok, value} = Cldr.Number.to_string(value, format: :short, currency: :USD, fractional_digits: 2)
+    value
+  end
+
   def format_currency_value(value, symbol) when is_float(value) do
     "#{number_to_currency(value, unit: symbol, precision: 0)}"
   end

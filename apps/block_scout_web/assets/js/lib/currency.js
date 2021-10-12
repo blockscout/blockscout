@@ -3,7 +3,12 @@ import numeral from 'numeral'
 import { BigNumber } from 'bignumber.js'
 
 export function formatUsdValue (value) {
-  return `${formatCurrencyValue(value)} USD`
+  const formattedValue = formatCurrencyValue(value)
+  if (formattedValue === 'N/A') {
+    return formattedValue
+  } else {
+    return `${formattedValue} USD`
+  }
 }
 
 function formatTokenUsdValue (value) {

@@ -11,16 +11,14 @@
         id="dropdown-tokens"
         aria-haspopup="true"
         aria-expanded="false"
-        class="btn-dropdown-line large dropdown-toggle"
+        class="btn-dropdown-line basic dropdown-toggle mr-1"
         style="text-decoration: none; height: 31px; padding: 0 10px;">
 
       <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
     </a>
-    <%= if @token_balances do %>
-        <div class="mr-2" style="line-height: 31px;">
-          (<span data-test="address-tokens-worth" data-usd-value=<%= address_tokens_usd_sum_cache(@address_hash, @token_balances) %>></span>)
-        </div>
-    <% end %>  
+    <div class="mr-3" style="line-height: 31px;">
+      (<span data-test="address-tokens-worth" data-usd-value=<%= address_tokens_usd_sum_cache(@address_hash, @token_balances) %>></span>)
+    </div>
     <%= if @conn.request_path |> String.contains?("/tokens") do %>
       <a href="#tokens" style="text-decoration: none;">
         <span class="btn-wallet-icon">

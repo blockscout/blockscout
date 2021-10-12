@@ -110,8 +110,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: params["verified_via_sourcify"],
-      is_vyper_contract: false,
-      partially_verified: params["partially_verified"]
+      partially_verified: params["partially_verified"],
+      is_vyper_contract: false
     }
   end
 

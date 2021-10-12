@@ -135,7 +135,7 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.tokenTransferCount) {
         if (oldState.tokenTransferCount === state.tokenTransferCount) return
-        const transfersDSName = (state.transactionCount > 1) ? ' Transfers' : ' Transfer'
+        const transfersDSName = (state.tokenTransferCount > 1) ? ' Transfers' : ' Transfer'
         $el.empty().append(numeral(state.tokenTransferCount).format() + transfersDSName)
         $el.show()
         $('.address-transfers-count-item').removeAttr('style')

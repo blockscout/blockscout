@@ -14,8 +14,8 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
 
       token_transfer = insert(:token_transfer, transaction: transaction, from_address: address)
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       [result] =
         address

@@ -428,9 +428,12 @@ defmodule Explorer.Chain do
   end
 
   defp address_to_transactions_tasks_query(options) do
+    from_block = from_block(options)
+    to_block = to_block(options)
+
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    |> fetch_transactions(from_block, to_block)
   end
 
   defp transactions_block_numbers_at_address(address_hash, options) do
@@ -447,9 +450,13 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
+    from_block = from_block(options)
+    to_block = to_block(options)
+
     options
     |> address_to_transactions_tasks_query()
     |> Transaction.not_dropped_or_replaced_transacions()
+    |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
@@ -795,7 +802,11 @@ defmodule Explorer.Chain do
         select:
           sum(
             fragment(
-              "Case When ? < ? Then ? Else ? End",
+              "CASE 
+                WHEN ? = 0 THEN 0
+                WHEN ? < ? THEN ?
+                ELSE ? END",
+              tx.max_fee_per_gas,
               tx.max_fee_per_gas - ^base_fee_per_gas,
               tx.max_priority_fee_per_gas,
               (tx.max_fee_per_gas - ^base_fee_per_gas) * tx.gas_used,
@@ -4332,9 +4343,10 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
-  defp fetch_transactions(paging_options \\ nil) do
+  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
 
@@ -7049,40 +7061,6 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp from_block(options) do
-    Keyword.get(options, :from_block) || nil
-  end
-
-  def to_block(options) do
-    Keyword.get(options, :to_block) || nil
-  end
-
-  def convert_date_to_min_block(date_str) do
-    date_format = "{YYYY}-{0M}-{0D}"
-
-    {:ok, date} =
-      date_str
-      |> Timex.parse(date_format)
-
-    {:ok, day_before} =
-      date
-      |> Timex.shift(days: -1)
-      |> Timex.format(date_format)
-
-    convert_date_to_max_block(day_before)
-  end
-
-  def convert_date_to_max_block(date) do
-    query =
-      from(block in Block,
-        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
-        select: max(block.number)
-      )
-
-    query
-    |> Repo.one()
-  end
-
   def bridged_tokens_enabled? do
     eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
     bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
@@ -7212,5 +7190,39 @@ defmodule Explorer.Chain do
     else
       nil
     end
+  end
+
+  defp from_block(options) do
+    Keyword.get(options, :from_block) || nil
+  end
+
+  def to_block(options) do
+    Keyword.get(options, :to_block) || nil
+  end
+
+  def convert_date_to_min_block(date_str) do
+    date_format = "%Y-%m-%d"
+
+    {:ok, date} =
+      date_str
+      |> Timex.parse(date_format, :strftime)
+
+    {:ok, day_before} =
+      date
+      |> Timex.shift(days: -1)
+      |> Timex.format(date_format, :strftime)
+
+    convert_date_to_max_block(day_before)
+  end
+
+  def convert_date_to_max_block(date) do
+    query =
+      from(block in Block,
+        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
+        select: max(block.number)
+      )
+
+    query
+    |> Repo.one()
   end
 end
