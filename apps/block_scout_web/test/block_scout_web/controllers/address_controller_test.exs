@@ -85,7 +85,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
       assert conn.status == 200
       {:ok, response} = Jason.decode(conn.resp_body)
 
-      assert %{"transaction_count" => 0, "validation_count" => 0, "gas_usage_count" => 0} == response
+      assert %{"transaction_count" => 0, "token_transfer_count" => 0, "validation_count" => 0, "gas_usage_count" => 0} ==
+               response
     end
   end
 end

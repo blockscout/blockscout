@@ -2492,6 +2492,18 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec address_to_token_transfer_count(Address.t()) :: non_neg_integer()
+  def address_to_token_transfer_count(address) do
+    query =
+      from(
+        token_transfer in TokenTransfer,
+        where: token_transfer.to_address_hash == ^address.hash,
+        or_where: token_transfer.from_address_hash == ^address.hash
+      )
+
+    Repo.aggregate(query, :count, timeout: :infinity)
+  end
+
   @spec address_to_gas_usage_count(Address.t()) :: non_neg_integer()
   def address_to_gas_usage_count(address) do
     if contract?(address) do
@@ -2522,7 +2534,7 @@ defmodule Explorer.Chain do
 
   def address_tokens_usd_sum(token_balances) do
     token_balances
-    |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc ->
+    |> Enum.reduce(Decimal.new(0), fn {token_balance, _, _}, acc ->
       if token_balance.value && token_balance.token.usd_value do
         Decimal.add(acc, balance_in_usd(token_balance))
       else
@@ -4423,6 +4435,29 @@ defmodule Explorer.Chain do
     )
   end
 
+  def page_token_balances(query, %PagingOptions{key: nil}), do: query
+
+  def page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
+    where(
+      query,
+      [tb],
+      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
+    )
+  end
+
+  def page_current_token_balances(query, %PagingOptions{key: nil}), do: query
+
+  def page_current_token_balances(query, paging_options: %PagingOptions{key: nil}), do: query
+
+  def page_current_token_balances(query, paging_options: %PagingOptions{key: {name, type, value}}) do
+    where(
+      query,
+      [ctb, bt, t],
+      ctb.value < ^value or (ctb.value == ^value and t.type < ^type) or
+        (ctb.value == ^value and t.type == ^type and t.name < ^name)
+    )
+  end
+
   @doc """
   Ensures the following conditions are true:
 
@@ -5610,6 +5645,14 @@ defmodule Explorer.Chain do
   def fetch_last_token_balances(address_hash) do
     address_hash
     |> CurrentTokenBalance.last_token_balances()
+    |> Repo.all()
+  end
+
+  @spec fetch_last_token_balances(Hash.Address.t(), [paging_options]) :: []
+  def fetch_last_token_balances(address_hash, paging_options) do
+    address_hash
+    |> CurrentTokenBalance.last_token_balances(paging_options)
+    |> page_current_token_balances(paging_options)
     |> Repo.all()
   end
 
