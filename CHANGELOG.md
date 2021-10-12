@@ -19,6 +19,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4751](https://github.com/blockscout/blockscout/pull/4751) - Change text and link for `trade STAKE` button
 - [#4746](https://github.com/blockscout/blockscout/pull/4746) - Fix comparison of decimal value
 - [#4711](https://github.com/blockscout/blockscout/pull/4711) - Add trimming to the contract functions inputs
 - [#4729](https://github.com/blockscout/blockscout/pull/4729) - Fix bugs with fees in cases of txs with `gas price = 0`
