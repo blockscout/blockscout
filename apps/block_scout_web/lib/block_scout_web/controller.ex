@@ -25,6 +25,14 @@ defmodule BlockScoutWeb.Controller do
     |> halt()
   end
 
+  def validation_failed(conn) do
+    conn
+    |> put_status(400)
+    |> put_view(BlockScoutWeb.ErrorValidationFailedView)
+    |> render(:index, layout: {BlockScoutWeb.LayoutView, "app.html"})
+    |> halt()
+  end
+
   @doc """
   Checks if the request is AJAX or not.
   """

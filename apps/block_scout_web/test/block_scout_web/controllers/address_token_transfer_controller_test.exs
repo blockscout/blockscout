@@ -7,13 +7,6 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
   alias Explorer.Chain.{Address, Token}
 
   describe "GET index/2" do
-    test "with invalid address hash", %{conn: conn} do
-      token_hash = "0xc8982771dd50285389c352c175ada74d074427c7"
-      conn = get(conn, address_token_transfers_path(conn, :index, "invalid_address", token_hash))
-
-      assert html_response(conn, 422)
-    end
-
     test "with invalid token hash", %{conn: conn} do
       address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
 
@@ -219,17 +212,6 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
         )
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
-    end
-
-    test "with invalid address hash", %{conn: conn} do
-      token_hash = "0xc8982771dd50285389c352c175ada74d074427c7"
-
-      conn =
-        get(conn, address_token_transfers_path(conn, :index, "invalid_address", token_hash), %{
-          type: "JSON"
-        })
-
-      assert html_response(conn, 422)
     end
 
     test "with invalid token hash", %{conn: conn} do

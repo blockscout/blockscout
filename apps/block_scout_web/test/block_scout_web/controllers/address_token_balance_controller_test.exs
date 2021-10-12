@@ -13,14 +13,6 @@ defmodule BlockScoutWeb.AddressTokenBalanceControllerTest do
       assert html_response(response_conn, 404)
     end
 
-    test "with AJAX without valid address", %{conn: conn} do
-      ajax_conn = ajax(conn)
-
-      response_conn = get(ajax_conn, address_token_balance_path(ajax_conn, :index, "invalid_address"))
-
-      assert html_response(response_conn, 404)
-    end
-
     test "with AJAX with valid address without address still returns token balances", %{conn: conn} do
       ajax_conn = ajax(conn)
 

@@ -8,14 +8,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
-    test "with invalid address hash", %{conn: conn} do
-      conn =
-        conn
-        |> get(address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, "invalid_address"))
-
-      assert html_response(conn, 404)
-    end
-
     test "with valid address hash without address", %{conn: conn} do
       conn =
         get(

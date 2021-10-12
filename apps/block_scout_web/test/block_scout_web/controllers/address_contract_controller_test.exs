@@ -17,14 +17,6 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "returns not found given an invalid address hash ", %{conn: conn} do
-      invalid_hash = "invalid_hash"
-
-      conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, invalid_hash))
-
-      assert html_response(conn, 404)
-    end
-
     test "returns not found when the address isn't a contract", %{conn: conn} do
       address = insert(:address)
 

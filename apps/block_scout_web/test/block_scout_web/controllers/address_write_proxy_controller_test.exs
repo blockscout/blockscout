@@ -21,12 +21,6 @@ defmodule BlockScoutWeb.AddressWriteProxyControllerTest do
       end)
     end
 
-    test "with invalid address hash", %{conn: conn} do
-      conn = get(conn, address_write_proxy_path(BlockScoutWeb.Endpoint, :index, "invalid_address"))
-
-      assert html_response(conn, 404)
-    end
-
     test "with valid address that is not a contract", %{conn: conn} do
       address = insert(:address)
 

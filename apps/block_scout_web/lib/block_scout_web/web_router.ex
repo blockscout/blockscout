@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
+    plug(BlockScoutWeb.Plug.ValidateRouteParameters)
   end
 
   # Disallows Iframes (write routes)
@@ -78,7 +79,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/bridged-tokens", BridgedTokensController, only: [:index, :show])
 
-    resources "/address", AddressController, only: [:show] do
+    resources "/address", AddressController, only: [:show], private: %{validate: %{"address_id" => :is_address}} do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
 
       resources(

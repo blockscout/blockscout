@@ -21,12 +21,6 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       end)
     end
 
-    test "with invalid address hash", %{conn: conn} do
-      conn = get(conn, address_token_path(conn, :index, "invalid_address"))
-
-      assert html_response(conn, 422)
-    end
-
     test "with valid address hash without address", %{conn: conn} do
       conn = get(conn, address_token_path(conn, :index, Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")))
 

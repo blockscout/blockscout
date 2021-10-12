@@ -1,0 +1,12 @@
+<section class="container">
+  <div class="block-not-found">
+    <div class="block-not-found-img">
+      <img alt="Page Not Found" src="/images/errors-img/pic-404.svg">
+    </div>
+    <div class="block-not-found-content">
+      <h1 class="card-title error-title">Validation Failed</h1>
+      <p class="error-descr">The request failed due to a validation error. Please check your parameters (e.g address hash) are valid.</p>
+      <a class="error-btn btn-line" href="/">Back Home</a>
+    </div>
+  </div>
+</section>
