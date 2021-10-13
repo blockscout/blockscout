@@ -5,6 +5,8 @@ defmodule EthereumJSONRPC.Geth do
 
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
+  require Logger
+
   alias EthereumJSONRPC.{FetchedBalance, FetchedCode, Transactions}
   alias EthereumJSONRPC.Geth.{Calls, Tracer}
 

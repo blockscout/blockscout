@@ -42,3 +42,11 @@ screenshots/
 
 # mix phx.gen.cert self-signed certs for dev
 /apps/block_scout_web/priv/cert
+/.idea/
+/make_env.sh
+/migrate_db.sh
+/block_scout.iml
+/apps/block_scout_web/block_scout_web.iml
+/apps/ethereum_jsonrpc/ethereum_jsonrpc.iml
+/apps/explorer/explorer.iml
+/apps/indexer/indexer.iml

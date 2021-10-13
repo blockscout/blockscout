@@ -28,7 +28,7 @@ config :logger, :pending_transactions_to_refetch,
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "ganache"
+    "geth"
   else
     System.get_env("ETHEREUM_JSONRPC_VARIANT")
     |> String.split(".")
