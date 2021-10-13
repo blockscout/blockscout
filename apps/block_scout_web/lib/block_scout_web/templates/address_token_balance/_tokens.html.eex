@@ -17,7 +17,7 @@
         end
       %>
       <%= link(
-            to: token_path(@conn, :show, to_string(token.contract_address_hash)),
+            to: path,
             class: "dropdown-item"
           ) do %>
         <div class="row">

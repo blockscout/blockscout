@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2]
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, BridgedToken, Hash, Token}
@@ -32,6 +32,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           token: %Ecto.Association.NotLoaded{} | Token.t(),
           token_contract_address_hash: Hash.Address,
           block_number: Block.block_number(),
+          max_block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
           value: Decimal.t() | nil,
@@ -42,6 +43,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   schema "address_current_token_balances" do
     field(:value, :decimal)
     field(:block_number, :integer)
+    field(:max_block_number, :integer, virtual: true)
     field(:value_fetched_at, :utc_datetime_usec)
     field(:token_id, :decimal)
     field(:token_type, :string)
@@ -121,7 +123,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     |> token_holders_by_token_id_query(token_id)
     |> preload(:address)
     |> order_by([tb], desc: :value, desc: :address_hash)
-    |> page_token_balances(paging_options)
+    |> Chain.page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
     |> offset(^offset)
   end
@@ -247,16 +249,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash != ^@burn_address_hash,
       where: tb.value > 0
-    )
-  end
-
-  defp page_token_balances(query, %PagingOptions{key: nil}), do: query
-
-  defp page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
-    where(
-      query,
-      [tb],
-      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
     )
   end
 end

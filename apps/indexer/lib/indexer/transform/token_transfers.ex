@@ -31,10 +31,27 @@ defmodule Indexer.Transform.TokenTransfers do
       end)
       |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc1155))
 
-    %{
-      tokens: erc1155_token_transfers.tokens ++ erc20_and_erc721_token_transfers.tokens,
-      token_transfers: erc1155_token_transfers.token_transfers ++ erc20_and_erc721_token_transfers.token_transfers
+    tokens = erc1155_token_transfers.tokens ++ erc20_and_erc721_token_transfers.tokens
+    token_transfers = erc1155_token_transfers.token_transfers ++ erc20_and_erc721_token_transfers.token_transfers
+
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
+    end)
+    |> Enum.map(fn token_transfer ->
+      token_transfer.token_contract_address_hash
+    end)
+    |> Enum.dedup()
+    |> Enum.each(&update_token/1)
+
+    tokens_dedup = tokens |> Enum.dedup()
+
+    token_transfers_from_logs_dedup = %{
+      tokens: tokens_dedup,
+      token_transfers: token_transfers
     }
+
+    token_transfers_from_logs_dedup
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type \\ :erc20_erc721) do

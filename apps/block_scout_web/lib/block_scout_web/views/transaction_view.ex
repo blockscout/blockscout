@@ -123,17 +123,13 @@ defmodule BlockScoutWeb.TransactionView do
         end
       )
 
-    final_ft_transfers = Map.values(ft_transfers)
-    transfers = final_ft_transfers ++ nft_transfers
+    transfers = ft_transfers ++ nft_transfers
 
-    final_ft_mintings = Map.values(ft_mintings)
-    mintings = final_ft_mintings ++ nft_mintings
+    mintings = ft_mintings ++ nft_mintings
 
-    final_ft_burnings = Map.values(ft_burnings)
-    burnings = final_ft_burnings ++ nft_burnings
+    burnings = ft_burnings ++ nft_burnings
 
-    final_ft_creations = Map.values(ft_creations)
-    creations = final_ft_creations ++ nft_creations
+    creations = ft_creations ++ nft_creations
 
     %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations}
   end
@@ -188,33 +184,24 @@ defmodule BlockScoutWeb.TransactionView do
       end)
 
     new_acc1 =
-      if token_transfer.token_id do
-        [new_entry | acc1]
-      else
-        if existing_entry do
-          acc1
-          |> Enum.map(fn entry ->
-            if entry.to_address_hash == token_transfer.to_address_hash &&
-                 entry.from_address_hash == token_transfer.from_address_hash &&
-                 entry.token == token_transfer.token do
-              updated_entry =
-                if new_entry.amount do
-                  %{
-                    entry
-                    | amount: Decimal.add(new_entry.amount, entry.amount)
-                  }
-                else
-                  entry
-                end
-
-              updated_entry
-            else
+      if existing_entry do
+        acc1
+        |> Enum.map(fn entry ->
+          if entry.to_address_hash == token_transfer.to_address_hash &&
+               entry.from_address_hash == token_transfer.from_address_hash &&
+               entry.token == token_transfer.token do
+            updated_entry = %{
               entry
-            end
-          end)
-        else
-          [new_entry | acc1]
-        end
+              | amount: Decimal.add(new_entry.amount, entry.amount)
+            }
+
+            updated_entry
+          else
+            entry
+          end
+        end)
+      else
+        [new_entry | acc1]
       end
 
     {new_acc1, acc2}
@@ -536,7 +523,6 @@ defmodule BlockScoutWeb.TransactionView do
 
     creations_count =
       Enum.count(token_transfers_types, fn token_transfers_type -> token_transfers_type == @token_creation_type end)
-<<<<<<< HEAD
 
     cond do
       Enum.count(token_transfers_types) == burnings_count -> @token_burning_type
@@ -560,14 +546,6 @@ defmodule BlockScoutWeb.TransactionView do
     case Integer.parse(string_value) do
       {integer, ""} -> integer
       _ -> 0
-=======
-
-    cond do
-      Enum.count(token_transfers_types) == burnings_count -> @token_burning_type
-      Enum.count(token_transfers_types) == mintings_count -> @token_minting_type
-      Enum.count(token_transfers_types) == creations_count -> @token_creation_type
-      true -> @token_transfer_type
->>>>>>> d8b6f073c (ERC-1155 transfers support in UI)
     end
   end
 

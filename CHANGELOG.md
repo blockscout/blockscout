@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4761](https://github.com/blockscout/blockscout/pull/4761) - ERC-1155 support
 - [#4739](https://github.com/blockscout/blockscout/pull/4739) - Improve logs and inputs decoding
 - [#4747](https://github.com/blockscout/blockscout/pull/4747) - Advanced CSV export
 - [#4745](https://github.com/blockscout/blockscout/pull/4745) - Vyper contracts verification
