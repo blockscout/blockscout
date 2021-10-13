@@ -868,7 +868,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:101
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7 lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:104
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:120
 msgid "Data"
 msgstr ""
 
@@ -892,7 +892,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:32
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:38 lib/block_scout_web/templates/address_logs/_logs.html.eex:53
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:33 lib/block_scout_web/templates/transaction_log/_logs.html.eex:41
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:56
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:56 lib/block_scout_web/templates/transaction_log/_logs.html.eex:72
 msgid "Decoded"
 msgstr ""
 
@@ -1119,7 +1119,7 @@ msgid "External libraries"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:33
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:40
 msgid "Failed to decode input data."
 msgstr ""
 
@@ -1432,7 +1432,7 @@ msgid "Log Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:114
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:130
 msgid "Log Index"
 msgstr ""
 
@@ -1777,6 +1777,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:18
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:32
 msgid "Potential matches from our contract method database:"
 msgstr ""
 
@@ -2573,7 +2574,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:71
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:74
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:90
 msgid "Topics"
 msgstr ""
 
