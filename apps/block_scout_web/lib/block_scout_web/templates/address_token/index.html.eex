@@ -10,7 +10,8 @@
         <%= render BlockScoutWeb.AddressTokenView,
           "overview.html",
           address: @address,
-          exchange_rate: @exchange_rate
+          exchange_rate: @exchange_rate,
+          circles_total_balance: circles_total_balance(@address.hash)
         %>
 
         <div class="list-top-pagination-container-wrapper">

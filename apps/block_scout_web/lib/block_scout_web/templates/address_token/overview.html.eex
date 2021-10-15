@@ -61,4 +61,12 @@
         data_test: "address-tokens-panel-tokens-worth",
         classes: ["fs-14"]
     %>
+    <%= if Decimal.cmp(@circles_total_balance, 0) == :gt do %>
+        <%= render BlockScoutWeb.AddressTokenView, "overview_item.html",
+            title: gettext("CRC Worth"),
+            tooltip: gettext("Shows the total CRC balance in the address."),
+            value: "#{format_according_to_decimals(@circles_total_balance, Decimal.new(18))} CRC",
+            classes: ["fs-14"]
+        %>
+    <% end %>
 </div>
