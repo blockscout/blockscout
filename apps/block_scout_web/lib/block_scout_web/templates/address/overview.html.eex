@@ -38,7 +38,7 @@
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title lg-card-title mb-2">
+          <h1 class="card-title lg-card-title mb-2-desktop">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
             <% validator_metadata = primary_validator_metadata(@address) %>
             <%= if contract?(@address) do %>
