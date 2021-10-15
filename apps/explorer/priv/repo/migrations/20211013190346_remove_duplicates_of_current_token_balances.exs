@@ -21,5 +21,19 @@ defmodule Explorer.Repo.Migrations.RemoveDuplicatesOfCurrentTokenBalances do
     WHERE c.address_hash IS NULL
     );
     """)
+
+    execute("""
+    UPDATE address_current_token_balances
+    SET token_id = NULL
+    WHERE id in (
+        SELECT a.id FROM (SELECT actb.*
+        FROM address_current_token_balances actb
+        INNER JOIN tokens t
+        ON actb.token_contract_address_hash = t.contract_address_hash
+        WHERE t.type='ERC-721'
+        AND actb.token_id IS NOT NULL
+        ) a
+    );
+    """)
   end
 end
