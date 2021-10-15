@@ -35,5 +35,21 @@ defmodule Explorer.Repo.Migrations.RemoveDuplicatesOfCurrentTokenBalances do
         ) a
     );
     """)
+
+    execute("""
+    UPDATE address_current_token_balances
+    SET token_type = t.type
+    FROM tokens t
+    WHERE address_current_token_balances.token_type IS NULL
+    AND t.contract_address_hash = address_current_token_balances.token_contract_address_hash;
+    """)
+
+    execute("""
+    UPDATE address_token_balances
+    SET token_type = t.type
+    FROM tokens t
+    WHERE address_token_balances.token_type IS NULL
+    AND t.contract_address_hash = address_token_balances.token_contract_address_hash;
+    """)
   end
 end
