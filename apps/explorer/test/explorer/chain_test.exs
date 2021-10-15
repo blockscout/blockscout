@@ -4881,7 +4881,7 @@ defmodule Explorer.ChainTest do
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
-        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end

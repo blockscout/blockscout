@@ -208,8 +208,8 @@ defmodule Explorer.Chain.SmartContract do
           abi: [function_description],
           verified_via_sourcify: boolean | nil,
           partially_verified: boolean | nil,
-          is_vyper_contract: boolean | nil,
-          file_path: String.t()
+          file_path: String.t(),
+          is_vyper_contract: boolean | nil
         }
 
   schema "smart_contracts" do
@@ -224,8 +224,8 @@ defmodule Explorer.Chain.SmartContract do
     field(:abi, {:array, :map})
     field(:verified_via_sourcify, :boolean)
     field(:partially_verified, :boolean)
-    field(:is_vyper_contract, :boolean)
     field(:file_path, :string)
+    field(:is_vyper_contract, :boolean)
 
     has_many(
       :decompiled_smart_contracts,
@@ -262,8 +262,8 @@ defmodule Explorer.Chain.SmartContract do
       :optimization_runs,
       :verified_via_sourcify,
       :partially_verified,
-      :is_vyper_contract,
-      :file_path
+      :file_path,
+      :is_vyper_contract
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
@@ -284,8 +284,8 @@ defmodule Explorer.Chain.SmartContract do
         :constructor_arguments,
         :verified_via_sourcify,
         :partially_verified,
-        :is_vyper_contract,
-        :file_path
+        :file_path,
+        :is_vyper_contract
       ])
       |> validate_required([:name, :compiler_version, :optimization, :address_hash])
 

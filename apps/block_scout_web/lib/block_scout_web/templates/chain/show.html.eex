@@ -190,7 +190,7 @@
             <span class="dashboard-banner-network-stats-label">
               <%= gettext "Total transactions" %>
             </span>
-            <div style="display: flex;">
+            <div class="d-flex">
               <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
                 <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
               </span>

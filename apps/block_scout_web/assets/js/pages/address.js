@@ -24,6 +24,7 @@ export const initialState = {
   balanceCard: null,
   fetchedCoinBalanceBlockNumber: null,
   transactionCount: null,
+  tokenTransferCount: null,
   gasUsageCount: null,
   validationCount: null,
   countersFetched: false
@@ -45,6 +46,7 @@ export function reducer (state = initialState, action) {
     case 'COUNTERS_FETCHED': {
       return Object.assign({}, state, {
         transactionCount: action.transactionCount,
+        tokenTransferCount: action.tokenTransferCount,
         gasUsageCount: action.gasUsageCount,
         validationCount: action.validationCount,
         countersFetched: true
@@ -62,6 +64,13 @@ export function reducer (state = initialState, action) {
       const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
 
       return Object.assign({}, state, { transactionCount })
+    }
+    case 'RECEIVED_NEW_TOKEN_TRANSFER': {
+      if (state.channelDisconnected) return state
+
+      const tokenTransferCount = (action.msg.fromAddressHash === state.addressHash) ? state.tokenTransferCount + 1 : state.tokenTransferCount
+
+      return Object.assign({}, state, { tokenTransferCount })
     }
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
@@ -109,12 +118,30 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.transactionCount) {
         if (oldState.transactionCount === state.transactionCount) return
-        $el.empty().append(numeral(state.transactionCount).format() + ' Transactions')
+        const transactionsDSName = (state.transactionCount > 1) ? ' Transactions' : ' Transaction'
+        $el.empty().append(numeral(state.transactionCount).format() + transactionsDSName)
         $el.show()
-        $el.parent('.address-detail-item').removeAttr('style')
+        $('.address-transactions-count-item').removeAttr('style')
       } else {
         $el.hide()
-        $el.parent('.address-detail-item').css('display', 'none')
+        $('.address-transactions-count-item').css('display', 'none')
+      }
+    }
+  },
+  '[data-selector="transfer-count"]': {
+    load ($el) {
+      return { tokenTransferCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (state.countersFetched && state.tokenTransferCount) {
+        if (oldState.tokenTransferCount === state.tokenTransferCount) return
+        const transfersDSName = (state.tokenTransferCount > 1) ? ' Transfers' : ' Transfer'
+        $el.empty().append(numeral(state.tokenTransferCount).format() + transfersDSName)
+        $el.show()
+        $('.address-transfers-count-item').removeAttr('style')
+      } else {
+        $el.hide()
+        $('.address-transfers-count-item').css('display', 'none')
       }
     }
   },
@@ -125,12 +152,12 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.gasUsageCount) {
         if (oldState.gasUsageCount === state.gasUsageCount) return
-        $el.empty().append(numeral(state.gasUsageCount).format() + ' Gas used')
+        $el.empty().append(numeral(state.gasUsageCount).format())
         $el.show()
-        $el.parent('.address-detail-item').removeAttr('style')
+        $('.address-gas-used-item').removeAttr('style')
       } else {
         $el.hide()
-        $el.parent('.address-detail-item').css('display', 'none')
+        $('.address-gas-used-item').css('display', 'none')
       }
     }
   },
@@ -150,10 +177,10 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.validationCount) {
         if (oldState.validationCount === state.validationCount) return
-        $el.empty().append(numeral(state.validationCount).format() + ' Blocks Validated')
-        $el.show()
+        $el.empty().append(numeral(state.validationCount).format())
+        $('.address-validation-count-item').removeAttr('style')
       } else {
-        $el.hide()
+        $('.address-validation-count-item').css('display', 'none')
       }
     }
   }
@@ -199,6 +226,12 @@ if ($addressDetailsPage.length) {
   addressChannel.on('transaction', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TRANSACTION',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
+  addressChannel.on('transfer', (msg) => {
+    store.dispatch({
+      type: 'RECEIVED_NEW_TOKEN_TRANSFER',
       msg: humps.camelizeKeys(msg)
     })
   })

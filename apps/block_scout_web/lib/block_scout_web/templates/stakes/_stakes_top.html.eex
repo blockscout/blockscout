@@ -46,11 +46,11 @@
             <span class="btn-full-primary-text"><%= gettext("Bridge STAKE to Ethereum") %></span>
         </a>
         <a
-            class="btn-full-primary full-width"
+            class="btn-full-primary full-width btn-add-full"
             href="https://ascendex.com/register?inviteCode=5EYVQSTQ"
             target="_blank"
         >
-            <span class="btn-full-primary-text"><%= gettext("Trade STAKE on BitMax") %></span>
+            <span class="btn-full-primary-text"><%= gettext("Trade STAKE on AscendEX") %></span>
         </a>
       </div>
     </div>

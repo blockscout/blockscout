@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2]
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, BridgedToken, Hash, Token}
@@ -99,7 +99,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     |> token_holders_query
     |> preload(:address)
     |> order_by([tb], desc: :value, desc: :address_hash)
-    |> page_token_balances(paging_options)
+    |> Chain.page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
     |> offset(^offset)
   end
@@ -123,7 +123,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     |> token_holders_by_token_id_query(token_id)
     |> preload(:address)
     |> order_by([tb], desc: :value, desc: :address_hash)
-    |> page_token_balances(paging_options)
+    |> Chain.page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
     |> offset(^offset)
   end
@@ -165,9 +165,23 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: ctb.value > 0,
       left_join: bt in BridgedToken,
       on: ctb.token_contract_address_hash == bt.home_token_contract_address_hash,
+      left_join: t in Token,
+      on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: :token,
-      select: {ctb, bt}
+      select: {ctb, bt, t},
+      order_by: [desc: ctb.value, asc: t.type, asc: t.name]
     )
+  end
+
+  @doc """
+  Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address (paginated version).
+  """
+  def last_token_balances(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> last_token_balances()
+    |> limit(^paging_options.page_size)
   end
 
   @doc """
@@ -235,16 +249,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash != ^@burn_address_hash,
       where: tb.value > 0
-    )
-  end
-
-  defp page_token_balances(query, %PagingOptions{key: nil}), do: query
-
-  defp page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
-    where(
-      query,
-      [tb],
-      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
     )
   end
 end

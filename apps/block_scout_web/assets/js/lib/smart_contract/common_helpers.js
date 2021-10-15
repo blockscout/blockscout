@@ -23,8 +23,8 @@ export function prepareMethodArgs ($functionInputs, inputs) {
     const inputType = inputs[ind] && inputs[ind].type
     const inputComponents = inputs[ind] && inputs[ind].components
     let sanitizedInputValue
-    sanitizedInputValue = replaceSpaces(inputValue, inputType, inputComponents)
-    sanitizedInputValue = replaceDoubleQuotes(sanitizedInputValue, inputType, inputComponents)
+    sanitizedInputValue = replaceDoubleQuotes(inputValue, inputType, inputComponents)
+    sanitizedInputValue = replaceSpaces(sanitizedInputValue, inputType, inputComponents)
 
     if (isArrayInputType(inputType) || isTupleInputType(inputType)) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
@@ -38,6 +38,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
           const elementInputType = inputType.split('[')[0]
 
           var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+          sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
 
           if (isBoolInputType(elementInputType)) {
             sanitizedElementValue = convertToBool(elementValue)
@@ -141,7 +142,7 @@ function replaceSpaces (value, type, components) {
       })
       .join(',')
   } else {
-    return value
+    return value.trim()
   }
 }
 

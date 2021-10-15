@@ -1,6 +1,10 @@
 ## Current
 
 ### Features
+- [#4739](https://github.com/blockscout/blockscout/pull/4739) - Improve logs and inputs decoding
+- [#4747](https://github.com/blockscout/blockscout/pull/4747) - Advanced CSV export
+- [#4745](https://github.com/blockscout/blockscout/pull/4745) - Vyper contracts verification
+- [#4699](https://github.com/blockscout/blockscout/pull/4699) - Address page facelifting
 - [#4667](https://github.com/blockscout/blockscout/pull/4667) - Transaction Page: Add expand/collapse button for long contract method data
 - [#4641](https://github.com/blockscout/blockscout/pull/4641), [#4733](https://github.com/blockscout/blockscout/pull/4733) - Improve Read Contract page logic
 - [#4660](https://github.com/blockscout/blockscout/pull/4660) - Save Sourcify path instead of filename
@@ -16,6 +20,10 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
+- [#4751](https://github.com/blockscout/blockscout/pull/4751) - Change text and link for `trade STAKE` button
+- [#4746](https://github.com/blockscout/blockscout/pull/4746) - Fix comparison of decimal value
+- [#4711](https://github.com/blockscout/blockscout/pull/4711) - Add trimming to the contract functions inputs
 - [#4729](https://github.com/blockscout/blockscout/pull/4729) - Fix bugs with fees in cases of txs with `gas price = 0`
 - [#4725](https://github.com/blockscout/blockscout/pull/4725) - Fix hardcoded coin name on transaction's and block's page
 - [#4717](https://github.com/blockscout/blockscout/pull/4717) - Contract verification fix: check only success creation tx
@@ -39,6 +47,7 @@
 - [#4546](https://github.com/blockscout/blockscout/pull/4546) - Indexer performance update: async get block rewards
 
 ### Chore
+- [#4735](https://github.com/blockscout/blockscout/pull/4735) - Code clean up: Remove clauses for outdated ganache bugs
 - [#4726](https://github.com/blockscout/blockscout/pull/4726) - Update chart.js
 - [#4707](https://github.com/blockscout/blockscout/pull/4707) - Top navigation: Move Accounts tab to Tokens
 - [#4704](https://github.com/blockscout/blockscout/pull/4704) - Update to Erlang/OTP 24

@@ -43,7 +43,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     |> dump_to_stream()
   end
 
-  defp fetch_all_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
+  def fetch_all_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
     options =
       @necessity_by_association
       |> Keyword.put(:paging_options, paging_options)

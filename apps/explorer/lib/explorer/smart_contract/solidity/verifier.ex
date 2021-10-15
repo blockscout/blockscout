@@ -112,7 +112,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init_without_0x
 
         _ ->
-          nil
+          bytecode
       end
 
     %{
@@ -177,6 +177,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   For more information on the swarm hash, check out:
   https://solidity.readthedocs.io/en/v0.5.3/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
   """
+  def extract_bytecode_and_metadata_hash(nil) do
+    %{"metadata_hash" => nil, "bytecode" => nil, "compiler_version" => nil}
+  end
+
   def extract_bytecode_and_metadata_hash("0x" <> code) do
     %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version} =
       extract_bytecode_and_metadata_hash(code)

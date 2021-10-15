@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.AddressController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{AccessHelpers, AddressView, Controller}
-  alias Explorer.Counters.{AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
+  alias Explorer.Counters.{AddressTokenTransfersCounter, AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
@@ -84,10 +84,11 @@ defmodule BlockScoutWeb.AddressController do
   def address_counters(conn, %{"id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {transaction_count, gas_usage_count, validation_count} = transaction_and_validation_count(address)
+      {transaction_count, token_transfer_count, gas_usage_count, validation_count} = address_counters(address)
 
       json(conn, %{
         transaction_count: transaction_count,
+        token_transfer_count: token_transfer_count,
         gas_usage_count: gas_usage_count,
         validation_count: validation_count
       })
@@ -95,16 +96,22 @@ defmodule BlockScoutWeb.AddressController do
       _ ->
         json(conn, %{
           transaction_count: 0,
+          token_transfer_count: 0,
           gas_usage_count: 0,
           validation_count: 0
         })
     end
   end
 
-  defp transaction_and_validation_count(address) do
+  defp address_counters(address) do
     transaction_count_task =
       Task.async(fn ->
         transaction_count(address)
+      end)
+
+    token_transfer_count_task =
+      Task.async(fn ->
+        token_transfers_count(address)
       end)
 
     gas_usage_count_task =
@@ -117,7 +124,7 @@ defmodule BlockScoutWeb.AddressController do
         validation_count(address)
       end)
 
-    [transaction_count_task, gas_usage_count_task, validation_count_task]
+    [transaction_count_task, token_transfer_count_task, gas_usage_count_task, validation_count_task]
     |> Task.yield_many(:timer.seconds(60))
     |> Enum.map(fn {_task, res} ->
       case res do
@@ -136,6 +143,10 @@ defmodule BlockScoutWeb.AddressController do
 
   def transaction_count(address) do
     AddressTransactionsCounter.fetch(address)
+  end
+
+  def token_transfers_count(address) do
+    AddressTokenTransfersCounter.fetch(address)
   end
 
   def gas_usage_count(address) do

@@ -170,8 +170,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       insert(:token_transfer, transaction: transaction, from_address: address)
       insert(:token_transfer, transaction: transaction, to_address: address)
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
         get(conn, "/token-transfers-csv", %{
@@ -196,8 +196,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
         get(conn, "/transactions-csv", %{
@@ -259,8 +259,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         transaction_index: transaction_3.index
       )
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), years: -1), "%Y-%m-%d %H:%M", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
+      from_period = Timex.format!(Timex.shift(Timex.now(), years: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
         get(conn, "/internal-transactions-csv", %{
@@ -316,8 +316,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         block_number: transaction_3.block_number
       )
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
       conn =
         get(conn, "/logs-csv", %{
