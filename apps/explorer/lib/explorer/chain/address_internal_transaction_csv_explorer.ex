@@ -88,8 +88,8 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
           internal_transaction.type,
           internal_transaction.call_type,
           internal_transaction.gas,
-          internal_transaction.gas_used,
-          Wei.to(internal_transaction.value, :wei),
+          Wei.to(internal_transaction.gas_used, :ether),
+          Wei.to(internal_transaction.value, :ether),
           internal_transaction.input,
           internal_transaction.output,
           internal_transaction.error
