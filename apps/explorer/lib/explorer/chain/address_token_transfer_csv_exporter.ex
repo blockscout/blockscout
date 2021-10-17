@@ -81,9 +81,9 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
 
   defp fee(transaction) do
     transaction
-    |> Chain.fee(:wei)
+    |> Chain.fee(:ether)
     |> case do
-      {:actual, value} -> value
+      {:actual, value} -> Wei.to(value, :ether)
       {:maximum, value} -> "Max of #{value}"
     end
   end
