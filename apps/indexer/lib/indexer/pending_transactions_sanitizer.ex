@@ -152,12 +152,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   defp invalidate_block(block_number, block_hash, consensus, pending_tx, tx) do
     if consensus do
-      opts = %{
-        timeout: 60_000,
-        timestamps: %{updated_at: DateTime.utc_now()}
-      }
-
-      Blocks.lose_consensus(Repo, [], [block_number], [], opts)
+      Blocks.invalidate_consensus_blocks([block_number])
     else
       {:ok, hash} = Hash.cast(block_hash)
       tx_info = to_elixir(tx)
