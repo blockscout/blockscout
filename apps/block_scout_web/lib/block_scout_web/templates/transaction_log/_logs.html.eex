@@ -4,9 +4,9 @@
     <%= {:error, :contract_not_verified, _cadidates} -> %>
       <div class="alert alert-info">
       <%= gettext "To see accurate decoded input data, the contract must be verified." %>
-      <%= case @transaction do %>
-        <% %{to_address: %{hash: hash}} -> %>
-          <% path = address_verify_contract_path(@conn, :new, hash) %>
+      <%= case @log do %>
+        <% %{address_hash: %Explorer.Chain.Hash{} = address_hash} -> %>
+          <% path = address_verify_contract_path(@conn, :new, address_hash) %>
           <%= gettext "Verify the contract " %><a href="<%= path %>"><%= gettext "here" %></a>
         <% _ -> %>
           <%= nil %>
@@ -52,7 +52,7 @@
           </table>
           <%= render BlockScoutWeb.LogView, "_data_decoded_view.html", mapping: mapping %>
           <% {:error, :contract_not_verified, results} -> %>
-             <%= for {:ok, method_id, text, mapping} <- results do %>
+            <%= for {:ok, method_id, text, mapping} <- results do %>
                <dt class="col-md-2"><%= gettext "Decoded" %></dt>
                <dd class="col-md-10">
                <table summary="Transaction Info" class="table thead-light table-bordered transaction-input-table">
@@ -66,7 +66,23 @@
                  </tr>
                </table>
                <%= render BlockScoutWeb.LogView, "_data_decoded_view.html", mapping: mapping %>
-          <% end %>
+            <% end %>
+          <% {:error, :contract_verified, results} -> %>
+            <%= for {:ok, method_id, text, mapping} <- results do %>
+               <dt class="col-md-2"><%= gettext "Decoded" %></dt>
+               <dd class="col-md-10">
+               <table summary="Transaction Info" class="table thead-light table-bordered transaction-input-table">
+                 <tr>
+                   <td>Method Id</td>
+                   <td colspan="3"><code>0x<%= method_id %></code></td>
+                 </tr>
+                 <tr>
+                   <td>Call</td>
+                   <td colspan="3"><code><%= text %></code></td>
+                 </tr>
+               </table>
+               <%= render BlockScoutWeb.LogView, "_data_decoded_view.html", mapping: mapping %>
+            <% end %>
         <% _ -> %>
           <%= nil %>
       <% end %>

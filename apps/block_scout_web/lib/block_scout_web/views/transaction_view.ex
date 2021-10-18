@@ -184,33 +184,24 @@ defmodule BlockScoutWeb.TransactionView do
       end)
 
     new_acc1 =
-      if token_transfer.token_id do
-        [new_entry | acc1]
-      else
-        if existing_entry do
-          acc1
-          |> Enum.map(fn entry ->
-            if entry.to_address_hash == token_transfer.to_address_hash &&
-                 entry.from_address_hash == token_transfer.from_address_hash &&
-                 entry.token == token_transfer.token do
-              updated_entry =
-                if new_entry.amount do
-                  %{
-                    entry
-                    | amount: Decimal.add(new_entry.amount, entry.amount)
-                  }
-                else
-                  entry
-                end
-
-              updated_entry
-            else
+      if existing_entry do
+        acc1
+        |> Enum.map(fn entry ->
+          if entry.to_address_hash == token_transfer.to_address_hash &&
+               entry.from_address_hash == token_transfer.from_address_hash &&
+               entry.token == token_transfer.token do
+            updated_entry = %{
               entry
-            end
-          end)
-        else
-          [new_entry | acc1]
-        end
+              | amount: Decimal.add(new_entry.amount, entry.amount)
+            }
+
+            updated_entry
+          else
+            entry
+          end
+        end)
+      else
+        [new_entry | acc1]
       end
 
     {new_acc1, acc2}
@@ -220,6 +211,7 @@ defmodule BlockScoutWeb.TransactionView do
     case type do
       :erc20 -> gettext("ERC-20 ")
       :erc721 -> gettext("ERC-721 ")
+      :erc1155 -> gettext("ERC-1155 ")
       _ -> ""
     end
   end
@@ -336,8 +328,10 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def transaction_revert_reason(transaction) do
-    Chain.transaction_to_revert_reason(transaction)
+    transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction)
   end
+
+  def get_pure_transaction_revert_reason(transaction), do: Chain.transaction_to_revert_reason(transaction)
 
   def empty_exchange_rate?(exchange_rate) do
     Token.null?(exchange_rate)
@@ -377,6 +371,10 @@ defmodule BlockScoutWeb.TransactionView do
 
   def decoded_input_data(transaction) do
     Transaction.decoded_input_data(transaction)
+  end
+
+  def decoded_revert_reason(revert_reason, transaction) do
+    Transaction.decoded_revert_reason(transaction, revert_reason)
   end
 
   @doc """

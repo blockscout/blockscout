@@ -20,7 +20,7 @@
       <%= gettext "To have guaranteed accuracy, use the link above to verify the contract's source code." %>
 
       <%= for {:ok, method_id, text, mapping} <- candidates do %>
-        <hr>
+        <hr/>
         <h3><%= text %>: </h3>
 
         <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
@@ -28,6 +28,13 @@
     <% end %>
     <% {:ok, method_id, text, mapping} -> %>
       <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
+    <% {:error, :contract_verified, candidates} -> %>
+      <h3><%= gettext "Potential matches from our contract method database:" %></h3>
+      <%= for {:ok, method_id, text, mapping} <- candidates do %>
+        <hr/>
+        <h3><%= text %>: </h3>
+        <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
+      <% end %>
     <% _ -> %>
         <div class="alert alert-danger">
           <%= gettext "Failed to decode input data." %>
