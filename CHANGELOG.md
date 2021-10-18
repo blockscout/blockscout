@@ -21,6 +21,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
 - [#4778](https://github.com/blockscout/blockscout/pull/4778) - Migrate :optimization_runs field type: `int4 -> int8` in `smart_contracts` table
 - [#4768](https://github.com/blockscout/blockscout/pull/4768) - Block Details page: handle zero division
 - [#4751](https://github.com/blockscout/blockscout/pull/4751) - Change text and link for `trade STAKE` button
