@@ -366,9 +366,6 @@ defmodule Indexer.TokenBalancesTest do
                result: "0x0000000000000000000000000000000000000000000000000000000000000002"
              }
 
-           req ->
-             IO.inspect("Gimme req")
-             IO.inspect(req)
          end)
          |> Enum.shuffle()}
       end
