@@ -13,12 +13,12 @@ defmodule BlockScoutWeb.CSPHeader do
       "content-security-policy" => "\
         connect-src 'self' #{websocket_endpoints(conn)} *.poa.network/ https://request-global.czilladx.com/ https://raw.githubusercontent.com/trustwallet/assets/; \
         default-src 'self';\
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://hcaptcha.com https://assets.hcaptcha.com https://newassets.hcaptcha.com https://coinzillatag.com;;\
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' *.hcaptcha.com https://coinzillatag.com https://www.google.com https://www.gstatic.com;\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
         img-src 'self' * data:;\
         media-src 'self' * data:;\
         font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com data:;\
-        frame-src 'self' 'unsafe-inline' 'unsafe-eval' https://hcaptcha.com https://assets.hcaptcha.com https://newassets.hcaptcha.com https://request-global.czilladx.com/;\
+        frame-src 'self' 'unsafe-inline' 'unsafe-eval' *.hcaptcha.com https://request-global.czilladx.com/ https://www.google.com;\
       "
     })
   end

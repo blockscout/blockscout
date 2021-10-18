@@ -1,0 +1,12 @@
+<%= case @type do %>
+    <% :token_burning -> %>
+    <%= gettext("Token Burning") %>
+    <% :token_minting -> %>
+    <%= gettext("Token Minting") %>
+    <% :token_spawning -> %>
+    <%= gettext("Token Creation") %>
+    <% :token_transfer -> %>
+    <%= gettext("Token Transfer") %>
+    <% _ -> %>
+    <%= gettext("Token Transfer") %>
+<% end %>

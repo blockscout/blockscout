@@ -132,22 +132,6 @@ defmodule BlockScoutWeb.WebRouter do
         as: :verify_contract
       )
 
-      # if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-      #   resources(
-      #     "/contract_verifications",
-      #     AddressContractVerificationController,
-      #     only: [:new],
-      #     as: :verify_contract
-      #   )
-      # else
-      #   resources(
-      #     "/contract_verifications",
-      #     AddressContractVerificationViaFlattenedCodeController,
-      #     only: [:new],
-      #     as: :verify_contract
-      #   )
-      # end
-
       resources(
         "/verify-via-flattened-code",
         AddressContractVerificationViaFlattenedCodeController,
@@ -160,6 +144,13 @@ defmodule BlockScoutWeb.WebRouter do
         AddressContractVerificationViaJsonController,
         only: [:new],
         as: :verify_contract_via_json
+      )
+
+      resources(
+        "/verify-vyper-contract",
+        AddressContractVerificationVyperController,
+        only: [:new],
+        as: :verify_vyper_contract
       )
 
       resources(
@@ -276,6 +267,13 @@ defmodule BlockScoutWeb.WebRouter do
           only: [:index],
           as: :metadata
         )
+
+        resources(
+          "/token-holders",
+          Tokens.Instance.HolderController,
+          only: [:index],
+          as: :holder
+        )
       end
     end
 
@@ -327,6 +325,13 @@ defmodule BlockScoutWeb.WebRouter do
           only: [:index],
           as: :metadata
         )
+
+        resources(
+          "/token-holders",
+          Tokens.Instance.HolderController,
+          only: [:index],
+          as: :holder
+        )
       end
     end
 
@@ -345,7 +350,19 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-results", SearchController, :search_results)
 
+    get("/csv-export", CsvExportController, :index)
+
+    post("/captcha", CaptchaController, :index)
+
+    get("/transactions-csv", AddressTransactionController, :transactions_csv)
+
     get("/token-autocomplete", ChainController, :token_autocomplete)
+
+    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
+
+    get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
+
+    get("/logs-csv", AddressTransactionController, :logs_csv)
 
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
