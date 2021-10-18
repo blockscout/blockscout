@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.WebRouter do
   scope "/auth", BlockScoutWeb do
     pipe_through(:browser)
 
+    get("/profile", AuthController, :profile)
     get("/logout", AuthController, :logout)
     get("/:provider", AuthController, :request)
     get("/:provider/callback", AuthController, :callback)

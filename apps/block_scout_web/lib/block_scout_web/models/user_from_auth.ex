@@ -34,10 +34,12 @@ defmodule UserFromAuth do
     nil
   end
 
+  defp email_from_auth(%{info: %{email: email}}), do: email
+
   defp nickname_from_auth(%{info: %{nickname: nickname}}), do: nickname
 
   defp basic_info(auth) do
-    %{id: auth.uid, name: name_from_auth(auth), nickname: nickname_from_auth(auth), avatar: avatar_from_auth(auth)}
+    %{id: auth.uid, email: email_from_auth(auth), name: name_from_auth(auth), nickname: nickname_from_auth(auth), avatar: avatar_from_auth(auth)}
   end
 
   defp name_from_auth(auth) do

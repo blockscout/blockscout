@@ -10,6 +10,20 @@ defmodule BlockScoutWeb.AuthController do
     |> redirect(to: "/")
   end
 
+  def profile(conn, _params) do
+    case get_session(conn, :current_user) do
+      nil ->
+        conn
+        |> put_flash(:info, "You must sign in to view profile!")
+        |> redirect(to: "/")
+
+      %{} = user ->
+        conn
+        |> put_flash(:info, "You are signed in as " <> user.name <> ".")
+        |> render(:profile, user: user)
+    end
+  end
+
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Failed to authenticate.")

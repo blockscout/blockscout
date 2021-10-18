@@ -1,0 +1,43 @@
+<section class="container">
+  <div class="row">
+    <div class="col-2">
+      <nav class="nav flex-column">
+        <a class="nav-link active" aria-current="page" href="#">Profile</a>
+        <a class="nav-link disabled" href="#">Watchlist</a>
+        <a class="nav-link disabled" href="#">Address Tags</a>
+        <a class="nav-link disabled" href="#">Transaction Tags</a>
+      </nav>
+    </div>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body" >
+          <h1 class="card-title list-title-description">Profile</h1>
+          <br>
+          <div class="col-sm">
+            <img src="<%= @user.avatar %>" class="rounded float-start" alt="...">
+          </div>
+          <br>
+          <div class="col-sm">
+            <div class="mb-4 row">
+              <label for="staticEmail" class="col-sm-6 col-form-label">Name</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.name %>">
+              </div>
+            </div>
+            <div class="mb-4 row">
+              <label for="staticEmail" class="col-sm-6 col-form-label">Nickname</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.nickname %>">
+              </div>
+            </div>
+            <div class="mb-4 row">
+              <label for="staticEmail" class="col-sm-6 col-form-label">Email</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.email %>">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</section>
