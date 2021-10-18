@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Migrations.TransactionsBlockNumberBlockHashIndex do
   def change do
     create(
       index(
-        :public.transactions,
+        :transactions,
         ~w(block_number block_hash)a,
         concurrently: true
       )

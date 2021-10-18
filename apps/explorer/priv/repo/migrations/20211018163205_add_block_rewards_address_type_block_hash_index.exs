@@ -6,7 +6,7 @@ defmodule Explorer.Repo.Migrations.AddBlockRewardsAddressTypeBlockHashIndex do
   def change do
     create(
       index(
-        :public.block_rewards,
+        :block_rewards,
         ~w(address_type block_hash)a,
         concurrently: true
       )

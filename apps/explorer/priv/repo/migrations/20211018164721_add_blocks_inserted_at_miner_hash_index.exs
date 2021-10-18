@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Migrations.AddBlocksInsertedAtMinerHashIndex do
   def change do
     create(
       index(
-        :public.blocks,
+        :blocks,
         ~w(inserted_at miner_hash)a,
         concurrently: true
       )
