@@ -58,14 +58,6 @@
               <% end %>
             </div>
           </li>
-          <li class="nav-item">
-            <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("accounts", @conn.request_path)}" do %>
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
-              </span>
-              <%= gettext("Accounts") %>
-            <% end %>
-          </li>
           <%= if Chain.bridged_tokens_enabled?() do %>
             <li class="nav-item dropdown">
               <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -83,23 +75,46 @@
                 <%= link(
                       gettext("Bridged from Ethereum"),
                       class: "dropdown-item #{tab_status("bridged-tokens/eth", @conn.request_path)}",
-                      to: bridged_tokens_path(@conn, :show, :eth)
+                      to: bridged_tokens_path(@conn, :show, :eth),
+                      style: "white-space: nowrap;"
                     ) %>
                 <%= link(
                       gettext("Bridged from BSC"),
                       class: "dropdown-item #{tab_status("bridged-tokens/bsc", @conn.request_path)}",
                       to: bridged_tokens_path(@conn, :show, :bsc)
                     ) %>
+                <%= link(
+                      gettext("Bridged from xDAI"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/xdai", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :xdai)
+                    ) %>
+                <%= link(
+                      gettext("Ether"),
+                      class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
+                      to: address_path(@conn, :index)
+                    ) %>
               </div>
             </li>
           <% else %>
-            <li class="nav-item">
-              <%= link to: tokens_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("tokens", @conn.request_path)}" do %>
+            <li class="nav-item dropdown">
+              <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="nav-link-icon">
                   <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
                 </span>
                 <%= gettext("Tokens") %>
-              <% end %>
+              </a>
+              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+                <%= link(
+                      gettext("All"),
+                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
+                      to: tokens_path(@conn, :index)
+                    ) %>
+                <%= link(
+                      gettext("Ether"),
+                      class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
+                      to: address_path(@conn, :index)
+                    ) %>
+              </div>
             </li>
           <% end %>
         <% end %>

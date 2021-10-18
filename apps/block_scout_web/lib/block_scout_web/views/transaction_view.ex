@@ -540,6 +540,21 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  defp amb_tx?(hash) do
+    Chain.amb_xdai_tx?(hash)
+  end
+
+  defp show_alm_link?(hash) do
+    amb_tx?(hash)
+  end
+
+  defp get_alm_app_link(hash) do
+    cond do
+      Chain.amb_xdai_tx?(hash) == true -> "alm-poa-xdai.herokuapp.com"
+      true -> nil
+    end
+  end
+
   defp show_tenderly_link? do
     System.get_env("SHOW_TENDERLY_LINK") == "true"
   end

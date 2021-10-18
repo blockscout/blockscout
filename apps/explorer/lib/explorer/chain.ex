@@ -756,7 +756,11 @@ defmodule Explorer.Chain do
         select:
           sum(
             fragment(
-              "Case When ? < ? Then ? Else ? End",
+              "CASE 
+                WHEN ? = 0 THEN 0
+                WHEN ? < ? THEN ?
+                ELSE ? END",
+              tx.max_fee_per_gas,
               tx.max_fee_per_gas - ^base_fee_per_gas,
               tx.max_priority_fee_per_gas,
               (tx.max_fee_per_gas - ^base_fee_per_gas) * tx.gas_used,
@@ -3248,6 +3252,31 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Returns the list of empty blocks from the DB which have not marked with `t:Explorer.Chain.Block.is_empty/0`.
+  This query used for initializtion of Indexer.EmptyBlocksSanitizer
+  """
+  def unprocessed_empty_blocks_query_list(limit) do
+    query =
+      from(block in Block,
+        as: :block,
+        where: block.consensus == true,
+        where: is_nil(block.is_empty),
+        where:
+          not exists(
+            from(transaction in Transaction,
+              where: transaction.block_number == parent_as(:block).number
+            )
+          ),
+        select: {block.number, block.hash},
+        order_by: [desc: block.number],
+        limit: ^limit
+      )
+
+    query
+    |> Repo.all(timeout: :infinity)
+  end
+
+  @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.Address.t/0`.
 
       iex> Explorer.Chain.string_to_address_hash("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
@@ -3665,6 +3694,7 @@ defmodule Explorer.Chain do
       from(
         tx in Transaction,
         where: tx.created_contract_address_hash == ^address_hash,
+        where: tx.status == ^1,
         select: tx.input
       )
 
@@ -4326,6 +4356,15 @@ defmodule Explorer.Chain do
   defp page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
     do: page_pending_transaction(query, options)
 
+  defp page_transaction(query, %PagingOptions{key: {block_number, index}, is_index_in_asc_order: true}) do
+    where(
+      query,
+      [transaction],
+      transaction.block_number < ^block_number or
+        (transaction.block_number == ^block_number and transaction.index > ^index)
+    )
+  end
+
   defp page_transaction(query, %PagingOptions{key: {block_number, index}}) do
     where(
       query,
@@ -4647,7 +4686,18 @@ defmodule Explorer.Chain do
         )
       end
 
-    if !eth_omni_status && !bsc_omni_status do
+    {:ok, xdai_omni_status} =
+      if eth_omni_status || bsc_omni_status do
+        {:ok, false}
+      else
+        extract_omni_bridged_token_metadata_wrapper(
+          token_address_hash,
+          created_from_int_tx_success,
+          :xdai_omni_bridge_mediator
+        )
+      end
+
+    if !eth_omni_status && !bsc_omni_status && !xdai_omni_status do
       set_token_bridged_status(token_address_hash, false)
     end
   end
@@ -6872,9 +6922,11 @@ defmodule Explorer.Chain do
   def bridged_tokens_enabled? do
     eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
     bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
+    xdai_omni_bridge_mediator = Application.get_env(:block_scout_web, :xdai_omni_bridge_mediator)
 
     (eth_omni_bridge_mediator && eth_omni_bridge_mediator !== "") ||
-      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "")
+      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "") ||
+      (xdai_omni_bridge_mediator && xdai_omni_bridge_mediator !== "")
   end
 
   def bridged_tokens_eth_enabled? do
@@ -6926,6 +6978,26 @@ defmodule Explorer.Chain do
 
       _ ->
         {:error, "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd)."}
+    end
+  end
+
+  @spec amb_xdai_tx?(Address.t()) :: boolean()
+  def amb_xdai_tx?(hash) do
+    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
+
+    xdai_omni_bridge_mediator = String.downcase(System.get_env("XDAI_OMNI_BRIDGE_MEDIATOR", ""))
+
+    if xdai_omni_bridge_mediator == "" do
+      false
+    else
+      Repo.exists?(
+        from(
+          l in Log,
+          where: l.transaction_hash == ^hash,
+          where: fragment("first_topic like '0x59a9a802%'"),
+          where: l.address_hash == ^xdai_omni_bridge_mediator
+        )
+      )
     end
   end
 

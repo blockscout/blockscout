@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.BridgedTokensController do
     get_items(conn, params, :bsc)
   end
 
+  def show(conn, %{"type" => "JSON", "id" => "xdai"} = params) do
+    get_items(conn, params, :xdai)
+  end
+
   def show(conn, %{"id" => "eth"}) do
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
@@ -30,6 +34,15 @@ defmodule BlockScoutWeb.BridgedTokensController do
       chain: "Binance Smart Chain",
       chain_id: 56,
       destination: :bsc
+    )
+  end
+
+  def show(conn, %{"id" => "xdai"}) do
+    render(conn, "index.html",
+      current_path: Controller.current_full_path(conn),
+      chain: "xDai",
+      chain_id: 100,
+      destination: :xdai
     )
   end
 
