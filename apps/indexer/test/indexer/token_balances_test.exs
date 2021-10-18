@@ -365,7 +365,6 @@ defmodule Indexer.TokenBalancesTest do
                jsonrpc: "2.0",
                result: "0x0000000000000000000000000000000000000000000000000000000000000002"
              }
-
          end)
          |> Enum.shuffle()}
       end
