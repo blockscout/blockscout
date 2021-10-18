@@ -23,7 +23,7 @@ defmodule Indexer.EmptyBlocksSanitizer do
   @timeout 1_000
 
   # unprocessed emty blocks to fetch at once
-  @limit 100
+  @limit 400
 
   @interval :timer.minutes(2)
 
