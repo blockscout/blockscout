@@ -999,7 +999,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_token/overview.html.eex:1
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89 lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:126
 msgid "ETH"
 msgstr ""
 
@@ -2938,7 +2938,7 @@ msgid "Vyper contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:124
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
 msgid "WEI"
 msgstr ""
 
