@@ -569,7 +569,6 @@ defmodule Explorer.Chain do
           transaction.block_number == ^block_number and transaction.index == ^transaction_index and
             log.index > ^log_index,
         where: log.address_hash == ^address_hash,
-        limit: ^paging_options.page_size,
         select: log
       )
 
@@ -588,6 +587,7 @@ defmodule Explorer.Chain do
     wrapped_query
     |> filter_topic(options)
     |> where_block_number_in_period(from_block, to_block)
+    |> limit(^paging_options.page_size)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
   end
@@ -615,9 +615,7 @@ defmodule Explorer.Chain do
   end
 
   def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
-    from(q in base_query,
-      where: 1
-    )
+    base_query
   end
 
   def where_block_number_in_period(base_query, from_block, to_block) do
