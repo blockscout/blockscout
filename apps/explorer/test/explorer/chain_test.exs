@@ -590,6 +590,7 @@ defmodule Explorer.ChainTest do
         :reward,
         address_hash: block.miner_hash,
         block_hash: block.hash,
+        block_number: block.number,
         address_type: :validator
       )
 
@@ -597,6 +598,7 @@ defmodule Explorer.ChainTest do
         :reward,
         address_hash: block.miner_hash,
         block_hash: block.hash,
+        block_number: block.number,
         address_type: :emission_funds
       )
 
@@ -649,6 +651,7 @@ defmodule Explorer.ChainTest do
         :reward,
         address_hash: block.miner_hash,
         block_hash: block.hash,
+        block_number: block.number,
         address_type: :validator
       )
 
@@ -656,6 +659,7 @@ defmodule Explorer.ChainTest do
         :reward,
         address_hash: block.miner_hash,
         block_hash: block.hash,
+        block_number: block.number,
         address_type: :emission_funds
       )
 
