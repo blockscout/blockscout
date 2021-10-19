@@ -1,4 +1,4 @@
-<div class="tile tile-type-emission-reward fade-in" data-identifier-hash="<%= @validator.block.hash %>">
+<div class="tile tile-type-emission-reward fade-in" data-identifier-hash="<%= @validator.block_hash %>">
   <div class="row tile-body">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <span class="tile-label">
@@ -10,8 +10,8 @@
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <%= link(
-        @validator.block.hash,
-        to: block_path(BlockScoutWeb.Endpoint, :show, @validator.block.hash),
+        @validator.block_hash,
+        to: block_path(BlockScoutWeb.Endpoint, :show, @validator.block_hash),
         class: "text-truncate") %>
       <span class="text-nowrap">
         <%= @emission_funds |> BlockScoutWeb.AddressView.address_partial_selector(nil, @current_address) |> BlockScoutWeb.RenderHelpers.render_partial() %>

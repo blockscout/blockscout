@@ -283,7 +283,7 @@ defmodule BlockScoutWeb.Chain do
     %{"holder_count" => holder_count, "name" => token_name}
   end
 
-  defp paging_params({%Reward{block: %{number: number}}, _}) do
+  defp paging_params({%Reward{block_number: number}, _}) do
     %{"block_number" => number, "index" => 0}
   end
 
