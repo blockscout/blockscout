@@ -7,7 +7,9 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.{PublisherWorker, Solidity.CodeCompiler, Solidity.CompilerVersion}
+  alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
+  alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
+  alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
@@ -26,7 +28,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         )
 
       compiler_versions =
-        case CompilerVersion.fetch_versions() do
+        case CompilerVersion.fetch_versions(:solc) do
           {:ok, compiler_versions} ->
             compiler_versions
 
@@ -50,7 +52,18 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "external_libraries" => external_libraries
         }
       ) do
-    Que.add(PublisherWorker, {smart_contract["address_hash"], smart_contract, external_libraries, conn})
+    Que.add(SolidityPublisherWorker, {smart_contract["address_hash"], smart_contract, external_libraries, conn})
+
+    send_resp(conn, 204, "")
+  end
+
+  def create(
+        conn,
+        %{
+          "smart_contract" => smart_contract
+        }
+      ) do
+    Que.add(VyperPublisherWorker, {smart_contract["address_hash"], smart_contract, conn})
 
     send_resp(conn, 204, "")
   end
@@ -104,7 +117,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   end
 
   def create(conn, _params) do
-    Que.add(PublisherWorker, {"", %{}, %{}, conn})
+    Que.add(SolidityPublisherWorker, {"", %{}, %{}, conn})
 
     send_resp(conn, 204, "")
   end

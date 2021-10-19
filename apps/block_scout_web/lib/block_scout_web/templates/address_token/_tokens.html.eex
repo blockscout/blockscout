@@ -1,22 +1,69 @@
-<div class="tile tile-type-token">
-  <div class="row justify-content align-items-center">
-    <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
-      <%= link(
-            to: address_token_transfers_path(@conn, :index, to_string(@address.hash), to_string(@token.contract_address_hash)),
-            class: "tile-title-lg",
-            "data-test": "token_transfers_#{@token.contract_address_hash}"
-        ) do %>
-        <%= token_name(@token) %>
-      <% end %>
-      <span><%= @token.type %> - <%= @token.contract_address_hash %></span>
-      <%= if @token.usd_value do %>
-        <span data-selector="token-price" data-usd-value="<%= @token.usd_value %>"></span>
-      <% end %>
-    </div>
-    <div class="col-md-5 d-flex flex-column text-md-right mt-3 mt-md-0">
-      <span class="tile-title-lg text-md-right align-bottom">
-        <%= format_according_to_decimals(@token.balance, @token.decimals) %> <%= @token.symbol %>
+<tr data-identifier-hash="<%= @token.contract_address_hash %>">
+  <td class="stakes-td">
+      <!-- incremented number by order in the list -->
+      <span class="color-lighten">
       </span>
-    </div>
-  </div>
-</div>
+  </td>
+  <td class="stakes-td">
+    <span
+        class="token-icon mr-1"
+    >
+    <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+      <% chain_id_for_token_icon = if @bridged_token && @bridged_token.foreign_chain_id, do: @bridged_token.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
+      <% address_hash = if @bridged_token && @bridged_token.foreign_token_contract_address_hash, do: @bridged_token.foreign_token_contract_address_hash, else: @token.contract_address_hash %>
+      <% token_icon_url = Chain.get_token_icon_url_by(chain_id_for_token_icon, Address.checksum(address_hash)) %>
+
+      <%= if token_icon_url do %>
+          <img heigth=15 width=15 src="<%= token_icon_url %>" style="margin-top: -2px;"/>
+      <% end %>
+    <% end %>
+    </span>
+    <%= link(
+          to: address_token_transfers_path(@conn, :index, to_string(@address.hash), to_string(@token.contract_address_hash)),
+          class: "tile-title-lg",
+          "data-test": "token_transfers_#{@token_balance.token.contract_address_hash}"
+      ) do %>
+      <%= token_name(@token) %>
+    <% end %>
+  </td>
+  <td class="stakes-td">
+    <%= @token.type  %>
+  </td>
+  <td class="stakes-td">
+    <%= format_according_to_decimals(@token_balance.value, @token.decimals)  %>
+  </td>
+  <td class="stakes-td">
+    <%= @token.symbol %>
+  </td>
+  <td class="stakes-td">
+    <p class="mb-0 col-md-6 text-right text-muted">
+      <% token_price = if @token_balance.token.usd_value, do: @token_balance.token.usd_value, else: nil %>
+      <span data-selector="token-price" data-token-usd-value="<%= @token_balance.token.usd_value %>"><%= ChainView.format_currency_value(token_price, "@") %></span>
+    </p>
+  </td>
+  <td class="stakes-td">
+    <%= if @bridged_token && @bridged_token.lp_token && @bridged_token.custom_cap do %>
+      <% lp_token_balance_usd = @token_balance.value |> Decimal.div(@token_balance.token.total_supply) |> Decimal.mult(@bridged_token.custom_cap) |> Decimal.round(4) %>
+      <p class="mb-0 col-md-6 text-right">
+        <span data-selector="token-balance-usd" data-usd-value="<%= lp_token_balance_usd %>"><%= ChainView.format_usd_value(lp_token_balance_usd) %></span>
+      </p>
+    <% else %>
+      <%= if @token_balance.token.usd_value do %>
+        <p class="mb-0 col-md-6 text-right">
+          <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(@token_balance) %>"><%= ChainView.format_usd_value(Chain.balance_in_usd(@token_balance)) %></span>
+        </p>
+      <% end %>
+    <% end %>
+  </td>
+  <td class="stakes-td">
+    <%= with {:ok, address} <- Chain.hash_to_address(@token.contract_address_hash) do
+      render BlockScoutWeb.AddressView,
+      "_link.html",
+      address: address,
+      contract: false,
+      use_custom_tooltip: false,
+      no_tooltip: true
+    end
+    %>
+  </td>
+</tr>

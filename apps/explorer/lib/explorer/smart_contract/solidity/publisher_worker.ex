@@ -1,4 +1,4 @@
-defmodule Explorer.SmartContract.PublisherWorker do
+defmodule Explorer.SmartContract.Solidity.PublisherWorker do
   @moduledoc """
   Background smart contract verification worker.
   """
@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.PublisherWorker do
   use Que.Worker, concurrency: 5
 
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
-  alias Explorer.SmartContract.Publisher
+  alias Explorer.SmartContract.Solidity.Publisher
 
   def perform({address_hash, params, external_libraries, conn}) do
     result =
