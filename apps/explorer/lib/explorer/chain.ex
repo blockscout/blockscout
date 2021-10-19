@@ -385,7 +385,7 @@ defmodule Explorer.Chain do
     |> Enum.sort_by(fn item ->
       case item do
         {%Reward{} = emission_reward, _} ->
-          {-emission_reward.block.number, 1}
+          {-emission_reward.block_number, 1}
 
         item ->
           block_number = if item.block_number, do: -item.block_number, else: 0
