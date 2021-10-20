@@ -1956,7 +1956,7 @@ msgid "Search network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:50
+#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:47
 msgid "Search tokens"
 msgstr ""
 
@@ -3205,4 +3205,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:10
 msgid "Error"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_token/overview.html.eex:65
+msgid "CRC Worth"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_token/overview.html.eex:66
+msgid "Shows the total CRC balance in the address."
 msgstr ""
