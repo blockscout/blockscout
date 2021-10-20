@@ -33,7 +33,7 @@
   <% end %>
   <td class="stakes-td">
     <%= if decimals?(@token) do %>
-      <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals, @token.symbol) %></span>
+      <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>
     <% else %>
       <span data-test="token_supply"><%= format_integer_to_currency(@token.total_supply) %></span>
     <% end %> <%= @token.symbol %>

@@ -17,39 +17,26 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   represents the ERC-721 token since this kind of token doesn't have amount and decimals.
   """
   def token_transfer_amount(%{token: token, amount: amount, token_id: token_id}) do
-    do_token_transfer_amount(token, amount, token_id, token)
+    do_token_transfer_amount(token, amount, token_id)
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20"}, nil, _token_id, %Token{type: "ERC-20"}) do
+  defp do_token_transfer_amount(%Token{type: "ERC-20"}, nil, _token_id) do
     {:ok, "--"}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: nil}, amount, _token_id, %Token{
-         type: "ERC-20",
-         symbol: nil
-       }) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, Decimal.new(0), "TOKEN")}
+  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: nil}, amount, _token_id) do
+    {:ok, CurrencyHelpers.format_according_to_decimals(amount, Decimal.new(0))}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _token_id, %Token{
-         type: "ERC-20",
-         symbol: nil
-       }) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals, "TOKEN")}
+  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _token_id) do
+    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals)}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _token_id, %Token{
-         type: "ERC-20",
-         symbol: symbol
-       }) do
-    {:ok, CurrencyHelpers.format_according_to_decimals(amount, decimals, symbol)}
-  end
-
-  defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, _token_id, _symbol) do
+  defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, _token_id) do
     {:ok, :erc721_instance}
   end
 
-  defp do_token_transfer_amount(_token, _amount, _token_id, _symbol) do
+  defp do_token_transfer_amount(_token, _amount, _token_id) do
     nil
   end
 

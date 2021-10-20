@@ -932,18 +932,16 @@ defmodule Explorer.Chain do
       |> Wei.to(unit)
       |> Decimal.mult(gas)
 
-    {:actual, fee}
     {:maximum, fee}
   end
 
   @spec fee(%Transaction{gas_used: Decimal.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
-  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: gas_used}, unit) do
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
     fee =
       gas_price
       |> Wei.to(unit)
-      |> Decimal.mult(gas)
+      |> Decimal.mult(gas_used)
 
-    {:ok, gas_used}
     {:actual, fee}
   end
 
