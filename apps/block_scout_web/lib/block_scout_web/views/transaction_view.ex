@@ -301,9 +301,6 @@ defmodule BlockScoutWeb.TransactionView do
 
   def contract_creation?(_), do: false
 
-  #  def utf8_encode() do
-  #  end
-
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
     value
@@ -330,6 +327,8 @@ defmodule BlockScoutWeb.TransactionView do
   def transaction_revert_reason(transaction) do
     transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction)
   end
+
+  def get_pure_transaction_revert_reason(nil), do: nil
 
   def get_pure_transaction_revert_reason(transaction), do: Chain.transaction_to_revert_reason(transaction)
 
@@ -565,5 +564,34 @@ defmodule BlockScoutWeb.TransactionView do
 
   defp template_to_string(template) when is_tuple(template) do
     safe_to_string(template)
+  end
+
+  # Function decodes revert reason of the transaction
+  @spec decoded_revert_reason(%Transaction{} | nil) :: binary() | nil
+  def decoded_revert_reason(transaction) do
+    revert_reason = get_pure_transaction_revert_reason(transaction)
+
+    case revert_reason do
+      "0x" <> hex_part ->
+        proccess_hex_revert_reason(hex_part)
+
+      hex_part ->
+        proccess_hex_revert_reason(hex_part)
+    end
+  end
+
+  # Function converts hex revert reason to the binary
+  @spec proccess_hex_revert_reason(nil) :: nil
+  defp proccess_hex_revert_reason(nil), do: nil
+
+  @spec proccess_hex_revert_reason(binary()) :: binary()
+  defp proccess_hex_revert_reason(hex_revert_reason) do
+    case Integer.parse(hex_revert_reason, 16) do
+      {number, ""} ->
+        :binary.encode_unsigned(number)
+
+      _ ->
+        hex_revert_reason
+    end
   end
 end
