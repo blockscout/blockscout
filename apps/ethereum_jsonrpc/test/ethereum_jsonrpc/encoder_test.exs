@@ -78,6 +78,55 @@ defmodule EthereumJSONRPC.EncoderTest do
                {"sum", {:error, "(-32602) Invalid params: Invalid hex: Invalid character 'x' at position 134."}}
     end
 
+    test "correctly handles the blockchain error response with returning error as map" do
+      result = %{
+        error: %{
+          code: -32602,
+          message: "Invalid params: Invalid hex: Invalid character 'x' at position 134."
+        },
+        id: "sum",
+        jsonrpc: "2.0"
+      }
+
+      selector = %ABI.FunctionSelector{
+        function: "get",
+        returns: {:uint, 256},
+        types: [{:uint, 256}]
+      }
+
+      assert Encoder.decode_result(result, selector, true) ==
+               {"sum",
+                {:error,
+                 %{code: -32602, message: "Invalid params: Invalid hex: Invalid character 'x' at position 134."}}}
+    end
+
+    test "correctly handles the blockchain error response with returning error as map 1" do
+      result = %{
+        error: %{
+          code: -32602,
+          message: "Invalid params: Invalid hex: Invalid character 'x' at position 134.",
+          data: "0x01"
+        },
+        id: "sum",
+        jsonrpc: "2.0"
+      }
+
+      selector = %ABI.FunctionSelector{
+        function: "get",
+        returns: {:uint, 256},
+        types: [{:uint, 256}]
+      }
+
+      assert Encoder.decode_result(result, selector, true) ==
+               {"sum",
+                {:error,
+                 %{
+                   code: -32602,
+                   message: "Invalid params: Invalid hex: Invalid character 'x' at position 134.",
+                   data: "0x01"
+                 }}}
+    end
+
     test "correctly decodes string types" do
       result =
         "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000441494f4e00000000000000000000000000000000000000000000000000000000"
