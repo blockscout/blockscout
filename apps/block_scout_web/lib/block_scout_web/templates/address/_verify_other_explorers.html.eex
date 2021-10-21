@@ -1,21 +1,21 @@
 <div>
 
-  <div class="verify-other-explorers">
+  <div class="verify-other-explorers mt-0 mb-3">
     <h2>Verify with other Explorers:</h2>
     <div class="verify-other-explorers-row">
       <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Blockchair.com", class: "blockchair", address_link: "https://blockchair.com/ethereum/address/", tx_link: "https://blockchair.com/ethereum/transaction/" %>
       <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherscan.io", class: "etherscan", address_link: "https://etherscan.io/address/", tx_link: "https://etherscan.io/tx/" %>
       <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherchain.org", class: "etherchain", address_link: "https://www.etherchain.org/account/", tx_link: "https://www.etherchain.org/tx/" %>
-      <a href="#" class="verify-other-explorers-more" data-toggle="modal" data-target="#explorersModal">
+      <!--<a href="#" class="verify-other-explorers-more" data-toggle="modal" data-target="#explorersModal">
         <span data-toggle="tooltip" data-placement="top" data-original-title="Explorers"></span>
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="4">
             <path fill="#49A2EE" fill-rule="evenodd" d="M16 4a2 2 0 1 1-.001-3.999A2 2 0 0 1 16 4zM9 4A2 2 0 1 1 8.999.001 2 2 0 0 1 9 4zM2 4A2 2 0 1 1 1.999.001 2 2 0 0 1 2 4z" />
         </svg>
-      </a>
+      </a>-->
     </div>
   </div>
 
-  <div class="modal fade" tabindex="-1" role="dialog" id="explorersModal">
+  <!--<div class="modal fade" tabindex="-1" role="dialog" id="explorersModal">
     <div class="modal-dialog verify-other-explorers-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -33,6 +33,6 @@
         </div>
       </div>
     </div>
-  </div>
+  </div>-->
 
 </div>
