@@ -3,4 +3,16 @@ $btn-contract-dimensions: 31px !default;
 
 .btn-contract-icon {
   @include square-icon-button($btn-contract-color, $btn-contract-dimensions);
+  display: block;
+  
+  @media not all and (min-resolution:.001dpcm)
+  { @supports (-webkit-appearance:none) {
+    svg {
+      &.safari_only { 
+        height: 32px;
+        width: 32px;
+        margin: 6.5px;
+      }
+    }
+  }}
 }
