@@ -7196,13 +7196,7 @@ defmodule Explorer.Chain do
       try_url =
         "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/#{chain_name}/assets/#{address_hash}/logo.png"
 
-      %HTTPoison.Response{status_code: status_code} = HTTPoison.get!(try_url)
-
-      if status_code == 200 do
-        try_url
-      else
-        nil
-      end
+      try_url
     else
       nil
     end
