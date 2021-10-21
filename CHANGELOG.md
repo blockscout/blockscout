@@ -23,6 +23,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4783](https://github.com/blockscout/blockscout/pull/4783) - Resolves request timeout for getting transactions on Emission funds contract address page
 - [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
 - [#4778](https://github.com/blockscout/blockscout/pull/4778) - Migrate :optimization_runs field type: `int4 -> int8` in `smart_contracts` table
 - [#4768](https://github.com/blockscout/blockscout/pull/4768) - Block Details page: handle zero division
