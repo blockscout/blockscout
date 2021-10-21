@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.EncoderTest do
                {"sum", {:error, "(-32602) Invalid params: Invalid hex: Invalid character 'x' at position 134."}}
     end
 
-    test "correctly handles the blockchain error response with returning error as map" do
+    test "correctly handles the blockchain error response with returning error as map without data" do
       result = %{
         error: %{
           code: -32602,
@@ -100,7 +100,7 @@ defmodule EthereumJSONRPC.EncoderTest do
                  %{code: -32602, message: "Invalid params: Invalid hex: Invalid character 'x' at position 134."}}}
     end
 
-    test "correctly handles the blockchain error response with returning error as map 1" do
+    test "correctly handles the blockchain error response with returning error as map with data" do
       result = %{
         error: %{
           code: -32602,
