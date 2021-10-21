@@ -6,8 +6,6 @@
 <%= case @outputs do %>
     <% {:error, %{code: code, message: message, data: data}} -> %>
         <% revert_reason = Chain.format_revert_reason_message(data) %>
-        <% decoded_revert_reason = decode_hex_revert_reason(revert_reason) %>
-        <pre><span class="text-muted"><div style="padding-left: 20px"><%= "(#{code}) #{message} (#{if String.valid?(decoded_revert_reason), do: decoded_revert_reason, else: revert_reason})" %></div></span></pre>
         <%= case decode_revert_reason(@smart_contract_address, revert_reason) do %>
             <% {:ok, _identifier, text, mapping} -> %>
                 <pre><%= raw(values_with_type(text, :error, nil)) %></pre>
@@ -17,7 +15,8 @@
                     <% end %>
                 </div>
             <% {:error, _contract_verified, []} -> %>
-                <%= nil %>
+                <% decoded_revert_reason = decode_hex_revert_reason(revert_reason) %>
+                <pre><span class="text-muted"><div style="padding-left: 20px"><%= "(#{code}) #{message} (#{if String.valid?(decoded_revert_reason), do: decoded_revert_reason, else: revert_reason})" %></div></span></pre>
             <% {:error, _contract_verified, candidates} -> %>
                 <% {:ok, _identifier, text, mapping} = Enum.at(candidates, 0) %>
                 <pre><%= raw(values_with_type(text, :error, nil)) %></pre>
@@ -27,7 +26,8 @@
                     <% end %>
                 </div>
             <% _ -> %>
-                <%= nil %>
+                <% decoded_revert_reason = decode_hex_revert_reason(revert_reason) %>
+                <pre><span class="text-muted"><div style="padding-left: 20px"><%= "(#{code}) #{message} (#{if String.valid?(decoded_revert_reason), do: decoded_revert_reason, else: revert_reason})" %></div></span></pre>
         <% end %>
     <% {:error, %{code: code, message: message}} -> %>
         <pre><div style="padding-left: 20px">(error) : <%= "(#{code}) #{message}" %></div></pre>
