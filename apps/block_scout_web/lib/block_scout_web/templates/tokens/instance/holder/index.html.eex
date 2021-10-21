@@ -1,0 +1,41 @@
+<section class="container">
+  <%= render(
+    OverviewView,
+    "_details.html",
+    token: @token,
+    total_token_transfers: @total_token_transfers,
+    token_id: @token_instance.token_id,
+    token_instance: @token_instance,
+    conn: @conn
+  ) %>
+
+  <section>
+    <div class="card">
+      <%= render OverviewView, "_tabs.html", assigns %>
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+        <h2 class="card-title list-title-description"><%= gettext "Token Holders" %></h2>
+
+        <div class="list-top-pagination-container-wrapper">
+          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        </div>
+
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
+
+        <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
+          <span data-selector="empty-transactions-list">
+            <%= gettext "There are no transfers for this Token." %>
+          </span>
+        </div>
+
+        <div data-items>
+          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+        </div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+      </div>
+    </div>
+  </section>
+</section>

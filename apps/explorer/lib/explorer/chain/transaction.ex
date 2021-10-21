@@ -444,6 +444,27 @@ defmodule Explorer.Chain.Transaction do
     preload(query, [tt], token_transfers: ^token_transfers_query)
   end
 
+  def decoded_revert_reason(transaction, revert_reason) do
+    case revert_reason do
+      "0x" <> hex_part ->
+        proccess_hex_revert_reason(hex_part, transaction)
+
+      hex_part ->
+        proccess_hex_revert_reason(hex_part, transaction)
+    end
+  end
+
+  defp proccess_hex_revert_reason(hex_revert_reason, %__MODULE__{to_address: smart_contract, hash: hash}) do
+    case Integer.parse(hex_revert_reason, 16) do
+      {number, ""} ->
+        binary_revert_reason = :binary.encode_unsigned(number)
+        decoded_input_data(%Transaction{to_address: smart_contract, hash: hash, input: %{bytes: binary_revert_reason}})
+
+      _ ->
+        hex_revert_reason
+    end
+  end
+
   # Because there is no contract association, we know the contract was not verified
   def decoded_input_data(%__MODULE__{to_address: nil}), do: {:error, :no_to_address}
   def decoded_input_data(%__MODULE__{input: %{bytes: bytes}}) when bytes in [nil, <<>>], do: {:error, :no_input_data}
@@ -483,7 +504,27 @@ defmodule Explorer.Chain.Transaction do
         to_address: %{smart_contract: %{abi: abi, address_hash: address_hash}},
         hash: hash
       }) do
-    do_decoded_input_data(data, abi, address_hash, hash)
+    case do_decoded_input_data(data, abi, address_hash, hash) do
+      # In some cases transactions use methods of some unpredictadle contracts, so we can try to look up for method in a whole DB
+      {:error, :could_not_decode} ->
+        case decoded_input_data(%__MODULE__{
+               to_address: %{smart_contract: nil},
+               input: %{bytes: data},
+               hash: hash
+             }) do
+          {:error, :contract_not_verified, []} ->
+            {:error, :could_not_decode}
+
+          {:error, :contract_not_verified, candidates} ->
+            {:error, :contract_verified, candidates}
+
+          _ ->
+            {:error, :could_not_decode}
+        end
+
+      output ->
+        output
+    end
   end
 
   defp do_decoded_input_data(data, abi, address_hash, hash) do

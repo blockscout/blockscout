@@ -1,12 +1,12 @@
-defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
+defmodule Explorer.SmartContract.CompilerVersionTest do
   use ExUnit.Case
 
-  doctest Explorer.SmartContract.Solidity.CompilerVersion
+  doctest Explorer.SmartContract.CompilerVersion
 
-  alias Explorer.SmartContract.Solidity.CompilerVersion
+  alias Explorer.SmartContract.CompilerVersion
   alias Plug.Conn
 
-  describe "fetch_versions" do
+  describe "fetch_versions/1" do
     setup do
       bypass = Bypass.open()
 
@@ -23,7 +23,7 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
         Conn.resp(conn, 200, solc_bin_versions())
       end)
 
-      assert {:ok, versions} = CompilerVersion.fetch_versions()
+      assert {:ok, versions} = CompilerVersion.fetch_versions(:solc)
       assert Enum.any?(versions, fn item -> item == "v0.4.9+commit.364da425" end) == true
     end
 
@@ -35,7 +35,7 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
         Conn.resp(conn, 200, solc_bin_versions())
       end)
 
-      assert {:ok, versions} = CompilerVersion.fetch_versions()
+      assert {:ok, versions} = CompilerVersion.fetch_versions(:solc)
       assert List.first(versions) == "latest"
     end
 
@@ -44,13 +44,13 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
         Conn.resp(conn, 400, ~S({"error": "bad request"}))
       end)
 
-      assert {:error, "bad request"} = CompilerVersion.fetch_versions()
+      assert {:error, "bad request"} = CompilerVersion.fetch_versions(:solc)
     end
 
     test "returns error when there is server error", %{bypass: bypass} do
       Bypass.down(bypass)
 
-      assert {:error, :econnrefused} = CompilerVersion.fetch_versions()
+      assert {:error, :econnrefused} = CompilerVersion.fetch_versions(:solc)
     end
   end
 

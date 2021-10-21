@@ -110,51 +110,8 @@ defmodule EthereumJSONRPC.Transaction do
         transaction_index: 0
       }
 
-      Ganache bug: https://github.com/trufflesuite/ganache/issues/997
-      Invalid input of `0x0` is converted to `0x`.
-
-      iex> EthereumJSONRPC.Transaction.elixir_to_params(
-      ...>   %{
-      ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
-      ...>     "blockNumber" => 46147,
-      ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
-      ...>     "gas" => 21000,
-      ...>     "gasPrice" => 50000000000000,
-      ...>     "hash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-      ...>     "input" => "0x0",
-      ...>     "nonce" => 0,
-      ...>     "r" => 61965845294689009770156372156374760022787886965323743865986648153755601564112,
-      ...>     "s" => 31606574786494953692291101914709926755545765281581808821704454381804773090106,
-      ...>     "to" => "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
-      ...>     "transactionIndex" => 0,
-      ...>     "v" => 28,
-      ...>     "value" => 31337
-      ...>   }
-      ...> )
-      %{
-        block_hash: "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
-        block_number: 46147,
-        from_address_hash: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
-        gas: 21000,
-        gas_price: 50000000000000,
-        hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-        index: 0,
-        input: "0x",
-        nonce: 0,
-        r: 61965845294689009770156372156374760022787886965323743865986648153755601564112,
-        s: 31606574786494953692291101914709926755545765281581808821704454381804773090106,
-        to_address_hash: "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
-        v: 28,
-        value: 31337,
-        transaction_index: 0
-      }
-
   """
   @spec elixir_to_params(elixir) :: params
-
-  def elixir_to_params(%{"input" => "0x0"} = transaction) do
-    elixir_to_params(%{transaction | "input" => "0x"})
-  end
 
   def elixir_to_params(
         %{
@@ -384,38 +341,6 @@ defmodule EthereumJSONRPC.Transaction do
     else
       result
     end
-  end
-
-  # Ganache bug. it return `to: "0x0"` except of `to: null`
-  def elixir_to_params(
-        %{
-          "to" => "0x0"
-        } = transaction
-      ) do
-    %{transaction | "to" => nil}
-    |> elixir_to_params()
-  end
-
-  # Ganache bug. It don't send `r,s,v` transaction fields.
-  # Fix is in sources but not released yet
-  def elixir_to_params(
-        %{
-          "blockHash" => _,
-          "blockNumber" => _,
-          "from" => _,
-          "gas" => _,
-          "gasPrice" => _,
-          "hash" => _,
-          "input" => _,
-          "nonce" => _,
-          "to" => _,
-          "transactionIndex" => _,
-          "value" => _
-        } = transaction
-      ) do
-    transaction
-    |> Map.merge(%{"r" => 0, "s" => 0, "v" => 0})
-    |> elixir_to_params()
   end
 
   def elixir_to_params(

@@ -35,7 +35,8 @@ defmodule BlockScoutWeb.Tokens.HolderController do
           View.render_to_string(HolderView, "_token_balances.html",
             address_hash: address_hash,
             token_balance: token_balance,
-            token: token
+            token: token,
+            conn: conn
           )
         end)
 

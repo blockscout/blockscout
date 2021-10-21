@@ -22,7 +22,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
-    # CoinBalanceOnDemand,
+    CoinBalanceOnDemand,
     ContractCode,
     InternalTransaction,
     PendingTransaction,
@@ -30,7 +30,7 @@ defmodule Indexer.Supervisor do
     Token,
     TokenBalance,
     TokenInstance,
-    # TokenTotalSupplyOnDemand,
+    TokenTotalSupplyOnDemand,
     TokenUpdater,
     UncleBlock
   }
@@ -126,9 +126,9 @@ defmodule Indexer.Supervisor do
       {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
 
       # Out-of-band fetchers
-      # {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {EmptyBlocksSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
-      # {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
       {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers

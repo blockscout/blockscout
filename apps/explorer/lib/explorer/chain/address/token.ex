@@ -34,17 +34,16 @@ defmodule Explorer.Chain.Address.Token do
 
     address_hash
     |> join_with_last_balance()
-    |> order_filter_and_group()
+    |> filter_and_group()
+    |> order()
     |> page_tokens(paging_options)
     |> limit(^paging_options.page_size)
   end
 
-  defp order_filter_and_group(query) do
+  defp filter_and_group(query) do
     from(
       [token, balance] in query,
-      order_by: fragment("? DESC, LOWER(?) ASC NULLS LAST", token.type, token.name),
       where: balance.value > 0,
-      group_by: [token.name, token.symbol, balance.value, token.type, token.contract_address_hash],
       select: %Address.Token{
         contract_address_hash: token.contract_address_hash,
         inserted_at: max(token.inserted_at),
@@ -53,22 +52,40 @@ defmodule Explorer.Chain.Address.Token do
         balance: balance.value,
         decimals: max(token.decimals),
         type: token.type
-      }
+      },
+      group_by: [token.name, token.symbol, balance.value, token.type, token.contract_address_hash, balance.block_number]
+    )
+  end
+
+  defp order(query) do
+    from(
+      token in subquery(query),
+      order_by: fragment("? DESC, ? ASC NULLS LAST", token.type, token.name)
     )
   end
 
   defp join_with_last_balance(address_hash) do
     last_balance_query =
       from(
-        tb in CurrentTokenBalance,
-        where: tb.address_hash == ^address_hash,
-        select: %{value: tb.value, token_contract_address_hash: tb.token_contract_address_hash}
+        ctb in CurrentTokenBalance,
+        where: ctb.address_hash == ^address_hash,
+        select: %{
+          value: ctb.value,
+          token_contract_address_hash: ctb.token_contract_address_hash,
+          block_number: ctb.block_number,
+          max_block_number: over(max(ctb.block_number), :w)
+        },
+        windows: [
+          w: [partition_by: [ctb.token_contract_address_hash, ctb.address_hash]]
+        ]
       )
 
     from(
       t in Chain.Token,
       join: tb in subquery(last_balance_query),
-      on: tb.token_contract_address_hash == t.contract_address_hash
+      on: tb.token_contract_address_hash == t.contract_address_hash,
+      where: tb.block_number == tb.max_block_number,
+      distinct: t.contract_address_hash
     )
   end
 

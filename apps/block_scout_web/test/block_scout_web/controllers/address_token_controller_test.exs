@@ -117,7 +117,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
           "token_name" => name,
           "token_type" => type,
-          "token_inserted_at" => inserted_at,
+          "value" => 1000,
           "type" => "JSON"
         })
 
