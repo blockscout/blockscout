@@ -65,7 +65,15 @@ const config = {
         grid: grid,
         ticks: {
           beginAtZero: true,
-          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
+          callback: (value, _index, _values) => {
+            const formattedValue = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              notation: 'compact',
+              compactDisplay: 'short'
+            }).format(value)
+            return formattedValue
+          },
           maxTicksLimit: 4,
           color: sassVariables.dashboardBannerChartAxisFontColor
         }
@@ -85,7 +93,13 @@ const config = {
         grid: grid,
         ticks: {
           beginAtZero: true,
-          callback: (value, _index, _values) => formatValue(value),
+          callback: (value, _index, _values) => {
+            const formattedValue = new Intl.NumberFormat('en-US', {
+              notation: 'compact',
+              compactDisplay: 'short'
+            }).format(value)
+            return formattedValue
+          },
           maxTicksLimit: 4,
           color: sassVariables.dashboardBannerChartAxisFontColor
         }
