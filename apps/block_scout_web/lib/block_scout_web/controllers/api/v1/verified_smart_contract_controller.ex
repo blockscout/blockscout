@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
 
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
-  alias Explorer.SmartContract.Publisher
+  alias Explorer.SmartContract.Solidity.Publisher
 
   def create(conn, params) do
     with {:ok, hash} <- validate_address_hash(params["address_hash"]),

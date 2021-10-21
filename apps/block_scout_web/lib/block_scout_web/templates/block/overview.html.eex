@@ -6,7 +6,7 @@
     <div class="col-md-12 js-ad-dependant-mb-2">
       <!-- Block Details -->
       <div class="card js-ad-dependant-mb-2">
-        <div class="card-body transaction-details">
+        <div class="card-body fs-14" style="line-height: 32px;">
           <dl class="pagination-container">
             <h1 class="card-title" data-test="detail_type">
               <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
@@ -74,7 +74,7 @@
               <%= gettext("Transactions") %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
-              <a href="#txs" class="page-link bs-label large btn-no-border-transactions">
+              <a href="#txs" class="page-link bs-label large btn-no-border-link-to-tems">
                 <%= if @block_transaction_count == 1 do %>
                   <%= gettext "%{count} Transaction", count: @block_transaction_count %>
                 <% else %>
@@ -91,8 +91,7 @@
                 text: gettext("A block producer who successfully included the block onto the blockchain.") %>
                 <%= gettext("Validator") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10">
-                <%= render BlockScoutWeb.AddressView, "_link.html", address: block_miner(@block), contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
+              <dd class="col-sm-9 col-lg-10"><%= render BlockScoutWeb.AddressView, "_link.html", address: @block.miner, contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @block.miner,

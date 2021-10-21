@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+    only: [paging_options: 1, put_key_value_to_paging_options: 3, next_page_params: 3, split_list_by_page: 1]
 
   import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2, string_to_block_hash: 1]
 
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
                 [to_address: :names] => :optional
               }
             ],
-            paging_options(params)
+            put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true)
           )
 
         transactions_plus_one = Chain.block_to_transactions(block.hash, full_options)

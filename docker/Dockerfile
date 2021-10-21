@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix:1.11.4
+FROM bitwalker/alpine-elixir-phoenix:1.12
 
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file pango-dev jpeg-dev libjpeg-turbo-dev giflib-dev librsvg-dev
 
@@ -42,6 +42,9 @@ RUN npm install -g npm@7.24.1
 ADD apps/block_scout_web/assets/ ./apps/block_scout_web/assets/
 ADD apps/explorer/package*.json ./apps/explorer/
 
+RUN npm install npm@latest
+
+# Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
     npm run deploy && \

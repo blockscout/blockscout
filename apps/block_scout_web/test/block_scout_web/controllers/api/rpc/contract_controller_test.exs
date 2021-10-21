@@ -403,7 +403,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ConstructorArguments" => "",
           "EVMVersion" => "",
           "ExternalLibraries" => "",
-          "OptimizationRuns" => ""
+          "OptimizationRuns" => "",
+          "FileName" => ""
         }
       ]
 
@@ -439,7 +440,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           # would be "0".
           "OptimizationUsed" => "true",
           "OptimizationRuns" => 200,
-          "EVMVersion" => "default"
+          "EVMVersion" => "default",
+          "FileName" => ""
         }
       ]
 
@@ -481,7 +483,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "OptimizationRuns" => 200,
           "EVMVersion" => "default",
           "ConstructorArguments" =>
-            "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546"
+            "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
+          "FileName" => ""
         }
       ]
 
@@ -581,7 +584,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ExternalLibraries" => [
             %{"name" => "Test", "address_hash" => "0xb18aed9518d735482badb4e8b7fd8d2ba425ce95"},
             %{"name" => "Test2", "address_hash" => "0x283539e1b1daf24cdd58a3e934d55062ea663c3f"}
-          ]
+          ],
+          "FileName" => ""
         }
       ]
 

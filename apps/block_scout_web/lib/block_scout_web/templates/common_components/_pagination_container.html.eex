@@ -38,7 +38,7 @@ data-pagination-container>
             </a>
         </li>
         <!-- Page X of XX -->
-        <li class="page-item"><a class="page-link no-hover" href data-page-number><%= gettext "Page" %> <%= assigns[:cur_page_number] || "" %> <% if assigns[:total_pages_number] do %> <%= gettext "of" %> <%= assigns[:total_pages_number] || "undefined" %><% end %></a></li>
+        <li class="page-item"><a class="page-link no-hover" href data-page-number><%= gettext "Page" %> <%= assigns[:cur_page_number] || "" %> <%= if assigns[:total_pages_number] do %> <%= gettext "of" %> <%= assigns[:total_pages_number] || "undefined" %><% end %></a></li>
         <!-- Next -->
         <li class="page-item">
             <a

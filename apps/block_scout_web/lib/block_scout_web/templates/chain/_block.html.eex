@@ -16,7 +16,7 @@
           <%= gettext "Validator" %>
           <%= render BlockScoutWeb.AddressView,
             "_link.html",
-            address: BlockScoutWeb.BlockView.block_miner(@block),
+            address: @block.miner,
             contract: false,
             use_custom_tooltip: false %>
         </div>

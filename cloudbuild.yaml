@@ -1,5 +1,5 @@
 steps:
-  - name: "gcr.io/kaniko-project/executor:latest"
+  - name: "gcr.io/kaniko-project/executor:v1.6.0"
     args: [
           "--cache=true",
           "--build-arg", "FORCE_MIX_COMPILE_CACHE_MISS=$COMMIT_SHA",
@@ -8,7 +8,7 @@ steps:
           "--context", "dir://."]
     waitFor: ["-"]
 
-  - name: "gcr.io/kaniko-project/executor:latest"
+  - name: "gcr.io/kaniko-project/executor:v1.6.0"
     args: [
           "--cache=true",
           "--destination=gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA",

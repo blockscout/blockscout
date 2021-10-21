@@ -220,9 +220,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
          acc
        ) do
     Logger.debug(
-      "Found #{Enum.count(internal_transactions)} internal tx for block #{block_number} had txs: #{num} used gas #{
-        used_gas
-      }"
+      "Found #{Enum.count(internal_transactions)} internal tx for block #{block_number} had txs: #{num} used gas #{used_gas}"
     )
 
     case check_db(num, Decimal.new(used_gas)) do

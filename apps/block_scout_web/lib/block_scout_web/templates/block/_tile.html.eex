@@ -42,20 +42,10 @@
           <%= gettext "Validator" %>
           <%= render BlockScoutWeb.AddressView,
             "_link.html",
-            address: block_miner(@block),
+            address: @block.miner,
             contract: false,
             use_custom_tooltip: false %>
         </div>
-        <%= if @block.online == true do %>
-          <div class="text-nowrap text-truncate mt-3 mt-md-0">
-            <%= gettext "Online" %>
-          </div>
-        <% end %>
-        <%= if @block.online == false do %>
-          <div class="text-nowrap text-truncate mt-3 mt-md-0">
-            <%= gettext "Downtime" %>
-          </div>
-        <% end %>
       <% end %>
       <%= if show_reward?(@block.rewards) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">
@@ -79,12 +69,13 @@
       <!-- Gas Used -->
       <div class="mr-3 mr-md-0">
         <%= formatted_gas(@block.gas_used) %>
-        (<%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>)
+        <% gas = if Decimal.cmp(@block.gas_limit, 0) == :gt, do: Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), else: 0  %>
+        (<%= formatted_gas(gas, format: "#.#%") %>)
         <%= gettext "Gas Used" %>
       </div>
       <!-- Progress bar -->
       <div class="progress">
-        <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(gas, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
         </div>
       </div>
     </div>

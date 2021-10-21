@@ -11,9 +11,9 @@ $btn-no-border-color: $primary !default;
   }
 }
 
-.btn-no-border-transactions {
+.btn-no-border-link-to-tems {
   background-color: rgba($primary, 0.1) !important;
-  border-color: $btn-no-border-bg;
+  border-color: #00000000 !important;
   align-items: center;
   border-radius: 2px;
   display: flex;

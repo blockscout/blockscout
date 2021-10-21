@@ -233,6 +233,7 @@ if ($contractVerificationPage.length) {
     if ($(this).prop('checked')) {
       $('#verify_via_flattened_code_button').show()
       $('#verify_via_sourcify_button').hide()
+      $('#verify_vyper_contract_button').hide()
     }
   })
 
@@ -240,6 +241,15 @@ if ($contractVerificationPage.length) {
     if ($(this).prop('checked')) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').show()
+      $('#verify_vyper_contract_button').hide()
+    }
+  })
+
+  $('.verify-vyper-contract').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').hide()
+      $('#verify_via_sourcify_button').hide()
+      $('#verify_vyper_contract_button').show()
     }
   })
 }

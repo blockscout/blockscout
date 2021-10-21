@@ -1,2 +1,3 @@
 priv/.recovery
 priv/solc_compilers/
+priv/vyper_compilers/

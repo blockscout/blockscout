@@ -271,7 +271,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _options ->
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn _, _options ->
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
 
@@ -283,7 +283,7 @@ defmodule Explorer.Chain.TransactionTest do
       |> insert()
       |> Repo.preload(to_address: :smart_contract)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _options ->
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn _, _options ->
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
 

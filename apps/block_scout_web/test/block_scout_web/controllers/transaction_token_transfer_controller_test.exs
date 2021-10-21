@@ -160,7 +160,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     test "preloads to_address smart contract verified", %{conn: conn} do
       transaction = insert(:transaction_to_verified_contract)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _options ->
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn _, _options ->
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
 

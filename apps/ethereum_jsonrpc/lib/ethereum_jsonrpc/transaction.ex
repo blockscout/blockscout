@@ -79,7 +79,6 @@ defmodule EthereumJSONRPC.Transaction do
 
   @doc """
   Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Parity.
-
       iex> EthereumJSONRPC.Transaction.elixir_to_params(
       ...>   %{
       ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
@@ -101,6 +100,7 @@ defmodule EthereumJSONRPC.Transaction do
       ...>     "value" => 31337
       ...>   }
       ...> )
+      
       %{
         block_hash: "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
         block_number: 46147,
@@ -121,10 +121,8 @@ defmodule EthereumJSONRPC.Transaction do
         value: 31337,
         transaction_index: 0
       }
-
       Ganache bug: https://github.com/trufflesuite/ganache/issues/997
       Invalid input of `0x0` is converted to `0x`.
-
       iex> EthereumJSONRPC.Transaction.elixir_to_params(
       ...>   %{
       ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
@@ -166,7 +164,6 @@ defmodule EthereumJSONRPC.Transaction do
         value: 31337,
         transaction_index: 0
       }
-
   """
   @spec elixir_to_params(elixir) :: params
 
@@ -406,7 +403,6 @@ defmodule EthereumJSONRPC.Transaction do
 
   @doc """
   Extracts `t:EthereumJSONRPC.hash/0` from transaction `params`
-
       iex> EthereumJSONRPC.Transaction.params_to_hash(
       ...>   %{
       ...>     block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
@@ -426,16 +422,13 @@ defmodule EthereumJSONRPC.Transaction do
       ...>   }
       ...> )
       "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
-
   """
   def params_to_hash(%{hash: hash}), do: hash
 
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0`.
-
   Pending transactions have a `nil` `"blockHash"`, `"blockNumber"`, and `"transactionIndex"` because those fields are
   related to the block the transaction is collated in.
-
     iex> EthereumJSONRPC.Transaction.to_elixir(
     ...>   %{
     ...>     "blockHash" => nil,
@@ -488,7 +481,6 @@ defmodule EthereumJSONRPC.Transaction do
       "v" => 190,
       "value" => 1000000000000000000
     }
-
   """
   def to_elixir(transaction) when is_map(transaction) do
     Enum.into(transaction, %{}, &entry_to_elixir/1)

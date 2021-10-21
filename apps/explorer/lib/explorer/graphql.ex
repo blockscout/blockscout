@@ -6,7 +6,6 @@ defmodule Explorer.GraphQL do
   import Ecto.Query,
     only: [
       from: 2,
-      union_all: 2,
       order_by: 3,
       or_where: 3,
       subquery: 1,

@@ -136,9 +136,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
     case Chain.fetch_block_by_hash(block_hash) do
       %{number: number, consensus: consensus} ->
         Logger.debug(
-          "Corresponding number of the block with hash #{block_hash} to invalidate is #{number} and consensus #{
-            consensus
-          }",
+          "Corresponding number of the block with hash #{block_hash} to invalidate is #{number} and consensus #{consensus}",
           fetcher: :pending_transactions_to_refetch
         )
 
@@ -176,9 +174,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
       Repo.update(changeset)
 
       Logger.debug(
-        "Pending tx with hash #{"0x" <> Base.encode16(pending_tx.hash.bytes, case: :lower)} assigned to block ##{
-          block_number
-        } with hash #{block_hash}"
+        "Pending tx with hash #{"0x" <> Base.encode16(pending_tx.hash.bytes, case: :lower)} assigned to block ##{block_number} with hash #{block_hash}"
       )
     end
   end

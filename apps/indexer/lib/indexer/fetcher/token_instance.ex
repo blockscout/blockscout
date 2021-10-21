@@ -74,9 +74,7 @@ defmodule Indexer.Fetcher.TokenInstance do
       result ->
         Logger.debug(
           [
-            "failed to fetch token instance metadata for #{
-              inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})
-            }: ",
+            "failed to fetch token instance metadata for #{inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})}: ",
             inspect(result)
           ],
           fetcher: :token_instances
