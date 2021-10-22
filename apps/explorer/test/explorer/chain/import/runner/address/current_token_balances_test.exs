@@ -86,6 +86,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       value_4 = Decimal.new(1)
       token_id_4 = Decimal.new(1)
 
+      value_5 = Decimal.new(2)
+      token_id_5 = Decimal.new(555)
+
       block_number = 1
 
       assert {:ok,
@@ -101,6 +104,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                   %Explorer.Chain.Address.CurrentTokenBalance{
                     address_hash: ^address_hash,
                     block_number: ^block_number,
+                    token_contract_address_hash: ^token_erc_721_contract_address_hash,
+                    value: ^value_5,
+                    token_id: nil
+                  },
+                  %Explorer.Chain.Address.CurrentTokenBalance{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
                     value: ^value_1,
                     token_id: ^token_id_1
@@ -111,13 +121,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     token_contract_address_hash: ^token_contract_address_hash,
                     value: ^value_2,
                     token_id: ^token_id_2
-                  },
-                  %Explorer.Chain.Address.CurrentTokenBalance{
-                    address_hash: ^address_hash,
-                    block_number: ^block_number,
-                    token_contract_address_hash: ^token_erc_721_contract_address_hash,
-                    value: ^value_4,
-                    token_id: ^token_id_4
                   }
                 ],
                 address_current_token_balances_update_token_holder_counts: [
@@ -171,6 +174,15 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                      value: value_4,
                      value_fetched_at: DateTime.utc_now(),
                      token_id: token_id_4,
+                     token_type: "ERC-721"
+                   },
+                   %{
+                     address_hash: address_hash,
+                     block_number: block_number,
+                     token_contract_address_hash: token_erc_721.contract_address_hash,
+                     value: value_5,
+                     value_fetched_at: DateTime.utc_now(),
+                     token_id: token_id_5,
                      token_type: "ERC-721"
                    }
                  ],

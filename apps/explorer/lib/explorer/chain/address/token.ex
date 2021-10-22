@@ -34,17 +34,16 @@ defmodule Explorer.Chain.Address.Token do
 
     address_hash
     |> join_with_last_balance()
-    |> order_filter_and_group()
+    |> filter_and_group()
+    |> order()
     |> page_tokens(paging_options)
     |> limit(^paging_options.page_size)
   end
 
-  defp order_filter_and_group(query) do
+  defp filter_and_group(query) do
     from(
       [token, balance] in query,
-      order_by: fragment("? DESC, LOWER(?) ASC NULLS LAST", token.type, token.name),
       where: balance.value > 0,
-      group_by: [token.name, token.symbol, balance.value, token.type, token.contract_address_hash, balance.block_number],
       select: %Address.Token{
         contract_address_hash: token.contract_address_hash,
         inserted_at: max(token.inserted_at),
@@ -53,7 +52,15 @@ defmodule Explorer.Chain.Address.Token do
         balance: balance.value,
         decimals: max(token.decimals),
         type: token.type
-      }
+      },
+      group_by: [token.name, token.symbol, balance.value, token.type, token.contract_address_hash, balance.block_number]
+    )
+  end
+
+  defp order(query) do
+    from(
+      token in subquery(query),
+      order_by: fragment("? DESC, ? ASC NULLS LAST", token.type, token.name)
     )
   end
 

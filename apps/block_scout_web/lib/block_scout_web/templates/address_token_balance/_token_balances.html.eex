@@ -65,6 +65,15 @@
             ) %>
       <% end %>
 
+      <%= if Enum.any?(@token_balances, fn {token_balance, _, _} -> token_balance.token.type == "ERC-1155" end) do %>
+        <%= render(
+              "_tokens.html",
+              conn: @conn,
+              token_balances: filter_by_type(@token_balances, "ERC-1155"),
+              type: "ERC-1155"
+            ) %>
+      <% end %>
+
       <%= if Enum.any?(@token_balances, fn {token_balance, _, _} -> token_balance.token.type == "ERC-20" end) do %>
         <%= render(
               "_tokens.html",

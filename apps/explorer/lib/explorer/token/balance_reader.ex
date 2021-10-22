@@ -53,7 +53,7 @@ defmodule Explorer.Token.BalanceReader do
           [
             %{token_contract_address_hash: String.t(), address_hash: String.t(), block_number: non_neg_integer()}
           ],
-          Map.t()
+          [%{}]
         ) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
   def get_balances_of_with_abi(token_balance_requests, abi) do
     formatted_balances_requests =

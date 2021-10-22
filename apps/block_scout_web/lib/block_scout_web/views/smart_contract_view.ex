@@ -26,6 +26,15 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def outputs?(outputs) when is_nil(outputs), do: false
 
+  def error?(outputs) when not is_nil(outputs) do
+    case outputs do
+      {:error, _} -> true
+      _ -> false
+    end
+  end
+
+  def error?(outputs) when is_nil(outputs), do: false
+
   def address?(type), do: type in ["address", "address payable"]
   def int?(type), do: String.contains?(type, "int") && !String.contains?(type, "[")
 

@@ -1,6 +1,5 @@
 <%= case token_transfer_amount(@transfer) do %>
     <% {:ok, :erc721_instance} -> %>
-        <%= gettext("ERC-721") %>
         <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @transfer.token_id %>
     <% {:ok, :erc1155_instance, value} -> %>
         <% transfer_type = Chain.get_token_transfer_type(@transfer) %>
