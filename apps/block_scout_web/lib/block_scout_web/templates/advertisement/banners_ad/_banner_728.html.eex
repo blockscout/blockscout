@@ -1,6 +1,6 @@
 <!-- Coinzilla Banner 728x90 -->
 <script async src="https://coinzillatag.com/lib/display.js"></script>
-<div class="ad-container mb-2" style="display: none;">
+<div class="ad-container mb-2">
     <div class="coinzilla" data-zone="C-57360d190f653191213"></div>
 </div>
 <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/banner.js") %>"></script>

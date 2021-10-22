@@ -218,7 +218,7 @@
   </div>
 </div>
 <section class="container">
-  <div class="card card-chain-blocks js-ad-dependant-mb-3">
+  <div class="card card-chain-blocks mb-3">
     <div class="card-body">
       <%= link(gettext("View All Blocks"), to: blocks_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
