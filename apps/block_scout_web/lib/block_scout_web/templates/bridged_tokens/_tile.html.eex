@@ -19,7 +19,8 @@
               render BlockScoutWeb.TokensView,
               "_token_icon.html",
               chain_id: chain_id_for_token_icon,
-              address: token_hash_for_token_icon
+              address: token_hash_for_token_icon,
+              additional_classes: ["mr-1"]
             %>
           <% end %>
           <%= link(token,
