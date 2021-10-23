@@ -82,8 +82,6 @@
                   title: gettext("Copy Txn Hash") %>
             </dd>
           </dl>
-          <!-- Verify in other explorers -->
-          <!-- <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %> -->
           <!-- Result -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
