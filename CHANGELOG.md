@@ -23,6 +23,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4806](https://github.com/blockscout/blockscout/pull/4806) - Get token type for token balance update if it is empty
 - [#4798](https://github.com/blockscout/blockscout/pull/4798) - Token instance View contract icon Safari fix
 - [#4796](https://github.com/blockscout/blockscout/pull/4796) - Fix nil.timestamp issue
 - [#4783](https://github.com/blockscout/blockscout/pull/4783) - Resolves request timeout for getting transactions on Emission funds contract address page

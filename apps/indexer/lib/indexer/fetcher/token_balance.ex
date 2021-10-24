@@ -107,11 +107,14 @@ defmodule Indexer.Fetcher.TokenBalance do
 
   def import_token_balances(token_balances_params) do
     addresses_params = format_and_filter_address_params(token_balances_params)
+    formatted_token_balances_params = format_and_filter_token_balance_params(token_balances_params)
 
     import_params = %{
       addresses: %{params: addresses_params},
-      address_token_balances: %{params: token_balances_params},
-      address_current_token_balances: %{params: TokenBalances.to_address_current_token_balances(token_balances_params)},
+      address_token_balances: %{params: formatted_token_balances_params},
+      address_current_token_balances: %{
+        params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
+      },
       timeout: :infinity
     }
 
@@ -132,6 +135,23 @@ defmodule Indexer.Fetcher.TokenBalance do
     token_balances_params
     |> Enum.map(&%{hash: &1.address_hash})
     |> Enum.uniq()
+  end
+
+  defp format_and_filter_token_balance_params(token_balances_params) do
+    token_balances_params
+    |> Enum.map(fn token_balance ->
+      if token_balance.token_type do
+        token_balance
+      else
+        token_type = Chain.get_token_type(token_balance.token_contract_address_hash)
+
+        if token_type do
+          Map.put(token_balance, :token_type, token_type)
+        else
+          token_balance
+        end
+      end
+    end)
   end
 
   defp entry(
