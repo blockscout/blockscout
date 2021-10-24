@@ -6352,6 +6352,17 @@ defmodule Explorer.Chain do
     |> TypeDecoder.decode_raw(types)
   end
 
+  def get_token_type(hash) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash == ^hash,
+        select: token.type
+      )
+
+    Repo.one(query)
+  end
+
   @doc """
   Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
 
