@@ -164,7 +164,7 @@ function onTransactionHash (txHash, $element, functionName) {
     })
       .then(txReceipt => {
         if (txReceipt) {
-          const successMsg = `Successfully sent <a href="/tx/${txHash}">transaction</a> for method "${functionName}"`
+          const successMsg = `Successfully sent <a href="/eth/mainnet/tx/${txHash}">transaction</a> for method "${functionName}"`
           openSuccessModal('Success', successMsg)
           clearInterval(txReceiptPollingIntervalId)
         }
