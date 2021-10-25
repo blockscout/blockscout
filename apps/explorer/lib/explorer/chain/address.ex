@@ -7,8 +7,6 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
-  alias Ecto.Changeset
-
   alias Explorer.Chain.{
     Address,
     Block,
@@ -22,6 +20,7 @@ defmodule Explorer.Chain.Address do
     DecompiledSmartContract,
     Hash,
     InternalTransaction,
+    PendingCelo,
     ProxyContract,
     SmartContract,
     SmartContractAdditionalSource,
@@ -29,6 +28,8 @@ defmodule Explorer.Chain.Address do
     Transaction,
     Wei
   }
+
+  alias Ecto.Changeset
 
   alias Explorer.Chain.Cache.NetVersion
 
@@ -127,6 +128,7 @@ defmodule Explorer.Chain.Address do
     has_many(:celo_voters, CeloVoters, foreign_key: :group_address_hash)
     has_many(:celo_voted, CeloVoters, foreign_key: :voter_address_hash)
     has_many(:celo_claims, CeloClaims, foreign_key: :address)
+    has_many(:pending_celo, PendingCelo, foreign_key: :account_address)
 
     has_one(:implementation_contract, ProxyContract, foreign_key: :proxy_address)
 

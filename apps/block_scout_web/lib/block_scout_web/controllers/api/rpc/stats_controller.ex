@@ -71,6 +71,12 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     render(conn, "totaltransactions.json", count: transaction_estimated_count)
   end
 
+  def pendingcelo(conn, _params) do
+    sum_pending_celo = Chain.fetch_sum_pending_celo()
+
+    render(conn, "pendingcelo.json", count: sum_pending_celo)
+  end
+
   defp fetch_contractaddress(params) do
     {:contractaddress_param, Map.fetch(params, "contractaddress")}
   end

@@ -1,17 +1,17 @@
-defmodule Indexer.Fetcher.CeloWithdrawal do
+defmodule Indexer.Fetcher.PendingCelo do
   @moduledoc """
-  Fetches Celo account withdrawals.
+  Fetches pending Celo.
   """
   use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
-  alias Indexer.Fetcher.CeloWithdrawal.Supervisor, as: CeloWithdrawalSupervisor
+  alias Indexer.Fetcher.PendingCelo.Supervisor, as: PendingCeloSupervisor
 
   alias Explorer.Celo.AccountReader
   alias Explorer.Chain
-  alias Explorer.Chain.CeloWithdrawal
+  alias Explorer.Chain.PendingCelo
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.CeloWithdrawal do
   @max_retries 3
 
   def async_fetch(accounts) do
-    if CeloWithdrawalSupervisor.disabled?() do
+    if PendingCeloSupervisor.disabled?() do
       :ok
     else
       params =
@@ -79,12 +79,12 @@ defmodule Indexer.Fetcher.CeloWithdrawal do
   end
 
   defp get_withdrawals(account) do
-    Enum.reduce(account.withdrawals, {[], []}, fn
+    Enum.reduce(account.pending, {[], []}, fn
       %{error: _error} = account, {failed, success} ->
         {[account | failed], success}
 
       item, {failed, success} ->
-        changeset = CeloWithdrawal.changeset(%CeloWithdrawal{}, item)
+        changeset = PendingCelo.changeset(%PendingCelo{}, item)
 
         if changeset.valid? do
           {failed, [changeset.changes | success]}
@@ -106,7 +106,7 @@ defmodule Indexer.Fetcher.CeloWithdrawal do
       end)
 
     import_params = %{
-      celo_withdrawals: %{params: success},
+      pending_celo: %{params: success},
       timeout: :infinity
     }
 
@@ -115,7 +115,7 @@ defmodule Indexer.Fetcher.CeloWithdrawal do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> ["failed to import Celo account withdrawal data: ", inspect(reason)] end,
+        Logger.debug(fn -> ["failed to import pending Celo data: ", inspect(reason)] end,
           error_count: Enum.count(accounts)
         )
     end

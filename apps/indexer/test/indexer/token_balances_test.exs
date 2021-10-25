@@ -38,8 +38,8 @@ defmodule Indexer.TokenBalancesTest do
 
       assert %{
                value: 1_000_000_000_000_000_000_000_000,
-               token_contract_address_hash: token_contract_address_hash,
-               address_hash: address_hash,
+               token_contract_address_hash: _,
+               address_hash: _,
                block_number: 1_000,
                value_fetched_at: _
              } = List.first(result)

@@ -479,7 +479,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
 
-      assert_receive {:block_numbers, [block_number]}, 5_000
+      assert_receive {:block_numbers, _}, 5_000
     end
 
     test "async fetches beneficiaries when entire call errors out", %{
@@ -637,7 +637,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
 
-      assert_receive {:block_numbers, [block_number]}, 5_000
+      assert_receive {:block_numbers, _}, 5_000
     end
   end
 

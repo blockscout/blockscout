@@ -527,7 +527,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
               id: 1,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x" <> unprefixed_celo_token_address_hash, "0x3C3660"]
+              params: ["0x" <> _, "0x3C3660"]
             },
             %{
               id: 2,
@@ -605,7 +605,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     }
                   ],
                   blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
-                  transactions: [%Transaction{hash: transaction_hash}]
+                  transactions: [%Transaction{hash: _}]
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)

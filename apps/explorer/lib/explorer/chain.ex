@@ -61,6 +61,7 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingBlockOperation,
+    PendingCelo,
     ProxyContract,
     SmartContract,
     SmartContractAdditionalSource,
@@ -7682,6 +7683,39 @@ defmodule Explorer.Chain do
       true ->
         :token_transfer
     end
+  end
+
+  @doc """
+  Returns the total amount of CELO that is in the unlocking period (pending).
+  Details at: https://docs.celo.org/celo-codebase/protocol/proof-of-stake/locked-gold#unlocking-period
+  """
+  @spec fetch_sum_pending_celo() :: non_neg_integer()
+  def fetch_sum_pending_celo do
+    query =
+      from(w in PendingCelo,
+        where: w.timestamp >= fragment("NOW()"),
+        select: sum(w.amount)
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> %Wei{value: Decimal.new(0)}
+      sum -> sum
+    end
+  end
+
+  @doc """
+  Deletes pending CELO when passed the address and the amount
+  """
+  @spec delete_pending_celo(Hash.t(), non_neg_integer()) :: {integer(), nil | [term()]}
+  def delete_pending_celo(address, amount) do
+    query =
+      from(pending_celo in PendingCelo,
+        where: pending_celo.account_address == ^address and pending_celo.amount == ^amount
+      )
+
+    Repo.delete_all(query)
   end
 
   @spec get_token_icon_url_by(String.t(), String.t()) :: String.t() | nil

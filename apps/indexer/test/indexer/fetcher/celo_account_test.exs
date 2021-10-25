@@ -33,7 +33,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
                 account_type: "validator",
                 address: %Explorer.Chain.Hash{
                   byte_count: 20,
-                  bytes: address
+                  bytes: _
                 },
                 name: "CLabs Validator #0 on testing",
                 locked_gold: locked_gold,

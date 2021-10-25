@@ -174,8 +174,7 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  # how to delete them from the table?
-  def withdrawal_data(%{address: address}) do
+  def withdrawal_data(address) do
     data = fetch_withdrawal_data(address)
 
     case data["getPendingWithdrawals"] do
@@ -183,7 +182,7 @@ defmodule Explorer.Celo.AccountReader do
         {:ok,
          %{
            address: address,
-           withdrawals:
+           pending:
              Enum.map(Enum.zip(values, timestamps), fn {v, t} -> %{address: address, amount: v, timestamp: t} end)
          }}
 

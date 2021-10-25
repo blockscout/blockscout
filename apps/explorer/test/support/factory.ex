@@ -18,6 +18,7 @@ defmodule Explorer.Factory do
     Address.CoinBalance,
     Address.CoinBalanceDaily,
     Block,
+    PendingCelo,
     ContractMethod,
     Data,
     DecompiledSmartContract,
@@ -702,6 +703,15 @@ defmodule Explorer.Factory do
       name: "Validator #123",
       locked_gold: wei_per_ether * 4,
       nonvoting_locked_gold: wei_per_ether * 4
+    }
+  end
+
+  def pending_celo_factory do
+    %PendingCelo{
+      account_address: address_hash(),
+      amount: Decimal.new(1),
+      index: sequence("pending_index", & &1),
+      timestamp: Timex.shift(Timex.now(), days: Enum.random(0..100) * -1)
     }
   end
 end
