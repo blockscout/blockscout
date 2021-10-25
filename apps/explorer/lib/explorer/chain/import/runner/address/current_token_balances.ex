@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -51,6 +52,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
                value: Decimal.t()
              }
   def token_holder_count_deltas(%{deleted: deleted, inserted: inserted}) when is_list(deleted) and is_list(inserted) do
+    Logger.info("### Blocks token_holder_count_deltas started ###")
+
     deleted_holder_address_hash_set_by_token_contract_address_hash =
       to_holder_address_hash_set_by_token_contract_address_hash(deleted)
 
@@ -63,24 +66,28 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         inserted_holder_address_hash_set_by_token_contract_address_hash
       ])
 
-    Enum.flat_map(ordered_token_contract_address_hashes, fn token_contract_address_hash ->
-      holder_count_delta =
-        holder_count_delta(%{
-          deleted_holder_address_hash_set_by_token_contract_address_hash:
-            deleted_holder_address_hash_set_by_token_contract_address_hash,
-          inserted_holder_address_hash_set_by_token_contract_address_hash:
-            inserted_holder_address_hash_set_by_token_contract_address_hash,
-          token_contract_address_hash: token_contract_address_hash
-        })
+    res =
+      Enum.flat_map(ordered_token_contract_address_hashes, fn token_contract_address_hash ->
+        holder_count_delta =
+          holder_count_delta(%{
+            deleted_holder_address_hash_set_by_token_contract_address_hash:
+              deleted_holder_address_hash_set_by_token_contract_address_hash,
+            inserted_holder_address_hash_set_by_token_contract_address_hash:
+              inserted_holder_address_hash_set_by_token_contract_address_hash,
+            token_contract_address_hash: token_contract_address_hash
+          })
 
-      case holder_count_delta do
-        0 ->
-          []
+        case holder_count_delta do
+          0 ->
+            []
 
-        _ ->
-          [%{contract_address_hash: token_contract_address_hash, delta: holder_count_delta}]
-      end
-    end)
+          _ ->
+            [%{contract_address_hash: token_contract_address_hash, delta: holder_count_delta}]
+        end
+      end)
+
+    Logger.info("### Blocks token_holder_count_deltas finished ###")
+    res
   end
 
   @impl Import.Runner
