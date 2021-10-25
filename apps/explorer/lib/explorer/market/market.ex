@@ -18,6 +18,11 @@ defmodule Explorer.Market do
     ExchangeRates.lookup(symbol)
   end
 
+  @spec get_exchange_rate(String.t(), String.t()) :: Token.t() | nil
+  def get_exchange_rate(token_contract_address_hash, symbol) do
+    ExchangeRates.lookup_by_address(token_contract_address_hash, symbol)
+  end
+
   @doc """
   Get the address of the token with the given symbol.
   """
@@ -52,19 +57,19 @@ defmodule Explorer.Market do
     Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
   end
 
-  def add_price(%{symbol: symbol} = token) do
+  def add_price(%{contract_address_hash: contract_address_hash, symbol: symbol} = token) do
     known_address = get_known_address(symbol)
 
-    matches_known_address = known_address && known_address == token.contract_address_hash
+    matches_known_address = known_address && known_address == contract_address_hash
 
     usd_value =
       cond do
         matches_known_address ->
-          fetch_token_usd_value(matches_known_address, symbol)
+          fetch_token_usd_value(matches_known_address, symbol, contract_address_hash)
 
         bridged_token = mainnet_bridged_token?(token) ->
           TokenBridge.get_current_price_for_bridged_token(
-            token.contract_address_hash,
+            contract_address_hash,
             bridged_token.foreign_token_contract_address_hash
           )
 
@@ -113,12 +118,12 @@ defmodule Explorer.Market do
     end
   end
 
-  defp fetch_token_usd_value(true, symbol) do
-    case get_exchange_rate(symbol) do
+  defp fetch_token_usd_value(true, symbol, contract_address_hash) do
+    case get_exchange_rate(contract_address_hash, symbol) do
       %{usd_value: usd_value} -> usd_value
       nil -> nil
     end
   end
 
-  defp fetch_token_usd_value(_matches_known_address, _symbol), do: nil
+  defp fetch_token_usd_value(_matches_known_address, _symbol, _contract_address_hash), do: nil
 end
