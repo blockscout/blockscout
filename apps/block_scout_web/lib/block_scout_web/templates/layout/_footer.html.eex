@@ -17,7 +17,7 @@
 
     <div class="row">
       <div class="col-xs-12 col-lg-3">
-        <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
+        <p class="footer-info-text"><%= gettext("Kubic Explorer is a tool for inspecting and analyzing Kubic Smarth Chain and its testing networks. Blockchain explorer for Kubic Networks.") %></p>
         <div class="footer-social-icons">
           <a href="https://github.com/blockscout/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <div class="footer-social-icon-container fontawesome-icon github"></div>
@@ -44,6 +44,9 @@
          <li><%= gettext("Support") %></li>
         </ul>
       </div>
+
+  
+      
       <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>
@@ -80,14 +83,24 @@
           </ul>
         </div>
       <% end %>
+
+        <div class="col-md-12">
+    Woonkly OU, regulated in Estonia (European Union), Crypto Exchange and Wallet Licenses 
+    <a style="color:white" href="https://mtr.mkm.ee/taotluse_tulemus/547860?backurl=%40juriidiline_isik_show%3Fid%3D265533" target="_blank" rel="noopener noreferrer">FVT004340</a>
+    </div>
     </div>
 
+  
+
+  
     <% version = version() %>
+   
 
     <%= unless ignore_version?(version) do %>
       <% release_link = release_link(version) %>
       <div>
-        <%= gettext("Version") %>: <%= release_link %>
+        <!-- <%= gettext("Version") %>: <%= release_link %> -->
+        <br>Version: Alpha 0.1
       </div>
     <% end %>
   </div>
