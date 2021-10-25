@@ -106,7 +106,7 @@
               <%= if @token.usd_value do %>
                 <div class="text-uppercase">
                   <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
-                  <%= unless @token.custom_cap do %>
+                  <%= unless Map.has_key?(@token, :custom_cap) && @token.custom_cap do %>
                     |
                     <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"></span>
                   <% end %>
