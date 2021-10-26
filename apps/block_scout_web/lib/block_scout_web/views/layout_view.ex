@@ -252,12 +252,27 @@ defmodule BlockScoutWeb.LayoutView do
 
   defp validate_url(_), do: :error
 
+  def sign_in_link do
+    if System.get_env("API_PATH") do
+      System.get_env("API_PATH") <> "/auth/auth0"
+    else
+      "/auth/auth0"
+    end
+  end
+
   @logout_url "https://blockscoutcom.us.auth0.com/v2/logout"
 
-  def logout_link do
+  def sign_out_link do
+    return_to =
+      if System.get_env("API_PATH") do
+        host() <> System.get_env("API_PATH") <> "/auth/logout"
+      else
+        host() <> "/auth/logout"
+      end
+
     params = [
       client_id: client_id(),
-      returnTo: host() <> "/auth/logout"
+      returnTo: return_to
     ]
 
     [@logout_url, "?", URI.encode_query(params)]

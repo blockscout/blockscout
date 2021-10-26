@@ -213,16 +213,16 @@ to: api_url() <> api_docs_path(@conn, :eth_rpc)
                 <div class="header dropdown-item">
                   <%= "Signed in as " <> Plug.Conn.get_session(@conn, :current_user)[:nickname] %>
                 </div>
-                <a href="/auth/profile" class= "dropdown-item">Profile</a>
+                <a href="<%= auth_path(@conn, :profile) %>" class= "dropdown-item">Profile</a>
                 <a href="#" class= "dropdown-item">Watch list</a>
                 <a href="#" class= "dropdown-item">Address tags</a>
                 <a href="#" class= "dropdown-item">Transaction tags</a>
-                <a href="<%= BlockScoutWeb.LayoutView.logout_link %>" class= "dropdown-item">Sign out</a>
+                <a href="<%= BlockScoutWeb.LayoutView.sign_out_link %>" class= "dropdown-item">Sign out</a>
               </div>
             </li>
           <% else %>
             <li>
-            <a class="nav-link topnav-nav-link" href="/auth/auth0" id="navbarBlocksDropdown" role="button" aria-haspopup="true">
+            <a class="nav-link topnav-nav-link" href="<%= BlockScoutWeb.LayoutView.sign_in_link %>" id="navbarBlocksDropdown" role="button" aria-haspopup="true">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_user_icon.html" %>
               </span>
