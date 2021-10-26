@@ -6,6 +6,8 @@ defmodule Explorer.Chain.Cache.GasUsage do
   require Logger
 
   @default_cache_period :timer.hours(2)
+  config = Application.get_env(:explorer, __MODULE__)
+  @enabled Keyword.get(config, :enabled)
 
   use Explorer.Chain.MapCache,
     name: :gas_usage,
@@ -26,25 +28,29 @@ defmodule Explorer.Chain.Cache.GasUsage do
   end
 
   defp handle_fallback(:async_task) do
-    # If this gets called it means an async task was requested, but none exists
-    # so a new one needs to be launched
-    {:ok, task} =
-      Task.start(fn ->
-        try do
-          result = Chain.fetch_sum_gas_used()
+    if @enabled do
+      # If this gets called it means an async task was requested, but none exists
+      # so a new one needs to be launched
+      {:ok, task} =
+        Task.start(fn ->
+          try do
+            result = Chain.fetch_sum_gas_used()
 
-          set_sum(result)
-        rescue
-          e ->
-            Logger.debug([
-              "Coudn't update gas used sum test #{inspect(e)}"
-            ])
-        end
+            set_sum(result)
+          rescue
+            e ->
+              Logger.debug([
+                "Coudn't update gas used sum test #{inspect(e)}"
+              ])
+          end
 
-        set_async_task(nil)
-      end)
+          set_async_task(nil)
+        end)
 
-    {:update, task}
+      {:update, task}
+    else
+      {:update, nil}
+    end
   end
 
   # By setting this as a `callback` an async task will be started each time the

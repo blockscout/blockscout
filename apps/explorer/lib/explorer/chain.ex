@@ -4819,6 +4819,8 @@ defmodule Explorer.Chain do
       else
         {:ok, false}
       end
+    else
+      {:ok, false}
     end
   end
 
