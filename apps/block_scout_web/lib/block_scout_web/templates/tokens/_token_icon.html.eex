@@ -1,0 +1,2 @@
+<% token_icon_url = Explorer.Chain.get_token_icon_url_by(@chain_id, @address) %>
+<img heigth=15 width=15 src="<%= token_icon_url %>" style="margin-top: -2px;" onerror="this.style.visibility = 'hidden'"/>
