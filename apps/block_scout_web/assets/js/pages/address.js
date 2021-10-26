@@ -121,11 +121,6 @@ const elements = {
         if (oldState.transactionCount === state.transactionCount) return
         const transactionsDSName = (state.transactionCount > 1) ? ' Transactions' : ' Transaction'
         $el.empty().append(numeral(state.transactionCount).format() + transactionsDSName)
-        $el.show()
-        $('.address-transactions-count-item').removeAttr('style')
-      } else {
-        $el.hide()
-        $('.address-transactions-count-item').css('display', 'none')
       }
     }
   },
@@ -138,11 +133,6 @@ const elements = {
         if (oldState.tokenTransferCount === state.tokenTransferCount) return
         const transfersDSName = (state.tokenTransferCount > 1) ? ' Transfers' : ' Transfer'
         $el.empty().append(numeral(state.tokenTransferCount).format() + transfersDSName)
-        $el.show()
-        $('.address-transfers-count-item').removeAttr('style')
-      } else {
-        $el.hide()
-        $('.address-transfers-count-item').css('display', 'none')
       }
     }
   },
@@ -154,11 +144,6 @@ const elements = {
       if (state.countersFetched && state.gasUsageCount) {
         if (oldState.gasUsageCount === state.gasUsageCount) return
         $el.empty().append(numeral(state.gasUsageCount).format())
-        $el.show()
-        $('.address-gas-used-item').removeAttr('style')
-      } else {
-        $el.hide()
-        $('.address-gas-used-item').css('display', 'none')
       }
     }
   },
