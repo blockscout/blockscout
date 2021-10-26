@@ -21,9 +21,7 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 EXPOSE 4000
 
-ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+ENV MIX_ENV="prod"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -32,7 +30,7 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
-RUN mix do deps.get, local.rebar --force, deps.compile
+RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 
