@@ -48,7 +48,9 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
 
   def fetch(address) do
     if cache_expired?(address) do
-      update_cache(address)
+      Task.start_link(fn ->
+        update_cache(address)
+      end)
     end
 
     address_hash_string = get_address_hash_string(address)
