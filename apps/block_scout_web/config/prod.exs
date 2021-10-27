@@ -35,8 +35,8 @@ config :logger, :block_scout_web,
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
 callback_url =
-  if System.get_env("API_PATH") do
-    "https://blockscout.com" <> System.get_env("API_PATH") <> "/auth/auth0/callback"
+  if System.get_env("NETWORK_PATH") do
+    "https://blockscout.com" <> System.get_env("NETWORK_PATH") <> "/auth/auth0/callback"
   else
     "https://blockscout.com" <> "/auth/auth0/callback"
   end

@@ -253,8 +253,8 @@ defmodule BlockScoutWeb.LayoutView do
   defp validate_url(_), do: :error
 
   def sign_in_link do
-    if System.get_env("API_PATH") do
-      System.get_env("API_PATH") <> "/auth/auth0"
+    if System.get_env("NETWORK_PATH") do
+      System.get_env("NETWORK_PATH") <> "/auth/auth0"
     else
       "/auth/auth0"
     end
@@ -264,8 +264,8 @@ defmodule BlockScoutWeb.LayoutView do
 
   def sign_out_link do
     return_to =
-      if System.get_env("API_PATH") do
-        host() <> System.get_env("API_PATH") <> "/auth/logout"
+      if System.get_env("NETWORK_PATH") do
+        host() <> System.get_env("NETWORK_PATH") <> "/auth/logout"
       else
         host() <> "/auth/logout"
       end
