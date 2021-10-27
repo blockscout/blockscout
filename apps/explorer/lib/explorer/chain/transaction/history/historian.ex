@@ -5,11 +5,11 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   require Logger
   use Explorer.History.Historian
 
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.History.Process, as: HistoryProcess
-  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2, subquery: 1]
 
@@ -33,17 +33,10 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
       Logger.info("tx/per day chart: latest date #{DateTime.to_string(latest)}")
 
-      min_max_block_query =
-        from(block in Block,
-          where: block.timestamp >= ^earliest and block.timestamp <= ^latest,
-          select: {min(block.number), max(block.number)}
-        )
+      with {:ok, min_block} <- Chain.timestamp_to_block_number(earliest, :before),
+           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :before) do
+        Logger.info("tx/per day chart: min/max block numbers [#{min_block}, #{max_block}]")
 
-      {min_block, max_block} = Repo.one(min_max_block_query, timeout: :infinity)
-
-      Logger.info("tx/per day chart: min/max block numbers [#{min_block}, #{max_block}]")
-
-      if min_block && max_block do
         all_transactions_query =
           from(
             transaction in Transaction,
@@ -81,8 +74,9 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
         compile_records(num_days - 1, records)
       else
-        records = [%{date: day_to_fetch, number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
-        compile_records(num_days - 1, records)
+        _ ->
+          records = [%{date: day_to_fetch, number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
+          compile_records(num_days - 1, records)
       end
     end
   end
