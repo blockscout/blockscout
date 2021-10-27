@@ -19,8 +19,10 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   def compile_records(num_days, records \\ []) do
     Logger.info("tx/per day chart: collect records for txs per day stats")
 
-    if num_days == 0 do
+    if num_days == 1 do
       Logger.info("tx/per day chart: records collected #{inspect(records)}")
+
+      records = [%{date: date_today(), number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
       # base case
       {:ok, records}
     else
