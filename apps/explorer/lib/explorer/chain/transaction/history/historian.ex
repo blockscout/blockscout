@@ -87,11 +87,18 @@ defmodule Explorer.Chain.Transaction.History.Historian do
         where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block
       )
 
+    all_blocks_query =
+      from(
+        block in Block,
+        where: block.consensus == true,
+        where: block.number >= ^min_block and block.number <= ^max_block,
+        select: block.number
+      )
+
     query =
       from(transaction in subquery(all_transactions_query),
-        join: block in Block,
-        on: transaction.block_hash == block.hash,
-        where: block.consensus == true,
+        join: block in subquery(all_blocks_query),
+        on: transaction.block_number == block.number,
         select: transaction
       )
 
