@@ -74,6 +74,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:noreply, new_state}
   end
 
+  # delay to allow for block propagation through celo archive nodes in milliseconds
+  @realtime_fetcher_delay 1500
+
   @impl GenServer
   def handle_info(
         {subscription, {:ok, %{"number" => quantity}}},
@@ -91,6 +94,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     if number > 0 do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
     end
+
+    :timer.sleep(@realtime_fetcher_delay)
 
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
