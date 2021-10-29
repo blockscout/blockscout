@@ -107,7 +107,7 @@
               text: gettext("Size of the block in bytes.") %>
               <%= gettext("Size") %>
             </dt>
-            <dd class="col-sm-9 col-lg-10"><%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %></dd>
+            <dd class="col-sm-9 col-lg-10"><%= if !is_nil(@block.size), do: (Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!()), else: gettext("N/A bytes") %></dd>
           </dl>
           <!-- Hash -->
           <dl class="row">
@@ -209,7 +209,7 @@
                   text: gettext("Ether") <> " " <> gettext("burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
                   <%= gettext("Burnt Fees") %>
                 </dt>
-                <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <s><%= format_wei_value(burned_fee, :ether) %></s></dd>
+                <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %></dd>
             </dl>
             <!-- Priority Fee / Tip -->
             <dl class="row">

@@ -106,7 +106,8 @@ export function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $
         methodToCall
           .on('error', function (error) {
             var titleAndError = formatTitleAndError(error)
-            openErrorModal(titleAndError.title.length ? titleAndError.title : `Error in sending transaction for method "${functionName}"`, titleAndError.message, false)
+            var message = titleAndError.message + (titleAndError.txHash ? `<br><a href="/tx/${titleAndError.txHash}">More info</a>` : '')
+            openErrorModal(titleAndError.title.length ? titleAndError.title : `Error in sending transaction for method "${functionName}"`, message, false)
             Sentry.captureException(error)
           })
           .on('transactionHash', function (txHash) {

@@ -131,7 +131,8 @@ defmodule BlockScoutWeb.SmartContractController do
         function_name: params["function_name"],
         method_id: params["method_id"],
         outputs: outputs,
-        names: names
+        names: names,
+        smart_contract_address: address_hash
       )
     else
       :error ->

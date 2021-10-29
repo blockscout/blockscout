@@ -106,7 +106,7 @@ defmodule Explorer.SmartContract.Reader do
           functions()
         ) :: functions_results()
   def query_contract(contract_address, abi, functions) do
-    query_contract_inner(contract_address, abi, functions, nil, nil)
+    query_contract_inner(contract_address, abi, functions, nil, nil, false)
   end
 
   @spec query_contract(
@@ -116,7 +116,7 @@ defmodule Explorer.SmartContract.Reader do
           functions()
         ) :: functions_results()
   def query_contract(contract_address, from, abi, functions) do
-    query_contract_inner(contract_address, abi, functions, nil, from)
+    query_contract_inner(contract_address, abi, functions, nil, from, true)
   end
 
   @spec query_contract_by_block_number(
@@ -125,11 +125,11 @@ defmodule Explorer.SmartContract.Reader do
           functions(),
           non_neg_integer()
         ) :: functions_results()
-  def query_contract_by_block_number(contract_address, abi, functions, block_number) do
-    query_contract_inner(contract_address, abi, functions, block_number, nil)
+  def query_contract_by_block_number(contract_address, abi, functions, block_number, leave_error_as_map \\ false) do
+    query_contract_inner(contract_address, abi, functions, block_number, nil, leave_error_as_map)
   end
 
-  defp query_contract_inner(contract_address, abi, functions, block_number, from) do
+  defp query_contract_inner(contract_address, abi, functions, block_number, from, leave_error_as_map) do
     requests =
       functions
       |> Enum.map(fn {method_id, args} ->
@@ -143,7 +143,7 @@ defmodule Explorer.SmartContract.Reader do
       end)
 
     requests
-    |> query_contracts(abi)
+    |> query_contracts(abi, [], leave_error_as_map)
     |> Enum.zip(requests)
     |> Enum.into(%{}, fn {response, request} ->
       {request.method_id, response}
@@ -167,6 +167,13 @@ defmodule Explorer.SmartContract.Reader do
       Keyword.get(opts, :json_rpc_named_arguments) || Application.get_env(:explorer, :json_rpc_named_arguments)
 
     EthereumJSONRPC.execute_contract_functions(requests, abi, json_rpc_named_arguments)
+  end
+
+  @spec query_contracts([Contract.call()], term(), true | false) :: [Contract.call_result()]
+  def query_contracts(requests, abi, [], leave_error_as_map) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    EthereumJSONRPC.execute_contract_functions(requests, abi, json_rpc_named_arguments, leave_error_as_map)
   end
 
   @doc """

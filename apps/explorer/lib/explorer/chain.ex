@@ -3862,7 +3862,7 @@ defmodule Explorer.Chain do
     formatted_revert_reason
   end
 
-  defp format_revert_reason_message(revert_reason) do
+  def format_revert_reason_message(revert_reason) do
     case revert_reason do
       @revert_msg_prefix_1 <> rest ->
         rest
@@ -5016,6 +5016,8 @@ defmodule Explorer.Chain do
       else
         {:ok, false}
       end
+    else
+      {:ok, false}
     end
   end
 
@@ -6533,7 +6535,9 @@ defmodule Explorer.Chain do
     )
   end
 
-  def get_total_staked_and_ordered(address_hash) do
+  def get_total_staked_and_ordered(""), do: nil
+
+  def get_total_staked_and_ordered(address_hash) when is_binary(address_hash) do
     StakingPoolsDelegator
     |> where([delegator], delegator.address_hash == ^address_hash and not delegator.is_deleted)
     |> select([delegator], %{
@@ -6542,6 +6546,8 @@ defmodule Explorer.Chain do
     })
     |> Repo.one()
   end
+
+  def get_total_staked_and_ordered(_), do: nil
 
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
@@ -6564,6 +6570,17 @@ defmodule Explorer.Chain do
     params
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
+  end
+
+  def get_token_type(hash) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash == ^hash,
+        select: token.type
+      )
+
+    Repo.one(query)
   end
 
   @doc """

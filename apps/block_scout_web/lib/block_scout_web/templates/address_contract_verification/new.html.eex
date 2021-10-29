@@ -74,11 +74,7 @@
             name="button"
             type="button"
           >
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
-            <%= gettext("Loading....") %>
+            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
           </button>
           <%= link(
             gettext("Next"),

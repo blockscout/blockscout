@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   Get the total value of the token supply in USD.
   """
   def total_supply_usd(token) do
-    if token.custom_cap do
+    if Map.has_key?(token, :custom_cap) && token.custom_cap do
       token.custom_cap
     else
       tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
