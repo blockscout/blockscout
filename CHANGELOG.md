@@ -24,6 +24,7 @@
 
 ### Fixes
 - [#4835](https://github.com/blockscout/blockscout/pull/4835) - Fix view for broken token icons
+- [#4830](https://github.com/blockscout/blockscout/pull/4830) - Speed up txs per day chart data collection
 - [#4818](https://github.com/blockscout/blockscout/pull/4818) - Fix for extract_omni_bridged_token_metadata_wrapper method
 - [#4812](https://github.com/blockscout/blockscout/pull/4812), [#4815](https://github.com/blockscout/blockscout/pull/4815) - Check if exists custom_cap property of extended token object before access it
 - [#4810](https://github.com/blockscout/blockscout/pull/4810) - Show `nil` block.size as `N/A bytes`
