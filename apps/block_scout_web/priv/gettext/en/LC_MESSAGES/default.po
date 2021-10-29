@@ -1900,7 +1900,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:52
-#: lib/block_scout_web/templates/chain/_block.html.eex:26 lib/block_scout_web/views/internal_transaction_view.ex:28
+#: lib/block_scout_web/templates/chain/_block.html.eex:27 lib/block_scout_web/views/internal_transaction_view.ex:28
 msgid "Reward"
 msgstr ""
 
