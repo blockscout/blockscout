@@ -129,7 +129,7 @@
               <%= gettext "Revert reason" %> </dt>
             <dd class="col-sm-9 col-lg-10">
               <%= case BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) do %>
-                <% {:error, :contract_not_verified, candidates} when candidates != [] -> %>
+                <% {:error, _contract_not_verified, candidates} when candidates != [] -> %>
                   <% {:ok, method_id, text, mapping} = Enum.at(candidates, 0) %>
                   <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
                 <% {:ok, method_id, text, mapping} -> %>

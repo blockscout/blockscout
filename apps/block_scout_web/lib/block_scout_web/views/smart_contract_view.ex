@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.SmartContract.Helper
 
@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, type, names, index, _components),
     do: render_type_value(type, binary_to_utf_string(value), fetch_name(names, index))
 
-  def values_with_type(value, :error, _components), do: render_type_value("error", value, nil)
+  def values_with_type(value, :error, _components), do: render_type_value("error", value, "error")
 
   defp fetch_name(nil, _index), do: nil
 
@@ -344,6 +344,25 @@ defmodule BlockScoutWeb.SmartContractView do
       "tuple[" <> types <> "]"
     else
       type
+    end
+  end
+
+  def decode_revert_reason(to_address, revert_reason) do
+    smart_contract = Chain.address_hash_to_smart_contract(to_address)
+
+    Transaction.decoded_revert_reason(
+      %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},
+      revert_reason
+    )
+  end
+
+  def decode_hex_revert_reason(hex_revert_reason) do
+    case Integer.parse(hex_revert_reason, 16) do
+      {number, ""} ->
+        :binary.encode_unsigned(number)
+
+      _ ->
+        hex_revert_reason
     end
   end
 end
