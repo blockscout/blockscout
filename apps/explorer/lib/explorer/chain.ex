@@ -4215,7 +4215,7 @@ defmodule Explorer.Chain do
 
             verified_contract_twin =
               verified_contract_twin_query
-              |> Repo.one(timeout: 10_000)
+              |> Repo.one(timeout: 30_000)
 
             verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
 
