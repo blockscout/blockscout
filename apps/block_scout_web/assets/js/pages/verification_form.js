@@ -175,12 +175,10 @@ if ($contractVerificationPage.length) {
             $('#verify-via-standart-json-input-submit').prop('disabled', false)
             $('#file-help-block').text('')
             $('#dropzone-previews').addClass('dz-started')
-            //$('#dz-button-message').hide()
           })
 
           this.on('removedfile', function (_file) {
             if (this.files.length == 0) {
-              //$('#dz-button-message').show()
               $('#verify-via-standart-json-input-submit').prop('disabled', true)
               $('#dropzone-previews').removeClass('dz-started')
             }
