@@ -3386,9 +3386,23 @@ defmodule Explorer.Chain do
         :ok,
         %Explorer.Chain.Hash{
           byte_count: 20,
-          bytes: <<0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed :: big-integer-size(20)-unit(8)>>
+          bytes: <<90, 174, 182, 5, 63, 62, 148, 201, 185, 160, 159, 51, 102, 148, 53,
+            231, 239, 27, 234, 237>>
         }
       }
+
+      iex> Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      {
+        :ok,
+        %Explorer.Chain.Hash{
+          byte_count: 20,
+          bytes: <<90, 174, 182, 5, 63, 62, 148, 201, 185, 160, 159, 51, 102, 148, 53,
+            231, 239, 27, 234, 237>>
+        }
+      }
+
+      iex> Base.encode16(<<90, 174, 182, 5, 63, 62, 148, 201, 185, 160, 159, 51, 102, 148, 53, 231, 239, 27, 234, 237>>, case: :lower)
+      "5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"
 
   `String.t` format must always have 40 hexadecimal digits after the `0x` base prefix.
 

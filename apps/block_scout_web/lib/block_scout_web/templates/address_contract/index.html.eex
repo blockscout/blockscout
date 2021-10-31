@@ -18,10 +18,15 @@
           <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: metadata_for_verification.address_hash, conn: @conn %>
         <% else %>
           <%= if metadata_for_verification do %>
+            <% path = address_verify_contract_path(@conn, :new, @address.hash) %>
             <div class="mb-4">
-              <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
-        metadata_for_verification.address_hash,
-        to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%=  gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
+              <div style="display: inline-block;">
+                <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %>
+                <span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
+                  metadata_for_verification.address_hash, 
+                  to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
+              </div>
+              <%= link(gettext("Verify & Publish"), to: path, class: "button button-primary button-sm float-right ml-3", "data-test": "verify_and_publish") %>
             </div>
           <% end %>
         <% end %>
@@ -99,21 +104,19 @@
           </div>
         </section>
 
-        <%= if target_contract.verified_via_sourcify do %>
-          <%= Enum.map(additional_sources, fn additional_source -> %>
-            <section>
-              <div class="d-flex justify-content-between align-items-baseline">
-                <h3><%= additional_source.file_name %></h3>
-                <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= additional_source.contract_source_code %>" aria-label="Copy Contract Source Code">
-                  <%= gettext "Copy Source Code" %>
-                </button>
-              </div>
-              <div class="tile tile-muted mb-4">
-                <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(additional_source.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
-              </div>
-            </section>
-          <% end)%>
-        <% end %>
+        <%= Enum.map(additional_sources, fn additional_source -> %>
+          <section>
+            <div class="d-flex justify-content-between align-items-baseline">
+              <h3><%= additional_source.file_name %></h3>
+              <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= additional_source.contract_source_code %>" aria-label="Copy Contract Source Code">
+                <%= gettext "Copy Source Code" %>
+              </button>
+            </div>
+            <div class="tile tile-muted mb-4">
+              <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(additional_source.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+            </div>
+          </section>
+        <% end)%>
 
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
