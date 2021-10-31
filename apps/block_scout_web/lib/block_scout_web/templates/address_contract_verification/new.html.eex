@@ -34,6 +34,11 @@
                   <div class="radio-icon"></div>
                   <%= label :verify_via, :true, gettext("Via flattened source code"), class: "radio-text" %>
                 </div>
+                <div class="radio-big">
+                  <%= radio_button f, :verify_via, false, class: "form-check-input verify-via-standard-json-input" %>
+                  <div class="radio-icon"></div>
+                  <%= label :verify_via, :false, gettext("Via standard JSON input"), class: "radio-text" %>
+                </div>
                 <%= if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do %>
                   <div class="radio-big">
                     <%= radio_button f, :verify_via, false, class: "form-check-input verify-via-sourcify" %>
@@ -95,6 +100,14 @@
             gettext("Next"),
             to: address_verify_vyper_contract_path(@conn, :new, @address_hash),
             id: "verify_vyper_contract_button",
+            class: "btn-full-primary mr-2",
+            style: "display: none;",
+            "data-button-loading": "animation"
+          ) %>
+          <%= link(
+            gettext("Next"),
+            to: address_verify_contract_via_standard_json_input_path(@conn, :new, @address_hash),
+            id: "verify_via_standard_json_input",
             class: "btn-full-primary mr-2",
             style: "display: none;",
             "data-button-loading": "animation"
