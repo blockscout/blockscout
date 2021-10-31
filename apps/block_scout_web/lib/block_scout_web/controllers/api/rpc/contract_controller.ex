@@ -76,6 +76,57 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+  def verifysourcecode(
+        conn,
+        %{
+          "codeformat" => "solidity-standard-json-input",
+          "contractaddress" => address_hash,
+          "sourceCode" => json_input
+        } = params
+      ) do
+    with {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+         {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
+         {:publish, {:ok, _}} <-
+           {:publish, Publisher.publish_with_standart_json_input(fetched_params, json_input)} do
+      render(conn, :show, %{result: address_hash})
+    else
+      {:publish,
+       {:error,
+        %Ecto.Changeset{
+          errors: [
+            address_hash:
+              {"has already been taken",
+               [
+                 constraint: :unique,
+                 constraint_name: "smart_contracts_address_hash_index"
+               ]}
+          ]
+        }}} ->
+        render(conn, :error, error: "Smart-contract already verified.")
+
+      {:publish, _err} ->
+        render(conn, :show, %{result: address_hash})
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address hash")
+
+      {:params, {:error, error}} ->
+        render(conn, :error, error: error)
+    end
+  end
+
+  def verifysourcecode(conn, %{"codeformat" => "solidity-standard-json-input"}) do
+    render(conn, :error, error: "Missing sourceCode or contractaddress fields")
+  end
+
+  def checkverifystatus(conn, %{"guid" => address_hash}) do
+    if Chain.smart_contract_verified?(address_hash) do
+      render(conn, :show, %{result: "Pass - Verified"})
+    else
+      render(conn, :show, %{result: "Fail - Unable to verify"})
+    end
+  end
+
   defp prepare_params(files) when is_struct(files) do
     {:error, "Invalid args format"}
   end
@@ -458,6 +509,14 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "compilerVersion", "compiler_version")
     |> required_param(params, "contractSourceCode", "contract_source_code")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+  end
+
+  defp fetch_verifysourcecode_params(params) do
+    {:ok, %{}}
+    |> required_param(params, "contractaddress", "address_hash")
+    |> required_param(params, "contractname", "name")
+    |> required_param(params, "compilerversion", "compiler_version")
+    |> optional_param(params, "constructorArguements", "constructor_arguments")
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do

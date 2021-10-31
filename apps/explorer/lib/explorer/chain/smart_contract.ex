@@ -270,7 +270,13 @@ defmodule Explorer.Chain.SmartContract do
     |> prepare_changes(&upsert_contract_methods/1)
   end
 
-  def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error, error_message) do
+  def invalid_contract_changeset(
+        %__MODULE__{} = smart_contract,
+        attrs,
+        error,
+        error_message,
+        json_verification \\ false
+      ) do
     validated =
       smart_contract
       |> cast(attrs, [
@@ -287,12 +293,17 @@ defmodule Explorer.Chain.SmartContract do
         :file_path,
         :is_vyper_contract
       ])
-      |> validate_required([:name, :compiler_version, :optimization, :address_hash])
+      |> (&if(json_verification,
+            do: &1,
+            else: validate_required(&1, [:name, :compiler_version, :optimization, :address_hash])
+          )).()
+
+    field_to_put_message = if json_verification, do: :file, else: :contract_source_code
 
     if error_message do
-      add_error(validated, :contract_source_code, error_message(error, error_message))
+      add_error(validated, field_to_put_message, error_message(error, error_message))
     else
-      add_error(validated, :contract_source_code, error_message(error))
+      add_error(validated, field_to_put_message, error_message(error))
     end
   end
 
