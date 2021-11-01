@@ -53,7 +53,7 @@ defmodule Explorer.Repo do
                 |> Enum.map(fn element ->
                   element.block_number
                 end)
-                |> Enum.dedup()
+                |> Enum.uniq()
 
               Blocks.invalidate_consensus_blocks(block_numbers)
             end
