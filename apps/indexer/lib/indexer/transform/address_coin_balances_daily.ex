@@ -41,7 +41,7 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
 
     coin_balances_daily_params_set =
       coin_balances_daily_params_list
-      |> Enum.dedup()
+      |> Enum.uniq()
       |> Enum.into(MapSet.new())
 
     coin_balances_daily_params_set
@@ -64,7 +64,7 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
 
     coin_balances_daily_params_set =
       coin_balances_daily_params_list
-      |> Enum.dedup()
+      |> Enum.uniq()
       |> Enum.into(MapSet.new())
 
     coin_balances_daily_params_set
