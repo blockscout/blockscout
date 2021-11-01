@@ -121,11 +121,11 @@ defmodule Indexer.Block.Fetcher do
         _.._ = range
       )
       when callback_module != nil do
-    range_list = Enum.to_list(range)
+    # range_list = Enum.to_list(range)
 
-    if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-      Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
-    end
+    # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+    #   Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
+    # end
 
     with {:blocks,
           {:ok,
@@ -180,9 +180,9 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-        Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
-      end
+      # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+      #   Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
+      # end
 
       Task.async(fn ->
         %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
@@ -245,29 +245,29 @@ defmodule Indexer.Block.Fetcher do
       result
     else
       {step, {:error, reason}} ->
-        if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-          Logger.info(["### fetch_and_import_range FAILED #1 ", inspect(step), inspect(reason), " ###"])
-        end
+        # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+        #   Logger.info(["### fetch_and_import_range FAILED #1 ", inspect(step), inspect(reason), " ###"])
+        # end
 
         {:error, {step, reason}}
 
-      {:import, {:error, step, failed_value, changes_so_far}} ->
-        if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-          Logger.info([
-            "### fetch_and_import_range FAILED #2 ",
-            inspect(step),
-            inspect(failed_value),
-            inspect(changes_so_far),
-            " ###"
-          ])
-        end
+        # {:import, {:error, step, failed_value, changes_so_far}} ->
+        #   if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+        #     Logger.info([
+        #       "### fetch_and_import_range FAILED #2 ",
+        #       inspect(step),
+        #       inspect(failed_value),
+        #       inspect(changes_so_far),
+        #       " ###"
+        #     ])
+        #   end
 
-        {:error, {step, failed_value, changes_so_far}}
+        #   {:error, {step, failed_value, changes_so_far}}
 
-      _ ->
-        if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-          Logger.info(["### fetch_and_import_range FAILED #3 ", inspect(range), " ###"])
-        end
+        # _ ->
+        #   if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
+        #     Logger.info(["### fetch_and_import_range FAILED #3 ", inspect(range), " ###"])
+        #   end
     end
   end
 
