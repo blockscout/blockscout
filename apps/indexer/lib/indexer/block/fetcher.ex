@@ -251,7 +251,7 @@ defmodule Indexer.Block.Fetcher do
 
         {:error, {step, reason}}
 
-        # {:import, {:error, step, failed_value, changes_so_far}} ->
+      {:import, {:error, step, failed_value, changes_so_far}} ->
         #   if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
         #     Logger.info([
         #       "### fetch_and_import_range FAILED #2 ",
@@ -262,7 +262,7 @@ defmodule Indexer.Block.Fetcher do
         #     ])
         #   end
 
-        #   {:error, {step, failed_value, changes_so_far}}
+        {:error, {step, failed_value, changes_so_far}}
 
         # _ ->
         #   if Enum.at(range_list, 0) != Enum.at(range_list, -1) do

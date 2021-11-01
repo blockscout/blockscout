@@ -46,12 +46,12 @@ defmodule Indexer.Transform.TokenTransfers do
 
     tokens_uniq = tokens |> Enum.uniq()
 
-    token_transfers_from_logs_dedup = %{
+    token_transfers_from_logs_uniq = %{
       tokens: tokens_uniq,
       token_transfers: token_transfers
     }
 
-    token_transfers_from_logs_dedup
+    token_transfers_from_logs_uniq
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type \\ :erc20_erc721) do

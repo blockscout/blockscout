@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   """
 
   require Ecto.Query
-  require Logger
+  # require Logger
 
   import Ecto.Query, only: [from: 2, subquery: 1]
 
