@@ -14,9 +14,17 @@
           <h1 class="card-title list-title-description">Profile</h1>
           <br>
           <div class="col-sm">
-            <img src="<%= @user.avatar %>" class="rounded float-start" alt="...">
+            <img src="<%= @user.avatar %>" alt="<%= @user.nickname %>" size="42" height="42" width="42" >
           </div>
           <br>
+          <div class="col-sm">
+            <div class="mb-4 row">
+              <label for="staticEmail" class="col-sm-6 col-form-label">Uid</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.uid %>">
+              </div>
+            </div>
+          </div>
           <div class="col-sm">
             <div class="mb-4 row">
               <label for="staticEmail" class="col-sm-6 col-form-label">Name</label>

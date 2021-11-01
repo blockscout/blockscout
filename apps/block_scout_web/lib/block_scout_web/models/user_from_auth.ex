@@ -6,19 +6,41 @@ defmodule UserFromAuth do
   require Poison
 
   alias Ueberauth.Auth
+  alias Explorer.Accounts.Identity
 
-  def find_or_create(%Auth{provider: :identity} = auth) do
-    case validate_pass(auth.credentials) do
-      :ok ->
-        {:ok, basic_info(auth)}
+  import Ecto.Query, only: [from: 2]
 
-      {:error, reason} ->
-        {:error, reason}
+  def find_or_create(%Auth{} = auth) do
+    case List.first(find_identity(auth)) do
+      nil -> create_identity(auth)
+      %{} = identity -> {:ok, basic_info(auth, identity)}
     end
   end
 
-  def find_or_create(%Auth{} = auth) do
-    {:ok, basic_info(auth)}
+  defp create_identity(auth) do
+    case Explorer.Repo.insert(%Identity{uid: auth.uid}) do
+      {:ok, identity} -> {:ok, basic_info(auth, identity)}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp find_identity(auth) do
+    Explorer.Repo.all(query_identity(auth))
+  end
+
+  defp query_identity(auth) do
+    from(i in Identity, where: i.uid == ^auth.uid)
+  end
+
+  defp basic_info(auth, identity) do
+    %{
+      id: identity.id,
+      uid: auth.uid,
+      email: email_from_auth(auth),
+      name: name_from_auth(auth),
+      nickname: nickname_from_auth(auth),
+      avatar: avatar_from_auth(auth)
+    }
   end
 
   # github does it this way
@@ -38,10 +60,6 @@ defmodule UserFromAuth do
 
   defp nickname_from_auth(%{info: %{nickname: nickname}}), do: nickname
 
-  defp basic_info(auth) do
-    %{id: auth.uid, email: email_from_auth(auth), name: name_from_auth(auth), nickname: nickname_from_auth(auth), avatar: avatar_from_auth(auth)}
-  end
-
   defp name_from_auth(auth) do
     if auth.info.name do
       auth.info.name
@@ -57,17 +75,17 @@ defmodule UserFromAuth do
     end
   end
 
-  defp validate_pass(%{other: %{password: ""}}) do
-    {:error, "Password required"}
-  end
+  #   defp validate_pass(%{other: %{password: ""}}) do
+  #     {:error, "Password required"}
+  #   end
 
-  defp validate_pass(%{other: %{password: pw, password_confirmation: pw}}) do
-    :ok
-  end
+  #   defp validate_pass(%{other: %{password: pw, password_confirmation: pw}}) do
+  #     :ok
+  #   end
 
-  defp validate_pass(%{other: %{password: _}}) do
-    {:error, "Passwords do not match"}
-  end
+  #   defp validate_pass(%{other: %{password: _}}) do
+  #     {:error, "Passwords do not match"}
+  #   end
 
-  defp validate_pass(_), do: {:error, "Password Required"}
+  #   defp validate_pass(_), do: {:error, "Password Required"}
 end
