@@ -23,6 +23,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4840](https://github.com/blockscout/blockscout/pull/4840) - Replace Enum.dedup with Enum.uniq where actually uniq items are expected
 - [#4835](https://github.com/blockscout/blockscout/pull/4835) - Fix view for broken token icons
 - [#4830](https://github.com/blockscout/blockscout/pull/4830) - Speed up txs per day chart data collection
 - [#4818](https://github.com/blockscout/blockscout/pull/4818) - Fix for extract_omni_bridged_token_metadata_wrapper method
@@ -42,8 +43,7 @@
 - [#4711](https://github.com/blockscout/blockscout/pull/4711) - Add trimming to the contract functions inputs
 - [#4729](https://github.com/blockscout/blockscout/pull/4729) - Fix bugs with fees in cases of txs with `gas price = 0`
 - [#4725](https://github.com/blockscout/blockscout/pull/4725) - Fix hardcoded coin name on transaction's and block's page
-- [#4724](https://github.com/blockscout/blockscout/pull/4724) - An empty blocks sanitizer
-- [#4718](https://github.com/blockscout/blockscout/pull/4718) - Lose block consensus if related token balance update failed
+- [#4724](https://github.com/blockscout/blockscout/pull/4724), [#4842](https://github.com/blockscout/blockscout/pull/4841) - Sanitizer of "empty" blocks
 - [#4717](https://github.com/blockscout/blockscout/pull/4717) - Contract verification fix: check only success creation tx
 - [#4713](https://github.com/blockscout/blockscout/pull/4713) - Search input field: sanitize input
 - [#4703](https://github.com/blockscout/blockscout/pull/4703) - Block Details page: Fix pagination on the Transactions tab
