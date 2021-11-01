@@ -42,13 +42,13 @@ defmodule Indexer.Transform.TokenTransfers do
     |> Enum.map(fn token_transfer ->
       token_transfer.token_contract_address_hash
     end)
-    |> Enum.dedup()
+    |> Enum.uniq()
     |> Enum.each(&update_token/1)
 
-    tokens_dedup = tokens |> Enum.dedup()
+    tokens_uniq = tokens |> Enum.uniq()
 
     token_transfers_from_logs_dedup = %{
-      tokens: tokens_dedup,
+      tokens: tokens_uniq,
       token_transfers: token_transfers
     }
 
