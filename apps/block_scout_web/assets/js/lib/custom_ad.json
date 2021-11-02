@@ -62,4 +62,13 @@
         "name": "SANA",
         "url": "https://www.ethsana.org/"
     }
-}]
+},{
+    "ad": {
+        "thumbnail": "/images/in-house-ad/snafu.png",
+        "description_short": "Hungry for NFTs? Check out the SNAFU Collection #3! A lot of international artists and prizes.",
+        "cta_button": "Collect NFTs",
+        "name": "SNAFU Collective",
+        "url": "https://app.nftsnafu.org/#/swap"
+    }
+}
+]
