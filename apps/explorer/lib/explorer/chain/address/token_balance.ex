@@ -23,6 +23,8 @@ defmodule Explorer.Chain.Address.TokenBalance do
    *  `token_contract_address_hash` - The contract address hash foreign key.
    *  `block_number` - The block's number that the transfer took place.
    *  `value` - The value that's represents the balance.
+   *  `token_id` - The token_id of the transferred token (applicable for ERC-1155 and ERC-721 tokens)
+   *  `token_type` - The type of the token
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -32,13 +34,17 @@ defmodule Explorer.Chain.Address.TokenBalance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Decimal.t() | nil
+          value: Decimal.t() | nil,
+          token_id: non_neg_integer() | nil,
+          token_type: String.t()
         }
 
   schema "address_token_balances" do
     field(:value, :decimal)
     field(:block_number, :integer)
     field(:value_fetched_at, :utc_datetime_usec)
+    field(:token_id, :decimal)
+    field(:token_type, :string)
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 
@@ -53,8 +59,8 @@ defmodule Explorer.Chain.Address.TokenBalance do
     timestamps()
   end
 
-  @optional_fields ~w(value value_fetched_at)a
-  @required_fields ~w(address_hash block_number token_contract_address_hash)a
+  @optional_fields ~w(value value_fetched_at token_id)a
+  @required_fields ~w(address_hash block_number token_contract_address_hash token_type)a
   @allowed_fields @optional_fields ++ @required_fields
 
   @doc false
@@ -82,8 +88,9 @@ defmodule Explorer.Chain.Address.TokenBalance do
       tb in TokenBalance,
       join: t in Token,
       on: tb.token_contract_address_hash == t.contract_address_hash,
-      where: is_nil(tb.value_fetched_at) or is_nil(tb.value),
-      where: (tb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20"
+      where:
+        ((tb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20" or t.type == "ERC-1155") and
+          (is_nil(tb.value_fetched_at) or is_nil(tb.value))
     )
   end
 end

@@ -43,7 +43,8 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       "OptimizationRuns" => "",
       "EVMVersion" => "",
       "ConstructorArguments" => "",
-      "ExternalLibraries" => ""
+      "ExternalLibraries" => "",
+      "FileName" => ""
     }
   end
 
@@ -142,6 +143,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       |> Map.put_new(:CompilerVersion, Map.get(contract, :compiler_version, ""))
       |> Map.put_new(:OptimizationUsed, contract_optimization)
       |> Map.put_new(:EVMVersion, Map.get(contract, :evm_version, ""))
+      |> Map.put_new(:FileName, Map.get(contract, :file_path, "") || "")
       |> insert_additional_sources(address)
     end
   end

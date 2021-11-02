@@ -51,7 +51,7 @@
             <div class="d-none d-sm-block d-md-none"></br></br></div>
             <div class="d-block d-sm-none"></br></br></div>
             <dt class="col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
-            <dd class="col-md-4"><%= format_optimization_text(target_contract.optimization) %></dd>
+            <dd class="col-md-4"><%= if target_contract.is_vyper_contract, do: "N/A", else: format_optimization_text(target_contract.optimization) %></dd>
           </dl>
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
@@ -89,7 +89,7 @@
         <% end %>
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
-            <h3><%= gettext "Contract source code" %></h3>
+            <h3><%= target_contract.file_path || gettext "Contract source code" %></h3>
             <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
               <%= gettext "Copy Source Code" %>
             </button>

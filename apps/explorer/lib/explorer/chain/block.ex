@@ -64,7 +64,8 @@ defmodule Explorer.Chain.Block do
           total_difficulty: difficulty(),
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
           refetch_needed: boolean(),
-          base_fee_per_gas: Wei.t()
+          base_fee_per_gas: Wei.t(),
+          is_empty: boolean()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -80,6 +81,7 @@ defmodule Explorer.Chain.Block do
     field(:total_difficulty, :decimal)
     field(:refetch_needed, :boolean)
     field(:base_fee_per_gas, Wei)
+    field(:is_empty, :boolean)
 
     timestamps()
 

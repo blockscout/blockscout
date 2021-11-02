@@ -1,6 +1,7 @@
 import Web3 from 'web3'
+import $ from 'jquery'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals'
-import { compareChainIDs, formatError, getContractABI, getCurrentAccount, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { compareChainIDs, formatError, formatTitleAndError, getContractABI, getCurrentAccount, getMethodInputs, prepareMethodArgs } from './common_helpers'
 
 export const walletEnabled = () => {
   return new Promise((resolve) => {
@@ -100,7 +101,9 @@ export function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $
         const methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
         methodToCall
           .on('error', function (error) {
-            openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
+            var titleAndError = formatTitleAndError(error)
+            var message = titleAndError.message + (titleAndError.txHash ? `<br><a href="/tx/${titleAndError.txHash}">More info</a>` : '')
+            openErrorModal(titleAndError.title.length ? titleAndError.title : `Error in sending transaction for method "${functionName}"`, message, false)
           })
           .on('transactionHash', function (txHash) {
             onTransactionHash(txHash, $element, functionName)
@@ -126,6 +129,31 @@ export function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $
     .catch(error => {
       openWarningModal('Unauthorized', formatError(error))
     })
+}
+
+export function queryMethod (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer) {
+  var data = {
+    function_name: functionName,
+    method_id: $methodId.val(),
+    type: type,
+    args
+  }
+  if (isWalletEnabled) {
+    getCurrentAccount()
+      .then((currentAccount) => {
+        data = {
+          function_name: functionName,
+          method_id: $methodId.val(),
+          type: type,
+          from: currentAccount,
+          args
+        }
+        $.get(url, data, response => $responseContainer.html(response))
+      }
+      )
+  } else {
+    $.get(url, data, response => $responseContainer.html(response))
+  }
 }
 
 function onTransactionHash (txHash, $element, functionName) {

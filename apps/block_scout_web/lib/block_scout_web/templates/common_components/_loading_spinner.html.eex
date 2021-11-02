@@ -1,0 +1,6 @@
+<span class="loading-spinner-small mr-2">
+    <span class="loading-spinner-block-1"></span>
+    <span class="loading-spinner-block-2"></span>
+</span>
+<%= if assigns[:loading_text], do: @loading_text %>
+</span>

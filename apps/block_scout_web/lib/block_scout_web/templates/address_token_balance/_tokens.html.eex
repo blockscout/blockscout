@@ -3,25 +3,31 @@
     <%= @type %> (<span data-number-of-tokens-by-type="<%= @type %>"><%= Enum.count(@token_balances)%></span>)
   </h6>
 
-  <%= for {token_balance, bridged_token} <- sort_by_usd_value_and_name(@token_balances) do %>
+  <%= for {token_balance, bridged_token, token} <- sort_by_usd_value_and_name(@token_balances) do %>
     <div
       class="border-bottom"
       data-dropdown-token-balance-test
       data-token-name="<%= token_name(token_balance.token) %>"
       data-token-symbol="<%= token_symbol(token_balance.token) %>"
     >
+      <% path = cond do
+          token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          token_balance.token_type == "ERC-1155" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          true -> token_path(@conn, :show, to_string(token_balance.token.contract_address_hash))
+        end
+      %>
       <%= link(
-            to: token_path(@conn, :show, to_string(token_balance.token.contract_address_hash)),
+            to: path,
             class: "dropdown-item"
           ) do %>
         <div class="row">
-          <p class="mb-0 col-md-6"><%= token_name(token_balance.token) %>
+          <p class="mb-0 col-md-6"><%= token_name(token) %>
           <%= if bridged_token && bridged_token.custom_metadata do %>
             <%= "(" <> bridged_token.custom_metadata <> ")" %>
           <% end %>
           </p>
           <%= if bridged_token && bridged_token.lp_token && bridged_token.custom_cap do %>
-            <% lp_token_balance_usd = token_balance.value |> Decimal.div(token_balance.token.total_supply) |> Decimal.mult(bridged_token.custom_cap) |> Decimal.round(4) %>
+            <% lp_token_balance_usd = token_balance.value |> Decimal.div(token.total_supply) |> Decimal.mult(bridged_token.custom_cap) |> Decimal.round(4) %>
             <p class="mb-0 col-md-6 text-right">
               <span data-selector="token-balance-usd" data-usd-value="<%= lp_token_balance_usd %>"></span>
             </p>
@@ -36,7 +42,14 @@
         <div class="row">
           <% col_md = if token_balance.token.usd_value, do: "col-md-6", else: "col-md-12" %>
           <p class="mb-0 <%= col_md %> ">
-            <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_symbol(token_balance.token) %>
+            <%= if token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) do %>
+              1
+            <% else %>
+              <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_symbol(token_balance.token) %>
+            <% end %>
+            <%= if (token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id)) or token_balance.token_type == "ERC-1155" do %>
+              <%= " TokenID " <> to_string(token_balance.token_id) %>
+            <% end %>
           </p>
           <%= if token_balance.token.usd_value do %>
             <p class="mb-0 col-md-6 text-right text-muted">

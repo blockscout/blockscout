@@ -597,11 +597,6 @@ $cube-quantity: 5;
   @include media-breakpoint-down(sm) {
     display: inline-block;
     word-break: break-all;
-  }
-}
-
-.bridged-tokens-buttons-mobile {
-  @include media-breakpoint-down(sm) {
-    margin-top: 0.5em;
+    line-height: 20px;
   }
 }

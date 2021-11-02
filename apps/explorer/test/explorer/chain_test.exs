@@ -1,6 +1,6 @@
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
-  use EthereumJSONRPC.Case, async: true
+  use EthereumJSONRPC.Case
 
   require Ecto.Query
 
@@ -4666,7 +4666,7 @@ defmodule Explorer.ChainTest do
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
-        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end
@@ -5744,6 +5744,18 @@ defmodule Explorer.ChainTest do
       implementation_abi = Chain.get_implementation_abi("0x" <> implementation_contract_address_hash_string)
 
       assert implementation_abi == @implementation_abi
+    end
+
+    test "get_total_staked_and_ordered should return just nil in case of invalid input and some response otherwise" do
+      assert Chain.get_total_staked_and_ordered(nil) == nil
+      assert Chain.get_total_staked_and_ordered(%{}) == nil
+      assert Chain.get_total_staked_and_ordered("") == nil
+      assert Chain.get_total_staked_and_ordered([]) == nil
+
+      assert Chain.get_total_staked_and_ordered("0x3f7c51ef174ee8a62e3fcfb0947aa90c97bd2784") == %{
+               stake_amount: Decimal.new(0),
+               ordered_withdraw: Decimal.new(0)
+             }
     end
   end
 end

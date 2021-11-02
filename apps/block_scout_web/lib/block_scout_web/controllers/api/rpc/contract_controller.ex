@@ -6,7 +6,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.{Hash, SmartContract}
-  alias Explorer.SmartContract.Publisher
+  alias Explorer.SmartContract.Solidity.Publisher
+  alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
@@ -196,22 +197,56 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
-  def publish_without_broadcast(%{"addressHash" => address_hash, "params" => params, "abi" => abi} = input) do
-    params =
-      if Map.has_key?(input, "secondarySources") do
-        params
-        |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
-      else
-        params
-      end
+  def verify_vyper_contract(conn, %{"addressHash" => address_hash} = params) do
+    with {:params, {:ok, fetched_params}} <- {:params, fetch_vyper_verify_params(params)},
+         {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+         {:publish, {:ok, _}} <-
+           {:publish, VyperPublisher.publish(address_hash, fetched_params)} do
+      address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
 
-    case Publisher.publish_smart_contract(address_hash, params, abi) do
-      {:ok, _contract} = result ->
-        result
+      render(conn, :verify, %{contract: address})
+    else
+      {:publish,
+       {:error,
+        %Ecto.Changeset{
+          errors: [
+            address_hash:
+              {"has already been taken",
+               [
+                 constraint: :unique,
+                 constraint_name: "smart_contracts_address_hash_index"
+               ]}
+          ]
+        }}} ->
+        render(conn, :error, error: "Smart-contract already verified.")
 
-      {:error, changeset} ->
-        {:error, changeset}
+      {:publish, _} ->
+        render(conn, :error, error: "Something went wrong while publishing the contract.")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address hash")
+
+      {:params, {:error, error}} ->
+        render(conn, :error, error: error)
     end
+  end
+
+  def publish_without_broadcast(
+        %{"addressHash" => address_hash, "abi" => abi, "compilationTargetFilePath" => file_path} = input
+      ) do
+    params = proccess_params(input)
+
+    address_hash
+    |> Publisher.publish_smart_contract(params, abi, file_path)
+    |> proccess_response()
+  end
+
+  def publish_without_broadcast(%{"addressHash" => address_hash, "abi" => abi} = input) do
+    params = proccess_params(input)
+
+    address_hash
+    |> Publisher.publish_smart_contract(params, abi)
+    |> proccess_response()
   end
 
   def publish(nil, %{"addressHash" => _address_hash} = input) do
@@ -222,6 +257,25 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     result = publish_without_broadcast(input)
 
     EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
+  end
+
+  def proccess_params(input) do
+    if Map.has_key?(input, "secondarySources") do
+      input["params"]
+      |> Map.put("secondary_sources", Map.get(input, "secondarySources"))
+    else
+      input["params"]
+    end
+  end
+
+  def proccess_response(response) do
+    case response do
+      {:ok, _contract} = result ->
+        result
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   def listcontracts(conn, params) do
@@ -395,6 +449,15 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> optional_param(params, "autodetectConstructorArguments", "autodetect_constructor_args")
     |> optional_param(params, "optimizationRuns", "optimization_runs")
     |> parse_optimization_runs()
+  end
+
+  defp fetch_vyper_verify_params(params) do
+    {:ok, %{}}
+    |> required_param(params, "addressHash", "address_hash")
+    |> required_param(params, "name", "name")
+    |> required_param(params, "compilerVersion", "compiler_version")
+    |> required_param(params, "contractSourceCode", "contract_source_code")
+    |> optional_param(params, "constructorArguments", "constructor_arguments")
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do

@@ -23,8 +23,8 @@ export function prepareMethodArgs ($functionInputs, inputs) {
     const inputType = inputs[ind] && inputs[ind].type
     const inputComponents = inputs[ind] && inputs[ind].components
     let sanitizedInputValue
-    sanitizedInputValue = replaceSpaces(inputValue, inputType, inputComponents)
-    sanitizedInputValue = replaceDoubleQuotes(sanitizedInputValue, inputType, inputComponents)
+    sanitizedInputValue = replaceDoubleQuotes(inputValue, inputType, inputComponents)
+    sanitizedInputValue = replaceSpaces(sanitizedInputValue, inputType, inputComponents)
 
     if (isArrayInputType(inputType) || isTupleInputType(inputType)) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
@@ -38,6 +38,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
           const elementInputType = inputType.split('[')[0]
 
           var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+          sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
 
           if (isBoolInputType(elementInputType)) {
             sanitizedElementValue = convertToBool(elementValue)
@@ -67,6 +68,22 @@ export const formatError = (error) => {
   let { message } = error
   message = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
   return message
+}
+
+export const formatTitleAndError = (error) => {
+  let { message } = error
+  var title = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
+  title = title && title.split('{').length > 1 ? title.split('{')[0].replace(':', '') : title
+  var txHash = ''
+  var errorMap = ''
+  try {
+    errorMap = message && message.indexOf('{') >= 0 ? JSON.parse(message && message.slice(message.indexOf('{'))) : ''
+    message = errorMap.error || ''
+    txHash = errorMap.transactionHash || ''
+  } catch (exception) {
+    message = ''
+  }
+  return { title: title, message: message, txHash: txHash }
 }
 
 export const getCurrentAccount = () => {
@@ -129,7 +146,7 @@ function replaceSpaces (value, type, components) {
       })
       .join(',')
   } else {
-    return value
+    return value.trim()
   }
 }
 

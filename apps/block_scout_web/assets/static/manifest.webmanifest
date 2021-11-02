@@ -15,7 +15,5 @@
     ],
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
-    "display": "standalone",
-    "permissions": [ "https://raw.githubusercontent.com/" ],
-    "content_security_policy": "connect-src 'self' raw.githubusercontent.com;"
+    "display": "standalone"
 }

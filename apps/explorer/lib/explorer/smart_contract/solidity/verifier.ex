@@ -1,5 +1,5 @@
 # credo:disable-for-this-file
-defmodule Explorer.SmartContract.Verifier do
+defmodule Explorer.SmartContract.Solidity.Verifier do
   @moduledoc """
   Module responsible to verify the Smart Contract.
 
@@ -107,12 +107,12 @@ defmodule Explorer.SmartContract.Verifier do
 
     blockchain_created_tx_input =
       case Chain.smart_contract_creation_tx_bytecode(address_hash) do
-        nil ->
-          bytecode
+        %{init: init, created_contract_code: _created_contract_code} ->
+          "0x" <> init_without_0x = init
+          init_without_0x
 
-        blockchain_created_tx_input_with_0x ->
-          "0x" <> blockchain_created_tx_input = blockchain_created_tx_input_with_0x
-          blockchain_created_tx_input
+        _ ->
+          bytecode
       end
 
     %{
@@ -177,6 +177,10 @@ defmodule Explorer.SmartContract.Verifier do
   For more information on the swarm hash, check out:
   https://solidity.readthedocs.io/en/v0.5.3/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
   """
+  def extract_bytecode_and_metadata_hash(nil) do
+    %{"metadata_hash" => nil, "bytecode" => nil, "compiler_version" => nil}
+  end
+
   def extract_bytecode_and_metadata_hash("0x" <> code) do
     %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version} =
       extract_bytecode_and_metadata_hash(code)

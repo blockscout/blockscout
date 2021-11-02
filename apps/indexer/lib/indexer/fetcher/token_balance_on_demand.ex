@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   alias Explorer.Chain
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Hash
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Token.BalanceReader
   alias Timex.Duration
@@ -34,7 +35,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
        when not is_nil(address_hash) do
     stale_current_token_balances =
       current_token_balances
-      |> Enum.filter(fn {current_token_balance, _} -> current_token_balance.block_number < stale_balance_window end)
+      |> Enum.filter(fn {current_token_balance, _, _} -> current_token_balance.block_number < stale_balance_window end)
 
     if Enum.count(stale_current_token_balances) > 0 do
       fetch_and_update(latest_block_number, address_hash, stale_current_token_balances)
@@ -48,11 +49,10 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
     current_token_balances_update_params =
       stale_current_token_balances
-      |> Enum.map(fn {stale_current_token_balance, _} ->
+      |> Enum.map(fn {stale_current_token_balance, _, token} ->
         stale_current_token_balances_to_fetch = [
           %{
-            token_contract_address_hash:
-              "0x" <> Base.encode16(stale_current_token_balance.token_contract_address_hash.bytes),
+            token_contract_address_hash: "0x" <> Base.encode16(token.contract_address_hash.bytes),
             address_hash: "0x" <> Base.encode16(address_hash.bytes),
             block_number: block_number
           }
@@ -64,8 +64,8 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
         if updated_balance do
           %{}
           |> Map.put(:address_hash, stale_current_token_balance.address_hash)
-          |> Map.put(:token_contract_address_hash, stale_current_token_balance.token_contract_address_hash)
-          |> Map.put(:token_type, stale_current_token_balance.token.type)
+          |> Map.put(:token_contract_address_hash, token.contract_address_hash)
+          |> Map.put(:token_type, token.type)
           |> Map.put(:block_number, block_number)
           |> Map.put(:value, Decimal.new(updated_balance))
           |> Map.put(:value_fetched_at, DateTime.utc_now())

@@ -6,7 +6,17 @@
 <% base_fee_per_gas = if block, do: block.base_fee_per_gas, else: nil %>
 <% max_priority_fee_per_gas = @transaction.max_priority_fee_per_gas %>
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
-<% burned_fee = if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas), do: Wei.mult(base_fee_per_gas, @transaction.gas_used), else: nil %>
+<% burned_fee = 
+  if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
+    if Decimal.cmp(max_fee_per_gas.value, 0) == :eq do
+      %Wei{value: Decimal.new(0)}
+    else
+      Wei.mult(base_fee_per_gas, @transaction.gas_used)
+    end
+  else
+    nil
+  end %>
+<% %Wei{value: burned_fee_decimal} = if is_nil(burned_fee), do: %Wei{value: Decimal.new(0)}, else: burned_fee %>
 <% priority_fee_per_gas = if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas), do: nil, else: Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x -> Wei.to(x, :wei) end) %>
 <% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
@@ -16,7 +26,7 @@
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-<section class="transaction-details" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
+<section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
       <!-- Transaction Details -->
@@ -48,6 +58,15 @@
               <%= gettext("This transaction is pending confirmation.") %>
             </div>
           <% end %>
+          <div class="d-flex flex-row">
+            <%= if show_tenderly_link?() do %>
+              <div class="mr-4 mb-4">
+                <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
+                    transaction_hash: @transaction.hash,
+                    tenderly_chain_path: tenderly_chain_path() %>
+              </div>
+            <% end %>
+          </div>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -109,7 +128,19 @@
                 text: gettext("The revert reason of the transaction.") %>
               <%= gettext "Revert reason" %> </dt>
             <dd class="col-sm-9 col-lg-10">
-              <%= BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) %>
+              <%= case BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) do %>
+                <% {:error, _contract_not_verified, candidates} when candidates != [] -> %>
+                  <% {:ok, method_id, text, mapping} = Enum.at(candidates, 0) %>
+                  <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% {:ok, method_id, text, mapping} -> %>
+                  <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% _ -> %>
+                  <% hex = BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %>
+                  <% utf8 = BlockScoutWeb.TransactionView.decoded_revert_reason(@transaction) %>
+                  <div class="tile tile-muted">
+                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
+                  </div>
+              <% end %>
             </dd>
           </dl>
           <% end %>
@@ -275,7 +306,9 @@
                     <%= gettext "Tokens Created" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for creation  <- creations do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                    </table>
                   <% end %>
                   </dd>
                 </dl>
@@ -375,10 +408,14 @@
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Amount of xDai burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
-                <%= gettext "Transaction Burned Fee" %>
+                  text: gettext("Amount of") <> " " <> gettext("Ether") <> " " <> gettext("burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
+                <%= gettext "Transaction Burnt Fee" %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <s><%= format_wei_value(burned_fee, :gwei) %></s></dd>
+              <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %>
+                <%= unless empty_exchange_rate?(@exchange_rate) do %>
+                  (<span data-wei-value=<%= burned_fee_decimal %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+                <% end %>
+              </dd>
             </dl>
           <% end %>
           <!-- Gas Used by Transaction -->
