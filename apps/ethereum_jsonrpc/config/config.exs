@@ -3,7 +3,7 @@ use Mix.Config
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
     window_count: 12,
-    duration: :timer.minutes(1),
+    duration: :timer.seconds(30),
     table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
   ],
   wait_per_timeout: :timer.seconds(20),
@@ -34,7 +34,7 @@ config :logger_json, :ethereum_jsonrpc,
 
 config :logger, :ethereum_jsonrpc, backends: [LoggerJSON]
 
-config :ethereum_jsonrpc, :internal_transaction_timeout, "100s"
+config :ethereum_jsonrpc, :internal_transaction_timeout, "360s"
 
 # config :logger, :ethereum_jsonrpc,
 #  # keep synced with `config/config.exs`
