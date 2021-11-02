@@ -6828,9 +6828,14 @@ defmodule Explorer.Chain do
   defp get_implementation_address_hash_basic(proxy_address_hash, abi) do
     # 5c60da1b = keccak256(implementation())
     implementation_address =
-      case Reader.query_contract(proxy_address_hash, abi, %{
-             "5c60da1b" => []
-           }) do
+      case Reader.query_contract(
+             proxy_address_hash,
+             abi,
+             %{
+               "5c60da1b" => []
+             },
+             false
+           ) do
         %{"5c60da1b" => {:ok, [result]}} -> result
         _ -> nil
       end
