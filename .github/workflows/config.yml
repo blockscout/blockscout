@@ -191,7 +191,7 @@ jobs:
 
       - run: |
           mix gettext.extract --merge | tee stdout.txt
-          cat stdout.txt | grep '(0 new translations' | grep ' 0 removed' | grep ' 0 reworded'
+          ! grep "Wrote " stdout.txt
         working-directory: "apps/block_scout_web"
   sobelow:
     name: Sobelow security analysis

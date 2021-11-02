@@ -482,7 +482,9 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:18
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20 lib/block_scout_web/templates/layout/app.html.eex:45
+#: lib/block_scout_web/templates/address/index.html.eex:5 lib/block_scout_web/templates/address_token/overview.html.eex:1
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20 lib/block_scout_web/templates/layout/_topnav.html.eex:81
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:102 lib/block_scout_web/templates/layout/app.html.eex:45
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89 lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125 lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:37 lib/block_scout_web/templates/transaction/overview.html.eex:400
@@ -1017,7 +1019,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:40
-#: lib/block_scout_web/templates/address_signed/index.html.eex:14 lib/block_scout_web/templates/block_signers/index.html.eex:36
+#: lib/block_scout_web/templates/address_signed/index.html.eex:14 lib/block_scout_web/templates/block_signers/index.html.eex:42
 msgid "Downtime"
 msgstr ""
 
@@ -1044,11 +1046,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:222
 msgid "ERC-721 "
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_token/overview.html.eex:1
-msgid "ETH"
 msgstr ""
 
 #, elixir-format
@@ -1130,9 +1127,7 @@ msgid "Eth RPC"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/index.html.eex:5
-#: lib/block_scout_web/templates/address/overview.html.eex:180 lib/block_scout_web/templates/layout/_topnav.html.eex:81
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:102
+#: lib/block_scout_web/templates/address/overview.html.eex:180
 msgid "Ether"
 msgstr ""
 
@@ -1707,7 +1702,7 @@ msgid "On which round was the block finalized"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block_signers/index.html.eex:33
+#: lib/block_scout_web/templates/block_signers/index.html.eex:39
 msgid "Online"
 msgstr ""
 
@@ -2086,7 +2081,8 @@ msgid "Shows total assets held in the address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block_signers/index.html.eex:19
+#: lib/block_scout_web/templates/block_signers/index.html.eex:17
+#: lib/block_scout_web/templates/block_signers/index.html.eex:25 lib/block_scout_web/templates/block_transaction/index.html.eex:17
 msgid "Signers"
 msgstr ""
 
@@ -2105,7 +2101,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:54 lib/block_scout_web/templates/address_logs/index.html.eex:23
 #: lib/block_scout_web/templates/address_signed/index.html.eex:23 lib/block_scout_web/templates/address_token/index.html.eex:57
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:58 lib/block_scout_web/templates/address_transaction/index.html.eex:54
-#: lib/block_scout_web/templates/address_validation/index.html.eex:24 lib/block_scout_web/templates/block_transaction/index.html.eex:23
+#: lib/block_scout_web/templates/address_validation/index.html.eex:24 lib/block_scout_web/templates/block_transaction/index.html.eex:29
 #: lib/block_scout_web/templates/chain/show.html.eex:179 lib/block_scout_web/templates/pending_transaction/index.html.eex:22
 #: lib/block_scout_web/templates/stakes/_table.html.eex:49 lib/block_scout_web/templates/tokens/holder/index.html.eex:27
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:23 lib/block_scout_web/templates/tokens/inventory/index.html.eex:22
@@ -2420,7 +2416,7 @@ msgid "There are no transactions for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block_transaction/index.html.eex:28
+#: lib/block_scout_web/templates/block_transaction/index.html.eex:34
 msgid "There are no transactions for this block."
 msgstr ""
 

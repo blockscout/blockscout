@@ -119,31 +119,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:ok, internal_transactions_params} ->
         import_internal_transaction(internal_transactions_params, unique_numbers)
 
-      {:error, :block_not_indexed_properly = reason} ->
-        Logger.debug(
-          fn ->
-            block_numbers = unique_numbers |> inspect(charlists: :as_lists)
-
-            [
-              "failed to fetch internal transactions for #{unique_numbers_count} blocks: #{block_numbers} reason: ",
-              inspect(reason)
-            ]
-          end,
-          error_count: unique_numbers_count
-        )
-
-        :ok
-
       {:error, reason} ->
-        Logger.error(
-          fn ->
-            block_numbers = unique_numbers |> inspect(charlists: :as_lists)
+        block_numbers = unique_numbers |> inspect(charlists: :as_lists)
 
-            [
-              "failed to fetch internal transactions for #{unique_numbers_count} blocks: #{block_numbers} reason: ",
-              inspect(reason)
-            ]
-          end,
+        Logger.error(
+          "failed to fetch internal transactions for #{unique_numbers_count} blocks: #{block_numbers} reason: #{inspect(reason)}",
           error_count: unique_numbers_count
         )
 
@@ -178,7 +158,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments) do
     Enum.reduce(unique_numbers, {:ok, []}, fn
       block_number, {:ok, acc_list} ->
-        block = Chain.number_to_any_block(block_number)
+        {:ok, block} = Chain.number_to_any_block(block_number)
 
         block_number
         |> Chain.get_transactions_of_block_number()
@@ -215,37 +195,36 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp handle_transaction_fetch_results(
-         {{:ok, internal_transactions}, num, {:ok, %{gas_used: used_gas, hash: block_hash}}},
+         {{:ok, internal_transactions}, tx_count, %Block{gas_used: used_gas, hash: block_hash}},
          block_number,
          acc
        ) do
     Logger.debug(
-      "Found #{Enum.count(internal_transactions)} internal tx for block #{block_number} had txs: #{num} used gas #{used_gas}"
+      "Found #{Enum.count(internal_transactions)} internal tx for block #{block_number} had txs: #{tx_count} used gas #{used_gas}"
     )
 
-    case check_db(num, Decimal.new(used_gas)) do
+    case check_db(tx_count, used_gas) do
       {:ok} ->
         {:ok, add_block_hash(block_hash, internal_transactions) ++ acc}
 
       {:error, :block_not_indexed_properly} ->
-        Logger.error("Block #{block_number} not indexed properly")
+        Logger.error(
+          "Block #{block_number} not indexed properly: tx_count=#{tx_count} used_gas=#{used_gas}, itx fetch will be retried"
+        )
+
         {:ok, acc}
     end
   end
 
   defp handle_transaction_fetch_results({:error, e, _block}, block_number, acc) do
-    Logger.error("failed to fetch internal transactions for block #{block_number} - error=#{inspect(e)}")
+    Logger.error("Failed to fetch internal transactions for block #{block_number} : error=#{inspect(e)}")
 
     {:ok, acc}
   end
 
-  defp check_db(num, used_gas) do
-    if num != 0 || Decimal.to_integer(used_gas) == 0 do
-      {:ok}
-    else
-      {:error, :block_not_indexed_properly}
-    end
-  end
+  defp check_db(0, _used_gas), do: {:error, :block_not_indexed_properly}
+  defp check_db(_tx_count, 0), do: {:error, :block_not_indexed_properly}
+  defp check_db(_tx_count, _used_gas), do: {:ok}
 
   # block_hash is required for TokenTransfers.parse_itx
   defp add_block_hash(block_hash, internal_transactions) do
