@@ -8,19 +8,11 @@ defmodule Indexer.EmptyBlocksSanitizer do
 
   require Logger
 
-  import Ecto.Query,
-    only: [
-      from: 2
-    ]
-
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, request: 1]
 
+  alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Block
   alias Explorer.Chain.Import.Runner.Blocks
-
-  # milliseconds
-  @timeout 1_000
 
   # unprocessed emty blocks to fetch at once
   @limit 400
@@ -111,31 +103,13 @@ defmodule Indexer.EmptyBlocksSanitizer do
   end
 
   defp set_is_empty_for_block(block_hash) do
-    query =
-      from(
-        block in Block,
-        select: block,
-        where: block.hash == ^block_hash,
-        lock: "FOR UPDATE"
-      )
+    block = Chain.fetch_block_by_hash(block_hash)
 
-    updated_at = DateTime.utc_now()
+    token =
+      block
+      |> Changeset.change(%{is_empty: true})
 
-    update_query =
-      from(
-        b in Block,
-        join: s in subquery(query),
-        on: b.hash == s.hash,
-        update: [
-          set: [
-            is_empty: true,
-            updated_at: ^updated_at
-          ]
-        ],
-        select: s
-      )
-
-    Repo.update_all(update_query, [], timeout: @timeout)
+    Repo.update(token)
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
