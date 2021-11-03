@@ -206,7 +206,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp fetch_functions_with_retries(contract_address_hash, contract_functions, accumulator, retries_left)
        when retries_left > 0 do
-    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions)
+    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions, false)
 
     functions_with_errors =
       Enum.filter(contract_functions_result, fn function ->
