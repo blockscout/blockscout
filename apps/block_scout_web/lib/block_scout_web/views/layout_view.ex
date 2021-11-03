@@ -265,7 +265,7 @@ defmodule BlockScoutWeb.LayoutView do
   def sign_out_link do
     return_to =
       if System.get_env("NETWORK_PATH") do
-        host() <> System.get_env("NETWORK_PATH") <> "/auth/logout"
+        "https://blockscout.com" <> System.get_env("NETWORK_PATH") <> "/auth/logout"
       else
         host() <> "/auth/logout"
       end

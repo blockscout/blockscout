@@ -1,17 +1,26 @@
 <section class="container">
   <div class="row">
     <div class="col-2">
-      <nav class="nav flex-column">
-        <a class="nav-link active" aria-current="page" href="#">Profile</a>
-        <a class="nav-link disabled" href="#">Watchlist</a>
-        <a class="nav-link disabled" href="#">Address Tags</a>
-        <a class="nav-link disabled" href="#">Transaction Tags</a>
-      </nav>
+
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" style="font-size: 20px;" href="#">Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled link-account" style="font-size: 17px;" href="#">Watchlist</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" style="font-size: 17px;" href="#">Address Tags</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" style="font-size: 17px;" href="#">Transaction Tags</a>
+        </li>
+      </ul>
     </div>
     <div class="col-md">
       <div class="card">
         <div class="card-body" >
-          <h1 class="card-title list-title-description">Profile</h1>
+          <h1 class="card-title list-title-description" style="font-size: 26px;">Profile</h1>
           <br>
           <div class="col-sm">
             <img src="<%= @user.avatar %>" alt="<%= @user.nickname %>" size="42" height="42" width="42" >
@@ -19,33 +28,60 @@
           <br>
           <div class="col-sm">
             <div class="mb-4 row">
-              <label for="staticEmail" class="col-sm-6 col-form-label">Uid</label>
+              <label for="staticUid" class="col-sm-6 col-form-label">Uid</label>
               <div class="col-sm">
-                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.uid %>">
+                <input type="text" readonly class="form-control-plaintext" id="staticUid" style="margin-left: 10px; color: #828ba0;" value="<%= @user.uid %>">
               </div>
             </div>
           </div>
           <div class="col-sm">
             <div class="mb-4 row">
-              <label for="staticEmail" class="col-sm-6 col-form-label">Name</label>
+              <label for="staticName" class="col-sm-6 col-form-label">Name</label>
               <div class="col-sm">
-                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.name %>">
+                <input type="text" readonly class="form-control-plaintext profile-item" id="staticName" style="margin-left: 10px; color: #828ba0;" value="<%= @user.name %>">
               </div>
             </div>
             <div class="mb-4 row">
-              <label for="staticEmail" class="col-sm-6 col-form-label">Nickname</label>
+              <label for="staticNickname" class="col-sm-6 col-form-label">Nickname</label>
               <div class="col-sm">
-                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.nickname %>">
+                <input type="text" readonly class="form-control-plaintext profile-item" id="staticNickname" style="margin-left: 10px; color: #828ba0;" value="<%= @user.nickname %>">
               </div>
             </div>
             <div class="mb-4 row">
               <label for="staticEmail" class="col-sm-6 col-form-label">Email</label>
               <div class="col-sm">
-                <input type="text" readonly class="form-control-plaintext" id="staticEmail" value="<%= @user.email %>">
+                <input type="text" readonly class="form-control-plaintext profile-item" id="staticEmail" style="margin-left: 10px; color: #828ba0;" value="<%= @user.email %>">
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+            <%# <dl class="row"> %>
+            <%#   <dt class="col-sm-4 col-md-4 col-lg-3"> %>
+            <%#     Uid %>
+            <%#   </dt> %>
+            <%#   <dd class="col-sm-8 col-md-8 col-lg-9" > %>
+            <%#     <%= @user.uid %1> %>
+            <%#   </dd> %>
+            <%#   <dt class="col-sm-4 col-md-4 col-lg-3"> %>
+            <%#     Name %>
+            <%#   </dt> %>
+            <%#   <dd class="col-sm-8 col-md-8 col-lg-9" > %>
+            <%#     <%= @user.name %1> %>
+            <%#   </dd> %>
+            <%#   <dt class="col-sm-4 col-md-4 col-lg-3"> %>
+            <%#     Nickname %>
+            <%#   </dt> %>
+            <%#   <dd class="col-sm-8 col-md-8 col-lg-9" > %>
+            <%#     <%= @user.nickname %1> %>
+            <%#   </dd> %>
+            <%#   <dt class="col-sm-4 col-md-4 col-lg-3"> %>
+            <%#     Email %>
+            <%#   </dt> %>
+            <%#   <dd class="col-sm-8 col-md-8 col-lg-9" > %>
+            <%#     <%= @user.email %1> %>
+            <%#   </dd> %>
+            <%# </dl> %>
 </section>

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AuthController do
     conn
     |> put_flash(:info, "You have been logged out!")
     |> configure_session(drop: true)
-    |> redirect(to: "/")
+    |> redirect(to: root())
   end
 
   def profile(conn, _params) do
@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.AuthController do
       nil ->
         conn
         |> put_flash(:info, "You must sign in to view profile!")
-        |> redirect(to: "/")
+        |> redirect(to: root())
 
       %{} = user ->
         conn
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.AuthController do
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Failed to authenticate.")
-    |> redirect(to: "/")
+    |> redirect(to: root())
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
@@ -36,12 +36,16 @@ defmodule BlockScoutWeb.AuthController do
         conn
         |> put_flash(:info, "Successfully authenticated as " <> user.name <> ".")
         |> put_session(:current_user, user)
-        |> redirect(to: "/")
+        |> redirect(to: root())
 
       {:error, reason} ->
         conn
         |> put_flash(:error, reason)
-        |> redirect(to: "/")
+        |> redirect(to: root())
     end
+  end
+
+  defp root do
+    System.get_env("NETWORK_PATH") || "/"
   end
 end
