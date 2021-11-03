@@ -149,7 +149,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
       |> Map.get("type", "")
 
     value =
-      case Reader.query_contract(address, abi, params) do
+      case Reader.query_contract(address, abi, params, false) do
         %{^method_id => {:ok, [result]}} ->
           result
 
