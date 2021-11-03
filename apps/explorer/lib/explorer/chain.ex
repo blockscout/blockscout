@@ -802,7 +802,7 @@ defmodule Explorer.Chain do
         select:
           sum(
             fragment(
-              "CASE 
+              "CASE
                 WHEN ? = 0 THEN 0
                 WHEN ? < ? THEN ?
                 ELSE ? END",
@@ -3496,14 +3496,11 @@ defmodule Explorer.Chain do
 
     InternalTransaction
     |> for_parent_transaction(hash)
-    |> join_associations(necessity_by_association)
     |> where_transaction_has_multiple_internal_transactions()
-    |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
-    |> page_internal_transaction(paging_options)
-    |> limit(^paging_options.page_size)
-    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> common_where_limit_order(paging_options)     # returns list in descending order
     |> preload(:transaction)
+    |> join_associations(necessity_by_association)
     |> Repo.all()
   end
 
