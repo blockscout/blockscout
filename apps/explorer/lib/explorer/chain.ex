@@ -7197,6 +7197,9 @@ defmodule Explorer.Chain do
         "100" ->
           "xdai"
 
+        "57" ->
+          "syscoin"
+
         _ ->
           nil
       end
