@@ -42,7 +42,8 @@ defmodule Indexer.Transform.AddressTokenBalances do
     Enum.filter(token_transfers_params, &do_filter_burn_address/1)
   end
 
-  defp add_token_balance_address(map_set, unquote(@burn_address), _, _, _, _), do: map_set
+  defp add_token_balance_address(map_set, unquote(@burn_address), _, _, token_type, _) when token_type != "ERC-20",
+    do: map_set
 
   defp add_token_balance_address(map_set, address, token_contract_address, token_id, token_type, block_number) do
     MapSet.put(map_set, %{
