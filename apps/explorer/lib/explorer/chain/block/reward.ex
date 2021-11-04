@@ -202,7 +202,7 @@ defmodule Explorer.Chain.Block.Reward do
       |> Enum.map(fn {key, _value} -> key end)
       |> List.first()
 
-    case Reader.query_contract(address, abi, params) do
+    case Reader.query_contract(address, abi, params, false) do
       %{^method_id => {:ok, [result]}} -> result
       _ -> @empty_address
     end

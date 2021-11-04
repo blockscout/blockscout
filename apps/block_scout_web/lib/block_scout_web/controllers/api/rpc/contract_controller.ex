@@ -461,7 +461,13 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do
-    {:ok, Map.put(opts, "optimization_runs", 200)}
+    case Integer.parse(runs) do
+      {runs_int, _} ->
+        {:ok, Map.put(opts, "optimization_runs", runs_int)}
+
+      _ ->
+        {:ok, Map.put(opts, "optimization_runs", 200)}
+    end
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_integer(runs) do
