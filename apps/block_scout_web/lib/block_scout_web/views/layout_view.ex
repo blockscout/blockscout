@@ -195,13 +195,52 @@ defmodule BlockScoutWeb.LayoutView do
 
   def other_explorers do
     if Application.get_env(:block_scout_web, :link_to_other_explorers) do
-      decode_other_explorers_json(Application.get_env(:block_scout_web, :other_explorers, []))
+      decode_json(Application.get_env(:block_scout_web, :other_explorers, []))
     else
       []
     end
   end
 
-  defp decode_other_explorers_json(data) do
+  defp list(component) do
+    if Application.get_env(:block_scout_web, component) do
+      try do
+        :block_scout_web
+        |> Application.get_env(component)
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
+  def bridges_list do
+    list(:bridges)
+  end
+
+  def other_bridges_list do
+    list(:other_bridges)
+  end
+
+  def bridges_alm_list do
+    list(:bridges_alm)
+  end
+
+  def defi_list do
+    list(:defi)
+  end
+
+  def nft_list do
+    list(:nft)
+  end
+
+  def apps_list do
+    list(:external_apps)
+  end
+
+  defp decode_json(data) do
     Jason.decode!(~s(#{data}))
   rescue
     _ -> []

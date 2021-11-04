@@ -197,6 +197,11 @@ msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:169
+msgid "Add Your App"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20 lib/block_scout_web/views/address_view.ex:161
 msgid "Address"
@@ -298,7 +303,8 @@ msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:144
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:148
 msgid "Apps"
 msgstr ""
 
@@ -471,6 +477,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:70
 msgid "Bridged from Ethereum"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:176
+msgid "Bridges"
 msgstr ""
 
 #, elixir-format
@@ -1065,6 +1076,11 @@ msgid "Easy Cowboy! This block does not exist yet!"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:188
+msgid "Ecosystem"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:5
 msgid "Emission Contract"
 msgstr ""
@@ -1212,6 +1228,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:342
 msgid "Gas Price"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:159
+msgid "Gas Tracker"
 msgstr ""
 
 #, elixir-format
@@ -1593,6 +1614,11 @@ msgid "Module"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:200
+msgid "More apps"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:12
 msgid "More internal transactions have come in"
 msgstr ""
@@ -1620,6 +1646,11 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_rows.html.eex:34
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:186
 msgid "N/A"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:194
+msgid "NFT"
 msgstr ""
 
 #, elixir-format
@@ -2167,19 +2198,9 @@ msgid "Staker's Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:146
-msgid "Stakes"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:59
 #: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:25 lib/block_scout_web/templates/stakes/_table.html.eex:34
 msgid "Stakes Ratio"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:152
-msgid "Staking"
 msgstr ""
 
 #, elixir-format
@@ -2190,6 +2211,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/channels/stakes_channel.ex:928
 msgid "Staking epochs are not specified or not in the allowed range"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:151
+msgid "Staking on xDai"
 msgstr ""
 
 #, elixir-format
@@ -2911,6 +2937,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:32
 msgid "Validator pools can be banned for misbehavior (such as not revealing secret numbers). Validator and delegator stake contained in a banned pool cannot be withdrawn until the ban is over."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
+msgid "Valora"
 msgstr ""
 
 #, elixir-format
