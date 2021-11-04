@@ -22,10 +22,14 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
   @type token_holder_count :: %{contract_address_hash: Hash.Address.t(), count: holder_count()}
 
   def acquire_contract_address_tokens(repo, contract_address_hashes) do
+    uniq_contract_address_hashes =
+      contract_address_hashes
+      |> Enum.uniq()
+
     token_query =
       from(
         token in Token,
-        where: token.contract_address_hash in ^contract_address_hashes,
+        where: token.contract_address_hash in ^uniq_contract_address_hashes,
         # Enforce Token ShareLocks order (see docs: sharelocks.md)
         order_by: token.contract_address_hash,
         lock: "FOR UPDATE"
