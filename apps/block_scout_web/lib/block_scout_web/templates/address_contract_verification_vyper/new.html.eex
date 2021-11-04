@@ -1,0 +1,98 @@
+<% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
+<% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "Vyper_contract" %>
+<% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
+<% contract_source_code_value = if metadata_for_verification, do: metadata_for_verification.contract_source_code, else: "" %>
+<section data-page="contract-verification" class="container new-smart-contract-container">
+  <div data-selector="channel-disconnected-message" class="d-none">
+    <div data-selector="reload-button" class="alert alert-danger">
+      <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
+    </div>
+  </div>
+
+  <div class="new-smart-contract-form">
+      <h1 class="smart-contract-title"><%= gettext "New Vyper Smart Contract Verification" %></h1>
+
+      <%= form_for @changeset,
+          address_contract_verification_path(@conn, :create),
+          [],
+          fn f -> %>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :address_hash, gettext("Contract Address") %>
+            <div class="center-column">
+              <%= text_input f, :address_hash, class: "form-control border-rounded", "aria-describedby": "contract-address-help-block", readonly: true %>
+              <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :name, gettext("Contract Name") %>
+            <div class="center-column">
+              <%= text_input f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name", value: contract_name_value, disabled: "true" %>
+              <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">Must match the name specified in the code.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :compiler_version, gettext("Compiler") %>
+            <div class="center-column">
+              <%= select f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: compiler_version, "aria-describedby": "compiler-help-block" %>
+              <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :contract_source_code, gettext("Enter the Vyper Contract Code") %>
+            <div class="center-column">
+              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block", value: contract_source_code_value %>
+              <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger form-error", "data-test": "contract-source-code-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group constructor-arguments" style="display: block">
+          <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :constructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
+            <div class="center-column">
+              <%= textarea f, :constructor_arguments, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-constructor-arguments-help-block" %>
+              <%= error_tag f, :constructor_arguments, id: "contract-constructor-arguments-help-block", class: "text-danger form-error", "data-test": "contract-constructor-arguments-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">Add arguments in <a href="https://solidity.readthedocs.io/en/develop/abi-spec.html" target="_blank">ABI hex encoded form</a>. Constructor arguments are written right to left, and will be found at the end of the input created bytecode. They may also be <a href="https://abi.hashex.org/" target="_blank">parsed here.</a></div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-buttons">
+          <button
+            class="position-absolute w-118 btn-full-primary d-none mr-2"
+            disabled="true"
+            id="loading"
+            name="button"
+            type="button"
+          >
+            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
+          </button>
+          <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation"  %>
+          <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
+          <%=
+            link(
+              gettext("Cancel"),
+              class: "btn-no-border",
+              to: address_contract_path(@conn, :index, @address_hash)
+              )
+          %>
+        </div>
+      <% end %>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
+</section>

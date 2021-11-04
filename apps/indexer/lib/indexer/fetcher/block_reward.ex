@@ -129,6 +129,7 @@ defmodule Indexer.Fetcher.BlockReward do
       beneficiaries_params ->
         beneficiaries_params
         |> add_gas_payments()
+        |> add_timestamp()
         |> import_block_reward_params()
         |> case do
           {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
@@ -184,6 +185,25 @@ defmodule Indexer.Fetcher.BlockReward do
     beneficiaries_params
     |> add_validator_rewards()
     |> reduce_uncle_rewards()
+  end
+
+  def add_timestamp(beneficiaries_params) do
+    timestamp_by_block_hash =
+      beneficiaries_params
+      |> Enum.map(& &1.block_hash)
+      |> Chain.timestamp_by_block_hash()
+
+    Enum.map(beneficiaries_params, fn %{block_hash: block_hash_str} = beneficiary ->
+      {:ok, block_hash} = Chain.string_to_block_hash(block_hash_str)
+
+      case timestamp_by_block_hash do
+        %{^block_hash => block_timestamp} ->
+          Map.put(beneficiary, :block_timestamp, block_timestamp)
+
+        _ ->
+          beneficiary
+      end
+    end)
   end
 
   defp add_validator_rewards(beneficiaries_params) do
@@ -245,8 +265,23 @@ defmodule Indexer.Fetcher.BlockReward do
     addresses_params = Addresses.extract_addresses(%{block_reward_contract_beneficiaries: block_rewards_params})
     address_coin_balances_params_set = AddressCoinBalances.params_set(%{beneficiary_params: block_rewards_params})
 
+    address_coin_balances_params_with_block_timestamp =
+      block_rewards_params
+      |> Enum.map(fn block_rewards_param ->
+        %{
+          address_hash: block_rewards_param.address_hash,
+          block_number: block_rewards_param.block_number,
+          block_timestamp: block_rewards_param.block_timestamp
+        }
+      end)
+      |> Enum.into(MapSet.new())
+
+    address_coin_balances_params_with_block_timestamp_set = %{
+      address_coin_balances_params_with_block_timestamp: address_coin_balances_params_with_block_timestamp
+    }
+
     address_coin_balances_daily_params_set =
-      AddressCoinBalancesDaily.params_set(%{beneficiary_params: block_rewards_params})
+      AddressCoinBalancesDaily.params_set(address_coin_balances_params_with_block_timestamp_set)
 
     Chain.import(%{
       addresses: %{params: addresses_params},

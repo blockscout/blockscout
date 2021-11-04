@@ -6,7 +6,7 @@
         <%= link to: webapp_url(@conn), class: "footer-brand" do %>
           <img class="footer-logo" src="<%= static_path(@conn, logo_footer()) %>" alt="<%= subnetwork_title() %>" />
           <%= if logo_text() do %>
-            <span class="logo-text footer"> <%= logo_text() %> </span>
+            <span class="logo-text in-footer"> <%= logo_text() %> </span>
           <% end %>
         <% end %>
       </div>
@@ -19,14 +19,14 @@
       <div class="col-xs-12 col-lg-3">
         <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
         <div class="footer-social-icons">
-          <a href="https://github.com/lukso-network" rel="noreferrer" target="_blank" class="footer-social-icon" data-toggle="tooltip" data-placement="top" title='<%= gettext("Github") %>'>
-            <i class="fab fa-github"></i>
+          <a href="https://github.com/lukso-network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+            <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
-          <a href="https://www.twitter.com/lukso_io/" rel="noreferrer" target="_blank" class="footer-social-icon" data-toggle="tooltip" data-placement="top" title='<%= gettext("Twitter") %>'>
-            <i class="fab fa-twitter"></i>
+          <a href="https://www.twitter.com/lukso_io/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+            <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
-          <a href="https://t.me/LUKSO" rel="noreferrer" target="_blank" class="footer-social-icon" data-toggle="tooltip" data-placement="top" title='<%= gettext("Telegram") %>'>
-            <i class="fab fa-telegram-plane"></i>
+          <a href="https://t.me/LUKSO" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
+            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
           </a>
         </div>
       </div>

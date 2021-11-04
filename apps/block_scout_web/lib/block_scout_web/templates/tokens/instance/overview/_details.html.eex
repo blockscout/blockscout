@@ -1,7 +1,7 @@
 <section class="address-overview">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="card-section col-md-12 col-lg-7 pr-0-md mb-2">
+    <div class="card-section col-md-12 col-lg-7 pr-0-md js-ad-dependant-mb-2">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title">
@@ -21,7 +21,7 @@
                   title='<%= gettext("View Contract") %>'
                   onclick='<%= "location='#{address_path(@conn, :show, Address.checksum(@token.contract_address_hash))}'" %>'
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32"  transform="translate(8,8)">
+                  <svg class="safari_only" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32"  transform="translate(8,8)">
                     <path fill-rule="evenodd" d="M15 16H1a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1zM14 2H2v12h12V2z"/>
                     <path fill-rule="evenodd" d="M11 9h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm0-3H5a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zM5 7h1a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2zm0 3h6a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2z"/>
                   </svg>
@@ -58,7 +58,11 @@
       </div>
     </div>
 
+<<<<<<< HEAD
     <div class="card-section col-md-12 col-lg-5 pl-0-md mb-2">
+=======
+    <div class="card-section col-md-12 col-lg-5 pl-0-md js-ad-dependant-mb-2">
+>>>>>>> origin/master
       <div class="card">
         <div class="card-body">
           <div class="erc721-media" >
@@ -95,4 +99,8 @@
     </div>
   </div>
 </div>
+<<<<<<< HEAD
 <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
+=======
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
+>>>>>>> origin/master

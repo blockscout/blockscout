@@ -106,9 +106,9 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
       assert %{
                address_hash: %Hash{
                  byte_count: 20,
-                 bytes: <<121, 174, 179, 69, 102, 185, 116, 195, 90, 88, 129, 222, 192, 32, 146, 125, 167, 223, 93, 37>>
+                 bytes: <<167, 105, 41, 137, 10, 123, 71, 251, 133, 145, 150, 1, 108, 111, 221, 130, 137, 206, 183, 85>>
                },
-               value: 2_000_000_000_000_000_000_000,
+               value: 5_000_000_000_000_000_000_000,
                contract_code: nil,
                nonce: 0
              } ==

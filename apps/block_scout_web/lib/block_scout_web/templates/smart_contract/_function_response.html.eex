@@ -1,10 +1,44 @@
 <div class="tile tile-muted tile-function-response monospace">
 <pre>
-[ <strong><%= @function_name %></strong> method Response ]
+[ <strong><%= @function_name %></strong> <%= gettext("method Response") %> ]
 
-[<%= for item <- @outputs do %>
+</pre>
+<%= case @outputs do %>
+    <% {:error, %{code: code, message: message, data: data}} -> %>
+        <% revert_reason = Chain.format_revert_reason_message(data) %>
+        <%= case decode_revert_reason(@smart_contract_address, revert_reason) do %>
+            <% {:ok, _identifier, text, mapping} -> %>
+                <pre><%= raw(values_with_type(text, :error, nil)) %></pre>
+                <div style="padding-left: 20px">
+                    <%= for {name, type, value} <- mapping do %>
+                        <pre><span class="text-muted"><%= raw(values_with_type(value, type, name, 1)) %></span></pre>
+                    <% end %>
+                </div>
+            <% {:error, _contract_verified, []} -> %>
+                <% decoded_revert_reason = decode_hex_revert_reason(revert_reason) %>
+                <pre><span class="text-muted"><div style="padding-left: 20px"><%= "(#{code}) #{message} (#{if String.valid?(decoded_revert_reason), do: decoded_revert_reason, else: revert_reason})" %></div></span></pre>
+            <% {:error, _contract_verified, candidates} -> %>
+                <% {:ok, _identifier, text, mapping} = Enum.at(candidates, 0) %>
+                <pre><%= raw(values_with_type(text, :error, nil)) %></pre>
+                <div style="padding-left: 20px">
+                    <%= for {name, type, value} <- mapping do %>
+                        <pre><span class="text-muted"><%= raw(values_with_type(value, type, name, 1)) %></span></pre>
+                    <% end %>
+                </div>
+            <% _ -> %>
+                <% decoded_revert_reason = decode_hex_revert_reason(revert_reason) %>
+                <pre><span class="text-muted"><div style="padding-left: 20px"><%= "(#{code}) #{message} (#{if String.valid?(decoded_revert_reason), do: decoded_revert_reason, else: revert_reason})" %></div></span></pre>
+        <% end %>
+    <% {:error, %{code: code, message: message}} -> %>
+        <pre><div style="padding-left: 20px">(error) : <%= "(#{code}) #{message}" %></div></pre>
+    <% {:error, error} -> %>
+        <pre><div style="padding-left: 20px">(error) : <%= error %></div></pre>
+    <% _ -> %>
+<pre>
+[<%= for {item, index} <- Enum.with_index(@outputs) do %>
 <%= if named_argument?(item) do %><span class="function-response-item"><%= item["name"] %></span><% end %>
-<span class="text-muted"><%= raw(values_with_type(item["value"], item["type"])) %></span>
+<span class="text-muted"><%= raw(values_with_type(item["value"], item["type"], fetch_name(@names, index), 0)) %></span>
 <% end %>]
+<% end %>
 </pre>
 </div>

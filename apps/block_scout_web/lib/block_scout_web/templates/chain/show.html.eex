@@ -19,7 +19,6 @@
                   data-history_chart_config = '<%= @chart_config_json %>'
                   width="350" height="152">
           </canvas>
-          <script data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
         </div>
         <!-- Legend -->
         <script>
@@ -132,7 +131,7 @@
             <span class="dashboard-banner-network-stats-label">
               <%= gettext "Total transactions" %>
             </span>
-            <div style="display: flex;">
+            <div class="d-flex">
               <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
                 <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
               </span>
@@ -169,12 +168,11 @@
       </div>
     </div>
   </div>
-  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
 </div>
 <section class="container">
-  <div class="card card-chain-blocks mb-3">
+  <div class="card card-chain-blocks js-ad-dependant-mb-3">
     <div class="card-body">
-      <%= link(gettext("View All Blocks"), to: block_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
+      <%= link(gettext("View All Blocks"), to: blocks_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
       <div class="row" data-selector="chain-block-list" data-url="<%= chain_blocks_path(@conn, :chain_blocks) %>">
         <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
@@ -230,7 +228,7 @@
     </div>
   </div>
 
-  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 
   <div class="card card-chain-transactions">
     <div class="card-body">
@@ -253,5 +251,4 @@
       </span>
     </div>
   </div>
-  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
 </section>

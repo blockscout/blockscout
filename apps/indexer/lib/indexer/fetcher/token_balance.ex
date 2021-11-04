@@ -96,7 +96,7 @@ defmodule Indexer.Fetcher.TokenBalance do
     retryable_params_list =
       params_list
       |> Enum.filter(&(&1.retries_count <= @max_retries))
-      |> Enum.uniq_by(&Map.take(&1, [:token_contract_address_hash, :address_hash, :block_number]))
+      |> Enum.uniq_by(&Map.take(&1, [:token_contract_address_hash, :token_id, :address_hash, :block_number]))
 
     Logger.metadata(count: Enum.count(retryable_params_list))
 
@@ -107,11 +107,14 @@ defmodule Indexer.Fetcher.TokenBalance do
 
   def import_token_balances(token_balances_params) do
     addresses_params = format_and_filter_address_params(token_balances_params)
+    formatted_token_balances_params = format_and_filter_token_balance_params(token_balances_params)
 
     import_params = %{
       addresses: %{params: addresses_params},
-      address_token_balances: %{params: token_balances_params},
-      address_current_token_balances: %{params: TokenBalances.to_address_current_token_balances(token_balances_params)},
+      address_token_balances: %{params: formatted_token_balances_params},
+      address_current_token_balances: %{
+        params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
+      },
       timeout: :infinity
     }
 
@@ -134,19 +137,47 @@ defmodule Indexer.Fetcher.TokenBalance do
     |> Enum.uniq()
   end
 
+  defp format_and_filter_token_balance_params(token_balances_params) do
+    token_balances_params
+    |> Enum.map(fn token_balance ->
+      if token_balance.token_type do
+        token_balance
+      else
+        token_type = Chain.get_token_type(token_balance.token_contract_address_hash)
+
+        if token_type do
+          Map.put(token_balance, :token_type, token_type)
+        else
+          token_balance
+        end
+      end
+    end)
+  end
+
   defp entry(
          %{
            token_contract_address_hash: token_contract_address_hash,
            address_hash: address_hash,
-           block_number: block_number
+           block_number: block_number,
+           token_type: token_type,
+           token_id: token_id
          } = token_balance
        ) do
     retries_count = Map.get(token_balance, :retries_count, 0)
 
-    {address_hash.bytes, token_contract_address_hash.bytes, block_number, retries_count}
+    token_id_int =
+      case token_id do
+        %Decimal{} -> Decimal.to_integer(token_id)
+        id_int when is_integer(id_int) -> id_int
+        _ -> token_id
+      end
+
+    {address_hash.bytes, token_contract_address_hash.bytes, block_number, token_type, token_id_int, retries_count}
   end
 
-  defp format_params({address_hash_bytes, token_contract_address_hash_bytes, block_number, retries_count}) do
+  defp format_params(
+         {address_hash_bytes, token_contract_address_hash_bytes, block_number, token_type, token_id, retries_count}
+       ) do
     {:ok, token_contract_address_hash} = Hash.Address.cast(token_contract_address_hash_bytes)
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
 
@@ -154,7 +185,9 @@ defmodule Indexer.Fetcher.TokenBalance do
       token_contract_address_hash: to_string(token_contract_address_hash),
       address_hash: to_string(address_hash),
       block_number: block_number,
-      retries_count: retries_count
+      retries_count: retries_count,
+      token_type: token_type,
+      token_id: token_id
     }
   end
 end

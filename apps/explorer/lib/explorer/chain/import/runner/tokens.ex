@@ -21,17 +21,70 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
   @type holder_count :: non_neg_integer()
   @type token_holder_count :: %{contract_address_hash: Hash.Address.t(), count: holder_count()}
 
-  def acquire_contract_address_tokens(repo, contract_address_hashes) do
-    token_query =
-      from(
-        token in Token,
-        where: token.contract_address_hash in ^contract_address_hashes,
-        # Enforce Token ShareLocks order (see docs: sharelocks.md)
-        order_by: token.contract_address_hash,
-        lock: "FOR UPDATE"
+  def acquire_contract_address_tokens(repo, contract_address_hashes_and_token_ids) do
+    initial_query_no_token_id =
+      from(token in Token,
+        select: token
       )
 
-    tokens = repo.all(token_query)
+    initial_query_with_token_id =
+      from(token in Token,
+        left_join: instance in Token.Instance,
+        on: token.contract_address_hash == instance.token_contract_address_hash,
+        select: token
+      )
+
+    {query_no_token_id, query_with_token_id} =
+      contract_address_hashes_and_token_ids
+      |> Enum.reduce({initial_query_no_token_id, initial_query_with_token_id}, fn {contract_address_hash, token_id},
+                                                                                  {query_no_token_id,
+                                                                                   query_with_token_id} ->
+        if is_nil(token_id) do
+          {from(
+             token in query_no_token_id,
+             or_where: token.contract_address_hash == ^contract_address_hash
+           ), query_with_token_id}
+        else
+          {query_no_token_id,
+           from(
+             [token, instance] in query_with_token_id,
+             or_where: token.contract_address_hash == ^contract_address_hash and instance.token_id == ^token_id
+           )}
+        end
+      end)
+
+    final_query_no_token_id =
+      if query_no_token_id == initial_query_no_token_id do
+        nil
+      else
+        from(
+          token in query_no_token_id,
+          # Enforce Token ShareLocks order (see docs: sharelocks.md)
+          order_by: [
+            token.contract_address_hash
+          ],
+          lock: "FOR UPDATE"
+        )
+      end
+
+    final_query_with_token_id =
+      if query_with_token_id == initial_query_with_token_id do
+        nil
+      else
+        from(
+          [token, instance] in query_with_token_id,
+          # Enforce Token ShareLocks order (see docs: sharelocks.md)
+          order_by: [
+            token.contract_address_hash,
+            instance.token_id
+          ],
+          lock: "FOR UPDATE"
+        )
+      end
+
+    tokens_no_token_id = (final_query_no_token_id && repo.all(final_query_no_token_id)) || []
+    tokens_with_token_id = (final_query_with_token_id && repo.all(final_query_with_token_id)) || []
+    tokens = tokens_no_token_id ++ tokens_with_token_id
 
     {:ok, tokens}
   end
@@ -148,6 +201,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           decimals: fragment("EXCLUDED.decimals"),
           type: fragment("EXCLUDED.type"),
           cataloged: fragment("EXCLUDED.cataloged"),
+          bridged: fragment("EXCLUDED.bridged"),
+          skip_metadata: fragment("EXCLUDED.skip_metadata"),
           # `holder_count` is not updated as a pre-existing token means the `holder_count` is already initialized OR
           #   need to be migrated with `priv/repo/migrations/scripts/update_new_tokens_holder_count_in_batches.sql.exs`
           # Don't update `contract_address_hash` as it is the primary key and used for the conflict target
@@ -157,13 +212,15 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       ],
       where:
         fragment(
-          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals, EXCLUDED.type, EXCLUDED.cataloged) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals, EXCLUDED.type, EXCLUDED.cataloged, EXCLUDED.bridged, EXCLUDED.skip_metadata) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
           token.name,
           token.symbol,
           token.total_supply,
           token.decimals,
           token.type,
-          token.cataloged
+          token.cataloged,
+          token.bridged,
+          token.skip_metadata
         )
     )
   end

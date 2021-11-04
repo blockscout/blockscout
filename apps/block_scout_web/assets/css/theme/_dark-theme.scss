@@ -1083,6 +1083,9 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: $dark-bg !important;
 		color: #fff !important;
 	}
+	.autocomplete-category {
+		color: #fff !important;
+	}
 	ul[id^='autoComplete_list_'] {
 		background-color: $dark-light-bg !important;
 	}
@@ -1146,4 +1149,16 @@ $dark-stakes-banned-background: #3e314c;
 		top: 14%;
 		color: $dark-primary;
 	}
+}
+.dark-theme-applied .confirmations-label:after {
+    border-left: .9rem solid $dark-light-bg;
+}
+
+.dark-theme-applied .i-tooltip-2:hover{
+	color: $labels-dark;
+}
+
+.dark-theme-applied .btn-no-border-link-to-tems {
+	border-color: $dark-primary !important;
+	color: $dark-primary !important;
 }

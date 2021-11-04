@@ -5,13 +5,7 @@
     <%= if minimal_proxy_template do %>
       <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: metadata_for_verification.address_hash, conn: @conn %>
     <% else %>
-      <% path = 
-        if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-          address_verify_contract_path(@conn, :new, @address.hash)
-        else
-          address_verify_contract_via_flattened_code_path(@conn, :new, @address.hash)
-        end
-      %>
+      <% path = address_verify_contract_path(@conn, :new, @address.hash) %>
       <div class="mb-4">
         <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
   metadata_for_verification.address_hash,
@@ -23,7 +17,7 @@
     <% end %>
   <% end %>
 <% end %>
-<%= if @action== "write" do %>
+<%= if @action == "write" or (@read_functions_required_wallet && @read_functions_required_wallet != []) do %>
   <%= render BlockScoutWeb.SmartContractView, "_connect_container.html" %>
 <% end %>
 <%= if @contract_type == "proxy" do %>
@@ -34,17 +28,22 @@
                 ) %></h3>
 </div>
 <% end %>
-<%= for {function, counter} <- Enum.with_index(@read_only_functions, 1) do %>
+<%= for {function, counter} <- Enum.with_index(@read_only_functions ++ @read_functions_required_wallet, 1) do %>
   <div class="d-flex py-2 border-bottom" data-function>
     <div class="py-2 pr-2 text-nowrap">
       <%= counter %>.
-
-      <%= function["name"] %>
-
+      <%= case function["type"] do %>
+        <% "fallback" -> %>
+          <%= gettext "fallback" %><%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", text: gettext("The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable.") %>
+        <% "receive" -> %>
+          <%= gettext "receive" %><%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", text: gettext("The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception.") %>
+        <% _ -> %>
+          <%= function["name"] %>
+      <% end %>
       &#8594;
     </div>
 
-    <%= if queryable?(function["inputs"]) || writable?(function) do %>
+    <%= if queryable?(function["inputs"]) || writable?(function) || Helper.read_with_wallet_method?(function) do %>
       <div style="width: 100%; overflow: hidden;">
         <%=
           for status <- ["error", "warning", "success", "question"] do
@@ -52,7 +51,7 @@
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if writable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
@@ -60,7 +59,9 @@
             <%= for input <- function["inputs"] do %>
               <div class="form-group pr-3">
                 <%= if int?(input["type"]) do %>
-                  <input type="number" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+                  <input type="number" name="function_input" class="form-control form-control-sm address-input-sm mt-2"
+                  placeholder='<%= input["name"] %>(<%= input["type"] %>)'
+                  style="width: <%= (String.length(input["name"]) + String.length(input["type"]) + 2) * 10 %>px;"/>
                   <span data-dropdown-toggle="" data-toggle="dropdown">
                     <span class="button btn-line button-xs contract-plus-btn-container ml-1 mt-2">
                       <i class="fa fa-plus contract-plus-btn"></i>
@@ -69,12 +70,14 @@
                       <div class="dropdown-item contract-exponentiation-btn" data-power=6>10<sup>6</sup></div>
                       <div class="dropdown-item contract-exponentiation-btn" data-power=8>10<sup>8</sup></div>
                       <div class="dropdown-item contract-exponentiation-btn" data-power=18>10<sup>18</sup></div>
-                      <div class="dropdown-item contract-exponentiation-btn" data-power>10<input type="number" name="custom_power" class="form-control form-control-sm address-input-sm ml-1 custom-power-input" /></div> 
+                      <div class="dropdown-item contract-exponentiation-btn" data-power><input type="number" name="custom_power" class="form-control form-control-sm address-input-sm ml-1 custom-power-input" />10</div> 
                     </div>
                   </span>
 
                 <% else %>
-                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" 
+                  placeholder='<%= input["name"] %>(<%= input["type"] %>)' 
+                  size="<%= String.length(input["name"]) + String.length(input["type"]) + 2 %>" />
                 <% end %>
               </div>
             <% end %>
@@ -82,11 +85,12 @@
 
           <%= if Helper.payable?(function) do %>
             <div class="form-group pr-3">
-              <input type="text" name="function_input" tx-value class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)'  />
+              <input type="number" name="function_input" tx-value
+              data-toggle="tooltip" title='Amount in native token <<%= gettext("ETH")%>>' class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)' min="0" step="1e-18" />
             </div>
           <% end %>
 
-          <input type="submit" value='<%= if writable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
+          <input type="submit" value='<%= if @action == "write", do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
         </form>
 
         <%= if outputs?(function["outputs"]) do %>
@@ -101,31 +105,38 @@
         <div data-function-response></div>
       </div>
     <% else %>
-      <%= if outputs?(function["outputs"]) do %>
-        <%= for output <- function["outputs"] do %>
-          <%= if address?(output["type"]) do %>
-            <div class="py-2 word-break-all">
-              <%= link(
-                output["value"],
-                to: address_path(@conn, :show, output["value"])) %>
-            </div>
-          <% else %>
-            <%= if output["type"] == "uint256" do %>
+      <%= cond do %>
+        <%= outputs?(function["outputs"]) -> %>
+          <% length = Enum.count(function["outputs"]) %>
+          <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>
+            <%= if address?(output["type"]) do %>
               <div class="py-2 word-break-all">
-                <div data-wei-ether-converter>
-                  <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
-                  <span class="py-2 px-2">
-                    <input class="wei-ether" type="checkbox" autocomplete="off">
-                    <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                    <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
-                  </span>
-                </div>
-              </div> 
+                <%= link(
+                  output["value"],
+                  to: address_path(@conn, :show, output["value"])) %><%= if length > 1 and index < length - 1 do %>,&#160;<% end %>
+              </div>
             <% else %>
-              <%= raw(values_only(output["value"], output["type"], output["components"])) %>
+              <%= if output["type"] == "uint256" do %>
+                <div class="py-2 word-break-all">
+                  <div data-wei-ether-converter>
+                    <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
+                    <span class="py-2 px-2">
+                      <input class="wei-ether" type="checkbox" autocomplete="off">
+                      <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
+                      <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
+                    </span>
+                  </div>
+                </div> 
+              <% else %>
+                <%= raw(values_only(output["value"], output["type"], output["components"])) %>
+              <% end %>
             <% end %>
           <% end %>
-        <% end %>
+        <% error?(function["outputs"]) -> %>
+          <% {:error, text_error} = function["outputs"] %>
+          <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0;"><%= text_error %></div>
+        <% true -> %>
+          <% nil %>
       <% end %>
     <% end %>
   </div>

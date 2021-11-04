@@ -43,6 +43,16 @@
     color: #828ba0 !important;
 }
 
+.autocomplete-category {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 100;
+    text-transform: uppercase;
+    color: rgb(33,33,33);
+    margin-left: auto;
+}
+
 .autoComplete_highlight {
     background-color: #feff54 !important;
     color: #212121 !important;

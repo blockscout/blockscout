@@ -5,10 +5,7 @@
       <div class="modal-stake-two-cols">
         <div class="modal-header">
           <div class="modal-header-group">
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
+            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html" %>
             <h5 class="modal-title centered"><%= gettext("Waiting for transaction's confirmation...") %></h5>
           </div>
         </div>

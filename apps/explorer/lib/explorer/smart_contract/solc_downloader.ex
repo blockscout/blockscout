@@ -5,7 +5,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
   """
   use GenServer
 
-  alias Explorer.SmartContract.Solidity.CompilerVersion
+  alias Explorer.SmartContract.CompilerVersion
 
   @latest_compiler_refetch_time :timer.minutes(30)
 
@@ -16,7 +16,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
       path
     else
       compiler_versions =
-        case CompilerVersion.fetch_versions() do
+        case CompilerVersion.fetch_versions(:solc) do
           {:ok, compiler_versions} ->
             compiler_versions
 

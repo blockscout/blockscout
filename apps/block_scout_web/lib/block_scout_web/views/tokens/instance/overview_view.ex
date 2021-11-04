@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.CurrencyHelpers
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
   alias FileInfo
@@ -154,7 +155,9 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   defp retrieve_image(image_url) do
-    compose_ipfs_url(image_url)
+    image_url
+    |> URI.encode()
+    |> compose_ipfs_url()
   end
 
   defp compose_ipfs_url(image_url) do

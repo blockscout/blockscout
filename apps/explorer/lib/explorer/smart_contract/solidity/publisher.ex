@@ -1,18 +1,18 @@
-defmodule Explorer.SmartContract.Publisher do
+defmodule Explorer.SmartContract.Solidity.Publisher do
   @moduledoc """
   Module responsible to control the contract verification.
   """
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.Solidity.CompilerVersion
-  alias Explorer.SmartContract.Verifier
+  alias Explorer.SmartContract.CompilerVersion
+  alias Explorer.SmartContract.Solidity.Verifier
 
   @doc """
   Evaluates smart contract authenticity and saves its details.
 
   ## Examples
-      Explorer.SmartContract.Publisher.publish(
+      Explorer.SmartContract.Solidity.Publisher.publish(
         "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
         %{
           "compiler_version" => "0.4.24",
@@ -48,6 +48,16 @@ defmodule Explorer.SmartContract.Publisher do
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
+    create_or_update_smart_contract(address_hash, attrs)
+  end
+
+  def publish_smart_contract(address_hash, params, abi, file_path) do
+    attrs = address_hash |> attributes(params, file_path, abi)
+
+    create_or_update_smart_contract(address_hash, attrs)
+  end
+
+  defp create_or_update_smart_contract(address_hash, attrs) do
     if Chain.smart_contract_verified?(address_hash) do
       Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     else
@@ -69,6 +79,10 @@ defmodule Explorer.SmartContract.Publisher do
     %{changeset | action: :insert}
   end
 
+  defp attributes(address_hash, params, file_path, abi) do
+    Map.put(attributes(address_hash, params, abi), :file_path, file_path)
+  end
+
   defp attributes(address_hash, params, abi \\ %{}) do
     constructor_arguments = params["constructor_arguments"]
 
@@ -81,7 +95,7 @@ defmodule Explorer.SmartContract.Publisher do
 
     prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
 
-    compiler_version = CompilerVersion.get_strict_compiler_version(params["compiler_version"])
+    compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
 
     %{
       address_hash: address_hash,
@@ -96,7 +110,8 @@ defmodule Explorer.SmartContract.Publisher do
       secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: params["verified_via_sourcify"],
-      partially_verified: params["partially_verified"]
+      partially_verified: params["partially_verified"],
+      is_vyper_contract: false
     }
   end
 

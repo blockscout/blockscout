@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.ChecksumAddress do
 
   import Plug.Conn
 
+  alias BlockScoutWeb.Controller, as: BlockScoutWebController
   alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Phoenix.Controller
@@ -41,7 +42,7 @@ defmodule BlockScoutWeb.ChecksumAddress do
               end
 
             conn
-            |> Controller.redirect(to: new_path)
+            |> Controller.redirect(to: new_path |> BlockScoutWebController.full_path())
             |> halt
           else
             conn

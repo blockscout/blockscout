@@ -1,6 +1,6 @@
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
-  use EthereumJSONRPC.Case, async: true
+  use EthereumJSONRPC.Case
 
   require Ecto.Query
 
@@ -921,7 +921,6 @@ defmodule Explorer.ChainTest do
                block.hash
                |> Chain.block_to_transactions(paging_options: %PagingOptions{key: {index}, page_size: 50})
                |> Enum.map(& &1.hash)
-               |> Enum.reverse()
     end
 
     test "returns transactions with token_transfers preloaded" do
@@ -1266,13 +1265,13 @@ defmodule Explorer.ChainTest do
       assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
     end
 
-    test "return only one result if multiple records are found" do
+    test "return not found if multiple records are in the results" do
       name = "TOKEN"
 
       insert(:token, symbol: name)
       insert(:token, symbol: name)
 
-      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
+      assert {:error, :not_found} = Chain.token_contract_address_from_token_name(name)
     end
   end
 
@@ -4537,7 +4536,7 @@ defmodule Explorer.ChainTest do
 
       [result] = Chain.search_token("magic")
 
-      assert result.contract_address_hash == token.contract_address_hash
+      assert result.link == token.contract_address_hash
     end
 
     test "finds multiple results in different columns" do
@@ -4667,7 +4666,7 @@ defmodule Explorer.ChainTest do
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
-        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end
@@ -4878,16 +4877,12 @@ defmodule Explorer.ChainTest do
               gas_used: 0,
               index: 0
             ),
+          block: block,
           address_hash: address.hash
         )
 
-      block_number = log.transaction.block_number
+      block_number = log.block_number
       assert {:ok, [^block_number]} = Chain.uncataloged_token_transfer_block_numbers()
-    end
-
-    test "does not include transactions without a block_number" do
-      insert(:token_transfer_log)
-      assert {:ok, []} = Chain.uncataloged_token_transfer_block_numbers()
     end
   end
 
@@ -5749,6 +5744,18 @@ defmodule Explorer.ChainTest do
       implementation_abi = Chain.get_implementation_abi("0x" <> implementation_contract_address_hash_string)
 
       assert implementation_abi == @implementation_abi
+    end
+
+    test "get_total_staked_and_ordered should return just nil in case of invalid input and some response otherwise" do
+      assert Chain.get_total_staked_and_ordered(nil) == nil
+      assert Chain.get_total_staked_and_ordered(%{}) == nil
+      assert Chain.get_total_staked_and_ordered("") == nil
+      assert Chain.get_total_staked_and_ordered([]) == nil
+
+      assert Chain.get_total_staked_and_ordered("0x3f7c51ef174ee8a62e3fcfb0947aa90c97bd2784") == %{
+               stake_amount: Decimal.new(0),
+               ordered_withdraw: Decimal.new(0)
+             }
     end
   end
 end
