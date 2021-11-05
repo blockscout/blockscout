@@ -114,14 +114,16 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      token_contract_address_hashes =
+      token_contract_address_hashes_and_ids =
         changes_list
         |> Enum.map(fn change ->
-          change.token_contract_address_hash
+          token_id = get_tokend_id(change)
+
+          {change.token_contract_address_hash, token_id}
         end)
         |> Enum.uniq()
 
-      Tokens.acquire_contract_address_tokens(repo, token_contract_address_hashes)
+      Tokens.acquire_contract_address_tokens(repo, token_contract_address_hashes_and_ids)
     end)
     |> Multi.run(:address_current_token_balances, fn repo, _ ->
       insert(repo, changes_list, insert_options)
@@ -140,6 +142,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         insert_options
       )
     end)
+  end
+
+  defp get_tokend_id(change) do
+    if Map.has_key?(change, :token_id), do: change.token_id, else: nil
   end
 
   @impl Import.Runner
@@ -322,7 +328,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
           old_value: current_token_balance.value,
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at),
+          token_type: fragment("EXCLUDED.token_type")
         ]
       ],
       where:
