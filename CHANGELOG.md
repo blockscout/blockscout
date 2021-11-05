@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 - [#5025](https://github.com/blockscout/blockscout/pull/5025) - Add standard input JSON files validation
 - [#5051](https://github.com/blockscout/blockscout/pull/5051) - Fix 500 response when ABI method was parsed as nil
 
