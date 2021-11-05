@@ -14,7 +14,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -180,8 +180,8 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-      #   Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
+      # if Enum.at(range_list, 0) == Enum.at(range_list, -1) do
+      Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
       # end
 
       Task.async(fn ->
@@ -239,7 +239,6 @@ defmodule Indexer.Block.Fetcher do
 
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
       result
@@ -282,10 +281,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp update_block_cache(_), do: :ok
-
-  defp update_transactions_cache(transactions) do
-    Transactions.update(transactions)
-  end
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
 

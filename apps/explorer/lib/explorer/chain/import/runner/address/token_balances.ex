@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -57,6 +58,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           {:ok, [TokenBalance.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    Logger.info(" ### Address_token_balances insert started ")
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
@@ -166,6 +168,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
 
     inserted_changes_list = inserted_changes_list_no_token_id ++ inserted_changes_list_with_token_id
 
+    Logger.info(" ### Address_token_balances insert finished ")
     {:ok, inserted_changes_list}
   end
 

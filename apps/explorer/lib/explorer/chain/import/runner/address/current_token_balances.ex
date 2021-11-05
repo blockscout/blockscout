@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   """
 
   require Ecto.Query
-  # require Logger
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -215,8 +215,12 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_atom(repo) and is_list(changes_list) do
+    Logger.info(" ### Address_current_token_balances insert started ")
+
     inserted_changes_list =
       insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options)
+
+    Logger.info(" ### Address_current_token_balances insert finished ")
 
     {:ok, inserted_changes_list}
   end

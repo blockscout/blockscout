@@ -144,6 +144,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           | {:error, [Changeset.t()]}
   defp insert(repo, valid_internal_transactions, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(valid_internal_transactions) do
+    Logger.info(" ### Internal_transactions insert started ")
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     ordered_changes_list = Enum.sort_by(valid_internal_transactions, &{&1.transaction_hash, &1.index})
@@ -159,6 +160,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         timeout: timeout,
         timestamps: timestamps
       )
+
+    Logger.info(" ### Internal_transactions insert finished ")
 
     {:ok, internal_transactions}
   end

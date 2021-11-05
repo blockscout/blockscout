@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Import.Stage.Addresses do
   @impl Stage
   def runners, do: [@runner]
 
-  @chunk_size 50
+  @chunk_size 100
 
   @impl Stage
   def multis(runner_to_changes_list, options) do

@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -60,20 +61,26 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
           {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout} = options) when is_atom(repo) and is_list(changes_list) do
+    Logger.info(["### Second degree relations insert started ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.nephew_hash, &1.uncle_hash})
 
-    Import.insert_changes_list(repo, ordered_changes_list,
-      conflict_target: [:nephew_hash, :uncle_hash],
-      on_conflict: on_conflict,
-      for: Block.SecondDegreeRelation,
-      returning: [:nephew_hash, :uncle_hash, :index],
-      timeout: timeout,
-      # block_second_degree_relations doesn't have timestamps
-      timestamps: %{}
-    )
+    {:ok, second_degree_relations} =
+      Import.insert_changes_list(repo, ordered_changes_list,
+        conflict_target: [:nephew_hash, :uncle_hash],
+        on_conflict: on_conflict,
+        for: Block.SecondDegreeRelation,
+        returning: [:nephew_hash, :uncle_hash, :index],
+        timeout: timeout,
+        # block_second_degree_relations doesn't have timestamps
+        timestamps: %{}
+      )
+
+    Logger.info(["### Second degree relations insert finished ###"])
+
+    {:ok, second_degree_relations}
   end
 
   defp default_on_conflict do

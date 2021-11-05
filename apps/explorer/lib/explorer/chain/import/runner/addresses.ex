@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   """
 
   require Ecto.Query
+  require Logger
 
   alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Address, Hash, Import, Transaction}
@@ -78,21 +79,45 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Address.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    Logger.info(["### Addresses insert started ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Address ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = sort_changes_list(changes_list)
 
-    Import.insert_changes_list(
-      repo,
-      ordered_changes_list,
-      conflict_target: :hash,
-      on_conflict: on_conflict,
-      for: Address,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+    # Logger.info(
+    #   inspect(
+    #     changes_list
+    #     |> Enum.map(
+    #       &%{
+    #         hash: &1.hash |> to_string(),
+    #         fetched_coin_balance: if(Map.has_key?(&1, :fetched_coin_balance), do: &1.fetched_coin_balance, else: nil),
+    #         fetched_coin_balance_block_number:
+    #           if(Map.has_key?(&1, :fetched_coin_balance_block_number),
+    #             do: &1.fetched_coin_balance_block_number,
+    #             else: nil
+    #           )
+    #       }
+    #     )
+    #   )
+    # )
+
+    Logger.info("address changes list length " <> inspect(Enum.count(changes_list)))
+
+    {:ok, addresses} =
+      Import.insert_changes_list(
+        repo,
+        ordered_changes_list,
+        conflict_target: :hash,
+        on_conflict: on_conflict,
+        for: Address,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    Logger.info(["### Addresses insert finished ###"])
+    {:ok, addresses}
   end
 
   defp default_on_conflict do
@@ -123,7 +148,8 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
               "GREATEST(EXCLUDED.fetched_coin_balance_block_number, ?)",
               address.fetched_coin_balance_block_number
             ),
-          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce)
+          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", address.updated_at)
         ]
       ],
       # where any of `set`s would make a change

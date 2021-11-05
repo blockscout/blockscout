@@ -77,21 +77,26 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
          } = options
        )
        when is_list(changes_list) do
+    Logger.info(["### Transactions insert started ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
 
-    Import.insert_changes_list(
-      repo,
-      ordered_changes_list,
-      conflict_target: :hash,
-      on_conflict: on_conflict,
-      for: Transaction,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+    {:ok, transactions} =
+      Import.insert_changes_list(
+        repo,
+        ordered_changes_list,
+        conflict_target: :hash,
+        on_conflict: on_conflict,
+        for: Transaction,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    Logger.info(["### Transactions insert finished ###"])
+    {:ok, transactions}
   end
 
   defp default_on_conflict do

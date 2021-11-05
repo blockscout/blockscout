@@ -31,7 +31,7 @@ defmodule Indexer.Block.Fetcher.Receipts do
     end)
     |> case do
       {:ok, receipt_params} ->
-        # Logger.info(["### Receipts fetched ###"])
+        Logger.info(["### Receipts fetched ###"])
         {:ok, set_block_number_to_logs(receipt_params, transaction_params)}
 
       other ->

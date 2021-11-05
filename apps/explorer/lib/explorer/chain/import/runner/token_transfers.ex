@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -52,12 +53,13 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           {:ok, [TokenTransfer.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    Logger.info(["### Token transfers insert started ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
 
-    {:ok, _} =
+    {:ok, token_transfers} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
@@ -68,6 +70,10 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timeout: timeout,
         timestamps: timestamps
       )
+
+    Logger.info(["### Token transfers insert finished ###"])
+
+    {:ok, token_transfers}
   end
 
   defp default_on_conflict do

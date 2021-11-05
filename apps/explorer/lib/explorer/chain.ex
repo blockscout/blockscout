@@ -73,7 +73,6 @@ defmodule Explorer.Chain do
     GasUsage,
     TokenExchangeRate,
     TransactionCount,
-    Transactions,
     Uncles
   }
 
@@ -3304,21 +3303,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if is_nil(paging_options.key) do
-      paging_options.page_size
-      |> Transactions.take_enough()
-      |> case do
-        nil ->
-          transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
-          Transactions.update(transactions)
-          transactions
-
-        transactions ->
-          transactions
-      end
-    else
-      fetch_recent_collated_transactions(paging_options, necessity_by_association)
-    end
+    fetch_recent_collated_transactions(paging_options, necessity_by_association)
   end
 
   def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
@@ -3403,7 +3388,8 @@ defmodule Explorer.Chain do
           ),
         select: {block.number, block.hash},
         order_by: [desc: block.number],
-        limit: ^limit
+        limit: ^limit,
+        offset: 100
       )
 
     query
