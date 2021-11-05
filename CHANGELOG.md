@@ -24,6 +24,7 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 - [#4854](https://github.com/blockscout/blockscout/pull/4854) - Fix infinite gas usage count loading
 - [#4853](https://github.com/blockscout/blockscout/pull/4853) - Allow custom optimizations runs for contract verifications via API
 - [#4840](https://github.com/blockscout/blockscout/pull/4840) - Replace Enum.dedup with Enum.uniq where actually uniq items are expected
