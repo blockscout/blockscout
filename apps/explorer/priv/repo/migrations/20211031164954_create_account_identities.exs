@@ -7,5 +7,7 @@ defmodule Explorer.Repo.Migrations.CreateAccountIdentities do
 
       timestamps()
     end
+
+    create(unique_index(:account_identities, [:uid]))
   end
 end

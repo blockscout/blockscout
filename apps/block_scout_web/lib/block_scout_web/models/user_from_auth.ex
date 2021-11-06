@@ -7,25 +7,44 @@ defmodule UserFromAuth do
 
   alias Ueberauth.Auth
   alias Explorer.Accounts.Identity
+  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
 
   def find_or_create(%Auth{} = auth) do
     case List.first(find_identity(auth)) do
       nil -> create_identity(auth)
-      %{} = identity -> {:ok, basic_info(auth, identity)}
+      %{} = identity -> {:ok, basic_info(auth, ensure_watchlist_exists(identity))}
     end
   end
 
   defp create_identity(auth) do
-    case Explorer.Repo.insert(%Identity{uid: auth.uid}) do
-      {:ok, identity} -> {:ok, basic_info(auth, identity)}
+    case Repo.insert(%Identity{uid: auth.uid}) do
+      {:ok, identity} -> {:ok, basic_info(auth, ensure_watchlist_exists(identity))}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  def ensure_watchlist_exists(identity) do
+    identity = Repo.preload(identity, :watchlists)
+
+    case List.first(identity.watchlists) do
+      nil -> add_watchlist(identity)
+      _ -> identity
+    end
+  end
+
+  defp add_watchlist(identity) do
+    watchlist = Ecto.build_assoc(identity, :watchlists, %{})
+
+    case Repo.insert(watchlist) do
+      {:ok, _} -> {:ok, Repo.preload(identity, :watchlists)}
       {:error, changeset} -> {:error, changeset}
     end
   end
 
   defp find_identity(auth) do
-    Explorer.Repo.all(query_identity(auth))
+    Repo.all(query_identity(auth))
   end
 
   defp query_identity(auth) do
@@ -33,13 +52,16 @@ defmodule UserFromAuth do
   end
 
   defp basic_info(auth, identity) do
+    [watchlist | _] = identity.watchlists
+
     %{
       id: identity.id,
       uid: auth.uid,
       email: email_from_auth(auth),
       name: name_from_auth(auth),
       nickname: nickname_from_auth(auth),
-      avatar: avatar_from_auth(auth)
+      avatar: avatar_from_auth(auth),
+      watchlist_id: watchlist.id
     }
   end
 
