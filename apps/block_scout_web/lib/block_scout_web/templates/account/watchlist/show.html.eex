@@ -1,0 +1,36 @@
+<section class="container">
+  <div class="row">
+    <div class="col-2">
+
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" style="font-size: 17px;" href="<%= auth_path(@conn, :profile) %>">Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" style="font-size: 20px;" href="#">Watchlist</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" style="font-size: 17px;" href="#">Address Tags</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" style="font-size: 17px;" href="#">Transaction Tags</a>
+        </li>
+      </ul>
+    </div>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body" >
+          <h1 class="card-title list-title-description" style="font-size: 26px;">Watchlist</h1>
+          <br>
+          <div class="col-sm">
+            <div class="mb-4 row">
+              <label for="staticName" class="col-sm-6 col-form-label">Name</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext profile-item" id="staticName" style="margin-left: 10px; color: #828ba0;" value="<%= @watchlist.name %>">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</section>

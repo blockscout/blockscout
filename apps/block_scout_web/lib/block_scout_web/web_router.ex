@@ -24,6 +24,12 @@ defmodule BlockScoutWeb.WebRouter do
     post("/:provider/callback", AuthController, :callback)
   end
 
+  scope "/account", BlockScoutWeb do
+    pipe_through(:browser)
+
+    resources("/watchlist", Account.WatchlistController, only: [:show], singleton: true, as: :watchlist)
+  end
+
   # Disallows Iframes (write routes)
   scope "/", BlockScoutWeb do
     pipe_through(:browser)

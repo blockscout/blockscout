@@ -7,7 +7,7 @@
           <a class="nav-link active" aria-current="page" style="font-size: 20px;" href="#">Profile</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link disabled link-account" style="font-size: 17px;" href="#">Watchlist</a>
+          <a class="nav-link link-account" style="font-size: 17px;" href="<%= watchlist_path(@conn, :show) %>">Watchlist</a>
         </li>
         <li class="nav-item">
           <a class="nav-link disabled" style="font-size: 17px;" href="#">Address Tags</a>
