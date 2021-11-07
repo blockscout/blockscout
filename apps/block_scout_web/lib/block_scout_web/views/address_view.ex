@@ -605,6 +605,13 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SPAM", "")) =~ address_hash_str
   end
 
+  def is_scam?(nil), do: false
+
+  def is_scam?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SCAM", "")) =~ address_hash_str
+  end
+
   def is_lewinswap?(nil), do: false
 
   def is_lewinswap?(address_hash) do

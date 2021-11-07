@@ -76,6 +76,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set spam tag
     AddressTag.set_tag("spam")
 
+    # set scam tag
+    AddressTag.set_tag("scam")
+
     # set Levinswap tags
     AddressTag.set_tag("lewinswap")
     AddressTag.set_tag("lewinswap farm")
@@ -170,6 +173,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
     # set spam tag
     set_spam_tag()
+
+    # set scam tag
+    set_scam_tag()
 
     # set Lewinswap tag
     set_lewinswap_tag()
@@ -357,6 +363,10 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_spam_tag do
     set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_SPAM", "spam")
+  end
+
+  defp set_scam_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_SCAM", "scam")
   end
 
   defp set_lewinswap_tag do
