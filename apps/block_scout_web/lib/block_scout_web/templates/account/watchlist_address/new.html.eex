@@ -1,0 +1,27 @@
+<section class="container">
+  <div class="row">
+    <div class="col-md">
+      <h1 class="card-title list-title-description" style="font-size: 26px;">Add new address</h1>
+
+      <div class="col-sm-6">
+        <%= form_for @watchlist_address, watchlist_address_path(@conn, :create), fn f -> %>
+          <div class="form-group">
+            <%= label f, "Address name", class: "control-label", style: "font-size: 17px" %>
+            <%= text_input f, :name, class: "form-control" %>
+            <%= error_tag f, :name %>
+          </div>
+
+          <div class="form-group">
+            <%= label f, "Address hash", class: "control-label", style: "font-size: 17px" %>
+            <%= text_input f, :hash, class: "form-control" %>
+            <%= error_tag f, :hash %>
+          </div>
+
+          <div class="form-group">
+            <%= submit "Submit", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>

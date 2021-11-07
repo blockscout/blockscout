@@ -28,7 +28,7 @@
           <br>
           <div class="col-sm">
             <div class="mb-4 row">
-              <label for="staticUid" class="col-sm-6 col-form-label">Uid</label>
+              <label for="staticUid" class="col-sm-6 col-form-label" style="font-size: 17px;" >Uid</label>
               <div class="col-sm">
                 <input type="text" readonly class="form-control-plaintext" id="staticUid" style="margin-left: 10px; color: #828ba0;" value="<%= @user.uid %>">
               </div>
@@ -36,19 +36,19 @@
           </div>
           <div class="col-sm">
             <div class="mb-4 row">
-              <label for="staticName" class="col-sm-6 col-form-label">Name</label>
+              <label for="staticName" class="col-sm-6 col-form-label" style="font-size: 17px;">Name</label>
               <div class="col-sm">
                 <input type="text" readonly class="form-control-plaintext profile-item" id="staticName" style="margin-left: 10px; color: #828ba0;" value="<%= @user.name %>">
               </div>
             </div>
             <div class="mb-4 row">
-              <label for="staticNickname" class="col-sm-6 col-form-label">Nickname</label>
+              <label for="staticNickname" class="col-sm-6 col-form-label" style="font-size: 17px;">Nickname</label>
               <div class="col-sm">
                 <input type="text" readonly class="form-control-plaintext profile-item" id="staticNickname" style="margin-left: 10px; color: #828ba0;" value="<%= @user.nickname %>">
               </div>
             </div>
             <div class="mb-4 row">
-              <label for="staticEmail" class="col-sm-6 col-form-label">Email</label>
+              <label for="staticEmail" class="col-sm-6 col-form-label" style="font-size: 17px;">Email</label>
               <div class="col-sm">
                 <input type="text" readonly class="form-control-plaintext profile-item" id="staticEmail" style="margin-left: 10px; color: #828ba0;" value="<%= @user.email %>">
               </div>

@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.WebRouter do
     pipe_through(:browser)
 
     resources("/watchlist", Account.WatchlistController, only: [:show], singleton: true, as: :watchlist)
+    resources("/watchlist_address", Account.WatchlistAddressController, only: [:new, :create, :update, :delete], as: :watchlist_address)
   end
 
   # Disallows Iframes (write routes)

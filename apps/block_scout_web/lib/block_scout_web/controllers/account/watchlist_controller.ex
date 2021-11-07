@@ -15,9 +15,15 @@ defmodule BlockScoutWeb.Account.WatchlistController do
         render(
           conn,
           "show.html",
-          watchlist: Repo.get(Watchlist, user.watchlist_id)
+          watchlist: watchlist_with_addresses(user)
         )
     end
+  end
+
+  defp watchlist_with_addresses(user) do
+    wl = Repo.get(Watchlist, user.watchlist_id)
+    Repo.preload wl, [:watchlist_addresses]
+
   end
 
   defp current_user(conn) do

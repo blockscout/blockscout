@@ -13,24 +13,21 @@ defmodule UserFromAuth do
 
   def find_or_create(%Auth{} = auth) do
     case List.first(find_identity(auth)) do
-      nil -> create_identity(auth)
-      %{} = identity -> {:ok, basic_info(auth, ensure_watchlist_exists(identity))}
+      nil -> {:ok, create_identity(auth)}
+      %{} = identity -> {:ok, basic_info(auth, identity)}
     end
   end
 
   defp create_identity(auth) do
     case Repo.insert(%Identity{uid: auth.uid}) do
-      {:ok, identity} -> {:ok, basic_info(auth, ensure_watchlist_exists(identity))}
-      {:error, changeset} -> {:error, changeset}
-    end
-  end
+      {:ok, identity} ->
+        case add_watchlist(identity) do
+          {:ok, _watchlist} -> basic_info(auth, identity)
+          {:error, changeset} -> {:error, changeset}
+        end
 
-  def ensure_watchlist_exists(identity) do
-    identity = Repo.preload(identity, :watchlists)
-
-    case List.first(identity.watchlists) do
-      nil -> add_watchlist(identity)
-      _ -> identity
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
@@ -38,7 +35,7 @@ defmodule UserFromAuth do
     watchlist = Ecto.build_assoc(identity, :watchlists, %{})
 
     case Repo.insert(watchlist) do
-      {:ok, _} -> {:ok, Repo.preload(identity, :watchlists)}
+      {:ok, _} -> {:ok, identity}
       {:error, changeset} -> {:error, changeset}
     end
   end
@@ -52,7 +49,8 @@ defmodule UserFromAuth do
   end
 
   defp basic_info(auth, identity) do
-    [watchlist | _] = identity.watchlists
+    identity_with_watchlists = Repo.preload(identity, :watchlists)
+    [watchlist | _] = identity_with_watchlists.watchlists
 
     %{
       id: identity.id,
@@ -96,18 +94,4 @@ defmodule UserFromAuth do
       end
     end
   end
-
-  #   defp validate_pass(%{other: %{password: ""}}) do
-  #     {:error, "Password required"}
-  #   end
-
-  #   defp validate_pass(%{other: %{password: pw, password_confirmation: pw}}) do
-  #     :ok
-  #   end
-
-  #   defp validate_pass(%{other: %{password: _}}) do
-  #     {:error, "Passwords do not match"}
-  #   end
-
-  #   defp validate_pass(_), do: {:error, "Password Required"}
 end

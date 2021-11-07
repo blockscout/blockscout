@@ -24,13 +24,34 @@
           <br>
           <div class="col-sm">
             <div class="mb-4 row">
-              <label for="staticName" class="col-sm-6 col-form-label">Name</label>
-              <div class="col-sm">
-                <input type="text" readonly class="form-control-plaintext profile-item" id="staticName" style="margin-left: 10px; color: #828ba0;" value="<%= @watchlist.name %>">
-              </div>
+              <table class="table mb-4"style="margin: 30px;">
+                <thead style="font-size: 17px;" >
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col"> Name</th>
+                    <th scope="col">Address</th>
+                    <th scope="col">Net Worth</th>
+                  </tr>
+                </thead>
+                <tbody style="font-size: 15px;" >
+                  <%= for wa <- @watchlist.watchlist_addresses do %>
+                    <tr>
+                      <th scope="row"><%= wa.id %></th>
+                      <td><%= wa.name %></td>
+                      <td>
+                        <%= link(trimmed_hash(wa.hash), to: address_path(@conn, :show, wa.hash)) %>
+                        <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: wa.hash, aria_label: gettext("Copy From Address"), title: gettext("Copy From Address") %>
+                      </td>
+                      <td><%= wa.name %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
             </div>
           </div>
+
+          <a class="btn btn-primary" style="font-size: 17px;" href="<%= watchlist_address_path(@conn, :new) %>">Add address to watchlist</a>
         </div>
       </div>
-    </div>
 </section>
