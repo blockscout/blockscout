@@ -109,16 +109,21 @@ defmodule EthereumJSONRPC.Contract do
 
   defp convert_int_string_to_array(arg) when is_nil(arg), do: true
 
+  defp convert_int_string_to_array(arg) when is_list(arg), do: convert_int_string_to_array_inner(arg)
+
   defp convert_int_string_to_array(arg) when not is_nil(arg) do
     cond do
       String.starts_with?(arg, "[") && String.ends_with?(arg, "]") ->
         arg
         |> String.trim_leading("[")
         |> String.trim_trailing("]")
+        |> String.split(",")
         |> convert_int_string_to_array_inner()
 
       arg !== "" ->
-        convert_int_string_to_array_inner(arg)
+        arg
+        |> String.split(",")
+        |> convert_int_string_to_array_inner()
 
       true ->
         []
@@ -127,7 +132,6 @@ defmodule EthereumJSONRPC.Contract do
 
   defp convert_int_string_to_array_inner(arg) do
     arg
-    |> String.split(",")
     |> Enum.map(fn el ->
       {int, _} = Integer.parse(el)
       int
@@ -135,6 +139,8 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp convert_string_to_array(arg) when is_nil(arg), do: true
+
+  defp convert_string_to_array(arg) when is_list(arg), do: arg
 
   defp convert_string_to_array(arg) when not is_nil(arg) do
     cond do

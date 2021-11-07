@@ -14,6 +14,7 @@
 - [#4945](https://github.com/blockscout/blockscout/pull/4945) - Fix `Verify & Publish` button link
 - [#4938](https://github.com/blockscout/blockscout/pull/4938) - Fix displaying of nested arrays for contracts read
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
+- [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
 
 ### Chore
 - [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
