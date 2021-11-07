@@ -340,6 +340,10 @@ defmodule Explorer.SmartContract.Reader do
       {:array, type, array_size} ->
         format_type(type) <> "[" <> Integer.to_string(array_size) <> "]"
 
+      # may be it is better to avoid this by constructing proper definition based on target method's components
+      {:array, {:tuple, _}} ->
+        "tuple[]"
+
       {:array, type} ->
         format_type(type) <> "[]"
 
@@ -566,8 +570,7 @@ defmodule Explorer.SmartContract.Reader do
     |> Tuple.to_list()
     |> Enum.map(fn value ->
       if is_list(value) do
-        value
-        |> Enum.join("")
+        parse_item(value)
       else
         hex =
           value
@@ -576,6 +579,10 @@ defmodule Explorer.SmartContract.Reader do
         "0x" <> hex
       end
     end)
+  end
+
+  defp parse_item(items) when is_list(items) do
+    Enum.map(items, &parse_item/1)
   end
 
   defp parse_item(item) do
