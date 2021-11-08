@@ -7312,7 +7312,7 @@ defmodule Explorer.Chain do
 
       {_, block_index} =
         sorted_traces
-        |> Enum.find(fn {trace, _} ->
+        |> Enum.find({nil, -1}, fn {trace, _} ->
           trace.transaction_index == transaction_index &&
             trace.transaction_hash == transaction_hash
         end)
