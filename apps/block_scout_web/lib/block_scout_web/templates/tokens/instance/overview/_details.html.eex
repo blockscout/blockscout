@@ -58,11 +58,7 @@
       </div>
     </div>
 
-<<<<<<< HEAD
-    <div class="card-section col-md-12 col-lg-5 pl-0-md mb-2">
-=======
     <div class="card-section col-md-12 col-lg-5 pl-0-md js-ad-dependant-mb-2">
->>>>>>> origin/master
       <div class="card">
         <div class="card-body">
           <div class="erc721-media" >
@@ -99,8 +95,4 @@
     </div>
   </div>
 </div>
-<<<<<<< HEAD
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
-=======
 <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
->>>>>>> origin/master

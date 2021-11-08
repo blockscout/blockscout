@@ -91,11 +91,7 @@
     </div>
 
     <%= if total_supply?(@token) do %>
-<<<<<<< HEAD
-      <div class="card-section col-md-12 col-lg-4 pl-0-md mb-2">
-=======
       <div class="card-section col-md-12 col-lg-4 pl-0-md js-ad-dependant-mb-2">
->>>>>>> origin/master
         <div class="card card-background-1">
           <div class="card-body">
             <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
@@ -127,9 +123,5 @@
 </section>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)), title: @token.contract_address %>
-<<<<<<< HEAD
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html" %>
-=======
 <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-overview.js") %>"></script>
->>>>>>> origin/master
