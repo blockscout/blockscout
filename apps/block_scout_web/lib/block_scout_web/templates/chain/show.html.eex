@@ -27,69 +27,55 @@
          document.documentElement.style.setProperty("--numChartData", numChartData);
         </script>
         <div class="dashboard-banner-chart-legend">
-          <%= if Map.has_key?(@chart_config, :market) do %>
-
-            <%# THE FOLLOWING LINE PREVENTS COPY/PASTE ERRORS %>
-            <%# Explicity put @chart_config.market in a variable %>
-            <%# This is done so that when people add a new chart source, x, %>
-            <%# They wont just access @chart_config.x w/o first checking if x exists%>
-            <% market_chart_config = @chart_config.market%>
-
-            <%= if Enum.member?(market_chart_config, :price) do %>
-                <div class="dashboard-banner-chart-legend-item">
-                    <span class="dashboard-banner-chart-legend-label">
-                    <%= gettext "Price" %>
-                    </span>
-                    <div class="dashboard-banner-chart-legend-value-container">
-                      <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+          <div class="dashboard-banner-chart-legend-item">
+            <span class="dashboard-banner-chart-legend-label">
+            <%= gettext "Gas tracker" %>
+            </span>
+            <div class="dashboard-banner-chart-legend-value-container">
+              <% gas_prices_from_oracle = gas_prices() %>
+              <%= if gas_prices_from_oracle do %>
+                <span class="dashboard-banner-chart-legend-value inline">
+                  <div>
+                    <div class="d-flex flex-row" style="height: 20px; line-height: 20px;">
+                      <div class="flex-column"><%= "#{gas_prices_from_oracle["average"]}" <> " " %><%= gettext "Gwei" %></div>
+                      <span
+                        data-toggle="tooltip"
+                        data-placement="top"
+                        data-html="true"
+                        data-template="<div class='tooltip tooltip-inversed-color tooltip-gas-tracker' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+                        title="
+                        <div class='custom-tooltip header'><%= gettext "Gas tracker" %></div>
+                        <div>
+                          <div class='custom-tooltip description left d-flex'><span><%= gettext "Slow" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["slow"] %> <%= gettext "Gwei" %></span></div>
+                          <div class='custom-tooltip description left d-flex'><span><%= gettext "Average" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["average"] %> <%= gettext "Gwei" %></span></div>
+                          <div class='custom-tooltip description left d-flex'><span><%= gettext "Fast" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["fast"] %> <%= gettext "Gwei" %></span></div>
+                        </div>
+                        "
+                      >
+                        <span style="display: inline-block; height: 20px; width: 12px;" class="fontawesome-icon info-circle ml-1"></span>
                       </span>
-                      <%= if @gas_price do %>
-                        <span class="dashboard-banner-chart-legend-value inline ml-2">
-                          <span class="gas-price-icon">
-                            <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
-                          </span>
-                          <%= @gas_price <> " " %>
-                          <%= gettext "Gwei" %>
-                        </span>
-                      <% end %>
                     </div>
-                </div>
-            <% end %>
-            <%= if Enum.member?(@chart_config.market, :market_cap) do %>
-            <div class="dashboard-banner-chart-legend-item">
-                <span class="dashboard-banner-chart-legend-label">
-                <%= gettext "Market Cap" %>
+                  </div>
                 </span>
-                <div>
-                  <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
-                  <span style="display: contents;" class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= total_market_cap %>">
-                  </span>
-                  <%= if token_bridge_supply?() do %>
-                    <% token_bridge_market_cap = total_market_cap_from_token_bridge(@exchange_rate) %>
-                    <% omni_bridge_market_cap = total_market_cap_from_omni_bridge() %>
-                    <% formatted_total_market_cap = if Decimal.cmp(total_market_cap, 0) == :gt, do: format_usd_value(total_market_cap), else: "N/A" %>
-                    <% formatted_token_bridge_market_cap = if Decimal.cmp(token_bridge_market_cap, 0) == :gt, do: format_usd_value(token_bridge_market_cap), else: "N/A" %>
-                    <% formatted_omni_bridge_market_cap = if Decimal.cmp(omni_bridge_market_cap, 0) == :gt, do: format_usd_value(omni_bridge_market_cap), else: "N/A" %>
-                    <span
-                      data-toggle="tooltip"
-                      data-placement="top"
-                      data-html="true"
-                      data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                      title="<div class='custom-tooltip-header'><b><%= formatted_total_market_cap %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip-description left'><b><%= formatted_token_bridge_market_cap %></b> locked in Dai in TokenBridge <br/><b><%= formatted_omni_bridge_market_cap %></b> locked in different assets in OmniBridge</div>">
-                      <i style="color: #ffffff;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i>
+              <% else %>
+                <%= if @gas_price do %>
+                  <span class="dashboard-banner-chart-legend-value inline ml-2">
+                    <span class="gas-price-icon">
+                      <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
                     </span>
-                  <% end %>
-                </div>
+                    <%= @gas_price <> " " %>
+                    <%= gettext "Gwei" %>
+                  </span>
+                <% end %>
+              <% end %>
             </div>
-            <% end %>
-          <% end %>
+        </div>
           <%= if Map.has_key?(@chart_config, :transactions) do %>
-
             <% transaction_chart_config = @chart_config.transactions%>
             <%= if Enum.member?(transaction_chart_config, :transactions_per_day) do %>
             <div class="dashboard-banner-chart-legend-item">
                 <span class="dashboard-banner-chart-legend-label">
-                    <%= gettext "Tx/day" %>
+                    <%= gettext "Daily Transactions" %>
                 </span>
                 <span class="dashboard-banner-chart-legend-value" data-selector="tx_per_day">
                     <% num_of_transactions = BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
