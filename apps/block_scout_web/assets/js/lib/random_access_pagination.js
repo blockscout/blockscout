@@ -50,10 +50,15 @@ export function asyncReducer (state = asyncInitialState, action) {
       return Object.assign({}, state, { itemKey: action.itemKey })
     }
     case 'START_REQUEST': {
+      var pageNumber = state.currentPageNumber
+      if (action.pageNumber) 
+        pageNumber = parseInt(action.pageNumber)
+
       return Object.assign({}, state, {
         loading: true,
         requestError: false,
-        currentPagePath: action.path
+        currentPagePath: action.path,
+        currentPageNumber: pageNumber
       })
     }
     case 'REQUEST_ERROR': {
@@ -170,7 +175,7 @@ export const elements = {
       $el.show()
       if (state.requestError || state.currentPageNumber <= 1 || state.loading) {
         return $el.attr('disabled', 'disabled')
-      }
+      } 
 
       $el.attr('disabled', false)
       $el.attr('href', state.prevPagePath)
@@ -242,7 +247,7 @@ export function refreshPage (store) {
 
 export function loadPageByNumber (store, pageNumber) {
   var path = $('[data-async-listing]').data('async-listing')
-  store.dispatch({ type: 'START_REQUEST', path })
+  store.dispatch({ type: 'START_REQUEST', path, pageNumber })
   if (URI(path).query() !== '' && typeof store.getState().nextPageParams === 'undefined') {
     $.getJSON(path, { type: 'JSON' })
       .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED', path }, humps.camelizeKeys(response))))
@@ -286,6 +291,7 @@ function firstPageLoad (store) {
   })
 
   $element.on('click', '[data-page-number]', (event) => {
+    event.preventDefault()
     loadPageByNumber(store, event.target.dataset.pageNumber)
   })
 
