@@ -67,6 +67,7 @@
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
+- [#4876](https://github.com/blockscout/blockscout/pull/4876) - Add missing columns updates when INSERT ... ON CONFLICT DO UPDATE ... happens
 - [#4872](https://github.com/blockscout/blockscout/pull/4872) - Set explicit ascending order by hash in acquire transactions query of internal transactions import
 - [#4871](https://github.com/blockscout/blockscout/pull/4871) - Remove cumulative gas used update duplicate
 - [#4860](https://github.com/blockscout/blockscout/pull/4860) - Node 16 support
