@@ -130,9 +130,7 @@ defmodule Explorer.Etherscan.Logs do
           block_hash: block.hash,
           block_number: block.number,
           block_timestamp: block.timestamp,
-          block_consensus: block.consensus,
-          block_hash: block.hash,
-          block_number: block.number
+          block_consensus: block.consensus
         }
       )
 
