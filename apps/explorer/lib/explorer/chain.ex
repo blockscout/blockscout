@@ -6951,30 +6951,17 @@ defmodule Explorer.Chain do
 
     # https://eips.ethereum.org/EIPS/eip-1967
     storage_slot_logic_contract_address = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
-    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
 
-    {status, implementation_address} =
+    {_status, implementation_address} =
       case Contract.eth_get_storage_at_request(
              proxy_address_hash,
              storage_slot_logic_contract_address,
              nil,
              json_rpc_named_arguments
            ) do
-        {:ok, "0x"} ->
-          Contract.eth_get_storage_at_request(
-            proxy_address_hash,
-            storage_slot_beacon_contract_address,
-            nil,
-            json_rpc_named_arguments
-          )
-
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"} ->
-          Contract.eth_get_storage_at_request(
-            proxy_address_hash,
-            storage_slot_beacon_contract_address,
-            nil,
-            json_rpc_named_arguments
-          )
+        {:ok, empty_address}
+        when empty_address in ["0x", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+          fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
 
         {:ok, implementation_logic_address} ->
           {:ok, implementation_logic_address}
@@ -6983,15 +6970,62 @@ defmodule Explorer.Chain do
           {:ok, "0x"}
       end
 
-    abi_decode_address_output(if status == :ok, do: implementation_address, else: "0x")
+    abi_decode_address_output(implementation_address)
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/4770
+  # for support BeaconProxy pattern
+  defp fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # https://eips.ethereum.org/EIPS/eip-1967
+    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
+
+    implementation_method_abi = [
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+        "name" => "implementation",
+        "inputs" => []
+      }
+    ]
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_beacon_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+        {:ok, "0x"}
+
+      {:ok, beacon_contract_address} ->
+        case beacon_contract_address
+             |> abi_decode_address_output()
+             |> get_implementation_address_hash_basic(implementation_method_abi) do
+          <<implementation_address::binary-size(42)>> ->
+            {:ok, implementation_address}
+
+          _ ->
+            {:ok, beacon_contract_address}
+        end
+
+      {:error, _} ->
+        {:ok, "0x"}
+    end
   end
 
   defp get_implementation_address_hash_basic(proxy_address_hash, abi) do
     # 5c60da1b = keccak256(implementation())
     implementation_address =
-      case Reader.query_contract(proxy_address_hash, abi, %{
-             "5c60da1b" => []
-           }) do
+      case Reader.query_contract(
+             proxy_address_hash,
+             abi,
+             %{
+               "5c60da1b" => []
+             },
+             false
+           ) do
         %{"5c60da1b" => {:ok, [result]}} -> result
         _ -> nil
       end
@@ -7036,17 +7070,19 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp abi_decode_address_output(address) when is_nil(address), do: nil
+  defp abi_decode_address_output(nil), do: nil
 
   defp abi_decode_address_output("0x"), do: @burn_address_hash_str
 
-  defp abi_decode_address_output(address) do
+  defp abi_decode_address_output(address) when is_binary(address) do
     if String.length(address) > 42 do
       "0x" <> String.slice(address, -40, 40)
     else
       address
     end
   end
+
+  defp abi_decode_address_output(_), do: nil
 
   defp address_to_hex(address) do
     if address do
@@ -7212,7 +7248,7 @@ defmodule Explorer.Chain do
 
       {_, block_index} =
         sorted_traces
-        |> Enum.find(fn {trace, _} ->
+        |> Enum.find({nil, -1}, fn {trace, _} ->
           trace.transaction_index == transaction_index &&
             trace.transaction_hash == transaction_hash
         end)
