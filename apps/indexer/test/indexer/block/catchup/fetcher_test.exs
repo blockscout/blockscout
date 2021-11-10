@@ -4,6 +4,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Mox
+  import Explorer.Celo.CacheHelper
 
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
@@ -152,7 +153,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     } do
       celo_token_address = insert(:contract_address)
       insert(:token, contract_address: celo_token_address)
-      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+      set_test_address(to_string(celo_token_address.hash))
 
       start_supervisors(json_rpc_named_arguments)
 
@@ -219,17 +220,6 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
         [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _options ->
           {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
-
-        # read_addresses for 4 smart contracts in the fetcher
-        [%{id: id, jsonrpc: "2.0", method: "eth_call"}], _options ->
-          {:ok,
-           [
-             %{
-               jsonrpc: "2.0",
-               id: id,
-               result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
-             }
-           ]}
 
         [%{id: id, jsonrpc: "2.0", method: "trace_block", params: [^block_quantity]}], _options ->
           {
@@ -321,7 +311,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     } do
       celo_token_address = insert(:contract_address)
       insert(:token, contract_address: celo_token_address)
-      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+      set_test_address(to_string(celo_token_address.hash))
 
       start_supervisors(json_rpc_named_arguments)
 
@@ -428,17 +418,6 @@ defmodule Indexer.Block.Catchup.FetcherTest do
              }
            ]}
 
-        # read_addresses for 4 smart contracts in the fetcher
-        [%{id: id, jsonrpc: "2.0", method: "eth_call"}], _options ->
-          {:ok,
-           [
-             %{
-               jsonrpc: "2.0",
-               id: id,
-               result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
-             }
-           ]}
-
         [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
           {:ok,
            [
@@ -487,7 +466,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     } do
       celo_token_address = insert(:contract_address)
       insert(:token, contract_address: celo_token_address)
-      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+
+      set_test_address(to_string(celo_token_address.hash))
 
       start_supervisors(json_rpc_named_arguments)
 
@@ -554,17 +534,6 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
         [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _options ->
           {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
-
-        # read_addresses for 4 smart contracts in the fetcher
-        [%{id: id, jsonrpc: "2.0", method: "eth_call"}], _options ->
-          {:ok,
-           [
-             %{
-               jsonrpc: "2.0",
-               id: id,
-               result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
-             }
-           ]}
 
         [%{method: "trace_block", params: [^block_quantity]}], _options ->
           {:error, :boom}

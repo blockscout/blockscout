@@ -93,6 +93,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.BlockPriorityFeeCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Celo.AbiHandler),
+      configure(Explorer.Celo.CoreContracts),
       configure(Explorer.Celo.SignerCache),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),

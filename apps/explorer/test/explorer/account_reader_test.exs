@@ -4,12 +4,14 @@ defmodule Explorer.Token.AccountReaderTest do
   alias Explorer.Celo.AccountReader
 
   import Mox
+  import Explorer.Celo.CacheHelper
 
   setup :verify_on_exit!
   setup :set_mox_global
 
   describe "get_account_data" do
     test "get_account_data success" do
+      set_test_address("0x47e172f6cfb6c7d01c1574fa3e2be7cc73269d95")
       get_account_data_from_blockchain()
 
       address = <<71, 225, 114, 246, 207, 182, 199, 208, 28, 21, 116, 250, 62, 43, 231, 204, 115, 38, 157, 149>>
@@ -34,7 +36,7 @@ defmodule Explorer.Token.AccountReaderTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      8,
+      1,
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn

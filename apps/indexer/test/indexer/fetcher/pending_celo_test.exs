@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.PendingCeloTest do
   use Explorer.DataCase
 
   import Mox
+  import Explorer.Celo.CacheHelper
 
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.PendingCelo, as: ChainPendingCelo
@@ -25,38 +26,9 @@ defmodule Indexer.Fetcher.PendingCeloTest do
         hash: %Hash{bytes: address}
       } = insert(:address, hash: "0xe26b6a5655601a9db347be8bd23dd7d4eabcf818")
 
-      IO.inspect(to_string(address))
+      set_test_address("0x6cc083aed9e3ebe302a6336dbc7c921c9f03349e")
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [
-             %{
-               id: id,
-               method: "eth_call",
-               params: [
-                 %{
-                   data:
-                     "0x853db3230000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000a4c6f636b6564476f6c6400000000000000000000000000000000000000000000",
-                   to: "0x000000000000000000000000000000000000ce10"
-                 },
-                 "latest"
-               ]
-             }
-           ],
-           _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x0000000000000000000000006cc083aed9e3ebe302a6336dbc7c921c9f03349e"
-             }
-           ]}
-        end
-      )
-
-      expect(
+      stub(
         EthereumJSONRPC.Mox,
         :json_rpc,
         fn [
@@ -107,8 +79,7 @@ defmodule Indexer.Fetcher.PendingCeloTest do
                   }
                 ]}
 
-      pending_celo_updated = Explorer.Repo.get_by(ChainPendingCelo, account_address: address)
-      IO.inspect(pending_celo_updated)
+      Explorer.Repo.get_by(ChainPendingCelo, account_address: address)
     end
   end
 end

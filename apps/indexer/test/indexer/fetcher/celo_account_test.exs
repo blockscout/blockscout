@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
   use Explorer.DataCase
 
   import Mox
+  import Explorer.Celo.CacheHelper
 
   @moduletag :capture_log
 
@@ -20,6 +21,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
       address = <<71, 225, 114, 246, 207, 182, 199, 208, 28, 21, 116, 250, 62, 43, 231, 204, 115, 38, 157, 149>>
 
       get_account_data_from_blockchain()
+      set_test_address()
 
       entry = Indexer.Fetcher.CeloAccount.entry(%{address: address}, [], [])
 
@@ -50,7 +52,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      8,
+      1,
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn

@@ -5,6 +5,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   import Mox
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import Explorer.Celo.CacheHelper
 
   alias Explorer.Chain.Block
   alias Explorer.Repo
@@ -40,6 +41,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
     @tag :no_geth
     test "starts fetching blocks from latest and goes down", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       Logger.configure(truncate: :infinity)
+
+      set_test_address()
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do

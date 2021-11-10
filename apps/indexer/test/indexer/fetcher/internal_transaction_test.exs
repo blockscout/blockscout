@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   use Explorer.DataCase
 
   import Mox
+  import Explorer.Celo.CacheHelper
 
   alias Explorer.Chain
   alias Explorer.Chain.{PendingBlockOperation, TokenTransfer}
@@ -65,6 +66,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       end
     end
 
+    empty_address_cache()
     CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
@@ -104,6 +106,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     block_number = 1_000_006
     block = insert(:block, number: block_number)
     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+    empty_address_cache()
 
     assert :ok = InternalTransaction.run([block_number], json_rpc_named_arguments)
 
@@ -169,6 +172,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
             raise ArgumentError, "Unsupported variant name (#{variant_name})"
         end
       end
+
+      empty_address_cache()
 
       block = insert(:block)
       block_hash = block.hash
@@ -277,6 +282,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         end
       end
 
+      empty_address_cache()
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
@@ -334,6 +340,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert %{block_hash: ^invalid_block_hash} = Repo.get(PendingBlockOperation, invalid_block_hash)
       assert %{block_hash: ^valid_block_hash2} = Repo.get(PendingBlockOperation, valid_block_hash2)
       assert %{block_hash: ^empty_block_hash} = Repo.get(PendingBlockOperation, empty_block_hash)
+
+      empty_address_cache()
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
@@ -415,7 +423,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     test "reverted internal transfers are not indexed" do
       celo_token_address = insert(:contract_address)
       insert(:token, contract_address: celo_token_address)
-      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+      set_test_address(to_string(celo_token_address.hash))
 
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block)
@@ -486,17 +494,6 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
            }
          ]}
       end)
-      |> expect(:json_rpc, fn [%{id: id, method: "eth_call"}], _options ->
-        # Utils.get_address("GoldToken") query
-        {:ok,
-         [
-           %{
-             jsonrpc: "2.0",
-             id: id,
-             result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
-           }
-         ]}
-      end)
 
       json_rpc_named_arguments = [
         transport: EthereumJSONRPC.Mox,
@@ -521,7 +518,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       transfer_amount_in_wei = 10_000_000_000_000_000_000_000
       celo_token_address = insert(:contract_address)
       insert(:token, contract_address: celo_token_address)
-      "0x" <> unprefixed_celo_token_address_hash = to_string(celo_token_address.hash)
+
+      set_test_address(to_string(celo_token_address.hash))
 
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block)
@@ -589,17 +587,6 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
                  "gasUsed" => "0x0"
                }
              ]
-           }
-         ]}
-      end)
-      |> expect(:json_rpc, fn [%{id: id, method: "eth_call"}], _options ->
-        # Utils.get_address("GoldToken") query
-        {:ok,
-         [
-           %{
-             jsonrpc: "2.0",
-             id: id,
-             result: "0x000000000000000000000000" <> unprefixed_celo_token_address_hash
            }
          ]}
       end)

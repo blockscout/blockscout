@@ -39,6 +39,9 @@ variant =
     |> String.downcase()
   end
 
+config :explorer, Explorer.Celo.CoreContracts, enabled: true, refresh: :timer.hours(1)
+config :explorer, Explorer.Celo.AddressCache, Explorer.Celo.CoreContracts
+
 # Import variant specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "dev/#{variant}.exs"
