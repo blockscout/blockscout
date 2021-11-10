@@ -1,0 +1,74 @@
+<footer class="footer">
+  <div class="footer-body container">
+    <!-- Logo -->
+    <div class="row footer-logo-row">
+      <div class="col-md-12">
+        <%= link to: webapp_url(@conn), class: "footer-brand" do %>
+          <img class="footer-logo" src="<%= static_path(@conn, logo_footer()) %>" alt="<%= subnetwork_title() %>" />
+          <%= if logo_text() do %>
+            <span class="logo-text in-footer"> <%= logo_text() %> </span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xs-12 col-lg-3">
+        <p class="footer-info-text"><%= gettext("Blockchain explorer is powered by Blockscout.") %></p>
+        <div class="footer-social-icons">
+          <a href="https://github.com/blockscout/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+            <div class="footer-social-icon-container fontawesome-icon github"></div>
+          </a>
+          <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+            <div class="footer-social-icon-container fontawesome-icon twitter"></div>
+          </a>
+          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
+            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-xs-12 col-md-3 col-lg-2 footer-list">
+        <h3>Company</h3>
+        <ul>
+          <li><a href="https://aurora.dev/about" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("About") %></a></li>
+          <li><a href="https://aurora.dev/dao" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("DAO") %></a></li>
+          <li><a href="https://aurora.dev/team" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Team") %></a></li>
+          <li><a href="https://aurora.dev/careers" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Careers") %></a></li>
+        </ul>
+      </div>
+
+      <div class="col-xs-12 col-md-3 col-lg-2 footer-list">
+        <h3>Developers</h3>
+        <ul>
+          <li><a href="https://docs.aurora.dev" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Documentation") %></a></li>
+          <li><a href="https://testnet.rainbowbridge.app" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Testnet Bridge") %></a></li>
+          <li><a href="https://github.com/aurora-is-near" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("GitHub") %></a></li>
+          <li><a href="https://t.me/auroraisneardev" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Telegram Dev") %></a></li>
+        </ul>
+      </div>
+
+      <div class="col-xs-12 col-md-3 col-lg-2 footer-list">
+        <h3>Resources</h3>
+        <ul>
+          <li><a href="https://rainbowbridge.app" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Bridge") %></a></li>
+          <li><a href="https://aurora.dev/blog" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("News & Blog") %></a></li>
+          <li><a href="https://aurora.dev/blog/category/updates" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Weekly Updates") %></a></li>
+          <li><a href="https://github.com/aurora-is-near/aurora-press-kit/archive/refs/heads/master.zip" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Press Kit") %></a></li>
+        </ul>
+      </div>
+
+      <div class="col-xs-12 col-md-3 col-lg-2 footer-list">
+        <h3>Stay in touch</h3>
+        <ul>
+          <li><a href="https://discord.gg/dEFJBz8HQV" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Discord") %></a></li>
+          <li><a href="https://t.me/auroraisnear" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Telegram Official") %></a></li>
+          <li><a href="https://t.me/AuroraSupport_bot" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Telegram Support") %></a></li>
+          <li><a href="https://twitter.com/auroraisnear" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Twitter") %></a></li>
+          <li><a href="https://www.youtube.com/channel/UC5inYyvUO10iL65hBPFtpvg" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("YouTube") %></a></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</footer>

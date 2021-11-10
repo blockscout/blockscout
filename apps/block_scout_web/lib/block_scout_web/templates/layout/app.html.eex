@@ -243,7 +243,7 @@
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
         <%= @inner_content %>
       </main>
-      <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
+      <%= render BlockScoutWeb.LayoutView, "_aurora_footer.html", assigns %>
     </div>
     <%= if (
       @view_module != Elixir.BlockScoutWeb.ChainView &&
