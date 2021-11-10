@@ -10,6 +10,7 @@ defmodule Explorer.Celo.Util do
   @celo_token_contract_symbols %{
     "stableToken" => "cUSD",
     "stableTokenEUR" => "cEUR",
+    "stableTokenREAL" => "cREAL",
     # cGLD is the old symbol, needs to be updated to CELO
     "goldToken" => "cGLD"
   }
@@ -55,6 +56,7 @@ defmodule Explorer.Celo.Util do
   defp contract(:gold), do: get_address("GoldToken")
   defp contract(:usd), do: get_address("StableToken")
   defp contract(:eur), do: get_address("StableTokenEUR")
+  defp contract(:real), do: get_address("StableTokenREAL")
 
   def get_address(name) do
     case AddressCache.contract_address(name) do

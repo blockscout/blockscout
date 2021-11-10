@@ -283,6 +283,7 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, gold_address} <- get_address("GoldToken"),
          {:ok, usd_address} <- get_address("StableToken"),
          {:ok, eur_address} <- get_address("StableTokenEUR"),
+         {:ok, real_address} <- get_address("StableTokenREAL"),
          {:ok, oracle_address} <- get_address("SortedOracles") do
       validators = SignerCache.epoch_signers(epoch, epoch_size, block_number)
 
@@ -296,6 +297,7 @@ defmodule Explorer.Celo.AccountReader do
         %{name: "totalLockedGold", number_value: total_gold},
         %{name: "stableToken", address_value: usd_address},
         %{name: "stableTokenEUR", address_value: eur_address},
+        %{name: "stableTokenREAL", address_value: real_address},
         %{name: "goldToken", address_value: gold_address},
         %{name: "sortedOracles", address_value: oracle_address},
         %{name: "maxElectableValidators", number_value: max_validators},

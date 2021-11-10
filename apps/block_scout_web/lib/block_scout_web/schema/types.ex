@@ -195,6 +195,7 @@ defmodule BlockScoutWeb.Schema.Types do
   object :celo_stable_coins do
     field(:cusd, :address_hash)
     field(:ceur, :address_hash)
+    field(:creal, :address_hash)
   end
 
   @desc """
