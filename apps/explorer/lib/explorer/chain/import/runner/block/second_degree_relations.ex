@@ -40,6 +40,8 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
 
   @impl Import.Runner
   def run(multi, changes_list, options) when is_map(options) do
+    Logger.info("### Second degree relations run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -78,7 +80,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
         timestamps: %{}
       )
 
-    Logger.info(["### Second degree relations insert finished ###"])
+    Logger.info(["### Second degree relations insert FINISHED ###"])
 
     {:ok, second_degree_relations}
   end

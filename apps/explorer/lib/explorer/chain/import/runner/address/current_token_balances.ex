@@ -52,7 +52,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
                value: Decimal.t()
              }
   def token_holder_count_deltas(%{deleted: deleted, inserted: inserted}) when is_list(deleted) and is_list(inserted) do
-    # Logger.info("### Blocks token_holder_count_deltas started ###")
+    Logger.info("### Blocks token_holder_count_deltas started ###")
 
     deleted_holder_address_hash_set_by_token_contract_address_hash =
       to_holder_address_hash_set_by_token_contract_address_hash(deleted)
@@ -66,26 +66,29 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         inserted_holder_address_hash_set_by_token_contract_address_hash
       ])
 
-    Enum.flat_map(ordered_token_contract_address_hashes, fn token_contract_address_hash ->
-      holder_count_delta =
-        holder_count_delta(%{
-          deleted_holder_address_hash_set_by_token_contract_address_hash:
-            deleted_holder_address_hash_set_by_token_contract_address_hash,
-          inserted_holder_address_hash_set_by_token_contract_address_hash:
-            inserted_holder_address_hash_set_by_token_contract_address_hash,
-          token_contract_address_hash: token_contract_address_hash
-        })
+    res =
+      Enum.flat_map(ordered_token_contract_address_hashes, fn token_contract_address_hash ->
+        holder_count_delta =
+          holder_count_delta(%{
+            deleted_holder_address_hash_set_by_token_contract_address_hash:
+              deleted_holder_address_hash_set_by_token_contract_address_hash,
+            inserted_holder_address_hash_set_by_token_contract_address_hash:
+              inserted_holder_address_hash_set_by_token_contract_address_hash,
+            token_contract_address_hash: token_contract_address_hash
+          })
 
-      case holder_count_delta do
-        0 ->
-          []
+        case holder_count_delta do
+          0 ->
+            []
 
-        _ ->
-          [%{contract_address_hash: token_contract_address_hash, delta: holder_count_delta}]
-      end
-    end)
+          _ ->
+            [%{contract_address_hash: token_contract_address_hash, delta: holder_count_delta}]
+        end
+      end)
 
-    # Logger.info("### Blocks token_holder_count_deltas finished ###")
+    Logger.info("### Blocks token_holder_count_deltas FINISHED ###")
+
+    res
   end
 
   @impl Import.Runner
@@ -104,6 +107,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Address current token balances run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -215,17 +220,18 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_atom(repo) and is_list(changes_list) do
-    Logger.info(" ### Address_current_token_balances insert started ")
+    Logger.info("### Address_current_token_balances insert started ###")
 
     inserted_changes_list =
       insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options)
 
-    Logger.info(" ### Address_current_token_balances insert finished ")
+    Logger.info("### Address_current_token_balances insert FINISHED ###")
 
     {:ok, inserted_changes_list}
   end
 
   def insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
+    Logger.info("### Address_current_token_balances insert_changes_list_with_and_without_token_id started ###")
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
@@ -318,6 +324,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       else
         {:ok, []}
       end
+
+    Logger.info("### Address_current_token_balances insert_changes_list_with_and_without_token_id FINISHED ###")
 
     inserted_changes_list_no_token_id ++ inserted_changes_list_with_token_id
   end

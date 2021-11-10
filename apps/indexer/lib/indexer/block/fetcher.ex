@@ -135,12 +135,18 @@ defmodule Indexer.Block.Fetcher do
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
+         Logger.info("### BEFORE blocks CHANGESET ###"),
          blocks = TransformBlocks.transform_blocks(blocks_params),
+         Logger.info("### BEFORE receipts params ###"),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
+         Logger.info("### BEFORE logs CHANGESET ###"),
          %{logs: logs, receipts: receipts} = receipt_params,
+         Logger.info("### BEFORE transactions_with_receipts CHANGESET ###"),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
+         Logger.info("### BEFORE token_transfers CHANGESET ###"),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
+         Logger.info("### BEFORE addresses CHANGESET ###"),
          addresses =
            Addresses.extract_addresses(%{
              blocks: blocks,
@@ -149,6 +155,7 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts
            }),
+         Logger.info("### BEFORE coin_balances_params_set CHANGESET ###"),
          coin_balances_params_set =
            %{
              blocks_params: blocks,
@@ -156,13 +163,16 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),
+         Logger.info("### BEFORE coin_balances_params_daily_set CHANGESET ###"),
          coin_balances_params_daily_set =
            %{
              coin_balances_params: coin_balances_params_set,
              blocks: blocks
            }
            |> AddressCoinBalancesDaily.params_set(),
+         Logger.info("### BEFORE address_token_balances CHANGESET ###"),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         Logger.info("### BEFORE INSERT BLOCK CHANGESETS ###"),
          {:ok, inserted} <-
            __MODULE__.import(
              state,

@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   """
 
   require Ecto.Query
+  require Logger
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, StakingPool}
@@ -36,6 +37,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Staking pools run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -127,12 +130,13 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           {:ok, [StakingPool.t()]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    Logger.info(["### Staking pools insert started ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.staking_address_hash)
 
-    {:ok, _} =
+    {:ok, staking_pools} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
@@ -143,6 +147,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
         timeout: timeout,
         timestamps: timestamps
       )
+
+    Logger.info(["### Staking pools insert FINISHED ###"])
+    {:ok, staking_pools}
   end
 
   defp default_on_conflict do

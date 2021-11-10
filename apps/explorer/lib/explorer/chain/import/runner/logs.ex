@@ -34,6 +34,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Logs run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -75,7 +77,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
         timestamps: timestamps
       )
 
-    Logger.info(["### Logs insert finished ###"])
+    Logger.info(["### Logs insert FINISHED ###"])
     {:ok, logs}
   end
 

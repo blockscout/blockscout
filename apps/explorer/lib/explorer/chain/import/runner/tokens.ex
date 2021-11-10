@@ -94,7 +94,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
         timeout: timeout,
         timestamps: %{updated_at: updated_at}
       }) do
-    Logger.info("### update_holder_counts_with_deltas STARTED")
+    Logger.info("### update_holder_counts_with_deltas started ###")
     # NOTE that acquire_contract_address_tokens needs to be called before this
     {hashes, deltas} =
       token_holder_count_deltas
@@ -129,7 +129,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       )
 
     {_total, result} = repo.update_all(query, [], timeout: timeout)
-    Logger.info("### update_holder_counts_with_deltas FINISHED")
+    Logger.info("### update_holder_counts_with_deltas FINISHED ###")
 
     {:ok, result}
   end
@@ -150,6 +150,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Tokens run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -193,7 +195,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
         timestamps: timestamps
       )
 
-    Logger.info(["### Tokens insert finished ###"])
+    Logger.info(["### Tokens insert FINISHED ###"])
     {:ok, tokens}
   end
 

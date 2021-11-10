@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
+  require Logger
+
   alias Ecto.Changeset
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
@@ -122,6 +124,8 @@ defmodule Explorer.Chain.Import do
   """
   @spec all(all_options()) :: all_result()
   def all(options) when is_map(options) do
+    Logger.info("### Import all started ###")
+
     with {:ok, runner_options_pairs} <- validate_options(options),
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),

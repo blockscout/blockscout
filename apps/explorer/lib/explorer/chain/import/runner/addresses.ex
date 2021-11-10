@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Address, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
 
@@ -40,9 +41,10 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info(["### Addresses insert started. Changes list length #{inspect(Enum.count(changes_list))} ###"])
+    Logger.info("### Addresses run started. Changes list length #{inspect(Enum.count(changes_list))} ###")
     Logger.info("Gimme multi #{inspect(multi)}")
     Logger.info("Gimme changes_list length #{inspect(Enum.count(changes_list))}")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -83,7 +85,10 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Address.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Addresses insert started (internal). Changes list length #{inspect(Enum.count(changes_list))} ###"])
+    Logger.info([
+      "### Addresses insert started (internal). Changes list length #{inspect(Enum.count(changes_list))} ###"
+    ])
+
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Address ShareLocks order (see docs: sharelocks.md)
@@ -120,7 +125,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         timestamps: timestamps
       )
 
-    Logger.info(["### Addresses insert finished ###"])
+    Logger.info(["### Addresses insert FINISHED ###"])
     {:ok, addresses}
   end
 

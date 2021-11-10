@@ -37,6 +37,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Address coin balances daily run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -70,35 +72,31 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
           {:ok, [%{required(:address_hash) => Hash.Address.t(), required(:day) => Date.t()}]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(" ### Address_coin_balances_daily insert started ")
+    Logger.info("### Address_coin_balances_daily insert started ###")
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
+    Logger.info("Address_coin_balances_daily changes_list #{inspect(changes_list)}")
 
     combined_changes_list =
       changes_list
-      |> Enum.reduce([], fn change, acc ->
-        if Enum.empty?(acc) do
-          [change | acc]
-        else
-          target_item =
-            Enum.find(acc, fn item ->
-              item.day == change.day && item.address_hash == change.address_hash
-            end)
-
-          if target_item do
-            if Map.has_key?(change, :value) && Map.has_key?(target_item, :value) && change.value > target_item.value do
-              acc_updated = List.delete(acc, target_item)
-              [change | acc_updated]
-            else
-              acc
-            end
-          else
-            [change | acc]
+      |> Enum.group_by(fn %{
+                            address_hash: address_hash,
+                            day: day
+                          } ->
+        {address_hash, day}
+      end)
+      |> Enum.map(fn {_, grouped_address_coin_balances} ->
+        Enum.max_by(grouped_address_coin_balances, fn daily_balance ->
+          case daily_balance do
+            %{value: value} -> value
+            _ -> nil
           end
-        end
+        end)
       end)
 
     # Enforce CoinBalanceDaily ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(combined_changes_list, &{&1.address_hash, &1.day})
+    Logger.info("Address_coin_balances_daily ordered_changes_list #{inspect(ordered_changes_list)}")
 
     {:ok, _} =
       Import.insert_changes_list(
@@ -111,7 +109,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
         timestamps: timestamps
       )
 
-    Logger.info(" ### Address_coin_balances_daily insert finished ")
+    Logger.info("### Address_coin_balances_daily insert FINISHED ###")
 
     {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash day)a))}
   end

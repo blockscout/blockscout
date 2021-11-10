@@ -37,6 +37,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Address coin balances run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -70,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
           {:ok, [%{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(" ### Address_coin_balances insert started ")
+    Logger.info("### Address_coin_balances insert started ###")
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CoinBalance ShareLocks order (see docs: sharelocks.md)
@@ -87,7 +89,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
         timestamps: timestamps
       )
 
-    Logger.info(" ### Address_coin_balances inset finished ")
+    Logger.info("### Address_coin_balances insert FINISHED ###")
 
     {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash block_number)a))}
   end

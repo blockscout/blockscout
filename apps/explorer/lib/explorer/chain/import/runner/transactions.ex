@@ -35,6 +35,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Transactions run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -95,7 +97,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         timestamps: timestamps
       )
 
-    Logger.info(["### Transactions insert finished ###"])
+    Logger.info(["### Transactions insert FINISHED ###"])
     {:ok, transactions}
   end
 

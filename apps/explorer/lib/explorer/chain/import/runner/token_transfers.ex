@@ -34,6 +34,8 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Token transfers run STARTED ###")
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -71,7 +73,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timestamps: timestamps
       )
 
-    Logger.info(["### Token transfers insert finished ###"])
+    Logger.info(["### Token transfers insert FINISHED ###"])
 
     {:ok, token_transfers}
   end

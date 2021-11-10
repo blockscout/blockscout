@@ -50,6 +50,7 @@ defmodule Explorer.Chain.Import.Stage do
           Logger.info("Gimme changes_chunk #{inspect(Enum.count(changes_chunk))}")
           Logger.info("Gimme options #{inspect(Enum.count(options.addresses.params))}")
         end
+
         runner.run(Multi.new(), changes_chunk, options)
       end)
     end)
@@ -57,6 +58,7 @@ defmodule Explorer.Chain.Import.Stage do
     |> Enum.map(fn {_task, res} ->
       Logger.info("Gimme res")
       Logger.info(inspect(res))
+
       case res do
         {:ok, result} ->
           result

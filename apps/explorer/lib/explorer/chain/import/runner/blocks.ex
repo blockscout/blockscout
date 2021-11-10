@@ -251,7 +251,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timestamps: timestamps
       )
 
-    Logger.info(["### Blocks insert finished ###"])
+    Logger.info(["### Blocks insert FINISHED ###"])
 
     {:ok, blocks}
   end

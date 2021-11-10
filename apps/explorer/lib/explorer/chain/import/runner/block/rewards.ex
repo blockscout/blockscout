@@ -33,6 +33,8 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    Logger.info("### Block rewards run STARTED ###")
+
     insert_options =
       options
       |> Map.put_new(:timeout, @timeout)
@@ -69,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
         timestamps: timestamps
       )
 
-    Logger.info(["### Block rewards insert finished ###"])
+    Logger.info(["### Block rewards insert FINISHED ###"])
 
     {:ok, block_rewards}
   end
