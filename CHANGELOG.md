@@ -37,7 +37,6 @@
 - [#4801](https://github.com/blockscout/blockscout/pull/4801) - Added clauses and tests for get_total_staked_and_ordered/1
 - [#4798](https://github.com/blockscout/blockscout/pull/4798) - Token instance View contract icon Safari fix
 - [#4796](https://github.com/blockscout/blockscout/pull/4796) - Fix nil.timestamp issue
-- [#4783](https://github.com/blockscout/blockscout/pull/4783) - Resolves request timeout for getting transactions on Emission funds contract address page
 - [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
 - [#4778](https://github.com/blockscout/blockscout/pull/4778) - Migrate :optimization_runs field type: `int4 -> int8` in `smart_contracts` table
 - [#4768](https://github.com/blockscout/blockscout/pull/4768) - Block Details page: handle zero division

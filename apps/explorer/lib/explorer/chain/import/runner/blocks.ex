@@ -582,7 +582,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     query =
       from(reward in Reward,
-        where: reward.block_hash in ^hashes or reward.block_number in ^numbers,
+        inner_join: block in assoc(reward, :block),
+        where: block.hash in ^hashes or block.number in ^numbers,
         # Enforce Reward ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :address_type, asc: :block_hash],
         # acquire locks for `reward`s only

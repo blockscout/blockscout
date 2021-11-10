@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Block.Reward do
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Reader
 
-  @required_attrs ~w(address_hash address_type block_hash block_number reward)a
+  @required_attrs ~w(address_hash address_type block_hash reward)a
 
   @get_payout_by_mining_abi %{
     "type" => "function",
@@ -49,7 +49,6 @@ defmodule Explorer.Chain.Block.Reward do
           address_type: AddressType.t(),
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
           block_hash: Hash.Full.t(),
-          block_number: non_neg_integer(),
           reward: Wei.t()
         }
 
@@ -57,7 +56,6 @@ defmodule Explorer.Chain.Block.Reward do
   schema "block_rewards" do
     field(:address_type, AddressType)
     field(:reward, Wei)
-    field(:block_number, :integer)
 
     belongs_to(
       :address,
@@ -87,7 +85,7 @@ defmodule Explorer.Chain.Block.Reward do
   def paginate(query, %PagingOptions{key: nil}), do: query
 
   def paginate(query, %PagingOptions{key: {block_number, _}}) do
-    where(query, [reward], reward.block_number < ^block_number)
+    where(query, [_, block], block.number < ^block_number)
   end
 
   @doc """
@@ -100,10 +98,10 @@ defmodule Explorer.Chain.Block.Reward do
       }) do
     address_rewards =
       __MODULE__
-      |> preload(:address)
+      |> join_associations()
       |> paginate(paging_options)
       |> limit(^paging_options.page_size)
-      |> order_by([reward], desc: reward.block_number)
+      |> order_by([_, block], desc: block.number)
       |> where([reward], reward.address_hash == ^address_hash)
       |> address_rewards_blocks_ranges_clause(min_block_number, max_block_number, paging_options)
       |> Repo.all()
@@ -126,8 +124,8 @@ defmodule Explorer.Chain.Block.Reward do
 
         other_rewards =
           __MODULE__
-          |> preload(:address)
-          |> order_by([reward], desc: reward.block_number)
+          |> join_associations()
+          |> order_by([_, block], desc: block.number)
           |> where([reward], reward.address_type == ^other_type)
           |> where([reward], reward.block_hash in ^block_hashes)
           |> Repo.all()
@@ -208,21 +206,28 @@ defmodule Explorer.Chain.Block.Reward do
     end
   end
 
+  defp join_associations(query) do
+    query
+    |> preload(:address)
+    |> join(:inner, [reward], block in assoc(reward, :block))
+    |> preload(:block)
+  end
+
   defp address_rewards_blocks_ranges_clause(query, min_block_number, max_block_number, paging_options) do
     if is_number(min_block_number) and max_block_number > 0 and min_block_number > 0 do
       cond do
         paging_options.page_number == 1 ->
           query
-          |> where([reward], reward.block_number >= ^min_block_number)
+          |> where([_, block], block.number >= ^min_block_number)
 
         min_block_number == max_block_number ->
           query
-          |> where([reward], reward.block_number == ^min_block_number)
+          |> where([_, block], block.number == ^min_block_number)
 
         true ->
           query
-          |> where([reward], reward.block_number >= ^min_block_number)
-          |> where([reward], reward.block_number <= ^max_block_number)
+          |> where([_, block], block.number >= ^min_block_number)
+          |> where([_, block], block.number <= ^max_block_number)
       end
     else
       query
