@@ -75,7 +75,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
     Logger.info("### Address_coin_balances_daily insert started ###")
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    Logger.info("Address_coin_balances_daily changes_list #{inspect(changes_list)}")
+    # Logger.info("Address_coin_balances_daily changes_list #{inspect(changes_list)}")
 
     combined_changes_list =
       changes_list
@@ -96,7 +96,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
 
     # Enforce CoinBalanceDaily ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(combined_changes_list, &{&1.address_hash, &1.day})
-    Logger.info("Address_coin_balances_daily ordered_changes_list #{inspect(ordered_changes_list)}")
+    # Logger.info("Address_coin_balances_daily ordered_changes_list #{inspect(ordered_changes_list)}")
 
     {:ok, _} =
       Import.insert_changes_list(
