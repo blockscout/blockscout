@@ -15,7 +15,7 @@ defmodule Explorer.Celo.CoreContracts do
   def registry_address, do: @registry_address
 
   # full list of core contracts, see https://github.com/celo-org/celo-monorepo/blob/master/packages/protocol/lib/registry-utils.ts
-  @core_contracts ~w(Accounts Attestations BlockchainParameters DoubleSigningSlasher DowntimeSlasher Election EpochRewards Escrow Exchange ExchangeEUR FeeCurrencyWhitelist Freezer GasPriceMinimum GoldToken Governance GovernanceSlasher GovernanceApproverMultiSig GrandaMento LockedGold Random Reserve ReserveSpenderMultiSig SortedOracles StableToken StableTokenEUR TransferWhitelist Validators)
+  @core_contracts ~w(Accounts Attestations BlockchainParameters DoubleSigningSlasher DowntimeSlasher Election EpochRewards Escrow Exchange ExchangeEUR FeeCurrencyWhitelist Freezer GasPriceMinimum GoldToken Governance GovernanceSlasher GovernanceApproverMultiSig GrandaMento LockedGold Random Reserve ReserveSpenderMultiSig SortedOracles StableToken StableTokenEUR StableTokenREAL TransferWhitelist Validators)
   def contract_list, do: @core_contracts
 
   ## GenServer Callbacks
@@ -80,6 +80,10 @@ defmodule Explorer.Celo.CoreContracts do
     {:noreply, Map.put(cache, :timer, timer)}
   end
 
+  def handle_info({:update, name, address}, state) do
+    {:noreply, Map.put(state, name, address)}
+  end
+
   ## API Methods
 
   @doc """
@@ -90,7 +94,26 @@ defmodule Explorer.Celo.CoreContracts do
 
   @impl AddressCache
   def contract_address(name) when name in @core_contracts do
-    GenServer.call(__MODULE__, {:get_address, name})
+    case GenServer.call(__MODULE__, {:get_address, name}) do
+      # not found in cache, fetch directly
+      nil ->
+        address = get_address_raw(name)
+        update_cache(name, address)
+        address
+
+      # not in registry / not deployed yet, fetch each time until found
+      "0x0000000000000000000000000000000000000000" ->
+        address = get_address_raw(name)
+        update_cache(name, address)
+        address
+
+      address ->
+        address
+    end
+  end
+
+  def update_cache(name, address) do
+    send(__MODULE__, {:update, name, address})
   end
 
   @doc """
