@@ -42,8 +42,8 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
     Logger.info("### Addresses run started. Changes list length #{inspect(Enum.count(changes_list))} ###")
-    Logger.info("Gimme multi #{inspect(multi)}")
-    Logger.info("Gimme changes_list length #{inspect(Enum.count(changes_list))}")
+    Logger.info("### multi #{inspect(multi)} ###")
+    Logger.info("### changes_list length #{inspect(Enum.count(changes_list))} ###")
 
     insert_options =
       options
@@ -63,9 +63,11 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         end)
       end)
 
+    Logger.info("### Addresses run started. Before multi.run #1 #{inspect(Multi.to_list(multi))} ###")
+
     multi
     |> Multi.run(:addresses, fn repo, _ ->
-      Logger.info("### Addresses insert started (internal, outside)")
+      Logger.info("### Addresses insert started (internal, outside) ###")
       insert(repo, changes_list_with_defaults, insert_options)
     end)
     |> Multi.run(:created_address_code_indexed_at_transactions, fn repo, %{addresses: addresses}

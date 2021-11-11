@@ -16,6 +16,7 @@ defmodule Explorer.Repo do
   end
 
   def logged_transaction(fun_or_multi, opts \\ []) do
+    Logger.info("### logged_transaction ###")
     transaction_id = :erlang.unique_integer([:positive])
 
     Explorer.Logger.metadata(
@@ -38,6 +39,8 @@ defmodule Explorer.Repo do
   """
   def safe_insert_all(kind, elements, opts) do
     returning = opts[:returning]
+
+    # Logger.info("### safe_insert_all elements length #{Enum.count(elements)} #4 ###")
 
     elements
     |> Enum.chunk_every(500)
