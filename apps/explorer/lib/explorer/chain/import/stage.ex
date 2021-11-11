@@ -55,7 +55,6 @@ defmodule Explorer.Chain.Import.Stage do
     end)
     |> Task.yield_many(:timer.seconds(60))
     |> Enum.map(fn {_task, res} ->
-
       case res do
         {:ok, result} ->
           result

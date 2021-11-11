@@ -346,7 +346,7 @@ defmodule Explorer.Chain.Import do
         addresses_multi = MapSet.new([:addresses, :created_address_code_indexed_at_transactions])
         # Logger.info("addresses_multi #{inspect(addresses_multi)}")
 
-        address_coin_balances_daily_multi =
+        acquire_contract_address_tokens_multi_1 =
           MapSet.new([
             :acquire_contract_address_tokens,
             :address_coin_balances,
@@ -364,7 +364,49 @@ defmodule Explorer.Chain.Import do
             :uncle_fetched_block_second_degree_relations
           ])
 
-        # Logger.info("address_coin_balances_daily_multi #{inspect(address_coin_balances_daily_multi)}")
+        acquire_contract_address_tokens_multi_2 =
+          MapSet.new([
+            :acquire_contract_address_tokens,
+            :blocks,
+            :blocks_update_token_holder_counts,
+            :delete_address_current_token_balances,
+            :delete_address_token_balances,
+            :delete_rewards,
+            :derive_address_current_token_balances,
+            :derive_transaction_forks,
+            :fork_transactions,
+            :lose_consensus,
+            :new_pending_operations,
+            :uncle_fetched_block_second_degree_relations
+          ])
+
+        acquire_blocks_multi =
+          MapSet.new([
+            :acquire_blocks,
+            :acquire_pending_internal_txs,
+            :acquire_transactions,
+            :internal_transactions,
+            :invalid_block_numbers,
+            :remove_consensus_of_invalid_blocks,
+            :remove_left_over_internal_transactions,
+            :update_pending_blocks_status,
+            :update_transactions,
+            :valid_internal_transactions,
+            :valid_internal_transactions_without_first_traces_of_trivial_transactions
+          ])
+
+        recollated_transactions_multi =
+          MapSet.new([
+            :recollated_transactions,
+            :transactions
+          ])
+
+        acquire_contract_address_tokens_multi_3 =
+          MapSet.new([
+            :acquire_contract_address_tokens,
+            :address_current_token_balances,
+            :address_current_token_balances_update_token_holder_counts
+          ])
 
         address_token_balances_multi =
           MapSet.new([
@@ -376,7 +418,31 @@ defmodule Explorer.Chain.Import do
             :transactions
           ])
 
-        # Logger.info("address_token_balances_multi #{inspect(address_token_balances_multi)}")
+        address_coin_balances_multi =
+          MapSet.new([
+            :address_coin_balances,
+            :address_coin_balances_daily
+          ])
+
+        address_coin_balances_daily_multi =
+          MapSet.new([
+            :address_coin_balances_daily
+          ])
+
+        block_second_degree_relations_multi =
+          MapSet.new([
+            :block_second_degree_relations
+          ])
+
+        block_rewards_multi =
+          MapSet.new([
+            :block_rewards
+          ])
+
+        address_token_balances_multi_2 =
+          MapSet.new([
+            :address_token_balances
+          ])
 
         empty_multi = MapSet.new()
         # Logger.info("empty_multi #{inspect(empty_multi)}")
@@ -385,18 +451,45 @@ defmodule Explorer.Chain.Import do
           ^addresses_multi ->
             0
 
-          ^address_coin_balances_daily_multi ->
+          ^acquire_contract_address_tokens_multi_1 ->
             1
 
-          ^address_token_balances_multi ->
+          ^acquire_contract_address_tokens_multi_2 ->
+            1
+
+          ^acquire_blocks_multi ->
+            1
+
+          ^recollated_transactions_multi ->
             2
 
-          ^empty_multi ->
+          ^acquire_contract_address_tokens_multi_3 ->
+            2
+
+          ^address_token_balances_multi ->
+            3
+
+          ^address_token_balances_multi_2 ->
             4
+
+          ^address_coin_balances_multi ->
+            4
+
+          ^address_coin_balances_daily_multi ->
+            4
+
+          ^block_second_degree_relations_multi ->
+            4
+
+          ^block_rewards_multi ->
+            4
+
+          ^empty_multi ->
+            5
 
           _multi ->
             Logger.info("Unrecognized multi_names #{inspect(multi_names)}")
-            3
+            4
         end
       end)
 
