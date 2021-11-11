@@ -44,7 +44,28 @@ defmodule Explorer.Chain.Import.Stage do
     changes_list
     |> Stream.chunk_every(chunk_size)
     |> Enum.map(fn changes_chunk ->
-      runner.run(Multi.new(), changes_chunk, options)
+      Task.async(fn ->
+        if runner == Explorer.Chain.Import.Runner.Addresses do
+          Logger.info("### changes_chunk #{inspect(Enum.count(changes_chunk))} ###")
+          Logger.info("### options #{inspect(Enum.count(options.addresses.params))} ###")
+        end
+
+        runner.run(Multi.new(), changes_chunk, options)
+      end)
+    end)
+    |> Task.yield_many(:timer.seconds(60))
+    |> Enum.map(fn {_task, res} ->
+
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Addresses insert/update terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Addresses insert/update timed out."
+      end
     end)
   end
 

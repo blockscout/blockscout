@@ -320,14 +320,124 @@ defmodule Explorer.Chain.Import do
   end
 
   defp logged_import(multis, options) when is_list(multis) and is_map(options) do
+    Logger.info("### logged_import ###")
     import_id = :erlang.unique_integer([:positive])
 
     Explorer.Logger.metadata(fn -> import_transactions(multis, options) end, import_id: import_id)
   end
 
   defp import_transactions(multis, options) when is_list(multis) and is_map(options) do
-    Enum.reduce_while(multis, {:ok, %{}}, fn multi, {:ok, acc_changes} ->
-      case import_transaction(multi, options) do
+    # Logger.info("### import_transactions with options keys #{inspect(Map.keys(options))} ###")
+    # Logger.info("### multis length #{Enum.count(multis)} ###")
+    # Logger.info("### multis #{inspect(multis)} ###")
+
+    grouped_multis =
+      multis
+      |> Enum.group_by(fn multi -> multi.names end)
+      |> Map.to_list()
+
+    # Logger.info("### grouped_multis length #{inspect(Enum.count(grouped_multis))} ###")
+    # Logger.info("### grouped_multis #{inspect(grouped_multis)} ###")
+
+    grouped_and_sorted_multis =
+      grouped_multis
+      |> Enum.sort_by(fn {multi_names, _group} ->
+        # Logger.info("### multi #{inspect(multi)} ###")
+        addresses_multi = MapSet.new([:addresses, :created_address_code_indexed_at_transactions])
+        # Logger.info("addresses_multi #{inspect(addresses_multi)}")
+
+        address_coin_balances_daily_multi =
+          MapSet.new([
+            :acquire_contract_address_tokens,
+            :address_coin_balances,
+            :address_coin_balances_daily,
+            :blocks,
+            :blocks_update_token_holder_counts,
+            :delete_address_current_token_balances,
+            :delete_address_token_balances,
+            :delete_rewards,
+            :derive_address_current_token_balances,
+            :derive_transaction_forks,
+            :fork_transactions,
+            :lose_consensus,
+            :new_pending_operations,
+            :uncle_fetched_block_second_degree_relations
+          ])
+
+        # Logger.info("address_coin_balances_daily_multi #{inspect(address_coin_balances_daily_multi)}")
+
+        address_token_balances_multi =
+          MapSet.new([
+            :address_token_balances,
+            :logs,
+            :recollated_transactions,
+            :token_transfers,
+            :tokens,
+            :transactions
+          ])
+
+        # Logger.info("address_token_balances_multi #{inspect(address_token_balances_multi)}")
+
+        empty_multi = MapSet.new()
+        # Logger.info("empty_multi #{inspect(empty_multi)}")
+
+        case multi_names do
+          ^addresses_multi ->
+            0
+
+          ^address_coin_balances_daily_multi ->
+            1
+
+          ^address_token_balances_multi ->
+            2
+
+          ^empty_multi ->
+            4
+
+          _multi ->
+            Logger.info("Unrecognized multi_names #{inspect(multi_names)}")
+            3
+        end
+      end)
+
+    # Logger.info("### grouped_and_sorted_multis length #{inspect(Enum.count(grouped_and_sorted_multis))} ###")
+    # Logger.info("### grouped_and_sorted_multis #{inspect(grouped_and_sorted_multis)} ###")
+
+    grouped_and_sorted_multis
+    |> Enum.map(fn {_, group} ->
+      # Logger.info("### group #{inspect(group)} ###")
+
+      group
+      |> Enum.map(fn multi ->
+        Task.async(fn ->
+          import_transaction(multi, options)
+        end)
+      end)
+      |> Task.yield_many(:timer.seconds(60))
+      |> Enum.map(fn {_task, res} -> res end)
+      |> Enum.reduce_while({:ok, %{}}, fn res, {:ok, acc_changes} ->
+        case res do
+          {:ok, changes} ->
+            case changes do
+              {:ok, changes_map} ->
+                {:cont, {:ok, Map.merge(acc_changes, changes_map)}}
+
+              {:error, _, _, _} = error ->
+                {:halt, error}
+            end
+
+          {:exit, reason} ->
+            {:halt, reason}
+
+          nil ->
+            {:halt, "Items insert/update timed out."}
+        end
+      end)
+    end)
+    |> Enum.reduce_while({:ok, %{}}, fn res, {:ok, acc_changes} ->
+      # Logger.info("### import_transactions results #{inspect(res)} ###")
+
+      case res do
         {:ok, changes} -> {:cont, {:ok, Map.merge(acc_changes, changes)}}
         {:error, _, _, _} = error -> {:halt, error}
       end
@@ -341,6 +451,7 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_transaction(multi, options) when is_map(options) do
+    Logger.info("### import_transaction ###")
     Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
   end
 
