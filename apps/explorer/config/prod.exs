@@ -6,7 +6,8 @@ config :explorer, Explorer.Repo,
   pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
   ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
   prepare: :unnamed,
-  timeout: :timer.seconds(60)
+  timeout: :timer.seconds(60),
+  queue_target: 2000
 
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 

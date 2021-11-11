@@ -9,7 +9,8 @@ config :explorer, Explorer.Repo,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
-  timeout: :timer.seconds(80)
+  timeout: :timer.seconds(80),
+  queue_target: 2000
 
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
 
