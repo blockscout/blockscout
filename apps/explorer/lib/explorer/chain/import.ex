@@ -519,11 +519,8 @@ defmodule Explorer.Chain.Import do
                 {:halt, error}
             end
 
-          {:exit, reason} ->
-            {:halt, reason}
-
           nil ->
-            {:halt, "Items insert/update timed out."}
+            {:cont, {:ok, acc_changes}}
         end
       end)
     end)
