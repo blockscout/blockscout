@@ -198,7 +198,7 @@ msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:169
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:166
 msgid "Add Your App"
 msgstr ""
 
@@ -304,8 +304,7 @@ msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:148
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:178
 msgid "Apps"
 msgstr ""
 
@@ -481,7 +480,7 @@ msgid "Bridged from Ethereum"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:176
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:172
 msgid "Bridges"
 msgstr ""
 
@@ -969,6 +968,11 @@ msgid "Decompiler version"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:148
+msgid "Defi"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:23
 msgid "Delegate Call"
 msgstr ""
@@ -1074,11 +1078,6 @@ msgstr ""
 #: lib/block_scout_web/views/block_signers_view.ex:30
 #: lib/block_scout_web/views/block_transaction_view.ex:7
 msgid "Easy Cowboy! This block does not exist yet!"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:188
-msgid "Ecosystem"
 msgstr ""
 
 #, elixir-format
@@ -1232,7 +1231,7 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:159
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:156
 msgid "Gas Tracker"
 msgstr ""
 
@@ -1419,6 +1418,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:250
 msgid "Last Balance Update"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:192
+msgid "Learn"
 msgstr ""
 
 #, elixir-format
@@ -1615,7 +1619,12 @@ msgid "Module"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:200
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
+msgid "More"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:198
 msgid "More apps"
 msgstr ""
 
@@ -1647,11 +1656,6 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_rows.html.eex:34
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:186
 msgid "N/A"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:194
-msgid "NFT"
 msgstr ""
 
 #, elixir-format
@@ -1969,6 +1973,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:53
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:90
 msgid "Reset"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:186
+msgid "Resources"
 msgstr ""
 
 #, elixir-format
@@ -2938,11 +2947,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:32
 msgid "Validator pools can be banned for misbehavior (such as not revealing secret numbers). Validator and delegator stake contained in a banned pool cannot be withdrawn until the ban is over."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
-msgid "Valora"
 msgstr ""
 
 #, elixir-format

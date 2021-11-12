@@ -220,20 +220,16 @@ defmodule BlockScoutWeb.LayoutView do
     list(:bridges)
   end
 
-  def other_bridges_list do
-    list(:other_bridges)
-  end
-
-  def bridges_alm_list do
-    list(:bridges_alm)
-  end
-
   def defi_list do
     list(:defi)
   end
 
-  def nft_list do
-    list(:nft)
+  def resources_list do
+    list(:resources)
+  end
+
+  def learning_list do
+    list(:learning)
   end
 
   def apps_list do
