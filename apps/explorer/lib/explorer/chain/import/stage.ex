@@ -45,11 +45,6 @@ defmodule Explorer.Chain.Import.Stage do
     |> Stream.chunk_every(chunk_size)
     |> Enum.map(fn changes_chunk ->
       Task.async(fn ->
-        if runner == Explorer.Chain.Import.Runner.Addresses do
-          Logger.info("### changes_chunk #{inspect(Enum.count(changes_chunk))} ###")
-          Logger.info("### options #{inspect(Enum.count(options.addresses.params))} ###")
-        end
-
         runner.run(Multi.new(), changes_chunk, options)
       end)
     end)
