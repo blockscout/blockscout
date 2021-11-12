@@ -2,6 +2,15 @@
 
 ### Features
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
+
+### Fixes
+
+### Chore
+
+
+## 4.0.0-beta
+
+### Features
 - [#4807](https://github.com/blockscout/blockscout/pull/4807) - Added support for BeaconProxy pattern
 - [#4777](https://github.com/blockscout/blockscout/pull/4777), [#4791](https://github.com/blockscout/blockscout/pull/4791), [#4799](https://github.com/blockscout/blockscout/pull/4799), [#4847](https://github.com/blockscout/blockscout/pull/4847) - Added decoding revert reason
 - [#4776](https://github.com/blockscout/blockscout/pull/4776) - Added view for unsuccessfully fetched values from read functions
