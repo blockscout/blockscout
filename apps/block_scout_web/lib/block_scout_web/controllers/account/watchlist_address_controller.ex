@@ -6,21 +6,22 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
 
   def new(conn, _params) do
     changeset = WatchlistAddress.changeset(%WatchlistAddress{}, %{})
-    render(conn, "new.html", watchlist_address: changeset)
+    render(conn, "new.html", watchlist_address: changeset(%{name: "wallet"}))
   end
 
   def create(conn, %{"watchlist_address" => wa_params}) do
-    %WatchlistAddress{watchlist_id: current_user(conn).watchlist_id}
-    |> WatchlistAddress.changeset(wa_params)
-    |> Repo.insert()
-    |> case do
+    IO.inspect(wa_params)
+
+    case AddWatchlistAddress.call(current_user(conn).watchlist_id, wa_params) do
       {:ok, _watchlist_address} ->
         conn
         |> put_flash(:info, "Address created!")
         |> redirect(to: watchlist_path(conn, :show))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html", watchlist_address: changeset)
+      {:error, message = message} ->
+        conn
+        |> put_flash(:error, message)
+        |> render("new.html", watchlist_address: changeset(wa_params))
     end
   end
 
@@ -40,9 +41,13 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     end
   end
 
+  defp changeset(params) do
+    WatchlistAddress.changeset(%WatchlistAddress{}, params)
+  end
+
   defp watchlist(user) do
     wl = Repo.get(Watchlist, user.watchlist_id)
-    Repo.preload(wl, :watchlist_address)
+    Repo.preload(wl, watchlist_addresses: :address)
   end
 
   defp current_user(conn) do

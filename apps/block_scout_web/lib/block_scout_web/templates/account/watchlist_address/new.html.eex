@@ -13,8 +13,8 @@
 
           <div class="form-group">
             <%= label f, "Address hash", class: "control-label", style: "font-size: 17px" %>
-            <%= text_input f, :hash, class: "form-control" %>
-            <%= error_tag f, :hash %>
+            <%= text_input f, :address_hash, class: "form-control" %>
+            <%= error_tag f, :address_hash %>
           </div>
 
           <div class="form-group">

@@ -30,22 +30,13 @@
                     <th scope="col">#</th>
                     <th scope="col"> Name</th>
                     <th scope="col">Address</th>
-                    <th scope="col">Net Worth</th>
+                    <th scope="col"> xDai balance</th>
                   </tr>
                 </thead>
                 <tbody style="font-size: 15px;" >
-                  <%= for wa <- @watchlist.watchlist_addresses do %>
-                    <tr>
-                      <th scope="row"><%= wa.id %></th>
-                      <td><%= wa.name %></td>
-                      <td>
-                        <%= link(trimmed_hash(wa.hash), to: address_path(@conn, :show, wa.hash)) %>
-                        <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: wa.hash, aria_label: gettext("Copy From Address"), title: gettext("Copy From Address") %>
-                      </td>
-                      <td><%= wa.name %></td>
-                    </tr>
-                  <% end %>
+                  <%= Enum.map(@watchlist.watchlist_addresses, fn wa ->
+  render(WatchlistAddressView, "row.html", watchlist_address: wa, conn: @conn)
+end) %>
                 </tbody>
               </table>
             </div>

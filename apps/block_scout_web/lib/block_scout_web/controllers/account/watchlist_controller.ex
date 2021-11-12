@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Account.WatchlistController do
 
   defp watchlist_with_addresses(user) do
     wl = Repo.get(Watchlist, user.watchlist_id)
-    Repo.preload wl, [:watchlist_addresses]
+    Repo.preload wl, [watchlist_addresses: :address]
 
   end
 
