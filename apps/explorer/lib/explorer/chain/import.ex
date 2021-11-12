@@ -346,155 +346,7 @@ defmodule Explorer.Chain.Import do
     grouped_and_sorted_multis =
       grouped_multis
       |> Enum.sort_by(fn {multi_names, _group} ->
-        # Logger.info("### multi #{inspect(multi)} ###")
-        addresses_multi = MapSet.new([:addresses, :created_address_code_indexed_at_transactions])
-        # Logger.info("addresses_multi #{inspect(addresses_multi)}")
-
-        acquire_contract_address_tokens_multi_1 =
-          MapSet.new([
-            :acquire_contract_address_tokens,
-            :address_coin_balances,
-            :address_coin_balances_daily,
-            :blocks,
-            :blocks_update_token_holder_counts,
-            :delete_address_current_token_balances,
-            :delete_address_token_balances,
-            :delete_rewards,
-            :derive_address_current_token_balances,
-            :derive_transaction_forks,
-            :fork_transactions,
-            :lose_consensus,
-            :new_pending_operations,
-            :uncle_fetched_block_second_degree_relations
-          ])
-
-        acquire_contract_address_tokens_multi_2 =
-          MapSet.new([
-            :acquire_contract_address_tokens,
-            :blocks,
-            :blocks_update_token_holder_counts,
-            :delete_address_current_token_balances,
-            :delete_address_token_balances,
-            :delete_rewards,
-            :derive_address_current_token_balances,
-            :derive_transaction_forks,
-            :fork_transactions,
-            :lose_consensus,
-            :new_pending_operations,
-            :uncle_fetched_block_second_degree_relations
-          ])
-
-        acquire_blocks_multi =
-          MapSet.new([
-            :acquire_blocks,
-            :acquire_pending_internal_txs,
-            :acquire_transactions,
-            :internal_transactions,
-            :invalid_block_numbers,
-            :remove_consensus_of_invalid_blocks,
-            :remove_left_over_internal_transactions,
-            :update_pending_blocks_status,
-            :update_transactions,
-            :valid_internal_transactions,
-            :valid_internal_transactions_without_first_traces_of_trivial_transactions
-          ])
-
-        recollated_transactions_multi =
-          MapSet.new([
-            :recollated_transactions,
-            :transactions
-          ])
-
-        acquire_contract_address_tokens_multi_3 =
-          MapSet.new([
-            :acquire_contract_address_tokens,
-            :address_current_token_balances,
-            :address_current_token_balances_update_token_holder_counts
-          ])
-
-        address_token_balances_multi =
-          MapSet.new([
-            :address_token_balances,
-            :logs,
-            :recollated_transactions,
-            :token_transfers,
-            :tokens,
-            :transactions
-          ])
-
-        address_coin_balances_multi =
-          MapSet.new([
-            :address_coin_balances,
-            :address_coin_balances_daily
-          ])
-
-        address_coin_balances_daily_multi =
-          MapSet.new([
-            :address_coin_balances_daily
-          ])
-
-        block_second_degree_relations_multi =
-          MapSet.new([
-            :block_second_degree_relations
-          ])
-
-        block_rewards_multi =
-          MapSet.new([
-            :block_rewards
-          ])
-
-        address_token_balances_multi_2 =
-          MapSet.new([
-            :address_token_balances
-          ])
-
-        empty_multi = MapSet.new()
-        # Logger.info("empty_multi #{inspect(empty_multi)}")
-
-        case multi_names do
-          ^addresses_multi ->
-            0
-
-          ^acquire_contract_address_tokens_multi_1 ->
-            1
-
-          ^acquire_contract_address_tokens_multi_2 ->
-            1
-
-          ^acquire_blocks_multi ->
-            1
-
-          ^recollated_transactions_multi ->
-            2
-
-          ^acquire_contract_address_tokens_multi_3 ->
-            2
-
-          ^address_token_balances_multi ->
-            3
-
-          ^address_token_balances_multi_2 ->
-            4
-
-          ^address_coin_balances_multi ->
-            4
-
-          ^address_coin_balances_daily_multi ->
-            4
-
-          ^block_second_degree_relations_multi ->
-            4
-
-          ^block_rewards_multi ->
-            4
-
-          ^empty_multi ->
-            5
-
-          _multi ->
-            Logger.info("Unrecognized multi_names #{inspect(multi_names)}")
-            4
-        end
+        multis_sorter(multi_names)
       end)
 
     # Logger.info("### grouped_and_sorted_multis length #{inspect(Enum.count(grouped_and_sorted_multis))} ###")
@@ -502,34 +354,7 @@ defmodule Explorer.Chain.Import do
 
     grouped_and_sorted_multis
     |> Enum.map(fn {_, group} ->
-      # Logger.info("### group #{inspect(group)} ###")
-
-      group
-      |> Enum.map(fn multi ->
-        Task.async(fn ->
-          import_transaction(multi, options)
-        end)
-      end)
-      |> Task.yield_many(:timer.seconds(60))
-      |> Enum.map(fn {_task, res} -> res end)
-      |> Enum.reduce_while({:ok, %{}}, fn res, {:ok, acc_changes} ->
-        case res do
-          {:ok, changes} ->
-            case changes do
-              {:ok, changes_map} ->
-                {:cont, {:ok, Map.merge(acc_changes, changes_map)}}
-
-              {:error, _, _, _} = error ->
-                {:halt, error}
-            end
-
-          {:exit, reason} ->
-            {:halt, reason}
-
-          nil ->
-            {:halt, "Items insert/update timed out."}
-        end
-      end)
+      multis_group_reducer(group, options)
     end)
     |> Enum.reduce_while({:ok, %{}}, fn res, {:ok, acc_changes} ->
       # Logger.info("### import_transactions results #{inspect(res)} ###")
@@ -545,6 +370,79 @@ defmodule Explorer.Chain.Import do
         "tcp recv: closed" <> _ -> {:error, :timeout}
         _ -> reraise exception, __STACKTRACE__
       end
+  end
+
+  defp multis_sorter(multi_names) do
+    multi_names_map_set = MapSet.new(multi_names)
+
+    cond do
+      MapSet.member?(multi_names_map_set, :addresses) ->
+        0
+
+      MapSet.member?(multi_names_map_set, :blocks) ->
+        1
+
+      MapSet.member?(multi_names_map_set, :acquire_blocks) ->
+        2
+
+      MapSet.member?(multi_names_map_set, :transactions) ->
+        3
+
+      secondary_updates?(multi_names_map_set) ->
+        4
+
+      tertiary_updates?(multi_names_map_set) ->
+        5
+
+      multi_names == %MapSet{} ->
+        7
+
+      true ->
+        6
+    end
+  end
+
+  defp secondary_updates?(multi_names_map_set) do
+    MapSet.member?(multi_names_map_set, :tokens) ||
+      MapSet.member?(multi_names_map_set, :address_coin_balances) ||
+      MapSet.member?(multi_names_map_set, :address_coin_balances_daily) ||
+      MapSet.member?(multi_names_map_set, :block_second_degree_relations) ||
+      MapSet.member?(multi_names_map_set, :block_rewards)
+  end
+
+  defp tertiary_updates?(multi_names_map_set) do
+    MapSet.member?(multi_names_map_set, :address_token_balances) ||
+      MapSet.member?(multi_names_map_set, :address_current_token_balances)
+  end
+
+  defp multis_group_reducer(group, options) do
+    group
+    |> Enum.map(fn multi ->
+      Task.async(fn ->
+        import_transaction(multi, options)
+      end)
+    end)
+    |> Task.yield_many(:timer.seconds(60))
+    |> Enum.map(fn {_task, res} -> res end)
+    |> Enum.reduce_while({:ok, %{}}, fn res, {:ok, acc_changes} ->
+      case res do
+        {:ok, changes} ->
+          changes_reducer(changes, acc_changes)
+
+        nil ->
+          {:cont, {:ok, acc_changes}}
+      end
+    end)
+  end
+
+  defp changes_reducer(changes, acc_changes) do
+    case changes do
+      {:ok, changes_map} ->
+        {:cont, {:ok, Map.merge(acc_changes, changes_map)}}
+
+      {:error, _, _, _} = error ->
+        {:halt, error}
+    end
   end
 
   defp import_transaction(multi, options) when is_map(options) do
