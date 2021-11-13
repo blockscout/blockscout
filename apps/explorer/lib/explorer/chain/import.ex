@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import do
     Import.Stage.Addresses,
     Import.Stage.AddressReferencing,
     Import.Stage.BlockReferencing,
+    Import.Stage.TokenBalances,
     Import.Stage.BlockFollowing,
     Import.Stage.BlockPending
   ]
