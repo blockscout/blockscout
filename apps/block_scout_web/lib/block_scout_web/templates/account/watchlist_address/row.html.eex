@@ -6,67 +6,20 @@
     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
 additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @watchlist_address.address_hash, aria_label: gettext("Copy From Address"), title: gettext("Copy From Address") %>
   </td>
-  <td><%= balance_ether(@watchlist_address.address) %></td>
+  <td>
+    <%= balance_ether(@watchlist_address.address) %>
+    <br>
+
+    <span class="address-current-balance">
+      (<span
+           data-wei-value="<%= if @watchlist_address.address.fetched_coin_balance, do: @watchlist_address.address.fetched_coin_balance.value %>"
+           data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
+           data-placement="top"
+           data-toggle="tooltip"
+           data-html="true"
+           title='<%= "@ " <> to_string(@exchange_rate.usd_value) <> "/" <> gettext("Ether") %>'  
+           >
+      </span>)
+    </span>
+  </td>
 </tr>
-
-            <%# <dt class="col-sm-4 col-md-4 col-lg-3 text-muted"> %>
-            <%#   <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", %>
-            <%#   text: gettext("Address balance in xDAI (doesn't include ERC20, ERC721, ERC1155 tokens).") %1> %>
-            <%#   <%= gettext("Balance") %1> %>
-            <%# </dt> %>
-            <%# <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance"> %>
-            <%#   <%= balance(@address) %1> %>
-            <%#   <%= if !match?({:pending, _}, @coin_balance_status) && !empty_exchange_rate?(@exchange_rate) do %1> %>
-            <%#     <% usd_value = to_string(@exchange_rate.usd_value) %1> %>
-            <%#     <span class="address-current-balance"> %>
-            <%#       (<span %>
-            <%#         data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %1>" %>
-            <%#         data-usd-exchange-rate="<%= @exchange_rate.usd_value %1>" %>
-            <%#         data-placement="top" %>
-            <%#         data-toggle="tooltip" %>
-            <%#         data-html="true" %>
-            <%#         title='<%= "@ " <> usd_value <> "/" <> gettext("Ether") %1>' %>  
-            <%#       > %>
-            <%#       </span>) %>
-            <%#     </span> %>
-            <%#   <% end %1> %>
-            <%# </dd> %>
-
-
-<%# <% native_coin = gettext("ETH") %>
-<%# <!-- USD value of the balance -->%>
-<%# <% wei_value = if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>
-<%# <% raw_usd_value =%>
-<%#     case @exchange_rate.usd_value do%>
-<%#         %Decimal{} ->%>
-<%#             if wei_value do%>
-<%#                 %Wei{value: Decimal.new(wei_value)}%>
-<%#                 |> Wei.to(:ether)%>
-<%#                 |> Decimal.mult(@exchange_rate.usd_value)%>
-<%#             else%>
-<%#                 Decimal.new(0)%>
-<%#             end%>
-<%#         _ -> Decimal.new(0)%>
-<%#     end%>
-<%# <% data_usd_exchange_rate =%> 
-<%#     unless AddressView.empty_exchange_rate?(@exchange_rate) do%>
-<%#         "data-usd-exchange-rate='#{@exchange_rate.usd_value}' data-raw-usd-value='#{raw_usd_value}'"%>
-<%#     end%>
-<%# <% native_coin_balance_token = AddressView.balance(@address)%>
-<%# <% native_coin_balance_usd =%> 
-<%#     if AddressView.empty_exchange_rate?(@exchange_rate) do%>
-<%#         nil%>
-<%#     else%>
-<%#         "<span%>
-<%#             data-wei-value='#{wei_value}'%>
-<%#             #{data_usd_exchange_rate}%>
-<%#         >%>
-<%#         </span>"%>
-<%#     end%>
-<%# <% native_coin_balance =%> 
-<%#     if native_coin_balance_usd do%>
-<%#         native_coin_balance_usd <> " | " <> native_coin_balance_token%>
-<%#     else%>
-<%#         native_coin_balance_token%>
-<%#     end%>
-<%# %>

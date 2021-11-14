@@ -205,9 +205,9 @@ to: api_url() <> api_docs_path(@conn, :eth_rpc)
           <%= if @current_user do %>
             <li class="nav-item dropdown">
               <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <%# <span class="nav-link-icon"> %>
-                  <img src="<%= Plug.Conn.get_session(@conn, :current_user)[:avatar] %>"  size="20" height="20" width="20" >
-                  <%# </span> %>
+                <span class="nav-link-icon">
+                  <img src="<%= Plug.Conn.get_session(@conn, :current_user)[:avatar] %>"  size="20" height="20" width="20"  >
+                </span>
               </a>
               <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
                 <div class="header dropdown-item">
@@ -222,12 +222,12 @@ to: api_url() <> api_docs_path(@conn, :eth_rpc)
             </li>
           <% else %>
             <li>
-            <a class="nav-link topnav-nav-link" href="<%= BlockScoutWeb.LayoutView.sign_in_link %>" id="navbarBlocksDropdown" role="button" aria-haspopup="true">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
-              </span>
-              Sign in
-            </a>
+              <a class="nav-link topnav-nav-link" href="<%= BlockScoutWeb.LayoutView.sign_in_link %>" id="navbarBlocksDropdown" role="button" aria-haspopup="true">
+                <span class="nav-link-icon">
+                  <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
+                </span>
+                Sign in
+              </a>
             </li>
           <% end %>
       </ul>

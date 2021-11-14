@@ -25,7 +25,7 @@
           <div class="col-sm">
             <div class="mb-4 row">
               <table class="table mb-4"style="margin: 30px;">
-                <thead style="font-size: 17px;" >
+                <thead style="font-size: 17px; color: #6c757d" >
                   <tr>
                     <th scope="col">#</th>
                     <th scope="col"> Name</th>
@@ -33,16 +33,16 @@
                     <th scope="col"> xDai balance</th>
                   </tr>
                 </thead>
-                <tbody style="font-size: 15px;" >
+                <tbody style="font-size: 15px; color: #6c757d" >
                   <%= Enum.map(@watchlist.watchlist_addresses, fn wa ->
-  render(WatchlistAddressView, "row.html", watchlist_address: wa, conn: @conn)
+  render(WatchlistAddressView, "row.html", watchlist_address: wa, exchange_rate: exchange_rate(), conn: @conn)
 end) %>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <a class="btn btn-primary" style="font-size: 17px;" href="<%= watchlist_address_path(@conn, :new) %>">Add address to watchlist</a>
+          <a class="btn btn-primary" style="font-size: 17px;" href="<%= watchlist_address_path(@conn, :new) %>">Add address</a>
         </div>
       </div>
 </section>

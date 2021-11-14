@@ -5,8 +5,8 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
   alias Explorer.Accounts.WatchlistAddress
 
   def new(conn, _params) do
-    changeset = WatchlistAddress.changeset(%WatchlistAddress{}, %{})
-    render(conn, "new.html", watchlist_address: changeset(%{name: "wallet"}))
+    changeset = WatchlistAddress.changeset(%WatchlistAddress{name: "wallet"}, %{})
+    render(conn, "new.html", watchlist_address: changeset)
   end
 
   def create(conn, %{"watchlist_address" => wa_params}) do
