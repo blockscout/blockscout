@@ -16,7 +16,7 @@ defmodule Explorer.Repo do
   end
 
   def logged_transaction(fun_or_multi, opts \\ []) do
-    Logger.info("### logged_transaction ###")
+    # Logger.info("### logged_transaction ###")
     transaction_id = :erlang.unique_integer([:positive])
 
     Explorer.Logger.metadata(

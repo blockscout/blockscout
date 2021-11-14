@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Address token balances run STARTED ###")
+    Logger.info("### Address_token_balances run STARTED changes_list length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -104,12 +104,12 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         {token_contract_address_hash, address_hash, block_number}
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
-        dedup = Enum.dedup(grouped_address_token_balances)
+        uniq = Enum.uniq(grouped_address_token_balances)
 
-        if Enum.count(dedup) > 1 do
-          Enum.max_by(dedup, fn %{value_fetched_at: value_fetched_at} -> value_fetched_at end)
+        if Enum.count(uniq) > 1 do
+          Enum.max_by(uniq, fn %{value_fetched_at: value_fetched_at} -> value_fetched_at end)
         else
-          Enum.at(dedup, 0)
+          Enum.at(uniq, 0)
         end
       end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash, &1.block_number})

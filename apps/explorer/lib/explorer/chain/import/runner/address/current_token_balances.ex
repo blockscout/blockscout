@@ -107,7 +107,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Address current token balances run STARTED ###")
+    Logger.info("### Address_current_token_balances tun STARTED changes_list length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -220,7 +220,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_atom(repo) and is_list(changes_list) do
-    Logger.info("### Address_current_token_balances insert started ###")
+    Logger.info("### Address_current_token_balances insert started changes_list length #{Enum.count(changes_list)} ###")
 
     inserted_changes_list =
       insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options)

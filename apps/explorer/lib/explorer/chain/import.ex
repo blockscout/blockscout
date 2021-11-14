@@ -325,7 +325,7 @@ defmodule Explorer.Chain.Import do
   end
 
   defp logged_import(multis, options) when is_list(multis) and is_map(options) do
-    Logger.info("### logged_import ###")
+    # Logger.info("### logged_import ###")
     import_id = :erlang.unique_integer([:positive])
 
     Explorer.Logger.metadata(fn -> import_transactions(multis, options) end, import_id: import_id)
@@ -375,6 +375,7 @@ defmodule Explorer.Chain.Import do
 
   defp multis_sorter(multi_names) do
     multi_names_map_set = MapSet.new(multi_names)
+    Logger.info("### multi_names_map_set #{inspect(multi_names_map_set)}")
 
     cond do
       MapSet.member?(multi_names_map_set, :addresses) ->
@@ -447,7 +448,7 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_transaction(multi, options) when is_map(options) do
-    Logger.info("### import_transaction ###")
+    # Logger.info("### import_transaction ###")
     Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
   end
 

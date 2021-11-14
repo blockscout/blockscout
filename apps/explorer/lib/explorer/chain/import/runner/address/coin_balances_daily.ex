@@ -37,7 +37,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Address coin balances daily run STARTED ###")
+    Logger.info("### Address_coin_balances_daily run STARTED changes_list length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -72,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
           {:ok, [%{required(:address_hash) => Hash.Address.t(), required(:day) => Date.t()}]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info("### Address_coin_balances_daily insert started ###")
+    Logger.info("### Address_coin_balances_daily insert started changes_list length #{Enum.count(changes_list)} ###")
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Logger.info("Address_coin_balances_daily changes_list #{inspect(changes_list)}")
