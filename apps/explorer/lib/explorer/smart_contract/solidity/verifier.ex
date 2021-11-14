@@ -51,6 +51,62 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     end)
   end
 
+  def evaluate_authenticity_via_standart_json_input(address_hash, params, json_input) do
+    verify(address_hash, params, json_input)          
+  end
+
+  defp verify(address_hash, params, json_input) do
+    name = Map.get(params, "name", "")
+    compiler_version = Map.fetch!(params, "compiler_version")
+    constructor_arguments = Map.get(params, "constructor_arguments", "")
+    autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
+
+    {:ok, candidates} =
+      CodeCompiler.run([
+        name: name,
+        compiler_version: compiler_version,
+      ],
+      json_input
+      )
+      
+    {:ok, map_json_input} = Jason.decode(json_input)
+
+    Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
+      file_path = candidate["file_path"]
+      source_code = map_json_input["sources"][file_path]["content"]
+      contract_name = candidate["name"]
+
+      case compare_bytecodes(
+        candidate,
+        address_hash,
+        constructor_arguments,
+        autodetect_constructor_arguments,
+        source_code,
+        contract_name
+      ) do
+      {:ok, verified_data} ->
+        secondary_sources = for {file, %{"content" => source}} <- map_json_input["sources"], file != file_path, do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
+        additional_params = 
+        map_json_input
+        |> extract_settings_from_json()
+        |> Map.put("contract_source_code", source_code)
+        |> Map.put("file_path", file_path)
+        |> Map.put("name", contract_name)
+        |> Map.put("secondary_sources", secondary_sources)
+
+        {:halt, {:ok, verified_data, additional_params}}
+      err ->
+        {:cont, {:error, err}}
+      end
+    end
+      )
+  end
+
+  defp extract_settings_from_json(json_input) when is_map(json_input) do
+    %{"enabled" => optimization, "runs" => optimization_runs} = json_input["settings"]["optimizer"]
+    %{"optimization" => optimization} |> (&(if parse_boolean(optimization), do: Map.put(&1, "optimization_runs", optimization_runs), else: &1)).()
+  end
+
   defp verify(address_hash, params) do
     name = Map.fetch!(params, "name")
     contract_source_code = Map.fetch!(params, "contract_source_code")
@@ -89,6 +145,22 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp compare_bytecodes({:error, _, error_message}, _, _, _, _, _) do
     {:error, :compilation, error_message}
   end
+
+  defp compare_bytecodes(
+         %{"abi" => abi, "bytecode" => bytecode},
+         address_hash,
+         arguments_data,
+         autodetect_constructor_arguments,
+         contract_source_code,
+         contract_name
+       ), do: compare_bytecodes(
+        {:ok, %{"abi" => abi, "bytecode" => bytecode}},
+        address_hash,
+        arguments_data,
+        autodetect_constructor_arguments,
+        contract_source_code,
+        contract_name
+      )
 
   # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
@@ -360,4 +432,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   defp parse_boolean("true"), do: true
   defp parse_boolean("false"), do: false
+  
+  defp parse_boolean(true), do: true
+  defp parse_boolean(false), do: false
 end

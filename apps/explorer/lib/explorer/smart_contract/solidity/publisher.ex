@@ -45,6 +45,24 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
+  def publish_with_standart_json_input(%{"address_hash" => address_hash} = params, json_input) do
+    case Verifier.evaluate_authenticity_via_standart_json_input(address_hash, params, json_input) do
+      {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
+        params_with_constructor_arguments = params
+          |> Map.put("constructor_arguments", constructor_arguments)
+          |> Map.merge(additional_params)
+
+        publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
+
+      {:ok, %{abi: abi}, additional_params} ->
+        merged_params = Map.merge(params, additional_params)
+        publish_smart_contract(address_hash, merged_params, abi)
+
+      {:error, error} ->
+        {:error, unverified_smart_contract(address_hash, params, error, nil)}
+    end
+  end
+
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
@@ -100,6 +118,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     %{
       address_hash: address_hash,
       name: params["name"],
+      file_path: params["file_path"],
       compiler_version: compiler_version,
       evm_version: params["evm_version"],
       optimization_runs: params["optimization_runs"],
