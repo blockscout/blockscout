@@ -11,18 +11,16 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
   @impl Stage
   def runners,
     do: [
-      Runner.Address.CoinBalances,
       Runner.Blocks,
+      Runner.Address.CoinBalances,
+      Runner.Address.CoinBalancesDaily,
+      Runner.Tokens,
       Runner.StakingPools,
-      Runner.StakingPoolsDelegators,
-      Runner.Address.CoinBalancesDaily
+      Runner.StakingPoolsDelegators
     ]
 
   @impl Stage
   def multis(runner_to_changes_list, options) do
-    {final_multi, final_remaining_runner_to_changes_list} =
-      Stage.single_multi(runners(), runner_to_changes_list, options)
-
-    {[final_multi], final_remaining_runner_to_changes_list}
+    Stage.concurrent_multis(runners(), runner_to_changes_list, options)
   end
 end

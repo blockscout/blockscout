@@ -82,4 +82,47 @@ defmodule Explorer.Chain.Import.Stage do
       {new_multi, new_remaining_runner_to_changes_list}
     end)
   end
+
+  @spec concurrent_multis([Runner.t()], runner_to_changes_list, %{optional(atom()) => term()}) ::
+          {[Multi.t()], runner_to_changes_list}
+  def concurrent_multis(runners, runner_to_changes_list, options) do
+    {final_changes_list, final_remaining_runner_to_changes_list} =
+      runners
+      |> Enum.reduce({[], runner_to_changes_list}, fn runner, {acc, remaining_runner_to_changes_list} ->
+        {changes_list, new_remaining_runner_to_changes_list} = Map.pop(remaining_runner_to_changes_list, runner)
+
+        new_acc =
+          case changes_list do
+            nil ->
+              [{runner, []} | acc]
+
+            _ ->
+              [{runner, changes_list} | acc]
+          end
+
+        {new_acc, new_remaining_runner_to_changes_list}
+      end)
+
+    acc =
+      final_changes_list
+      |> Enum.map(fn {runner, changes_chunk} ->
+        if Enum.count(changes_chunk) > 0 do
+          Task.async(fn ->
+            runner.run(Multi.new(), changes_chunk, options)
+          end)
+        else
+          nil
+        end
+      end)
+      |> Enum.filter(& &1)
+      |> Task.yield_many(:timer.seconds(60))
+      |> Enum.reduce([], fn {_task, res}, acc ->
+        case res do
+          {:ok, result} ->
+            [result | acc]
+        end
+      end)
+
+    {acc, final_remaining_runner_to_changes_list}
+  end
 end

@@ -74,10 +74,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
     # Enforce CoinBalance ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.block_number})
 
+    # Import.insert_changes_list_in_batches(
     {:ok, _} =
       Import.insert_changes_list(
+        # __MODULE__,
         repo,
         ordered_changes_list,
+        # 100,
         conflict_target: [:address_hash, :block_number],
         on_conflict: on_conflict,
         for: CoinBalance,

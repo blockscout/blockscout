@@ -11,8 +11,8 @@ defmodule Explorer.Chain.Import do
   @stages [
     Import.Stage.Addresses,
     Import.Stage.AddressReferencing,
+    Import.Stage.Transactions,
     Import.Stage.BlockReferencing,
-    Import.Stage.TokenBalances,
     Import.Stage.BlockFollowing,
     Import.Stage.BlockPending
   ]
@@ -304,6 +304,32 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, inserted}
+  end
+
+  def insert_changes_list_in_batches(_module, repo, changes_list, batch_size, options)
+      when is_atom(repo) and is_list(changes_list) do
+    changes_list
+    |> Stream.chunk_every(batch_size)
+    |> Enum.map(fn changes_chunk ->
+      Task.async(fn ->
+        insert_changes_list(repo, changes_chunk, options)
+      end)
+    end)
+    |> Task.yield_many(:timer.seconds(60))
+    |> Enum.reduce_while({:ok, []}, fn {_task, res}, {:ok, acc} ->
+      insert_changes_results_reducer(res, acc)
+    end)
+  end
+
+  defp insert_changes_results_reducer(res, acc) do
+    case res do
+      {:ok, {:ok, result}} ->
+        new_acc = if result, do: result ++ acc, else: acc
+        {:cont, {:ok, new_acc}}
+
+      error ->
+        {:halt, error}
+    end
   end
 
   defp timestamp_changes_list(changes_list, timestamps) when is_list(changes_list) do
