@@ -327,19 +327,9 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_transactions(multis, options) when is_list(multis) and is_map(options) do
-    grouped_multis =
-      multis
-      |> Enum.group_by(fn multi -> multi.names end)
-      |> Map.to_list()
-
-    grouped_and_sorted_multis =
-      grouped_multis
-      |> Enum.sort_by(fn {multi_names, _group} ->
-        multis_sorter(multi_names)
-      end)
-
-    grouped_and_sorted_multis
-    |> Enum.map(fn {_, group} ->
+    multis
+    |> Enum.chunk_by(& &1.names)
+    |> Enum.map(fn group ->
       multis_group_reducer(group, options)
     end)
     |> Enum.reduce_while({:ok, %{}}, fn res, {:ok, acc_changes} ->
@@ -354,49 +344,6 @@ defmodule Explorer.Chain.Import do
         "tcp recv: closed" <> _ -> {:error, :timeout}
         _ -> reraise exception, __STACKTRACE__
       end
-  end
-
-  defp multis_sorter(multi_names) do
-    multi_names_map_set = MapSet.new(multi_names)
-
-    cond do
-      MapSet.member?(multi_names_map_set, :addresses) ->
-        0
-
-      MapSet.member?(multi_names_map_set, :blocks) ->
-        1
-
-      MapSet.member?(multi_names_map_set, :acquire_blocks) ->
-        7
-
-      MapSet.member?(multi_names_map_set, :transactions) ->
-        2
-
-      secondary_updates?(multi_names_map_set) ->
-        3
-
-      tertiary_updates?(multi_names_map_set) ->
-        4
-
-      multi_names == %MapSet{} ->
-        6
-
-      true ->
-        5
-    end
-  end
-
-  defp secondary_updates?(multi_names_map_set) do
-    MapSet.member?(multi_names_map_set, :tokens) ||
-      MapSet.member?(multi_names_map_set, :address_coin_balances) ||
-      MapSet.member?(multi_names_map_set, :address_coin_balances_daily) ||
-      MapSet.member?(multi_names_map_set, :block_second_degree_relations) ||
-      MapSet.member?(multi_names_map_set, :block_rewards)
-  end
-
-  defp tertiary_updates?(multi_names_map_set) do
-    MapSet.member?(multi_names_map_set, :address_token_balances) ||
-      MapSet.member?(multi_names_map_set, :address_current_token_balances)
   end
 
   defp multis_group_reducer(group, options) do
