@@ -227,7 +227,13 @@ defmodule EthereumJSONRPC.Receipts do
   defp response_to_receipt(%{id: id, result: receipt}, id_to_transaction_params) do
     %{gas: gas} = Map.fetch!(id_to_transaction_params, id)
 
-    # gas from the transaction is needed for pre-Byzantium derived status
+    # added code that fills missing logs.blockHash
+    logs = Map.get(receipt,"logs");
+    temp_logs = Enum.map(logs, fn elem ->
+      Map.replace!(elem, "blockHash", Map.get(receipt,"blockHash"))
+    end)
+    receipt = Map.put(receipt, "logs", temp_logs)
+
     {:ok, Map.put(receipt, "gas", gas)}
   end
 
