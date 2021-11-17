@@ -42,6 +42,15 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
       iex> format_according_to_decimals(205000, Decimal.new(2))
       "2,050"
+
+      iex> format_according_to_decimals(105000, Decimal.new(0))
+      "105,000"
+
+      iex> format_according_to_decimals(105000000000000000000, Decimal.new(100500))
+      "105"
+
+      iex> format_according_to_decimals(105000000000000000000, nil)
+      "105,000,000,000,000,000,000"
   """
   @spec format_according_to_decimals(non_neg_integer() | nil, nil) :: String.t()
   def format_according_to_decimals(nil, _) do
@@ -60,9 +69,13 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   @spec format_according_to_decimals(Decimal.t(), Decimal.t()) :: String.t()
   def format_according_to_decimals(value, decimals) do
-    value
-    |> divide_decimals(decimals)
-    |> thousands_separator()
+    if Decimal.cmp(decimals, 18) == :gt do
+      format_according_to_decimals(value, Decimal.new(18))
+    else
+      value
+      |> divide_decimals(decimals)
+      |> thousands_separator()
+    end
   end
 
   defp thousands_separator(value) do

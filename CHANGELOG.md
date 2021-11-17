@@ -4,6 +4,7 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
 
 ### Chore
 
