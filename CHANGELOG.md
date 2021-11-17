@@ -5,6 +5,7 @@
 
 ### Fixes
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
+- [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 
 ### Chore
 

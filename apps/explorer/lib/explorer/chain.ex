@@ -3594,7 +3594,7 @@ defmodule Explorer.Chain do
     |> InternalTransaction.where_nonpending_block()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
-    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> order_by([internal_transaction], desc: internal_transaction.index)
     |> preload(:transaction)
     |> Repo.all()
   end
@@ -3614,7 +3614,7 @@ defmodule Explorer.Chain do
     |> InternalTransaction.where_nonpending_block()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
-    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> order_by([internal_transaction], desc: internal_transaction.index)
     |> preload(:transaction)
     |> Repo.all()
   end
