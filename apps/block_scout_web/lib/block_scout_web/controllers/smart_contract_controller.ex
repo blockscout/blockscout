@@ -105,11 +105,14 @@ defmodule BlockScoutWeb.SmartContractController do
          {:ok, _address} <- Chain.find_contract_address(address_hash, address_options, true) do
       contract_type = if params["type"] == "proxy", do: :proxy, else: :regular
 
+      # we should convert: %{"0" => _, "1" => _} to [_, _]
+      args = params["args"] |> convert_map_to_array()
+
       %{output: outputs, names: names} =
         if params["from"] do
           Reader.query_function_with_names(
             address_hash,
-            %{method_id: params["method_id"], args: params["args"]},
+            %{method_id: params["method_id"], args: args},
             contract_type,
             params["function_name"],
             params["from"]
@@ -117,7 +120,7 @@ defmodule BlockScoutWeb.SmartContractController do
         else
           Reader.query_function_with_names(
             address_hash,
-            %{method_id: params["method_id"], args: params["args"]},
+            %{method_id: params["method_id"], args: args},
             contract_type,
             params["function_name"]
           )
@@ -145,4 +148,38 @@ defmodule BlockScoutWeb.SmartContractController do
         not_found(conn)
     end
   end
+
+  defp convert_map_to_array(map) do
+    if is_turned_out_array?(map) do
+      map |> Map.values() |> try_to_map_elements()
+    else
+      try_to_map_elements(map)
+    end
+  end
+
+  defp try_to_map_elements(values) do
+    if Enumerable.impl_for(values) do
+      Enum.map(values, &convert_map_to_array/1)
+    else
+      values
+    end
+  end
+
+  defp is_turned_out_array?(map) when is_map(map), do: Enum.all?(Map.keys(map), &is_integer?/1)
+
+  defp is_turned_out_array?(_), do: false
+
+  defp is_integer?(string) when is_binary(string) do
+    case string |> String.trim() |> Integer.parse() do
+      {_, ""} ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp is_integer?(integer) when is_integer(integer), do: true
+
+  defp is_integer?(_), do: false
 end
