@@ -195,6 +195,9 @@ defmodule Explorer.Chain.SmartContract do
   * `verified_via_sourcify` - whether contract verified through Sourcify utility or not.
   * `partially_verified` - whether contract verified using partial matched source code or not.
   * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
+  * `file_path` - show the filename or path to the file of the contract source file
+  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified 
+  * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -209,7 +212,9 @@ defmodule Explorer.Chain.SmartContract do
           verified_via_sourcify: boolean | nil,
           partially_verified: boolean | nil,
           file_path: String.t(),
-          is_vyper_contract: boolean | nil
+          is_vyper_contract: boolean | nil,
+          is_changed_bytecode: boolean,
+          bytecode_checked_at: DateTime.t()
         }
 
   schema "smart_contracts" do
@@ -226,6 +231,8 @@ defmodule Explorer.Chain.SmartContract do
     field(:partially_verified, :boolean)
     field(:file_path, :string)
     field(:is_vyper_contract, :boolean)
+    field(:is_changed_bytecode, :boolean)
+    field(:bytecode_checked_at, :utc_datetime_usec)
 
     has_many(
       :decompiled_smart_contracts,
@@ -263,7 +270,9 @@ defmodule Explorer.Chain.SmartContract do
       :verified_via_sourcify,
       :partially_verified,
       :file_path,
-      :is_vyper_contract
+      :is_vyper_contract,
+      :is_changed_bytecode,
+      :bytecode_checked_at
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
@@ -291,7 +300,9 @@ defmodule Explorer.Chain.SmartContract do
         :verified_via_sourcify,
         :partially_verified,
         :file_path,
-        :is_vyper_contract
+        :is_vyper_contract,
+        :is_changed_bytecode,
+        :bytecode_checked_at
       ])
       |> (&if(json_verification,
             do: &1,
