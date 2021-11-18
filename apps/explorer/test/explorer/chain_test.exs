@@ -5659,7 +5659,7 @@ defmodule Explorer.ChainTest do
         EthereumJSONRPC.Mox,
         :json_rpc,
         fn _json, [] ->
-          {:error, %{code: -32015, message: "VM execution error.", data: "revert: No credit of that type"}}
+          {:error, %{code: -32015, message: "revert: No credit of that type"}}
         end
       )
 
