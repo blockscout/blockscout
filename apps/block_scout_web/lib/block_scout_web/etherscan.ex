@@ -2614,7 +2614,8 @@ defmodule BlockScoutWeb.Etherscan do
         key: "contractname",
         placeholder: "contractname",
         type: "string",
-        description: "The name of the contract. It could be empty string(\"\"), just contract name(\"ContractName\"), or filename and contract name(\"contracts/contract_1.sol:ContractName\")"
+        description:
+          "The name of the contract. It could be empty string(\"\"), just contract name(\"ContractName\"), or filename and contract name(\"contracts/contract_1.sol:ContractName\")"
       },
       %{
         key: "compilerversion",

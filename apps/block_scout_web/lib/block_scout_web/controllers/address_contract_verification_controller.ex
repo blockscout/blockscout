@@ -63,16 +63,16 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "smart_contract" => smart_contract,
           "file" => files
         }
-      ) do    
+      ) do
     files_array = prepare_files_array(files)
 
     with %{path: path} <- get_one_json(files_array),
-          {:ok, json_input} <- File.read(path) do
-        Que.add(SolidityPublisherWorker, {smart_contract, json_input, conn})        
-          else
-      _ -> 
+         {:ok, json_input} <- File.read(path) do
+      Que.add(SolidityPublisherWorker, {smart_contract, json_input, conn})
+    else
+      _ ->
         nil
-      end
+    end
 
     send_resp(conn, 204, "")
   end

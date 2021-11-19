@@ -76,10 +76,26 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
-  def verifysourcecode(conn, %{"codeformat" => "solidity-standard-json-input", "compilerversion" => compiler_version, "constructorArguements" => constructor_arguments, "contractaddress" => address_hash, "contractname" => contract_name, "sourceCode" => json_input}) do
+  def verifysourcecode(conn, %{
+        "codeformat" => "solidity-standard-json-input",
+        "compilerversion" => compiler_version,
+        "constructorArguements" => constructor_arguments,
+        "contractaddress" => address_hash,
+        "contractname" => contract_name,
+        "sourceCode" => json_input
+      }) do
     with {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:publish, {:ok, _}} <-
-           {:publish, Publisher.publish_with_standart_json_input(%{"address_hash" => address_hash, "compiler_version" => compiler_version, "constructor_arguments" => constructor_arguments, "name" => contract_name}, json_input)} do
+           {:publish,
+            Publisher.publish_with_standart_json_input(
+              %{
+                "address_hash" => address_hash,
+                "compiler_version" => compiler_version,
+                "constructor_arguments" => constructor_arguments,
+                "name" => contract_name
+              },
+              json_input
+            )} do
       address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
 
       render(conn, :verify, %{contract: address})

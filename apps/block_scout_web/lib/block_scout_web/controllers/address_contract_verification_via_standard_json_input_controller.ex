@@ -28,17 +28,21 @@ defmodule BlockScoutWeb.AddressContractVerificationViaStandardJsonInputControlle
               %SmartContract{address_hash: address_hash_string},
               %{}
             )
-            
-        compiler_versions =
-          case CompilerVersion.fetch_versions(:solc) do
-            {:ok, compiler_versions} ->
-              compiler_versions
-  
-            {:error, _} ->
-              []
-          end
 
-          render(conn, "new.html", changeset: changeset, address_hash: address_hash_string, compiler_versions: compiler_versions)
+          compiler_versions =
+            case CompilerVersion.fetch_versions(:solc) do
+              {:ok, compiler_versions} ->
+                compiler_versions
+
+              {:error, _} ->
+                []
+            end
+
+          render(conn, "new.html",
+            changeset: changeset,
+            address_hash: address_hash_string,
+            compiler_versions: compiler_versions
+          )
       end
     end
   end

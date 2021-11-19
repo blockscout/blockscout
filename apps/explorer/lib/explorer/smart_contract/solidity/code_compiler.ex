@@ -128,15 +128,15 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   def run(params, json_input) do
     name = Keyword.fetch!(params, :name)
     compiler_version = Keyword.fetch!(params, :compiler_version)
-    #code = Keyword.fetch!(params, :code)
-    #optimize = Keyword.fetch!(params, :optimize)
-    #optimization_runs = optimization_runs(params)
-    #evm_version = Keyword.get(params, :evm_version, List.last(allowed_evm_versions()))
-    #external_libs = Keyword.get(params, :external_libs, %{})
+    # code = Keyword.fetch!(params, :code)
+    # optimize = Keyword.fetch!(params, :optimize)
+    # optimization_runs = optimization_runs(params)
+    # evm_version = Keyword.get(params, :evm_version, List.last(allowed_evm_versions()))
+    # external_libs = Keyword.get(params, :external_libs, %{})
 
-    #external_libs_string = Jason.encode!(external_libs)
+    # external_libs_string = Jason.encode!(external_libs)
 
-    #checked_evm_version =
+    # checked_evm_version =
     #  if evm_version in allowed_evm_versions() do
     #    evm_version
     #  else
@@ -155,9 +155,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
             path
           ]
         )
+
       with {:ok, decoded} <- Jason.decode(response),
            {:ok, contracts} <- get_contracts_standard_input_verification(decoded) do
-            fetch_candidates(contracts, name)
+        fetch_candidates(contracts, name)
       else
         {:error, %Jason.DecodeError{}} ->
           {:error, :compilation}
@@ -178,25 +179,35 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   end
 
   defp fetch_candidates(contracts, "") when is_map(contracts) do
-    candidates = for {file, content} <- contracts, {contract_name, %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}}} <- content, do: %{"abi" => abi, "bytecode" => bytecode, "name" => contract_name, "file_path" => file}
+    candidates =
+      for {file, content} <- contracts,
+          {contract_name, %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}}} <- content,
+          do: %{"abi" => abi, "bytecode" => bytecode, "name" => contract_name, "file_path" => file}
+
     {:ok, candidates}
   end
-  
+
   defp fetch_candidates(contracts, name) when is_binary(name) and is_map(contracts) do
     if String.contains?(name, ":") do
       [file_name, contract_name] = String.split(name, ":")
       fetch_candidates(contracts, file_name, contract_name)
     else
-      candidates = for {file, content} <- contracts, {contract_name, %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}}} <- content, contract_name == name, do: %{"abi" => abi, "bytecode" => bytecode, "name" => contract_name, "file_path" => file}
+      candidates =
+        for {file, content} <- contracts,
+            {contract_name, %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}}} <- content,
+            contract_name == name,
+            do: %{"abi" => abi, "bytecode" => bytecode, "name" => contract_name, "file_path" => file}
+
       {:ok, candidates}
     end
   end
 
-  defp fetch_candidates(contracts, file_name, name) when is_binary(name) and is_binary(file_name) and is_map(contracts) do
+  defp fetch_candidates(contracts, file_name, name)
+       when is_binary(name) and is_binary(file_name) and is_map(contracts) do
     with %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}} <- contracts[file_name][name] do
       {:ok, [%{"abi" => abi, "bytecode" => bytecode, "name" => name, "file_path" => file_name}]}
-    else 
-      _ -> 
+    else
+      _ ->
         {:ok, []}
     end
   end
@@ -234,7 +245,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   defp get_contracts(%{"contracts" => %{"" => contracts}}), do: {:ok, contracts}
   defp get_contracts(response), do: {:error, response}
 
-  defp get_contracts_standard_input_verification(%{"contracts" => contracts}), do: {:ok, contracts} 
+  defp get_contracts_standard_input_verification(%{"contracts" => contracts}), do: {:ok, contracts}
 
   defp optimize_value(false), do: "0"
   defp optimize_value("false"), do: "0"
