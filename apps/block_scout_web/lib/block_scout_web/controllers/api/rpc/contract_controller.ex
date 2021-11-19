@@ -78,24 +78,13 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   def verifysourcecode(conn, %{
         "codeformat" => "solidity-standard-json-input",
-        "compilerversion" => compiler_version,
-        "constructorArguements" => constructor_arguments,
         "contractaddress" => address_hash,
-        "contractname" => contract_name,
         "sourceCode" => json_input
-      }) do
+      } = params) do
     with {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+         {:params, {:ok, fetched_params}} <- fetch_verifysourcecode_params(params),
          {:publish, {:ok, _}} <-
-           {:publish,
-            Publisher.publish_with_standart_json_input(
-              %{
-                "address_hash" => address_hash,
-                "compiler_version" => compiler_version,
-                "constructor_arguments" => constructor_arguments,
-                "name" => contract_name
-              },
-              json_input
-            )} do
+           {:publish, Publisher.publish_with_standart_json_input(fetched_params, json_input)} do
       address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
 
       render(conn, :verify, %{contract: address})
@@ -123,6 +112,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
     end
+  end
+
+  def verifysourcecode(conn, %{"codeformat" => "solidity-standard-json-input"}) do
+    render(conn, :error, error: "Missing sourceCode or contractaddress fields")
   end
 
   defp prepare_params(files) when is_struct(files) do
@@ -507,6 +500,14 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "compilerVersion", "compiler_version")
     |> required_param(params, "contractSourceCode", "contract_source_code")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+  end
+
+  defp fetch_verifysourcecode_params(params) do
+    {:ok, %{}}
+    |> required_param(params, "contractaddress", "address_hash")
+    |> required_param(params, "contractname", "name")
+    |> required_param(params, "compilerversion", "compiler_version")
+    |> optional_param(params, "constructorArguements", "constructor_arguments")
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do

@@ -27,6 +27,17 @@
 
       <div class="smart-contract-form-group">
         <div class="smart-contract-form-group-inner-wrapper">
+          <%= label f, :name, gettext("Contract Name") %>
+          <div class="center-column">
+            <%= text_input f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+            <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger form-error" %>
+          </div>
+          <div class="smart-contract-form-group-tooltip">Must match the name specified in the code. For example, in <span class="tooltip-quote">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name. Also contract name could be: <span class="tooltip-quote"><strong>path/to/file.sol:MyContract</strong></span></div>
+        </div>
+      </div>
+
+      <div class="smart-contract-form-group">
+        <div class="smart-contract-form-group-inner-wrapper">
           <%= label f, "Include nightly builds" %>
           <div class="center-column">
             <div class="form-radios-group">
