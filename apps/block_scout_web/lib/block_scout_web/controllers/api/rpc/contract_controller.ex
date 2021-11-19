@@ -82,12 +82,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         "sourceCode" => json_input
       } = params) do
     with {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
-         {:params, {:ok, fetched_params}} <- fetch_verifysourcecode_params(params),
+         {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
          {:publish, {:ok, _}} <-
            {:publish, Publisher.publish_with_standart_json_input(fetched_params, json_input)} do
-      address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
 
-      render(conn, :verify, %{contract: address})
+      render(conn, :show, %{result: address_hash})
     else
       {:publish,
        {:error,
@@ -104,13 +103,21 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         render(conn, :error, error: "Smart-contract already verified.")
 
       {:publish, err} ->
-        render(conn, :error, error: err)
+        render(conn, :show, %{result: address_hash})
 
       {:format, :error} ->
         render(conn, :error, error: "Invalid address hash")
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
+    end
+  end
+      
+  def checkverifystatus(conn, %{"guid" => address_hash}) do
+    if Chain.smart_contract_verified?(address_hash) do
+      render(conn, :show, %{result: "Pass - Verified"})
+    else
+      render(conn, :show, %{result: "Fail - Unable to verify"})
     end
   end
 
