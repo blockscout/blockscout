@@ -145,7 +145,7 @@ if ($contractVerificationPage.length) {
         parallelUploads: 100,
         uploadMultiple: true,
         addRemoveLinks: true,
-        maxFilesize: 0.5,
+        maxFilesize: 10,
         params: { address_hash: $('#smart_contract_address_hash').val() },
         init: function () {
           this.on('addedfile', function (_file) {
@@ -167,7 +167,7 @@ if ($contractVerificationPage.length) {
         uploadMultiple: true,
         addRemoveLinks: true,
         previewsContainer: '#dropzone-previews',
-        maxFilesize: 0.5,
+        maxFilesize: 10,
         params: { address_hash: $('#smart_contract_address_hash').val() },
         init: function () {
           $('#json-dropzone-form').removeClass('dz-clickable')
