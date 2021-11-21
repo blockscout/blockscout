@@ -107,7 +107,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
              get_contract_info(contracts, name) do
         {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
       else
-        {:error, %Jason.DecodeError{}} ->
+        {:error, [%Jason.DecodeError{}]} ->
           {:error, :compilation}
 
         {:error, reason} when reason in [:name, :compilation] ->
@@ -128,20 +128,6 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   def run(params, json_input) do
     name = Keyword.fetch!(params, :name)
     compiler_version = Keyword.fetch!(params, :compiler_version)
-    # code = Keyword.fetch!(params, :code)
-    # optimize = Keyword.fetch!(params, :optimize)
-    # optimization_runs = optimization_runs(params)
-    # evm_version = Keyword.get(params, :evm_version, List.last(allowed_evm_versions()))
-    # external_libs = Keyword.get(params, :external_libs, %{})
-
-    # external_libs_string = Jason.encode!(external_libs)
-
-    # checked_evm_version =
-    #  if evm_version in allowed_evm_versions() do
-    #    evm_version
-    #  else
-    #    "byzantium"
-    #  end
 
     path = SolcDownloader.ensure_exists(compiler_version)
 
@@ -246,6 +232,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   defp get_contracts(response), do: {:error, response}
 
   defp get_contracts_standard_input_verification(%{"contracts" => contracts}), do: {:ok, contracts}
+  defp get_contracts_standard_input_verification(response), do: {:error, response}
 
   defp optimize_value(false), do: "0"
   defp optimize_value("false"), do: "0"
