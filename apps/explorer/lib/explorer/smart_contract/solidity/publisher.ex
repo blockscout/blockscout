@@ -60,10 +60,10 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         publish_smart_contract(address_hash, merged_params, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params, error, nil)}
+        {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
       
       _ ->
-        {:error, unverified_smart_contract(address_hash, params, "Failed to verify", nil)}
+        {:error, unverified_smart_contract(address_hash, params, "Failed to verify", nil, true)}
     end
   end
 
@@ -87,7 +87,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
-  defp unverified_smart_contract(address_hash, params, error, error_message) do
+  defp unverified_smart_contract(address_hash, params, error, error_message, json_verification \\ false) do
     attrs = attributes(address_hash, params)
 
     changeset =
@@ -95,7 +95,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         %SmartContract{address_hash: address_hash},
         attrs,
         error,
-        error_message
+        error_message,
+        json_verification
       )
 
     %{changeset | action: :insert}
