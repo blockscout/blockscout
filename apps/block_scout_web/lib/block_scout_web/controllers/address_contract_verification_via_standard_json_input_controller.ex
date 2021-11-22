@@ -1,12 +1,10 @@
 defmodule BlockScoutWeb.AddressContractVerificationViaStandardJsonInputController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias BlockScoutWeb.Controller
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.CompilerVersion
-  alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do

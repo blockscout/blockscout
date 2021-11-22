@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           "sourceCode" => json_input
         } = params
       ) do
-    with {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+    with {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
          {:publish, {:ok, _}} <-
            {:publish, Publisher.publish_with_standart_json_input(fetched_params, json_input)} do
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         }}} ->
         render(conn, :error, error: "Smart-contract already verified.")
 
-      {:publish, err} ->
+      {:publish, _err} ->
         render(conn, :show, %{result: address_hash})
 
       {:format, :error} ->
@@ -115,16 +115,16 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+  def verifysourcecode(conn, %{"codeformat" => "solidity-standard-json-input"}) do
+    render(conn, :error, error: "Missing sourceCode or contractaddress fields")
+  end
+
   def checkverifystatus(conn, %{"guid" => address_hash}) do
     if Chain.smart_contract_verified?(address_hash) do
       render(conn, :show, %{result: "Pass - Verified"})
     else
       render(conn, :show, %{result: "Fail - Unable to verify"})
     end
-  end
-
-  def verifysourcecode(conn, %{"codeformat" => "solidity-standard-json-input"}) do
-    render(conn, :error, error: "Missing sourceCode or contractaddress fields")
   end
 
   defp prepare_params(files) when is_struct(files) do

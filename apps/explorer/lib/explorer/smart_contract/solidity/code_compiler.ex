@@ -190,9 +190,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   defp fetch_candidates(contracts, file_name, name)
        when is_binary(name) and is_binary(file_name) and is_map(contracts) do
-    with %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}} <- contracts[file_name][name] do
-      {:ok, [%{"abi" => abi, "bytecode" => bytecode, "name" => name, "file_path" => file_name}]}
-    else
+    case contracts[file_name][name] do
+      %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}} ->
+        {:ok, [%{"abi" => abi, "bytecode" => bytecode, "name" => name, "file_path" => file_name}]}
       _ ->
         {:ok, []}
     end

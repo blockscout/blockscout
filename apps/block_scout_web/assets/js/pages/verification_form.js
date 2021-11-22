@@ -138,8 +138,9 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
+    var dropzone
     if ($('#metadata-json-dropzone').length) {
-      var dropzone = new Dropzone('#metadata-json-dropzone', {
+      dropzone = new Dropzone('#metadata-json-dropzone', {
         autoProcessQueue: false,
         acceptedFiles: 'text/plain,application/json,.sol,.json',
         parallelUploads: 100,
@@ -159,7 +160,7 @@ if ($contractVerificationPage.length) {
         }
       })
     } else if ($('#json-dropzone-form').length) {
-      var dropzone = new Dropzone('#json-dropzone-form', {
+      dropzone = new Dropzone('#json-dropzone-form', {
         autoProcessQueue: false,
         acceptedFiles: 'text/plain,application/json,.json',
         parallelUploads: 100,
@@ -178,7 +179,7 @@ if ($contractVerificationPage.length) {
           })
 
           this.on('removedfile', function (_file) {
-            if (this.files.length == 0) {
+            if (this.files.length === 0) {
               $('#verify-via-standart-json-input-submit').prop('disabled', true)
               $('#dropzone-previews').removeClass('dz-started')
             }
