@@ -1,7 +1,8 @@
 import Web3 from 'web3'
 import Web3Modal from 'web3modal'
 import WalletConnectProvider from '@walletconnect/web3-provider'
-import { showConnectElements, showConnectedToElements } from './common_helpers'
+import { compareChainIDs, formatError, showConnectElements, showConnectedToElements } from './common_helpers'
+import { openWarningModal } from '../modals'
 
 const instanceChainId = process.env.CHAIN_ID ? parseInt(`${process.env.CHAIN_ID}`, 10) : 77
 const walletConnectOptions = { rpc: {}, chainId: instanceChainId }
@@ -34,7 +35,6 @@ export function init () {
     providerOptions, // required
     disableInjectedProvider: false // optional. For MetaMask / Brave / Opera.
   })
-
 }
 
 export const walletEnabled = () => {

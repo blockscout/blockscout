@@ -1,3 +1,4 @@
+import $ from 'jquery'
 import { getCurrentAccountPromise } from './common_helpers'
 
 export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer) => {
@@ -8,7 +9,7 @@ export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functio
     args
   }
   if (isWalletEnabled) {
-    getCurrentAccountPromise(provider)
+    getCurrentAccountPromise(window.web3 && window.web3.currentProvider)
       .then((currentAccount) => {
         data = {
           function_name: functionName,
