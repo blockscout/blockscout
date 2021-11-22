@@ -61,7 +61,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
-      
+
       _ ->
         {:error, unverified_smart_contract(address_hash, params, "Failed to verify", nil, true)}
     end
