@@ -4,6 +4,7 @@
 
 ### Fixes
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
+- [#4945](https://github.com/blockscout/blockscout/pull/4945) - Fix `Verify & Publish` button link
 
 ### Chore
 
