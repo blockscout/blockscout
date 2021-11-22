@@ -193,6 +193,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     case contracts[file_name][name] do
       %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}} ->
         {:ok, [%{"abi" => abi, "bytecode" => bytecode, "name" => name, "file_path" => file_name}]}
+
       _ ->
         {:ok, []}
     end
