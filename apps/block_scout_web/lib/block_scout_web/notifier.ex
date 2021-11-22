@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.Notifier do
     verification_from_standard_json_input? =
       verification_from_json_upload? && Map.has_key?(conn.params, "smart_contract")
 
-    compiler = if verification_from_flattened_source?, do: :solc, else: :vyper
+    compiler = if verification_from_flattened_source? or verification_from_standard_json_input?, do: :solc, else: :vyper
 
     contract_verification_result =
       case contract_verification_result do

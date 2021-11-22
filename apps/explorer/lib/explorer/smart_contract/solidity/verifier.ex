@@ -61,7 +61,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
 
-    {:ok, candidates} =
+    solc_output =
       CodeCompiler.run(
         [
           name: name,
@@ -69,42 +69,47 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         ],
         json_input
       )
+    
+    case solc_output do
+      {:ok, candidates} -> 
+        {:ok, map_json_input} = Jason.decode(json_input)
 
-    {:ok, map_json_input} = Jason.decode(json_input)
+        Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
+          file_path = candidate["file_path"]
+          source_code = map_json_input["sources"][file_path]["content"]
+          contract_name = candidate["name"]
 
-    Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
-      file_path = candidate["file_path"]
-      source_code = map_json_input["sources"][file_path]["content"]
-      contract_name = candidate["name"]
+          case compare_bytecodes(
+                candidate,
+                address_hash,
+                constructor_arguments,
+                autodetect_constructor_arguments,
+                source_code,
+                contract_name
+              ) do
+            {:ok, verified_data} ->
+              secondary_sources =
+                for {file, %{"content" => source}} <- map_json_input["sources"],
+                    file != file_path,
+                    do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
 
-      case compare_bytecodes(
-             candidate,
-             address_hash,
-             constructor_arguments,
-             autodetect_constructor_arguments,
-             source_code,
-             contract_name
-           ) do
-        {:ok, verified_data} ->
-          secondary_sources =
-            for {file, %{"content" => source}} <- map_json_input["sources"],
-                file != file_path,
-                do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
+              additional_params =
+                map_json_input
+                |> extract_settings_from_json()
+                |> Map.put("contract_source_code", source_code)
+                |> Map.put("file_path", file_path)
+                |> Map.put("name", contract_name)
+                |> Map.put("secondary_sources", secondary_sources)
 
-          additional_params =
-            map_json_input
-            |> extract_settings_from_json()
-            |> Map.put("contract_source_code", source_code)
-            |> Map.put("file_path", file_path)
-            |> Map.put("name", contract_name)
-            |> Map.put("secondary_sources", secondary_sources)
+              {:halt, {:ok, verified_data, additional_params}}
 
-          {:halt, {:ok, verified_data, additional_params}}
-
-        err ->
-          {:cont, {:error, err}}
-      end
-    end)
+            err ->
+              {:cont, {:error, err}}
+          end
+        end)
+      error_response ->
+        error_response
+    end
   end
 
   defp extract_settings_from_json(json_input) when is_map(json_input) do
