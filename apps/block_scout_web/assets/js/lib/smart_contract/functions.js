@@ -1,7 +1,6 @@
 import $ from 'jquery'
 import { getContractABI, getMethodInputs, prepareMethodArgs, showConnectElements, showConnectedToElements, hideConnectButton } from './common_helpers'
-import { queryMethod } from './read'
-import { callMethod } from './write'
+import { queryMethod, callMethod } from './interact'
 import { walletEnabled, shouldHideConnectButton } from './connect.js'
 import '../../pages/address'
 

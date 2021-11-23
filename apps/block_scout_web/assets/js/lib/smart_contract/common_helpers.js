@@ -171,7 +171,15 @@ export function hideConnectButton () {
 
 function setConnectToAddress (account) {
   if (document.querySelector('[connected-to-address]')) {
-    document.querySelector('[connected-to-address]').innerHTML = `<a href='/address/${account}'>${account}</a>`
+    document.querySelector('[connected-to-address]').innerHTML = `<a href='/address/${account}'>${trimmedAddressHash(account)}</a>`
+  }
+}
+
+function trimmedAddressHash (account) {
+  if ($(window).width() < 544) {
+    return `${account.slice(0, 7)}–${account.slice(-6)}`
+  } else {
+    return account
   }
 }
 
