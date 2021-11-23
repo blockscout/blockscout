@@ -738,8 +738,8 @@ msgid "Copy Decompiled Contract Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:187
-#: lib/block_scout_web/templates/address_contract/index.html.eex:197
+#: lib/block_scout_web/templates/address_contract/index.html.eex:181
+#: lib/block_scout_web/templates/address_contract/index.html.eex:191
 msgid "Copy Deployed ByteCode"
 msgstr ""
 
@@ -944,8 +944,8 @@ msgid "Delegators’ Staked Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:185
-#: lib/block_scout_web/templates/address_contract/index.html.eex:193
+#: lib/block_scout_web/templates/address_contract/index.html.eex:179
+#: lib/block_scout_web/templates/address_contract/index.html.eex:187
 msgid "Deployed ByteCode"
 msgstr ""
 
@@ -1130,7 +1130,7 @@ msgid "Export Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:234
+#: lib/block_scout_web/templates/address_contract/index.html.eex:222
 msgid "External libraries"
 msgstr ""
 
@@ -2900,8 +2900,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:24
-#: lib/block_scout_web/templates/address_contract/index.html.eex:158 lib/block_scout_web/templates/address_contract/index.html.eex:170
-#: lib/block_scout_web/templates/address_contract/index.html.eex:201 lib/block_scout_web/templates/address_contract/index.html.eex:213
+#: lib/block_scout_web/templates/address_contract/index.html.eex:158 lib/block_scout_web/templates/address_contract/index.html.eex:164
+#: lib/block_scout_web/templates/address_contract/index.html.eex:195 lib/block_scout_web/templates/address_contract/index.html.eex:201
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:13
 msgid "Verify & Publish"
 msgstr ""
