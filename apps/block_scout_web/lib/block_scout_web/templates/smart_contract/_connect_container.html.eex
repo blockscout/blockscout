@@ -5,8 +5,8 @@
      <h2 style="margin-top: -2px;">Disconnected</h2>
     <button connect-wallet class="button btn-line ml-4">Connect wallet</button>
 </div>
-<div connected-to class="connect-container hidden row">
-    <div class="d-flex">
+<div connected-to class="connect-container row hidden">
+    <div class="d-flex ml-3">
       <span style="margin-top: -2px;" class="mr-2">
         <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
       </span>
