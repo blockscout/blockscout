@@ -421,7 +421,7 @@ async function connectToWallet (store) {
 
   initNetworkAndAccount(store, web3)
 
-  await fetchAccountData(provider, setAccount, [store])
+  await fetchAccountData(setAccount, [store])
 }
 
 async function initNetworkAndAccount (store, web3) {
