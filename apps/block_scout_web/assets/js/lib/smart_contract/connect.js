@@ -133,25 +133,30 @@ export const connectToWallet = async () => {
   await connectToProvider()
 
   // Subscribe to accounts change
-  provider.on('accountsChanged', (_accounts) => {
-    fetchAccountData(provider, showConnectedToElements, [provider])
+  provider.on('accountsChanged', async (accs) => {
+    const newAccount = accs && accs.length > 0 ? accs[0].toLowerCase() : null
+
+    if (!newAccount) {
+      await disconnectWallet()
+    }
+
+    fetchAccountData(showConnectedToElements, [])
   })
 
   // Subscribe to chainId change
   provider.on('chainChanged', (chainId) => {
     compareChainIDs(instanceChainId, chainId)
-      .then(() => fetchAccountData(provider, showConnectedToElements, [provider]))
+      .then(() => fetchAccountData(showConnectedToElements, []))
       .catch(error => {
         openWarningModal('Unauthorized', formatError(error))
       })
-    fetchAccountData(provider, showConnectedToElements, [provider])
   })
 
   provider.on('disconnect', async () => {
     await disconnectWallet()
   })
 
-  await fetchAccountData(provider, showConnectedToElements, [provider])
+  await fetchAccountData(showConnectedToElements, [])
 }
 
 export const shouldHideConnectButton = () => {
@@ -177,15 +182,17 @@ export const shouldHideConnectButton = () => {
   })
 }
 
-export async function fetchAccountData (provider, setAccount, args) {
+export async function fetchAccountData (setAccount, args) {
   // Get a Web3 instance for the wallet
-  window.web3 = new Web3(provider)
+  if (provider) {
+    window.web3 = new Web3(provider)
+  }
 
   // Get list of accounts of the connected wallet
-  const accounts = await window.web3.eth.getAccounts()
+  const accounts = window.web3 && await window.web3.eth.getAccounts()
 
   // MetaMask does not give you all accounts, only the selected account
-  if (accounts.length > 0) {
+  if (accounts && accounts.length > 0) {
     const selectedAccount = accounts[0]
 
     setAccount(selectedAccount, ...args)

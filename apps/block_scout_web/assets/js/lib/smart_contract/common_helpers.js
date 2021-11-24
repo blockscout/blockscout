@@ -144,12 +144,12 @@ export const getCurrentAccountFromMMPromise = () => {
   })
 }
 
-export function showConnectedToElements (account, provider) {
+export function showConnectedToElements (account) {
   document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.add('hidden')
   document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.remove('hidden')
   document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.remove('hidden')
   // Show disconnect button only in case of Wallet Connect
-  if (provider && provider.wc) {
+  if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
     document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.remove('hidden')
   } else {
     document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.add('hidden')
