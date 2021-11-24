@@ -1,7 +1,7 @@
 import $ from 'jquery'
-import { getContractABI, getMethodInputs, prepareMethodArgs, showConnectElements, showConnectedToElements, hideConnectButton } from './common_helpers'
+import { getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
 import { queryMethod, callMethod } from './interact'
-import { walletEnabled, shouldHideConnectButton } from './connect.js'
+import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
 
 const loadFunctions = (element) => {
@@ -17,25 +17,9 @@ const loadFunctions = (element) => {
     response => $element.html(response)
   )
     .done(function () {
-      window.ethereum && window.ethereum.on('accountsChanged', function (accounts) {
-        if (accounts.length === 0) {
-          showConnectElements()
-        } else {
-          showConnectedToElements(accounts[0])
-        }
-      })
-
-      const provider = window.web3 && window.web3.currentProvider
-      shouldHideConnectButton(provider)
-        .then(({ shouldHide, account }) => {
-          if (shouldHide && account) {
-            showConnectedToElements(account, provider)
-          } else if (shouldHide) {
-            hideConnectButton()
-          } else {
-            showConnectElements()
-          }
-        })
+      document.querySelector('[connect-wallet]') && document.querySelector('[connect-wallet]').addEventListener('click', connectToWallet)
+      document.querySelector('[disconnect-wallet]') && document.querySelector('[disconnect-wallet]').addEventListener('click', disconnectWallet)
+      web3ModalInit(connectToWallet)
 
       $('[data-function]').each((_, element) => {
         readWriteFunction(element)

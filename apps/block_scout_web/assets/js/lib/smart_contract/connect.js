@@ -4,11 +4,9 @@ import WalletConnectProvider from '@walletconnect/web3-provider'
 import { compareChainIDs, formatError, showConnectElements, showConnectedToElements } from './common_helpers'
 import { openWarningModal } from '../modals'
 
-const instanceChainId = process.env.CHAIN_ID ? parseInt(`${process.env.CHAIN_ID}`, 10) : 77
+const instanceChainId = process.env.CHAIN_ID ? parseInt(`${process.env.CHAIN_ID}`, 10) : 100
 const walletConnectOptions = { rpc: {}, chainId: instanceChainId }
-walletConnectOptions.rpc[instanceChainId] = 'https://sokol.poa.network'
-
-let selectedAccount
+walletConnectOptions.rpc[instanceChainId] = process.env.JSON_RPC ? process.env.JSON_RPC : 'https://dai.poa.network'
 
 // Chosen wallet provider given by the dialog window
 let provider
@@ -19,21 +17,29 @@ let web3Modal
 /**
  * Setup the orchestra
  */
-export function init () {
-  // Tell Web3modal what providers we have available.
-  // Built-in web browser provider (only one can exist as a time)
-  // like MetaMask, Brave or Opera is added automatically by Web3modal
-  const providerOptions = {
-    walletconnect: {
-      package: WalletConnectProvider,
-      options: walletConnectOptions
+export async function web3ModalInit (connectToWallet, ...args) {
+  return new Promise((resolve) => {
+    // Tell Web3modal what providers we have available.
+    // Built-in web browser provider (only one can exist as a time)
+    // like MetaMask, Brave or Opera is added automatically by Web3modal
+    const providerOptions = {
+      walletconnect: {
+        package: WalletConnectProvider,
+        options: walletConnectOptions
+      }
     }
-  }
 
-  web3Modal = new Web3Modal({
-    cacheProvider: false, // optional
-    providerOptions, // required
-    disableInjectedProvider: false // optional. For MetaMask / Brave / Opera.
+    web3Modal = new Web3Modal({
+      cacheProvider: true,
+      providerOptions,
+      disableInjectedProvider: false
+    })
+
+    if (web3Modal.cachedProvider) {
+      connectToWallet(...args)
+    }
+
+    resolve(web3Modal)
   })
 }
 
@@ -82,77 +88,73 @@ export const walletEnabled = () => {
   })
 }
 
-export const shouldHideConnectButton = (provider) => {
-  return new Promise((resolve) => {
-    if (window.ethereum) {
-      window.web3 = new Web3(provider)
-      if (window.ethereum.isNiftyWallet) {
-        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
-      } else if (window.ethereum.isMetaMask) {
-        window.ethereum.request({ method: 'eth_accounts' })
-          .then(accounts => {
-            accounts.length > 0 ? resolve({ shouldHide: true, account: accounts[0] }) : resolve({ shouldHide: false })
-          })
-          .catch(_error => {
-            resolve({ shouldHide: false })
-          })
-      } else {
-        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
-      }
-    } else {
-      resolve({ shouldHide: false })
-    }
-  })
-}
-
-export const connectToWallet = async () => {
-  try {
-    provider = await web3Modal.connect()
-    window.web3 = new Web3(provider)
-  } catch (e) {
-    return
+export async function disconnect () {
+  if (provider && provider.close) {
+    await provider.close()
   }
 
-  // Subscribe to accounts change
-  provider.on('accountsChanged', (accounts) => {
-    fetchAccountData()
-  })
+  provider = null
 
-  // Subscribe to chainId change
-  provider.on('chainChanged', (chainId) => {
-    compareChainIDs(instanceChainId, chainId)
-      .then(() => fetchAccountData())
-      .catch(error => {
-        openWarningModal('Unauthorized', formatError(error))
-      })
-    fetchAccountData()
-  })
+  window.web3 = null
 
-  await refreshAccountData()
+  // If the cached provider is not cleared,
+  // WalletConnect will default to the existing session
+  // and does not allow to re-scan the QR code with a new wallet.
+  // Depending on your use case you may want or want not his behavir.
+  await web3Modal.clearCachedProvider()
 }
 
 /**
  * Disconnect wallet button pressed.
  */
-export const disconnectWallet = async () => {
-  if (provider && provider.close) {
-    await provider.close()
+export async function disconnectWallet () {
+  await disconnect()
 
-    // If the cached provider is not cleared,
-    // WalletConnect will default to the existing session
-    // and does not allow to re-scan the QR code with a new wallet.
-    // Depending on your use case you may want or want not his behavir.
-    await web3Modal.clearCachedProvider()
-    provider = null
-    window.web3 = null
-
-    showConnectElements()
-  }
-
-  selectedAccount = null
+  showConnectElements()
 }
 
-async function fetchAccountData () {
+export const connectToProvider = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      web3Modal
+        .connect()
+        .then((connectedProvider) => {
+          provider = connectedProvider
+          window.web3 = new Web3(provider)
+          resolve(provider)
+        })
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
+export const connectToWallet = async () => {
+  await connectToProvider()
+
+  // Subscribe to accounts change
+  provider.on('accountsChanged', (_accounts) => {
+    fetchAccountData(provider, showConnectedToElements, [provider])
+  })
+
+  // Subscribe to chainId change
+  provider.on('chainChanged', (chainId) => {
+    compareChainIDs(instanceChainId, chainId)
+      .then(() => fetchAccountData(provider, showConnectedToElements, [provider]))
+      .catch(error => {
+        openWarningModal('Unauthorized', formatError(error))
+      })
+    fetchAccountData(provider, showConnectedToElements, [provider])
+  })
+
+  provider.on('disconnect', async () => {
+    await disconnectWallet()
+  })
+
+  await fetchAccountData(provider, showConnectedToElements, [provider])
+}
+
+export async function fetchAccountData (provider, setAccount, args) {
   // Get a Web3 instance for the wallet
   window.web3 = new Web3(provider)
 
@@ -161,12 +163,8 @@ async function fetchAccountData () {
 
   // MetaMask does not give you all accounts, only the selected account
   if (accounts.length > 0) {
-    selectedAccount = accounts[0]
+    const selectedAccount = accounts[0]
 
-    showConnectedToElements(selectedAccount, provider)
+    setAccount(selectedAccount, ...args)
   }
-}
-
-async function refreshAccountData () {
-  await fetchAccountData(provider)
 }
