@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import Swal from 'sweetalert2'
-import { walletEnabled, connectToWallet, shouldHideConnectButton } from '../lib/smart_contract/write.js'
+import { walletEnabled, connectToWallet, shouldHideConnectButton } from '../lib/smart_contract/connect.js'
 import { getCurrentAccount, compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
 import { uuidv4 } from '../lib/keys_helpers'
 import { getCookie, setCookie } from '../lib/cookies_helpers'
