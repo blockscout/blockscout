@@ -73,6 +73,7 @@ defmodule Indexer.BufferedTask do
             max_batch_size: nil,
             max_concurrency: nil,
             poll: false,
+            dedup_entries: false,
             metadata: [],
             current_buffer: [],
             bound_queue: %BoundQueue{},
@@ -209,6 +210,7 @@ defmodule Indexer.BufferedTask do
              | {:poll_interval, timeout()}
              | {:max_batch_size, pos_integer()}
              | {:max_concurrency, pos_integer()}
+             | {:dedup_entries, boolean()}
              | {:memory_monitor, GenServer.name()}
              | {:name, GenServer.name()}
              | {:task_supervisor, GenServer.name()}
@@ -237,6 +239,7 @@ defmodule Indexer.BufferedTask do
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
       poll_interval: Keyword.get(opts, :poll_interval, :timer.seconds(3)),
+      dedup_entries: Keyword.get(opts, :dedup_entries, false),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
       max_concurrency: Keyword.fetch!(opts, :max_concurrency),
       metadata: metadata
@@ -402,8 +405,10 @@ defmodule Indexer.BufferedTask do
   end
 
   defp push_back(%BufferedTask{bound_queue: bound_queue} = state, entries) when is_list(entries) do
+    entries_to_push = dedup_entries(state, entries)
+
     new_bound_queue =
-      case BoundQueue.push_back_until_maximum_size(bound_queue, entries) do
+      case BoundQueue.push_back_until_maximum_size(bound_queue, entries_to_push) do
         {new_bound_queue, []} ->
           new_bound_queue
 
@@ -418,6 +423,28 @@ defmodule Indexer.BufferedTask do
       end
 
     %BufferedTask{state | bound_queue: new_bound_queue}
+  end
+
+  defp dedup_entries(%BufferedTask{dedup_entries: false}, entries), do: entries
+
+  defp dedup_entries(
+         %BufferedTask{dedup_entries: true, task_ref_to_batch: task_ref_to_batch, bound_queue: bound_queue},
+         entries
+       ) do
+    running_entries =
+      task_ref_to_batch
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
+      |> MapSet.new()
+
+    queued_entries = MapSet.new(bound_queue)
+
+    entries
+    |> MapSet.new()
+    |> MapSet.difference(running_entries)
+    |> MapSet.difference(queued_entries)
+    |> MapSet.to_list()
   end
 
   defp take_batch(%BufferedTask{bound_queue: bound_queue, max_batch_size: max_batch_size} = state) do

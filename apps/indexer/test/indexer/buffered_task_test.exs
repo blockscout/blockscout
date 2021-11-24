@@ -180,6 +180,66 @@ defmodule Indexer.BufferedTaskTest do
     assert buffer + tasks == 3
   end
 
+  test "dedup_entries prevents adding duplicates to the queue" do
+    RetryableTask
+    |> expect(:init, fn initial, reducer, _ ->
+      Enum.reduce([2, 3, 4], initial, reducer)
+    end)
+    |> expect(:run, fn [2] = batch, _state ->
+      :timer.sleep(@flush_interval)
+      send(RetryableTask, {:run, {0, batch}})
+      :ok
+    end)
+    |> expect(:run, fn [3] = batch, _state ->
+      :timer.sleep(@flush_interval)
+      send(RetryableTask, {:run, {1, batch}})
+      :ok
+    end)
+    |> expect(:run, fn [4] = batch, _state ->
+      :timer.sleep(@flush_interval)
+      send(RetryableTask, {:run, {2, batch}})
+      :ok
+    end)
+    |> expect(:run, fn [1] = batch, _state ->
+      :timer.sleep(@flush_interval)
+      send(RetryableTask, {:run, {3, batch}})
+      :ok
+    end)
+
+    Process.register(self(), RetryableTask)
+    start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+    {:ok, buffer} =
+      start_supervised(
+        {BufferedTask,
+         [
+           {RetryableTask,
+            state: nil,
+            task_supervisor: BufferedTaskSup,
+            flush_interval: @flush_interval,
+            dedup_entries: true,
+            max_batch_size: 1,
+            max_concurrency: 1}
+         ]}
+      )
+
+    # at this moment 2 would be in the task_ref_to_batch, and 3 and 4 in the bound_queue
+    # it should filter out 2 and 3 on the deduplication step
+    BufferedTask.buffer(buffer, [1, 2, 3])
+
+    # it should process the first 3 items from the initial group first
+    assert_receive {:run, {0, [2]}}, @assert_receive_timeout
+    assert_receive {:run, {1, [3]}}, @assert_receive_timeout
+    assert_receive {:run, {2, [4]}}, @assert_receive_timeout
+
+    # and then only the unique item from the buffer
+    assert_receive {:run, {3, [1]}}, @assert_receive_timeout
+
+    Process.sleep(@assert_receive_timeout)
+
+    refute_receive _
+  end
+
   describe "handle_info(:flush, state)" do
     test "without 0 size without maximum size schedules next flush" do
       {:ok, bound_queue} = BoundQueue.push_back(%BoundQueue{}, 1)
