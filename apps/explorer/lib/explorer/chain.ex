@@ -2359,7 +2359,7 @@ defmodule Explorer.Chain do
         left_join: bt in subquery(bridged_tokens_query),
         on: t.contract_address_hash == bt.home_token_contract_address_hash,
         where: t.total_supply > ^0,
-        order_by: [desc: t.holder_count, asc: t.name],
+        order_by: [desc_nulls_last: t.holder_count, asc: t.name],
         select: [t, bt],
         preload: [:contract_address]
       )

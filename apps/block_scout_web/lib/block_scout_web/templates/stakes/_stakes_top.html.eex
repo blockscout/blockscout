@@ -6,52 +6,70 @@
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Next epoch in"), value: ngettext("%{blocks} block", "%{blocks} blocks", @epoch_end_in, blocks: @epoch_end_in) %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item_account.html", account: @account, token: @token %>
       <!-- Buttons -->
-      <div class="stakes-top-buttons">
-        <%= if @account[:pool] && @account.pool.is_active do %>
-          <%= unless @account.pool.is_unremovable do %>
-            <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
-          <% end %>
-        <% else %>
-          <%=
-            button_class = "full-width " <>
-              if !is_nil(@account[:pool]) or !is_nil(@account[:pool_id]) do
-                "js-make-stake"
-              else
-                "js-become-candidate"
-              end
+      <div class="container stakes-top-buttons">
+        <div class="row">
+          <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
+            <%= if @account[:pool] && @account.pool.is_active do %>
+              <%= unless @account.pool.is_unremovable do %>
+                <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
+              <% end %>
+            <% else %>
+              <%=
+                button_class = "staking-dapp-top-panel-button-width " <>
+                  if !is_nil(@account[:pool]) or !is_nil(@account[:pool_id]) do
+                    "js-make-stake"
+                  else
+                    "js-become-candidate"
+                  end
 
-            render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html",
-              text: gettext("Become a Candidate"),
-              extra_class: button_class,
-              disabled: @account[:pool] && @account.pool.is_banned || @candidates_limit_reached
-          %>
-        <% end %>
-
-        <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward"), extra_class: "full-width" %>
-        <button class="btn-full-primary btn-full-primary-text full-width mt-2 btn-add-chain-to-mm"><%= gettext("Add xDai Chain") %></button>
-      </div>
-      <div class="stakes-top-buttons right">
-        <a
-            class="btn-full-primary full-width btn-add-full"
-            href="https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e&exactField=input"
-            target="_blank"
-        >
-            <span class="btn-full-primary-text"><%= gettext("Swap STAKE on Honeyswap") %></span>
-        </a>
-        <a
-            class="btn-full-primary full-width btn-add-full"
-            href="https://omni.xdaichain.com/bridge?from=100&to=1&token=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e"
-            target="_blank"
-        >
-            <span class="btn-full-primary-text"><%= gettext("Bridge STAKE to Ethereum") %></span>
-        </a>
-        <a
-            class="btn-full-primary full-width btn-add-full"
-            href="https://ascendex.com/register?inviteCode=5EYVQSTQ"
-            target="_blank"
-        >
-            <span class="btn-full-primary-text"><%= gettext("Trade STAKE on AscendEX") %></span>
-        </a>
+                render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html",
+                  text: gettext("Become a Candidate"),
+                  extra_class: button_class,
+                  disabled: @account[:pool] && @account.pool.is_banned || @candidates_limit_reached
+              %>
+            <% end %>
+          </div>
+          <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
+            <a
+                class="btn-full-primary btn-add-full staking-dapp-top-panel-button-width"
+                style="text-align: center;"
+                href="https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e&exactField=input"
+                target="_blank"
+            >
+                <span class="btn-full-primary-text"><%= gettext("Swap STAKE on Honeyswap") %></span>
+            </a>
+          </div>
+        </div>
+        <div class="row">
+          <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
+            <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward"), extra_class: "staking-dapp-top-panel-button-width" %>
+          </div>
+          <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
+            <a
+                class="btn-full-primary btn-add-full staking-dapp-top-panel-button-width"
+                style="text-align: center;"
+                href="https://omni.xdaichain.com/bridge?from=100&to=1&token=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e"
+                target="_blank"
+            >
+                <span class="btn-full-primary-text"><%= gettext("Bridge STAKE to Ethereum") %></span>
+            </a>
+          </div>
+        </div>
+        <div class="row">
+          <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
+            <button class="btn-full-primary btn-full-primary-text mb-2 btn-add-chain-to-mm staking-dapp-top-panel-button-width"><%= gettext("Add xDai Chain") %></button>
+          </div>
+          <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
+            <a
+                class="btn-full-primary btn-add-full staking-dapp-top-panel-button-width"
+                style="text-align: center;"
+                href="https://ascendex.com/register?inviteCode=5EYVQSTQ"
+                target="_blank"
+            >
+                <span class="btn-full-primary-text"><%= gettext("Trade STAKE on AscendEX") %></span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </div>

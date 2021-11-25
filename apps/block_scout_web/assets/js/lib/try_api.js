@@ -57,7 +57,7 @@ function handleSuccess (query, xhr, clickedButton) {
 }
 
 function escapeHtml (text) {
-  var map = {
+  const map = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',

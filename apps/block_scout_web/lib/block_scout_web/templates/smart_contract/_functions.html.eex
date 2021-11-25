@@ -57,13 +57,13 @@
 
           <%= if queryable?(function["inputs"]) do %>
             <%= for input <- function["inputs"] do %>
-              <div class="form-group pr-3">
+              <div class="form-group pr-3 d-flex" style="margin: 0.5rem 0 !important;">
                 <%= if int?(input["type"]) do %>
-                  <input type="number" name="function_input" class="form-control form-control-sm address-input-sm mt-2"
+                  <input type="number" name="function_input" class="form-control form-control-sm address-input-sm"
                   placeholder='<%= input["name"] %>(<%= input["type"] %>)'
                   style="width: <%= (String.length(input["name"]) + String.length(input["type"]) + 2) * 10 %>px;"/>
                   <span data-dropdown-toggle="" data-toggle="dropdown">
-                    <span class="button btn-line button-xs contract-plus-btn-container ml-1 mt-2">
+                    <span class="button btn-line button-xs contract-plus-btn-container ml-1">
                       <i class="fa fa-plus contract-plus-btn"></i>
                     </span>
                     <div class="dropdown-menu exponention-dropdown">  
@@ -75,7 +75,7 @@
                   </span>
 
                 <% else %>
-                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" 
+                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm" 
                   placeholder='<%= input["name"] %>(<%= input["type"] %>)' 
                   size="<%= String.length(input["name"]) + String.length(input["type"]) + 2 %>" />
                 <% end %>
@@ -84,13 +84,15 @@
           <% end %>
 
           <%= if Helper.payable?(function) do %>
-            <div class="form-group pr-3">
+            <div class="form-group pr-3 d-flex">
               <input type="number" name="function_input" tx-value
-              data-toggle="tooltip" title='Amount in native token <<%= gettext("ETH")%>>' class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)' min="0" step="1e-18" />
+              data-toggle="tooltip" title='Amount in native token <<%= gettext("ETH")%>>' class="form-control form-control-sm address-input-sm" placeholder='value(<%= gettext("ETH")%>)' min="0" step="1e-18" />
             </div>
           <% end %>
 
-          <input type="submit" value='<%= if @action == "write", do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
+          <div>
+            <input type="submit" value='<%= if @action == "write", do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 write-contract-btn" />
+          </div>
         </form>
 
         <%= if outputs?(function["outputs"]) do %>

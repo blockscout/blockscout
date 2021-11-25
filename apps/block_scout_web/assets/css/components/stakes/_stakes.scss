@@ -207,3 +207,13 @@ $stakes-stats-item-border-color: #fff !default;
   margin-top: 10px;
   font-size: 12px;
 }
+
+.staking-dapp-top-panel-button-width {
+  width: 180px;
+}
+
+.staking-dapp-top-panel-buttons-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

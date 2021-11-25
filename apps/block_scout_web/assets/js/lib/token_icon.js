@@ -1,5 +1,5 @@
 function getTokenIconUrl (chainID, addressHash) {
-  var chainName = null
+  let chainName = null
   switch (chainID) {
     case '1':
       chainName = 'ethereum'
@@ -23,7 +23,7 @@ function getTokenIconUrl (chainID, addressHash) {
 
 function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons, size) {
   const iconSize = size || 20
-  var tokenIconURL = null
+  let tokenIconURL = null
   if (foreignChainID) {
     tokenIconURL = getTokenIconUrl(foreignChainID.toString(), foreignAddressHash)
   } else if (chainID) {
@@ -34,7 +34,7 @@ function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChai
       .then(checkTokenIconLink => {
         if (checkTokenIconLink) {
           if ($tokenIconContainer) {
-            var img = new Image(iconSize, iconSize)
+            const img = new Image(iconSize, iconSize)
             img.src = tokenIconURL
             $tokenIconContainer.append(img)
           }
