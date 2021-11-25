@@ -171,9 +171,9 @@ function showConnectToContainer () {
 export function showHideDisconnectButton () {
   // Show disconnect button only in case of Wallet Connect
   if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
-    $(disconnectSelector).removeClass('hidden')
+    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.remove('hidden')
   } else {
-    $(disconnectSelector).addClass('hidden')
+    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.add('hidden')
   }
 }
 

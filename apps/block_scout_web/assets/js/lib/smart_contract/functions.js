@@ -1,7 +1,7 @@
 import $ from 'jquery'
-import { getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { connectSelector, disconnectSelector, getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
 import { queryMethod, callMethod } from './interact'
-import { connectSelector, disconnectSelector, walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
+import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
 
 const loadFunctions = (element) => {
