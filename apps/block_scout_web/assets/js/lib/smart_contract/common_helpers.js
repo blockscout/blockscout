@@ -2,10 +2,10 @@ import Web3 from 'web3'
 import $ from 'jquery'
 import { props } from 'eth-net-props'
 
-const connectSelector = '[connect-wallet]'
+export const connectSelector = '[connect-wallet]'
+export const disconnectSelector = '[disconnect-wallet]'
 const connectToSelector = '[connect-to]'
 const connectedToSelector = '[connected-to]'
-const disconnectSelector = '[disconnect-wallet]'
 
 export function getContractABI ($form) {
   const implementationAbi = $form.data('implementation-abi')
@@ -140,29 +140,57 @@ export const getCurrentAccountFromMMPromise = () => {
   })
 }
 
-export function showConnectedToElements (account) {
-  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.add('hidden')
-  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.remove('hidden')
+function hideConnectedToContainer () {
+  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.add('hidden')
+}
+
+function showConnectedToContainer () {
   document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.remove('hidden')
+}
+
+function hideConnectContainer () {
+  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.add('hidden')
+}
+
+function showConnectContainer () {
+  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.remove('hidden')
+}
+
+function hideConnectToContainer () {
+  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.add('hidden')
+}
+
+function showConnectToContainer () {
+  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.remove('hidden')
+}
+
+export function showHideDisconnectButton () {
   // Show disconnect button only in case of Wallet Connect
   if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
-    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.remove('hidden')
+    $(disconnectSelector).removeClass('hidden')
   } else {
-    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.add('hidden')
+    $(disconnectSelector).addClass('hidden')
   }
+}
+
+export function showConnectedToElements (account) {
+  hideConnectToContainer()
+  showConnectContainer()
+  showConnectedToContainer()
+  showHideDisconnectButton()
   setConnectToAddress(account)
 }
 
 export function showConnectElements () {
-  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.remove('hidden')
-  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.remove('hidden')
-  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.add('hidden')
+  showConnectToContainer()
+  showConnectContainer()
+  hideConnectedToContainer()
 }
 
 export function hideConnectButton () {
-  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.remove('hidden')
-  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.add('hidden')
-  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.add('hidden')
+  showConnectToContainer()
+  hideConnectContainer()
+  hideConnectedToContainer()
 }
 
 function setConnectToAddress (account) {
