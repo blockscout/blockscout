@@ -5,6 +5,7 @@ import _ from 'lodash'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
+import { showHideDisconnectButton } from '../lib/smart_contract/common_helpers'
 import { connectToProvider, disconnect, fetchAccountData, web3ModalInit } from '../lib/smart_contract/connect'
 import Queue from '../lib/queue'
 import Web3 from 'web3'
@@ -166,6 +167,16 @@ const elements = {
 const $stakesPage = $(stakesPageSelector)
 const $stakesTop = $('[data-selector="stakes-top"]')
 const $refreshInformer = $('.refresh-informer', $stakesPage)
+
+const observer = new MutationObserver(function (mutationsList) {
+  mutationsList.forEach(function (mutation) {
+    mutation.addedNodes.forEach(function (addedNode) {
+      if (addedNode.className === 'stakes-top') {
+        showHideDisconnectButton()
+      }
+    })
+  })
+})
 
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
@@ -345,6 +356,8 @@ if ($stakesPage.length) {
   $stakesTop.on('click', '[disconnect-wallet]', async (_event) => {
     disconnectWalletFromStakingDapp(store)
   })
+
+  observer.observe(document.querySelector('[data-selector="stakes-top"]'), { subtree: false, childList: true })
 }
 
 function accountChanged (account, state) {
