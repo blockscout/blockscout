@@ -52,6 +52,6 @@
     <% end %>
   </span>
   <%= if @account do %>
-  <button disconnect-wallet class="button btn-full-primary mt-2 mr-4">Disconnect wallet</button>
+  <button disconnect-wallet class="button btn-full-primary mt-2 mr-4 hidden">Disconnect wallet</button>
   <% end %>
 </div>
