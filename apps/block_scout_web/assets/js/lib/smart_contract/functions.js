@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import { getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { connectSelector, disconnectSelector, getContractABI, getMethodInputs, prepareMethodArgs } from './common_helpers'
 import { queryMethod, callMethod } from './interact'
 import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
@@ -18,8 +18,8 @@ const loadFunctions = (element) => {
     response => $element.html(response)
   )
     .done(function () {
-      document.querySelector('[connect-wallet]') && document.querySelector('[connect-wallet]').addEventListener('click', connectToWallet)
-      document.querySelector('[disconnect-wallet]') && document.querySelector('[disconnect-wallet]').addEventListener('click', disconnectWallet)
+      document.querySelector(connectSelector) && document.querySelector(connectSelector).addEventListener('click', connectToWallet)
+      document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).addEventListener('click', disconnectWallet)
       web3ModalInit(connectToWallet)
 
       $('[data-function]').each((_, element) => {
