@@ -226,7 +226,6 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   def parse_error({:error, %{"error" => error}}), do: {:error, [error]}
   def parse_error({:error, %{"errors" => errors}}), do: {:error, errors}
   def parse_error({:error, _} = error), do: error
-  def parse_error({:error, _} = error), do: error
 
   # Older solc-bin versions don't use filename as contract key
   defp get_contracts(%{"contracts" => %{"New.sol" => contracts}}), do: {:ok, contracts}
