@@ -69,9 +69,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         ],
         json_input
       )
-    
+
     case solc_output do
-      {:ok, candidates} -> 
+      {:ok, candidates} ->
         {:ok, map_json_input} = Jason.decode(json_input)
 
         Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
@@ -80,13 +80,13 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           contract_name = candidate["name"]
 
           case compare_bytecodes(
-                candidate,
-                address_hash,
-                constructor_arguments,
-                autodetect_constructor_arguments,
-                source_code,
-                contract_name
-              ) do
+                 candidate,
+                 address_hash,
+                 constructor_arguments,
+                 autodetect_constructor_arguments,
+                 source_code,
+                 contract_name
+               ) do
             {:ok, verified_data} ->
               secondary_sources =
                 for {file, %{"content" => source}} <- map_json_input["sources"],
@@ -107,6 +107,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
               {:cont, {:error, err}}
           end
         end)
+
       error_response ->
         error_response
     end
