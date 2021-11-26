@@ -5,6 +5,7 @@ import $ from 'jquery'
 const DATE_FORMAT = 'YYYY-MM-DD'
 
 const $button = $('#export-csv-button')
+const $message = $('#downloading-message')
 
 // eslint-disable-next-line
 const _instance1 = new Pikaday({
@@ -29,7 +30,7 @@ const _instance2 = new Pikaday({
 $button.on('click', () => {
   $button.addClass('spinner')
   // eslint-disable-next-line
-  const resp = grecaptcha.getResponse()
+  const resp = grecaptcha.enterprise.getResponse()
   if (resp) {
     $.ajax({
       url: './captcha?type=JSON',
@@ -44,11 +45,12 @@ $button.on('click', () => {
     })
       .done(function (data) {
         // eslint-disable-next-line
-        grecaptcha.reset()
+        grecaptcha.enterprise.reset()
         const dataJson = JSON.parse(data)
-        if (dataJson.success) {
+        if (dataJson.tokenProperties.valid === true) {
           $button.removeClass('spinner')
           location.href = $button.data('link')
+          $message.removeClass('hidden')
         } else {
           $button.removeClass('spinner')
           return false

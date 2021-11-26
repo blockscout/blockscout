@@ -1028,7 +1028,7 @@ msgid "Domain"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/csv_export/index.html.eex:25
+#: lib/block_scout_web/templates/csv_export/index.html.eex:27
 msgid "Download"
 msgstr ""
 
@@ -1164,7 +1164,7 @@ msgid "Expand"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/csv_export/index.html.eex:10
+#: lib/block_scout_web/templates/csv_export/index.html.eex:12
 msgid "Export Data"
 msgstr ""
 
@@ -3307,3 +3307,8 @@ msgstr "CELO"
 # From templates/tokens/overview/details.html.eex#
 msgid "Celo Gold"
 msgstr "CELO"
+
+#, elixir-format
+#: lib/block_scout_web/templates/csv_export/index.html.eex:28
+msgid "CSV is being prepared, please wait..."
+msgstr ""

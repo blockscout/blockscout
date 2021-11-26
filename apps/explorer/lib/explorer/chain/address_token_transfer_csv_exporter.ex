@@ -4,7 +4,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, AddressTransactionCsvExporter, TokenTransfer}
+  alias Explorer.Chain.{Address, AddressTransactionCsvExporter, TokenTransfer, Transaction}
   alias NimbleCSV.RFC4180
 
   @page_size 150
@@ -47,6 +47,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
       "TokenSymbol",
       "TokensTransferred",
       "TransactionFee",
+      "TransactionFeeCurrency",
       "Status",
       "ErrCode"
     ]
@@ -65,6 +66,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
           token_transfer.token.symbol,
           token_transfer.amount,
           fee(token_transfer.transaction),
+          fee_currency(token_transfer.transaction),
           token_transfer.transaction.status,
           token_transfer.transaction.error
         ]
@@ -86,5 +88,12 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"
     end
+  end
+
+  # if currency is nil we assume celo as tx fee currency
+  defp fee_currency(%Transaction{gas_currency_hash: nil}), do: "CELO"
+
+  defp fee_currency(transaction) do
+    transaction.gas_currency.token.symbol
   end
 end

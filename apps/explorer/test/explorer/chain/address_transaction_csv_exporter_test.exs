@@ -7,9 +7,11 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
     test "exports address transactions to csv" do
       address = insert(:address)
 
+      fee_currency = insert(:token, symbol: "TestSymbol", name: "TestName")
+
       transaction =
         :transaction
-        |> insert(from_address: address)
+        |> insert(from_address: address, gas_currency: fee_currency.contract_address)
         |> with_block()
         |> Repo.preload(:token_transfers)
 
@@ -40,15 +42,11 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
                          _,
                          fee,
                          _,
+                         currency,
+                         _,
                          status,
                          _,
                          error,
-                         _,
-                         cur_price,
-                         _,
-                         op_price,
-                         _,
-                         cl_price,
                          _
                        ] ->
           %{
@@ -61,11 +59,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
             type: type,
             value: value,
             fee: fee,
+            currency: currency,
             status: status,
-            error: error,
-            current_price: cur_price,
-            opening_price: op_price,
-            closing_price: cl_price
+            error: error
           }
         end)
 
@@ -78,11 +74,58 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.type == "OUT"
       assert result.value == transaction.value |> Wei.to(:wei) |> to_string()
       assert result.fee
+      assert result.currency == fee_currency.symbol
       assert result.status == to_string(transaction.status)
       assert result.error == to_string(transaction.error)
-      assert result.current_price
-      assert result.opening_price
-      assert result.closing_price
+    end
+
+    test "exports transaction without explicity fee currency with CELO as currency" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+        |> Repo.preload(:token_transfers)
+
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+
+      [result_currency] =
+        address
+        |> AddressTransactionCsvExporter.export(from_period, to_period)
+        |> Enum.to_list()
+        |> Enum.drop(1)
+        |> Enum.map(fn [
+                         _hash,
+                         _,
+                         _block_number,
+                         _,
+                         _timestamp,
+                         _,
+                         _from_address,
+                         _,
+                         _to_address,
+                         _,
+                         _created_address,
+                         _,
+                         _type,
+                         _,
+                         _value,
+                         _,
+                         _fee,
+                         _,
+                         currency,
+                         _,
+                         _status,
+                         _,
+                         _error,
+                         _
+                       ] ->
+          currency
+        end)
+
+      assert result_currency == "CELO"
     end
 
     test "fetches all transactions" do

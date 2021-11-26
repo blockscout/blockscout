@@ -43,6 +43,8 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
                          _,
                          transaction_fee,
                          _,
+                         transaction_currency,
+                         _,
                          status,
                          _,
                          err_code,
@@ -59,6 +61,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
             token_symbol: token_symbol,
             tokens_transferred: tokens_transferred,
             transaction_fee: transaction_fee,
+            transaction_currency: transaction_currency,
             status: status,
             err_code: err_code
           }
@@ -69,6 +72,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
       assert result.from_address == token_transfer.from_address_hash |> to_string() |> String.downcase()
       assert result.to_address == token_transfer.to_address_hash |> to_string() |> String.downcase()
       assert result.timestamp == to_string(transaction.block.timestamp)
+      assert result.transaction_currency == "CELO"
       assert result.type == "OUT"
     end
   end
