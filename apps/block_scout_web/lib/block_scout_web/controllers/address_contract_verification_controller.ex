@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       ) do
     files_array = prepare_files_array(files)
 
-    with %{path: path} <- get_one_json(files_array),
+    with %Plug.Upload{path: path} <- get_one_json(files_array),
          {:ok, json_input} <- File.read(path) do
       Que.add(SolidityPublisherWorker, {smart_contract, json_input, conn})
     else
