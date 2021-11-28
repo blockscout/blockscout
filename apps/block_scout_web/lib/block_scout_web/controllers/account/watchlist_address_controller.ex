@@ -3,15 +3,14 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
 
   alias Explorer.Repo
   alias Explorer.Accounts.WatchlistAddress
+  alias Explorer.Accounts.WatchlistAddressForm
 
   def new(conn, _params) do
-    changeset = WatchlistAddress.changeset(%WatchlistAddress{name: "wallet"}, %{})
+    changeset = WatchlistAddressForm.changeset(%WatchlistAddressForm{name: "wallet"}, %{})
     render(conn, "new.html", watchlist_address: changeset)
   end
 
-  def create(conn, %{"watchlist_address" => wa_params}) do
-    IO.inspect(wa_params)
-
+  def create(conn, %{"watchlist_address_form" => wa_params}) do
     case AddWatchlistAddress.call(current_user(conn).watchlist_id, wa_params) do
       {:ok, _watchlist_address} ->
         conn
@@ -42,7 +41,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
   end
 
   defp changeset(params) do
-    WatchlistAddress.changeset(%WatchlistAddress{}, params)
+    WatchlistAddressForm.changeset(%WatchlistAddressForm{}, params)
   end
 
   defp watchlist(user) do

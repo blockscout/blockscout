@@ -302,6 +302,8 @@ defmodule Explorer.Chain.Import do
         Keyword.delete(options, :for)
       )
 
+    Explorer.Accounts.Notify.Notification.process(inserted)
+
     {:ok, inserted}
   end
 

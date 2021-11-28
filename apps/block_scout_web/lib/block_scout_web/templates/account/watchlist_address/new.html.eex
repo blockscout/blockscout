@@ -8,15 +8,15 @@
       <div class="col-sm-6">
         <%= form_for @watchlist_address, watchlist_address_path(@conn, :create), fn f -> %>
           <div class="form-group">
-            <%= label f, "Address name", class: "control-label", style: "font-size: 17px" %>
-            <%= text_input f, :name, class: "form-control" %>
-            <%= error_tag f, :name %>
+            <%= label f, "Address", class: "control-label", style: "font-size: 17px" %>
+            <%= text_input f, :address_hash, class: "form-control" %>
+            <%= error_tag f, :address_hash %>
           </div>
 
           <div class="form-group">
-            <%= label f, "Address hash", class: "control-label", style: "font-size: 17px" %>
-            <%= text_input f, :address_hash, class: "form-control" %>
-            <%= error_tag f, :address_hash %>
+            <%= label f, "Name", class: "control-label", style: "font-size: 17px" %>
+            <%= text_input f, :name, class: "form-control" %>
+            <%= error_tag f, :name %>
           </div>
 
           <h2 style="font-size: 24px;">Notifications</h2>
@@ -48,30 +48,17 @@
                 <%= error_tag f, :watch_erc_20_output %>
               </div>
             </div>
-            <div class="col-sm">
-              <h3>ERC-721 tokens</h3>
+            <div class="col-md">
+              <h3>ERC-721, ERC-1155 tokens (NFT)</h3>
               <div class="form-group">
-                <%= checkbox f, :watch_erc_721_input, class: "form-check-input" %>
+                <%= checkbox f, :watch_nft_input, class: "form-check-input" %>
                 <%= label f, "Incoming", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_erc_721_input %>
+                <%= error_tag f, :watch_nft_input %>
               </div>
               <div class="form-group">
-                <%= checkbox f, :watch_erc_721_output, class: "form-check-input" %>
+                <%= checkbox f, :watch_nft_output, class: "form-check-input" %>
                 <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_erc_721_output %>
-              </div>
-            </div>
-            <div class="col-sm">
-              <h3>ERC-1155 tokens</h3>
-              <div class="form-group">
-                <%= checkbox f, :watch_erc_1155_input, class: "form-check-input" %>
-                <%= label f, "Incoming", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_erc_1155_input %>
-              </div>
-              <div class="form-group">
-                <%= checkbox f, :watch_erc_1155_output, class: "form-check-input" %>
-                <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_erc_1155_output %>
+                <%= error_tag f, :watch_nft_output %>
               </div>
             </div>
           </div>
@@ -82,14 +69,9 @@
                 <%= label f, "Email notifications", class: "form-check-label", style: "font-size: 13px" %>
                 <%= error_tag f, :notify_email %>
               </div>
-              <div class="form-group">
-                <%= checkbox f, :notify_feed, class: "form-check-input" %>
-                <%= label f, "Feed notifications", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :notify_feed %>
-              </div>
 
           <div class="form-group">
-            <%= submit "Submit", class: "btn btn-primary" %>
+            <%= submit "Save", class: "btn btn-primary" %>
           </div>
         <% end %>
       </div>

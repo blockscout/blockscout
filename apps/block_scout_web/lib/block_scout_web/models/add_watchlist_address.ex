@@ -3,7 +3,7 @@ defmodule AddWatchlistAddress do
   Create watchlist address, associated with Address and Watchlist
 
   params =  %{
-    "address_hash" => "0xBA80A39FD165DFD3BFE704EFAB40B7F899DA7C4B",
+    "address_hash_string" => "0xBA80A39FD165DFD3BFE704EFAB40B7F899DA7C4B",
     "name" => "wallet"
   }
   call(watchlist, params)
@@ -11,20 +11,22 @@ defmodule AddWatchlistAddress do
 
   alias Explorer.Repo
   alias Explorer.Accounts.Watchlist
+  alias Explorer.Chain
   alias Explorer.Chain.Address
 
   def call(watchlist_id, params) do
-    %{"address_hash" => address_hash} = params
+    %{"address_hash" => address_hash_string} = params
 
-    case find_address(address_hash) do
-      {:ok, address} ->
-        address
+    case format_address(address_hash_string) do
+      {:ok, address_hash} ->
+        address_hash
+        |> find_or_create_address()
         |> params_to_attributes(params)
         |> build_watchlist_address(watchlist(watchlist_id))
         |> Repo.insert()
 
-      {:error, message} ->
-        {:error, message}
+      :error ->
+        {:error, "Wrong address"}
     end
   end
 
@@ -35,12 +37,9 @@ defmodule AddWatchlistAddress do
       "watch_coin_output" => watch_coin_output,
       "watch_erc_20_input" => watch_erc_20_input,
       "watch_erc_20_output" => watch_erc_20_output,
-      "watch_erc_721_input" => watch_erc_721_input,
-      "watch_erc_721_output" => watch_erc_721_output,
-      "watch_erc_1155_input" => watch_erc_1155_input,
-      "watch_erc_1155_output" => watch_erc_1155_output,
-      "notify_email" => notify_email,
-      "notify_feed" => notify_feed
+      "watch_nft_input" => watch_nft_input,
+      "watch_nft_output" => watch_nft_output,
+      "notify_email" => notify_email
     } = params
 
     %{
@@ -50,27 +49,39 @@ defmodule AddWatchlistAddress do
       watch_coin_output: to_bool(watch_coin_output),
       watch_erc_20_input: to_bool(watch_erc_20_input),
       watch_erc_20_output: to_bool(watch_erc_20_output),
-      watch_erc_721_input: to_bool(watch_erc_721_input),
-      watch_erc_721_output: to_bool(watch_erc_721_output),
-      watch_erc_1155_input: to_bool(watch_erc_1155_input),
-      watch_erc_1155_output: to_bool(watch_erc_1155_output),
-      notify_email: to_bool(notify_email),
-      notify_feed: to_bool(notify_feed)
+      watch_erc_721_input: to_bool(watch_nft_input),
+      watch_erc_721_output: to_bool(watch_nft_output),
+      watch_erc_1155_input: to_bool(watch_nft_input),
+      watch_erc_1155_output: to_bool(watch_nft_output),
+      notify_email: to_bool(notify_email)
     }
   end
 
   defp to_bool("true"), do: true
   defp to_bool("false"), do: false
 
+  def format_address(address_hash_string) do
+    Chain.string_to_address_hash(address_hash_string)
+  end
+
+  def find_or_create_address(address_hash) do
+    case find_address(address_hash) do
+      {:ok, address} -> address
+      {:error, :address_not_found} -> create_address(address_hash)
+    end
+  end
+
+  def create_address(address_hash) do
+    case Repo.insert(%Address{hash: address_hash}) do
+      {:ok, address} -> address
+      {:error, _} -> :wrong_address
+    end
+  end
+
   defp find_address(address_hash) do
-    try do
-      case Repo.get(Address, address_hash) do
-        nil -> {:error, :address_not_found}
-        %{} = address -> {:ok, address}
-      end
-    rescue
-      _ ->
-        {:error, :invalid_address}
+    case Repo.get(Address, address_hash) do
+      nil -> {:error, :address_not_found}
+      %Address{} = address -> {:ok, address}
     end
   end
 

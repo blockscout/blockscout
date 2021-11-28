@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.AuthController do
+defmodule BlockScoutWeb.Account.AuthController do
   use BlockScoutWeb, :controller
 
   plug(Ueberauth)
@@ -19,7 +19,6 @@ defmodule BlockScoutWeb.AuthController do
 
       %{} = user ->
         conn
-        |> put_flash(:info, "You are signed in as " <> user.name <> ".")
         |> render(:profile, user: user)
     end
   end
