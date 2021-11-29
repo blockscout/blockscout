@@ -40,7 +40,7 @@ $(document.body)
 
     $btn.tooltip('dispose')
     $btn.tooltip({
-      title: `Swap token through Curve`,
+      title: 'Swap token through Curve',
       trigger: 'hover',
       placement: 'top'
     }).tooltip('show')
@@ -50,7 +50,7 @@ $(document.body)
 
     $btn.tooltip('dispose')
     $btn.tooltip({
-      title: `Swap token through Component`,
+      title: 'Swap token through Component',
       trigger: 'hover',
       placement: 'top'
     }).tooltip('show')

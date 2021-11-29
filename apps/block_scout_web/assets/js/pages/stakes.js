@@ -379,18 +379,22 @@ async function getAccounts () {
 }
 
 async function getNetId (web3) {
-  let netId = window.ethereum.chainId
-  if (!netId) {
-    netId = await window.ethereum.request({ method: 'eth_chainId' })
-  }
-  if (!netId) {
-    const msg = `Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`
-    console.error(msg)
-    Sentry.captureMessage(msg)
+  if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
+    return window.web3.currentProvider.chainId
   } else {
-    netId = web3.utils.isHex(netId) ? web3.utils.hexToNumber(netId) : netId
+    let netId = window.ethereum.chainId
+    if (!netId) {
+      netId = await window.ethereum.request({ method: 'eth_chainId' })
+    }
+    if (!netId) {
+      const msg = `Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`
+      console.error(msg)
+      Sentry.captureMessage(msg)
+    } else {
+      netId = web3.utils.isHex(netId) ? web3.utils.hexToNumber(netId) : netId
+    }
+    return netId
   }
-  return netId
 }
 
 function hideCurrentModal () {

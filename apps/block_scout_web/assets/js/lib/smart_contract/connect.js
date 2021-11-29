@@ -3,6 +3,7 @@ import Web3Modal from 'web3modal'
 import WalletConnectProvider from '@walletconnect/web3-provider'
 import { compareChainIDs, formatError, showConnectElements, showConnectedToElements } from './common_helpers'
 import { openWarningModal } from '../modals'
+import * as Sentry from '@sentry/browser'
 
 const instanceChainId = process.env.CHAIN_ID ? parseInt(`${process.env.CHAIN_ID}`, 10) : 100
 const walletConnectOptions = { rpc: {}, chainId: instanceChainId }

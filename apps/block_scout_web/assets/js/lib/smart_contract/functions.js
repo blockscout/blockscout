@@ -3,7 +3,6 @@ import { connectSelector, disconnectSelector, getContractABI, getMethodInputs, p
 import { queryMethod, callMethod } from './interact'
 import { walletEnabled, connectToWallet, disconnectWallet, web3ModalInit } from './connect.js'
 import '../../pages/address'
-import * as Sentry from '@sentry/browser'
 
 const loadFunctions = (element) => {
   const $element = $(element)
