@@ -200,8 +200,7 @@ defmodule BlockScoutWeb.Notifier do
     verification_from_json_upload? = Map.has_key?(params, "file")
     verification_from_flattened_source? = Map.has_key?(params, "external_libraries")
 
-    verification_from_standard_json_input? =
-      verification_from_json_upload? && Map.has_key?(params, "smart_contract")
+    verification_from_standard_json_input? = verification_from_json_upload? && Map.has_key?(params, "smart_contract")
 
     compiler = if verification_from_flattened_source? || verification_from_standard_json_input?, do: :solc, else: :vyper
 
@@ -212,7 +211,7 @@ defmodule BlockScoutWeb.Notifier do
         verification_from_flattened_source? -> AddressContractVerificationViaFlattenedCodeView
         true -> AddressContractVerificationVyperView
       end
-    
+
     %{view: view, compiler: compiler}
   end
 
