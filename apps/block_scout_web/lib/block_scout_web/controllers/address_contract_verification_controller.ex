@@ -57,6 +57,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     send_resp(conn, 204, "")
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   def create(
         conn,
         %{
