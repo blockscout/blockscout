@@ -1010,7 +1010,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_token/overview.html.eex:1
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89 lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:126
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:128
 msgid "ETH"
 msgstr ""
 
@@ -1853,7 +1853,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:93
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
 msgid "Query"
 msgstr ""
 
@@ -2981,7 +2981,7 @@ msgid "Vyper contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:127
 msgid "WEI"
 msgstr ""
 
@@ -3031,7 +3031,7 @@ msgid "Working Stake Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:93
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:94
 msgid "Write"
 msgstr ""
 

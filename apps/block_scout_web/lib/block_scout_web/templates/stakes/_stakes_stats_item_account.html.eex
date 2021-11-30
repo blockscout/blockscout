@@ -12,7 +12,7 @@
         </svg>
       </div>
     <% else %>
-      <a href="https://metamask.io" target="_blank" data-selector="login-button" class="stakes-top-stats-login">Login</a> with MetaMask
+      <a target="_blank" data-selector="login-button" class="stakes-top-stats-login">Login</a>
     <% end %>
   </span>
   <span class="stakes-top-stats-label">
@@ -51,4 +51,7 @@
       </span>
     <% end %>
   </span>
+  <%= if @account do %>
+  <button disconnect-wallet class="button btn-full-primary mt-2 mr-4 hidden">Disconnect wallet</button>
+  <% end %>
 </div>

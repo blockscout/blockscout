@@ -54,7 +54,7 @@ const searchEngine = (query, record) => {
       (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
   )
   ) {
-    var searchResult = '<div>'
+    let searchResult = '<div>'
     searchResult += `<div>${record.address_hash || record.tx_hash || record.block_hash}</div>`
 
     if (record.type === 'label') {
@@ -76,7 +76,7 @@ const searchEngine = (query, record) => {
       searchResult += '</div>'
     }
     searchResult += '</div>'
-    var re = new RegExp(query, 'ig')
+    const re = new RegExp(query, 'ig')
     searchResult = searchResult.replace(re, '<mark class=\'autoComplete_highlight\'>$&</mark>')
     return searchResult
   }
