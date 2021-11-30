@@ -26,7 +26,6 @@ defmodule Indexer.Transform.CeloAccounts do
           get_addresses(logs, Events.vote_events(), fn a -> a.third_topic end),
       withdrawals: [get_withdrawals(logs, Events.withdrawal_events())],
       signers: get_signers(logs, Events.signer_events()),
-      voter_rewards: get_rewards(logs, Events.validator_group_voter_reward_events()),
       voters: get_voters(logs, Events.voter_events()),
       attestations_fulfilled: get_addresses(logs, [Events.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
@@ -69,12 +68,6 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, accounts -> do_parse_signers(log, accounts) end)
   end
 
-  def get_rewards(logs, topics) do
-    logs
-    |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
-    |> Enum.reduce([], fn log, accounts -> do_parse_rewards(log, accounts) end)
-  end
-
   def get_wallets(logs) do
     logs
     |> Enum.filter(fn log -> log.first_topic == Events.account_wallet_address_set_event() end)
@@ -108,14 +101,6 @@ defmodule Indexer.Transform.CeloAccounts do
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown signer authorization event format: #{inspect(log)}" end)
       accounts
-  end
-
-  defp do_parse_rewards(log, accounts) do
-    reward = parse_reward_params(log)
-    [reward | accounts]
-  rescue
-    _ in [FunctionClauseError, MatchError] ->
-      Logger.error(fn -> "Unknown group voter reward event format: #{inspect(log)}" end)
   end
 
   defp do_parse_wallets(log, wallets) do
@@ -188,19 +173,6 @@ defmodule Indexer.Transform.CeloAccounts do
     address = truncate_address_hash(log.second_topic)
     [signer] = decode_data(log.data, [:address])
     %{address: address, signer: signer}
-  end
-
-  defp parse_reward_params(log) do
-    address = truncate_address_hash(log.second_topic)
-    [value] = decode_data(log.data, [{:uint, 256}])
-
-    %{
-      address_hash: address,
-      reward: value,
-      log_index: log.index,
-      block_hash: log.block_hash,
-      block_number: log.block_number
-    }
   end
 
   defp parse_wallet_params(log) do

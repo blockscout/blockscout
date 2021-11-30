@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
       Runner.CeloValidatorGroups,
       Runner.CeloValidatorHistory,
       Runner.CeloValidatorStatus,
-      Runner.CeloVoterRewards,
+      Runner.CeloEpochRewards,
       Runner.CeloVoters,
       Runner.PendingCelo,
       Runner.CeloWallets,

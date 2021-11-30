@@ -34,11 +34,10 @@ defmodule Mix.Tasks.CoreContracts do
   end
 
   def query_registry(name, registry_url) do
-    result =
-      name
-      |> request_for_name()
-      |> perform_request(registry_url)
-      |> transform_result()
+    name
+    |> request_for_name()
+    |> perform_request(registry_url)
+    |> transform_result()
   end
 
   defp perform_request(json_body, source_url) do
@@ -51,7 +50,7 @@ defmodule Mix.Tasks.CoreContracts do
     end
   end
 
-  defp transform_result({:ok, %{id: id, result: address}}) do
+  defp transform_result({:ok, %{result: address}}) do
     address
     # last 40 characters of response
     |> String.slice(-40..-1)

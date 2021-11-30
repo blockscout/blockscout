@@ -8,7 +8,7 @@ defmodule Indexer.Block.FetcherTest do
   import Explorer.Celo.CacheHelper
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, PendingCelo, Log, Transaction, Wei}
+  alias Explorer.Chain.{Address, CeloPendingEpochOperation, PendingCelo, Log, Transaction, Wei}
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
 
@@ -24,7 +24,7 @@ defmodule Indexer.Block.FetcherTest do
     CeloValidator,
     CeloValidatorHistory,
     CeloValidatorGroup,
-    CeloVoterRewards,
+    CeloEpochRewards,
     CeloVoters
   }
 
@@ -66,7 +66,7 @@ defmodule Indexer.Block.FetcherTest do
       CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloVoters.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      CeloVoterRewards.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloEpochRewards.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       UncleBlock.Supervisor.Case.start_supervised!(

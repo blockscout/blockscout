@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Block, Import, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Block, CeloPendingEpochOperation, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
 
@@ -63,6 +63,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
       new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
+    end)
+    |> Multi.run(:new_celo_pending_operations, fn repo, _ ->
+      new_celo_pending_operations(repo, changes_list, insert_options)
     end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
       update_block_second_degree_relations(repo, hashes, %{
@@ -338,6 +341,32 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         conflict_target: :block_hash,
         on_conflict: PendingBlockOperation.default_on_conflict(),
         for: PendingBlockOperation,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+    end
+  end
+
+  def new_celo_pending_operations(repo, changes_list, %{timeout: timeout, timestamps: timestamps}) do
+    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
+      {:ok, []}
+    else
+      celo_pending_ops =
+        changes_list
+        |> Enum.map(& &1.number)
+        |> MapSet.new()
+        |> MapSet.to_list()
+        |> Enum.filter(&(rem(&1, 17280) == 0))
+        |> Enum.map(&Enum.find(changes_list, fn block -> block.number == &1 end))
+        |> Enum.map(&%{block_hash: &1.hash, fetch_epoch_rewards: true})
+
+      Import.insert_changes_list(
+        repo,
+        celo_pending_ops,
+        conflict_target: :block_hash,
+        on_conflict: CeloPendingEpochOperation.default_on_conflict(),
+        for: CeloPendingEpochOperation,
         returning: true,
         timeout: timeout,
         timestamps: timestamps

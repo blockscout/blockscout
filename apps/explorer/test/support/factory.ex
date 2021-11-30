@@ -18,7 +18,8 @@ defmodule Explorer.Factory do
     Address.CoinBalance,
     Address.CoinBalanceDaily,
     Block,
-    PendingCelo,
+    CeloAccount,
+    CeloPendingEpochOperation,
     ContractMethod,
     Data,
     DecompiledSmartContract,
@@ -26,12 +27,12 @@ defmodule Explorer.Factory do
     InternalTransaction,
     Log,
     PendingBlockOperation,
+    PendingCelo,
     SmartContract,
     Token,
     TokenTransfer,
     Token.Instance,
     Transaction,
-    CeloAccount,
     StakingPool,
     StakingPoolsDelegator
   }
@@ -310,6 +311,14 @@ defmodule Explorer.Factory do
       # caller MUST supply block
       # all operations will default to false
       fetch_internal_transactions: false
+    }
+  end
+
+  def celo_pending_epoch_operations_factory do
+    %CeloPendingEpochOperation{
+      # caller MUST supply block
+      # all operations will default to false
+      fetch_epoch_rewards: false
     }
   end
 

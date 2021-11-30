@@ -24,7 +24,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
     CeloValidator,
     CeloValidatorHistory,
     CeloValidatorGroup,
-    CeloVoterRewards,
+    CeloEpochRewards,
     CeloVoters
   }
 
@@ -234,7 +234,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      CeloVoterRewards.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloEpochRewards.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloVoters.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 

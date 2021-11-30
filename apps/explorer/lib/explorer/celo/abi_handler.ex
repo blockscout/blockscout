@@ -20,7 +20,10 @@ defmodule Explorer.Celo.AbiHandler do
         abi("blockchainparameters.json") ++
         abi("epochrewards.json") ++
         abi("registry.json") ++
-        abi("erc20.json")
+        abi("erc20.json") ++
+        abi("reserve.json") ++
+        abi("goldtoken.json") ++
+        abi("stabletoken.json")
 
     {:ok, contract_abi}
   end

@@ -27,6 +27,7 @@ defmodule Explorer.Celo.Util do
     |> Enum.into(%{}, fn
       {response, {_, function_name, _}} -> {function_name, response}
       {response, {_, function_name, _, _}} -> {function_name, response}
+      {response, {_, _, _, _, custom_name}} -> {custom_name, response}
     end)
   end
 
@@ -47,6 +48,10 @@ defmodule Explorer.Celo.Util do
     }
   end
 
+  defp format_request({contract_name, function_name, params, bn, _}) do
+    format_request({contract_name, function_name, params, bn})
+  end
+
   defp contract(:blockchainparameters), do: get_address("BlockchainParameters")
   defp contract(:lockedgold), do: get_address("LockedGold")
   defp contract(:validators), do: get_address("Validators")
@@ -56,6 +61,7 @@ defmodule Explorer.Celo.Util do
   defp contract(:gold), do: get_address("GoldToken")
   defp contract(:usd), do: get_address("StableToken")
   defp contract(:eur), do: get_address("StableTokenEUR")
+  defp contract(:reserve), do: get_address("Reserve")
   defp contract(:real), do: get_address("StableTokenREAL")
 
   def get_address(name) do
