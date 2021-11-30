@@ -2575,6 +2575,90 @@ defmodule BlockScoutWeb.Etherscan do
       }
     ]
   }
+
+  @contract_verifysourcecode_action %{
+    name: "verifysourcecode",
+    description: """
+    Verify a contract with its source code and contract creation information.
+    <br/>
+    <br/>
+    <p class="api-doc-list-item-text">curl POST example:</p>
+    <br/>
+    <div class='tab-content'>
+    <div class='tab-pane fade show active'>
+    <div class="tile tile-muted p-1">
+    <div class="m-2">
+    curl -d '{"addressHash":"0xc63BB6555C90846afACaC08A0F0Aa5caFCB382a1","compilerVersion":"v0.5.4+commit.9549d8ff",
+    "contractSourceCode":"pragma solidity ^0.5.4; \ncontract Test {\n}","name":"Test","optimization":false}'
+    -H "Content-Type: application/json" -X POST  "https://blockscout.com/poa/sokol/api?module=contract&action=verifysourcecode"
+    </pre>
+    </div>
+    </div>
+    </div>
+    """,
+    required_params: [
+      %{
+        name: "solidity-standard-json-input",
+        key: "codeformat",
+        placeholder: "solidity-standard-json-input",
+        type: "string",
+        description: "Format of sourceCode(supported only \"solidity-standard-json-input\")"
+      },
+      %{
+        key: "contractaddress",
+        placeholder: "contractaddress",
+        type: "string",
+        description: "The address of the contract."
+      },
+      %{
+        key: "contractname",
+        placeholder: "contractname",
+        type: "string",
+        description:
+          "The name of the contract. It could be empty string(\"\"), just contract name(\"ContractName\"), or filename and contract name(\"contracts/contract_1.sol:ContractName\")"
+      },
+      %{
+        key: "compilerversion",
+        placeholder: "compilerversion",
+        type: "string",
+        description: "The compiler version for the contract."
+      },
+      %{
+        key: "sourceCode",
+        placeholder: "sourceCode",
+        type: "string",
+        description: "Standard input json file"
+      }
+    ],
+    optional_params: [
+      %{
+        key: "constructorArguements",
+        type: "string",
+        description: "The constructor argument data provided."
+      },
+      %{
+        key: "autodetectConstructorArguments",
+        placeholder: false,
+        type: "boolean",
+        description: "Whether or not automatically detect constructor argument."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_verify_example_value),
+        type: "model",
+        model: @contract_model
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@contract_verify_example_value_error)
+      }
+    ]
+  }
+
   @contract_getabi_action %{
     name: "getabi",
     description: "Get ABI for verified contract. Also available through a GraphQL 'addresses' query.",
@@ -2821,7 +2905,8 @@ defmodule BlockScoutWeb.Etherscan do
       @contract_getsourcecode_action,
       @contract_verify_action,
       @contract_verify_via_sourcify_action,
-      @contract_verify_vyper_contract_action
+      @contract_verify_vyper_contract_action,
+      @contract_verifysourcecode_action
     ]
   }
 
