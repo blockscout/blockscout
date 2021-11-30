@@ -5,10 +5,11 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#4945](https://github.com/blockscout/blockscout/pull/4945) - Fix `Verify & Publish` button link
+- [#4938](https://github.com/blockscout/blockscout/pull/4938) - Fix displaying of nested arrays for contracts read
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
 - [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 - [#4784](https://github.com/blockscout/blockscout/pull/4784) - Fix logs query
-- [#4945](https://github.com/blockscout/blockscout/pull/4945) - Fix `Verify & Publish` button link
 
 ### Chore
 
