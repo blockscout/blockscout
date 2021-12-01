@@ -141,7 +141,7 @@ defmodule BlockScoutWeb.AddressController do
       validation_count_task,
       crc_total_worth_task
     ]
-    |> Task.yield_many(:timer.seconds(180))
+    |> Task.yield_many(:timer.seconds(300))
     |> Enum.map(fn {_task, res} ->
       case res do
         {:ok, result} ->
