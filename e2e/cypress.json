@@ -1,0 +1,21 @@
+{
+    "baseUrl": "https://explorer.testnet.blockgns.com/",
+    "chromeWebSecurity": false,
+    "video": false,
+    "pageLoadTimeout": 180000,
+    "defaultCommandTimeout": 40000,
+    "execTimeout": 180000,
+    "taskTimeout": 180000,
+    "requestTimeout": 180000,
+    "responseTimeout": 180000,
+    "viewportHeight": 1200,
+    "viewportWidth": 1600,
+    "waitForAnimations": true,
+    "include": [
+        "node_modules/cypress",
+        "./cypress/**/*.js"
+    ],
+    "retries": {
+        "runMode": 2
+    }
+}
