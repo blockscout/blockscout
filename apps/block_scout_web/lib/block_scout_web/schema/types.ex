@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.Schema.Types do
     CeloValidator,
     CeloValidatorGroup,
     InternalTransaction,
+    TokenTransfer,
     Transaction
   }
 
@@ -326,6 +327,7 @@ defmodule BlockScoutWeb.Schema.Types do
   node object(:celo_transfer, id_fetcher: &celo_transfer_id_fetcher/2) do
     field(:value, :decimal)
     field(:token, :string)
+    field(:token_address, :string)
     field(:block_number, :integer)
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
@@ -362,6 +364,19 @@ defmodule BlockScoutWeb.Schema.Types do
     connection field(:celo_transfer, node_type: :celo_transfer) do
       arg(:count, :integer)
       resolve(&CeloTransfer.get_by/3)
+
+      complexity(fn
+        %{first: first}, child_complexity ->
+          first * child_complexity
+
+        %{last: last}, child_complexity ->
+          last * child_complexity
+      end)
+    end
+
+    connection field(:token_transfer, node_type: :celo_transfer) do
+      arg(:count, :integer)
+      resolve(&TokenTransfer.get_by/3)
 
       complexity(fn
         %{first: first}, child_complexity ->
