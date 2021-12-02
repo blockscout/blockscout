@@ -2627,7 +2627,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "sourceCode",
         placeholder: "sourceCode",
         type: "string",
-        description: "Standard input json file"
+        description: "Standard input json"
       }
     ],
     optional_params: [
