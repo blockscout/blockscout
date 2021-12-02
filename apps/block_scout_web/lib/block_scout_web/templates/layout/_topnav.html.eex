@@ -47,7 +47,6 @@
                     to: transaction_path(@conn, :index)
                   ) %>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
-              <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
             </div>
           </li>
           <%= if Chain.bridged_tokens_enabled?() do %>
