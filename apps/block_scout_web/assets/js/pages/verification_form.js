@@ -138,7 +138,7 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
-    function standardJSONBehavior() {
+    function standardJSONBehavior () {
       $('#json-dropzone-form').removeClass('dz-clickable')
       this.on('addedfile', function (_file) {
         $('#verify-via-standart-json-input-submit').prop('disabled', false)
@@ -164,30 +164,30 @@ if ($contractVerificationPage.length) {
         changeVisibilityOfVerifyButton(this.files.length)
       })
     }
-  
-  var $jsonDropzoneMetadata = $('#metadata-json-dropzone')
-  var $jsonDropzoneStandardInput = $('#json-dropzone-form')
-  
-  if ($jsonDropzoneMetadata.length || $jsonDropzoneStandardInput.length) {
-    var func = $jsonDropzoneMetadata.length ? metadataJSONBehavior : standardJSONBehavior
-    var maxFiles = $jsonDropzoneMetadata.length ? 100 : 1
-    var acceptedFiles = $jsonDropzoneMetadata.length ? 'text/plain,application/json,.sol,.json' : 'text/plain,application/json,.json'
-    var tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone' : '#json-dropzone-form'
-    var previewsContainer = $jsonDropzoneMetadata.length ? undefined : '#dropzone-previews'
 
-    var dropzone = new Dropzone(tag, {
-      autoProcessQueue: false,
-      acceptedFiles: acceptedFiles,
-      parallelUploads: 100,
-      uploadMultiple: true,
-      addRemoveLinks: true,
-      maxFilesize: 10,
-      maxFiles: maxFiles,
-      previewsContainer: previewsContainer,
-      params: { address_hash: $('#smart_contract_address_hash').val() },
-      init: func
-    })
-  }
+    const $jsonDropzoneMetadata = $('#metadata-json-dropzone')
+    const $jsonDropzoneStandardInput = $('#json-dropzone-form')
+
+    if ($jsonDropzoneMetadata.length || $jsonDropzoneStandardInput.length) {
+      const func = $jsonDropzoneMetadata.length ? metadataJSONBehavior : standardJSONBehavior
+      const maxFiles = $jsonDropzoneMetadata.length ? 100 : 1
+      const acceptedFiles = $jsonDropzoneMetadata.length ? 'text/plain,application/json,.sol,.json' : 'text/plain,application/json,.json'
+      const tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone' : '#json-dropzone-form'
+      const previewsContainer = $jsonDropzoneMetadata.length ? undefined : '#dropzone-previews'
+
+      var dropzone = new Dropzone(tag, {
+        autoProcessQueue: false,
+        acceptedFiles: acceptedFiles,
+        parallelUploads: 100,
+        uploadMultiple: true,
+        addRemoveLinks: true,
+        maxFilesize: 10,
+        maxFiles: maxFiles,
+        previewsContainer: previewsContainer,
+        params: { address_hash: $('#smart_contract_address_hash').val() },
+        init: func
+      })
+    }
 
     function changeVisibilityOfVerifyButton (filesLength) {
       if (filesLength > 0) {
