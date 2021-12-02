@@ -31,9 +31,9 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status
-                     to_address_hash revert_reason)a
+                     to_address_hash revert_reason r s v)a
 
-  @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
+  @required_attrs ~w(from_address_hash gas gas_price hash input nonce value)a
 
   @required_attrs_for_1559 ~w(type)a
 
