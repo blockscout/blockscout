@@ -985,7 +985,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:30
-#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:78
 msgid "Drop sources and metadata JSON file or click here"
 msgstr ""
 
@@ -2118,7 +2117,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:23
-#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:74
 msgid "Sources and Metadata JSON"
 msgstr ""
 
@@ -2950,11 +2948,6 @@ msgid "Via flattened source code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
-msgid "Via standard JSON input"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:175
 msgid "View All Blocks"
 msgstr ""
@@ -3259,4 +3252,19 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:18
 msgid "validator"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:78
+msgid "Drop the standard input JSON file or click here"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:74
+msgid "Standard Input JSON"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
+msgid "Via Standard Input JSON"
 msgstr ""
