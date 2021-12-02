@@ -138,55 +138,56 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
-    var dropzone
-    if ($('#metadata-json-dropzone').length) {
-      dropzone = new Dropzone('#metadata-json-dropzone', {
-        autoProcessQueue: false,
-        acceptedFiles: 'text/plain,application/json,.sol,.json',
-        parallelUploads: 100,
-        uploadMultiple: true,
-        addRemoveLinks: true,
-        maxFilesize: 10,
-        params: { address_hash: $('#smart_contract_address_hash').val() },
-        init: function () {
-          this.on('addedfile', function (_file) {
-            changeVisibilityOfVerifyButton(this.files.length)
-            $('#file-help-block').text('')
-          })
-
-          this.on('removedfile', function (_file) {
-            changeVisibilityOfVerifyButton(this.files.length)
-          })
-        }
+    function standardJSONBehavior() {
+      $('#json-dropzone-form').removeClass('dz-clickable')
+      this.on('addedfile', function (_file) {
+        $('#verify-via-standart-json-input-submit').prop('disabled', false)
+        $('#file-help-block').text('')
+        $('#dropzone-previews').addClass('dz-started')
       })
-    } else if ($('#json-dropzone-form').length) {
-      dropzone = new Dropzone('#json-dropzone-form', {
-        autoProcessQueue: false,
-        acceptedFiles: 'text/plain,application/json,.json',
-        parallelUploads: 100,
-        maxFiles: 1,
-        uploadMultiple: true,
-        addRemoveLinks: true,
-        previewsContainer: '#dropzone-previews',
-        maxFilesize: 10,
-        params: { address_hash: $('#smart_contract_address_hash').val() },
-        init: function () {
-          $('#json-dropzone-form').removeClass('dz-clickable')
-          this.on('addedfile', function (_file) {
-            $('#verify-via-standart-json-input-submit').prop('disabled', false)
-            $('#file-help-block').text('')
-            $('#dropzone-previews').addClass('dz-started')
-          })
 
-          this.on('removedfile', function (_file) {
-            if (this.files.length === 0) {
-              $('#verify-via-standart-json-input-submit').prop('disabled', true)
-              $('#dropzone-previews').removeClass('dz-started')
-            }
-          })
+      this.on('removedfile', function (_file) {
+        if (this.files.length === 0) {
+          $('#verify-via-standart-json-input-submit').prop('disabled', true)
+          $('#dropzone-previews').removeClass('dz-started')
         }
       })
     }
+
+    function metadataJSONBehavior () {
+      this.on('addedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+        $('#file-help-block').text('')
+      })
+
+      this.on('removedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+      })
+    }
+  
+  var $jsonDropzoneMetadata = $('#metadata-json-dropzone')
+  var $jsonDropzoneStandardInput = $('#json-dropzone-form')
+  
+  if ($jsonDropzoneMetadata.length || $jsonDropzoneStandardInput.length) {
+    var func = $jsonDropzoneMetadata.length ? metadataJSONBehavior : standardJSONBehavior
+    var maxFiles = $jsonDropzoneMetadata.length ? 100 : 1
+    var acceptedFiles = $jsonDropzoneMetadata.length ? 'text/plain,application/json,.sol,.json' : 'text/plain,application/json,.json'
+    var tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone' : '#json-dropzone-form'
+    var previewsContainer = $jsonDropzoneMetadata.length ? undefined : '#dropzone-previews'
+
+    var dropzone = new Dropzone(tag, {
+      autoProcessQueue: false,
+      acceptedFiles: acceptedFiles,
+      parallelUploads: 100,
+      uploadMultiple: true,
+      addRemoveLinks: true,
+      maxFilesize: 10,
+      maxFiles: maxFiles,
+      previewsContainer: previewsContainer,
+      params: { address_hash: $('#smart_contract_address_hash').val() },
+      init: func
+    })
+  }
 
     function changeVisibilityOfVerifyButton (filesLength) {
       if (filesLength > 0) {
