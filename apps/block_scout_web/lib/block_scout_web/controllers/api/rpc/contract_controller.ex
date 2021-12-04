@@ -6,10 +6,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.{Hash, SmartContract}
-  alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.Chain.SmartContract.VerificationStatus
-  alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
+  alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
+  alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
