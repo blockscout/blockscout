@@ -107,15 +107,15 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   def checkverifystatus(conn, %{"guid" => guid}) do
     case VerificationStatus.fetch_status(guid) do
-      :pending -> 
+      :pending ->
         render(conn, :show, %{result: "Pending in queue"})
 
-      :pass -> 
+      :pass ->
         render(conn, :show, %{result: "Pass - Verified"})
 
       :fail ->
         render(conn, :show, %{result: "Fail - Unable to verify"})
-      
+
       :unknown_uid ->
         render(conn, :show, %{result: "Unknown UID"})
     end
