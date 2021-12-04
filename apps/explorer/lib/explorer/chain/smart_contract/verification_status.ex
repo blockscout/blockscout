@@ -38,12 +38,9 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   def changeset(%__MODULE__{} = struct, params \\ %{}) do
     casted_params = encode_status(params)
 
-    to_return =
-      struct
-      |> cast(casted_params, @required_fields)
-      |> validate_required(@required_fields)
-
-    to_return
+    struct
+    |> cast(casted_params, @required_fields)
+    |> validate_required(@required_fields)
   end
 
   def encode_status(%{status: status} = changeset) do
@@ -61,6 +58,8 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
         changeset
     end
   end
+	
+	def encode_status(changeset), do: changeset
 
   def decode_status(number) when number in [0, 1, 2, 3] do
     case number do
