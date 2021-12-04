@@ -51,7 +51,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     end)
   end
 
-  def evaluate_authenticity_via_standart_json_input(address_hash, params, json_input) do
+  def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
     verify(address_hash, params, json_input)
   end
 
