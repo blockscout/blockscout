@@ -5,6 +5,7 @@
 
 ### Fixes
 - [#4977](https://github.com/blockscout/blockscout/pull/4977) - Export token transfers on address: include transfers on contract itself
+- [#4976](https://github.com/blockscout/blockscout/pull/4976) - Handle :econnrefused in pending transactions fetcher
 - [#4965](https://github.com/blockscout/blockscout/pull/4965) - Fix search field appearance on medium size screens
 - [#4945](https://github.com/blockscout/blockscout/pull/4945) - Fix `Verify & Publish` button link
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
