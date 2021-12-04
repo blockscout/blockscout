@@ -37,11 +37,13 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
 
   def changeset(%__MODULE__{} = struct, params \\ %{}) do
     casted_params = encode_status(params)
-		to_return =
-			struct
-			|> cast(casted_params, @required_fields)
-			|> validate_required(@required_fields)
-		to_return
+
+    to_return =
+      struct
+      |> cast(casted_params, @required_fields)
+      |> validate_required(@required_fields)
+
+    to_return
   end
 
   def encode_status(%{status: status} = changeset) do
