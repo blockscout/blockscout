@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
+  alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
@@ -87,28 +88,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       ) do
     with {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
-         {:publish, {:ok, _}} <-
-           {:publish, Publisher.publish_with_standart_json_input(fetched_params, json_input)} do
-      # VerificationStatus.generate_uid(address_hash)
-      render(conn, :show, %{result: address_hash})
+         uid <- VerificationStatus.generate_uid(address_hash) do
+      Que.add(SolidityPublisherWorker, {fetched_params, json_input, uid})
+
+      render(conn, :show, %{result: uid})
     else
-      {:publish,
-       {:error,
-        %Ecto.Changeset{
-          errors: [
-            address_hash:
-              {"has already been taken",
-               [
-                 constraint: :unique,
-                 constraint_name: "smart_contracts_address_hash_index"
-               ]}
-          ]
-        }}} ->
-        render(conn, :error, error: "Smart-contract already verified.")
-
-      {:publish, _err} ->
-        render(conn, :show, %{result: address_hash})
-
       {:format, :error} ->
         render(conn, :error, error: "Invalid address hash")
 
