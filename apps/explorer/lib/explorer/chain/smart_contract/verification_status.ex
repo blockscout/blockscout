@@ -58,8 +58,8 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
         changeset
     end
   end
-	
-	def encode_status(changeset), do: changeset
+
+  def encode_status(changeset), do: changeset
 
   def decode_status(number) when number in [0, 1, 2, 3] do
     case number do
