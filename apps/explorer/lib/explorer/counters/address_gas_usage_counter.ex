@@ -17,7 +17,7 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
     read_concurrency: true
   ]
 
-  config = Application.get_env(:explorer, Explorer.Counters.AddressTransactionsGasUsageCounter)
+  config = Application.get_env(:explorer, __MODULE__)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
