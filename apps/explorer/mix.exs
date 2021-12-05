@@ -56,6 +56,7 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bamboo, "~> 2.2.0"},
       {:bcrypt_elixir, "~> 1.0"},
       # benchmark optimizations
       {:benchee, "~> 0.13.1", only: :test},

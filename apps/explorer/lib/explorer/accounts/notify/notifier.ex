@@ -1,4 +1,5 @@
 defmodule Explorer.Accounts.Notify.Notifier do
+  alias Explorer.Accounts.Notify.Email
   alias Explorer.Accounts.Notify.Notification
   alias Explorer.Accounts.WatchlistAddress
   alias Explorer.Accounts.WatchlistNotification
@@ -31,7 +32,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
       )
 
     Repo.insert(notification)
-    # send_email(notification, address)
+    Email.send(notification, address)
   end
 
   @doc """

@@ -14,13 +14,11 @@ defmodule Explorer.Accounts.WatchlistNotification do
   schema "account_watchlist_notifications" do
     field(:amount, :decimal)
     field(:block_number, :integer)
-    field(:decimals, :integer)
     field(:direction, :string)
     field(:method, :string)
     field(:name, :string)
     field(:tx_fee, :decimal)
     field(:type, :string)
-    field(:value, :integer)
     field(:viewed_at, :integer)
 
     belongs_to(:watchlist_address, WatchlistAddress)
@@ -43,7 +41,6 @@ defmodule Explorer.Accounts.WatchlistNotification do
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
-      primary_key: true,
       references: :hash,
       type: Hash.Full
     )

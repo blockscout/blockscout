@@ -252,6 +252,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("SENDGRID_API_KEY")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

@@ -19,7 +19,7 @@ defmodule UserFromAuth do
   end
 
   defp create_identity(auth) do
-    case Repo.insert(%Identity{uid: auth.uid}) do
+    case Repo.insert(%Identity{uid: auth.uid, email: email_from_auth(auth)}) do
       {:ok, identity} ->
         case add_watchlist(identity) do
           {:ok, _watchlist} -> basic_info(auth, identity)
