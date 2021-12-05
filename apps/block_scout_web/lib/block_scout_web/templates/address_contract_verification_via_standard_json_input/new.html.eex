@@ -1,4 +1,5 @@
 <% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
+<% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "" %>
 <% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
 <% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
 <% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
@@ -17,7 +18,7 @@
                 fn f -> %>      
       <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
 
-      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name. Also contract name could be: <span class=\"tooltip-quote\"><strong>path/to/file.sol:MyContract</strong></span>" %>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name. Also contract name could be: <span class=\"tooltip-quote\"><strong>path/to/file.sol:MyContract</strong></span>", contract_name_value: contract_name_value %>
 
       <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
@@ -40,16 +41,7 @@
 
       <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_fetch_constructor_args.html", f: f, fetch_constructor_arguments_automatically: fetch_constructor_arguments_automatically %>
 
-      <div class="smart-contract-form-group constructor-arguments" style="display: <%= display_constructor_arguments_text_area %>">
-        <div class="smart-contract-form-group-inner-wrapper">
-          <%= label f, :constructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
-          <div class="center-column">
-            <%= textarea f, :constructor_arguments, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-constructor-arguments-help-block" %>
-            <%= error_tag f, :constructor_arguments, id: "contract-constructor-arguments-help-block", class: "text-danger form-error", "data-test": "contract-constructor-arguments-error" %>
-          </div>
-          <div class="smart-contract-form-group-tooltip">Add arguments in <a href="https://solidity.readthedocs.io/en/develop/abi-spec.html" target="_blank">ABI hex encoded form</a>. Constructor arguments are written right to left, and will be found at the end of the input created bytecode. They may also be <a href="https://abi.hashex.org/" target="_blank">parsed here.</a></div>
-        </div>
-      </div>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: display_constructor_arguments_text_area %>
 
       <div class="smart-contract-form-buttons">
         <button
