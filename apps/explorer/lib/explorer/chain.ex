@@ -553,6 +553,29 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @doc """
+  address_hash_to_token_transfers_including_contract/2 function returns token transfers on address (to/from/contract).
+  It is used by CSV export of token transfers button.
+  """
+  @spec address_hash_to_token_transfers_including_contract(Hash.Address.t(), Keyword.t()) :: [TokenTransfer.t()]
+  def address_hash_to_token_transfers_including_contract(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    query =
+      from(
+        token_transfer in TokenTransfer,
+        where: token_transfer.to_address_hash == ^address_hash,
+        or_where: token_transfer.from_address_hash == ^address_hash,
+        or_where: token_transfer.token_contract_address_hash == ^address_hash
+      )
+
+    query
+    |> handle_paging_options(paging_options)
+    |> preload(transaction: :block)
+    |> preload(:token)
+    |> Repo.all()
+  end
+
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
@@ -846,7 +869,7 @@ defmodule Explorer.Chain do
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
-  @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_incoming_transaction_gas_usage(address_hash) do
     to_address_query =
       from(
@@ -857,7 +880,7 @@ defmodule Explorer.Chain do
     Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
   end
 
-  @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_outcoming_transaction_gas_usage(address_hash) do
     to_address_query =
       from(
@@ -2559,12 +2582,12 @@ defmodule Explorer.Chain do
     Repo.aggregate(query, :count, timeout: :infinity)
   end
 
-  @spec address_to_gas_usage_count(Address.t()) :: non_neg_integer()
+  @spec address_to_gas_usage_count(Address.t()) :: Decimal.t() | nil
   def address_to_gas_usage_count(address) do
     if contract?(address) do
       incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
 
-      if incoming_transaction_gas_usage == 0 do
+      if Decimal.cmp(incoming_transaction_gas_usage, 0) == :eq do
         address_to_outcoming_transaction_gas_usage(address.hash)
       else
         incoming_transaction_gas_usage

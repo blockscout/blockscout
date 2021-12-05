@@ -4,7 +4,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, AddressTransactionCsvExporter, TokenTransfer}
+  alias Explorer.Chain.{Address, TokenTransfer}
   alias NimbleCSV.RFC4180
 
   @page_size 150
@@ -16,18 +16,30 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
     to_block = Chain.convert_date_to_max_block(to_period)
 
     address.hash
-    |> AddressTransactionCsvExporter.fetch_all_transactions(from_block, to_block, @paging_options)
-    |> to_token_transfers()
+    |> fetch_all_token_transfers(from_block, to_block, @paging_options)
     |> to_csv_format(address)
     |> dump_to_stream()
   end
 
-  defp to_token_transfers(transactions) do
-    transactions
-    |> Enum.flat_map(fn transaction ->
-      transaction.token_transfers
-      |> Enum.map(fn transfer -> %{transfer | transaction: transaction} end)
-    end)
+  def fetch_all_token_transfers(address_hash, from_block, to_block, paging_options, acc \\ []) do
+    options =
+      []
+      |> Keyword.put(:paging_options, paging_options)
+      |> Keyword.put(:from_block, from_block)
+      |> Keyword.put(:to_block, to_block)
+
+    token_transfers = Chain.address_hash_to_token_transfers_including_contract(address_hash, options)
+
+    new_acc = token_transfers ++ acc
+
+    case Enum.split(token_transfers, @page_size) do
+      {_token_transfers, [%TokenTransfer{block_number: block_number, log_index: log_index}]} ->
+        new_paging_options = %{@paging_options | key: {block_number, log_index}}
+        fetch_all_token_transfers(address_hash, from_block, to_block, new_paging_options, new_acc)
+
+      {_, []} ->
+        new_acc
+    end
   end
 
   defp dump_to_stream(transactions) do
@@ -58,9 +70,9 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
           to_string(token_transfer.transaction_hash),
           token_transfer.transaction.block_number,
           token_transfer.transaction.block.timestamp,
-          token_transfer.from_address |> to_string() |> String.downcase(),
-          token_transfer.to_address |> to_string() |> String.downcase(),
-          token_transfer.token_contract_address |> to_string() |> String.downcase(),
+          token_transfer.from_address_hash |> to_string() |> String.downcase(),
+          token_transfer.to_address_hash |> to_string() |> String.downcase(),
+          token_transfer.token_contract_address_hash |> to_string() |> String.downcase(),
           type(token_transfer, address.hash),
           token_transfer.token.symbol,
           token_transfer.amount,
