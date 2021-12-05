@@ -93,16 +93,16 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   end
 
   def fetch_status(uid) do
-		case validate_uid(uid) do
-			{:ok, valid_uid} ->
-				__MODULE__
-				|> Repo.get_by(uid: valid_uid)
-				|> (&if(is_nil(&1), do: 3, else: Map.get(&1, :status))).()
-				|> decode_status()
+    case validate_uid(uid) do
+      {:ok, valid_uid} ->
+        __MODULE__
+        |> Repo.get_by(uid: valid_uid)
+        |> (&if(is_nil(&1), do: 3, else: Map.get(&1, :status))).()
+        |> decode_status()
 
-			_ ->
-				:unknown_uid
-		end
+      _ ->
+        :unknown_uid
+    end
   end
 
   def generate_uid(address_hash) do
@@ -117,18 +117,19 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
     end
   end
 
-	def validate_uid(<<_address::binary-size(40), timestamp_hex::binary>> = uid) do
-		case Integer.parse(timestamp_hex, 16)do
-			{timestamp, ""} ->
-				if (DateTime.utc_now() |> DateTime.to_unix()) > timestamp do
-					{:ok, uid}
-				else
-					:error
-				end
-			_ ->
-				:error
-		end
-	end
+  def validate_uid(<<_address::binary-size(40), timestamp_hex::binary>> = uid) do
+    case Integer.parse(timestamp_hex, 16) do
+      {timestamp, ""} ->
+        if DateTime.utc_now() |> DateTime.to_unix() > timestamp do
+          {:ok, uid}
+        else
+          :error
+        end
 
-	def validate_uid(_), do: :error
+      _ ->
+        :error
+    end
+  end
+
+  def validate_uid(_), do: :error
 end
