@@ -23,7 +23,6 @@ defmodule BlockScoutWeb.Mixfile do
         credo: :test,
         dialyzer: :test
       ],
-      xref: [exclude: [Explorer.Chain.SmartContract.VerificationStatus]],
       start_permanent: Mix.env() == :prod,
       version: "0.0.1"
     ]

@@ -110,7 +110,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
       :error ->
         nil
 
-      {:ok, %Explorer.Chain.Hash{byte_count: 20, bytes: address_hash}} ->
+      {:ok, %Hash{byte_count: 20, bytes: address_hash}} ->
         address_encoded = Base.encode16(address_hash, case: :lower)
         timestamp = DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string(16) |> String.downcase()
         address_encoded <> timestamp
