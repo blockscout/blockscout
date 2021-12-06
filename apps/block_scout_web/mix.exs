@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_cldr_units, "~> 2.5"},
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
-      {:explorer, in_umbrella: true},
+      #{:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
       {:file_info, "~> 0.0.4"},
       # HTML CSS selectors for Phoenix controller tests
