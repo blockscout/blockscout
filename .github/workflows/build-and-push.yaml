@@ -7,9 +7,9 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-*'
 
-# env:
-#   ## overrides the docker image name (name is repo name with docker- prefix stripped)
-#   DOCKER_IMAGE: foobar
+env:
+  # DOCKER_IMAGE: ""
+  DOCKER_REPO: matterlabs
 
 jobs:
   pre:
@@ -21,9 +21,14 @@ jobs:
         uses: actions/github-script@v4
         id: set
         with:
-          script: |
-            const image = '${{ github.event.repository.full_name }}'.toLowerCase().replace(/\/docker-/, '/')
-            core.setOutput('image', '${{ env.DOCKER_IMAGE }}' ? '${{ env.DOCKER_IMAGE }}' : image)
+          script: |-
+            const imageRepo = '${{ github.event.repository.owner.login }}'.toLowerCase().replace(/\/docker-/, '/')
+            const imageName = '${{ github.event.repository.name }}'.toLowerCase().replace(/\/docker-/, '/')
+            let imagePaths = [
+              '${{ env.DOCKER_REPO }}' == '' ? imageRepo : '${{ env.DOCKER_REPO }}',
+              '${{ env.DOCKER_IMAGE }}' == '' ? imageName : '${{ env.DOCKER_IMAGE }}',
+            ]
+            core.setOutput('image', imagePaths.join('/'))
 
   build:
     name: Build Docker Image
