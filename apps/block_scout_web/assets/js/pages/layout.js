@@ -10,7 +10,7 @@ $(document).click(function (event) {
 
 const search = (value) => {
   if (value) {
-    window.location.href = `/search?q=${value}`
+    window.location.href = `/xdai/mainnet/search?q=${value}`
   }
 }
 
