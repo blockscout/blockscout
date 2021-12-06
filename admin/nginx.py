@@ -1,6 +1,6 @@
 import os
 from admin import (NGINX_CONFIG_PATH, EXPLORERS_META_DATA_PATH, SSL_CRT_PATH,
-                   SSL_KEY_PATH, SSL_DIR_PATH)
+                   SSL_KEY_PATH)
 import crossplane
 
 from admin.endpoints import read_json
@@ -18,13 +18,13 @@ def generate_ssl_nginx_config(schain_name, explorer_endpoint):
             {
                 "directive": "ssl_certificate",
                 "args": [
-                    SSL_CRT_PATH
+                    '/data/server.crt'
                 ]
             },
             {
                 "directive": "ssl_certificate_key",
                 "args": [
-                    SSL_KEY_PATH
+                    '/data/server.key'
                 ]
             },
             {
