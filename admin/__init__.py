@@ -13,4 +13,8 @@ NGINX_TEMP_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.temp.conf')
 ENDPOINT = os.environ['ETH_ENDPOINT']
 PROXY_DOMAIN_NAME = os.environ.get('PROXY_DOMAIN')
 
+SSL_DIR_PATH = os.environ.get('SSL_DIR')
+SSL_CRT_PATH = os.path.join(SSL_DIR_PATH, 'server.crt') if SSL_DIR_PATH else None
+SSL_KEY_PATH = os.path.join(SSL_DIR_PATH, 'server.key') if SSL_DIR_PATH else None
+
 assert os.path.isfile(ABI_FILEPATH), "ABI not found"
