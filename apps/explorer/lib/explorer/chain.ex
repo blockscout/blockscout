@@ -3358,7 +3358,7 @@ defmodule Explorer.Chain do
       }
 
       iex> Base.encode16(<<90, 174, 182, 5, 63, 62, 148, 201, 185, 160, 159, 51, 102, 148, 53, 231, 239, 27, 234, 237>>, case: :lower)
-        "5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"
+      "5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"
 
   `String.t` format must always have 40 hexadecimal digits after the `0x` base prefix.
 
