@@ -867,7 +867,7 @@ defmodule Explorer.Chain do
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
-  @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_incoming_transaction_gas_usage(address_hash) do
     to_address_query =
       from(
@@ -878,7 +878,7 @@ defmodule Explorer.Chain do
     Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
   end
 
-  @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_outcoming_transaction_gas_usage(address_hash) do
     to_address_query =
       from(
@@ -2527,12 +2527,12 @@ defmodule Explorer.Chain do
     Repo.aggregate(query, :count, timeout: :infinity)
   end
 
-  @spec address_to_gas_usage_count(Address.t()) :: non_neg_integer()
+  @spec address_to_gas_usage_count(Address.t()) :: Decimal.t() | nil
   def address_to_gas_usage_count(address) do
     if contract?(address) do
       incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
 
-      if incoming_transaction_gas_usage == 0 do
+      if Decimal.cmp(incoming_transaction_gas_usage, 0) == :eq do
         address_to_outcoming_transaction_gas_usage(address.hash)
       else
         incoming_transaction_gas_usage

@@ -398,7 +398,7 @@ msgid "Block number containing the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:254
+#: lib/block_scout_web/templates/address/overview.html.eex:258
 msgid "Block number in which the address was updated."
 msgstr ""
 
@@ -420,7 +420,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:48
-#: lib/block_scout_web/templates/address/overview.html.eex:271 lib/block_scout_web/templates/address_validation/index.html.eex:15
+#: lib/block_scout_web/templates/address/overview.html.eex:275 lib/block_scout_web/templates/address_validation/index.html.eex:15
 #: lib/block_scout_web/views/address_view.ex:356
 msgid "Blocks Validated"
 msgstr ""
@@ -1151,7 +1151,7 @@ msgid "Favorites"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:245
+#: lib/block_scout_web/templates/address/overview.html.eex:248
 msgid "Fetching gas used..."
 msgstr ""
 
@@ -1220,7 +1220,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:240
-#: lib/block_scout_web/templates/address/overview.html.eex:270
+#: lib/block_scout_web/templates/address/overview.html.eex:274
 msgid "Gas used by the address."
 msgstr ""
 
@@ -1377,7 +1377,7 @@ msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:255
+#: lib/block_scout_web/templates/address/overview.html.eex:259
 msgid "Last Balance Update"
 msgstr ""
 
