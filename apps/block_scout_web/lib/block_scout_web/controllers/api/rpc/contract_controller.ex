@@ -6,7 +6,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.SmartContract.Solidity.Publisher
+  alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
@@ -86,27 +88,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       ) do
     with {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
-         {:publish, {:ok, _}} <-
-           {:publish, Publisher.publish_with_standart_json_input(fetched_params, json_input)} do
-      render(conn, :show, %{result: address_hash})
+         uid <- VerificationStatus.generate_uid(address_hash) do
+      Que.add(SolidityPublisherWorker, {fetched_params, json_input, uid})
+
+      render(conn, :show, %{result: uid})
     else
-      {:publish,
-       {:error,
-        %Ecto.Changeset{
-          errors: [
-            address_hash:
-              {"has already been taken",
-               [
-                 constraint: :unique,
-                 constraint_name: "smart_contracts_address_hash_index"
-               ]}
-          ]
-        }}} ->
-        render(conn, :error, error: "Smart-contract already verified.")
-
-      {:publish, _err} ->
-        render(conn, :show, %{result: address_hash})
-
       {:format, :error} ->
         render(conn, :error, error: "Invalid address hash")
 
@@ -119,11 +105,19 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     render(conn, :error, error: "Missing sourceCode or contractaddress fields")
   end
 
-  def checkverifystatus(conn, %{"guid" => address_hash}) do
-    if Chain.smart_contract_verified?(address_hash) do
-      render(conn, :show, %{result: "Pass - Verified"})
-    else
-      render(conn, :show, %{result: "Fail - Unable to verify"})
+  def checkverifystatus(conn, %{"guid" => guid}) do
+    case VerificationStatus.fetch_status(guid) do
+      :pending ->
+        render(conn, :show, %{result: "Pending in queue"})
+
+      :pass ->
+        render(conn, :show, %{result: "Pass - Verified"})
+
+      :fail ->
+        render(conn, :show, %{result: "Fail - Unable to verify"})
+
+      :unknown_uid ->
+        render(conn, :show, %{result: "Unknown UID"})
     end
   end
 
@@ -517,6 +511,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractname", "name")
     |> required_param(params, "compilerversion", "compiler_version")
     |> optional_param(params, "constructorArguements", "constructor_arguments")
+<<<<<<< HEAD
+=======
+    |> optional_param(params, "constructorArguments", "constructor_arguments")
+>>>>>>> origin/np-add-standart-json-verification
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do

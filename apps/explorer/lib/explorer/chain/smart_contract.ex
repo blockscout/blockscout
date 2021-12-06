@@ -366,6 +366,7 @@ defmodule Explorer.Chain.SmartContract do
   defp error_message(:generated_bytecode), do: "Bytecode does not match, please try again."
   defp error_message(:constructor_arguments), do: "Constructor arguments do not match, please try again."
   defp error_message(:name), do: "Wrong contract name, please try again."
+  defp error_message(:json), do: "Invalid JSON file."
   defp error_message(_), do: "There was an error validating your contract, please try again."
   defp error_message(:compilation, error_message), do: "There was an error compiling your contract: #{error_message}"
 end
