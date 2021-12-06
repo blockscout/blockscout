@@ -14,7 +14,7 @@ mix local.hex --force
 
 mix deps.get
 
-mix compile
+mix compile --warnings-as-errors=false
 
 # Install node dependencies
 pushd apps/explorer || exit 1
