@@ -511,10 +511,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractname", "name")
     |> required_param(params, "compilerversion", "compiler_version")
     |> optional_param(params, "constructorArguements", "constructor_arguments")
-<<<<<<< HEAD
-=======
     |> optional_param(params, "constructorArguments", "constructor_arguments")
->>>>>>> origin/np-add-standart-json-verification
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do
