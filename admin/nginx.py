@@ -12,7 +12,8 @@ def generate_ssl_nginx_config(schain_name, explorer_endpoint):
             {
                 "directive": "listen",
                 "args": [
-                    '443'
+                    '443',
+                    'ssl'
                 ]
             },
             {
