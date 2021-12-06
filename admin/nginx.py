@@ -1,3 +1,4 @@
+import os
 from admin import (NGINX_CONFIG_PATH, EXPLORERS_META_DATA_PATH, SSL_CRT_PATH,
                    SSL_KEY_PATH, SSL_DIR_PATH)
 import crossplane
@@ -105,7 +106,7 @@ def regenerate_nginx_config():
         explorer_endpoint = f'http://127.0.0.1:{explorers[schain_name]["port"]}'
         schain_config = generate_schain_base_nginx_config(schain_name, explorer_endpoint)
         nginx_cfg.append(schain_config)
-        if SSL_DIR_PATH:
+        if os.path.isfile(SSL_CRT_PATH) and os.path.isfile(SSL_KEY_PATH):
             ssl_schain_config = generate_ssl_nginx_config(schain_name, explorer_endpoint)
             nginx_cfg.append(ssl_schain_config)
     formatted_config = crossplane.build(nginx_cfg)
