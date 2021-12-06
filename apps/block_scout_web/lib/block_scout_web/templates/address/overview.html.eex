@@ -280,7 +280,11 @@
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_gas_used">
               <span data-selector="gas-usage-count">
-                <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching gas used...") %>
+                <%= if @address.gas_used do %>
+                  <%= Number.Delimit.number_to_delimited(@address.gas_used, precision: 0) %>
+                <% else %>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching gas used...") %>
+                <% end %>
               </span>
             </dd>
           </dl>
