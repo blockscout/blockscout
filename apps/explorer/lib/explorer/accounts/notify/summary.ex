@@ -1,10 +1,10 @@
-defmodule Explorer.Accounts.Notify.Notification do
+defmodule Explorer.Accounts.Notify.Summary do
   require Logger
 
   alias Explorer.Chain
   alias Explorer.Chain.Wei
   alias Explorer.Repo
-  alias Explorer.Accounts.Notify.Notification
+  alias Explorer.Accounts.Notify.Summary
   alias Explorer.Accounts.Notify.Notifier
 
   defstruct [
@@ -16,7 +16,7 @@ defmodule Explorer.Accounts.Notify.Notification do
     :amount,
     :tx_fee,
     :name,
-    :type,
+    :type
   ]
 
   def process(nil), do: nil
@@ -27,18 +27,20 @@ defmodule Explorer.Accounts.Notify.Notification do
   end
 
   def process(%Chain.Transaction{} = transaction) do
-    summary = fetch_summary(transaction)
     preloaded_transaction = preload(transaction)
 
     handle_collection(transaction, preloaded_transaction.token_transfers)
     summary = fetch_summary(transaction)
 
-    Notifier.process(summary)
+    case summary do
+      :nothing -> :nothing
+      %Summary{} = summary -> Notifier.process(summary)
+    end
   end
 
   def process(_), do: nil
 
-  def handle_collection(transaction, []), do: log_entry("No transfers to handle")
+  def handle_collection(_transaction, []), do: :nothing
 
   def handle_collection(transaction, transfers_list) do
     Enum.map(
@@ -51,12 +53,10 @@ defmodule Explorer.Accounts.Notify.Notification do
     )
   end
 
-  def fetch_summary(%Chain.Transaction{} = transaction) do
-    # preloaded_transaction = Repo.preload(transaction, [:internal_transactions, token_transfers: :token])
-    #
-    # IO.inspect(transaction)
+  def fetch_summary(%Chain.Transaction{block_number: nil}), do: :nothing
 
-    %Notification{
+  def fetch_summary(%Chain.Transaction{} = transaction) do
+    %Summary{
       transaction_hash: transaction.hash,
       method: method(transaction),
       from_address_hash: transaction.from_address_hash,
@@ -69,11 +69,15 @@ defmodule Explorer.Accounts.Notify.Notification do
     }
   end
 
+  def fetch_summary(_), do: %Summary{name: :skip_other}
+
+  def fetch_summary(%Chain.Transaction{block_number: nil}, _), do: :nothing
+
   def fetch_summary(
         %Chain.Transaction{} = transaction,
         %Chain.TokenTransfer{} = transfer
       ) do
-    %Notification{
+    %Summary{
       transaction_hash: transaction.hash,
       method: method(transfer),
       from_address_hash: transfer.from_address_hash,
@@ -110,13 +114,8 @@ defmodule Explorer.Accounts.Notify.Notification do
     transfer.amount / transfer.token.decimals
   end
 
-  def fetch_summary(%Chain.Address{}), do: %Notification{name: :skip_address}
-  def fetch_summary(%Chain.Block{}), do: %Notification{name: :skip_block}
-  def fetch_summary(%Chain.PendingBlockOperation{}), do: %Notification{name: :skip_pending}
-  def fetch_summary(_), do: %Notification{name: :skip_other}
-
-  def type(%Chain.Transaction{} = transaction), do: :coin
-  def type(%Chain.InternalTransaction{} = transaction), do: :coin
+  def type(%Chain.Transaction{}), do: :coin
+  def type(%Chain.InternalTransaction{}), do: :coin
 
   def fee(%Chain.Transaction{} = transaction) do
     {_, fee} = Chain.fee(transaction, :gwei)

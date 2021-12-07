@@ -6,6 +6,7 @@ defmodule Explorer.Accounts.Identity do
   schema "account_identities" do
     field(:uid, :string)
     field(:email, :string)
+    field(:name, :string)
     has_many(:watchlists, Watchlist)
 
     timestamps()
@@ -14,7 +15,7 @@ defmodule Explorer.Accounts.Identity do
   @doc false
   def changeset(identity, attrs) do
     identity
-    |> cast(attrs, [:uid, :email])
-    |> validate_required([:uid, :email])
+    |> cast(attrs, [:uid, :email, :name])
+    |> validate_required([:uid, :email, :name])
   end
 end

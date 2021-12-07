@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Repo
-  alias Explorer.Accounts.WatchlistAddress
   alias Explorer.Accounts.WatchlistAddressForm
 
   def new(conn, _params) do

@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Account.WatchlistController do
           conn,
           "show.html",
           watchlist: watchlist_with_addresses(user),
-          watchlist_address: new_address
+          watchlist_address: new_address()
         )
     end
   end

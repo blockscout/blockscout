@@ -7,8 +7,7 @@ defmodule Explorer.Accounts.WatchlistNotification do
   alias Explorer.Chain.{
     Address,
     Hash,
-    Transaction,
-    Wei
+    Transaction
   }
 
   schema "account_watchlist_notifications" do

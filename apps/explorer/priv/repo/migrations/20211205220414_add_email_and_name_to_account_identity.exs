@@ -4,6 +4,7 @@ defmodule Explorer.Repo.Migrations.AddEmailToAccountIdentity do
   def change do
     alter table(:account_identities) do
       add(:email, :string)
+      add(:name, :string)
     end
   end
 end

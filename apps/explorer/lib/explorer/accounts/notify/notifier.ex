@@ -1,26 +1,22 @@
 defmodule Explorer.Accounts.Notify.Notifier do
   alias Explorer.Accounts.Notify.Email
-  alias Explorer.Accounts.Notify.Notification
+  alias Explorer.Accounts.Notify.Summary
   alias Explorer.Accounts.WatchlistAddress
   alias Explorer.Accounts.WatchlistNotification
   alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
 
-  def process(%Notification{from_address_hash: nil} = summary), do: nil
-  def process(%Notification{to_address_hash: nil} = summary), do: nil
+  def process(%Summary{from_address_hash: nil}), do: nil
+  def process(%Summary{to_address_hash: nil}), do: nil
 
-  def process(%Notification{} = summary) do
+  def process(%Summary{} = summary) do
     incoming_addresses = find_watchlists_addresses(summary.to_address_hash)
     outgoing_addresses = find_watchlists_addresses(summary.from_address_hash)
 
-    incoming_notifications =
-      Enum.map(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
+    Enum.map(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
 
-    outgoing_notifications =
-      Enum.map(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
-
-    all_notifications = incoming_notifications ++ outgoing_notifications
+    Enum.map(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
   end
 
   def notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
@@ -40,7 +36,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
   """
   def build_watchlist_notification(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
     if is_watched(address, summary, direction) do
-      wl_notification = %WatchlistNotification{
+      %WatchlistNotification{
         watchlist_address_id: address.id,
         transaction_hash: summary.transaction_hash,
         from_address_hash: summary.from_address_hash,

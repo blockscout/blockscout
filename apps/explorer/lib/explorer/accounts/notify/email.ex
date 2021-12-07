@@ -1,5 +1,5 @@
 defmodule Explorer.Accounts.Notify.Email do
-  alias Explorer.Accounts.Notify.Notification
+  alias BlockScoutWeb.WebRouter.Helpers
   alias Explorer.Accounts.Identity
   alias Explorer.Accounts.Watchlist
   alias Explorer.Accounts.WatchlistAddress
@@ -8,33 +8,36 @@ defmodule Explorer.Accounts.Notify.Email do
   alias Explorer.Repo
 
   import Bamboo.Email
+  import Bamboo.SendGridHelper
 
   def send(notification, %{notify_email: notify}) when notify do
-    IO.inspect(notification)
-
     notification = preload(notification)
 
-    Mailer.deliver_now!(welcome_email(notification))
+    email = compose_email(notification)
+
+    Mailer.deliver_now!(email)
   end
 
-  def welcome_email(notification) do
-    new_email(
-      to: email(notification),
-      from: "ulyana@blockscout.com",
-      subject: subject(notification),
-      html_body: "<strong>T#{subject(notification)}</strong>",
-      text_body: subject(notification)
-    )
-  end
-
-  def subject(notification) do
-    "[Address Watch Alert] " <>
-      "#{notification.amount} " <>
-      "#{notification.name} " <>
-      "#{affect(notification)} " <>
-      "#{place(notification)} " <>
-      "#{address(notification)} " <>
-      notification.watchlist_address.name
+  def compose_email(notification) do
+    new_email(from: "ulyana@blockscout.com", to: email(notification))
+    |> with_template("d-7ab86397e5bb4f0e94e285879a42be64")
+    |> add_dynamic_field("username", username(notification))
+    |> add_dynamic_field("address_hash", address_hash_string(notification))
+    |> add_dynamic_field("address_name", notification.watchlist_address.name)
+    |> add_dynamic_field("transaction_hash", hash_string(notification.transaction_hash))
+    |> add_dynamic_field("from_address_hash", hash_string(notification.from_address_hash))
+    |> add_dynamic_field("to_address_hash", hash_string(notification.to_address_hash))
+    |> add_dynamic_field("block_number", notification.block_number)
+    |> add_dynamic_field("amount", notification.amount)
+    |> add_dynamic_field("name", notification.name)
+    |> add_dynamic_field("tx_fee", notification.tx_fee)
+    |> add_dynamic_field("direction", notification.method)
+    |> add_dynamic_field("method", notification.method)
+    |> add_dynamic_field("transaction_url", transaction_url(notification))
+    |> add_dynamic_field("address_url", address_url(notification.watchlist_address.address_hash))
+    |> add_dynamic_field("from_url", address_url(notification.from_address_hash))
+    |> add_dynamic_field("to_url", address_url(notification.to_address_hash))
+    |> add_dynamic_field("block_url", transaction_url(notification))
   end
 
   def email(%WatchlistNotification{
@@ -48,10 +51,29 @@ defmodule Explorer.Accounts.Notify.Email do
       }),
       do: email
 
-  def address(%WatchlistNotification{
+  def username(%WatchlistNotification{
+        watchlist_address: %WatchlistAddress{
+          watchlist: %Watchlist{
+            identity: %Identity{
+              name: name
+            }
+          }
+        }
+      }),
+      do: name
+
+  def address_hash_string(%WatchlistNotification{
         watchlist_address: %WatchlistAddress{address: address}
       }),
-      do: "0x" <> Base.encode16(address.hash.bytes)
+      do: hash_string(address.hash)
+
+  def hash_string(hash) do
+    "0x" <> Base.encode16(hash.bytes)
+  end
+
+  def direction(notification) do
+    affect(notification) <> place(notification)
+  end
 
   def place(%WatchlistNotification{direction: direction}) do
     case direction do
@@ -69,10 +91,31 @@ defmodule Explorer.Accounts.Notify.Email do
     end
   end
 
-  def text_body(notification) do
-  end
-
   def preload(notification) do
     Repo.preload(notification, watchlist_address: [:address, watchlist: :identity])
+  end
+
+  def address_url(address_hash) do
+    Helpers.address_url(uri(), :show, address_hash)
+  end
+
+  def transaction_url(notification) do
+    Helpers.transaction_url(uri(), :show, notification.transaction_hash)
+  end
+
+  defp uri do
+    %URI{scheme: "https", host: host(), path: path()}
+  end
+
+  defp host do
+    if System.get_env("MIX_ENV") == "prod" do
+      "blockscout.com"
+    else
+      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+    end
+  end
+
+  defp path do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
   end
 end
