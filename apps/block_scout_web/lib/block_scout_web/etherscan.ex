@@ -2026,6 +2026,18 @@ defmodule BlockScoutWeb.Etherscan do
         key: "chainid",
         type: "integer",
         description: "A nonnegative integer that represents the chain id, where original token exists."
+      },
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
       }
     ],
     responses: [

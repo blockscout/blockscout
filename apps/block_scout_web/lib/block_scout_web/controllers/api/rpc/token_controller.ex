@@ -55,11 +55,17 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
     chainid = params |> Map.get("chainid")
     destination = translate_chain_id_to_destination(chainid)
 
-    paging_params =
-      params
-      |> paging_options()
+    params_with_paging_options = Helpers.put_pagination_options(%{}, params)
 
-    bridged_tokens = Chain.list_top_bridged_tokens(destination, nil, paging_params)
+    options = [
+      paging_options: %PagingOptions{
+        key: nil,
+        page_number: params_with_paging_options.page_number,
+        page_size: params_with_paging_options.page_size
+      }
+    ]
+
+    bridged_tokens = Chain.list_top_bridged_tokens(destination, nil, options)
     render(conn, "bridgedtokenlist.json", %{bridged_tokens: bridged_tokens})
   end
 

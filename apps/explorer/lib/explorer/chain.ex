@@ -10,6 +10,7 @@ defmodule Explorer.Chain do
       join: 5,
       limit: 2,
       lock: 2,
+      offset: 2,
       order_by: 2,
       order_by: 3,
       preload: 2,
@@ -2405,6 +2406,7 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_top_bridged_tokens(destination, paging_options, filter) do
+    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
     chain_id = translate_destination_to_chain_id(destination)
 
     if chain_id == :undefined do
@@ -2437,6 +2439,7 @@ defmodule Explorer.Chain do
         base_query
         |> page_tokens(paging_options)
         |> limit(^paging_options.page_size)
+        |> offset(^offset)
 
       query =
         if filter && filter !== "" do
