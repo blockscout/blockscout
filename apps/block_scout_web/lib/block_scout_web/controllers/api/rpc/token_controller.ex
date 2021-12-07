@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.TokenController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Chain, only: [paging_options: 1]
+
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, PagingOptions}
 
@@ -49,8 +51,30 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
     end
   end
 
+  def bridgedtokenlist(conn, params) do
+    chainid = params |> Map.get("chainid")
+    destination = translate_chain_id_to_destination(chainid)
+
+    paging_params =
+      params
+      |> paging_options()
+
+    bridged_tokens = Chain.list_top_bridged_tokens(destination, nil, paging_params)
+    render(conn, "bridgedtokenlist.json", %{bridged_tokens: bridged_tokens})
+  end
+
   defp fetch_contractaddress(params) do
     {:contractaddress_param, Map.fetch(params, "contractaddress")}
+  end
+
+  defp translate_chain_id_to_destination(destination) do
+    case destination do
+      "1" -> :eth
+      "42" -> :kovan
+      "56" -> :bsc
+      "99" -> :poa
+      wrong_chain_id -> wrong_chain_id
+    end
   end
 
   defp to_address_hash(address_hash_string) do

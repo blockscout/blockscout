@@ -2305,7 +2305,7 @@ defmodule Explorer.Chain do
     fetch_top_tokens(filter, paging_options)
   end
 
-  @spec list_top_bridged_tokens(atom(), String.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec list_top_bridged_tokens(atom(), String.t() | nil, [paging_options | necessity_by_association_option]) :: [
           {Token.t(), non_neg_integer()}
         ]
   def list_top_bridged_tokens(destination, filter, options \\ []) do
@@ -2342,45 +2342,58 @@ defmodule Explorer.Chain do
   defp fetch_top_bridged_tokens(destination, paging_options, filter) do
     chain_id = translate_destination_to_chain_id(destination)
 
-    bridged_tokens_query =
-      from(bt in BridgedToken,
-        select: bt,
-        where: bt.foreign_chain_id == ^chain_id
-      )
+    if chain_id == :undefined do
+      []
+    else
+      bridged_tokens_query =
+        if chain_id do
+          from(bt in BridgedToken,
+            select: bt,
+            where: bt.foreign_chain_id == ^chain_id
+          )
+        else
+          from(bt in BridgedToken,
+            select: bt
+          )
+        end
 
-    base_query =
-      from(t in Token,
-        right_join: bt in subquery(bridged_tokens_query),
-        on: t.contract_address_hash == bt.home_token_contract_address_hash,
-        where: t.total_supply > ^0,
-        where: t.bridged,
-        order_by: [desc: t.holder_count, asc: t.name],
-        select: [t, bt],
-        preload: [:contract_address]
-      )
+      base_query =
+        from(t in Token,
+          right_join: bt in subquery(bridged_tokens_query),
+          on: t.contract_address_hash == bt.home_token_contract_address_hash,
+          where: t.total_supply > ^0,
+          where: t.bridged,
+          order_by: [desc: t.holder_count, asc: t.name],
+          select: [t, bt],
+          preload: [:contract_address]
+        )
 
-    base_query_with_paging =
-      base_query
-      |> page_tokens(paging_options)
-      |> limit(^paging_options.page_size)
+      base_query_with_paging =
+        base_query
+        |> page_tokens(paging_options)
+        |> limit(^paging_options.page_size)
 
-    query =
-      if filter && filter !== "" do
-        base_query_with_paging
-        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
-      else
-        base_query_with_paging
-      end
+      query =
+        if filter && filter !== "" do
+          base_query_with_paging
+          |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+        else
+          base_query_with_paging
+        end
 
-    query
-    |> Repo.all()
+      query
+      |> Repo.all()
+    end
   end
 
   defp translate_destination_to_chain_id(destination) do
     case destination do
       :eth -> 1
+      :kovan -> 42
       :bsc -> 56
-      _ -> 1
+      :poa -> 99
+      nil -> nil
+      _ -> :undefined
     end
   end
 
