@@ -55,6 +55,10 @@ defmodule BlockScoutWeb.BridgedTokensView do
     "<div class='custom-tooltip header'>OWL token bridged through OmniBridge without support of <i>burnOWL</i> method. It is not recommended to use.</div>"
   end
 
+  @doc """
+  Calculates capitalization of the bridged token in USD.
+  """
+  @spec bridged_token_usd_cap(%BridgedToken{}, %Token{}) :: any()
   def bridged_token_usd_cap(bridged_token, token) do
     if bridged_token.custom_cap do
       bridged_token.custom_cap
