@@ -2666,10 +2666,15 @@ defmodule Explorer.Chain do
     if contract?(address) do
       incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
 
-      if Decimal.cmp(incoming_transaction_gas_usage, 0) == :eq do
-        address_to_outcoming_transaction_gas_usage(address.hash)
-      else
-        incoming_transaction_gas_usage
+      cond do
+        !incoming_transaction_gas_usage ->
+          address_to_outcoming_transaction_gas_usage(address.hash)
+
+        Decimal.cmp(incoming_transaction_gas_usage, 0) == :eq ->
+          address_to_outcoming_transaction_gas_usage(address.hash)
+
+        true ->
+          incoming_transaction_gas_usage
       end
     else
       address_to_outcoming_transaction_gas_usage(address.hash)
