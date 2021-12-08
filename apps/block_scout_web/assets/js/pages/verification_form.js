@@ -179,6 +179,7 @@ if ($contractVerificationPage.length) {
         autoProcessQueue: false,
         acceptedFiles: acceptedFiles,
         parallelUploads: 100,
+        maxFiles: 1,
         uploadMultiple: true,
         addRemoveLinks: true,
         maxFilesize: 10,
@@ -186,33 +187,6 @@ if ($contractVerificationPage.length) {
         previewsContainer: previewsContainer,
         params: { address_hash: $('#smart_contract_address_hash').val() },
         init: func
-      })
-    } else if ($('#json-dropzone-form').length) {
-      dropzone = new Dropzone('#json-dropzone-form', {
-        autoProcessQueue: false,
-        acceptedFiles: 'text/plain,application/json,.json',
-        parallelUploads: 100,
-        maxFiles: 1,
-        uploadMultiple: true,
-        addRemoveLinks: true,
-        previewsContainer: '#dropzone-previews',
-        maxFilesize: 10,
-        params: { address_hash: $('#smart_contract_address_hash').val() },
-        init: function () {
-          $('#json-dropzone-form').removeClass('dz-clickable')
-          this.on('addedfile', function (_file) {
-            $('#verify-via-standart-json-input-submit').prop('disabled', false)
-            $('#file-help-block').text('')
-            $('#dropzone-previews').addClass('dz-started')
-          })
-
-          this.on('removedfile', function (_file) {
-            if (this.files.length === 0) {
-              $('#verify-via-standart-json-input-submit').prop('disabled', true)
-              $('#dropzone-previews').removeClass('dz-started')
-            }
-          })
-        }
       })
     }
 

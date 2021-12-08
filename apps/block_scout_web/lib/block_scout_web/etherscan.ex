@@ -472,6 +472,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @contract_verifysourcecode_example_value %{
+    "message" => "OK",
+    "result" => "b080b96bd06ad1c9341c2afb7e3730311388544961acde94",
+    "status" => "1"
+  }
+
+  @contract_checkverifystatus_example_value %{
+    "message" => "OK",
+    "result" => "Pending in queue",
+    "status" => "1"
+  }
+
   @contract_getsourcecode_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -1012,6 +1024,28 @@ defmodule BlockScoutWeb.Etherscan do
         type: "optimization used",
         enum: ~s(["0", "1"]),
         enum_interpretation: %{"0" => "false", "1" => "true"}
+      }
+    }
+  }
+
+  @uid_response_model %{
+    name: "UID",
+    fields: %{
+      "UID" => %{
+        type: "string",
+        definition: "Unique identifier of the verification attempt",
+        example: "b080b96bd06ad1c9341c2afb7e3730311388544961acde94"
+      }
+    }
+  }
+
+  @status_response_model %{
+    name: "Status",
+    fields: %{
+      "status" => %{
+        type: "string",
+        definition: "Current status of the verification attempt",
+        example: "`Pending in queue` | `Pass - Verified` | `Fail - Unable to verify` | `Unknown UID`"
       }
     }
   }
@@ -2579,22 +2613,9 @@ defmodule BlockScoutWeb.Etherscan do
   @contract_verifysourcecode_action %{
     name: "verifysourcecode",
     description: """
-    Verify a contract with its source code and contract creation information.
+    Verify a contract with Standard input JSON file. Its interface the same as <a href="https://docs.etherscan.io/tutorials/verifying-contracts-programmatically">Etherscan</a>'s API endpoint
     <br/>
     <br/>
-    <p class="api-doc-list-item-text">curl POST example:</p>
-    <br/>
-    <div class='tab-content'>
-    <div class='tab-pane fade show active'>
-    <div class="tile tile-muted p-1">
-    <div class="m-2">
-    curl -d '{"addressHash":"0xc63BB6555C90846afACaC08A0F0Aa5caFCB382a1","compilerVersion":"v0.5.4+commit.9549d8ff",
-    "contractSourceCode":"pragma solidity ^0.5.4; \ncontract Test {\n}","name":"Test","optimization":false}'
-    -H "Content-Type: application/json" -X POST  "https://blockscout.com/poa/sokol/api?module=contract&action=verifysourcecode"
-    </pre>
-    </div>
-    </div>
-    </div>
     """,
     required_params: [
       %{
@@ -2647,14 +2668,32 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_verify_example_value),
+        example_value: Jason.encode!(@contract_verifysourcecode_example_value),
         type: "model",
-        model: @contract_model
-      },
+        model: @uid_response_model
+      }
+    ]
+  }
+
+  @contract_checkverifystatus_action %{
+    name: "checkverifystatus",
+    description: "Return status of the verification attempt (works in addition to verifysourcecode method)",
+    required_params: [
+      %{
+        key: "guid",
+        placeholder: "identifierString",
+        type: "string",
+        description: "A string used for identifying verification attempt"
+      }
+    ],
+    optional_params: [],
+    responses: [
       %{
         code: "200",
-        description: "error",
-        example_value: Jason.encode!(@contract_verify_example_value_error)
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_checkverifystatus_example_value),
+        type: "model",
+        model: @status_response_model
       }
     ]
   }
@@ -2906,7 +2945,8 @@ defmodule BlockScoutWeb.Etherscan do
       @contract_verify_action,
       @contract_verify_via_sourcify_action,
       @contract_verify_vyper_contract_action,
-      @contract_verifysourcecode_action
+      @contract_verifysourcecode_action,
+      @contract_checkverifystatus_action
     ]
   }
 
