@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4989](https://github.com/blockscout/blockscout/pull/4989) - Bridged tokens list API endpoint
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
