@@ -20,3 +20,4 @@ services:
     network_mode: host
     volumes:
       - ./data/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./data/certs:/data/
