@@ -28,12 +28,6 @@ def generate_schain_nginx_config(schain_name, explorer_endpoint, ssl=False):
                     "args": [
                         '/data/server.key'
                     ]
-                },
-                {
-                    "directive": "ssl_verify_client",
-                    "args": [
-                        "off"
-                    ]
                 }
         ]
         config['block'] = ssl_block + config['block']
