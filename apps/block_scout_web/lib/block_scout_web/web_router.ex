@@ -152,6 +152,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/verify-via-standard-json-input",
+        AddressContractVerificationViaStandardJsonInputController,
+        only: [:new],
+        as: :verify_contract_via_standard_json_input
+      )
+
+      resources(
         "/verify-vyper-contract",
         AddressContractVerificationVyperController,
         only: [:new],
