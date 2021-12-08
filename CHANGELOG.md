@@ -1,7 +1,7 @@
 ## Current
 
 ### Features
-- [#4989](https://github.com/blockscout/blockscout/pull/4989) - Bridged tokens list API endpoint
+- [#4989](https://github.com/blockscout/blockscout/pull/4989), [#4991](https://github.com/blockscout/blockscout/pull/4991) - Bridged tokens list API endpoint
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 
 ### Fixes
