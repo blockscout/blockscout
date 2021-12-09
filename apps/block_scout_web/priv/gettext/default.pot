@@ -219,7 +219,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:166
-msgid "Address balance in xDAI (doesn't include ERC20, ERC721, ERC1155 tokens)."
+msgid "Address balance in CELO (doesn't include ERC20, ERC721, ERC1155 tokens)."
 msgstr ""
 
 #, elixir-format
@@ -509,6 +509,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/common_components/_csv_export_button.html.eex:2
 msgid "CSV"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/csv_export/index.html.eex:28
+msgid "CSV is being prepared, please wait..."
 msgstr ""
 
 #, elixir-format
@@ -3306,8 +3311,3 @@ msgstr "CELO"
 # From templates/tokens/overview/details.html.eex#
 msgid "Celo Gold"
 msgstr "CELO"
-
-#, elixir-format
-#: lib/block_scout_web/templates/csv_export/index.html.eex:28
-msgid "CSV is being prepared, please wait..."
-msgstr ""
