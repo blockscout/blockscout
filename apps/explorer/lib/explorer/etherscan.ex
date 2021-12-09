@@ -3,12 +3,12 @@ defmodule Explorer.Etherscan do
   The etherscan context.
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, order_by: 3]
+  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, subquery: 1, order_by: 3]
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Block, Hash, InternalTransaction, TokenTransfer, Transaction}
 
   @default_options %{
     order_by_direction: :desc,
@@ -419,83 +419,79 @@ defmodule Explorer.Etherscan do
     |> or_where([t], t.created_contract_address_hash == ^address_hash)
   end
 
-  # @token_transfer_fields ~w(
-  #   block_number
-  #   block_hash
-  #   token_contract_address_hash
-  #   transaction_hash
-  #   from_address_hash
-  #   to_address_hash
-  #   amount
-  # )a
+  @token_transfer_fields ~w(
+    block_number
+    block_hash
+    token_contract_address_hash
+    transaction_hash
+    from_address_hash
+    to_address_hash
+    amount
+  )a
 
-  defp list_token_transfers(_address_hash, _contract_address_hash, _block_height, _options) do
-    []
+  defp list_token_transfers(address_hash, contract_address_hash, block_height, options) do
+    tt_query =
+      from(
+        tt in TokenTransfer,
+        inner_join: tkn in assoc(tt, :token),
+        where: tt.from_address_hash == ^address_hash,
+        or_where: tt.to_address_hash == ^address_hash,
+        order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.log_index}],
+        limit: ^options.page_size,
+        offset: ^offset(options),
+        select:
+          merge(map(tt, ^@token_transfer_fields), %{
+            token_id: tt.token_id,
+            token_name: tkn.name,
+            token_symbol: tkn.symbol,
+            token_decimals: tkn.decimals,
+            token_type: tkn.type,
+            token_log_index: tt.log_index
+          })
+      )
+
+    tt_specific_token_query =
+      tt_query
+      |> where_contract_address_match(contract_address_hash)
+
+    wrapped_query =
+      from(
+        tt in subquery(tt_specific_token_query),
+        inner_join: t in Transaction,
+        on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
+        inner_join: b in assoc(t, :block),
+        order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
+        select: %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          amount: tt.amount,
+          transaction_nonce: t.nonce,
+          transaction_index: t.index,
+          transaction_gas: t.gas,
+          transaction_gas_price: t.gas_price,
+          transaction_gas_used: t.gas_used,
+          transaction_cumulative_gas_used: t.cumulative_gas_used,
+          transaction_input: t.input,
+          block_hash: b.hash,
+          block_number: b.number,
+          block_timestamp: b.timestamp,
+          confirmations: fragment("? - ?", ^block_height, t.block_number),
+          token_id: tt.token_id,
+          token_name: tt.token_name,
+          token_symbol: tt.token_symbol,
+          token_decimals: tt.token_decimals,
+          token_type: tt.token_type,
+          token_log_index: tt.token_log_index
+        }
+      )
+
+    wrapped_query
+    |> where_start_block_match(options)
+    |> where_end_block_match(options)
+    |> Repo.all()
   end
-
-  # defp list_token_transfers(address_hash, contract_address_hash, block_height, options) do
-  #   tt_query =
-  #     from(
-  #       tt in TokenTransfer,
-  #       inner_join: tkn in assoc(tt, :token),
-  #       where: tt.from_address_hash == ^address_hash,
-  #       or_where: tt.to_address_hash == ^address_hash,
-  #       order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.log_index}],
-  #       limit: ^options.page_size,
-  #       offset: ^offset(options),
-  #       select:
-  #         merge(map(tt, ^@token_transfer_fields), %{
-  #           token_id: tt.token_id,
-  #           token_name: tkn.name,
-  #           token_symbol: tkn.symbol,
-  #           token_decimals: tkn.decimals,
-  #           token_type: tkn.type,
-  #           token_log_index: tt.log_index
-  #         })
-  #     )
-
-  #   tt_specific_token_query =
-  #     tt_query
-  #     |> where_contract_address_match(contract_address_hash)
-
-  #   wrapped_query =
-  #     from(
-  #       tt in subquery(tt_specific_token_query),
-  #       inner_join: t in Transaction,
-  #       on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
-  #       inner_join: b in assoc(t, :block),
-  #       order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
-  #       select: %{
-  #         token_contract_address_hash: tt.token_contract_address_hash,
-  #         transaction_hash: tt.transaction_hash,
-  #         from_address_hash: tt.from_address_hash,
-  #         to_address_hash: tt.to_address_hash,
-  #         amount: tt.amount,
-  #         transaction_nonce: t.nonce,
-  #         transaction_index: t.index,
-  #         transaction_gas: t.gas,
-  #         transaction_gas_price: t.gas_price,
-  #         transaction_gas_used: t.gas_used,
-  #         transaction_cumulative_gas_used: t.cumulative_gas_used,
-  #         transaction_input: t.input,
-  #         block_hash: b.hash,
-  #         block_number: b.number,
-  #         block_timestamp: b.timestamp,
-  #         confirmations: fragment("? - ?", ^block_height, t.block_number),
-  #         token_id: tt.token_id,
-  #         token_name: tt.token_name,
-  #         token_symbol: tt.token_symbol,
-  #         token_decimals: tt.token_decimals,
-  #         token_type: tt.token_type,
-  #         token_log_index: tt.token_log_index
-  #       }
-  #     )
-
-  #   wrapped_query
-  #   |> where_start_block_match(options)
-  #   |> where_end_block_match(options)
-  #   |> Repo.all()
-  # end
 
   defp where_start_block_match(query, %{start_block: nil}), do: query
 
@@ -521,11 +517,11 @@ defmodule Explorer.Etherscan do
     where(query, [..., block], block.timestamp <= ^end_timestamp)
   end
 
-  # defp where_contract_address_match(query, nil), do: query
+  defp where_contract_address_match(query, nil), do: query
 
-  # defp where_contract_address_match(query, contract_address_hash) do
-  #   where(query, [tt, _], tt.token_contract_address_hash == ^contract_address_hash)
-  # end
+  defp where_contract_address_match(query, contract_address_hash) do
+    where(query, [tt, _], tt.token_contract_address_hash == ^contract_address_hash)
+  end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size
 
