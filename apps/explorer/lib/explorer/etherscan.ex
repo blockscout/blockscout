@@ -3,12 +3,12 @@ defmodule Explorer.Etherscan do
   The etherscan context.
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, subquery: 1, order_by: 3]
+  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, order_by: 3]
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.{Block, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction}
 
   @default_options %{
     order_by_direction: :desc,
@@ -236,15 +236,14 @@ defmodule Explorer.Etherscan do
         contract_address_hash,
         options \\ @default_options
       ) do
-    []
-    # case Chain.max_consensus_block_number() do
-    #   {:ok, block_height} ->
-    #     merged_options = Map.merge(@default_options, options)
-    #     list_token_transfers(address_hash, contract_address_hash, block_height, merged_options)
+    case Chain.max_consensus_block_number() do
+      {:ok, block_height} ->
+        merged_options = Map.merge(@default_options, options)
+        list_token_transfers(address_hash, contract_address_hash, block_height, merged_options)
 
-    #   _ ->
-    #     []
-    # end
+      _ ->
+        []
+    end
   end
 
   @doc """
@@ -420,15 +419,15 @@ defmodule Explorer.Etherscan do
     |> or_where([t], t.created_contract_address_hash == ^address_hash)
   end
 
-  @token_transfer_fields ~w(
-    block_number
-    block_hash
-    token_contract_address_hash
-    transaction_hash
-    from_address_hash
-    to_address_hash
-    amount
-  )a
+  # @token_transfer_fields ~w(
+  #   block_number
+  #   block_hash
+  #   token_contract_address_hash
+  #   transaction_hash
+  #   from_address_hash
+  #   to_address_hash
+  #   amount
+  # )a
 
   defp list_token_transfers(_address_hash, _contract_address_hash, _block_height, _options) do
     []
@@ -522,11 +521,11 @@ defmodule Explorer.Etherscan do
     where(query, [..., block], block.timestamp <= ^end_timestamp)
   end
 
-  defp where_contract_address_match(query, nil), do: query
+  # defp where_contract_address_match(query, nil), do: query
 
-  defp where_contract_address_match(query, contract_address_hash) do
-    where(query, [tt, _], tt.token_contract_address_hash == ^contract_address_hash)
-  end
+  # defp where_contract_address_match(query, contract_address_hash) do
+  #   where(query, [tt, _], tt.token_contract_address_hash == ^contract_address_hash)
+  # end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size
 
