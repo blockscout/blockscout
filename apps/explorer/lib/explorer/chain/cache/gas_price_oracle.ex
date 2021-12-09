@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   require Logger
 
-  @default_cache_period :timer.seconds(30)
+  @default_cache_period :timer.minutes(5)
 
   @num_of_blocks (case Integer.parse(System.get_env("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", "200")) do
                     {integer, ""} -> integer
