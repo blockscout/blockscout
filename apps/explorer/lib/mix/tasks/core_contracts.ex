@@ -12,7 +12,6 @@ defmodule Mix.Tasks.CoreContracts do
 
     url
     |> full_cache_build()
-    |> IO.inspect()
   end
 
   def full_cache_build(url) do

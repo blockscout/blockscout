@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.PendingCelo do
+defmodule Indexer.Fetcher.CeloUnlocked do
   @moduledoc """
   Fetches pending Celo.
   """
@@ -7,11 +7,11 @@ defmodule Indexer.Fetcher.PendingCelo do
 
   require Logger
 
-  alias Indexer.Fetcher.PendingCelo.Supervisor, as: PendingCeloSupervisor
+  alias Indexer.Fetcher.CeloUnlocked.Supervisor, as: CeloUnlockedSupervisor
 
   alias Explorer.Celo.AccountReader
   alias Explorer.Chain
-  alias Explorer.Chain.PendingCelo
+  alias Explorer.Chain.CeloUnlocked
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.PendingCelo do
   @max_retries 3
 
   def async_fetch(accounts) do
-    if PendingCeloSupervisor.disabled?() do
+    if CeloUnlockedSupervisor.disabled?() do
       :ok
     else
       params =
@@ -84,7 +84,7 @@ defmodule Indexer.Fetcher.PendingCelo do
         {[account | failed], success}
 
       item, {failed, success} ->
-        changeset = PendingCelo.changeset(%PendingCelo{}, item)
+        changeset = CeloUnlocked.changeset(%CeloUnlocked{}, item)
 
         if changeset.valid? do
           {failed, [changeset.changes | success]}
@@ -106,7 +106,7 @@ defmodule Indexer.Fetcher.PendingCelo do
       end)
 
     import_params = %{
-      pending_celo: %{params: success},
+      celo_unlocked: %{params: success},
       timeout: :infinity
     }
 

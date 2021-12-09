@@ -27,7 +27,7 @@ defmodule Explorer.Factory do
     InternalTransaction,
     Log,
     PendingBlockOperation,
-    PendingCelo,
+    CeloUnlocked,
     SmartContract,
     Token,
     TokenTransfer,
@@ -715,12 +715,11 @@ defmodule Explorer.Factory do
     }
   end
 
-  def pending_celo_factory do
-    %PendingCelo{
+  def celo_unlocked_factory do
+    %CeloUnlocked{
       account_address: address_hash(),
       amount: Decimal.new(1),
-      index: sequence("pending_index", & &1),
-      timestamp: Timex.shift(Timex.now(), days: Enum.random(0..100) * -1)
+      available: Timex.shift(Timex.now(), days: Enum.random(0..100) * -1)
     }
   end
 end

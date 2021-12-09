@@ -261,13 +261,17 @@ defmodule Explorer.Celo.AccountReader do
   def withdrawal_data(address) do
     data = fetch_withdrawal_data(address)
 
+    {:ok, cast_address} = Explorer.Chain.Hash.Address.cast(address)
+
     case data["getPendingWithdrawals"] do
       {:ok, [values, timestamps]} ->
         {:ok,
          %{
-           address: address,
+           address: cast_address,
            pending:
-             Enum.map(Enum.zip(values, timestamps), fn {v, t} -> %{address: address, amount: v, timestamp: t} end)
+             Enum.map(Enum.zip(values, timestamps), fn {v, t} ->
+               %{address: cast_address, amount: v, timestamp: DateTime.from_unix!(t)}
+             end)
          }}
 
       _ ->

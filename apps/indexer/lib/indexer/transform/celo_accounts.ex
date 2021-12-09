@@ -24,7 +24,8 @@ defmodule Indexer.Transform.CeloAccounts do
       validator_groups:
         get_addresses(logs, Events.validator_group_events()) ++
           get_addresses(logs, Events.vote_events(), fn a -> a.third_topic end),
-      withdrawals: [get_withdrawals(logs, Events.withdrawal_events())],
+      withdrawals: [get_withdrawal_events(logs, Events.gold_withdrawn())],
+      unlocked: [get_withdrawal_events(logs, Events.gold_unlocked())],
       signers: get_signers(logs, Events.signer_events()),
       voters: get_voters(logs, Events.voter_events()),
       attestations_fulfilled: get_addresses(logs, [Events.attestation_completed_event()], fn a -> a.fourth_topic end),
@@ -56,10 +57,10 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.map(fn address -> %{address: address} end)
   end
 
-  defp get_withdrawals(logs, topics) do
+  defp get_withdrawal_events(logs, topics) do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
-    |> Enum.reduce([], fn log, accounts -> do_parse_withdrawals(log, accounts, fn a -> a.second_topic end) end)
+    |> Enum.reduce([], fn log, accounts -> do_parse_withdrawal_events(log, accounts, fn a -> a.second_topic end) end)
   end
 
   defp get_signers(logs, topics) do
@@ -148,11 +149,18 @@ defmodule Indexer.Transform.CeloAccounts do
       names
   end
 
-  defp do_parse_withdrawals(log, accounts, get_topic) do
+  defp do_parse_withdrawal_events(log, accounts, get_topic) do
     account_address = parse_params(log, get_topic)
-    [amount] = decode_data(log.data, [{:uint, 256}])
 
-    %{address: account_address, amount: amount}
+    # GoldUnlocked has 2 unindexed parameters which end up in the data field, while the rest of the withdrawal events
+    # only 1. Each of these parameters are of length 64 plus 2 for the 0x.
+    if String.length(log.data) > 66 do
+      [amount, available] = decode_data(log.data, [{:uint, 256}, {:uint, 256}])
+      %{address: account_address, amount: amount, available: available}
+    else
+      [amount] = decode_data(log.data, [{:uint, 256}])
+      %{address: account_address, amount: amount}
+    end
   rescue
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)

@@ -124,6 +124,16 @@ defmodule Explorer.Celo.Events do
       @gold_locked
     ]
 
+  def gold_unlocked,
+    do: [
+      @gold_unlocked
+    ]
+
+  def gold_withdrawn,
+    do: [
+      @gold_withdrawn
+    ]
+
   def signer_events,
     do: [
       @validator_signer_authorized,

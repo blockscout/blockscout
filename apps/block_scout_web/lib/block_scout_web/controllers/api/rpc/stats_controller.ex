@@ -71,10 +71,10 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     render(conn, "totaltransactions.json", count: transaction_estimated_count)
   end
 
-  def pendingcelo(conn, _params) do
-    sum_pending_celo = Chain.fetch_sum_pending_celo()
+  def celounlocked(conn, _params) do
+    sum_celo_unlocked = Chain.fetch_sum_celo_unlocked()
 
-    render(conn, "pendingcelo.json", count: sum_pending_celo)
+    render(conn, "celounlocked.json", count: sum_celo_unlocked)
   end
 
   defp fetch_contractaddress(params) do

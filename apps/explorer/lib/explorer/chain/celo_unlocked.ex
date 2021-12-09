@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.PendingCelo do
+defmodule Explorer.Chain.CeloUnlocked do
   @moduledoc """
   Table for storing unlocked CELO that has not been withdrawn yet.
   """
@@ -15,24 +15,22 @@ defmodule Explorer.Chain.PendingCelo do
   """
 
   @type t :: %__MODULE__{
-          address: Hash.Address.t(),
-          timestamp: DateTime.t(),
-          amount: Wei.t(),
-          index: non_neg_integer()
+          account_address: Hash.Address.t(),
+          available: DateTime.t(),
+          amount: Wei.t()
         }
 
   @attrs ~w(
-        account_address timestamp amount index
+        available amount
     )a
 
   @required_attrs ~w(
-        address
+        account_address
     )a
 
   @primary_key false
-  schema "pending_celo" do
-    field(:timestamp, :utc_datetime_usec)
-    field(:index, :integer, primary_key: true)
+  schema "celo_unlocked" do
+    field(:available, :utc_datetime_usec)
     field(:amount, Wei)
 
     belongs_to(
@@ -46,10 +44,14 @@ defmodule Explorer.Chain.PendingCelo do
     timestamps(null: false, type: :utc_datetime_usec)
   end
 
-  def changeset(%__MODULE__{} = pending_celo, attrs) do
-    pending_celo
-    |> cast(attrs, @attrs)
+  def changeset(%__MODULE__{} = celo_unlocked, %{address: a} = attrs) do
+    attrs = attrs |> Map.delete(:address) |> Map.put(:account_address, a)
+    changeset(celo_unlocked, attrs)
+  end
+
+  def changeset(%__MODULE__{} = celo_unlocked, attrs) do
+    celo_unlocked
+    |> cast(attrs, @attrs ++ @required_attrs)
     |> validate_required(@required_attrs)
-    |> unique_constraint(:pending_celo_key, name: :pending_celo_account_address_index_index)
   end
 end
