@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   """
 
   require Logger
+  require APILogger
 
   import Plug.Conn
   import Phoenix.Controller, only: [put_view: 2]
@@ -29,6 +30,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
          {:ok, action} <- translate_action(action),
          true <- action_accessed?(action, write_actions),
          {:ok, conn} <- call_controller(conn, controller, action) do
+      APILogger.log(conn)
       conn
     else
       {:error, :no_action} ->
