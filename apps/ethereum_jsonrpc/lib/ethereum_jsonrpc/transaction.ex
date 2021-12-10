@@ -250,6 +250,43 @@ defmodule EthereumJSONRPC.Transaction do
     end
   end
 
+  def elixir_to_params(
+        %{
+          "blockHash" => block_hash,
+          "blockNumber" => block_number,
+          "from" => from_address_hash,
+          "gas" => gas,
+          "gasPrice" => gas_price,
+          "hash" => hash,
+          "input" => input,
+          "nonce" => nonce,
+          "to" => to_address_hash,
+          "transactionIndex" => index,
+          "value" => value
+        } = transaction
+      ) do
+    result = %{
+      block_hash: block_hash,
+      block_number: block_number,
+      from_address_hash: from_address_hash,
+      gas: gas,
+      gas_price: gas_price,
+      hash: hash,
+      index: index,
+      input: input,
+      nonce: nonce,
+      to_address_hash: to_address_hash,
+      value: value,
+      transaction_index: index
+    }
+
+    if transaction["creates"] do
+      Map.put(result, :created_contract_address_hash, transaction["creates"])
+    else
+      result
+    end
+  end
+
   @doc """
   Extracts `t:EthereumJSONRPC.hash/0` from transaction `params`
 
