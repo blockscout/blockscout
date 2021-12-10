@@ -269,8 +269,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
         _ -> []
       end
 
+    token_transfers_addresses_params =
+      Addresses.extract_addresses(%{
+        token_transfers: token_transfers
+      })
+
     address_hash_to_block_number =
-      Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
+      Enum.into(token_transfers_addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
         {hash, block_number}
       end)
 
@@ -293,10 +298,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     case imports do
       {:ok, imported} ->
-        Accounts.drop(imported[:addreses])
+        Accounts.drop(imported[:addresses])
         Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
 
-        async_import_coin_balances(imported, %{
+        async_import_coin_balances(token_transfers_addresses_params, %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })
 

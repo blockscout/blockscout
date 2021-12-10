@@ -309,7 +309,7 @@ defmodule Indexer.Block.FetcherTest do
               unprefixed_celo_token_address_hash,
               event_first_topic,
               event_data,
-              22
+              18
             )
 
           variant ->
@@ -544,7 +544,7 @@ defmodule Indexer.Block.FetcherTest do
               unprefixed_celo_token_address_hash,
               event_first_topic,
               event_data,
-              22
+              18
             )
 
           variant ->
@@ -658,7 +658,7 @@ defmodule Indexer.Block.FetcherTest do
               unprefixed_celo_token_address_hash,
               event_first_topic,
               event_data,
-              22
+              18
             )
 
           variant ->
