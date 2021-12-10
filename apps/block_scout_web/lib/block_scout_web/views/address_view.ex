@@ -523,7 +523,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_amb_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("AMB_BRIDGE_ADDRESSES", "")) =~ address_hash_str
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_AMB_BRIDGE", "")) =~ address_hash_str
   end
 
   def is_amb_bridge_mediators?(nil), do: false
@@ -546,35 +546,35 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_df_0_5?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5", "")) =~ address_hash_str
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_5", "")) =~ address_hash_str
   end
 
   def is_df_0_6?(nil), do: false
 
   def is_df_0_6?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6", "")) =~ address_hash_str
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6", "")) =~ address_hash_str
   end
 
   def is_df_0_6_r2?(nil), do: false
 
   def is_df_0_6_r2?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6_r2", "")) =~ address_hash_str
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R2", "")) =~ address_hash_str
   end
 
   def is_df_0_6_r3?(nil), do: false
 
   def is_df_0_6_r3?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6_r3", "")) =~ address_hash_str
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R3", "")) =~ address_hash_str
   end
 
   def is_df_0_6_r4?(nil), do: false
 
   def is_df_0_6_r4?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6_r4", "")) =~ address_hash_str
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R4", "")) =~ address_hash_str
   end
 
   def is_hopr?(nil), do: false

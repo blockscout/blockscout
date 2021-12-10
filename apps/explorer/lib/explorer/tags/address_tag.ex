@@ -43,9 +43,13 @@ defmodule Explorer.Tags.AddressTag do
   end
 
   def set_tag(label) do
-    %AddressTag{}
-    |> AddressTag.changeset(%{label: label})
-    |> Repo.insert()
+    tag_id = get_tag_id(label)
+
+    unless tag_id do
+      %AddressTag{}
+      |> AddressTag.changeset(%{label: label})
+      |> Repo.insert()
+    end
   end
 
   def get_tag_id(nil), do: nil
@@ -60,5 +64,16 @@ defmodule Explorer.Tags.AddressTag do
 
     query
     |> Repo.one()
+  end
+
+  def get_all_tags do
+    query =
+      from(
+        tag in AddressTag,
+        select: tag.label
+      )
+
+    query
+    |> Repo.all()
   end
 end
