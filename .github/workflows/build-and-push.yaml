@@ -63,9 +63,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ matrix.flavor }}-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-${{ matrix.flavor }}
+            ${{ runner.os }}-buildx-${{ github.event.before }}
       -
         uses: docker/login-action@v1
         with:
