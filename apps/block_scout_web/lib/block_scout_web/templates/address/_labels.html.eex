@@ -105,3 +105,6 @@
 <%= if is_scam?(@address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "SCAM", additional_classes: ["scam", "ml-1"] %>
 <% end %>
+<%= if is_gbc?(@address_hash) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "GBC", additional_classes: ["gbc", "ml-1"] %>
+<% end %>

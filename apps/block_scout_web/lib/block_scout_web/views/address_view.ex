@@ -703,6 +703,13 @@ defmodule BlockScoutWeb.AddressView do
     String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_AOX", "")) =~ address_hash_str
   end
 
+  def is_gbc?(nil), do: false
+
+  def is_gbc?(address_hash) do
+    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_GBC", "")) =~ address_hash_str
+  end
+
   def is_l2?(nil), do: false
 
   def is_l2?(address_hash) do
