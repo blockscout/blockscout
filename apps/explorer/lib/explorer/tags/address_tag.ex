@@ -19,6 +19,7 @@ defmodule Explorer.Tags.AddressTag do
   @typedoc """
   * `:id` - id of Tag
   * `:label` - Tag's label
+  * `:label` - Label's display name
   """
   @type t :: %AddressTag{
           label: String.t()
@@ -26,13 +27,14 @@ defmodule Explorer.Tags.AddressTag do
 
   schema "address_tags" do
     field(:label, :string)
+    field(:display_name, :string)
     has_many(:addresses, Address, foreign_key: :hash)
     has_many(:tag_id, AddressToTag, foreign_key: :id)
 
     timestamps()
   end
 
-  @required_attrs ~w(label)a
+  @required_attrs ~w(label display_name)a
 
   @doc false
   def changeset(struct, params \\ %{}) do
@@ -42,12 +44,16 @@ defmodule Explorer.Tags.AddressTag do
     |> unique_constraint(:label, name: :address_tags_label_index)
   end
 
-  def set_tag(label) do
-    tag_id = get_tag_id(label)
+  def set_tag(name, display_name) do
+    tag = get_tag(name)
 
-    unless tag_id do
+    if tag do
+      tag
+      |> AddressTag.changeset(%{display_name: display_name})
+      |> Repo.update()
+    else
       %AddressTag{}
-      |> AddressTag.changeset(%{label: label})
+      |> AddressTag.changeset(%{label: name, display_name: display_name})
       |> Repo.insert()
     end
   end
@@ -66,11 +72,24 @@ defmodule Explorer.Tags.AddressTag do
     |> Repo.one()
   end
 
+  def get_tag(nil), do: nil
+
+  def get_tag(label) do
+    query =
+      from(
+        tag in AddressTag,
+        where: tag.label == ^label
+      )
+
+    query
+    |> Repo.one()
+  end
+
   def get_all_tags do
     query =
       from(
         tag in AddressTag,
-        select: tag.label
+        select: tag
       )
 
     query

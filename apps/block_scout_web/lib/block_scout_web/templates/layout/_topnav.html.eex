@@ -151,7 +151,7 @@
                     </a>
                   <% end %>
                   <hr class="menu-hr" />
-                  <%= for %{url: url, title: title} <- apps_list() do %> 
+                  <%= for %{url: url, title: title} <- external_apps_list() do %> 
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
                   <hr class="menu-hr" />

@@ -66,7 +66,8 @@ config :block_scout_web,
   gts_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN"),
   chainlink_oracles: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
-  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil)
+  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
+  new_tags: System.get_env("NEW_TAGS")
 
 config :block_scout_web, :faucet,
   enabled: if(System.get_env("ENABLE_FAUCET", "false") == "true", do: true, else: false),

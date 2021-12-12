@@ -1,3 +1,8 @@
+<%= if System.get_env("ALERT_TO_ADDRESSES") && System.get_env("ALERT_TO_ADDRESSES") |> String.downcase() == to_string(@address.hash) |> String.downcase() do %>
+  <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
+    <%= raw(System.get_env("ADDRESS_ALERT_MESSAGE")) %>
+  </div>
+<% end %>
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
@@ -9,6 +14,7 @@
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
+  <% tags = if assigns[:tags], do: @tags, else: [] %>
   <div class="row mb-2">
     <!-- Address details -->
     <div class="col-md-12 mb-2">
@@ -55,7 +61,7 @@
             <% else %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "EOA", additional_classes: ["eoa", "ml-1"] %>
             <% end %>
-            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash %>
+            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash, tags: tags %>
             <%= if validator_metadata || Chain.is_active_validator?(@address.hash) do %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "validator", additional_classes: ["validator", "ml-1"] %>
             <% end %>

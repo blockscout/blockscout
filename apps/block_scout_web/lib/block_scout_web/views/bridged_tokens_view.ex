@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.BridgedTokensView do
   def type_tag_class_name(type) do
     case type do
       "omni" -> "omni"
-      "amb" -> "amb-ext"
+      "amb" -> "amb-bridge-mediators"
     end
   end
 

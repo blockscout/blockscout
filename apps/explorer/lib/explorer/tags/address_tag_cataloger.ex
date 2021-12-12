@@ -5,6 +5,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   use GenServer
 
+  alias Explorer.EnvVarTranslator
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Validator.MetadataRetriever
   alias Poison.Parser
@@ -48,7 +49,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     all_tags = AddressTag.get_all_tags()
 
     all_tags
-    |> Enum.each(fn tag_name ->
+    |> Enum.each(fn %{label: tag_name} ->
       if tag_name !== "validator" && tag_name !== "amb bridge mediators" && tag_name !== "omni bridge" &&
            tag_name !== "l2" && !String.contains?(tag_name, "chainlink") do
         env_var_name = "CUSTOM_CONTRACT_ADDRESSES_#{tag_name_to_env_var_part(tag_name)}"
@@ -74,7 +75,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
       |> Parser.parse!(%{keys: :atoms!})
       |> Enum.each(fn %{:name => name, :address => address} ->
         chainlink_tag_name = "chainlink oracle #{String.downcase(name)}"
-        AddressTag.set_tag(chainlink_tag_name)
+        AddressTag.set_tag(chainlink_tag_name, chainlink_tag_name)
         tag_id = AddressTag.get_tag_id(chainlink_tag_name)
         AddressToTag.set_tag_to_addresses(tag_id, [address])
       end)
@@ -115,15 +116,11 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
   end
 
   def create_new_tags do
-    tags = env_var_string_array_to_list("NEW_TAGS")
+    tags = EnvVarTranslator.map_array_env_var_to_list(:new_tags)
 
     tags
-    |> Enum.each(fn tag_name ->
-      tag_id = AddressTag.get_tag_id(tag_name)
-
-      unless tag_id do
-        AddressTag.set_tag(tag_name)
-      end
+    |> Enum.each(fn %{tag: tag_name, title: tag_display_name} ->
+      AddressTag.set_tag(tag_name, tag_display_name)
     end)
   end
 
@@ -159,7 +156,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_amb_mediators_tag do
     set_tag_for_multiple_env_var_array_addresses(
-      ["AMB_BRIDGE_MEDIATORS", "CUSTOM_AMB_BRIDGE_MEDIATORS"],
+      ["AMB_BRIDGE_MEDIATORS", "CUSTOM_CONTRACT_ADDRESSES_AMB_BRIDGE_MEDIATORS"],
       "amb bridge mediators"
     )
   end

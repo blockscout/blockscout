@@ -65,6 +65,20 @@ defmodule Explorer.Tags.AddressToTag do
     |> Repo.all()
   end
 
+  def get_tags_on_address(address_hash) do
+    query =
+      from(
+        tt in AddressTag,
+        left_join: att in AddressToTag,
+        on: tt.id == att.tag_id,
+        where: att.address_hash == ^address_hash,
+        select: tt
+      )
+
+    query
+    |> Repo.all()
+  end
+
   def set_tag_to_addresses(tag_id, address_hash_string_list) do
     current_address_hashes = get_address_hashes_mapped_to_tag(tag_id)
 

@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.AddressContractController do
   alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Tags.AddressToTag
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -23,13 +24,16 @@ defmodule BlockScoutWeb.AddressContractController do
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
          _ <- VerificationController.check_and_verify(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
+      tags = AddressToTag.get_tags_on_address(address_hash)
+
       render(
         conn,
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+        tags: tags
       )
     else
       {:restricted_access, _} ->

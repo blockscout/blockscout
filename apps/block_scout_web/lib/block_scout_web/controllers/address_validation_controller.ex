@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressValidationController do
   alias BlockScoutWeb.{AccessHelpers, BlockView, Controller}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
+  alias Explorer.Tags.AddressToTag
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -72,6 +73,8 @@ defmodule BlockScoutWeb.AddressValidationController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_or_insert_address_from_hash(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      tags = AddressToTag.get_tags_on_address(address_hash)
+
       render(
         conn,
         "index.html",
@@ -79,7 +82,8 @@ defmodule BlockScoutWeb.AddressValidationController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        tags: tags
       )
     else
       {:restricted_access, _} ->
