@@ -2,8 +2,16 @@ $alert-danger-background-color: #fff3f7 !default;
 $alert-danger-border-color: #fff3f7 !default;
 $alert-danger-color: #ff7986 !default;
 
+$alert-danger-etherscan-background-color: #f8dad7 !default;
+$alert-danger-etherscan-border-color: #f6cbc7 !default;
+
 .alert-danger {
     background-color: $alert-danger-background-color;
     border-color: $alert-danger-border-color;
     color: $alert-danger-color;
+}
+
+.alert-danger-etherscan {
+    background-color: $alert-danger-etherscan-background-color;
+    border-color: $alert-danger-etherscan-border-color;
 }

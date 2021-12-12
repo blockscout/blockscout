@@ -28,18 +28,6 @@ const stakesPageSelector = '[data-page="stakes"]'
 
 let provider = null
 
-if (localStorage.getItem('stakes-alert-read') === 'true') {
-  $('.js-stakes-welcome-alert').hide()
-} else {
-  $('.js-stakes-welcome-alert').show()
-}
-
-if (localStorage.getItem('stakes-warning-read') === 'true') {
-  $('.js-stakes-warning-alert').hide()
-} else {
-  $('.js-stakes-warning-alert').show()
-}
-
 export const initialState = {
   account: null,
   blockRewardContract: null,
@@ -335,14 +323,6 @@ if ($stakesPage.length) {
       if (checkForTokenDefinition(store)) {
         openClaimWithdrawalModal(event, store)
       }
-    })
-    .on('click', '.js-stakes-btn-close-welcome-alert', event => {
-      $(event.target).closest('section.container').hide()
-      localStorage.setItem('stakes-alert-read', 'true')
-    })
-    .on('click', '.js-stakes-btn-close-warning', event => {
-      $(event.target).closest('section.container').hide()
-      localStorage.setItem('stakes-warning-read', 'true')
     })
 
   $stakesPage
