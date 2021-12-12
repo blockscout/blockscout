@@ -14,6 +14,7 @@
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
 
 ### Chore
+- [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
 
 
 ## 4.0.0-beta
