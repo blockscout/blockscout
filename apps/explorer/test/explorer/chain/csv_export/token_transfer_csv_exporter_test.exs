@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
+defmodule Explorer.CSV.Export.TokenTransferCsvExporterTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.AddressTokenTransferCsvExporter
@@ -12,15 +12,21 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
         |> insert(from_address: address)
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, from_address: address)
+      token_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          from_address: address,
+          block_number: transaction.block_number,
+          block: transaction.block
+        )
 
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
+      {:ok, csv} = Explorer.Export.CSV.export_token_transfers(address, from_period, to_period, [])
+
       [result] =
-        address
-        |> AddressTokenTransferCsvExporter.export(from_period, to_period)
-        |> Enum.to_list()
+        csv
         |> Enum.drop(1)
         |> Enum.map(fn [
                          tx_hash,

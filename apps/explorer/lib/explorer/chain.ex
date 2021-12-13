@@ -7811,11 +7811,21 @@ defmodule Explorer.Chain do
   end
 
   def convert_date_to_max_block(date) do
-    query =
-      from(block in Block,
-        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
-        select: max(block.number)
+    {:ok, from} =
+      date
+      |> Date.from_iso8601!()
+      |> NaiveDateTime.new(~T[00:00:00])
+
+    next_day = from |> NaiveDateTime.add(:timer.hours(24), :millisecond)
+
+    block_query =
+      from(b in Block,
+        select: %{max: max(b.timestamp), number: b.number},
+        where: fragment("? BETWEEN ? AND ?", b.timestamp, ^from, ^next_day),
+        group_by: b.number
       )
+
+    query = from(b in subquery(block_query), select: max(b.number))
 
     query
     |> Repo.one()

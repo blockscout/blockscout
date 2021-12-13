@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
+defmodule Explorer.Export.CSV.TransactionExporterTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.{AddressTransactionCsvExporter, Wei}
@@ -18,10 +18,10 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
+      {:ok, csv} = address |> Explorer.Export.CSV.export_transactions(from_period, to_period, [])
+
       [result] =
-        address
-        |> AddressTransactionCsvExporter.export(from_period, to_period)
-        |> Enum.to_list()
+        csv
         |> Enum.drop(1)
         |> Enum.map(fn [
                          hash,
@@ -79,7 +79,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.error == to_string(transaction.error)
     end
 
-    test "exports transaction without explicity fee currency with CELO as currency" do
+    test "exports transaction without explicit fee currency with CELO as currency" do
       address = insert(:address)
 
       transaction =
@@ -91,10 +91,10 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
+      {:ok, csv} = address |> Explorer.Export.CSV.export_transactions(from_period, to_period, [])
+
       [result_currency] =
-        address
-        |> AddressTransactionCsvExporter.export(from_period, to_period)
-        |> Enum.to_list()
+        csv
         |> Enum.drop(1)
         |> Enum.map(fn [
                          _hash,
@@ -142,11 +142,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
-      result =
-        address
-        |> AddressTransactionCsvExporter.export(from_period, to_period)
-        |> Enum.to_list()
-        |> Enum.drop(1)
+      {:ok, csv} = address |> Explorer.Export.CSV.export_transactions(from_period, to_period, [])
+
+      result = csv |> Enum.drop(1)
 
       assert Enum.count(result) == 200
     end
