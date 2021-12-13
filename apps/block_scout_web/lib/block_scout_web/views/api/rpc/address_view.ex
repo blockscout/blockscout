@@ -52,6 +52,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("pending_withdrawals.json", %{pending_withdrawals: pending_withdrawals}) do
+    data = Enum.map(pending_withdrawals, &prepare_pending_withdrawals/1)
+    RPCView.render("show.json", data: data)
+  end
+
   def render("getminedblocks.json", %{blocks: blocks}) do
     data = Enum.map(blocks, &prepare_block/1)
     RPCView.render("show.json", data: data)
@@ -184,6 +189,21 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   defp prepare_token_transfer(token_transfer) do
     prepare_common_token_transfer(token_transfer)
+  end
+
+  defp prepare_pending_withdrawals(pending_withdrawal) do
+    %{
+      "total" => pending_withdrawal.total,
+      "availableForWithdrawal" => pending_withdrawal.available_for_withdrawal,
+      "pendingWithdrawals" =>
+        Enum.map(
+          pending_withdrawal.pending_withdrawals,
+          &%{
+            "total" => &1.total,
+            "availableAt" => &1.available_at
+          }
+        )
+    }
   end
 
   defp prepare_block(block) do

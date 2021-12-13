@@ -628,7 +628,7 @@ defmodule Indexer.Block.FetcherTest do
       end
     end
 
-    @tag :no_geth
+    @tag :skip
     test "deletes the entry in unlocked celo in case of a gold_withdrawn event", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do

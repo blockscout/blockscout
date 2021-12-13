@@ -7851,4 +7851,17 @@ defmodule Explorer.Chain do
     end)
     |> Explorer.Repo.transaction()
   end
+
+  def pending_withdrawals_for_account(account_address) do
+    query =
+      from(unlocked in CeloUnlocked,
+        select: %{
+          amount: unlocked.amount,
+          available: unlocked.available
+        },
+        where: unlocked.account_address == ^account_address
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
 end

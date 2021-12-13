@@ -5962,4 +5962,20 @@ defmodule Explorer.ChainTest do
       assert Repo.one!(select(CeloPendingEpochOperation, fragment("COUNT(*)"))) == 0
     end
   end
+
+  describe "pending_withdrawals_for_account/1" do
+    test "fetches individual pending withdrawals when passed an account address" do
+      available = DateTime.utc_now()
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+      insert(:celo_unlocked, %{account_address: address_1.hash, amount: 1, available: available})
+      insert(:celo_unlocked, %{account_address: address_1.hash, amount: 2, available: available})
+      insert(:celo_unlocked, %{account_address: address_2.hash, amount: 3, available: available})
+
+      assert Chain.pending_withdrawals_for_account(address_1.hash) == [
+               %{amount: %Explorer.Chain.Wei{value: Decimal.new(1)}, available: available},
+               %{amount: %Explorer.Chain.Wei{value: Decimal.new(2)}, available: available}
+             ]
+    end
+  end
 end

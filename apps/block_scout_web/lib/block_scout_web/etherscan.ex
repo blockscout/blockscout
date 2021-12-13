@@ -198,6 +198,27 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_getpendingwithdrawals_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "total" => "2000000000000000000",
+        "available_for_withdrawal" => "1000000000000000000",
+        "pending_withdrawals" => [
+          %{
+            "total" => "1000000000000000000",
+            "available_at" => "2021-12-09 00:11:23"
+          },
+          %{
+            "total" => "1000000000000000000",
+            "available_at" => "2021-12-11 11:21:50"
+          }
+        ]
+      }
+    ]
+  }
+
   @account_getminedblocks_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -224,6 +245,12 @@ defmodule BlockScoutWeb.Etherscan do
   @account_getminedblocks_example_value_error %{
     "status" => "0",
     "message" => "No blocks found",
+    "result" => []
+  }
+
+  @account_getpendingwithdrawals_example_value_error %{
+    "status" => "0",
+    "message" => "No pending withdrawals found",
     "result" => []
   }
 
@@ -825,6 +852,30 @@ defmodule BlockScoutWeb.Etherscan do
         type: "timestamp",
         definition: "When the block was collated.",
         example: ~s("1480072029")
+      }
+    }
+  }
+
+  @pending_withdrawal_model %{
+    name: "PendingWithdrawal",
+    fields: %{
+      total: @wei_type,
+      available_at: %{
+        type: "timestamp",
+        definition: "When the unlocked CELO will be available for withdrawal.",
+        example: "2021-12-09 00:11:23"
+      }
+    }
+  }
+
+  @pending_withdrawals_model %{
+    name: "PendingWithdrawals",
+    fields: %{
+      total: @wei_type,
+      available_for_withdrawal: @wei_type,
+      pending_withdrawals: %{
+        type: "array",
+        array_type: @pending_withdrawal_model
       }
     }
   }
@@ -1681,6 +1732,43 @@ defmodule BlockScoutWeb.Etherscan do
         code: "200",
         description: "error",
         example_value: Jason.encode!(@account_tokenbalance_example_value_error)
+      }
+    ]
+  }
+
+  @account_getpendingwithdrawals_action %{
+    name: "getpendingwithdrawals",
+    description: "Get list of pending withdrawals by address.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying accounts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_getpendingwithdrawals_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @pending_withdrawals_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_getpendingwithdrawals_example_value_error)
       }
     ]
   }
@@ -2844,6 +2932,7 @@ defmodule BlockScoutWeb.Etherscan do
       @account_tokentx_action,
       @account_tokenbalance_action,
       @account_tokenlist_action,
+      @account_getpendingwithdrawals_action,
       @account_getminedblocks_action,
       @account_listaccounts_action
     ]

@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Etherscan}
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, CeloUnlocked, Wei}
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def listaccounts(conn, params) do
@@ -212,6 +212,23 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
       {:error, :not_found} ->
         render(conn, :error, error: "No tokens found", data: [])
+    end
+  end
+
+  def getpendingwithdrawals(conn, params) do
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:ok, pending_withdrawals} <- list_pending_withdrawals(address_hash) do
+      render(conn, :pending_withdrawals, %{pending_withdrawals: pending_withdrawals})
+    else
+      {:address_param, :error} ->
+        render(conn, :error, error: "Query parameter address is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No pending withdrawals found", data: [])
     end
   end
 
@@ -505,6 +522,34 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     case Etherscan.list_token_transfers(address_hash, contract_address_hash, options) do
       [] -> {:error, :not_found}
       token_transfers -> {:ok, token_transfers}
+    end
+  end
+
+  defp list_pending_withdrawals(address_hash) do
+    case Chain.pending_withdrawals_for_account(address_hash) do
+      [] ->
+        {:error, :not_found}
+
+      pending_withdrawals ->
+        {:ok,
+         [
+           %{
+             total:
+               Enum.reduce(pending_withdrawals, Decimal.new(0), fn withdrawal, acc ->
+                 Decimal.add(Wei.to(withdrawal.amount, :wei), acc)
+               end),
+             available_for_withdrawal:
+               Enum.reduce(pending_withdrawals, Decimal.new(0), fn withdrawal, acc ->
+                 if CeloUnlocked.is_available(withdrawal) do
+                   Decimal.add(Wei.to(withdrawal.amount, :wei), acc)
+                 else
+                   acc
+                 end
+               end),
+             pending_withdrawals:
+               Enum.map(pending_withdrawals, &%{total: to_string(&1.amount), available_at: to_string(&1.available)})
+           }
+         ]}
     end
   end
 

@@ -2618,6 +2618,122 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
   end
 
+  describe "getpendingwithdrawals" do
+    test "with missing address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "getpendingwithdrawals"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "address is required"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(pendingwithdrawals_schema(), response)
+    end
+
+    test "with an invalid address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "getpendingwithdrawals",
+        "address" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(pendingwithdrawals_schema(), response)
+    end
+
+    test "with an address that doesn't exist", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "getpendingwithdrawals",
+        "address" => "0x9bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No pending withdrawals found"
+      assert :ok = ExJsonSchema.Validator.validate(pendingwithdrawals_schema(), response)
+    end
+
+    test "with address with existing pending withdrawals in celo_unlocked table", %{conn: conn} do
+      available_1 = Timex.shift(DateTime.utc_now(), days: -1)
+      available_2 = Timex.shift(DateTime.utc_now(), days: 1)
+      address = insert(:address)
+
+      pending_withdrawal_1 =
+        insert(:celo_unlocked, %{
+          account_address: address.hash,
+          amount: 2_000_000_000_000_000_000,
+          available: available_1
+        })
+
+      pending_withdrawal_2 =
+        insert(:celo_unlocked, %{
+          account_address: address.hash,
+          amount: 1_000_000_000_000_000_000,
+          available: available_2
+        })
+
+      params = %{
+        "module" => "account",
+        "action" => "getpendingwithdrawals",
+        "address" => to_string(address.hash)
+      }
+
+      expected_result = [
+        %{
+          "total" =>
+            to_string(
+              Decimal.add(
+                Explorer.Chain.Wei.to(pending_withdrawal_1.amount, :wei),
+                Explorer.Chain.Wei.to(pending_withdrawal_2.amount, :wei)
+              )
+            ),
+          "availableForWithdrawal" => to_string(pending_withdrawal_1.amount),
+          "pendingWithdrawals" => [
+            %{
+              "total" => to_string(pending_withdrawal_1.amount),
+              "availableAt" => to_string(available_1)
+            },
+            %{
+              "total" => to_string(pending_withdrawal_2.amount),
+              "availableAt" => to_string(available_2)
+            }
+          ]
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(pendingwithdrawals_schema(), response)
+    end
+  end
+
   describe "getminedblocks" do
     test "with missing address hash", %{conn: conn} do
       params = %{
@@ -3059,6 +3175,29 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "decimals" => %{"type" => "string"},
           "symbol" => %{"type" => "string"},
           "type" => %{"type" => "string"}
+        }
+      }
+    })
+  end
+
+  defp pendingwithdrawals_schema do
+    resolve_schema(%{
+      "type" => ["array", "null"],
+      "items" => %{
+        "type" => "object",
+        "properties" => %{
+          "total" => %{"type" => "string"},
+          "available_for_withdrawal" => %{"type" => "string"},
+          "pending_withdrawals" => %{
+            "type" => "array",
+            "items" => %{
+              "type" => "object",
+              "properties" => %{
+                "total" => %{"type" => "string"},
+                "available_at" => %{"type" => "string"}
+              }
+            }
+          }
         }
       }
     })

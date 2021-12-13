@@ -54,4 +54,8 @@ defmodule Explorer.Chain.CeloUnlocked do
     |> cast(attrs, @attrs ++ @required_attrs)
     |> validate_required(@required_attrs)
   end
+
+  def is_available(withdrawal) do
+    DateTime.diff(withdrawal.available, DateTime.utc_now()) <= 0
+  end
 end
