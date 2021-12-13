@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Tags.AddressToTag
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext

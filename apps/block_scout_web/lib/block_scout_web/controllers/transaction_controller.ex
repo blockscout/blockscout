@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Tags.AddressToTag
   alias Phoenix.View
 
   @necessity_by_association %{
@@ -113,6 +114,8 @@ defmodule BlockScoutWeb.TransactionController do
                ),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+          tags = AddressToTag.get_tags_on_address(transaction.to_address_hash)
+
           render(
             conn,
             "show_token_transfers.html",
@@ -120,7 +123,8 @@ defmodule BlockScoutWeb.TransactionController do
             block_height: Chain.block_height(),
             current_path: current_path(conn),
             show_token_transfers: true,
-            transaction: transaction
+            transaction: transaction,
+            tags: tags
           )
         else
           :not_found ->
@@ -143,6 +147,8 @@ defmodule BlockScoutWeb.TransactionController do
                ),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+          tags = AddressToTag.get_tags_on_address(transaction.to_address_hash)
+
           render(
             conn,
             "show_internal_transactions.html",
@@ -150,7 +156,8 @@ defmodule BlockScoutWeb.TransactionController do
             current_path: current_path(conn),
             block_height: Chain.block_height(),
             show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
-            transaction: transaction
+            transaction: transaction,
+            tags: tags
           )
         else
           :not_found ->
