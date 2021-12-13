@@ -9,6 +9,7 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5003](https://github.com/blockscout/blockscout/pull/5003) - API router refactoring
 - [#4992](https://github.com/blockscout/blockscout/pull/4992) - Fix `type` field in transactions after enabling 1559
 - [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
 - [#4979](https://github.com/blockscout/blockscout/pull/4979), [#4993](https://github.com/blockscout/blockscout/pull/4993) - Store total gas_used in addresses table
@@ -22,6 +23,7 @@
 - [#4784](https://github.com/blockscout/blockscout/pull/4784) - Fix logs query
 
 ### Chore
+- [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
 
 
 ## 4.0.0-beta
