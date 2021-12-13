@@ -6,6 +6,7 @@ $stakes-btn-close-alert-color: $primary !default;
   outline: none !important;
 
   path {
-    fill: $stakes-btn-close-alert-color;
+    fill: $stakes-btn-close-alert-color !important;
+    cursor: pointer;
   }
 }

@@ -1,7 +1,7 @@
 <div class="card fs-14 <%= if assigns[:additional_container_classes] do @additional_container_classes |> Enum.join(" ") end %>">
-  <div class="card-body container <%= if assigns[:additional_body_classes] do @additional_body_classes |> Enum.join(" ") end %>" style="padding: 1rem; border-radius: 10px;">
+  <div class="card-body <%= if assigns[:additional_body_classes] do @additional_body_classes |> Enum.join(" ") end %>" style="padding: 1rem;">
     <div class="row">
-      <div class="col-sm-6 col-md-8 col-lg-10" style="width: 90%;">
+      <div class="col-sm-6 col-md-10 col-lg-10" style="width: 90%;">
         <span>
           <%= if assigns[:enable_info_icon] && @enable_info_icon == true do %>
             <%= render BlockScoutWeb.CommonComponentsView, "_info.html", extra_class: "ml-1" %>
@@ -9,12 +9,12 @@
           <%= raw(@message) %>
       </span>
       </div>
-      <div class="col-sm-6 col-md-4 col-lg-2" style="width: 10%;">
-        <button type="button" class="stakes-btn-close-alert <%= if assigns[:additional_button_classes] do @additional_button_classes |> Enum.join(" ") end %> float-right">
+      <div class="col-sm-6 col-md-2 col-lg-2" style="width: 10%;">
+        <div class="stakes-btn-close-alert <%= if assigns[:additional_button_classes] do @additional_button_classes |> Enum.join(" ") end %> float-right">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
                 <path fill="#ddd" fill-rule="evenodd" d="M10.435 8.983l7.261 7.261a1.027 1.027 0 1 1-1.452 1.452l-7.261-7.261-7.262 7.262a1.025 1.025 0 1 1-1.449-1.45l7.262-7.261L.273 1.725A1.027 1.027 0 1 1 1.725.273l7.261 7.261 7.23-7.231a1.025 1.025 0 1 1 1.449 1.45l-7.23 7.23z"></path>
             </svg>
-        </button>
+        </div>
       </div>
     </div>
   </div>

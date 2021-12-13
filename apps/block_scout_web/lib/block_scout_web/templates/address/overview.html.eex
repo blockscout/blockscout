@@ -1,5 +1,5 @@
 <%= if System.get_env("ALERT_TO_ADDRESSES") && System.get_env("ALERT_TO_ADDRESSES") |> String.downcase() == to_string(@address.hash) |> String.downcase() do %>
-  <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: System.get_env("ADDRESS_ALERT_MESSAGE"), additional_container_classes: ["mb-2", "js-warning-alert"], additional_body_classes: ["alert-danger-etherscan"], additional_button_classes: ["js-btn-close-warning"] %>
+  <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: System.get_env("ADDRESS_ALERT_MESSAGE"), additional_container_classes: ["mb-2", "js-warning-alert"], additional_body_classes: ["alert-danger-etherscan", "border-radius-10"], additional_button_classes: ["js-btn-close-warning"] %>
 <% end %>
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
