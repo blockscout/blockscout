@@ -43,7 +43,7 @@ export function reducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
   '[data-page="contract-verification"]': {
@@ -111,6 +111,10 @@ function filterNightlyBuilds (filter) {
 }
 
 if ($contractVerificationPage.length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
