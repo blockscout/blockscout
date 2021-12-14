@@ -115,7 +115,7 @@ defmodule Explorer.Etherscan do
     |> Chain.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   @doc """
@@ -198,7 +198,7 @@ defmodule Explorer.Etherscan do
       query_to_address_hash_wrapped
       |> union(^query_from_address_hash_wrapped)
       |> union(^query_created_contract_address_hash_wrapped)
-      |> Repo.all()
+      |> Repo.replica().all()
     else
       query =
         from(
@@ -222,7 +222,7 @@ defmodule Explorer.Etherscan do
       |> where_start_block_match(options)
       |> where_end_block_match(options)
       |> InternalTransaction.where_nonpending_block()
-      |> Repo.all()
+      |> Repo.replica().all()
     end
   end
 
@@ -279,7 +279,7 @@ defmodule Explorer.Etherscan do
         }
       )
 
-    Repo.all(query)
+    Repo.replica().all(query)
   end
 
   @doc """
@@ -300,7 +300,7 @@ defmodule Explorer.Etherscan do
         select: ctb
       )
 
-    Repo.one(query)
+    Repo.replica().one(query)
   end
 
   @doc """
@@ -326,7 +326,7 @@ defmodule Explorer.Etherscan do
         }
       )
 
-    Repo.all(query)
+    Repo.replica().all(query)
   end
 
   @transaction_fields ~w(
@@ -377,7 +377,7 @@ defmodule Explorer.Etherscan do
     |> where_address_match(address_hash, options)
     |> Chain.pending_transactions_query()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp list_transactions(address_hash, max_block_number, options) do
@@ -401,7 +401,7 @@ defmodule Explorer.Etherscan do
     |> where_end_block_match(options)
     |> where_start_timestamp_match(options)
     |> where_end_timestamp_match(options)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp where_address_match(query, address_hash, %{filter_by: "to"}) do
@@ -490,7 +490,7 @@ defmodule Explorer.Etherscan do
     wrapped_query
     |> where_start_block_match(options)
     |> where_end_block_match(options)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp where_start_block_match(query, %{start_block: nil}), do: query

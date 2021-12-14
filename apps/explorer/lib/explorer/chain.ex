@@ -1735,7 +1735,7 @@ defmodule Explorer.Chain do
         select: coin_balance.value
       )
 
-    case Repo.one(coin_balance_query) do
+    case Repo.replica().one(coin_balance_query) do
       nil -> {:error, :not_found}
       coin_balance -> {:ok, coin_balance}
     end
@@ -1761,7 +1761,7 @@ defmodule Explorer.Chain do
         select: coin_balance.value
       )
 
-    case Repo.one(query) do
+    case Repo.replica().one(query) do
       nil -> {:error, :not_found}
       coin_balance -> {:ok, coin_balance}
     end
@@ -1790,7 +1790,7 @@ defmodule Explorer.Chain do
           )
       end
 
-    case Repo.one(query) do
+    case Repo.replica().one(query) do
       nil -> {:error, :not_found}
       coin_balance -> {:ok, coin_balance}
     end
@@ -1806,7 +1806,7 @@ defmodule Explorer.Chain do
         limit: ^limit
       )
 
-    Repo.all(query)
+    Repo.replica().all(query)
   end
 
   @doc """
@@ -6181,7 +6181,7 @@ defmodule Explorer.Chain do
 
     query
     |> reject_decompiled_with_version(not_decompiled_with_version)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   @spec transaction_token_transfer_type(Transaction.t()) ::
@@ -6322,7 +6322,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.all()
+    |> Repo.replica().all()
     |> Enum.map(fn smart_contract ->
       Map.put(smart_contract.address, :smart_contract, smart_contract)
     end)
@@ -6339,7 +6339,7 @@ defmodule Explorer.Chain do
         offset: ^offset
       )
 
-    Repo.all(query)
+    Repo.replica().all(query)
   end
 
   def list_unordered_unverified_contracts(limit, offset) do
@@ -6354,7 +6354,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.all()
+    |> Repo.replica().all()
     |> Enum.map(fn address ->
       %{address | smart_contract: nil}
     end)
@@ -6370,7 +6370,7 @@ defmodule Explorer.Chain do
         offset: ^offset
       )
 
-    Repo.all(query)
+    Repo.replica().all(query)
   end
 
   def list_unordered_not_decompiled_contracts(limit, offset) do
@@ -6386,7 +6386,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.all()
+    |> Repo.replica().all()
     |> Enum.map(fn address ->
       %{address | smart_contract: nil}
     end)
@@ -7470,7 +7470,7 @@ defmodule Explorer.Chain do
             select: tx_stats.total_fee
           )
 
-        total_fees = Repo.one(query)
+        total_fees = Repo.replica().one(query)
         {:ok, total_fees}
 
       _ ->
