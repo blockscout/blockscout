@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Account.AuthController do
 
   def logout(conn, _params) do
     conn
-    |> put_flash(:info, "You have been logged out!")
+    # |> put_flash(:info, "You have been logged out!")
     |> configure_session(drop: true)
     |> redirect(to: root())
   end
@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Account.AuthController do
     case get_session(conn, :current_user) do
       nil ->
         conn
-        |> put_flash(:info, "You must sign in to view profile!")
+        # |> put_flash(:info, "You must sign in to view profile!")
         |> redirect(to: root())
 
       %{} = user ->
@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.Account.AuthController do
     case UserFromAuth.find_or_create(auth) do
       {:ok, user} ->
         conn
-        |> put_flash(:info, "Successfully authenticated as " <> user.name <> ".")
+        # |> put_flash(:info, "Successfully authenticated as " <> user.name <> ".")
         |> put_session(:current_user, user)
         |> redirect(to: root())
 

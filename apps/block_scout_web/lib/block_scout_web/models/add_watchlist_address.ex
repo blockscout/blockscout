@@ -90,7 +90,6 @@ defmodule AddWatchlistAddress do
       watchlist,
       :watchlist_addresses,
       attributes
-      # %{address_hash: address.hash, name: name}
     )
   end
 

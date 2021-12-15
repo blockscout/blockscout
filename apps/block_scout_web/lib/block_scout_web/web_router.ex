@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.WebRouter do
     resources("/watchlist", Account.WatchlistController, only: [:show], singleton: true, as: :watchlist)
 
     resources("/watchlist_address", Account.WatchlistAddressController,
-      only: [:new, :create, :update, :delete],
+      only: [:new, :create, :edit, :update, :delete],
       as: :watchlist_address
     )
   end

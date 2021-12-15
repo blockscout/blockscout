@@ -6,7 +6,7 @@ defmodule Explorer.Accounts.WatchlistAddressForm do
   alias Explorer.Chain.Address
   alias Explorer.Chain.Hash
 
-  schema "account_watchlist_addresses" do
+  schema "account_watchlist_address_forms" do
     field(:name, :string)
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
     belongs_to(:watchlist, Watchlist)
@@ -15,10 +15,6 @@ defmodule Explorer.Accounts.WatchlistAddressForm do
     field(:watch_coin_output, :boolean)
     field(:watch_erc_20_input, :boolean)
     field(:watch_erc_20_output, :boolean)
-    field(:watch_erc_721_input, :boolean)
-    field(:watch_erc_721_output, :boolean)
-    field(:watch_erc_1155_input, :boolean)
-    field(:watch_erc_1155_output, :boolean)
     field(:watch_nft_input, :boolean)
     field(:watch_nft_output, :boolean)
     field(:notify_email, :boolean)
@@ -39,10 +35,6 @@ defmodule Explorer.Accounts.WatchlistAddressForm do
       :watch_coin_output,
       :watch_erc_20_input,
       :watch_erc_20_output,
-      :watch_erc_721_input,
-      :watch_erc_721_output,
-      :watch_erc_1155_input,
-      :watch_erc_1155_output,
       :watch_nft_input,
       :watch_nft_output,
       :notify_email,

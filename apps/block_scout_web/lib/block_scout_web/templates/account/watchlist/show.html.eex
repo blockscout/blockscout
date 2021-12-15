@@ -1,137 +1,45 @@
 <section class="container">
-  <div class="row"> <div class="col-2">
-
+  <div class="row"> 
+    <div class="col-2">
       <ul class="nav flex-column">
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" style="font-size: 17px;" href="<%= auth_path(@conn, :profile) %>">Profile</a>
+          <a class="nav-link" aria-current="page" style="font-size: 14px;" href="<%= auth_path(@conn, :profile) %>">Profile</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link active" style="font-size: 20px;" href="#">Watchlist</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link disabled" style="font-size: 17px;" href="#">Address Tags</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link disabled" style="font-size: 17px;" href="#">Transaction Tags</a>
+          <a class="nav-link active" style="font-size: 14px;" href="#">Watchlist</a>
         </li>
       </ul>
     </div>
     <div class="col-md">
       <div class="card">
         <div class="card-body" >
-          <h1 class="card-title list-title-description" style="font-size: 26px;">Watchlist</h1>
+          <h1 class="card-title list-title-description" style="font-size: 18;">Watchlist</h1>
           <br>
           <div class="col-sm">
             <div class="mb-4 row">
-              <table class="table mb-4"style="margin: 30px;">
-                <thead style="font-size: 17px; color: #6c757d" >
-                  <tr>
-                    <th scope="col">#</th>
-                    <th scope="col"> Name</th>
-                    <th scope="col">Address</th>
-                    <th scope="col"> Balance</th>
-                  </tr>
-                </thead>
-                <tbody style="font-size: 15px; color: #6c757d" >
-                  <%= Enum.map(@watchlist.watchlist_addresses, fn wa ->
+              <%= if @watchlist.watchlist_addresses == [] do %>
+                <h2>You don't have addresses on you watchlist yet</h2>
+              <% else %>
+                <table class="table mb-4"style="margin: 30px;">
+                  <thead style="font-size: 14px; color: #6c757d" >
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col"> Name</th>
+                      <th scope="col">Address</th>
+                      <th scope="col"> Balance</th>
+                      <th scope="col"> Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody style="font-size: 15px; color: #6c757d" >
+                    <%= Enum.map(@watchlist.watchlist_addresses, fn wa ->
 render(WatchlistAddressView, "row.html", watchlist_address: wa, exchange_rate: exchange_rate(), conn: @conn)
 end) %>
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              <% end %>
             </div>
           </div>
-
-          <!-- Button trigger modal -->
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
-            Add address
-          </button>
+          <a class="btn btn-primary" style="font-size: 14px;" href="<%= watchlist_address_path(@conn, :new) %>">Add address</a>
         </div>
       </div>
 </section>
-
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Add  address to the Watchlist</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <h2 style="font-size: 24px;">Address</h2>
-
-        <%= form_for @watchlist_address, watchlist_address_path(@conn, :create), fn f -> %>
-          <div class="form-group">
-            <%= label f, "Address", class: "control-label", style: "font-size: 17px" %>
-            <%= text_input f, :address_hash, class: "form-control" %>
-            <%= error_tag f, :address_hash %>
-          </div>
-
-          <div class="form-group">
-            <%= label f, "Name", class: "control-label", style: "font-size: 17px" %>
-            <%= text_input f, :name, class: "form-control" %>
-            <%= error_tag f, :name %>
-          </div>
-
-          <h2 style="font-size: 24px;">Notifications</h2>
-          <h3>Please select what types of notifications you will receive:</h3>
-          <div class="row">
-            <div class="col-sm">
-              <h3>xDai</h3>
-              <div class="form-group">
-                <%= checkbox f, :watch_coin_input, class: "form-check-input" %>
-                <%= label f, "Incoming", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_coin_input %>
-              </div>
-              <div class="form-group">
-                <%= checkbox f, :watch_coin_output, class: "form-check-input" %>
-                <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_coin_output %>
-              </div>
-            </div>
-            <div class="col-sm">
-              <h3>ERC-20 tokens</h3>
-              <div class="form-group">
-                <%= checkbox f, :watch_erc_20_input, class: "form-check-input" %>
-                <%= label f, "Incoming", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_erc_20_input %>
-              </div>
-              <div class="form-group">
-                <%= checkbox f, :watch_erc_20_output, class: "form-check-input" %>
-                <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_erc_20_output %>
-              </div>
-            </div>
-            <div class="col-md">
-              <h3>ERC-721, ERC-1155 tokens (NFT)</h3>
-              <div class="form-group">
-                <%= checkbox f, :watch_nft_input, class: "form-check-input" %>
-                <%= label f, "Incoming", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_nft_input %>
-              </div>
-              <div class="form-group">
-                <%= checkbox f, :watch_nft_output, class: "form-check-input" %>
-                <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 13px" %>
-                <%= error_tag f, :watch_nft_output %>
-              </div>
-            </div>
-          </div>
-
-          <h3>Please select notification methods:</h3>
-          <div class="form-group">
-            <%= checkbox f, :notify_email, class: "form-check-input" %>
-            <%= label f, "Email notifications", class: "form-check-label", style: "font-size: 13px" %>
-            <%= error_tag f, :notify_email %>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <%= submit "Save", class: "btn btn-primary" %>
-          </div>
-        <% end %>
-      </div>
-    </div>
-  </div>
-</div>

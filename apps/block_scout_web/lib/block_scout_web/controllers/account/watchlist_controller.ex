@@ -3,7 +3,6 @@ defmodule BlockScoutWeb.Account.WatchlistController do
 
   alias Explorer.Repo
   alias Explorer.Accounts.Watchlist
-  alias Explorer.Accounts.WatchlistAddressForm
 
   def show(conn, _params) do
     case current_user(conn) do
@@ -16,8 +15,7 @@ defmodule BlockScoutWeb.Account.WatchlistController do
         render(
           conn,
           "show.html",
-          watchlist: watchlist_with_addresses(user),
-          watchlist_address: new_address()
+          watchlist: watchlist_with_addresses(user)
         )
     end
   end
@@ -25,21 +23,6 @@ defmodule BlockScoutWeb.Account.WatchlistController do
   defp watchlist_with_addresses(user) do
     wl = Repo.get(Watchlist, user.watchlist_id)
     Repo.preload(wl, watchlist_addresses: :address)
-  end
-
-  defp new_address do
-    WatchlistAddressForm.changeset(
-      %WatchlistAddressForm{
-        watch_coin_input: true,
-        watch_coin_output: true,
-        watch_erc_20_input: true,
-        watch_erc_20_output: true,
-        watch_nft_input: true,
-        watch_nft_output: true,
-        notify_email: true
-      },
-      %{}
-    )
   end
 
   defp current_user(conn) do

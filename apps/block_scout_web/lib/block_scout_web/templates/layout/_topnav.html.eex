@@ -214,8 +214,6 @@ to: api_url() <> api_docs_path(@conn, :eth_rpc)
                 </div>
                 <a href="<%= auth_path(@conn, :profile) %>" class= "dropdown-item">Profile</a>
                 <a href="<%= watchlist_path(@conn, :show) %>" class= "dropdown-item">Watch list</a>
-                <a href="#" class= "dropdown-item">Address tags</a>
-                <a href="#" class= "dropdown-item">Transaction tags</a>
                 <a href="<%= BlockScoutWeb.LayoutView.sign_out_link %>" class= "dropdown-item">Sign out</a>
               </div>
             </li>

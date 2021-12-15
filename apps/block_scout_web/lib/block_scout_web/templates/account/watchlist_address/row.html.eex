@@ -22,4 +22,7 @@ additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-ic
       </span>)
     </span>
   </td>
+  <td>
+    <%= link("Edit", to: watchlist_address_path(@conn, :edit, @watchlist_address.id)) %>
+  </td>
 </tr>

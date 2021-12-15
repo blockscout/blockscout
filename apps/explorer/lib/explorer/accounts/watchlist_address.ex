@@ -3,6 +3,8 @@ defmodule Explorer.Accounts.WatchlistAddress do
   import Ecto.Changeset
 
   alias Explorer.Accounts.Watchlist
+  alias Explorer.Accounts.WatchlistAddress
+  alias Explorer.Accounts.WatchlistAddressForm
   alias Explorer.Chain.Address
   alias Explorer.Chain.Hash
 
@@ -47,5 +49,19 @@ defmodule Explorer.Accounts.WatchlistAddress do
       :notify_inapp
     ])
     |> validate_required([:name, :address_hash])
+  end
+
+  def to_form(%WatchlistAddress{} = wa) do
+    %WatchlistAddressForm{
+      address_hash: wa.address.hash,
+      name: wa.name,
+      watch_coin_input: wa.watch_coin_input,
+      watch_coin_output: wa.watch_coin_output,
+      watch_erc_20_input: wa.watch_erc_20_input,
+      watch_erc_20_output: wa.watch_erc_20_output,
+      watch_nft_input: wa.watch_erc_721_input,
+      watch_nft_output: wa.watch_erc_721_output,
+      notify_email: wa.notify_email
+    }
   end
 end
