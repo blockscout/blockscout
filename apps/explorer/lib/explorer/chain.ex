@@ -1841,7 +1841,7 @@ defmodule Explorer.Chain do
            ) do
         {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
           bytecode_from_node = fetched_codes |> List.first() |> Map.get(:code)
-          bytecode_from_db = "0x0" <> (address.contract_code.bytes |> Base.encode16(case: :lower))
+          bytecode_from_db = "0x" <> (address.contract_code.bytes |> Base.encode16(case: :lower))
 
           if bytecode_from_node == bytecode_from_db do
             {:ok, smart_contract} =
