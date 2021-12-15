@@ -65,6 +65,8 @@ defmodule Explorer.Tags.AddressToTag do
     |> Repo.all()
   end
 
+  def get_tags_on_address(address_hash) when is_nil(address_hash), do: []
+
   def get_tags_on_address(address_hash) do
     query =
       from(

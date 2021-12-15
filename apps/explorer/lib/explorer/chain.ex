@@ -4967,6 +4967,7 @@ defmodule Explorer.Chain do
 
       created_from_int_tx_success =
         created_from_int_tx_success_query
+        |> limit(1)
         |> Repo.one()
 
       created_from_tx_query =
@@ -5986,16 +5987,22 @@ defmodule Explorer.Chain do
 
   @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
   def fetch_last_token_balance(address_hash, token_contract_address_hash) do
-    address_hash
-    |> CurrentTokenBalance.last_token_balance(token_contract_address_hash)
-    |> Repo.one() || Decimal.new(0)
+    if address_hash !== %{} do
+      address_hash
+      |> CurrentTokenBalance.last_token_balance(token_contract_address_hash) || Decimal.new(0)
+    else
+      Decimal.new(0)
+    end
   end
 
   # @spec fetch_last_token_balance_1155(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
   def fetch_last_token_balance_1155(address_hash, token_contract_address_hash, token_id) do
-    address_hash
-    |> CurrentTokenBalance.last_token_balance_1155(token_contract_address_hash, token_id)
-    |> Repo.one() || Decimal.new(0)
+    if address_hash !== %{} do
+      address_hash
+      |> CurrentTokenBalance.last_token_balance_1155(token_contract_address_hash, token_id) || Decimal.new(0)
+    else
+      Decimal.new(0)
+    end
   end
 
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
