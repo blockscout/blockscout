@@ -9,11 +9,7 @@
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
-        <div data-selector="channel-disconnected-message" style="display: none;">
-          <div data-selector="reload-button" class="alert alert-danger" style="padding: 0.75rem 0rem; cursor: pointer;">
-            <span href="#" class="alert alert-danger"><%= gettext "Connection Lost, click to load newer blocks" %></span>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost, click to load newer blocks") %>
 
         <h2 class="card-title"><%= gettext "Balances" %></h2>
 
