@@ -340,10 +340,6 @@ defmodule Explorer.SmartContract.Reader do
       {:array, type, array_size} ->
         format_type(type) <> "[" <> Integer.to_string(array_size) <> "]"
 
-      # may be it is better to avoid this by constructing proper definition based on target method's components
-      {:array, {:tuple, _}} ->
-        "tuple[]"
-
       {:array, type} ->
         format_type(type) <> "[]"
 
