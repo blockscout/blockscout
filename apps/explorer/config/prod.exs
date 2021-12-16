@@ -8,6 +8,19 @@ config :explorer, Explorer.Repo,
   prepare: :unnamed,
   timeout: :timer.seconds(60)
 
+database_api_url =
+  if System.get_env("DATABASE_READ_ONLY_API_URL"),
+    do: System.get_env("DATABASE_READ_ONLY_API_URL"),
+    else: System.get_env("DATABASE_URL")
+
+# Configures API the database
+config :explorer, Explorer.Repo.Replica1,
+  url: database_api_url,
+  pool_size: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
+  ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
+  prepare: :unnamed,
+  timeout: :timer.seconds(60)
+
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 
 config :logger, :explorer,

@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5004](https://github.com/blockscout/blockscout/pull/5004) - Add ability to set up a separate DB endpoint for the API endpoints
 - [#4924](https://github.com/blockscout/blockscout/pull/4924) - Add daily bytecode verifcation to prevent metamorphic contracts vulnerablity
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 - [#4989](https://github.com/blockscout/blockscout/pull/4989), [#4991](https://github.com/blockscout/blockscout/pull/4991) - Bridged tokens list API endpoint
