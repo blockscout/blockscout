@@ -297,12 +297,19 @@ function firstPageLoad (store) {
 
   $element.on('submit', '[input-page-number-form]', (event) => {
     event.preventDefault()
+    const $input = event.target.querySelector('#page-number')
+    const input = parseInt($input.value)
+    const loading = store.getState().loading
+    const pagesLimit = store.getState().pagesLimit
+    if (!isNaN(input) && input <= pagesLimit && !loading) { loadPageByNumber(store, input) }
+    if (!loading || isNaN(input) || input > pagesLimit) { $input.value = '' }
     return false
   })
 }
 
 const $element = $('[data-async-load]')
 if ($element.length) {
+  if (Object.prototype.hasOwnProperty.call($element.data(), 'noFirstLoading')) {
     enableFirstLoading = false
   }
   if (enableFirstLoading) {
