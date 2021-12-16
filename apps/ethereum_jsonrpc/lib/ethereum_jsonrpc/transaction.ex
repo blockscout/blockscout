@@ -12,6 +12,7 @@ defmodule EthereumJSONRPC.Transaction do
   import EthereumJSONRPC, only: [quantity_to_integer: 1, integer_to_quantity: 1, request: 1]
 
   alias EthereumJSONRPC
+  alias EthereumJSONRPC.Celo.TransactionParsing
 
   @type elixir :: %{
           String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
@@ -171,105 +172,20 @@ defmodule EthereumJSONRPC.Transaction do
     elixir_to_params(%{transaction | "input" => "0x"})
   end
 
-  def elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "gasPrice" => gas_price,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "r" => r,
-          "s" => s,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "v" => v,
-          "value" => value,
-          "type" => type,
-          "maxPriorityFeePerGas" => max_priority_fee_per_gas,
-          "maxFeePerGas" => max_fee_per_gas
-        } = transaction
-      ) do
-    result = %{
-      block_hash: block_hash,
-      block_number: block_number,
-      from_address_hash: from_address_hash,
-      gas: gas,
-      gas_price: gas_price,
-      gas_currency_hash: nil,
-      gas_fee_recipient_hash: nil,
-      gateway_fee: 0,
-      hash: hash,
-      index: index,
-      input: input,
-      nonce: nonce,
-      r: r,
-      s: s,
-      to_address_hash: to_address_hash,
-      v: v,
-      value: value,
-      transaction_index: index,
-      type: type,
-      max_priority_fee_per_gas: max_priority_fee_per_gas,
-      max_fee_per_gas: max_fee_per_gas
-    }
+  # eip-1559 typed transaction parsing
+  def elixir_to_params(%{"type" => type} = transaction) when type in [0, "0x0"],
+    do: TransactionParsing.parse_legacy_transaction(transaction)
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
-  end
+  def elixir_to_params(%{"type" => type} = transaction) when type in [1, "0x1"],
+    do: TransactionParsing.parse_access_list_transaction(transaction)
 
-  def elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "gasPrice" => gas_price,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "r" => r,
-          "s" => s,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "v" => v,
-          "value" => value,
-          "type" => type
-        } = transaction
-      ) do
-    result = %{
-      block_hash: block_hash,
-      block_number: block_number,
-      from_address_hash: from_address_hash,
-      gas: gas,
-      gas_price: gas_price,
-      gas_currency_hash: nil,
-      gas_fee_recipient_hash: nil,
-      gateway_fee: 0,
-      hash: hash,
-      index: index,
-      input: input,
-      nonce: nonce,
-      r: r,
-      s: s,
-      to_address_hash: to_address_hash,
-      v: v,
-      value: value,
-      transaction_index: index,
-      type: type
-    }
+  def elixir_to_params(%{"type" => type} = transaction) when type in [2, "0x2", "0x02"],
+    do: TransactionParsing.parse_dynamic_fee_transaction(transaction)
 
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
-  end
+  def elixir_to_params(%{"type" => type} = transaction) when type in [124, "0x7c"],
+    do: TransactionParsing.parse_celo_transaction(transaction)
+
+  # fall back to legacy parsing when type does not match
 
   def elixir_to_params(
         %{
