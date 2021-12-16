@@ -7,6 +7,7 @@
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 
 ### Fixes
+- [#5005](https://github.com/blockscout/blockscout/pull/5005) - Fix falsy appearance `Connection Lost` warning on reload/switch page
 - [#5003](https://github.com/blockscout/blockscout/pull/5003) - API router refactoring
 - [#4992](https://github.com/blockscout/blockscout/pull/4992) - Fix `type` field in transactions after enabling 1559
 - [#4979](https://github.com/blockscout/blockscout/pull/4979), [#4993](https://github.com/blockscout/blockscout/pull/4993) - Store total gas_used in addresses table

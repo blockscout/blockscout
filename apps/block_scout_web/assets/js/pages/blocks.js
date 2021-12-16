@@ -42,7 +42,7 @@ function baseReducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   }
 }
@@ -78,6 +78,10 @@ const $blockListPage = $('[data-page="block-list"]')
 const $uncleListPage = $('[data-page="uncle-list"]')
 const $reorgListPage = $('[data-page="reorg-list"]')
 if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const blockType = $blockListPage.length ? 'block' : $uncleListPage.length ? 'uncle' : 'reorg'
 
   const store = createAsyncLoadStore(
