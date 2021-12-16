@@ -113,6 +113,14 @@ $pagination-page-link-color-active: #fff !default;
         pointer-events: none;
       }
     }
+
+    .page-link-light-hover {
+      &:not(.no-hover):hover {
+        @include pagination-container-base($pagination-page-link-background-active, $pagination-page-link-color-active);
+        background-color: rgba($pagination-page-link-background-active, 0.5);
+        border-color: rgba($pagination-page-link-background-active, 0.5);
+      }
+    }
   }
 }
 

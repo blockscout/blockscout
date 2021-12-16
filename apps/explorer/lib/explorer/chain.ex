@@ -102,7 +102,7 @@ defmodule Explorer.Chain do
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
-  @limit_showing_transaсtions 10_000
+  @limit_showing_transaсtions 100_000
   @default_page_size 50
   # seconds
   @check_bytecode_interval 86_400
