@@ -7,6 +7,7 @@
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 
 ### Fixes
+- [#5008](https://github.com/blockscout/blockscout/pull/5008) - Extend decimals cap in format_according_to_decimals up to 24
 - [#5005](https://github.com/blockscout/blockscout/pull/5005) - Fix falsy appearance `Connection Lost` warning on reload/switch page
 - [#5003](https://github.com/blockscout/blockscout/pull/5003) - API router refactoring
 - [#4992](https://github.com/blockscout/blockscout/pull/4992) - Fix `type` field in transactions after enabling 1559
