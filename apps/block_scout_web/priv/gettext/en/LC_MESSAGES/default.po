@@ -38,7 +38,7 @@ msgid "%{block_type} Height:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/index.html.eex:11
+#: lib/block_scout_web/templates/block/index.html.eex:7
 msgid "%{block_type}s"
 msgstr ""
 
