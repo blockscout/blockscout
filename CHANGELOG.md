@@ -25,6 +25,7 @@
 - [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
 
 ### Chore
+- [#5047](https://github.com/blockscout/blockscout/pull/5047) - At contract write use wei precision
 - [#5023](https://github.com/blockscout/blockscout/pull/5023) - Capability to leave an empty logo
 - [#5018](https://github.com/blockscout/blockscout/pull/5018) - Resolve npm vulnerabilities via npm audix fix
 - [#5014](https://github.com/blockscout/blockscout/pull/5014) - Separate FIRST_BLOCK and TRACE_FIRST_BLOCK option for blocks import and tracing methods
