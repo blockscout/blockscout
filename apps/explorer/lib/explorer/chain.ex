@@ -4159,7 +4159,7 @@ defmodule Explorer.Chain do
 
     result = Repo.one(query)
 
-    if result, do: !result.partially_verified
+    if result, do: !result.partially_verified, else: false
   end
 
   def smart_contract_verified?(address_hash_str) when is_binary(address_hash_str) do

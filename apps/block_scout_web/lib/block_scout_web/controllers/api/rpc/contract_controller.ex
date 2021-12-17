@@ -6,8 +6,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.{Hash, SmartContract}
-  alias Explorer.Etherscan.Contracts
   alias Explorer.Chain.SmartContract.VerificationStatus
+  alias Explorer.Etherscan.Contracts
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
@@ -87,18 +87,23 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           "sourceCode" => json_input
         } = params
       ) do
-    with {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+    with {:check_verified_status, false} <-
+           {:check_verified_status, Chain.smart_contract_fully_verified?(address_hash)},
+         {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
          uid <- VerificationStatus.generate_uid(address_hash) do
       Que.add(SolidityPublisherWorker, {fetched_params, json_input, uid})
 
       render(conn, :show, %{result: uid})
     else
+      {:check_verified_status, true} ->
+        render(conn, :error, error: "Smart-contract already verified.", data: "Smart-contract already verified")
+
       {:format, :error} ->
-        render(conn, :error, error: "Invalid address hash")
+        render(conn, :error, error: "Invalid address hash", data: "Invalid address hash")
 
       {:params, {:error, error}} ->
-        render(conn, :error, error: error)
+        render(conn, :error, error: error, data: error)
     end
   end
 
