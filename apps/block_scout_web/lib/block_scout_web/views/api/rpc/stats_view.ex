@@ -27,8 +27,9 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
     RPCView.render("show.json", data: count)
   end
 
-  def render("celounlocked.json", %{count: sum_celo_unlocked}) do
-    RPCView.render("show.json", data: sum_celo_unlocked)
+  def render("celounlocked.json", %{celo_unlocked: celo_unlocked}) do
+    data = Enum.map(celo_unlocked, &prepare_celo_unlocked/1)
+    RPCView.render("show.json", data: data)
   end
 
   def render("totalfees.json", %{total_fees: total_fees}) do
@@ -57,5 +58,12 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
         "coin_usd_timestamp" => nil
       }
     end
+  end
+
+  defp prepare_celo_unlocked(celo_unlocked) do
+    %{
+      "total" => celo_unlocked.total,
+      "availableForWithdrawal" => celo_unlocked.available_for_withdrawal
+    }
   end
 end

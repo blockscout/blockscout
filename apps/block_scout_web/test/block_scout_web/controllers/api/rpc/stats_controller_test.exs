@@ -104,6 +104,69 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     end
   end
 
+  describe "celounlocked" do
+    test "returns total sum and available sum of unlocked CELO", %{conn: conn} do
+      available_1 = Timex.shift(DateTime.utc_now(), days: -1)
+      available_2 = Timex.shift(DateTime.utc_now(), days: 1)
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+
+      pending_withdrawal_1 =
+        insert(:celo_unlocked, %{
+          account_address: address_1.hash,
+          amount: 3_000_000_000_000_000_000,
+          available: available_1
+        })
+
+      pending_withdrawal_2 =
+        insert(:celo_unlocked, %{
+          account_address: address_2.hash,
+          amount: 2_000_000_000_000_000_000,
+          available: available_1
+        })
+
+      pending_withdrawal_3 =
+        insert(:celo_unlocked, %{
+          account_address: address_2.hash,
+          amount: 1_000_000_000_000_000_000,
+          available: available_2
+        })
+
+      params = %{
+        "module" => "stats",
+        "action" => "celounlocked"
+      }
+
+      expected_result = [
+        %{
+          "total" =>
+            to_string(
+              Explorer.Chain.Wei.to(pending_withdrawal_1.amount, :wei)
+              |> Decimal.add(Explorer.Chain.Wei.to(pending_withdrawal_2.amount, :wei))
+              |> Decimal.add(Explorer.Chain.Wei.to(pending_withdrawal_3.amount, :wei))
+            ),
+          "availableForWithdrawal" =>
+            to_string(
+              Decimal.add(
+                Explorer.Chain.Wei.to(pending_withdrawal_1.amount, :wei),
+                Explorer.Chain.Wei.to(pending_withdrawal_2.amount, :wei)
+              )
+            )
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(celounlocked_schema(), response)
+    end
+  end
+
   # todo: Temporarily disable this test because of unstable work in CI
   # describe "ethsupply" do
   #   test "returns total supply from DB", %{conn: conn} do
@@ -218,6 +281,19 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   defp ethsupplyexchange_schema do
     resolve_schema(%{
       "type" => ["string", "null"]
+    })
+  end
+
+  defp celounlocked_schema do
+    resolve_schema(%{
+      "type" => ["array", "null"],
+      "items" => %{
+        "type" => "object",
+        "properties" => %{
+          "total" => %{"type" => "string"},
+          "available_for_withdrawal" => %{"type" => "string"}
+        }
+      }
     })
   end
 

@@ -7711,11 +7711,30 @@ defmodule Explorer.Chain do
   Returns the total amount of CELO that is unlocked and can't or hasn't yet been withdrawn.
   Details at: https://docs.celo.org/celo-codebase/protocol/proof-of-stake/locked-gold#unlocking-period
   """
-  @spec fetch_sum_celo_unlocked() :: non_neg_integer()
+  @spec fetch_sum_celo_unlocked() :: Wei.t()
   def fetch_sum_celo_unlocked do
     query =
       from(w in CeloUnlocked,
         select: sum(w.amount)
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> %Wei{value: Decimal.new(0)}
+      sum -> sum
+    end
+  end
+
+  @doc """
+  Returns the total amount of CELO that is unlocked and hasn't yet been withdrawn.
+  """
+  @spec fetch_sum_available_celo_unlocked() :: Wei.t()
+  def fetch_sum_available_celo_unlocked do
+    query =
+      from(w in CeloUnlocked,
+        select: sum(w.amount),
+        where: w.available <= fragment("NOW()")
       )
 
     query

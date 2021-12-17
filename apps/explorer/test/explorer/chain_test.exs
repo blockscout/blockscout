@@ -5923,8 +5923,22 @@ defmodule Explorer.ChainTest do
       assert %Wei{value: Decimal.new(6)} == Chain.fetch_sum_celo_unlocked()
     end
 
-    test "fetches all pending CELO when there are no blocks" do
+    test "returns 0 when the table has no entries" do
       assert %Wei{value: Decimal.new(0)} == Chain.fetch_sum_celo_unlocked()
+    end
+  end
+
+  describe "fetch_sum_available_celo_unlocked/0" do
+    test "fetches all available unlocked CELO" do
+      insert(:celo_unlocked, %{available: Timex.shift(DateTime.utc_now(), days: -1), amount: 2})
+      insert(:celo_unlocked, %{available: Timex.shift(DateTime.utc_now(), seconds: -1), amount: 3})
+      insert(:celo_unlocked, %{available: Timex.shift(DateTime.utc_now(), days: 1), amount: 4})
+
+      assert %Wei{value: Decimal.new(5)} == Chain.fetch_sum_available_celo_unlocked()
+    end
+
+    test "returns 0 when the table has no entries" do
+      assert %Wei{value: Decimal.new(0)} == Chain.fetch_sum_available_celo_unlocked()
     end
   end
 

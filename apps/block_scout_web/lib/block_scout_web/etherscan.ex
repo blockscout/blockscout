@@ -341,6 +341,17 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => "101959776311500000000000000"
   }
 
+  @stats_celounlocked_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "total" => "2000000000000000000",
+        "available_for_withdrawal" => "1000000000000000000"
+      }
+    ]
+  }
+
   @stats_coinsupply_example_value 101_959_776.3115
 
   @stats_coinprice_example_value %{
@@ -1198,6 +1209,14 @@ defmodule BlockScoutWeb.Etherscan do
         type: "string",
         example: ~s("Out of gas")
       }
+    }
+  }
+
+  @celo_unlocked_model %{
+    name: "PendingWithdrawals",
+    fields: %{
+      total: @wei_type,
+      available_for_withdrawal: @wei_type
     }
   }
 
@@ -2159,6 +2178,31 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @stats_celounlocked_action %{
+    name: "celounlocked",
+    description: "Get the sum of total and available pending withdrawals.",
+    required_params: [],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_celounlocked_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @celo_unlocked_model
+            }
+          }
+        }
+      }
+    ]
+  }
+
   @stats_coinsupply_action %{
     name: "coinsupply",
     description: "Get total coin supply from DB minus burnt number.",
@@ -2957,6 +3001,7 @@ defmodule BlockScoutWeb.Etherscan do
       @stats_tokensupply_action,
       @stats_ethsupplyexchange_action,
       @stats_ethsupply_action,
+      @stats_celounlocked_action,
       @stats_coinsupply_action,
       @stats_totaltransactions_action,
       @stats_coinprice_action,
