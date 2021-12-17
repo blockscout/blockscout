@@ -84,63 +84,65 @@ defmodule Explorer.Tags.AddressToTag do
   def set_tag_to_addresses(tag_id, address_hash_string_list) do
     current_address_hashes = get_address_hashes_mapped_to_tag(tag_id)
 
-    current_address_hashes_strings =
-      current_address_hashes
-      |> Enum.map(fn address_hash ->
-        "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-      end)
+    if current_address_hashes do 
+      current_address_hashes_strings =
+        current_address_hashes
+        |> Enum.map(fn address_hash ->
+          "0x" <> Base.encode16(address_hash.bytes, case: :lower)
+        end)
 
-    current_address_hashes_strings_tuples = MapSet.new(current_address_hashes_strings)
-    new_address_hashes_strings_tuples = MapSet.new(address_hash_string_list)
+      current_address_hashes_strings_tuples = MapSet.new(current_address_hashes_strings)
+      new_address_hashes_strings_tuples = MapSet.new(address_hash_string_list)
 
-    all_tuples = MapSet.union(current_address_hashes_strings_tuples, new_address_hashes_strings_tuples)
+      all_tuples = MapSet.union(current_address_hashes_strings_tuples, new_address_hashes_strings_tuples)
 
-    addresses_to_delete =
-      all_tuples
-      |> MapSet.difference(new_address_hashes_strings_tuples)
-      |> MapSet.to_list()
+      addresses_to_delete =
+        all_tuples
+        |> MapSet.difference(new_address_hashes_strings_tuples)
+        |> MapSet.to_list()
 
-    addresses_to_add =
-      all_tuples
-      |> MapSet.difference(current_address_hashes_strings_tuples)
-      |> MapSet.to_list()
+      addresses_to_add =
+        all_tuples
+        |> MapSet.difference(current_address_hashes_strings_tuples)
+        |> MapSet.to_list()
 
-    changeset_to_add_list =
-      addresses_to_add
-      |> Enum.map(fn address_hash_string ->
-        with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-             :ok <- Chain.check_address_exists(address_hash) do
-          %{
-            tag_id: tag_id,
-            address_hash: address_hash,
-            inserted_at: DateTime.utc_now(),
-            updated_at: DateTime.utc_now()
-          }
-        else
-          _ ->
-            nil
-        end
-      end)
-      |> Enum.filter(&(!is_nil(&1)))
+      changeset_to_add_list =
+        addresses_to_add
+        |> Enum.map(fn address_hash_string ->
+          with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+              :ok <- Chain.check_address_exists(address_hash) do
+            %{
+              tag_id: tag_id,
+              address_hash: address_hash,
+              inserted_at: DateTime.utc_now(),
+              updated_at: DateTime.utc_now()
+            }
+          else
+            _ ->
+              nil
+          end
+        end)
+        |> Enum.filter(&(!is_nil(&1)))
 
-    if Enum.count(addresses_to_delete) > 0 do
-      delete_query_base =
-        from(
-          att in AddressToTag,
-          where: att.tag_id == ^tag_id
-        )
+      if Enum.count(addresses_to_delete) > 0 do
+        delete_query_base =
+          from(
+            att in AddressToTag,
+            where: att.tag_id == ^tag_id
+          )
 
-      delete_query =
-        delete_query_base
-        |> where_addresses(addresses_to_delete)
+        delete_query =
+          delete_query_base
+          |> where_addresses(addresses_to_delete)
 
-      Repo.delete_all(delete_query)
+        Repo.delete_all(delete_query)
+      end
+
+      Repo.insert_all(AddressToTag, changeset_to_add_list,
+        on_conflict: :nothing,
+        conflict_target: [:address_hash, :tag_id]
+      )
     end
-
-    Repo.insert_all(AddressToTag, changeset_to_add_list,
-      on_conflict: :nothing,
-      conflict_target: [:address_hash, :tag_id]
-    )
   end
 
   defp where_addresses(query, addresses_to_delete) do
