@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Etherscan.Contracts
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
@@ -17,7 +18,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
            {:params, fetch_external_libraries(params)},
          {:publish, {:ok, _}} <-
            {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)} do
-      address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
+      address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)
 
       render(conn, :verify, %{contract: address})
     else
@@ -163,7 +164,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
              }) do
           {:ok, _contract} ->
             {:format, {:ok, address_hash}} = to_address_hash(address_hash_string)
-            address = Chain.address_hash_to_address_with_source_code(address_hash)
+            address = Contracts.address_hash_to_address_with_source_code(address_hash)
             render(conn, :verify, %{contract: address})
 
           {:error, changeset} ->
@@ -202,7 +203,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:publish, {:ok, _}} <-
            {:publish, VyperPublisher.publish(address_hash, fetched_params)} do
-      address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
+      address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)
 
       render(conn, :verify, %{contract: address})
     else
@@ -320,7 +321,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
       _ = VerificationController.check_and_verify(address_param)
-      address = Chain.address_hash_to_address_with_source_code(address_hash)
+      address = Contracts.address_hash_to_address_with_source_code(address_hash)
 
       render(conn, :getsourcecode, %{
         contract: address
@@ -342,23 +343,23 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
     case Map.get(opts, :filter) do
       :verified ->
-        Chain.list_verified_contracts(page_size, offset)
+        Contracts.list_verified_contracts(page_size, offset)
 
       :decompiled ->
         not_decompiled_with_version = Map.get(opts, :not_decompiled_with_version)
-        Chain.list_decompiled_contracts(page_size, offset, not_decompiled_with_version)
+        Contracts.list_decompiled_contracts(page_size, offset, not_decompiled_with_version)
 
       :unverified ->
-        Chain.list_unordered_unverified_contracts(page_size, offset)
+        Contracts.list_unordered_unverified_contracts(page_size, offset)
 
       :not_decompiled ->
-        Chain.list_unordered_not_decompiled_contracts(page_size, offset)
+        Contracts.list_unordered_not_decompiled_contracts(page_size, offset)
 
       :empty ->
-        Chain.list_empty_contracts(page_size, offset)
+        Contracts.list_empty_contracts(page_size, offset)
 
       _ ->
-        Chain.list_contracts(page_size, offset)
+        Contracts.list_contracts(page_size, offset)
     end
   end
 
