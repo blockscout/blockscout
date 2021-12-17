@@ -6,6 +6,7 @@
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 
 ### Fixes
+- [#5011](https://github.com/blockscout/blockscout/pull/5011) - Fix `0x0` implementation address
 - [#5008](https://github.com/blockscout/blockscout/pull/5008) - Extend decimals cap in format_according_to_decimals up to 24
 - [#5005](https://github.com/blockscout/blockscout/pull/5005) - Fix falsy appearance `Connection Lost` warning on reload/switch page
 - [#5003](https://github.com/blockscout/blockscout/pull/5003) - API router refactoring
