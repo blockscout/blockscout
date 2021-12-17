@@ -39,12 +39,16 @@ export function reducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   }
 }
 
 if ($('[data-page="blocks-validated"]').length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.blockNumber')
   connectElements({ store, elements })
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
