@@ -3,7 +3,7 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, TimeScal
 import 'chartjs-adapter-moment'
 import humps from 'humps'
 import numeral from 'numeral'
-import moment from 'moment'
+import { DateTime } from 'luxon'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
@@ -22,7 +22,7 @@ function xAxe (fontColor) {
     type: 'time',
     time: {
       unit: 'day',
-      tooltipFormat: 'YYYY-MM-DD',
+      tooltipFormat: 'DD',
       stepSize: 14
     },
     ticks: {
@@ -60,28 +60,8 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      price: {
-        position: 'left',
-        grid: grid,
-        ticks: {
-          beginAtZero: true,
-          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
-          maxTicksLimit: 4,
-          color: sassVariables.dashboardBannerChartAxisFontColor
-        }
-      },
-      marketCap: {
-        position: 'right',
-        grid: grid,
-        ticks: {
-          callback: (_value, _index, _values) => '',
-          maxTicksLimit: 6,
-          drawOnChartArea: false,
-          color: sassVariables.dashboardBannerChartAxisFontColor
-        }
-      },
       numTransactions: {
-        position: 'right',
+        position: 'left',
         grid: grid,
         ticks: {
           beginAtZero: true,
@@ -93,6 +73,11 @@ const config = {
     },
     plugins: {
       legend: legend,
+      title: {
+        display: true,
+        text: 'Daily transactions (30 days)',
+        color: sassVariables.dashboardBannerChartAxisFontColor
+      },
       tooltip: {
         mode: 'index',
         intersect: false,
@@ -142,9 +127,9 @@ function getTxHistoryData (transactionHistory) {
 
   // it should be empty value for tx history the current day
   const prevDayStr = data[0].x
-  const prevDay = moment(prevDayStr)
-  let curDay = prevDay.add(1, 'days')
-  curDay = curDay.format('YYYY-MM-DD')
+  const prevDay = DateTime.fromISO(prevDayStr)
+  let curDay = prevDay.plus({ days: 1 })
+  curDay = curDay.toISODate()
   data.unshift({ x: curDay, y: null })
 
   setDataToLocalStorage('txHistoryDataPOACore', data)
@@ -173,7 +158,6 @@ class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
     const axes = config.options.scales
 
-    let priceActivated = true
     let marketCapActivated = true
 
     this.price = {
@@ -186,11 +170,6 @@ class MarketHistoryChart {
       backgroundColor: priceLineColor,
       borderColor: priceLineColor
       // lineTension: 0
-    }
-    if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
-      this.price.hidden = true
-      axes.price.display = false
-      priceActivated = false
     }
 
     this.marketCap = {
@@ -225,14 +204,14 @@ class MarketHistoryChart {
     if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {
       this.numTransactions.hidden = true
       axes.numTransactions.display = false
-    } else if (!priceActivated && !marketCapActivated) {
+    } else if (!marketCapActivated) {
       axes.numTransactions.position = 'left'
       this.numTransactions.backgroundColor = sassVariables.dashboardLineColorPrice
       this.numTransactions.borderColor = sassVariables.dashboardLineColorPrice
     }
 
     this.availableSupply = availableSupply
-    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
+    config.data.datasets = [this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoadedPOACore'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
@@ -268,7 +247,20 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartError = $('[data-chart-error-message]')
-  const chart = new MarketHistoryChart(el, 0, [], dataConfig)
+  const txsHistoryChartDataCache = JSON.parse(localStorage.getItem('txHistoryDataPOACore')) || []
+
+  const numTransactions = {
+    label: 'Tx/day',
+    yAxisID: 'numTransactions',
+    data: getTxHistoryData(txsHistoryChartDataCache),
+    cubicInterpolationMode: 'monotone',
+    fill: false,
+    pointRadius: 0,
+    backgroundColor: sassVariables.dashboardLineColorTransactions,
+    borderColor: sassVariables.dashboardLineColorTransactions
+  }
+
+  const chart = new MarketHistoryChart(el, 0, [numTransactions], dataConfig)
   Object.keys(dataPaths).forEach(function (historySource) {
     $.getJSON(dataPaths[historySource], { type: 'JSON' })
       .done(data => {

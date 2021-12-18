@@ -221,7 +221,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     block_numbers =
       changes_list
       |> Enum.map(& &1.block_number)
-      |> Enum.dedup()
+      |> Enum.uniq()
 
     query =
       from(
@@ -258,7 +258,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         where: t.block_hash in ^pending_block_hashes,
         select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-        order_by: t.hash,
+        order_by: [asc: t.hash],
         lock: "FOR UPDATE"
       )
 

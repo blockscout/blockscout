@@ -136,23 +136,17 @@
               <%= gettext "Revert reason" %> </dt>
             <dd class="col-sm-9 col-lg-10">
               <%= case BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) do %>
-                <% {:error, :contract_not_verified, []} -> %>
-                  <div class="tx-raw-input">
-                    <div class="tile tile-muted">
-                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %></code></pre>
-                    </div>
-                  </div>
-                <% {:error, :contract_not_verified, candidates} -> %>
+                <% {:error, _contract_not_verified, candidates} when candidates != [] -> %>
                   <% {:ok, method_id, text, mapping} = Enum.at(candidates, 0) %>
                   <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
                 <% {:ok, method_id, text, mapping} -> %>
                   <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
                 <% _ -> %>
-                  <div class="tx-raw-input">
-                    <div class="tile tile-muted">
-                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %></code></pre>
+                  <% hex = BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %>
+                  <% utf8 = BlockScoutWeb.TransactionView.decoded_revert_reason(@transaction) %>
+                  <div class="tile tile-muted">
+                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
                   </div>
-              </div>
               <% end %>
             </dd>
           </dl>

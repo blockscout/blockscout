@@ -113,3 +113,41 @@ $tooltip-background-color: $btn-line-color !default;
         text-align: left;
     }
 }
+
+.custom-tooltip {
+    font-family: Nunito, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+.tooltip-gas-tracker {
+    .tooltip-inner {
+        @media (min-width: 576px) {
+            max-width: 150px !important;
+        }
+        @media (min-width: 768px) {
+            max-width: 150px !important;
+        }
+        width: 150px !important;
+    }
+}
+
+.custom-tooltip.header {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.custom-tooltip.total-transactions {
+    margin-top: 6px;
+    @media (min-width: 992px) {
+        margin-top: 9px;
+    }
+}
+
+.custom-tooltip.description {
+    width: 100%;
+    .left {
+        text-align: left;
+    }
+    .right {
+        text-align: right;
+    }
+}

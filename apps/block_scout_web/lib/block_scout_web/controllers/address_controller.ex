@@ -87,10 +87,12 @@ defmodule BlockScoutWeb.AddressController do
       {transaction_count, token_transfer_count, gas_usage_count, validation_count, crc_total_worth} =
         address_counters(address)
 
+      gas_usage_count_formatted = if gas_usage_count, do: gas_usage_count, else: 0
+
       json(conn, %{
         transaction_count: transaction_count,
         token_transfer_count: token_transfer_count,
-        gas_usage_count: gas_usage_count,
+        gas_usage_count: gas_usage_count_formatted,
         validation_count: validation_count,
         crc_total_worth: crc_total_worth
       })

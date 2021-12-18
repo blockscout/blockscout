@@ -114,15 +114,11 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     }
 
     &:nth-child(1)::before {
-      background-color: $dashboard-line-color-price;
-    }
-
-    &:nth-child(2)::before {
       background-color: $dashboard-line-color-market;
     }
 
-    &:nth-child(3)::before {
-        background-color: $dashboard-line-color-transactions;
+    &:nth-child(2)::before {
+      background-color: $dashboard-line-color-transactions;
     }
   }
 

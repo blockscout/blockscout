@@ -19,7 +19,7 @@ lib/block_scout_web/views/layout_view.ex:145: The call 'Elixir.Poison.Parser':'p
 lib/block_scout_web/views/layout_view.ex:237: The call 'Elixir.Poison.Parser':'parse!'
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
-lib/explorer/smart_contract/reader.ex:440
+lib/explorer/smart_contract/reader.ex:461
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:110
 lib/explorer/exchange_rates/source.ex:113

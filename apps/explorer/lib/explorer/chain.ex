@@ -10,6 +10,7 @@ defmodule Explorer.Chain do
       join: 5,
       limit: 2,
       lock: 2,
+      offset: 2,
       order_by: 2,
       order_by: 3,
       preload: 2,
@@ -100,6 +101,9 @@ defmodule Explorer.Chain do
   @revert_error_method_id "08c379a0"
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
+
+  @limit_showing_transaсtions 100_000
+  @default_page_size 50
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
@@ -2903,6 +2907,70 @@ defmodule Explorer.Chain do
     end
   end
 
+  def get_average_gas_price(num_of_blocks, safelow_percentile, average_percentile, fast_percentile) do
+    lates_gas_price_query =
+      from(
+        block in Block,
+        left_join: transaction in assoc(block, :transactions),
+        where: block.consensus == true,
+        where: transaction.status == ^1,
+        where: transaction.gas_price > ^0,
+        group_by: block.number,
+        order_by: [desc: block.number],
+        select: min(transaction.gas_price),
+        limit: ^num_of_blocks
+      )
+
+    latest_gas_prices =
+      lates_gas_price_query
+      |> Repo.all(timeout: :infinity)
+
+    latest_ordered_gas_prices =
+      latest_gas_prices
+      |> Enum.map(fn %Explorer.Chain.Wei{value: gas_price} -> Decimal.to_integer(gas_price) end)
+
+    safelow_gas_price = gas_price_percentile_to_gwei(latest_ordered_gas_prices, safelow_percentile)
+    average_gas_price = gas_price_percentile_to_gwei(latest_ordered_gas_prices, average_percentile)
+    fast_gas_price = gas_price_percentile_to_gwei(latest_ordered_gas_prices, fast_percentile)
+
+    gas_prices = %{
+      "slow" => safelow_gas_price,
+      "average" => average_gas_price,
+      "fast" => fast_gas_price
+    }
+
+    {:ok, gas_prices}
+  catch
+    error ->
+      {:error, error}
+  end
+
+  defp gas_price_percentile_to_gwei(gas_prices, percentile) do
+    safelow_gas_price_wei = percentile(gas_prices, percentile)
+
+    if safelow_gas_price_wei do
+      safelow_gas_price_gwei = Wei.to(%Explorer.Chain.Wei{value: Decimal.from_float(safelow_gas_price_wei)}, :gwei)
+      Decimal.to_float(safelow_gas_price_gwei) |> Float.floor(1)
+    else
+      nil
+    end
+  end
+
+  @spec percentile(list, number) :: number | nil
+  defp percentile([], _), do: nil
+  defp percentile([x], _), do: x
+  defp percentile(list, 0), do: Enum.min(list)
+  defp percentile(list, 100), do: Enum.max(list)
+
+  defp percentile(list, n) when is_list(list) and is_number(n) do
+    s = Enum.sort(list)
+    r = n / 100.0 * (length(list) - 1)
+    f = :erlang.trunc(r)
+    lower = Enum.at(s, f)
+    upper = Enum.at(s, f + 1)
+    lower + (upper - lower) * (r - f)
+  end
+
   @spec upsert_last_fetched_counter(map()) :: {:ok, LastFetchedCounter.t()} | {:error, Ecto.Changeset.t()}
   def upsert_last_fetched_counter(params) do
     changeset = LastFetchedCounter.changeset(%LastFetchedCounter{}, params)
@@ -3243,6 +3311,61 @@ defmodule Explorer.Chain do
     else
       fetch_recent_collated_transactions(paging_options, necessity_by_association)
     end
+  end
+
+  # RAP - random access pagination
+  @spec recent_collated_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
+          :total_transactions_count => non_neg_integer(),
+          :transactions => [Transaction.t()]
+        }
+  def recent_collated_transactions_for_rap(options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    total_transactions_count = transactions_available_count()
+
+    fetched_transactions =
+      if is_nil(paging_options.key) or paging_options.page_number == 1 do
+        paging_options.page_size
+        |> Kernel.+(1)
+        |> Transactions.take_enough()
+        |> case do
+          nil ->
+            transactions = fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
+            Transactions.update(transactions)
+            transactions
+
+          transactions ->
+            transactions
+        end
+      else
+        fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
+      end
+
+    %{total_transactions_count: total_transactions_count, transactions: fetched_transactions}
+  end
+
+  def default_page_size, do: @default_page_size
+
+  def fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
+    fetch_transactions_for_rap()
+    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> handle_random_access_paging_options(paging_options)
+    |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    |> Repo.all()
+  end
+
+  defp fetch_transactions_for_rap do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+  end
+
+  def transactions_available_count do
+    Transaction
+    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> limit(^@limit_showing_transaсtions)
+    |> Repo.aggregate(:count, :hash)
   end
 
   def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
@@ -3676,7 +3799,7 @@ defmodule Explorer.Chain do
     formatted_revert_reason
   end
 
-  defp format_revert_reason_message(revert_reason) do
+  def format_revert_reason_message(revert_reason) do
     case revert_reason do
       @revert_msg_prefix_1 <> rest ->
         rest
@@ -4318,6 +4441,47 @@ defmodule Explorer.Chain do
     |> page_transaction(paging_options)
     |> limit(^paging_options.page_size)
   end
+
+  defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
+    do: limit(query, ^(@default_page_size + 1))
+
+  defp handle_random_access_paging_options(query, paging_options) do
+    query
+    |> (&if(paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1,
+          do: &1,
+          else: page_transaction(&1, paging_options)
+        )).()
+    |> handle_page(paging_options)
+  end
+
+  defp handle_page(query, paging_options) do
+    page_number = paging_options |> Map.get(:page_number, 1) |> proccess_page_number()
+    page_size = Map.get(paging_options, :page_size, @default_page_size)
+
+    cond do
+      page_in_bounds?(page_number, page_size) && page_number == 1 ->
+        query
+        |> limit(^(page_size + 1))
+
+      page_in_bounds?(page_number, page_size) ->
+        query
+        |> limit(^page_size)
+        |> offset(^((page_number - 2) * page_size))
+
+      true ->
+        query
+        |> limit(^(@default_page_size + 1))
+    end
+  end
+
+  defp proccess_page_number(number) when number < 1, do: 1
+
+  defp proccess_page_number(number), do: number
+
+  defp page_in_bounds?(page_number, page_size),
+    do: page_size <= @limit_showing_transaсtions && @limit_showing_transaсtions - page_number * page_size >= 0
+
+  def limit_shownig_transactions, do: @limit_showing_transaсtions
 
   defp join_association(query, [{association, nested_preload}], necessity)
        when is_atom(association) and is_atom(nested_preload) do
@@ -6369,6 +6533,17 @@ defmodule Explorer.Chain do
     |> TypeDecoder.decode_raw(types)
   end
 
+  def get_token_type(hash) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash == ^hash,
+        select: token.type
+      )
+
+    Repo.one(query)
+  end
+
   @doc """
   Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
 
@@ -6801,30 +6976,17 @@ defmodule Explorer.Chain do
 
     # https://eips.ethereum.org/EIPS/eip-1967
     storage_slot_logic_contract_address = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
-    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
 
-    {status, implementation_address} =
+    {_status, implementation_address} =
       case Contract.eth_get_storage_at_request(
              proxy_address_hash,
              storage_slot_logic_contract_address,
              nil,
              json_rpc_named_arguments
            ) do
-        {:ok, "0x"} ->
-          Contract.eth_get_storage_at_request(
-            proxy_address_hash,
-            storage_slot_beacon_contract_address,
-            nil,
-            json_rpc_named_arguments
-          )
-
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"} ->
-          Contract.eth_get_storage_at_request(
-            proxy_address_hash,
-            storage_slot_beacon_contract_address,
-            nil,
-            json_rpc_named_arguments
-          )
+        {:ok, empty_address}
+        when empty_address in ["0x", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+          fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
 
         {:ok, implementation_logic_address} ->
           {:ok, implementation_logic_address}
@@ -6833,15 +6995,62 @@ defmodule Explorer.Chain do
           {:ok, "0x"}
       end
 
-    abi_decode_address_output(if status == :ok, do: implementation_address, else: "0x")
+    abi_decode_address_output(implementation_address)
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/4770
+  # for support BeaconProxy pattern
+  defp fetch_beacon_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # https://eips.ethereum.org/EIPS/eip-1967
+    storage_slot_beacon_contract_address = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
+
+    implementation_method_abi = [
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+        "name" => "implementation",
+        "inputs" => []
+      }
+    ]
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_beacon_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+        {:ok, "0x"}
+
+      {:ok, beacon_contract_address} ->
+        case beacon_contract_address
+             |> abi_decode_address_output()
+             |> get_implementation_address_hash_basic(implementation_method_abi) do
+          <<implementation_address::binary-size(42)>> ->
+            {:ok, implementation_address}
+
+          _ ->
+            {:ok, beacon_contract_address}
+        end
+
+      {:error, _} ->
+        {:ok, "0x"}
+    end
   end
 
   defp get_implementation_address_hash_basic(proxy_address_hash, abi) do
     # 5c60da1b = keccak256(implementation())
     implementation_address =
-      case Reader.query_contract(proxy_address_hash, abi, %{
-             "5c60da1b" => []
-           }) do
+      case Reader.query_contract(
+             proxy_address_hash,
+             abi,
+             %{
+               "5c60da1b" => []
+             },
+             false
+           ) do
         %{"5c60da1b" => {:ok, [result]}} -> result
         _ -> nil
       end
@@ -6886,17 +7095,19 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp abi_decode_address_output(address) when is_nil(address), do: nil
+  defp abi_decode_address_output(nil), do: nil
 
   defp abi_decode_address_output("0x"), do: @burn_address_hash_str
 
-  defp abi_decode_address_output(address) do
+  defp abi_decode_address_output(address) when is_binary(address) do
     if String.length(address) > 42 do
       "0x" <> String.slice(address, -40, 40)
     else
       address
     end
   end
+
+  defp abi_decode_address_output(_), do: nil
 
   defp address_to_hex(address) do
     if address do
@@ -7062,7 +7273,7 @@ defmodule Explorer.Chain do
 
       {_, block_index} =
         sorted_traces
-        |> Enum.find(fn {trace, _} ->
+        |> Enum.find({nil, -1}, fn {trace, _} ->
           trace.transaction_index == transaction_index &&
             trace.transaction_hash == transaction_hash
         end)
