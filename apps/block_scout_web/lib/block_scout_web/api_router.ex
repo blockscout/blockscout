@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.ApiRouter do
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
     alias BlockScoutWeb.API.{RPC, V1}
-    alias BlockScoutWeb.API.V1.HealthController
+    alias BlockScoutWeb.API.V1.{GasPriceOracleController, HealthController}
 
     get("/health", HealthController, :health)
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
