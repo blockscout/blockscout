@@ -1,6 +1,33 @@
 ## Current
 
 ### Features
+- [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
+- [#5004](https://github.com/blockscout/blockscout/pull/5004) - Add ability to set up a separate DB endpoint for the API endpoints
+- [#4989](https://github.com/blockscout/blockscout/pull/4989), [#4991](https://github.com/blockscout/blockscout/pull/4991) - Bridged tokens list API endpoint
+- [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
+
+### Fixes
+- [#5011](https://github.com/blockscout/blockscout/pull/5011) - Fix `0x0` implementation address
+- [#5008](https://github.com/blockscout/blockscout/pull/5008) - Extend decimals cap in format_according_to_decimals up to 24
+- [#5005](https://github.com/blockscout/blockscout/pull/5005) - Fix falsy appearance `Connection Lost` warning on reload/switch page
+- [#5003](https://github.com/blockscout/blockscout/pull/5003) - API router refactoring
+- [#4992](https://github.com/blockscout/blockscout/pull/4992) - Fix `type` field in transactions after enabling 1559
+- [#4979](https://github.com/blockscout/blockscout/pull/4979), [#4993](https://github.com/blockscout/blockscout/pull/4993) - Store total gas_used in addresses table
+- [#4977](https://github.com/blockscout/blockscout/pull/4977) - Export token transfers on address: include transfers on contract itself
+- [#4976](https://github.com/blockscout/blockscout/pull/4976) - Handle :econnrefused in pending transactions fetcher
+- [#4965](https://github.com/blockscout/blockscout/pull/4965) - Fix search field appearance on medium size screens
+- [#4945](https://github.com/blockscout/blockscout/pull/4945) - Fix `Verify & Publish` button link
+- [#4938](https://github.com/blockscout/blockscout/pull/4938) - Fix displaying of nested arrays for contracts read
+- [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order
+- [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
+
+### Chore
+- [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
+
+
+## 4.0.0-beta
+
+### Features
 - [#4807](https://github.com/blockscout/blockscout/pull/4807) - Added support for BeaconProxy pattern
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 - [#4777](https://github.com/blockscout/blockscout/pull/4777), [#4791](https://github.com/blockscout/blockscout/pull/4791), [#4799](https://github.com/blockscout/blockscout/pull/4799), [#4847](https://github.com/blockscout/blockscout/pull/4847) - Added decoding revert reason
