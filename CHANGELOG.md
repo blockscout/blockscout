@@ -28,6 +28,7 @@
 - [#4784](https://github.com/blockscout/blockscout/pull/4784) - Fix logs query
 
 ### Chore
+- [#5014](https://github.com/blockscout/blockscout/pull/5014) - Separate FIRST_BLOCK and TRACE_FIRST_BLOCK option for blocks import and tracing methods
 - [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
 
 
