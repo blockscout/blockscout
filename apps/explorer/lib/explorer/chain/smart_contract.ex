@@ -231,8 +231,8 @@ defmodule Explorer.Chain.SmartContract do
     field(:partially_verified, :boolean)
     field(:file_path, :string)
     field(:is_vyper_contract, :boolean)
-    field(:is_changed_bytecode, :boolean)
-    field(:bytecode_checked_at, :utc_datetime_usec)
+    field(:is_changed_bytecode, :boolean, default: false)
+    field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
 
     has_many(
       :decompiled_smart_contracts,
