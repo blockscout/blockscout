@@ -159,6 +159,30 @@ export const connectToWallet = async () => {
   await fetchAccountData(showConnectedToElements, [])
 }
 
+export const shouldHideConnectButton = () => {
+  return new Promise((resolve) => {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      if (window.ethereum.isNiftyWallet) {
+        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
+      } else if (window.ethereum.isMetaMask) {
+        window.ethereum.request({ method: 'eth_accounts' })
+          .then(accounts => {
+            accounts.length > 0 ? resolve({ shouldHide: true, account: accounts[0] }) : resolve({ shouldHide: false })
+          })
+          .catch(error => {
+            Sentry.captureException(error)
+            resolve({ shouldHide: false })
+          })
+      } else {
+        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
+      }
+    } else {
+      resolve({ shouldHide: false })
+    }
+  })
+}
+
 export async function fetchAccountData (setAccount, args) {
   // Get a Web3 instance for the wallet
   if (provider) {
