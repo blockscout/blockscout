@@ -6,8 +6,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.Etherscan.Contracts
   alias Explorer.SmartContract.Solidity.Publisher
+  alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
@@ -74,6 +76,54 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
               render(conn, :error, error: "Invalid body")
           end
       end
+    end
+  end
+
+  def verifysourcecode(
+        conn,
+        %{
+          "codeformat" => "solidity-standard-json-input",
+          "contractaddress" => address_hash,
+          "sourceCode" => json_input
+        } = params
+      ) do
+    with {:check_verified_status, false} <-
+           {:check_verified_status, Chain.smart_contract_fully_verified?(address_hash)},
+         {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+         {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
+         uid <- VerificationStatus.generate_uid(address_hash) do
+      Que.add(SolidityPublisherWorker, {fetched_params, json_input, uid})
+
+      render(conn, :show, %{result: uid})
+    else
+      {:check_verified_status, true} ->
+        render(conn, :error, error: "Smart-contract already verified.", data: "Smart-contract already verified")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address hash", data: "Invalid address hash")
+
+      {:params, {:error, error}} ->
+        render(conn, :error, error: error, data: error)
+    end
+  end
+
+  def verifysourcecode(conn, %{"codeformat" => "solidity-standard-json-input"}) do
+    render(conn, :error, error: "Missing sourceCode or contractaddress fields")
+  end
+
+  def checkverifystatus(conn, %{"guid" => guid}) do
+    case VerificationStatus.fetch_status(guid) do
+      :pending ->
+        render(conn, :show, %{result: "Pending in queue"})
+
+      :pass ->
+        render(conn, :show, %{result: "Pass - Verified"})
+
+      :fail ->
+        render(conn, :show, %{result: "Fail - Unable to verify"})
+
+      :unknown_uid ->
+        render(conn, :show, %{result: "Unknown UID"})
     end
   end
 
@@ -458,6 +508,15 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "name", "name")
     |> required_param(params, "compilerVersion", "compiler_version")
     |> required_param(params, "contractSourceCode", "contract_source_code")
+    |> optional_param(params, "constructorArguments", "constructor_arguments")
+  end
+
+  defp fetch_verifysourcecode_params(params) do
+    {:ok, %{}}
+    |> required_param(params, "contractaddress", "address_hash")
+    |> required_param(params, "contractname", "name")
+    |> required_param(params, "compilerversion", "compiler_version")
+    |> optional_param(params, "constructorArguements", "constructor_arguments")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
   end
 
