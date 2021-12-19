@@ -46,7 +46,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
           const sanitizedInputValueElements = inputValueElements.map(elementValue => {
             const elementInputType = inputType.split('[')[0]
 
-            var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+            let sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
             sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
 
             if (isBoolInputType(elementInputType)) {

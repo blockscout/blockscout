@@ -23,8 +23,9 @@
 - [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
 
 ### Chore
-- [#4983](https://github.com/blockscout/blockscout/pull/4983) - Fix contract verification tests
+- [#5014](https://github.com/blockscout/blockscout/pull/5014) - Separate FIRST_BLOCK and TRACE_FIRST_BLOCK option for blocks import and tracing methods
 - [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
+- [#4983](https://github.com/blockscout/blockscout/pull/4983) - Fix contract verification tests
 
 
 ## 4.0.0-beta
