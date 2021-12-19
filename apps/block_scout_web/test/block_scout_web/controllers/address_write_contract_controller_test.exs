@@ -86,6 +86,12 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
 
   def get_eip1967_implementation do
     EthereumJSONRPC.Mox
+    |> expect(
+      :json_rpc,
+      fn [%{id: id, method: "eth_getCode", params: [_, _]}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
+      end
+    )
     |> expect(:json_rpc, fn %{
                               id: 0,
                               method: "eth_getStorageAt",
