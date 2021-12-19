@@ -23,6 +23,7 @@
 - [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
 
 ### Chore
+- [#4983](https://github.com/blockscout/blockscout/pull/4983) - Fix contract verification tests
 - [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
 
 
