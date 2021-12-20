@@ -1,12 +1,12 @@
 <section class="container">
   <div class="row">
-    <div class="col-2">
+    <div class="col-2 mb-3">
       <ul class="nav flex-column">
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" style="font-size: 14px;" href="<%= auth_path(@conn, :profile) %>">Profile</a>
+          <a class="dropdown-item fs-14" aria-current="page" style="font-size: 14px;" href="<%= auth_path(@conn, :profile) %>">Profile</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link active" style="font-size: 14px;" href="#">Watchlist</a>
+          <a class="dropdown-item acc-link-active fs-14" style="font-size: 14px;" href="#">Watchlist</a>
         </li>
       </ul>
     </div>
@@ -14,17 +14,17 @@
     <div class="col-sm-10">
       <div class="card">
         <div class="card-body" >
-          <h1 class="card-title list-title-description" style="font-size: 18;">Edit Watchlist address</h1>
-          <div class="col-sm-10">
+          <h1 class="card-title list-title-description header-account">Edit Watchlist address</h1>
+          <div class="col-sm-10 card-body-account">
             <%= form_for @changeset, watchlist_address_path(@conn, :update, @watchlist_address_id), [method: "put"], fn f -> %>
               <div class="form-group">
-                <%= label f, "Address", class: "control-label", style: "font-size: 14px" %>
+                <%= label f, :address_hash, "Address", class: "control-label", style: "font-size: 14px" %>
                 <%= text_input f, :address_hash, class: "form-control", readonly: true %>
                 <%= error_tag f, :address_hash %>
               </div>
 
               <div class="form-group">
-                <%= label f, "Name", class: "control-label", style: "font-size: 14px" %>
+                <%= label f, :name, "Name", class: "control-label", style: "font-size: 14px" %>
                 <%= text_input f, :name, class: "form-control" %>
                 <%= error_tag f, :name %>
               </div>
@@ -34,41 +34,41 @@
               <p style="font-size: 14px;">Please select what types of notifications you will receive:</p>
               <div class="row">
                 <div class="col-sm">
-                  <h3>xDai</h3>
-                  <div class="form-group">
-                    <%= checkbox f, :watch_coin_input, class: "form-check-input" %>
-                    <%= label f, "Incoming", class: "form-check-label", style: "font-size: 14px" %>
+                  <h3><%= gettext("Ether") %></h3>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_coin_input, class: "form-checkbox" %>
+                    <%= label f, :watch_coin_input, "Incoming", class: "label-checkbox" %>
                     <%= error_tag f, :watch_coin_input %>
                   </div>
-                  <div class="form-group">
-                    <%= checkbox f, :watch_coin_output, class: "form-check-input" %>
-                    <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 14px" %>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_coin_output, class: "form-checkbox" %>
+                    <%= label f, :watch_coin_output, "Outgoing", class: "label-checkbox" %>
                     <%= error_tag f, :watch_coin_output %>
                   </div>
                 </div>
                 <div class="col-sm">
                   <h3>ERC-20 tokens</h3>
-                  <div class="form-group">
-                    <%= checkbox f, :watch_erc_20_input, class: "form-check-input" %>
-                    <%= label f, "Incoming", class: "form-check-label", style: "font-size: 14px" %>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_erc_20_input, class: "form-checkbox" %>
+                    <%= label f, :watch_erc_20_input, "Incoming", class: "label-checkbox" %>
                     <%= error_tag f, :watch_erc_20_input %>
                   </div>
-                  <div class="form-group">
-                    <%= checkbox f, :watch_erc_20_output, class: "form-check-input" %>
-                    <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 14px" %>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_erc_20_output, class: "form-checkbox" %>
+                    <%= label f, :watch_erc_20_output, "Outgoing", class: "label-checkbox" %>
                     <%= error_tag f, :watch_erc_20_output %>
                   </div>
                 </div>
                 <div class="col-md">
                   <h3>ERC-721, ERC-1155 tokens (NFT)</h3>
-                  <div class="form-group">
-                    <%= checkbox f, :watch_nft_input, class: "form-check-input" %>
-                    <%= label f, "Incoming", class: "form-check-label", style: "font-size: 14px" %>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_nft_input, class: "form-checkbox" %>
+                    <%= label f, :watch_nft_input, "Incoming", class: "label-checkbox" %>
                     <%= error_tag f, :watch_nft_input %>
                   </div>
-                  <div class="form-group">
-                    <%= checkbox f, :watch_nft_output, class: "form-check-input" %>
-                    <%= label f, "Outgoing", class: "form-check-label", style: "font-size: 14px" %>
+                  <div class="form-input">
+                    <%= checkbox f, :watch_nft_output, class: "form-checkbox" %>
+                    <%= label f, :watch_nft_output, "Outgoing", class: "label-checkbox" %>
                     <%= error_tag f, :watch_nft_output %>
                   </div>
                 </div>
@@ -76,17 +76,17 @@
 
               <br>
               <p style="font-size: 14px;">Please select notification methods:</p>
-              <div class="form-group">
-                <%= checkbox f, :notify_email, class: "form-check-input" %>
-                <%= label f, "Email notifications", class: "form-check-label", style: "font-size: 14px" %>
+              <div class="form-input">
+                <%= checkbox f, :notify_email, class: "form-checkbox" %>
+                <%= label f, :notify_email, "Email notifications", class: "label-checkbox" %>
                 <%= error_tag f, :notify_email %>
               </div>
 
               <br>
-<%= link "Remove from Watchlist", to: watchlist_address_path(@conn, :delete, @watchlist_address_id), method: :delete, class: "btn btn-danger" %>
-              <div class="form-group float-right">
-                <a class="btn btn-secondary"  href="<%= watchlist_path(@conn, :show) %>"> Back to Watchlist (Cancel)</a>
-                <%= submit "Save", class: "btn btn-primary" %>
+              <%= link "Remove from Watchlist", to: watchlist_address_path(@conn, :delete, @watchlist_address_id), method: :delete, class: "btn btn-danger white button-sm" %>
+              <div class="form-group float-right form-input">
+                <a class="btn btn-line"  href="<%= watchlist_path(@conn, :show) %>"> Back to Watchlist (Cancel)</a>
+                <%= submit "Save", class: "button button-primary button-sm ml-3" %>
               </div>
             <% end %>
           </div>

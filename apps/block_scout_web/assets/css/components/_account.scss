@@ -7,6 +7,63 @@ div.divider {
 }
 
 input.profile-item {
-  margin-left: 10px;
-  color: #212529;
+  margin-left: 10px; 
+  color: #828ba0; 
+  outline: none;
+}
+
+.header-account {
+  font-size: 18px;
+}
+
+.label-account {
+  font-size: 1rem;
+}
+
+.white {
+  color: #fff;
+}
+
+.card-body-account {
+  max-width: none !important;
+}
+
+.form-input {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.form-checkbox {
+  margin-right: 0.5rem;
+  align-self: center;
+}
+
+.label-checkbox {
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.o-flow-x {
+  overflow-x: auto;
+}
+
+.fs-14 {
+  font-size: 14px;
+}
+
+.acc-link-active { 
+  &:hover, &:focus {
+    background-color: $primary !important;
+    color: #fff !important;  
+  }
+  background-color: $primary;
+  color: #fff;
+}
+
+.table-watchlist {
+  margin: 30px;
+  
+  @include media-breakpoint-down(md) {
+    margin: 0;
+  }
 }

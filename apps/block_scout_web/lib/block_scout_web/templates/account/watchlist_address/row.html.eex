@@ -2,9 +2,11 @@
   <th scope="row"><%= @watchlist_address.id %></th>
   <td><%= @watchlist_address.name %></td>
   <td>
-    <%= link(trimmed_hash(@watchlist_address.address_hash), to: address_path(@conn, :show, @watchlist_address.address_hash)) %>
-    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @watchlist_address.address_hash, aria_label: gettext("Copy From Address"), title: gettext("Copy From Address") %>
+    <div>
+      <%= link(trimmed_hash(@watchlist_address.address_hash), to: address_path(@conn, :show, @watchlist_address.address_hash)) %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @watchlist_address.address_hash, aria_label: gettext("Copy From Address"), title: gettext("Copy From Address"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
+    </div>
   </td>
   <td>
     <%= balance_ether(@watchlist_address.address) %>
