@@ -19,6 +19,7 @@ services:
     image: nginx:1.19.6
     container_name: nginx
     network_mode: host
+    restart: unless-stopped
     volumes:
       - ./data/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./data/certs:/data/
