@@ -120,6 +120,16 @@ def get_all_names():
     return [schains_internal_contract.functions.schains(id).call()[0] for id in schain_ids]
 
 
+def is_dkg_passed(schain_name):
+    provider = HTTPProvider(ENDPOINT)
+    web3 = Web3(provider)
+    sm_abi = read_json(ABI_FILEPATH)
+    dkg_contract = web3.eth.contract(address=sm_abi['skale_d_k_g_address'],
+                                                  abi=sm_abi['skale_d_k_g_abi'])
+    group_id = web3.keccak(text=schain_name)
+    return dkg_contract.functions.isLastDKGSuccessful(group_id).call()
+
+
 def check_endpoint(endpoint, ws=False):
     try:
         if ws:

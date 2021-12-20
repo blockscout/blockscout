@@ -21,6 +21,18 @@ def is_explorer_found(schain_name):
     return is_container_exists(container_name)
 
 
+def is_explorer_running(schain_name):
+    container_name = f'blockscout_{schain_name}'
+    return get_info(container_name) == RUNNING_STATUS
+
+
+def remove_explorer(schain_name):
+    container_name = f'blockscout_{schain_name}'
+    if is_container_exists(container_name):
+        logger.warning(f'Removing {container_name}...')
+        return dutils.containers.get(container_name).remove(force=True)
+
+
 def is_container_exists(name: str) -> bool:
     try:
         dutils.containers.get(name)
@@ -29,16 +41,14 @@ def is_container_exists(name: str) -> bool:
     return True
 
 
-def get_info(container_id: str) -> dict:
-    container_info = {}
+def get_info(container_id: str):
     try:
         container = dutils.containers.get(container_id)
-        container_info['status'] = container.status
+        return container.status
     except docker.errors.NotFound:
         logger.warning(
             f'Can not get info - no such container: {container_id}')
-        container_info['status'] = CONTAINER_NOT_FOUND
-    return container_info
+        return CONTAINER_NOT_FOUND
 
 
 def get_db_port(schain_name):
