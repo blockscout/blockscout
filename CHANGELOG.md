@@ -8,6 +8,7 @@
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 
 ### Fixes
+- [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display imrovement
 - [#5019](https://github.com/blockscout/blockscout/pull/5019) - Fix fetch_last_token_balance function termination
 - [#5011](https://github.com/blockscout/blockscout/pull/5011) - Fix `0x0` implementation address
 - [#5008](https://github.com/blockscout/blockscout/pull/5008) - Extend decimals cap in format_according_to_decimals up to 24
