@@ -279,7 +279,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-container, .navbar-primary {
-  @include media-breakpoint-up(xl) {
+  @media (min-width: 992px) {
     padding-right: 0;
   }
 }

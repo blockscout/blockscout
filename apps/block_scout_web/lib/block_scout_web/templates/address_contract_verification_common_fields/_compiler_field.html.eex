@@ -1,0 +1,10 @@
+<div class="smart-contract-form-group">
+    <div class="smart-contract-form-group-inner-wrapper">
+        <%= label @f, :compiler_version, gettext("Compiler") %>
+        <div class="center-column">
+            <%= select @f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: @compiler_version, "aria-describedby": "compiler-help-block", id: "smart_contract_compiler_version" %>
+            <%= error_tag @f, :compiler_version, id: "compiler-help-block", class: "text-danger form-error" %>
+        </div>
+        <div class="smart-contract-form-group-tooltip">The compiler version is specified in <span class="tooltip-quote">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class="tooltip-quote">solc —version</span> to check.</div>
+    </div>
+</div>
