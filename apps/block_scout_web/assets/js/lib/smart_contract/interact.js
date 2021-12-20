@@ -105,9 +105,9 @@ function onTransactionHash (txHash, $element, functionName) {
   const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
 }
 
-const ethStrToWeiBn = ethStr => BigNumber(ethStr).multipliedBy(10 ** 18);
+const ethStrToWeiBn = ethStr => BigNumber(ethStr).multipliedBy(10 ** 18)
 
 function getTxValue ($functionInputs) {
-  const txValueEth = $functionInputs.filter("[tx-value]:first")?.val() || "0";
-  return `0x${ethStrToWeiBn(txValueEth).toString(16)}`;
+  const txValueEth = $functionInputs.filter('[tx-value]:first')?.val() || '0'
+  return `0x${ethStrToWeiBn(txValueEth).toString(16)}`
 }
