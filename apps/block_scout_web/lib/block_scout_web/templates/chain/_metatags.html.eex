@@ -1,5 +1,5 @@
 <title>
-  <%= gettext("%{subnetwork} %{network} Explorer", subnetwork: LayoutView.subnetwork_title(), network: LayoutView.network_title()) %>
+  <%= gettext("%{subnetwork} Explorer", subnetwork: LayoutView.subnetwork_title(), network: LayoutView.network_title()) %>
 </title>
 <meta name="description" content="<%= gettext "BlockScout provides analytics data, API, and Smart Contract tools for the %{subnetwork}", subnetwork: LayoutView.subnetwork_title() %>">
 <meta name="keywords" content="BlockScout, blockchain, api, analytics, address, smart contract">

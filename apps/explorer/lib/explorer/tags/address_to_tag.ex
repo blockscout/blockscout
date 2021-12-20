@@ -74,6 +74,7 @@ defmodule Explorer.Tags.AddressToTag do
         left_join: att in AddressToTag,
         on: tt.id == att.tag_id,
         where: att.address_hash == ^address_hash,
+        where: tt.label != ^"validator",
         select: tt
       )
 
