@@ -161,7 +161,7 @@ class MarketHistoryChart {
     let marketCapActivated = true
 
     this.price = {
-      label: 'xDai Price',
+      label: 'Gnosis Chain Price',
       yAxisID: 'price',
       data: [],
       fill: false,

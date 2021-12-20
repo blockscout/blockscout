@@ -57,7 +57,7 @@
         </div>
         <div class="row">
           <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
-            <button class="btn-full-primary btn-full-primary-text mb-2 btn-add-chain-to-mm staking-dapp-top-panel-button-width"><%= gettext("Add xDai Chain") %></button>
+            <button class="btn-full-primary btn-full-primary-text mb-2 btn-add-chain-to-mm staking-dapp-top-panel-button-width"><%= gettext("Add Gnosis Chain") %></button>
           </div>
           <div class="staking-dapp-top-panel-buttons-row col-sm-12 col-md-6">
             <a

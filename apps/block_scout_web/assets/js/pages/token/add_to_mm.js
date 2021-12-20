@@ -42,7 +42,7 @@ async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenIm
     } else {
       btn.tooltip('dispose')
       btn.tooltip({
-        title: 'You\'re not connected to xDai chain',
+        title: 'You\'re not connected to Gnosis Chain',
         trigger: 'click',
         placement: 'top'
       }).tooltip('show')

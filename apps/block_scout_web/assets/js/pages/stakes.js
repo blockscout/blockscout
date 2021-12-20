@@ -52,7 +52,7 @@ export const initialState = {
   stakingErrorShown: false
 }
 
-// 100 - id of xDai network, 101 - id of xDai test network
+// 100 - id of Gnosis chain, 101 - id of Gnosis Chain Testnet
 export const allowedNetworkIds = [100, 101]
 
 export function reducer (state = initialState, action) {

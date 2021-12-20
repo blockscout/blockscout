@@ -15,7 +15,7 @@ async function addChainToMM ({ btn }) {
         method: 'wallet_addEthereumChain',
         params: [{
           chainId: '0x64',
-          chainName: 'xDai Chain',
+          chainName: 'Gnosis Chain',
           nativeCurrency: {
             name: 'xDAI',
             symbol: 'xDAI',
@@ -29,7 +29,7 @@ async function addChainToMM ({ btn }) {
     } else {
       btn.tooltip('dispose')
       btn.tooltip({
-        title: 'You\'re already connected to xDai chain',
+        title: 'You\'re already connected to Gnosis chain',
         trigger: 'click',
         placement: 'bottom'
       }).tooltip('show')

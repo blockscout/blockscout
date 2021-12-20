@@ -132,7 +132,7 @@
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Apps") %></b></h3>
                   <%= if staking_enabled_in_menu do %>
                     <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                      <%= gettext("Staking on xDai") %>
+                      <%= gettext("Staking on Gnosis Chain") %>
                     </a>
                   <% end %>
                   <a class="dropdown-item" href="https://easy-staking.xdaichain.com/">
@@ -142,7 +142,7 @@
                       <%= gettext("Staking stats") %>
                   </a>
                   <a class="dropdown-item" href="https://duneanalytics.com/maxaleks/xDai-Usage">
-                      <%= gettext("xDai Usage stats") %>
+                      <%= gettext("Gnosis Chain Usage stats") %>
                   </a>
                   <%= if Application.get_env(:block_scout_web, :gas_tracker)[:enabled_in_menu] == true do %>
                     <a class="dropdown-item" href="/gas-tracker-consumers-3hrs">

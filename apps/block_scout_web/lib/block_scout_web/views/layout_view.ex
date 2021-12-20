@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.LayoutView do
       test_net?: true
     },
     %{
-      title: "xDai",
+      title: "Gnosis Chain",
       url: "https://blockscout.com/xdai/mainnet"
     },
     %{

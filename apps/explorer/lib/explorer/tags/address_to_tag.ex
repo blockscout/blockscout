@@ -84,7 +84,7 @@ defmodule Explorer.Tags.AddressToTag do
   def set_tag_to_addresses(tag_id, address_hash_string_list) do
     current_address_hashes = get_address_hashes_mapped_to_tag(tag_id)
 
-    if current_address_hashes do 
+    if current_address_hashes do
       current_address_hashes_strings =
         current_address_hashes
         |> Enum.map(fn address_hash ->
@@ -110,7 +110,7 @@ defmodule Explorer.Tags.AddressToTag do
         addresses_to_add
         |> Enum.map(fn address_hash_string ->
           with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-              :ok <- Chain.check_address_exists(address_hash) do
+               :ok <- Chain.check_address_exists(address_hash) do
             %{
               tag_id: tag_id,
               address_hash: address_hash,

@@ -2,7 +2,7 @@
   <%= raw(@top) %>
 </div>
 <section data-page="stakes" class="container" data-refresh-interval="<%= @refresh_interval %>">
-  <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: "Participate in Proof-of-Stake consensus on the xDai chain as a delegator or validator. To start you will need STAKE on the xDai network. <a href='https://www.xdaichain.com/for-stakers/staking-protocol' target='_blank'>Learn More</a>", additional_container_classes: ["mb-4", "js-stakes-welcome-alert"], enable_info_icon: true, additional_button_classes: ["js-stakes-btn-close-welcome-alert"] %>
+  <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: "Participate in Proof-of-Stake consensus on the Gnosis Chain as a delegator or validator. To start you will need STAKE on the Gnosis Chain. <a href='https://www.xdaichain.com/for-stakers/staking-protocol' target='_blank'>Learn More</a>", additional_container_classes: ["mb-4", "js-stakes-welcome-alert"], enable_info_icon: true, additional_button_classes: ["js-stakes-btn-close-welcome-alert"] %>
   <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_staking_warning] do %>
     <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: System.get_env("STAKING_WARNING_MESSAGE", nil), additional_container_classes: ["mb-4", "js-stakes-warning-alert"], enable_info_icon: true, additional_button_classes: ["js-stakes-btn-close-warning"] %>
   <% end %>
