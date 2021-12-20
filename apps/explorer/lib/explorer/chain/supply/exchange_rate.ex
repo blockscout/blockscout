@@ -13,7 +13,12 @@ defmodule Explorer.Chain.Supply.ExchangeRate do
   def circulating do
     with {:ok, address_hash} <- Chain.string_to_address_hash(@wpoa_address),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      wpoa_total_supply = address.token.total_supply
+      token_decimals_divider =
+        10
+        |> :math.pow(Decimal.to_integer(address.token.decimals))
+        |> Decimal.from_float()
+
+      wpoa_total_supply = Decimal.div(address.token.total_supply, token_decimals_divider)
       available_supply = exchange_rate().available_supply
 
       circulating_supply = Decimal.sub(available_supply, wpoa_total_supply)
