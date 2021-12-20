@@ -28,7 +28,9 @@ def is_explorer_running(schain_name):
 
 def remove_explorer(schain_name):
     container_name = f'blockscout_{schain_name}'
-    return dutils.containers.get(container_name).remove()
+    if is_container_exists(container_name):
+        logger.warning(f'Removing {container_name}...')
+        return dutils.containers.get(container_name).remove(forse=True)
 
 
 def is_container_exists(name: str) -> bool:

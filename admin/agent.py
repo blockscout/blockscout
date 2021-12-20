@@ -64,7 +64,7 @@ def run_iteration():
     for schain_name in schains:
         if schain_name not in explorers and not is_dkg_passed(schain_name):
             continue
-        if schain_name not in explorers or not is_explorer_found(schain_name):
+        if schain_name not in explorers:
             run_explorer_for_schain(schain_name)
         if not is_explorer_running(schain_name):
             logger.warning(f'Blockscout is not working for {schain_name}. Recreating...')
