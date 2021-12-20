@@ -6,7 +6,7 @@ from time import sleep
 from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
 from admin.containers import (get_free_port, get_db_port, restart_nginx,
                               is_explorer_found, is_explorer_running, remove_explorer)
-from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json
+from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json, is_dkg_passed
 from admin.logger import init_logger
 from admin.nginx import regenerate_nginx_config
 
@@ -62,10 +62,10 @@ def run_iteration():
     explorers = read_json(EXPLORERS_META_DATA_PATH)
     schains = get_all_names()
     for schain_name in schains:
+        if schain_name not in explorers and not is_dkg_passed(schain_name):
+            continue
         if schain_name not in explorers or not is_explorer_found(schain_name):
-            endpoint = get_schain_endpoint(schain_name)
-            ws_endpoint = get_schain_endpoint(schain_name, ws=True)
-            run_explorer(schain_name, endpoint, ws_endpoint)
+            run_explorer_for_schain(schain_name)
         if not is_explorer_running(schain_name):
             logger.warning(f'Blockscout is not working for {schain_name}. Recreating...')
             remove_explorer(schain_name)

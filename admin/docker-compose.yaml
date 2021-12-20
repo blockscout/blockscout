@@ -3,6 +3,7 @@ services:
   explorer-admin:
     container_name: explorer_admin
     image: "explorer-admin:${TAG:-latest}"
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
