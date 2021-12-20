@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
   alias BlockScoutWeb.Tokens.InventoryView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, TokenTransfer}
+  alias Explorer.Tags.AddressToTag
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, default_paging_options: 0]
@@ -72,12 +73,15 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      tags = AddressToTag.get_tags_on_address(address_hash)
+
       render(
         conn,
         "index.html",
         current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
-        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
+        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
+        tags: tags
       )
     else
       {:restricted_access, _} ->
