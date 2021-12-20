@@ -36,7 +36,9 @@ config :indexer,
   # bytes
   memory_limit: 7 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || "",
-  last_block: System.get_env("LAST_BLOCK") || ""
+  last_block: System.get_env("LAST_BLOCK") || "",
+  trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
+  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu"

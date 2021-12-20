@@ -253,6 +253,10 @@ $navbar-logo-width: auto !default;
   &.in-footer {
     color: #fff;
   }
+
+  &.no-logo {
+    margin-left: 0px;
+  }
 }
 
 @include media-breakpoint-up(md) {

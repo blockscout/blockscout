@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
 
   @tabs ["token-transfers", "metadata"]
+  @stub_image "/images/controller.svg"
 
   def token_name?(%Token{name: nil}), do: false
   def token_name?(%Token{name: _}), do: true
@@ -22,7 +23,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def total_supply?(%Token{total_supply: nil}), do: false
   def total_supply?(%Token{total_supply: _}), do: true
 
-  def media_src(nil), do: "/images/controller.svg"
+  def media_src(nil), do: @stub_image
 
   def media_src(instance) do
     result =
@@ -150,8 +151,15 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     |> tab_name()
   end
 
+  defp retrieve_image(image, _) when is_nil(image), do: @stub_image
+
   defp retrieve_image(image, _) when is_map(image) do
     image["description"]
+  end
+
+  defp retrieve_image(image, token_contract_address_hash) when is_list(image) do
+    image_url = image |> Enum.at(0)
+    retrieve_image(image_url, token_contract_address_hash)
   end
 
   defp retrieve_image(image_url, token_contract_address_hash) do

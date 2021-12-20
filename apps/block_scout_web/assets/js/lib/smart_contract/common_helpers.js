@@ -36,22 +36,26 @@ export function prepareMethodArgs ($functionInputs, inputs) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
         return [[]]
       } else {
-        if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
-          sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
-        }
-        const inputValueElements = sanitizedInputValue.split(',')
-        const sanitizedInputValueElements = inputValueElements.map(elementValue => {
-          const elementInputType = inputType.split('[')[0]
-
-          let sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
-          sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
-
-          if (isBoolInputType(elementInputType)) {
-            sanitizedElementValue = convertToBool(elementValue)
+        if (isArrayOfTuple(inputType)) {
+          return [JSON.parse(sanitizedInputValue)]
+        } else {
+          if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
+            sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
           }
-          return sanitizedElementValue
-        })
-        return [sanitizedInputValueElements]
+          const inputValueElements = sanitizedInputValue.split(',')
+          const sanitizedInputValueElements = inputValueElements.map(elementValue => {
+            const elementInputType = inputType.split('[')[0]
+
+            let sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+            sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
+
+            if (isBoolInputType(elementInputType)) {
+              sanitizedElementValue = convertToBool(elementValue)
+            }
+            return sanitizedElementValue
+          })
+          return [sanitizedInputValueElements]
+        }
       }
     } else if (isBoolInputType(inputType)) {
       return convertToBool(sanitizedInputValue)
@@ -219,6 +223,10 @@ function isArrayInputType (inputType) {
 
 function isTupleInputType (inputType) {
   return inputType && inputType.includes('tuple') && !isArrayInputType(inputType)
+}
+
+function isArrayOfTuple (inputType) {
+  return inputType && inputType.includes('tuple') && isArrayInputType(inputType)
 }
 
 function isAddressInputType (inputType) {
