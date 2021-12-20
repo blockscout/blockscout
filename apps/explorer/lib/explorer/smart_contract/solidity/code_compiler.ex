@@ -125,6 +125,80 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
+  def run(params, json_input) do
+    name = Keyword.fetch!(params, :name)
+    compiler_version = Keyword.fetch!(params, :compiler_version)
+
+    path = SolcDownloader.ensure_exists(compiler_version)
+
+    if path do
+      {response, _status} =
+        System.cmd(
+          "node",
+          [
+            Application.app_dir(:explorer, "priv/compile_solc_standard_json_input.js"),
+            create_source_file(json_input),
+            path
+          ]
+        )
+
+      with {:ok, decoded} <- Jason.decode(response),
+           {:ok, contracts} <- get_contracts_standard_input_verification(decoded) do
+        fetch_candidates(contracts, name)
+      else
+        {:error, %Jason.DecodeError{}} ->
+          {:error, :compilation}
+
+        {:error, reason} when reason in [:name, :compilation] ->
+          {:error, reason}
+
+        error ->
+          error = parse_error(error)
+          Logger.warn(["There was an error compiling a provided contract: ", inspect(error)])
+          {:error, [first_error | _]} = error
+          %{"message" => error_message} = first_error
+          {:error, :compilation, error_message}
+      end
+    else
+      {:error, :compilation}
+    end
+  end
+
+  defp fetch_candidates(contracts, "") when is_map(contracts) do
+    candidates =
+      for {file, content} <- contracts,
+          {contract_name, %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}}} <- content,
+          do: %{"abi" => abi, "bytecode" => bytecode, "name" => contract_name, "file_path" => file}
+
+    {:ok, candidates}
+  end
+
+  defp fetch_candidates(contracts, name) when is_binary(name) and is_map(contracts) do
+    if String.contains?(name, ":") do
+      [file_name, contract_name] = String.split(name, ":")
+      fetch_candidates(contracts, file_name, contract_name)
+    else
+      candidates =
+        for {file, content} <- contracts,
+            {contract_name, %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}}} <- content,
+            contract_name == name,
+            do: %{"abi" => abi, "bytecode" => bytecode, "name" => contract_name, "file_path" => file}
+
+      {:ok, candidates}
+    end
+  end
+
+  defp fetch_candidates(contracts, file_name, name)
+       when is_binary(name) and is_binary(file_name) and is_map(contracts) do
+    case contracts[file_name][name] do
+      %{"abi" => abi, "evm" => %{"bytecode" => %{"object" => bytecode}}} ->
+        {:ok, [%{"abi" => abi, "bytecode" => bytecode, "name" => name, "file_path" => file_name}]}
+
+      _ ->
+        {:ok, []}
+    end
+  end
+
   def allowed_evm_versions do
     :explorer
     |> Application.get_env(:allowed_evm_versions)
@@ -157,6 +231,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   defp get_contracts(%{"contracts" => %{"New.sol" => contracts}}), do: {:ok, contracts}
   defp get_contracts(%{"contracts" => %{"" => contracts}}), do: {:ok, contracts}
   defp get_contracts(response), do: {:error, response}
+
+  defp get_contracts_standard_input_verification(%{"contracts" => contracts}), do: {:ok, contracts}
+  defp get_contracts_standard_input_verification(response), do: {:error, response}
 
   defp optimize_value(false), do: "0"
   defp optimize_value("false"), do: "0"

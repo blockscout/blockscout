@@ -1,11 +1,16 @@
 ## Current
 
 ### Features
+- [#4924](https://github.com/blockscout/blockscout/pull/4924) - Add daily bytecode verifcation to prevent metamorphic contracts vulnerablity
+- [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 - [#5004](https://github.com/blockscout/blockscout/pull/5004) - Add ability to set up a separate DB endpoint for the API endpoints
 - [#4989](https://github.com/blockscout/blockscout/pull/4989), [#4991](https://github.com/blockscout/blockscout/pull/4991) - Bridged tokens list API endpoint
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 
 ### Fixes
+- [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display imrovement
+- [#5019](https://github.com/blockscout/blockscout/pull/5019) - Fix fetch_last_token_balance function termination
+- [#5011](https://github.com/blockscout/blockscout/pull/5011) - Fix `0x0` implementation address
 - [#5008](https://github.com/blockscout/blockscout/pull/5008) - Extend decimals cap in format_according_to_decimals up to 24
 - [#5005](https://github.com/blockscout/blockscout/pull/5005) - Fix falsy appearance `Connection Lost` warning on reload/switch page
 - [#5003](https://github.com/blockscout/blockscout/pull/5003) - API router refactoring
@@ -20,7 +25,11 @@
 - [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
 
 ### Chore
+- [#5023](https://github.com/blockscout/blockscout/pull/5023) - Capability to leave an empty logo
+- [#5018](https://github.com/blockscout/blockscout/pull/5018) - Resolve npm vulnerabilities via npm audix fix
+- [#5014](https://github.com/blockscout/blockscout/pull/5014) - Separate FIRST_BLOCK and TRACE_FIRST_BLOCK option for blocks import and tracing methods
 - [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
+- [#4983](https://github.com/blockscout/blockscout/pull/4983) - Fix contract verification tests
 
 
 ## 4.0.0-beta

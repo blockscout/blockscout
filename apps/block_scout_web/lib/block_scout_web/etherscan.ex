@@ -501,6 +501,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @contract_verifysourcecode_example_value %{
+    "message" => "OK",
+    "result" => "b080b96bd06ad1c9341c2afb7e3730311388544961acde94",
+    "status" => "1"
+  }
+
+  @contract_checkverifystatus_example_value %{
+    "message" => "OK",
+    "result" => "Pending in queue",
+    "status" => "1"
+  }
+
   @contract_getsourcecode_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -1078,6 +1090,28 @@ defmodule BlockScoutWeb.Etherscan do
         type: "optimization used",
         enum: ~s(["0", "1"]),
         enum_interpretation: %{"0" => "false", "1" => "true"}
+      }
+    }
+  }
+
+  @uid_response_model %{
+    name: "UID",
+    fields: %{
+      "UID" => %{
+        type: "string",
+        definition: "Unique identifier of the verification attempt",
+        example: "b080b96bd06ad1c9341c2afb7e3730311388544961acde94"
+      }
+    }
+  }
+
+  @status_response_model %{
+    name: "Status",
+    fields: %{
+      "status" => %{
+        type: "string",
+        definition: "Current status of the verification attempt",
+        example: "`Pending in queue` | `Pass - Verified` | `Fail - Unable to verify` | `Unknown UID`"
       }
     }
   }
@@ -2684,6 +2718,95 @@ defmodule BlockScoutWeb.Etherscan do
       }
     ]
   }
+
+  @contract_verifysourcecode_action %{
+    name: "verifysourcecode",
+    description: """
+    Verify a contract with Standard input JSON file. Its interface the same as <a href="https://docs.etherscan.io/tutorials/verifying-contracts-programmatically">Etherscan</a>'s API endpoint
+    <br/>
+    <br/>
+    """,
+    required_params: [
+      %{
+        name: "solidity-standard-json-input",
+        key: "codeformat",
+        placeholder: "solidity-standard-json-input",
+        type: "string",
+        description: "Format of sourceCode(supported only \"solidity-standard-json-input\")"
+      },
+      %{
+        key: "contractaddress",
+        placeholder: "contractaddress",
+        type: "string",
+        description: "The address of the contract."
+      },
+      %{
+        key: "contractname",
+        placeholder: "contractname",
+        type: "string",
+        description:
+          "The name of the contract. It could be empty string(\"\"), just contract name(\"ContractName\"), or filename and contract name(\"contracts/contract_1.sol:ContractName\")"
+      },
+      %{
+        key: "compilerversion",
+        placeholder: "compilerversion",
+        type: "string",
+        description: "The compiler version for the contract."
+      },
+      %{
+        key: "sourceCode",
+        placeholder: "sourceCode",
+        type: "string",
+        description: "Standard input json"
+      }
+    ],
+    optional_params: [
+      %{
+        key: "constructorArguements",
+        type: "string",
+        description: "The constructor argument data provided."
+      },
+      %{
+        key: "autodetectConstructorArguments",
+        placeholder: false,
+        type: "boolean",
+        description: "Whether or not automatically detect constructor argument."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_verifysourcecode_example_value),
+        type: "model",
+        model: @uid_response_model
+      }
+    ]
+  }
+
+  @contract_checkverifystatus_action %{
+    name: "checkverifystatus",
+    description: "Return status of the verification attempt (works in addition to verifysourcecode method)",
+    required_params: [
+      %{
+        key: "guid",
+        placeholder: "identifierString",
+        type: "string",
+        description: "A string used for identifying verification attempt"
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_checkverifystatus_example_value),
+        type: "model",
+        model: @status_response_model
+      }
+    ]
+  }
+
   @contract_getabi_action %{
     name: "getabi",
     description: "Get ABI for verified contract. Also available through a GraphQL 'addresses' query.",
@@ -2931,7 +3054,9 @@ defmodule BlockScoutWeb.Etherscan do
       @contract_getsourcecode_action,
       @contract_verify_action,
       @contract_verify_via_sourcify_action,
-      @contract_verify_vyper_contract_action
+      @contract_verify_vyper_contract_action,
+      @contract_verifysourcecode_action,
+      @contract_checkverifystatus_action
     ]
   }
 
