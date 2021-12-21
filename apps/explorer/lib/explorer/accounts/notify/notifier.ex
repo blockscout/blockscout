@@ -1,8 +1,10 @@
 defmodule Explorer.Accounts.Notify.Notifier do
-  alias Explorer.Accounts.Notify.Email
-  alias Explorer.Accounts.Notify.Summary
-  alias Explorer.Accounts.WatchlistAddress
-  alias Explorer.Accounts.WatchlistNotification
+  @moduledoc """
+    Composing notification, store and send it to email
+  """
+
+  alias Explorer.Accounts.Notify.{Email, Summary}
+  alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
@@ -14,9 +16,8 @@ defmodule Explorer.Accounts.Notify.Notifier do
     incoming_addresses = find_watchlists_addresses(summary.to_address_hash)
     outgoing_addresses = find_watchlists_addresses(summary.from_address_hash)
 
-    Enum.map(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
-
-    Enum.map(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
+    Enum.each(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
+    Enum.each(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
   end
 
   def notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do

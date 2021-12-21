@@ -1,14 +1,13 @@
 defmodule Explorer.Accounts.Notify.Email do
-  alias BlockScoutWeb.WebRouter.Helpers
-  alias Explorer.Accounts.Identity
-  alias Explorer.Accounts.Watchlist
-  alias Explorer.Accounts.WatchlistAddress
-  alias Explorer.Accounts.WatchlistNotification
-  alias Explorer.Mailer
-  alias Explorer.Repo
+  @moduledoc """
+    Composing an email to sendgrid
+  """
 
-  import Bamboo.Email
-  import Bamboo.SendGridHelper
+  alias BlockScoutWeb.WebRouter.Helpers
+  alias Explorer.Accounts.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
+  alias Explorer.{Mailer, Repo}
+
+  import Bamboo.{Email, SendGridHelper}
 
   def send(notification, %{notify_email: notify}) when notify do
     notification = preload(notification)
@@ -19,7 +18,9 @@ defmodule Explorer.Accounts.Notify.Email do
   end
 
   def compose_email(notification) do
-    new_email(from: "ulyana@blockscout.com", to: email(notification))
+    email = new_email(from: "ulyana@blockscout.com", to: email(notification))
+
+    email
     |> with_template("d-7ab86397e5bb4f0e94e285879a42be64")
     |> add_dynamic_field("username", username(notification))
     |> add_dynamic_field("address_hash", address_hash_string(notification))

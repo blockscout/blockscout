@@ -11,6 +11,7 @@ defmodule AddWatchlistAddress do
 
   alias Explorer.Repo
   alias Explorer.Accounts.Watchlist
+  alias Explorer.Accounts.WatchlistAddress
   alias Explorer.Chain
   alias Explorer.Chain.Address
 
@@ -19,14 +20,20 @@ defmodule AddWatchlistAddress do
 
     case format_address(address_hash_string) do
       {:ok, address_hash} ->
-        address_hash
-        |> find_or_create_address()
-        |> params_to_attributes(params)
-        |> build_watchlist_address(watchlist(watchlist_id))
-        |> Repo.insert()
+        case find_watchlist_address(watchlist_id, address_hash) do
+          %WatchlistAddress{} ->
+            {:error, "Address already exists!"}
+
+          nil ->
+            address_hash
+            |> find_or_create_address()
+            |> params_to_attributes(params)
+            |> build_watchlist_address(watchlist(watchlist_id))
+            |> Repo.insert()
+        end
 
       :error ->
-        {:error, "Wrong address"}
+        {:error, "Wrong address, "}
     end
   end
 
@@ -62,6 +69,13 @@ defmodule AddWatchlistAddress do
 
   def format_address(address_hash_string) do
     Chain.string_to_address_hash(address_hash_string)
+  end
+
+  def find_watchlist_address(watchlist_id, address_hash) do
+    Repo.get_by(WatchlistAddress,
+      address_hash: address_hash,
+      watchlist_id: watchlist_id
+    )
   end
 
   def find_or_create_address(address_hash) do

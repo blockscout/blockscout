@@ -20,7 +20,7 @@
               <div class="form-group">
                 <%= label f, "Address", class: "control-label", style: "font-size: 14px" %>
                 <%= text_input f, :address_hash, class: "form-control", placeholder: "0x0000000000000000000000000000000000000000" %>
-                <%= error_tag f, :address_hash %>
+                <%= error_tag f, :address_hash, style: "color: #ff7986;" %>
               </div>
 
               <div class="form-group">

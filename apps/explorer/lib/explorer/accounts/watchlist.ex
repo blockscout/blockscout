@@ -1,8 +1,11 @@
 defmodule Explorer.Accounts.Watchlist do
+  @moduledoc """
+    Watchlist is root entity for WatchlistAddresses
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
-  alias Explorer.Accounts.Identity
-  alias Explorer.Accounts.WatchlistAddress
+  alias Explorer.Accounts.{Identity, WatchlistAddress}
 
   schema "account_watchlists" do
     field(:name, :string)

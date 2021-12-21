@@ -1,4 +1,9 @@
 defmodule Explorer.Accounts.WatchlistNotification do
+  @moduledoc """
+    Strored notification about event 
+    related to WatchlistAddress
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 

@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import do
   """
 
   alias Ecto.Changeset
+  alias Explorer.Accounts.Notify.Summary
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
@@ -302,7 +303,7 @@ defmodule Explorer.Chain.Import do
         Keyword.delete(options, :for)
       )
 
-    Explorer.Accounts.Notify.Summary.process(inserted)
+    Summary.process(inserted)
 
     {:ok, inserted}
   end

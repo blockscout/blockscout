@@ -1,4 +1,8 @@
 defmodule Explorer.Accounts.Identity do
+  @moduledoc """
+    Identity of user fetched via Oauth
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
   alias Explorer.Accounts.Watchlist

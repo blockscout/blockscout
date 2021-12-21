@@ -1,12 +1,17 @@
 defmodule Explorer.Accounts.WatchlistAddressForm do
+  @moduledoc """
+    WatchlistAddressForm 
+    needed for substitute WatchlistAddress, 
+    because of nft boolean fields expand to 721 & 1155
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 
   alias Explorer.Accounts.Watchlist
-  alias Explorer.Chain.Address
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Address, Hash}
 
-  schema "account_watchlist_address_forms" do
+  embedded_schema do
     field(:name, :string)
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
     belongs_to(:watchlist, Watchlist)

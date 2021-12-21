@@ -1,12 +1,6 @@
 defmodule UpdateWatchlistAddress do
   @moduledoc """
   Update watchlist address, associated with Address and Watchlist
-
-  params =  %{
-    "address_hash_string" => "0xBA80A39FD165DFD3BFE704EFAB40B7F899DA7C4B",
-    "name" => "wallet"
-  }
-  call(watchlist, params)
   """
 
   alias Explorer.Repo

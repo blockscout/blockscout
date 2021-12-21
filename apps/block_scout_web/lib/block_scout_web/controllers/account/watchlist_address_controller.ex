@@ -5,12 +5,18 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
   alias Explorer.Accounts.WatchlistAddress
   alias Explorer.Accounts.WatchlistAddressForm
 
+  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
+
   def new(conn, _params) do
+    authenticate!(conn)
+
     render(conn, "new.html", watchlist_address: new_address())
   end
 
   def create(conn, %{"watchlist_address_form" => wa_params}) do
-    case AddWatchlistAddress.call(current_user(conn).watchlist_id, wa_params) do
+    current_user = authenticate!(conn)
+
+    case AddWatchlistAddress.call(current_user.watchlist_id, wa_params) do
       {:ok, _watchlist_address} ->
         conn
         # |> put_flash(:info, "Address created!")
@@ -19,37 +25,42 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
       {:error, message = message} ->
         conn
         # |> put_flash(:error, message)
-        |> render("new.html", watchlist_address: changeset(wa_params))
+        |> render("new.html", watchlist_address: changeset_with_error(wa_params, message))
     end
   end
 
   def show(conn, _params) do
-    case current_user(conn) do
-      nil ->
-        conn
-        # |> put_flash(:info, "Sign in to see watchlist!")
-        |> redirect(to: root())
+    current_user = authenticate!(conn)
 
-      %{} = user ->
-        render(
-          conn,
-          "show.html",
-          watchlist: watchlist(user)
-        )
-    end
+    render(
+      conn,
+      "show.html",
+      watchlist: watchlist(current_user)
+    )
   end
 
   def edit(conn, %{"id" => id}) do
-    wla = get_watchlist_address(id)
-    form = WatchlistAddress.to_form(wla)
+    authenticate!(conn)
 
-    changeset = WatchlistAddressForm.changeset(form, %{})
+    case get_watchlist_address(conn, id) do
+      nil ->
+        conn
+        |> put_status(404)
+        |> put_view(BlockScoutWeb.ErrorView)
+        |> render(:"404")
 
-    render(conn, "edit.html", watchlist_address_id: wla, changeset: changeset)
+      %WatchlistAddress{} = wla ->
+        form = WatchlistAddress.to_form(wla)
+        changeset = WatchlistAddressForm.changeset(form, %{})
+
+        render(conn, "edit.html", watchlist_address_id: wla, changeset: changeset)
+    end
   end
 
   def update(conn, %{"id" => id, "watchlist_address_form" => wa_params}) do
-    wla = get_watchlist_address(id)
+    authenticate!(conn)
+
+    wla = get_watchlist_address(conn, id)
 
     case UpdateWatchlistAddress.call(wla, wa_params) do
       {:ok, _watchlist_address} ->
@@ -59,13 +70,15 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
 
       {:error, message = message} ->
         conn
-        |> put_flash(:error, message)
-        |> render("edit.html", watchlist_address: changeset(wa_params))
+        # |> put_flash(:error, message)
+        |> render("edit.html", watchlist_address: changeset_with_error(wa_params, message))
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    wla = get_watchlist_address(id)
+    authenticate!(conn)
+
+    wla = get_watchlist_address(conn, id)
     Repo.delete(wla)
 
     conn
@@ -75,6 +88,11 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
 
   defp changeset(params) do
     WatchlistAddressForm.changeset(%WatchlistAddressForm{}, params)
+  end
+
+  defp changeset_with_error(params, message) do
+    %{changeset(params) | action: :insert}
+    |> Ecto.Changeset.add_error(:address_hash, message)
   end
 
   defp new_address do
@@ -97,16 +115,10 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     Repo.preload(wl, watchlist_addresses: :address)
   end
 
-  defp get_watchlist_address(id) do
-    wla = Repo.get(WatchlistAddress, id)
+  defp get_watchlist_address(conn, id) do
+    current_user = authenticate!(conn)
+    wl_id = current_user.watchlist_id
+    wla = Repo.get_by(WatchlistAddress, id: id, watchlist_id: wl_id)
     Repo.preload(wla, :address)
-  end
-
-  defp current_user(conn) do
-    get_session(conn, :current_user)
-  end
-
-  defp root do
-    System.get_env("NETWORK_PATH") || "/"
   end
 end

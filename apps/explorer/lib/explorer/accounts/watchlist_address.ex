@@ -1,12 +1,13 @@
 defmodule Explorer.Accounts.WatchlistAddress do
+  @moduledoc """
+    WatchlistAddress entity
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Explorer.Accounts.Watchlist
-  alias Explorer.Accounts.WatchlistAddress
-  alias Explorer.Accounts.WatchlistAddressForm
-  alias Explorer.Chain.Address
-  alias Explorer.Chain.Hash
+  alias Explorer.Accounts.{Watchlist, WatchlistAddress, WatchlistAddressForm}
+  alias Explorer.Chain.{Address, Hash}
 
   schema "account_watchlist_addresses" do
     field(:name, :string)

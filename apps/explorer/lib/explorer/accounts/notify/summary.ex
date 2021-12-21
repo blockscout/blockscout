@@ -1,11 +1,13 @@
 defmodule Explorer.Accounts.Notify.Summary do
+  @moduledoc """
+    Compose a summary from transactions
+  """
+
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Wei
-  alias Explorer.Repo
-  alias Explorer.Accounts.Notify.Summary
-  alias Explorer.Accounts.Notify.Notifier
+  alias Explorer.Accounts.Notify.{Notifier, Summary}
 
   defstruct [
     :transaction_hash,
@@ -47,7 +49,6 @@ defmodule Explorer.Accounts.Notify.Summary do
       transfers_list,
       fn transfer ->
         summary = fetch_summary(transaction, transfer)
-        IO.inspect(summary)
         log_entry(summary)
       end
     )
