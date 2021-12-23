@@ -326,11 +326,11 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp render_type_value(type, value, type) do
-    "<div style=\"padding-left: 20px\">(#{type}) : #{value}</div>"
+    "<div class=\"py-2 pr-2 text-nowrap\" style=\"padding-left: 20px\">(#{type}) : #{value}</div>"
   end
 
   defp render_type_value(type, value, name) do
-    "<div style=\"padding-left: 20px\"><span style=\"color: black\">#{name}</span> (#{type}) : #{value}</div>"
+    "<div class=\"py-2 pr-2 text-nowrap\" style=\"padding-left: 20px\"><span>#{name}</span> (#{type}) : #{value}</div>"
   end
 
   defp render_array_type_value(type, values, name) do
