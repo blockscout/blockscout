@@ -186,7 +186,7 @@
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
                   <hr class="menu-hr" />
-                  <a href="https://www.xdai.world/" class="dropdown-item" target="_blank"><%= gettext("More apps") %></a>
+                  <a href="https://gnosischain.world/" class="dropdown-item" target="_blank"><%= gettext("More apps") %></a>
                 </div>
               </div>
             </div>
