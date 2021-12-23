@@ -5,7 +5,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
-import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import { createAsyncLoadStore } from '../../lib/random_access_pagination'
 import { batchChannel } from '../../lib/utils'
 import '../address'
 import { isFiltered } from './utils'
@@ -26,14 +26,12 @@ export function reducer (state, action) {
       return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
-      if (state.beyondPageOne) return state
+      if (state.beyondPageOne || state.loading) return state
 
       return Object.assign({}, state, { channelDisconnected: true })
     }
     case 'RECEIVED_NEW_TRANSACTION': {
-      if (state.channelDisconnected) return state
-
-      if (state.beyondPageOne ||
+      if (state.channelDisconnected || state.beyondPageOne || state.loading ||
         (state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
         (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
         return state
@@ -42,7 +40,7 @@ export function reducer (state, action) {
       return Object.assign({}, state, { items: [action.msg.transactionHtml, ...state.items] })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected || state.beyondPageOne || state.loading) return state
 
       const transactionCount = state.transactionCount + action.msgs.length
 
@@ -65,7 +63,7 @@ export function reducer (state, action) {
       }
     }
     case 'RECEIVED_NEW_REWARD': {
-      if (state.channelDisconnected) return state
+      if (state.channelDisconnected || state.loading || state.beyondPageOne) return state
 
       return Object.assign({}, state, { items: [action.msg.rewardHtml, ...state.items] })
     }
