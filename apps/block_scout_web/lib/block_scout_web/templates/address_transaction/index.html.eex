@@ -38,7 +38,8 @@
                 ) %>
               </div>
             </div>
-            <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+            <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: 10_000 %>
+            <% #todo: add counting total txs count %>
           </div>
         </div>
         <div data-selector="channel-batching-message" style="display: none;">
@@ -62,7 +63,7 @@
 
         <div class="transaction-bottom-panel">
           <%= render BlockScoutWeb.CommonComponentsView, "_csv_export_button.html", address: Address.checksum(@address.hash), type: "transactions", conn: @conn %>
-          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "bottom" %>
         </div>
 
       </div>
