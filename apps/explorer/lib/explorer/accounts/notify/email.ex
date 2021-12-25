@@ -14,14 +14,14 @@ defmodule Explorer.Accounts.Notify.Email do
 
     email = compose_email(notification)
 
-    Mailer.deliver_now!(email)
+    Mailer.deliver_later(email)
   end
 
   def compose_email(notification) do
-    email = new_email(from: "ulyana@blockscout.com", to: email(notification))
+    email = new_email(from: sender(), to: email(notification))
 
     email
-    |> with_template("d-7ab86397e5bb4f0e94e285879a42be64")
+    |> with_template(template())
     |> add_dynamic_field("username", username(notification))
     |> add_dynamic_field("address_hash", address_hash_string(notification))
     |> add_dynamic_field("address_name", notification.watchlist_address.name)
@@ -118,5 +118,13 @@ defmodule Explorer.Accounts.Notify.Email do
 
   defp path do
     Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
+  end
+
+  defp sender do
+    Application.get_env(:explorer, :sendgrid_sender)
+  end
+
+  defp template do
+    Application.get_env(:explorer, :sendgrid_template)
   end
 end

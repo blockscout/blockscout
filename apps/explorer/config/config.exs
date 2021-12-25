@@ -38,11 +38,13 @@ config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
   emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
-  rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
+  rewards_contract_address:
+    System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
 
 config :explorer, Explorer.Chain.Cache.BlockNumber,
   enabled: true,
-  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  ttl_check_interval:
+    if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 address_sum_global_ttl =
@@ -132,13 +134,18 @@ config :explorer, Explorer.Counters.Bridge,
   update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60,
   disable_lp_tokens_in_market_cap: System.get_env("DISABLE_LP_TOKENS_IN_MARKET_CAP") == "true"
 
-config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
+config :explorer, Explorer.ExchangeRates,
+  enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
+  store: :ets
 
-config :explorer, Explorer.KnownTokens, enabled: System.get_env("DISABLE_KNOWN_TOKENS") != "true", store: :ets
+config :explorer, Explorer.KnownTokens,
+  enabled: System.get_env("DISABLE_KNOWN_TOKENS") != "true",
+  store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
-config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
+config :explorer, Explorer.Market.History.Cataloger,
+  enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
@@ -177,7 +184,8 @@ if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") 
     metadata_contract_address: System.get_env("METADATA_CONTRACT"),
     validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
 
-  config :explorer, Explorer.Validator.MetadataProcessor, enabled: System.get_env("DISABLE_INDEXER") != "true"
+  config :explorer, Explorer.Validator.MetadataProcessor,
+    enabled: System.get_env("DISABLE_INDEXER") != "true"
 else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
@@ -208,12 +216,14 @@ case System.get_env("SUPPLY_MODULE") do
 end
 
 if System.get_env("SOURCE_MODULE") == "TokenBridge" do
-  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TokenBridge
+  config :explorer, Explorer.ExchangeRates.Source,
+    source: Explorer.ExchangeRates.Source.TokenBridge
 end
 
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org",
-  checksum_function: System.get_env("CHECKSUM_FUNCTION") && String.to_atom(System.get_env("CHECKSUM_FUNCTION"))
+  checksum_function:
+    System.get_env("CHECKSUM_FUNCTION") && String.to_atom(System.get_env("CHECKSUM_FUNCTION"))
 
 config :logger, :explorer,
   # keep synced with `config/config.exs`
@@ -229,19 +239,23 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   otp_app: :explorer
 
 config :explorer, Explorer.Chain.Cache.Blocks,
-  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  ttl_check_interval:
+    if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.Chain.Cache.Transactions,
-  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  ttl_check_interval:
+    if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.Chain.Cache.Accounts,
-  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  ttl_check_interval:
+    if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.Chain.Cache.Uncles,
-  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  ttl_check_interval:
+    if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.Chain.Cache.GasUsage, enabled: false
@@ -255,6 +269,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
 config :explorer, Explorer.Mailer,
   adapter: Bamboo.SendGridAdapter,
   api_key: System.get_env("SENDGRID_API_KEY")
+
+config :explorer,
+  sendgrid_sender: System.get_env("SENDGRID_SENDER"),
+  sendgrid_template: System.get_env("SENDGRID_TEMPLATE")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
