@@ -5,19 +5,17 @@ defmodule Explorer.Accounts.Notify.Email do
 
   alias BlockScoutWeb.WebRouter.Helpers
   alias Explorer.Accounts.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
-  alias Explorer.{Mailer, Repo}
+  alias Explorer.Repo
 
   import Bamboo.{Email, SendGridHelper}
 
-  def send(notification, %{notify_email: notify}) when notify do
+  def compose(notification, %{notify_email: notify}) when notify do
     notification = preload(notification)
 
-    email = compose_email(notification)
-
-    Mailer.deliver_later(email)
+    compose_email(notification)
   end
 
-  def compose_email(notification) do
+  defp compose_email(notification) do
     email = new_email(from: sender(), to: email(notification))
 
     email
@@ -32,7 +30,7 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("amount", notification.amount)
     |> add_dynamic_field("name", notification.name)
     |> add_dynamic_field("tx_fee", notification.tx_fee)
-    |> add_dynamic_field("direction", notification.method)
+    |> add_dynamic_field("direction", direction(notification))
     |> add_dynamic_field("method", notification.method)
     |> add_dynamic_field("transaction_url", transaction_url(notification))
     |> add_dynamic_field("address_url", address_url(notification.watchlist_address.address_hash))
@@ -41,42 +39,42 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("block_url", transaction_url(notification))
   end
 
-  def email(%WatchlistNotification{
-        watchlist_address: %WatchlistAddress{
-          watchlist: %Watchlist{
-            identity: %Identity{
-              email: email
-            }
-          }
-        }
-      }),
-      do: email
+  defp email(%WatchlistNotification{
+         watchlist_address: %WatchlistAddress{
+           watchlist: %Watchlist{
+             identity: %Identity{
+               email: email
+             }
+           }
+         }
+       }),
+       do: email
 
-  def username(%WatchlistNotification{
-        watchlist_address: %WatchlistAddress{
-          watchlist: %Watchlist{
-            identity: %Identity{
-              name: name
-            }
-          }
-        }
-      }),
-      do: name
+  defp username(%WatchlistNotification{
+         watchlist_address: %WatchlistAddress{
+           watchlist: %Watchlist{
+             identity: %Identity{
+               name: name
+             }
+           }
+         }
+       }),
+       do: name
 
-  def address_hash_string(%WatchlistNotification{
-        watchlist_address: %WatchlistAddress{address: address}
-      }),
-      do: hash_string(address.hash)
+  defp address_hash_string(%WatchlistNotification{
+         watchlist_address: %WatchlistAddress{address: address}
+       }),
+       do: hash_string(address.hash)
 
-  def hash_string(hash) do
+  defp hash_string(hash) do
     "0x" <> Base.encode16(hash.bytes)
   end
 
-  def direction(notification) do
+  defp direction(notification) do
     affect(notification) <> place(notification)
   end
 
-  def place(%WatchlistNotification{direction: direction}) do
+  defp place(%WatchlistNotification{direction: direction}) do
     case direction do
       "incoming" -> "at"
       "outgoing" -> "from"
@@ -84,7 +82,7 @@ defmodule Explorer.Accounts.Notify.Email do
     end
   end
 
-  def affect(%WatchlistNotification{direction: direction}) do
+  defp affect(%WatchlistNotification{direction: direction}) do
     case direction do
       "incoming" -> "received"
       "outgoing" -> "sent"
@@ -92,15 +90,15 @@ defmodule Explorer.Accounts.Notify.Email do
     end
   end
 
-  def preload(notification) do
+  defp preload(notification) do
     Repo.preload(notification, watchlist_address: [:address, watchlist: :identity])
   end
 
-  def address_url(address_hash) do
+  defp address_url(address_hash) do
     Helpers.address_url(uri(), :show, address_hash)
   end
 
-  def transaction_url(notification) do
+  defp transaction_url(notification) do
     Helpers.transaction_url(uri(), :show, notification.transaction_hash)
   end
 

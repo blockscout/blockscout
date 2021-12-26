@@ -5,9 +5,9 @@ defmodule Explorer.Accounts.Notify.Summary do
 
   require Logger
 
+  alias Explorer.Accounts.Notify.Summary
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Wei
-  alias Explorer.Accounts.Notify.{Notifier, Summary}
 
   defstruct [
     :transaction_hash,
@@ -21,23 +21,11 @@ defmodule Explorer.Accounts.Notify.Summary do
     :type
   ]
 
-  def process(nil), do: nil
-  def process([]), do: nil
-
-  def process(transactions) when is_list(transactions) do
-    Enum.map(transactions, fn transaction -> process(transaction) end)
-  end
-
   def process(%Chain.Transaction{} = transaction) do
     preloaded_transaction = preload(transaction)
 
     handle_collection(transaction, preloaded_transaction.token_transfers)
-    summary = fetch_summary(transaction)
-
-    case summary do
-      :nothing -> :nothing
-      %Summary{} = summary -> Notifier.process(summary)
-    end
+    fetch_summary(transaction)
   end
 
   def process(_), do: nil
@@ -124,7 +112,6 @@ defmodule Explorer.Accounts.Notify.Summary do
   end
 
   defp log_entry(:nothing), do: nil
-  defp log_entry([]), do: nil
 
   defp log_entry(entry) do
     Logger.info(entry)

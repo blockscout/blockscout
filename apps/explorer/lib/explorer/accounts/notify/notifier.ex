@@ -5,14 +5,27 @@ defmodule Explorer.Accounts.Notify.Notifier do
 
   alias Explorer.Accounts.Notify.{Email, Summary}
   alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
-  alias Explorer.Repo
+  alias Explorer.{Mailer, Repo}
 
   import Ecto.Query, only: [from: 2]
 
-  def process(%Summary{from_address_hash: nil}), do: nil
-  def process(%Summary{to_address_hash: nil}), do: nil
+  def notify(nil), do: nil
+  def notify([]), do: nil
 
-  def process(%Summary{} = summary) do
+  def notify(transactions) when is_list(transactions) do
+    Enum.map(transactions, fn transaction -> process(transaction) end)
+  end
+
+  defp process(transaction) do
+    transaction
+    |> Summary.process()
+    |> notify_watchlists()
+  end
+
+  defp notify_watchlists(%Summary{from_address_hash: nil}), do: nil
+  defp notify_watchlists(%Summary{to_address_hash: nil}), do: nil
+
+  defp notify_watchlists(%Summary{} = summary) do
     incoming_addresses = find_watchlists_addresses(summary.to_address_hash)
     outgoing_addresses = find_watchlists_addresses(summary.from_address_hash)
 
@@ -20,7 +33,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
     Enum.each(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
   end
 
-  def notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
+  defp notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
     notification =
       build_watchlist_notification(
         address,
@@ -29,7 +42,9 @@ defmodule Explorer.Accounts.Notify.Notifier do
       )
 
     Repo.insert(notification)
-    Email.send(notification, address)
+
+    email = Email.compose(notification, address)
+    Mailer.deliver_later(email)
   end
 
   @doc """
@@ -53,7 +68,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
     end
   end
 
-  def is_watched(%WatchlistAddress{} = address, %{type: type}, direction) do
+  defp is_watched(%WatchlistAddress{} = address, %{type: type}, direction) do
     case {type, direction} do
       {"COIN", :incoming} -> address.watch_coin_input
       {"COIN", :outgoing} -> address.watch_coin_output
@@ -66,11 +81,11 @@ defmodule Explorer.Accounts.Notify.Notifier do
     end
   end
 
-  def find_watchlists_addresses(%Explorer.Chain.Hash{} = address_hash) do
+  defp find_watchlists_addresses(%Explorer.Chain.Hash{} = address_hash) do
     Repo.all(query(address_hash))
   end
 
-  def query(address_hash) do
+  defp query(address_hash) do
     from(wa in WatchlistAddress, where: wa.address_hash == ^address_hash)
   end
 end
