@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.Account.WatchlistController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Repo
   alias Explorer.Accounts.Watchlist
+  alias Explorer.Repo
 
   def show(conn, _params) do
     case current_user(conn) do

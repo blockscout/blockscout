@@ -9,10 +9,8 @@ defmodule AddWatchlistAddress do
   call(watchlist, params)
   """
 
-  alias Explorer.Repo
-  alias Explorer.Accounts.Watchlist
-  alias Explorer.Accounts.WatchlistAddress
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Accounts.{Watchlist, WatchlistAddress}
   alias Explorer.Chain.Address
 
   def call(watchlist_id, params) do

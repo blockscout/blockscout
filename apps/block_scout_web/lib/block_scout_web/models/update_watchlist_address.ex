@@ -3,6 +3,7 @@ defmodule UpdateWatchlistAddress do
   Update watchlist address, associated with Address and Watchlist
   """
 
+  alias Ecto.Changeset
   alias Explorer.Repo
 
   def call(watchlist_address, params) do
@@ -43,6 +44,6 @@ defmodule UpdateWatchlistAddress do
   defp to_bool("false"), do: false
 
   def changeset(watchlist_address, attrs) do
-    Ecto.Changeset.change(watchlist_address, attrs)
+    Changeset.change(watchlist_address, attrs)
   end
 end

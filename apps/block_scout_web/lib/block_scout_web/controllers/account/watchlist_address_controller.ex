@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.Account.WatchlistAddressController do
   use BlockScoutWeb, :controller
 
+  alias Ecto.Changeset
   alias Explorer.Repo
-  alias Explorer.Accounts.WatchlistAddress
-  alias Explorer.Accounts.WatchlistAddressForm
+  alias Explorer.Accounts.{WatchlistAddress, WatchlistAddressForm}
 
   import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
 
@@ -92,7 +92,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
 
   defp changeset_with_error(params, message) do
     %{changeset(params) | action: :insert}
-    |> Ecto.Changeset.add_error(:address_hash, message)
+    |> Changeset.add_error(:address_hash, message)
   end
 
   defp new_address do

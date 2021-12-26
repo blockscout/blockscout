@@ -5,9 +5,9 @@ defmodule UserFromAuth do
   require Logger
   require Poison
 
-  alias Ueberauth.Auth
   alias Explorer.Accounts.Identity
   alias Explorer.Repo
+  alias Ueberauth.Auth
 
   import Ecto.Query, only: [from: 2]
 
@@ -20,10 +20,10 @@ defmodule UserFromAuth do
 
   defp create_identity(auth) do
     case Repo.insert(%Identity{
-      uid: auth.uid, 
-      email: email_from_auth(auth),
-      name: name_from_auth(auth) 
-    }) do
+           uid: auth.uid,
+           email: email_from_auth(auth),
+           name: name_from_auth(auth)
+         }) do
       {:ok, identity} ->
         case add_watchlist(identity) do
           {:ok, _watchlist} -> basic_info(auth, identity)
@@ -92,9 +92,10 @@ defmodule UserFromAuth do
         [auth.info.first_name, auth.info.last_name]
         |> Enum.filter(&(&1 != nil and &1 != ""))
 
-      cond do
-        length(name) == 0 -> auth.info.nickname
-        true -> Enum.join(name, " ")
+      if Enum.empty?(name) do
+        auth.info.nickname
+      else
+        Enum.join(name, " ")
       end
     end
   end
