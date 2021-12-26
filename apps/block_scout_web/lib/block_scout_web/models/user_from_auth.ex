@@ -13,18 +13,23 @@ defmodule UserFromAuth do
 
   def find_or_create(%Auth{} = auth) do
     case List.first(find_identity(auth)) do
-      nil -> {:ok, create_identity(auth)}
-      %{} = identity -> {:ok, basic_info(auth, identity)}
+      nil ->
+        case create_identity(auth) do
+          %{} = basic_info ->
+            {:ok, basic_info}
+
+          {:error, changeset} ->
+            {:error, changeset}
+        end
+
+      %{} = identity ->
+        {:ok, basic_info(auth, identity)}
     end
   end
 
   defp create_identity(auth) do
-    case Repo.insert(%Identity{
-           uid: auth.uid,
-           email: email_from_auth(auth),
-           name: name_from_auth(auth)
-         }) do
-      {:ok, identity} ->
+    case Repo.insert(new_identity(auth)) do
+      {:ok, %Identity{} = identity} ->
         case add_watchlist(identity) do
           {:ok, _watchlist} -> basic_info(auth, identity)
           {:error, changeset} -> {:error, changeset}
@@ -33,6 +38,14 @@ defmodule UserFromAuth do
       {:error, changeset} ->
         {:error, changeset}
     end
+  end
+
+  defp new_identity(auth) do
+    %Identity{
+      uid: auth.uid,
+      email: email_from_auth(auth),
+      name: name_from_auth(auth)
+    }
   end
 
   defp add_watchlist(identity) do

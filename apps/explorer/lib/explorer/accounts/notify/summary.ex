@@ -70,7 +70,7 @@ defmodule Explorer.Accounts.Notify.Summary do
     }
   end
 
-  def fetch_summary(_), do: %Summary{name: :skip_other}
+  def fetch_summary(_), do: :nothing
 
   def fetch_summary(%Chain.Transaction{block_number: nil}, _), do: :nothing
 
@@ -123,7 +123,7 @@ defmodule Explorer.Accounts.Notify.Summary do
     fee
   end
 
-  defp log_entry(nil), do: nil
+  defp log_entry(:nothing), do: nil
   defp log_entry([]), do: nil
 
   defp log_entry(entry) do
