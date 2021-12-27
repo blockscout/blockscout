@@ -199,14 +199,12 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
-<<<<<<< HEAD
 config :ex_twilio,
   account_sid: {:system, "TWILIO_ACCOUNT_SID"},
   auth_token: {:system, "TWILIO_AUTH_TOKEN"}
-=======
+
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
->>>>>>> origin/vb-api-rate-limit
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
