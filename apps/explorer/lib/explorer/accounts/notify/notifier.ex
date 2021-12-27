@@ -22,6 +22,8 @@ defmodule Explorer.Accounts.Notify.Notifier do
     |> notify_watchlists()
   end
 
+  defp notify_watchlists(summary) when is_nil(summary), do: nil
+  defp notify_watchlists(summary) when summary == :nothing, do: nil
   defp notify_watchlists(%Summary{from_address_hash: nil}), do: nil
   defp notify_watchlists(%Summary{to_address_hash: nil}), do: nil
 
@@ -82,10 +84,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
   end
 
   defp find_watchlists_addresses(%Explorer.Chain.Hash{} = address_hash) do
-    Repo.all(query(address_hash))
-  end
-
-  defp query(address_hash) do
-    from(wa in WatchlistAddress, where: wa.address_hash == ^address_hash)
+    query = from(wa in WatchlistAddress, where: wa.address_hash == ^address_hash)
+    Repo.all(query)
   end
 end
