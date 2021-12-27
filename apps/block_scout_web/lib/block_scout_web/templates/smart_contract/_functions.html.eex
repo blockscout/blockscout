@@ -99,6 +99,7 @@
           </div>
         </form>
 
+        <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0; display: none;" input-parse-error-container></div>
         <%= if outputs?(function["outputs"]) do %>
           <div class='p-2 text-muted <%= if (queryable?(function["inputs"]) == true), do: "w-100" %>'>
             <%= if (queryable?(function["inputs"])), do: raw "&#8627;" %>
