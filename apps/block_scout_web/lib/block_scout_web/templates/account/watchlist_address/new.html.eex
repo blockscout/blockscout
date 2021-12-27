@@ -28,8 +28,6 @@
                 <%= text_input f, :name, class: "form-control", placeholder: "Name this address" %>
                 <%= error_tag f, :name %>
               </div>
-
-              <%# <h2 style="font-size: 24px;">Notifications</h2> %>
               <br>
               <p style="font-size: 14px;">Please select what types of notifications you will receive:</p>
               <div class="row">

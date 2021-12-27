@@ -278,10 +278,6 @@ defmodule BlockScoutWeb.LayoutView do
     [@logout_url, "?", URI.encode_query(params)]
   end
 
-  # defp auth_domain do
-  #   Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:domain]
-  # end
-
   defp client_id do
     Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
   end

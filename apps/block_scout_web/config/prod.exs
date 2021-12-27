@@ -34,17 +34,17 @@ config :logger, :block_scout_web,
   path: Path.absname("logs/prod/block_scout_web.log"),
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
+config :logger, :api,
+  level: :debug,
+  path: Path.absname("logs/prod/api.log"),
+  metadata_filter: [fetcher: :api],
+  rotate: %{max_bytes: 52_428_800, keep: 19}
+
 callback_url = %URI{
   scheme: "https",
   host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
   path: (System.get_env("NETWORK_PATH") || "") <> "/auth/auth0/callback"
 }
-
-# if System.get_env("NETWORK_PATH") do
-#   "https://blockscout.com" <> System.get_env("NETWORK_PATH") <> "/auth/auth0/callback"
-# else
-#   "https://blockscout.com" <> "/auth/auth0/callback"
-# end
 
 # Configures Ueberauth
 config :ueberauth, Ueberauth,
