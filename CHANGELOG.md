@@ -29,7 +29,7 @@
 - [#5018](https://github.com/blockscout/blockscout/pull/5018) - Resolve npm vulnerabilities via npm audix fix
 - [#5014](https://github.com/blockscout/blockscout/pull/5014) - Separate FIRST_BLOCK and TRACE_FIRST_BLOCK option for blocks import and tracing methods
 - [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
-- [#4983](https://github.com/blockscout/blockscout/pull/4983) - Fix contract verification tests
+- [#4983](https://github.com/blockscout/blockscout/pull/4983), [#5038](https://github.com/blockscout/blockscout/pull/5038) - Fix contract verification tests
 
 
 ## 4.0.0-beta
