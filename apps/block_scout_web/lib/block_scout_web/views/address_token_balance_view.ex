@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
 
   alias BlockScoutWeb.AccessHelpers
   alias Explorer.Chain
+  alias Explorer.Chain.Address
   alias Explorer.Counters.AddressTokenUsdSum
 
   def tokens_count_title(token_balances) do
