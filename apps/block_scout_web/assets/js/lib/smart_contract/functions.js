@@ -55,8 +55,11 @@ const readWriteFunction = (element) => {
   const $responseContainer = $element.find('[data-function-response]')
 
   $form.on('submit', (event) => {
-    const action = $form.data('action')
     event.preventDefault()
+    const action = $form.data('action')
+    const $errorContainer = $form.parent().find('[input-parse-error-container]')
+
+    $errorContainer.hide()
 
     const $functionInputs = $form.find('input[name=function_input]')
     const $functionName = $form.find('input[name=function_name]')
@@ -68,7 +71,13 @@ const readWriteFunction = (element) => {
       const contractAbi = getContractABI($form)
       const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
-      const args = prepareMethodArgs($functionInputs, inputs)
+      try {
+        var args = prepareMethodArgs($functionInputs, inputs)
+      } catch (exception) {
+        $errorContainer.show()
+        $errorContainer.text(exception)
+        return
+      }
       const type = $('[data-smart-contract-functions]').data('type')
 
       walletEnabled()
