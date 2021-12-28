@@ -9,6 +9,7 @@
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 
 ### Fixes
+- [#5045](https://github.com/blockscout/blockscout/pull/5045) - Contracts interaction improvements
 - [#5032](https://github.com/blockscout/blockscout/pull/5032) - Fix token transfer csv export 
 - [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display imrovement
 - [#5019](https://github.com/blockscout/blockscout/pull/5019) - Fix fetch_last_token_balance function termination
