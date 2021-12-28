@@ -9,6 +9,7 @@
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 
 ### Fixes
+- [#5032](https://github.com/blockscout/blockscout/pull/5032) - Fix token transfer csv export 
 - [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display imrovement
 - [#5019](https://github.com/blockscout/blockscout/pull/5019) - Fix fetch_last_token_balance function termination
 - [#5011](https://github.com/blockscout/blockscout/pull/5011) - Fix `0x0` implementation address
@@ -26,11 +27,13 @@
 - [#4867](https://github.com/blockscout/blockscout/pull/4867) - Fix bug in quering contracts method and improve contracts interactions
 
 ### Chore
+- [#5047](https://github.com/blockscout/blockscout/pull/5047) - At contract write use wei precision
 - [#5023](https://github.com/blockscout/blockscout/pull/5023) - Capability to leave an empty logo
 - [#5018](https://github.com/blockscout/blockscout/pull/5018) - Resolve npm vulnerabilities via npm audix fix
 - [#5014](https://github.com/blockscout/blockscout/pull/5014) - Separate FIRST_BLOCK and TRACE_FIRST_BLOCK option for blocks import and tracing methods
 - [#4998](https://github.com/blockscout/blockscout/pull/4998) - API endpoints logger
-- [#4983](https://github.com/blockscout/blockscout/pull/4983) - Fix contract verification tests
+- [#4983](https://github.com/blockscout/blockscout/pull/4983), [#5038](https://github.com/blockscout/blockscout/pull/5038) - Fix contract verification tests
+- [#4861](https://github.com/blockscout/blockscout/pull/4861) - Add separate column for token icons
 
 
 ## 4.0.0-beta

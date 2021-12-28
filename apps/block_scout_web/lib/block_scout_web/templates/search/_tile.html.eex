@@ -5,9 +5,9 @@
       <span class="color-lighten">
       </span>
   </td>
-  <td class="stakes-td">
-    <%= case @result.type do %>
-        <% "token" -> %>
+<%= case @result.type do %>
+    <% "token" -> %>
+        <td class="token-icon">
             <span
                 class="token-icon mr-1"
                 data-address-hash="<%= address_hash_checksummed %>"
@@ -23,35 +23,41 @@
                 %>
             <% end %>
             </span>
+        </td>
+        <td class="stakes-td">
             <% res = @result.name <> " (" <> @result.symbol <> ")" %>
             <a href="<%= token_path(@conn, :show, address_hash_checksummed) %>">
                 <%= highlight_search_result(res, @query) %>
             </a>
-        <% "address" -> %>
+    <% "address" -> %>
+        <td class="stakes-td">
             <%= if @result.name do %>
                 <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
                     <%= highlight_search_result(@result.name, @query) %>
                 </a>
             <% end %>
-        <% "contract" -> %>
+    <% "contract" -> %>
+        <td class="stakes-td">
             <%= if @result.name do %>
                 <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
                     <%= highlight_search_result(@result.name, @query) %>
                 </a>
             <% end %>
-        <% "block" -> %>
+    <% "block" -> %>
+        <td class="stakes-td">
             <%= link(
                 highlight_search_result(to_string(@result.block_number), @query),
                 to: block_path(@conn, :show, @result.block_number)
             ) %>
-        <% "label" -> %>
-            <%= if @result.name do %>
-                <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
-                    <%= highlight_search_result(@result.name, @query) %>
-                </a>
-            <% end %>
-        <% _ -> %>
-    <% end %>
+    <% "label" -> %>
+        <%= if @result.name do %>
+            <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
+                <%= highlight_search_result(@result.name, @query) %>
+            </a>
+        <% end %>
+    <% _ -> %>
+        <td class="stakes-td">
+<% end %>
   </td>
   <td class="stakes-td">
     <%= case @result.type do %>

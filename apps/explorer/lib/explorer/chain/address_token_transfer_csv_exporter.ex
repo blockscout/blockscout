@@ -8,7 +8,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   alias NimbleCSV.RFC4180
 
   @page_size 1000
-  @paging_options %PagingOptions{page_size: @page_size + 1}
+  @paging_options %PagingOptions{page_size: @page_size + 1, asc_order: true}
 
   @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
   def export(address, from_period, to_period) do
@@ -30,7 +30,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
 
     token_transfers = Chain.address_hash_to_token_transfers_including_contract(address_hash, options)
 
-    new_acc = token_transfers ++ acc
+    new_acc = acc ++ token_transfers
 
     case Enum.split(token_transfers, @page_size) do
       {_token_transfers, [%TokenTransfer{block_number: block_number, log_index: log_index}]} ->

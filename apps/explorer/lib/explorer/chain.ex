@@ -560,20 +560,65 @@ defmodule Explorer.Chain do
   @spec address_hash_to_token_transfers_including_contract(Hash.Address.t(), Keyword.t()) :: [TokenTransfer.t()]
   def address_hash_to_token_transfers_including_contract(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    from_block = Keyword.get(options, :from_block)
+    to_block = Keyword.get(options, :to_block)
 
     query =
-      from(
-        token_transfer in TokenTransfer,
-        where: token_transfer.to_address_hash == ^address_hash,
-        or_where: token_transfer.from_address_hash == ^address_hash,
-        or_where: token_transfer.token_contract_address_hash == ^address_hash
-      )
+      from_block
+      |> query_address_hash_to_token_transfers_including_contract(to_block, address_hash)
+      |> order_by([token_transfer], asc: token_transfer.block_number, asc: token_transfer.log_index)
 
     query
-    |> handle_paging_options(paging_options)
+    |> handle_token_transfer_paging_options(paging_options)
     |> preload(transaction: :block)
     |> preload(:token)
     |> Repo.all()
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(nil, to_block, address_hash)
+       when not is_nil(to_block) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        (token_transfer.to_address_hash == ^address_hash or
+           token_transfer.from_address_hash == ^address_hash or
+           token_transfer.token_contract_address_hash == ^address_hash) and
+          token_transfer.block_number <= ^to_block
+    )
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(from_block, nil, address_hash)
+       when not is_nil(from_block) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        (token_transfer.to_address_hash == ^address_hash or
+           token_transfer.from_address_hash == ^address_hash or
+           token_transfer.token_contract_address_hash == ^address_hash) and
+          token_transfer.block_number >= ^from_block
+    )
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(from_block, to_block, address_hash)
+       when not is_nil(from_block) and not is_nil(to_block) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        (token_transfer.to_address_hash == ^address_hash or
+           token_transfer.from_address_hash == ^address_hash or
+           token_transfer.token_contract_address_hash == ^address_hash) and
+          (token_transfer.block_number >= ^from_block and token_transfer.block_number <= ^to_block)
+    )
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(_, _, address_hash) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        token_transfer.to_address_hash == ^address_hash or
+          token_transfer.from_address_hash == ^address_hash or
+          token_transfer.token_contract_address_hash == ^address_hash
+    )
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
@@ -4440,6 +4485,14 @@ defmodule Explorer.Chain do
   defp handle_paging_options(query, paging_options) do
     query
     |> page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
+  defp handle_token_transfer_paging_options(query, nil), do: query
+
+  defp handle_token_transfer_paging_options(query, paging_options) do
+    query
+    |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
   end
 
