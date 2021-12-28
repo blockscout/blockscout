@@ -84,6 +84,17 @@ config :block_scout_web, :gas_tracker,
   enabled_in_menu: System.get_env("GAS_TRACKER_ENABLED_IN_MENU", "false") == "true",
   access_token: System.get_env("GAS_TRACKER_ACCESS_KEY", nil)
 
+api_rate_limit_value =
+  "API_RATE_LIMIT"
+  |> System.get_env("30")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 30
+  end
+
+config :block_scout_web, api_rate_limit: api_rate_limit_value
+
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint
@@ -195,6 +206,9 @@ config :briefly,
   directory: ["/tmp"],
   default_prefix: "briefly",
   default_extname: ""
+
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

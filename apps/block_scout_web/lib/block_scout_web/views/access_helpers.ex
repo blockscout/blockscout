@@ -3,6 +3,10 @@ defmodule BlockScoutWeb.AccessHelpers do
   Helpers to restrict access to some pages filtering by address
   """
 
+  import Phoenix.Controller
+
+  alias BlockScoutWeb.API.APILogger
+  alias BlockScoutWeb.API.RPC.RPCView
   alias BlockScoutWeb.WebRouter.Helpers
   alias Plug.Conn
 
@@ -65,5 +69,29 @@ defmodule BlockScoutWeb.AccessHelpers do
     correct_key = key && key == Application.get_env(:block_scout_web, :gas_tracker)[:access_token]
 
     if correct_key, do: {:ok, false}, else: {:restricted_access, true}
+  end
+
+  def handle_rate_limit_deny(conn) do
+    APILogger.message("API rate limit reached")
+
+    conn
+    |> Conn.put_status(429)
+    |> put_view(RPCView)
+    |> render(:error, %{error: "429 Too Many Requests"})
+    |> Conn.halt()
+  end
+
+  def check_rate_limit(_conn) do
+    if Mix.env() == :test do
+      :ok
+    else
+      case Hammer.check_rate("api", 60_000, Application.get_env(:block_scout_web, :api_rate_limit)) do
+        {:allow, _count} ->
+          :ok
+
+        {:deny, _limit} ->
+          :rate_limit_reached
+      end
+    end
   end
 end

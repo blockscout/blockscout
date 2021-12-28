@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V1.SupplyController do
   use BlockScoutWeb, :controller
 
-  require APILogger
+  alias BlockScoutWeb.API.APILogger
   alias Explorer.Chain
 
   def supply(conn, _) do

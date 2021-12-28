@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
   use BlockScoutWeb, :controller
 
-  require APILogger
-
+  alias BlockScoutWeb.API.APILogger
   alias Explorer.Chain
 
   def health(conn, _) do
