@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 4.1.0-beta
+
+### Features
 - [#5030](https://github.com/blockscout/blockscout/pull/5030) - API rate limiting
 - [#4924](https://github.com/blockscout/blockscout/pull/4924) - Add daily bytecode verifcation to prevent metamorphic contracts vulnerablity
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
