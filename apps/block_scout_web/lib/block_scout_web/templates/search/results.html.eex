@@ -1,4 +1,9 @@
-<section class="container" data-page="search-results">
+<section
+    class="container"
+    data-page="search-results"
+    data-chain-id="<%= System.get_env("CHAIN_ID") %>"
+	data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
+>
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
@@ -20,6 +25,9 @@
                                 <div class="stakes-table-th-content">&nbsp;</div>
                             </th>
                             <th class="stakes-table-th">
+			                    <div>&nbsp;</div>
+		                    </th>
+                            <th class="stakes-table-th">
                                 <div class="stakes-table-th-content">Search Result</div>
                             </th>
                             <th class="stakes-table-th">
@@ -31,7 +39,7 @@
                         </tr>
                     </thead>
                     <tbody data-items data-selector="search-results-list">
-                        <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html" %>
+                        <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 5 %>
                     </tbody>
                 </table>
             </div>

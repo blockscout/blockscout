@@ -67,12 +67,12 @@ defmodule BlockScoutWeb.Router do
 
       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
     end
-  end
+  else
+    scope "/verify_smart_contract" do
+      pipe_through(:api)
 
-  scope "/verify_smart_contract" do
-    pipe_through(:api)
-
-    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+    end
   end
 
   # if path != api_path do

@@ -97,7 +97,8 @@ defmodule Indexer.Block.Catchup.SequenceTest do
     test "with finite mode with range in wrong direction returns error" do
       {:ok, ascending} = Sequence.start_link(first: 0, step: 1)
 
-      assert Sequence.push_back(ascending, 1..0) == {:error, "Range (1..0) direction is opposite step (1) direction"}
+      assert Sequence.push_back(ascending, 1..0) ==
+               {:error, "Range (1..0//-1) direction is opposite step (1) direction"}
 
       {:ok, descending} = Sequence.start_link(ranges: [1..0], step: -1)
 
@@ -155,7 +156,8 @@ defmodule Indexer.Block.Catchup.SequenceTest do
     test "with finite mode with range in wrong direction returns error" do
       {:ok, ascending} = Sequence.start_link(first: 0, step: 1)
 
-      assert Sequence.push_front(ascending, 1..0) == {:error, "Range (1..0) direction is opposite step (1) direction"}
+      assert Sequence.push_front(ascending, 1..0) ==
+               {:error, "Range (1..0//-1) direction is opposite step (1) direction"}
 
       {:ok, descending} = Sequence.start_link(ranges: [1..0], step: -1)
 

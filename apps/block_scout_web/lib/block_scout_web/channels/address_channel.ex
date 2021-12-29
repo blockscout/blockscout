@@ -200,7 +200,7 @@ defmodule BlockScoutWeb.AddressChannel do
       rendered =
         View.render_to_string(
           AddressView,
-          "_balance_card.html",
+          "_balance_dropdown.html",
           conn: socket,
           address: address,
           coin_balance_status: :current,

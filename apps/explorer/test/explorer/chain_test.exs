@@ -1,6 +1,6 @@
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
-  use EthereumJSONRPC.Case, async: true
+  use EthereumJSONRPC.Case
 
   require Ecto.Query
 
@@ -27,7 +27,7 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.InternalTransaction.Type
 
   alias Explorer.Chain.Supply.ProofOfAuthority
@@ -1413,11 +1413,11 @@ defmodule Explorer.ChainTest do
         insert(:address, fetched_coin_balance: index)
       end
 
-      assert "10" = Decimal.to_string(Chain.fetch_sum_coin_total_supply())
+      assert "10" = Decimal.to_string(Etherscan.fetch_sum_coin_total_supply())
     end
 
     test "fetches coin total supply when there are no blocks" do
-      assert 0 = Chain.fetch_sum_coin_total_supply()
+      assert 0 = Etherscan.fetch_sum_coin_total_supply()
     end
   end
 
@@ -3049,11 +3049,11 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "transaction_to_logs/2" do
+  describe "transaction_to_logs/3" do
     test "without logs" do
       transaction = insert(:transaction)
 
-      assert [] = Chain.transaction_to_logs(transaction.hash)
+      assert [] = Chain.transaction_to_logs(transaction.hash, false)
     end
 
     test "with logs" do
@@ -3065,7 +3065,8 @@ defmodule Explorer.ChainTest do
       %Log{transaction_hash: transaction_hash, index: index} =
         insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
-      assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] = Chain.transaction_to_logs(transaction.hash)
+      assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] =
+               Chain.transaction_to_logs(transaction.hash, false)
     end
 
     test "with logs can be paginated" do
@@ -3096,7 +3097,7 @@ defmodule Explorer.ChainTest do
 
       assert second_page_indexes ==
                transaction.hash
-               |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.index}, page_size: 50})
+               |> Chain.transaction_to_logs(false, paging_options: %PagingOptions{key: {log.index}, page_size: 50})
                |> Enum.map(& &1.index)
     end
 
@@ -3111,6 +3112,7 @@ defmodule Explorer.ChainTest do
       assert [%Log{address: %Address{}, transaction: %Transaction{}}] =
                Chain.transaction_to_logs(
                  transaction.hash,
+                 false,
                  necessity_by_association: %{
                    address: :optional,
                    transaction: :optional
@@ -3122,7 +3124,7 @@ defmodule Explorer.ChainTest do
                  address: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-             ] = Chain.transaction_to_logs(transaction.hash)
+             ] = Chain.transaction_to_logs(transaction.hash, false)
     end
   end
 
@@ -4666,13 +4668,13 @@ defmodule Explorer.ChainTest do
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
-        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end
   end
 
-  describe "fetch_token_holders_from_token_hash/2" do
+  describe "fetch_token_holders_from_token_hash/3" do
     test "returns the token holders" do
       %Token{contract_address_hash: contract_address_hash} = insert(:token)
       address_a = insert(:address)
@@ -4695,7 +4697,7 @@ defmodule Explorer.ChainTest do
 
       token_holders_count =
         contract_address_hash
-        |> Chain.fetch_token_holders_from_token_hash([])
+        |> Chain.fetch_token_holders_from_token_hash(false, [])
         |> Enum.count()
 
       assert token_holders_count == 2
@@ -5744,6 +5746,18 @@ defmodule Explorer.ChainTest do
       implementation_abi = Chain.get_implementation_abi("0x" <> implementation_contract_address_hash_string)
 
       assert implementation_abi == @implementation_abi
+    end
+
+    test "get_total_staked_and_ordered should return just nil in case of invalid input and some response otherwise" do
+      assert Chain.get_total_staked_and_ordered(nil) == nil
+      assert Chain.get_total_staked_and_ordered(%{}) == nil
+      assert Chain.get_total_staked_and_ordered("") == nil
+      assert Chain.get_total_staked_and_ordered([]) == nil
+
+      assert Chain.get_total_staked_and_ordered("0x3f7c51ef174ee8a62e3fcfb0947aa90c97bd2784") == %{
+               stake_amount: Decimal.new(0),
+               ordered_withdraw: Decimal.new(0)
+             }
     end
   end
 end
