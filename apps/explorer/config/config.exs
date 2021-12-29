@@ -21,8 +21,7 @@ config :explorer,
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    ),
-  enabled_1559_support: System.get_env("ENABLE_1559_SUPPORT") == "true"
+    )
 
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,

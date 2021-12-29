@@ -296,42 +296,11 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp get_abi_with_method_id(abi) do
-    parsed_abi =
-      abi
-      |> ABI.parse_specification()
-
-    abi_with_method_id =
-      abi
-      |> Enum.map(fn target_method ->
-        methods =
-          parsed_abi
-          |> Enum.filter(fn method ->
-            Atom.to_string(method.type) == Map.get(target_method, "type") &&
-              method.function == Map.get(target_method, "name") &&
-              Enum.count(method.input_names) == Enum.count(Map.get(target_method, "inputs")) &&
-              input_types_matched?(method.types, target_method)
-          end)
-
-        if Enum.count(methods) > 0 do
-          method = Enum.at(methods, 0)
-          method_id = Map.get(method, :method_id)
-          method_with_id = Map.put(target_method, "method_id", Base.encode16(method_id, case: :lower))
-          method_with_id
-        else
-          target_method
-        end
-      end)
-
-    abi_with_method_id
-  end
-
-  defp input_types_matched?(types, target_method) do
-    types
-    |> Enum.with_index()
-    |> Enum.all?(fn {target_type, index} ->
-      type_to_compare = Map.get(Enum.at(Map.get(target_method, "inputs"), index), "type")
-      target_type_formatted = format_type(target_type)
-      target_type_formatted == type_to_compare
+    abi
+    |> Enum.map(fn method ->
+      parsed_method = [method] |> ABI.parse_specification() |> Enum.at(0)
+      method_id = Map.get(parsed_method, :method_id)
+      Map.put(method, "method_id", Base.encode16(method_id, case: :lower))
     end)
   end
 
@@ -566,8 +535,7 @@ defmodule Explorer.SmartContract.Reader do
     |> Tuple.to_list()
     |> Enum.map(fn value ->
       if is_list(value) do
-        value
-        |> Enum.join("")
+        parse_item(value)
       else
         hex =
           value
@@ -576,6 +544,10 @@ defmodule Explorer.SmartContract.Reader do
         "0x" <> hex
       end
     end)
+  end
+
+  defp parse_item(items) when is_list(items) do
+    Enum.map(items, &parse_item/1)
   end
 
   defp parse_item(item) do

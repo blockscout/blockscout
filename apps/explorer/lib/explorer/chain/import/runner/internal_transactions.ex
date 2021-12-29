@@ -258,7 +258,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         where: t.block_hash in ^pending_block_hashes,
         select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-        order_by: t.hash,
+        order_by: [asc: t.hash],
         lock: "FOR UPDATE"
       )
 
@@ -588,11 +588,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
+    minimal_block = first_block_to_fetch()
+
     if Enum.count(invalid_block_numbers) > 0 do
       update_query =
         from(
           b in Block,
           where: b.number in ^invalid_block_numbers and b.consensus,
+          where: b.number > ^minimal_block,
           select: b.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
           update: [set: [consensus: false]]
@@ -617,6 +620,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     else
       {:ok, []}
     end
+  end
+
+  def first_block_to_fetch do
+    EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
   end
 
   def update_pending_blocks_status(repo, pending_hashes, invalid_block_hashes) do

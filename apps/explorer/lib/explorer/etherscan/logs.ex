@@ -146,7 +146,7 @@ defmodule Explorer.Etherscan.Logs do
     query_with_consensus
     |> order_by([log], asc: log.index)
     |> page_logs(paging_options)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   # Since address_hash was not present, we know that a
@@ -198,7 +198,7 @@ defmodule Explorer.Etherscan.Logs do
     query_with_block_transaction_data
     |> order_by([log], asc: log.index)
     |> page_logs(paging_options)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   @topics [

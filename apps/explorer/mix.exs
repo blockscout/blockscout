@@ -104,7 +104,7 @@ defmodule Explorer.Mixfile do
       # `:spandex` tracing of `:ecto`
       {:spandex_ecto, "~> 0.6.2"},
       # Attach `:prometheus_ecto` to `:ecto`
-      {:telemetry, "~> 0.4.1"},
+      {:telemetry, "~> 0.4.3"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
