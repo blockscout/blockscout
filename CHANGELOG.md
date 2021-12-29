@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5025](https://github.com/blockscout/blockscout/pull/5025) - Add standard input JSON files validation
 
 ### Chore
 
