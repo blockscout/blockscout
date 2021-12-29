@@ -299,8 +299,13 @@ defmodule Explorer.SmartContract.Reader do
     abi
     |> Enum.map(fn method ->
       parsed_method = [method] |> ABI.parse_specification() |> Enum.at(0)
-      method_id = Map.get(parsed_method, :method_id)
-      Map.put(method, "method_id", Base.encode16(method_id, case: :lower))
+
+      if is_map(parsed_method) do
+        method_id = Map.get(parsed_method, :method_id)
+        Map.put(method, "method_id", Base.encode16(method_id, case: :lower))
+      else
+        method
+      end
     end)
   end
 
