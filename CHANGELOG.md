@@ -1,6 +1,18 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transation page
+- [#5025](https://github.com/blockscout/blockscout/pull/5025) - Add standard input JSON files validation
+- [#5051](https://github.com/blockscout/blockscout/pull/5051) - Fix 500 response when ABI method was parsed as nil
+
+### Chore
+
+
+## 4.1.0-beta
+
+### Features
 - [#5030](https://github.com/blockscout/blockscout/pull/5030) - API rate limiting
 - [#4924](https://github.com/blockscout/blockscout/pull/4924) - Add daily bytecode verifcation to prevent metamorphic contracts vulnerablity
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input

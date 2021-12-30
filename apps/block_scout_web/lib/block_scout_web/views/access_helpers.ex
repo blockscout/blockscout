@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.AccessHelpers do
     if Mix.env() == :test do
       :ok
     else
-      case Hammer.check_rate("api", 60_000, Application.get_env(:block_scout_web, :api_rate_limit)) do
+      case Hammer.check_rate("api", 1_000, Application.get_env(:block_scout_web, :api_rate_limit)) do
         {:allow, _count} ->
           :ok
 
