@@ -95,6 +95,17 @@ api_rate_limit_value =
 
 config :block_scout_web, api_rate_limit: api_rate_limit_value
 
+api_rate_limit_value =
+  "API_RATE_LIMIT"
+  |> System.get_env("30")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 30
+  end
+
+config :block_scout_web, api_rate_limit: api_rate_limit_value
+
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint
