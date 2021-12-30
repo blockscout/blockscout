@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5016](https://github.com/blockscout/blockscout/pull/5016) - Add view for internal transactions error
 
 ### Fixes
 - [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transation page
