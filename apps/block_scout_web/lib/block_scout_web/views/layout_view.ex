@@ -263,26 +263,14 @@ defmodule BlockScoutWeb.LayoutView do
   @logout_url "https://blockscoutcom.us.auth0.com/v2/logout"
 
   def sign_out_link do
-    return_to =
-      if System.get_env("NETWORK_PATH") do
-        "https://blockscout.com" <> System.get_env("NETWORK_PATH") <> "/auth/logout"
-      else
-        host() <> "/auth/logout"
-      end
+    client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
+    return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
 
     params = [
-      client_id: client_id(),
+      client_id: client_id,
       returnTo: return_to
     ]
 
     [@logout_url, "?", URI.encode_query(params)]
-  end
-
-  defp client_id do
-    Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
-  end
-
-  defp host do
-    "http://" <> Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] <> ":4000"
   end
 end

@@ -40,18 +40,12 @@ config :logger, :api,
   metadata_filter: [fetcher: :api],
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
-callback_url = %URI{
-  scheme: "https",
-  host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
-  path: (System.get_env("NETWORK_PATH") || "") <> "/auth/auth0/callback"
-}
-
 # Configures Ueberauth
 config :ueberauth, Ueberauth,
   providers: [
-    auth0:
-      {Ueberauth.Strategy.Auth0,
-       [
-         callback_url: callback_url
-       ]}
-  ]
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: "https://blockscout.com/xdai/testnet/auth/auth0/callback"]
+    }
+  ],
+  logout_return_to_url: "https://blockscout.com/xdai/testnet/auth/logout"
