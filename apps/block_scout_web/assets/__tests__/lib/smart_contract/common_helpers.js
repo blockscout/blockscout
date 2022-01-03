@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import { prepareMethodArgs } from '../../../js/lib/smart_contract/common_helpers'
 import $ from 'jquery'
   
