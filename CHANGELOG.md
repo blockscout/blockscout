@@ -9,6 +9,7 @@
 - [#5051](https://github.com/blockscout/blockscout/pull/5051) - Fix 500 response when ABI method was parsed as nil
 
 ### Chore
+- [#5053](https://github.com/blockscout/blockscout/pull/5053) - Update ex_keccak lib
 
 
 ## 4.1.0-beta
