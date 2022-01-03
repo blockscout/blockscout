@@ -4,7 +4,8 @@
 <% dark_forest_addresses_list_0_6_r2 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r2) %>
 <% dark_forest_addresses_list_0_6_r3 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r3) %>
 <% dark_forest_addresses_list_0_6_r4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_6_r4) %>
-<% dark_forest_addresses_list = dark_forest_addresses_list_0_4 ++ dark_forest_addresses_list_0_5 ++ dark_forest_addresses_list_0_6 ++ dark_forest_addresses_list_0_6_r2 ++ dark_forest_addresses_list_0_6_r3 ++ dark_forest_addresses_list_0_6_r4 %>
+<% dark_forest_addresses_list_dao = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_dao) %>
+<% dark_forest_addresses_list = dark_forest_addresses_list_0_4 ++ dark_forest_addresses_list_0_5 ++ dark_forest_addresses_list_0_6 ++ dark_forest_addresses_list_0_6_r2 ++ dark_forest_addresses_list_0_6_r3 ++ dark_forest_addresses_list_0_6_r4 ++ dark_forest_addresses_list_dao %>
 <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
 <div class="card-tabs js-card-tabs">
   <%= link(

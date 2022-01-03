@@ -23,3 +23,7 @@
     <%= render BlockScoutWeb.FormView, "_tag.html", text: tag.display_name, additional_classes: [tag_name_to_label(tag.label), "ml-1"] %>
   <% end %>
 <% end %>
+<% dark_forest_addresses_list_dao = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_dao) %>
+<%= if Enum.member?(dark_forest_addresses_list_dao, String.downcase(to_string(@address_hash))) do %>
+  <%= render BlockScoutWeb.FormView, "_tag.html", text: "☠️🪐", additional_classes: ["df", "df-dao", "ml-1"] %>
+<% end %>
