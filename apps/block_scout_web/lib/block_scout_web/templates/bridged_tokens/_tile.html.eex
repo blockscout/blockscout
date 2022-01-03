@@ -5,7 +5,7 @@
         <%= @index %>
       </span>
   </td>
-  <td clas="token-icon">
+  <td class="token-icon">
     <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
     <% foreign_chain_id = if Map.has_key?(@bridged_token, :foreign_chain_id), do: @bridged_token.foreign_chain_id, else: nil %>
     <% chain_id_for_token_icon = if foreign_chain_id, do: foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
