@@ -24,19 +24,6 @@
     <div class="centered-container">
       <div>
         <div style="display: table;">
-          <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
-            <% foreign_chain_id = if Map.has_key?(@bridged_token, :foreign_chain_id), do: @bridged_token.foreign_chain_id, else: nil %>
-            <% chain_id_for_token_icon = if foreign_chain_id, do: foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
-            <% foreign_token_contract_address_hash = if Map.has_key?(@bridged_token, :foreign_token_contract_address_hash), do: Address.checksum(@bridged_token.foreign_token_contract_address_hash), else: nil %>
-            <% token_hash_for_token_icon = if foreign_token_contract_address_hash, do: foreign_token_contract_address_hash, else: Address.checksum(@token.contract_address_hash) %>
-            <%=
-              render BlockScoutWeb.TokensView,
-              "_token_icon.html",
-              chain_id: chain_id_for_token_icon,
-              address: token_hash_for_token_icon,
-              additional_classes: ["mr-1"]
-            %>
-          <% end %>
           <%= link(token,
             to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
             "data-test": "token_link",
