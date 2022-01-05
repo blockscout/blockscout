@@ -96,4 +96,3 @@ config :ueberauth, Ueberauth,
     }
   ],
   logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")
-

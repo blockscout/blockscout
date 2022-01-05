@@ -253,11 +253,7 @@ defmodule BlockScoutWeb.LayoutView do
   defp validate_url(_), do: :error
 
   def sign_in_link do
-    if System.get_env("NETWORK_PATH") do
-      System.get_env("NETWORK_PATH") <> "/auth/auth0"
-    else
-      "/auth/auth0"
-    end
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] <> "auth/auth0"
   end
 
   @logout_url "https://blockscoutcom.us.auth0.com/v2/logout"
