@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import { blockReducer as reducer, initialState, placeHolderBlock } from '../../js/pages/blocks'
 
 test('CHANNEL_DISCONNECTED', () => {
