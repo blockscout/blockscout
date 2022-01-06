@@ -43,8 +43,13 @@ export function prepareMethodArgs ($functionInputs, inputs) {
             sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
           }
           const inputValueElements = sanitizedInputValue.split(',')
-          const sanitizedInputValueElements = inputValueElements.map(elementValue => {
-            const elementInputType = inputType.split('[')[0]
+          const sanitizedInputValueElements = inputValueElements.map((elementValue, index) => {
+            let elementInputType
+            if (inputType === 'tuple') {
+              elementInputType = inputComponents[index].type
+            } else {
+              elementInputType = inputType.split('[')[0]
+            }
 
             let sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
             sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
