@@ -295,7 +295,7 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp get_abi_with_method_id(abi) do
+  def get_abi_with_method_id(abi) do
     abi
     |> Enum.map(fn method ->
       with parsed_method <- [method] |> ABI.parse_specification() |> Enum.at(0),
