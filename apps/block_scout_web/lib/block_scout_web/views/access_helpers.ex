@@ -81,16 +81,31 @@ defmodule BlockScoutWeb.AccessHelpers do
     |> Conn.halt()
   end
 
-  def check_rate_limit(_conn) do
+  def check_rate_limit(conn) do
     if Mix.env() == :test do
       :ok
     else
-      case Hammer.check_rate("api", 1_000, Application.get_env(:block_scout_web, :api_rate_limit)) do
-        {:allow, _count} ->
-          :ok
+      global_api_rate_limit = Application.get_env(:block_scout_web, :global_api_rate_limit)
+      api_rate_limit_by_key = Application.get_env(:block_scout_web, :api_rate_limit_by_key)
+      static_api_key = Application.get_env(:block_scout_web, :static_api_key)
 
-        {:deny, _limit} ->
-          :rate_limit_reached
+      if conn.query_params && Map.has_key?(conn.query_params, "apikey") &&
+           Map.get(conn.query_params, "apikey") == static_api_key do
+        case Hammer.check_rate("api-#{static_api_key}", 1_000, api_rate_limit_by_key) do
+          {:allow, _count} ->
+            :ok
+
+          {:deny, _limit} ->
+            :rate_limit_reached
+        end
+      else
+        case Hammer.check_rate("api", 1_000, global_api_rate_limit) do
+          {:allow, _count} ->
+            :ok
+
+          {:deny, _limit} ->
+            :rate_limit_reached
+        end
       end
     end
   end
