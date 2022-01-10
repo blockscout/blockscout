@@ -239,6 +239,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-logo {
+  margin-left: -5px;
   height: $navbar-logo-height;
   width: $navbar-logo-width;
 }

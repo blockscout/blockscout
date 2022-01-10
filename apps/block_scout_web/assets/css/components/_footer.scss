@@ -26,6 +26,7 @@ $footer-logo-width: auto !default;
 }
 
 .footer-logo {
+  margin-left: -5px;
   max-height: $footer-logo-height;
   width: $footer-logo-width;
 }
