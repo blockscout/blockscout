@@ -3,8 +3,8 @@
 ### Features
 
 ### Fixes
-- [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug
 - [#5071](https://github.com/blockscout/blockscout/pull/5071) - Fix write page contract tuple input
+- [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug
 - [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transation page
 - [#5025](https://github.com/blockscout/blockscout/pull/5025) - Add standard input JSON files validation
 - [#5051](https://github.com/blockscout/blockscout/pull/5051) - Fix 500 response when ABI method was parsed as nil
