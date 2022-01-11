@@ -44,16 +44,16 @@ defmodule BlockScoutWeb.Account.AuthController do
     end
   end
 
-  defp root do
-    System.get_env("NETWORK_PATH") || "/"
-  end
-
   # for importing in other controllers
   def authenticate!(conn) do
     current_user(conn) || redirect(conn, to: root())
   end
 
-  defp current_user(conn) do
+  def current_user(conn) do
     get_session(conn, :current_user)
+  end
+
+  defp root do
+    System.get_env("NETWORK_PATH") || "/"
   end
 end
