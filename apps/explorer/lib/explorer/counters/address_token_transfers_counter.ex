@@ -4,7 +4,8 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
   """
   use GenServer
 
-  alias Explorer.Chain
+  alias Ecto.Changeset
+  alias Explorer.{Chain, Repo}
 
   @cache_name :address_token_transfers_counter
   @last_update_key "last_update"
@@ -16,7 +17,7 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
     read_concurrency: true
   ]
 
-  config = Application.get_env(:explorer, Explorer.Counters.AddressTokenTransfersCounter)
+  config = Application.get_env(:explorer, __MODULE__)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -74,6 +75,7 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
     new_data = Chain.address_to_token_transfer_count(address)
     put_into_cache("hash_#{address_hash_string}", new_data)
+    put_into_db(address, new_data)
   end
 
   defp fetch_from_cache(key) do
@@ -109,5 +111,11 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
       {secs, ""} -> :timer.seconds(secs)
       _ -> :timer.hours(1)
     end
+  end
+
+  defp put_into_db(address, value) do
+    address
+    |> Changeset.change(%{token_transfers_count: value})
+    |> Repo.update()
   end
 end
