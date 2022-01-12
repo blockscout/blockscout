@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5090](https://github.com/blockscout/blockscout/pull/5090) - Allotted rate limiting by IP
 
 ### Fixes
 - [#5088](https://github.com/blockscout/blockscout/pull/5088) - Store address transactions/token transfers in the DB
