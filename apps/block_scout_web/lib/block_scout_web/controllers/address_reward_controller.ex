@@ -49,14 +49,15 @@ defmodule BlockScoutWeb.AddressRewardController do
 
       items_json =
         Enum.map(results, fn result ->
-            {%Chain.Block.Reward{} = emission_reward, %Chain.Block.Reward{} = validator_reward} = result
-            View.render_to_string(
-              TransactionView,
-              "_emission_reward_tile.html",
-              current_address: address,
-              emission_funds: emission_reward,
-              validator: validator_reward
-            )
+          {%Chain.Block.Reward{} = emission_reward, %Chain.Block.Reward{} = validator_reward} = result
+
+          View.render_to_string(
+            TransactionView,
+            "_emission_reward_tile.html",
+            current_address: address,
+            emission_funds: emission_reward,
+            validator: validator_reward
+          )
         end)
 
       json(conn, %{items: items_json, next_page_path: next_page_url})
@@ -79,46 +80,46 @@ defmodule BlockScoutWeb.AddressRewardController do
   end
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
-      with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-            {:ok, address} <- Chain.hash_to_address(address_hash),
-            {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-        render(
-          conn,
-          "index.html",
-          address: address,
-          coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-          exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-          filter: params["filter"],
-          counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-          current_path: Controller.current_full_path(conn)
-        )
-      else
-        :error ->
-          unprocessable_entity(conn)
-  
-        {:restricted_access, _} ->
-          not_found(conn)
-  
-        {:error, :not_found} ->
-          {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
-          address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
-  
-          case Chain.Hash.Address.validate(address_hash_string) do
-            {:ok, _} ->
-              render(
-                conn,
-                "index.html",
-                address: address,
-                coin_balance_status: nil,
-                exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-                filter: params["filter"],
-                counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-                current_path: Controller.current_full_path(conn)
-              )
-  
-            _ ->
-              not_found(conn)
-          end
-      end
-    end  
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      render(
+        conn,
+        "index.html",
+        address: address,
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        filter: params["filter"],
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+        current_path: Controller.current_full_path(conn)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:restricted_access, _} ->
+        not_found(conn)
+
+      {:error, :not_found} ->
+        {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+        address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
+
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            render(
+              conn,
+              "index.html",
+              address: address,
+              coin_balance_status: nil,
+              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              filter: params["filter"],
+              counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+              current_path: Controller.current_full_path(conn)
+            )
+
+          _ ->
+            not_found(conn)
+        end
+    end
+  end
 end

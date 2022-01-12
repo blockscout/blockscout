@@ -2428,7 +2428,8 @@ defmodule Explorer.Chain do
   end
 
   def check_if_rewards_at_address(address_hash) do
-    Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] and address_has_rewards?(address_hash)
+    Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] and
+      address_has_rewards?(address_hash)
   end
 
   def check_if_logs_at_address(address_hash) do
@@ -7224,6 +7225,7 @@ defmodule Explorer.Chain do
 
   def address_to_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
     with true <- Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds],
          true <- address_has_rewards?(address_hash),
          %{payout_key: block_miner_payout_address} <- Reward.get_validator_payout_key_by_mining(address_hash),
@@ -7233,12 +7235,12 @@ defmodule Explorer.Chain do
       address_hash
       |> Reward.fetch_emission_rewards_tuples(paging_options, blocks_range)
       |> Enum.sort_by(fn item ->
-          {%Reward{} = emission_reward, _} = item
-          {-emission_reward.block.number, 1}
-        end)
+        {%Reward{} = emission_reward, _} = item
+        {-emission_reward.block.number, 1}
+      end)
       |> Enum.dedup_by(fn item ->
         {%Reward{} = emission_reward, _} = item
-          {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+        {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
       end)
       |> Enum.take(paging_options.page_size)
     else
