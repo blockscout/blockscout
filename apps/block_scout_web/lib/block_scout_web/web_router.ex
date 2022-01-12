@@ -105,6 +105,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/rewards",
+        AddressRewardController,
+        only: [:index],
+        as: :reward
+      )
+
+      resources(
         "/contracts",
         AddressContractController,
         only: [:index],
