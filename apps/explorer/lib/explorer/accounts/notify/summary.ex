@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.Notify.Summary do
     Compose a summary from transactions
   """
 
-  require Logger
+  require AccountLogger
 
   alias Explorer.Accounts.Notify.Summary
   alias Explorer.{Chain, Repo}
@@ -114,7 +114,7 @@ defmodule Explorer.Accounts.Notify.Summary do
   defp log_entry(:nothing), do: nil
 
   defp log_entry(entry) do
-    Logger.info(entry)
+    AccountLogger.info(entry)
   end
 
   def preload(%Chain.Transaction{} = transaction) do

@@ -46,7 +46,16 @@ defmodule Explorer.Accounts.Notify.Notifier do
     Repo.insert(notification)
 
     email = Email.compose(notification, address)
-    Mailer.deliver_later(email)
+
+    case Mailer.deliver_now(email, response: true) do
+      {:ok, _email, response} ->
+        AccountLogger.info("--- email delivery response: SUCCESS")
+        AccountLogger.info(response)
+
+      {:error, error} ->
+        AccountLogger.info("--- email delivery response: FAILED")
+        AccountLogger.info(error)
+    end
   end
 
   @doc """
