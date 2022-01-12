@@ -4,6 +4,7 @@
 
 ### Fixes
 - [#5088](https://github.com/blockscout/blockscout/pull/5088) - Store address transactions/token transfers in the DB
+- [#5085](https://github.com/blockscout/blockscout/pull/5085) - Fix wallet style
 - [#5071](https://github.com/blockscout/blockscout/pull/5071) - Fix write page contract tuple input
 - [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug
 - [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transation page
