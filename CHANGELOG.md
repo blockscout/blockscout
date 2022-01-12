@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5090](https://github.com/blockscout/blockscout/pull/5090) - Allotted rate limiting by IP
 
 ### Fixes
 - [#5071](https://github.com/blockscout/blockscout/pull/5071) - Fix write page contract tuple input
