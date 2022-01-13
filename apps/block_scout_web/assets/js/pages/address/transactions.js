@@ -5,7 +5,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
-import { createAsyncLoadStore } from '../../lib/random_access_pagination'
+import { createAsyncLoadStore, firstPageLoad } from '../../lib/random_access_pagination'
 import { batchChannel } from '../../lib/utils'
 import '../address'
 import { isFiltered } from './utils'
@@ -148,32 +148,14 @@ if ($('[data-page="address-transactions"]').length) {
     })
   ))
 
-  const rewardsChannel = subscribeChannel(`rewards:${addressHash}`)
-  rewardsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-  rewardsChannel.on('new_reward', (msg) => {
-    store.dispatch({
-      type: 'RECEIVED_NEW_REWARD',
-      msg: humps.camelizeKeys(msg)
-    })
-  })
-
   const $txReloadButton = $('[data-selector="reload-transactions-button"]')
   const $channelBatching = $('[data-selector="channel-batching-message"]')
   $txReloadButton.on('click', (event) => {
     event.preventDefault()
-    loadTransactions(store)
+    firstPageLoad(store)
     $channelBatching.hide()
     store.dispatch({
       type: 'TRANSACTION_BATCH_EXPANDED'
     })
   })
-}
-
-function loadTransactions (store) {
-  const path = $('[class="card-body"]')[1].dataset.asyncListing
-  store.dispatch({ type: 'START_TRANSACTIONS_FETCH' })
-  $.getJSON(path, { type: 'JSON' })
-    .done(response => store.dispatch({ type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response) }))
-    .fail(() => store.dispatch({ type: 'TRANSACTIONS_FETCH_ERROR' }))
-    .always(() => store.dispatch({ type: 'FINISH_TRANSACTIONS_FETCH' }))
 }

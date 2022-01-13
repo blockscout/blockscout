@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.Block.Reward
 
+  alias Explorer.Chain
+
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
@@ -234,6 +236,42 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def fetch_page_number(_), do: 1
+
+  def supplement_page_options(options, params) do
+    options
+    |> Keyword.put(
+      :paging_options,
+      params
+      |> fetch_page_number()
+      |> update_page_parameters(Chain.default_page_size(), Keyword.get(options, :paging_options))
+    )
+  end
+
+  def next_page_params(params, transactions_count, next_page, transactions) do
+    if fetch_page_number(params) == 1 and !is_nil(transactions_count) do
+      page_size = Chain.default_page_size()
+
+      pages_limit = transactions_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
+
+      case next_page_params(next_page, transactions, params) do
+        nil ->
+          nil
+
+        next_page_params ->
+          next_page_params
+          |> Map.delete("type")
+          |> Map.delete("items_count")
+          |> Map.delete("address_id")
+          |> Map.put("pages_limit", pages_limit)
+          |> Map.put("page_size", page_size)
+          |> Map.put("page_number", 1)
+      end
+    else
+      params
+      |> Map.delete("type")
+      |> Map.delete("address_id")
+    end
+  end
 
   def update_page_parameters(new_page_number, new_page_size, %PagingOptions{} = options) do
     %PagingOptions{options | page_number: new_page_number, page_size: new_page_size}
