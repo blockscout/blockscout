@@ -76,7 +76,7 @@ defmodule Explorer.Accounts.Notify.Email do
   end
 
   defp direction(notification) do
-    affect(notification) <> place(notification)
+    affect(notification) <> " " <> place(notification)
   end
 
   defp place(%WatchlistNotification{direction: direction}) do
