@@ -54,8 +54,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         |> Keyword.merge(current_filter(params))
       
       full_options = supplement_page_options(options, params)
-      
-      %{transactions_count: transactions_count, tranasctions: transactions_plus_one} = Chain.address_to_transactions_rap(address_hash, options)
+
+      %{transactions_count: transactions_count, tranasctions: transactions_plus_one} = Chain.address_to_transactions_rap(address_hash, full_options)
 
       {transactions, next_page} =
         if fetch_page_number(params) == 1 do

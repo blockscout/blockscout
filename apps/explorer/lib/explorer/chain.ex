@@ -361,25 +361,13 @@ defmodule Explorer.Chain do
     
     transactions_count = if is_nil(paging_options.key) or paging_options.page_number == 1, do: address_to_available_transactions_count(address_hash, options), else: nil
 
-    debug(transactions_count, "tx_count")
-    debug(options, "options")
-    
     tranasctions = 
       address_hash
       |> address_to_transactions_query_rap(options)
-      |> debug("query final")
       |> Repo.all()
     
     %{transactions_count: transactions_count, tranasctions: tranasctions}
   end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.debug(key)
-    Logger.debug(Kernel.inspect(value))
-    value
-    end
 
   def address_to_transactions_query_rap(address_hash, options) do
     direction = Keyword.get(options, :direction)
