@@ -1296,7 +1296,7 @@ defmodule Explorer.Chain do
   def search_label_query(term) do
     inner_query =
       from(tag in AddressTag,
-        where: fragment("to_tsvector('english', label ) @@ to_tsquery(?)", ^term),
+        where: fragment("to_tsvector('english', display_name ) @@ to_tsquery(?)", ^term),
         select: tag
       )
 
@@ -1310,7 +1310,7 @@ defmodule Explorer.Chain do
         foreign_token_hash: fragment("CAST(NULL AS bytea)"),
         foreign_chain_id: ^nil,
         type: "label",
-        name: at.label,
+        name: at.display_name,
         symbol: ^nil,
         holder_count: ^nil,
         inserted_at: att.inserted_at,
@@ -1534,6 +1534,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  # depreciated function
   @spec search_token(String.t()) :: [Token.t()]
   def search_token(string) do
     case prepare_search_term(string) do
@@ -1558,6 +1559,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  # depreciated function
   @spec search_contract(String.t()) :: [SmartContract.t()]
   def search_contract(string) do
     case prepare_search_term(string) do
@@ -1583,13 +1585,14 @@ defmodule Explorer.Chain do
     end
   end
 
+  # depreciated function
   @spec search_label(String.t()) :: [Map.t()]
   def search_label(string) do
     case prepare_search_term(string) do
       {:some, term} ->
         inner_query =
           from(tag in AddressTag,
-            where: fragment("to_tsvector('english', label ) @@ to_tsquery(?)", ^term),
+            where: fragment("to_tsvector('english', display_name ) @@ to_tsquery(?)", ^term),
             select: tag
           )
 
@@ -1599,7 +1602,7 @@ defmodule Explorer.Chain do
             on: att.tag_id == at.id,
             select: %{
               contract_address_hash: att.address_hash,
-              name: at.label,
+              name: at.display_name,
               type: "label"
             }
           )
@@ -1611,6 +1614,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  # depreciated function
   def search_tx(term) do
     case Chain.string_to_transaction_hash(term) do
       {:ok, tx_hash} ->
@@ -1630,6 +1634,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  # depreciated function
   def search_address(term) do
     case Chain.string_to_address_hash(term) do
       {:ok, address_hash} ->
@@ -1652,6 +1657,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  # depreciated function
   def search_block(term) do
     case Chain.string_to_block_hash(term) do
       {:ok, block_hash} ->
