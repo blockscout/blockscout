@@ -29,7 +29,7 @@
               "_token_icon.html",
               chain_id: chain_id_for_token_icon,
               address: Address.checksum(address_hash),
-              class: "token-wallet-icon"
+              additional_classes: ["token-wallet-icon"]
             %>
           <% end %>
           <p class="mb-0 col-md-6 pl-0 pr-0 el-1"><%= token_name(token) %>
