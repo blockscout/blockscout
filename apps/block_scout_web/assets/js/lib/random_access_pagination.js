@@ -76,6 +76,8 @@ export function asyncReducer (state = asyncInitialState, action) {
           history.replaceState({}, null, URI(action.path).query(humps.decamelizeKeys(action.nextPageParams)))
         }
         delete action.nextPageParams.pageNumber
+        
+        if (action.items.length === 0) hideLimitMessage()
 
         return Object.assign({}, state, {
           requestError: false,
@@ -87,6 +89,9 @@ export function asyncReducer (state = asyncInitialState, action) {
           beyondPageOne: pageNumber !== 1
         })
       }
+      
+      if (action.items.length === 0) hideLimitMessage()
+
       return Object.assign({}, state, {
         requestError: false,
         emptyResponse: action.items.length === 0,
@@ -317,6 +322,10 @@ if ($element.length) {
     connectElements({ store, elements })
     firstPageLoad(store)
   }
+}
+
+function hideLimitMessage() {
+  $('[txs-limit]').hide()
 }
 
 function pagesNumbersGenerate (pagesLimit, $container, currentPageNumber, loading) {
