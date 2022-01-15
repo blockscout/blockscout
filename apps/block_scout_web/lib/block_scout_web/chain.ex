@@ -253,7 +253,7 @@ defmodule BlockScoutWeb.Chain do
 
       pages_limit = transactions_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
 
-      case next_page_params(next_page, transactions, params) do
+      case next_page_params(next_page, transactions, %{}) do
         nil ->
           nil
 
