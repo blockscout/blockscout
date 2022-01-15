@@ -4294,7 +4294,7 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions_rap(paging_options) do
     Transaction
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index, desc: transaction.inserted_at, desc: transaction.hash)
     |> handle_random_access_paging_options(paging_options)    
   end
 
