@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       {:error, :not_found} ->
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->
-            json(conn, %{items: [], next_page_path: ""})
+            json(conn, %{items: [], next_page_params: nil})
 
           _ ->
             not_found(conn)

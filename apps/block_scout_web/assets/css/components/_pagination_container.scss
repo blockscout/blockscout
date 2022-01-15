@@ -55,7 +55,7 @@ $pagination-page-link-color-active: #fff !default;
     padding: 0;
 
     @include media-breakpoint-down(sm) {
-      justify-content: space-between;
+      justify-content: flex-end;
       margin: 0;
     }
 
@@ -148,7 +148,6 @@ $pagination-page-link-color-active: #fff !default;
 .go-to {
   @include media-breakpoint-down(sm) {
     margin-top: 10px !important;
-    justify-content: end !important;
   }
 }
 
@@ -166,6 +165,7 @@ $pagination-page-link-color-active: #fff !default;
 
 .align-end {
   align-self: end;
+  justify-self: end;
 }
 
 .page-number {

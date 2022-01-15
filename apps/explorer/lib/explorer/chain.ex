@@ -391,6 +391,8 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :hash)
   end
 
+  def limit_showing_address_transaсtions, do: @limit_showing_address_transaсtions
+
   def address_to_transactions_without_rewards(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
