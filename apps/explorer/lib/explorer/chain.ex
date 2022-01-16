@@ -358,14 +358,17 @@ defmodule Explorer.Chain do
           ]
   def address_to_transactions_rap(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    
-    transactions_count = if is_nil(paging_options.key) or paging_options.page_number == 1, do: address_to_available_transactions_count(address_hash, options), else: nil
 
-    tranasctions = 
+    transactions_count =
+      if is_nil(paging_options.key) or paging_options.page_number == 1,
+        do: address_to_available_transactions_count(address_hash, options),
+        else: nil
+
+    tranasctions =
       address_hash
       |> address_to_transactions_query_rap(options)
       |> Repo.all()
-    
+
     %{transactions_count: transactions_count, tranasctions: tranasctions}
   end
 
@@ -383,7 +386,7 @@ defmodule Explorer.Chain do
 
   def address_to_available_transactions_count(address_hash, options) do
     direction = Keyword.get(options, :direction)
-    
+
     Transaction
     |> Transaction.not_dropped_or_replaced_transacions()
     |> Transaction.matching_address_query(direction, address_hash)
@@ -647,7 +650,8 @@ defmodule Explorer.Chain do
     )
   end
 
-  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block), do: base_query
+  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block),
+    do: base_query
 
   def where_block_number_in_period(base_query, from_block, to_block) do
     from(q in base_query,
@@ -3217,7 +3221,8 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    total_transactions_count = if is_nil(paging_options.key) or paging_options.page_number == 1, do: transactions_available_count(), else: nil
+    total_transactions_count =
+      if is_nil(paging_options.key) or paging_options.page_number == 1, do: transactions_available_count(), else: nil
 
     fetched_transactions =
       if is_nil(paging_options.key) or paging_options.page_number == 1 do
@@ -4294,8 +4299,13 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions_rap(paging_options) do
     Transaction
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index, desc: transaction.inserted_at, desc: transaction.hash)
-    |> handle_random_access_paging_options(paging_options)    
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index,
+      desc: transaction.inserted_at,
+      desc: transaction.hash
+    )
+    |> handle_random_access_paging_options(paging_options)
   end
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
