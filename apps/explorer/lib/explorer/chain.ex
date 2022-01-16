@@ -328,19 +328,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Fetches the transactions related to the address with the given hash, including
-  transactions that only have the address in the `token_transfers` related table
-  and rewards for block validation.
-
-  This query is divided into multiple subqueries intentionally in order to
-  improve the listing performance.
-
-  The `token_trasfers` table tends to grow exponentially, and the query results
-  with a `transactions` `join` statement takes too long.
-
-  To solve this the `transaction_hashes` are fetched in a separate query, and
-  paginated through the `block_number` already present in the `token_transfers`
-  table.
+  Fetches the transactions related to the address with the given hash
 
   ## Options
 
@@ -352,10 +340,7 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions_rap(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
-          [
-            Transaction.t()
-          ]
+  @spec address_to_transactions_rap(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: %{transactions_count: nil | non_neg_integer(), tranasctions: [Transaction.t()]}
   def address_to_transactions_rap(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
