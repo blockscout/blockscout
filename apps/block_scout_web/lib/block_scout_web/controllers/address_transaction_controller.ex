@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, 
+  import BlockScoutWeb.Chain,
     only: [
       fetch_page_number: 1,
       current_filter: 1,
@@ -51,10 +51,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
         @transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
-      
+
       full_options = supplement_page_options(options, params)
 
-      %{transactions_count: transactions_count, tranasctions: transactions_plus_one} = Chain.address_to_transactions_rap(address_hash, full_options)
+      %{transactions_count: transactions_count, tranasctions: transactions_plus_one} =
+        Chain.address_to_transactions_rap(address_hash, full_options)
 
       {transactions, next_page} =
         if fetch_page_number(params) == 1 do
@@ -67,14 +68,14 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       items_json =
         Enum.map(transactions, fn transaction ->
-            View.render_to_string(
-              TransactionView,
-              "_tile.html",
-              conn: conn,
-              current_address: address,
-              transaction: transaction,
-              burn_address_hash: @burn_address_hash
-            )
+          View.render_to_string(
+            TransactionView,
+            "_tile.html",
+            conn: conn,
+            current_address: address,
+            transaction: transaction,
+            burn_address_hash: @burn_address_hash
+          )
         end)
 
       json(conn, %{items: items_json, next_page_params: next_page_params})
