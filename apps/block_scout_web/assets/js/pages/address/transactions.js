@@ -5,7 +5,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
-import { createAsyncLoadStore, firstPageLoad } from '../../lib/random_access_pagination'
+import { createAsyncLoadStore, loadPageByNumber } from '../../lib/random_access_pagination'
 import { batchChannel } from '../../lib/utils'
 import '../address'
 import { isFiltered } from './utils'
@@ -152,7 +152,7 @@ if ($('[data-page="address-transactions"]').length) {
   const $channelBatching = $('[data-selector="channel-batching-message"]')
   $txReloadButton.on('click', (event) => {
     event.preventDefault()
-    firstPageLoad(store)
+    loadPageByNumber(store, 1)
     $channelBatching.hide()
     store.dispatch({
       type: 'TRANSACTION_BATCH_EXPANDED'
