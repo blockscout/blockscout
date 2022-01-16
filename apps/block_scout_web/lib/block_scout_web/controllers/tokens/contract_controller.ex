@@ -32,6 +32,21 @@ defmodule BlockScoutWeb.Tokens.ContractController do
             %{type: :proxy, action: :write}
         end
 
+      %{type: type, action: action} =
+        cond do
+          TabHelpers.tab_active?("read-contract", conn.request_path) ->
+            %{type: :regular, action: :read}
+
+          TabHelpers.tab_active?("write-contract", conn.request_path) ->
+            %{type: :regular, action: :write}
+
+          TabHelpers.tab_active?("read-proxy", conn.request_path) ->
+            %{type: :proxy, action: :read}
+
+          TabHelpers.tab_active?("write-proxy", conn.request_path) ->
+            %{type: :proxy, action: :write}
+        end
+
       render(
         conn,
         "index.html",
