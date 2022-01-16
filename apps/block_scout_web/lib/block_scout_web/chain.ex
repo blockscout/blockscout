@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.Block.Reward
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions}
 
   alias Explorer.Chain.{
     Address,
@@ -32,8 +32,6 @@ defmodule BlockScoutWeb.Chain do
     Transaction,
     Wei
   }
-
-  alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
     def encode(value, _opts) do
