@@ -5,9 +5,7 @@ defmodule BlockScoutWeb.TransactionController do
     only: [
       fetch_page_number: 1,
       paging_options: 1,
-      next_page_params: 3,
       next_page_params: 4,
-      update_page_parameters: 3,
       split_list_by_page: 1,
       supplement_page_options: 2
     ]

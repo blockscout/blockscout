@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
       fetch_page_number: 1,
       current_filter: 1,
       paging_options: 1,
-      next_page_params: 3,
       next_page_params: 4,
       split_list_by_page: 1,
       supplement_page_options: 2
