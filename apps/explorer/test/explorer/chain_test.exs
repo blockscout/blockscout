@@ -485,7 +485,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      assert %{transactions_count: _, tranasctions: []} == Chain.address_to_transactions_rap(address.hash)
+      assert %{transactions_count: 0, tranasctions: []} == Chain.address_to_transactions_rap(address.hash)
     end
 
     test "returns transactions that have token transfers for the given to_address" do
