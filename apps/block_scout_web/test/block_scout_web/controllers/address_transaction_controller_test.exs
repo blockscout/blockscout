@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address.hash), %{"type" => "JSON"}))
 
-      assert json_response(conn, 200)["next_page_params"]
+      assert json_response(conn, 200)["next_page_params"]["pages_limit"] > 1
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
