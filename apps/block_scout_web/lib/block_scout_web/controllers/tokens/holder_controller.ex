@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Tokens.HolderController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.{AccessHelpers, Controller}
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -15,9 +15,11 @@ defmodule BlockScoutWeb.Tokens.HolderController do
     ]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
+    from_api = false
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
-         token_balances <- Chain.fetch_token_holders_from_token_hash(address_hash, paging_options(params)),
+         token_balances <- Chain.fetch_token_holders_from_token_hash(address_hash, from_api, paging_options(params)),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       {token_balances_paginated, next_page} = split_list_by_page(token_balances)
 
@@ -35,7 +37,8 @@ defmodule BlockScoutWeb.Tokens.HolderController do
           View.render_to_string(HolderView, "_token_balances.html",
             address_hash: address_hash,
             token_balance: token_balance,
-            token: token
+            token: token,
+            conn: conn
           )
         end)
 
@@ -61,7 +64,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
       render(
         conn,
         "index.html",
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
       )

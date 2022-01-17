@@ -6,7 +6,7 @@
 		<% tag = Chain.chain_id_display_name(@chain_id) %>
 		<h1 class="card-title"><div class="title-with-label"><%= gettext "Bridged Tokens from " %><%= @chain %></div><div class="bs-label ml-2 destination-<%= tag %>"><%= String.upcase(tag) %></div></h1>
 		<label class="tokens-list-search-input-container">
-			<input data-search-field="" class="form-control tokens-list-search-input" type="text" name="filter" placeholder="Token name or symbol" id="search-text-input" />
+			<input data-search-field="" class="form-control tokens-list-search-input search-input" type="text" name="filter" placeholder="Token name or symbol" id="search-text-input" />
 	  	</label>
 	  </div>
 	  <div>
@@ -23,6 +23,9 @@
 	    <tr>
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">&nbsp;</div>
+	      </th>
+		  <th class="stakes-table-th">
+			<div>&nbsp;</div>
 	      </th>
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">Token</div>
@@ -51,9 +54,9 @@
 	  </thead>
 	  <tbody data-items data-selector="top-bridged-tokens-list">
 	    <%= if @destination == :eth do %>
-	    	<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_eth_bridged_tokens_table: true %>
+	    	<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 7 %>
 		<% else %>
-			<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_bsc_bridged_tokens_table: true %>
+			<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 6 %>
 		<% end %>
 	  </tbody>
 	</table>

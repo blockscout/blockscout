@@ -3,163 +3,70 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
   Extracts `Explorer.Chain.Address.CoinBalanceDaily` params from other schema's params.
   """
 
-  alias EthereumJSONRPC.Blocks
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1, request: 1]
 
-  def params_set(%{} = import_options) do
-    Enum.reduce(import_options, MapSet.new(), &reducer/2)
-  end
+  def params_set(%{coin_balances_params: coin_balances_params_set, blocks: blocks}) do
+    coin_balances_params =
+      coin_balances_params_set
+      |> MapSet.to_list()
 
-  defp reducer({:beneficiary_params, beneficiary_params}, acc) when is_list(beneficiary_params) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    coin_balances_daily_params_list =
+      Enum.reduce(coin_balances_params, [], fn coin_balances_param, acc ->
+        address_hash = Map.get(coin_balances_param, :address_hash)
+        block_number = Map.get(coin_balances_param, :block_number)
 
-    block_numbers =
-      beneficiary_params
-      |> Enum.map(&Map.get(&1, :block_number))
-      |> Enum.sort()
-      |> Enum.dedup()
+        block =
+          blocks
+          |> Enum.find(fn block ->
+            block.number == block_number
+          end)
 
-    block_timestamp_map =
-      Enum.reduce(block_numbers, %{}, fn block_number, map ->
-        {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+        day =
+          if block do
+            DateTime.to_date(block.timestamp)
+          else
+            json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-        day = DateTime.to_date(timestamp)
-        Map.put(map, "#{block_number}", day)
+            with {:ok, %{"timestamp" => timestamp_raw}} <-
+                   %{id: 1, method: "eth_getBlockByNumber", params: [integer_to_quantity(block_number), false]}
+                   |> request()
+                   |> json_rpc(json_rpc_named_arguments) do
+              timestamp = quantity_to_integer(timestamp_raw)
+              DateTime.from_unix!(timestamp)
+            end
+          end
+
+        [%{address_hash: address_hash, day: day} | acc]
       end)
 
-    Enum.into(beneficiary_params, acc, fn %{
-                                            address_hash: address_hash,
-                                            block_number: block_number
-                                          }
-                                          when is_binary(address_hash) and is_integer(block_number) ->
-      day = Map.get(block_timestamp_map, "#{block_number}")
+    coin_balances_daily_params_set =
+      coin_balances_daily_params_list
+      |> Enum.uniq()
+      |> Enum.into(MapSet.new())
 
-      %{address_hash: address_hash, day: day}
-    end)
+    coin_balances_daily_params_set
   end
 
-  defp reducer({:blocks_params, blocks_params}, acc) when is_list(blocks_params) do
-    # a block MUST have a miner_hash and number
-    Enum.into(blocks_params, acc, fn %{miner_hash: address_hash, number: block_number, timestamp: block_timestamp}
-                                     when is_binary(address_hash) and is_integer(block_number) ->
-      day = DateTime.to_date(block_timestamp)
-      %{address_hash: address_hash, day: day}
-    end)
-  end
+  def params_set(%{address_coin_balances_params_with_block_timestamp: address_coin_balances_params_with_block_timestamp}) do
+    coin_balances_params =
+      address_coin_balances_params_with_block_timestamp
+      |> MapSet.to_list()
 
-  defp reducer({:internal_transactions_params, internal_transactions_params}, initial)
-       when is_list(internal_transactions_params) do
-    Enum.reduce(internal_transactions_params, initial, &internal_transactions_params_reducer/2)
-  end
+    coin_balances_daily_params_list =
+      Enum.reduce(coin_balances_params, [], fn coin_balances_param, acc ->
+        address_hash = Map.get(coin_balances_param, :address_hash)
+        block_timestamp = Map.get(coin_balances_param, :block_timestamp)
 
-  defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
-    # a log MUST have address_hash and block_number
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+        day = DateTime.to_date(block_timestamp)
 
-    block_numbers =
-      logs_params
-      |> Enum.map(&Map.get(&1, :block_number))
-      |> Enum.sort()
-      |> Enum.dedup()
-
-    block_timestamp_map =
-      Enum.reduce(block_numbers, %{}, fn block_number, map ->
-        case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
-          {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} ->
-            day = DateTime.to_date(timestamp)
-            Map.put(map, "#{block_number}", day)
-
-          _ ->
-            map
-        end
+        [%{address_hash: address_hash, day: day} | acc]
       end)
 
-    logs_params
-    |> Enum.into(acc, fn
-      %{address_hash: address_hash, block_number: block_number}
-      when is_binary(address_hash) and is_integer(block_number) ->
-        if Map.has_key?(block_timestamp_map, "#{block_number}") do
-          day = Map.get(block_timestamp_map, "#{block_number}")
-          %{address_hash: address_hash, day: day}
-        else
-          nil
-        end
+    coin_balances_daily_params_set =
+      coin_balances_daily_params_list
+      |> Enum.uniq()
+      |> Enum.into(MapSet.new())
 
-      %{type: "pending"} ->
-        nil
-    end)
-    |> Enum.reject(fn val -> is_nil(val) end)
-    |> MapSet.new()
-  end
-
-  defp reducer({:transactions_params, transactions_params}, initial) when is_list(transactions_params) do
-    Enum.reduce(transactions_params, initial, &transactions_params_reducer/2)
-  end
-
-  defp reducer({:block_second_degree_relations_params, block_second_degree_relations_params}, initial)
-       when is_list(block_second_degree_relations_params),
-       do: initial
-
-  defp internal_transactions_params_reducer(
-         %{block_number: block_number} = internal_transaction_params,
-         acc
-       )
-       when is_integer(block_number) do
-    case internal_transaction_params do
-      %{type: "call"} ->
-        acc
-
-      %{type: "create", error: _} ->
-        acc
-
-      %{type: "create", created_contract_address_hash: address_hash} when is_binary(address_hash) ->
-        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-        {:ok, %Blocks{blocks_params: [%{timestamp: block_timestamp}]}} =
-          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
-
-        day = DateTime.to_date(block_timestamp)
-        MapSet.put(acc, %{address_hash: address_hash, day: day})
-
-      %{type: "selfdestruct", from_address_hash: from_address_hash, to_address_hash: to_address_hash}
-      when is_binary(from_address_hash) and is_binary(to_address_hash) ->
-        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-        {:ok, %Blocks{blocks_params: [%{timestamp: block_timestamp}]}} =
-          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
-
-        day = DateTime.to_date(block_timestamp)
-
-        acc
-        |> MapSet.put(%{address_hash: from_address_hash, day: day})
-        |> MapSet.put(%{address_hash: to_address_hash, day: day})
-    end
-  end
-
-  defp transactions_params_reducer(
-         %{block_number: block_number, from_address_hash: from_address_hash} = transaction_params,
-         initial
-       )
-       when is_binary(from_address_hash) do
-    # a transaction MUST have a `from_address_hash`
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
-      {:ok, %Blocks{blocks_params: [%{timestamp: block_timestamp}]}} ->
-        day = DateTime.to_date(block_timestamp)
-        acc = MapSet.put(initial, %{address_hash: from_address_hash, day: day})
-
-        # `to_address_hash` is optional
-        case transaction_params do
-          %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
-            MapSet.put(acc, %{address_hash: to_address_hash, day: day})
-
-          _ ->
-            acc
-        end
-
-      _ ->
-        initial
-    end
+    coin_balances_daily_params_set
   end
 end

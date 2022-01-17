@@ -1,0 +1,102 @@
+<% address_hash_checksummed = @result.address_hash %>
+<tr data-identifier-hash="<%= @result.address_hash %>-<%= if @result.tx_hash, do: Base.encode16(@result.tx_hash, case: :lower), else: "" %>-<%= if @result.block_hash, do: Base.encode16(@result.block_hash, case: :lower), else: "" %>">
+  <td class="stakes-td">
+      <!-- incremented number by order in the list -->
+      <span class="color-lighten">
+      </span>
+  </td>
+<%= case @result.type do %>
+    <% "token" -> %>
+        <td class="token-icon">
+            <span
+                class="token-icon mr-1"
+                data-address-hash="<%= address_hash_checksummed %>"
+            >
+            <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+                <% chain_id_for_token_icon = if @result.foreign_chain_id, do: @result.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
+                <% address_hash = if @result.foreign_token_hash, do: @result.foreign_token_hash, else: @result.address_hash %>
+                <%=
+                    render BlockScoutWeb.TokensView,
+                    "_token_icon.html",
+                    chain_id: chain_id_for_token_icon,
+                    address: address_hash
+                %>
+            <% end %>
+            </span>
+        </td>
+        <td class="stakes-td">
+            <% res = @result.name <> " (" <> @result.symbol <> ")" %>
+            <a href="<%= token_path(@conn, :show, address_hash_checksummed) %>">
+                <%= highlight_search_result(res, @query) %>
+            </a>
+    <% "address" -> %>
+        <td class="stakes-td">
+            <%= if @result.name do %>
+                <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
+                    <%= highlight_search_result(@result.name, @query) %>
+                </a>
+            <% end %>
+    <% "contract" -> %>
+        <td class="stakes-td">
+            <%= if @result.name do %>
+                <a href="<%= address_path(@conn, :show, address_hash_checksummed) %>">
+                    <%= highlight_search_result(@result.name, @query) %>
+                </a>
+            <% end %>
+    <% "block" -> %>
+        <td class="stakes-td">
+            <%= link(
+                highlight_search_result(to_string(@result.block_number), @query),
+                to: block_path(@conn, :show, @result.block_number)
+            ) %>
+    <% _ -> %>
+        <td class="stakes-td">
+<% end %>
+  </td>
+  <td class="stakes-td">
+    <%= case @result.type do %>
+        <% "token" -> %>
+            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
+            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
+                <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: address,
+                contract: false,
+                use_custom_tooltip: false
+                %>
+            <% end %>
+        <% "address" -> %>
+            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
+            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
+                <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: address,
+                contract: false,
+                use_custom_tooltip: false
+                %>
+            <% end %>
+        <% "contract" -> %>
+            <%= with {:ok, address_hash} = Chain.string_to_address_hash(@result.address_hash),
+            {:ok, address} <- Chain.hash_to_address(address_hash) do %>
+                <%= render BlockScoutWeb.AddressView,
+                "_link.html",
+                address: address,
+                contract: true,
+                use_custom_tooltip: false
+                %>
+            <% end %>
+        <% "transaction" -> %>
+            <%= render BlockScoutWeb.TransactionView,
+            "_link.html",
+            transaction_hash: "0x" <> Base.encode16(@result.tx_hash, case: :lower) %>
+        <% "block" -> %>
+            <%= link(
+                "0x" <> Base.encode16(@result.block_hash, case: :lower),
+                to: block_path(@conn, :show, @result.block_number)
+            ) %>
+    <% end %>
+  </td>
+  <td class="stakes-td">
+    <div class="bs-label <%= @result.type %>"><%= @result.type %></div>
+  </td>
+</tr>

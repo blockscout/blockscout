@@ -1,5 +1,11 @@
+import Web3 from 'web3'
 import $ from 'jquery'
 import { props } from 'eth-net-props'
+
+export const connectSelector = '[connect-wallet]'
+export const disconnectSelector = '[disconnect-wallet]'
+const connectToSelector = '[connect-to]'
+const connectedToSelector = '[connected-to]'
 
 export function getContractABI ($form) {
   const implementationAbi = $form.data('implementation-abi')
@@ -23,28 +29,33 @@ export function prepareMethodArgs ($functionInputs, inputs) {
     const inputType = inputs[ind] && inputs[ind].type
     const inputComponents = inputs[ind] && inputs[ind].components
     let sanitizedInputValue
-    sanitizedInputValue = replaceSpaces(inputValue, inputType, inputComponents)
-    sanitizedInputValue = replaceDoubleQuotes(sanitizedInputValue, inputType, inputComponents)
+    sanitizedInputValue = replaceDoubleQuotes(inputValue, inputType, inputComponents)
+    sanitizedInputValue = replaceSpaces(sanitizedInputValue, inputType, inputComponents)
 
     if (isArrayInputType(inputType) || isTupleInputType(inputType)) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
         return [[]]
       } else {
-        if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
-          sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
-        }
-        const inputValueElements = sanitizedInputValue.split(',')
-        const sanitizedInputValueElements = inputValueElements.map(elementValue => {
-          const elementInputType = inputType.split('[')[0]
-
-          var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
-
-          if (isBoolInputType(elementInputType)) {
-            sanitizedElementValue = convertToBool(elementValue)
+        if (isArrayOfTuple(inputType)) {
+          return [JSON.parse(sanitizedInputValue)]
+        } else {
+          if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
+            sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
           }
-          return sanitizedElementValue
-        })
-        return [sanitizedInputValueElements]
+          const inputValueElements = sanitizedInputValue.split(',')
+          const sanitizedInputValueElements = inputValueElements.map(elementValue => {
+            const elementInputType = inputType.split('[')[0]
+
+            let sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+            sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
+
+            if (isBoolInputType(elementInputType)) {
+              sanitizedElementValue = convertToBool(elementValue)
+            }
+            return sanitizedElementValue
+          })
+          return [sanitizedInputValueElements]
+        }
       }
     } else if (isBoolInputType(inputType)) {
       return convertToBool(sanitizedInputValue)
@@ -69,7 +80,58 @@ export const formatError = (error) => {
   return message
 }
 
-export const getCurrentAccount = () => {
+export const formatTitleAndError = (error) => {
+  let { message } = error
+  let title = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
+  title = title && title.split('{').length > 1 ? title.split('{')[0].replace(':', '') : title
+  let txHash = ''
+  let errorMap = ''
+  try {
+    errorMap = message && message.indexOf('{') >= 0 ? JSON.parse(message && message.slice(message.indexOf('{'))) : ''
+    message = errorMap.error || ''
+    txHash = errorMap.transactionHash || ''
+  } catch (exception) {
+    message = ''
+  }
+  return { title: title, message: message, txHash: txHash }
+}
+
+export const getCurrentAccountPromise = (provider) => {
+  return new Promise((resolve, reject) => {
+    if (provider && provider.wc) {
+      getCurrentAccountFromWCPromise(provider)
+        .then(account => resolve(account))
+        .catch(err => {
+          reject(err)
+        })
+    } else {
+      getCurrentAccountFromMMPromise()
+        .then(account => resolve(account))
+        .catch(err => {
+          reject(err)
+        })
+    }
+  })
+}
+
+export const getCurrentAccountFromWCPromise = (provider) => {
+  return new Promise((resolve, reject) => {
+  // Get a Web3 instance for the wallet
+    const web3 = new Web3(provider)
+
+    // Get list of accounts of the connected wallet
+    web3.eth.getAccounts()
+      .then(accounts => {
+        // MetaMask does not give you all accounts, only the selected account
+        resolve(accounts[0])
+      })
+      .catch(err => {
+        reject(err)
+      })
+  })
+}
+
+export const getCurrentAccountFromMMPromise = () => {
   return new Promise((resolve, reject) => {
     window.ethereum.request({ method: 'eth_accounts' })
       .then(accounts => {
@@ -80,6 +142,73 @@ export const getCurrentAccount = () => {
         reject(err)
       })
   })
+}
+
+function hideConnectedToContainer () {
+  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.add('hidden')
+}
+
+function showConnectedToContainer () {
+  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.remove('hidden')
+}
+
+function hideConnectContainer () {
+  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.add('hidden')
+}
+
+function showConnectContainer () {
+  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.remove('hidden')
+}
+
+function hideConnectToContainer () {
+  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.add('hidden')
+}
+
+function showConnectToContainer () {
+  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.remove('hidden')
+}
+
+export function showHideDisconnectButton () {
+  // Show disconnect button only in case of Wallet Connect
+  if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
+    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.remove('hidden')
+  } else {
+    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.add('hidden')
+  }
+}
+
+export function showConnectedToElements (account) {
+  hideConnectToContainer()
+  showConnectContainer()
+  showConnectedToContainer()
+  showHideDisconnectButton()
+  setConnectToAddress(account)
+}
+
+export function showConnectElements () {
+  showConnectToContainer()
+  showConnectContainer()
+  hideConnectedToContainer()
+}
+
+export function hideConnectButton () {
+  showConnectToContainer()
+  hideConnectContainer()
+  hideConnectedToContainer()
+}
+
+function setConnectToAddress (account) {
+  if (document.querySelector('[connected-to-address]')) {
+    document.querySelector('[connected-to-address]').innerHTML = `<a href='/address/${account}'>${trimmedAddressHash(account)}</a>`
+  }
+}
+
+function trimmedAddressHash (account) {
+  if ($(window).width() < 544) {
+    return `${account.slice(0, 7)}–${account.slice(-6)}`
+  } else {
+    return account
+  }
 }
 
 function convertToBool (value) {
@@ -94,6 +223,10 @@ function isArrayInputType (inputType) {
 
 function isTupleInputType (inputType) {
   return inputType && inputType.includes('tuple') && !isArrayInputType(inputType)
+}
+
+function isArrayOfTuple (inputType) {
+  return inputType && inputType.includes('tuple') && isArrayInputType(inputType)
 }
 
 function isAddressInputType (inputType) {
@@ -129,7 +262,7 @@ function replaceSpaces (value, type, components) {
       })
       .join(',')
   } else {
-    return value
+    return value.trim()
   }
 }
 

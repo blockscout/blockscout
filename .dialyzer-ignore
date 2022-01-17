@@ -5,27 +5,33 @@
 :0: Unknown type 'Elixir.Address':t/0
 apps/ethereum_jsonrpc/lib/ethereum_jsonrpc.ex:400: Function timestamp_to_datetime/1 has no local return
 lib/explorer/repo/prometheus_logger.ex:8
-lib/explorer/smart_contract/publisher_worker.ex:6
+lib/explorer/smart_contract/solidity/publisher_worker.ex:1
+lib/explorer/smart_contract/vyper/publisher_worker.ex:1
+lib/explorer/smart_contract/solidity/publisher_worker.ex:6
+lib/explorer/smart_contract/vyper/publisher_worker.ex:6
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: Function microseconds_time/1 has no local return
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: The call 'Elixir.System':convert_time_unit(__@1::any(),'native','microseconds') breaks the contract (integer(),time_unit() | 'native',time_unit() | 'native') -> integer()
-apps/explorer/lib/explorer/smart_contract/publisher_worker.ex:6: The pattern 'false' can never match the type 'true'
-apps/explorer/lib/explorer/smart_contract/publisher_worker.ex:6: The test 5 == 'infinity' can never evaluate to 'true'
 lib/block_scout_web/router.ex:1
 lib/block_scout_web/schema/types.ex:31
 lib/phoenix/router.ex:324
 lib/phoenix/router.ex:402
 lib/block_scout_web/views/layout_view.ex:145: The call 'Elixir.Poison.Parser':'parse!'
 lib/block_scout_web/views/layout_view.ex:237: The call 'Elixir.Poison.Parser':'parse!'
-lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
-lib/explorer/smart_contract/reader.ex:348
+lib/explorer/smart_contract/reader.ex:430
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:110
 lib/explorer/exchange_rates/source.ex:113
-lib/explorer/smart_contract/verifier.ex:89
-lib/block_scout_web/templates/address_contract/index.html.eex:150
-lib/block_scout_web/templates/address_contract/index.html.eex:193
+lib/explorer/smart_contract/solidity/verifier.ex:162
+lib/block_scout_web/templates/address_contract/index.html.eex:162
+lib/block_scout_web/templates/address_contract/index.html.eex:199
 lib/explorer/staking/stake_snapshotting.ex:15: Function do_snapshotting/7 has no local return
 lib/explorer/staking/stake_snapshotting.ex:147
 lib/explorer/third_party_integrations/sourcify.ex:70
 lib/explorer/third_party_integrations/sourcify.ex:73
+lib/block_scout_web/views/transaction_view.ex:137
+lib/block_scout_web/views/transaction_view.ex:152
+lib/block_scout_web/views/transaction_view.ex:197
+lib/indexer/buffered_task.ex:402
+lib/indexer/buffered_task.ex:451
+lib/indexer/memory/monitor.ex:161

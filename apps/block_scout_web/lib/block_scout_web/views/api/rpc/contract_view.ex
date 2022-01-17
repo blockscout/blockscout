@@ -30,6 +30,10 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     RPCView.render("show.json", data: prepare_source_code_contract(contract))
   end
 
+  def render("show.json", %{result: result}) do
+    RPCView.render("show.json", data: result)
+  end
+
   defp prepare_source_code_contract(nil) do
     %{
       "Address" => "",
@@ -43,7 +47,8 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       "OptimizationRuns" => "",
       "EVMVersion" => "",
       "ConstructorArguments" => "",
-      "ExternalLibraries" => ""
+      "ExternalLibraries" => "",
+      "FileName" => ""
     }
   end
 
@@ -142,6 +147,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       |> Map.put_new(:CompilerVersion, Map.get(contract, :compiler_version, ""))
       |> Map.put_new(:OptimizationUsed, contract_optimization)
       |> Map.put_new(:EVMVersion, Map.get(contract, :evm_version, ""))
+      |> Map.put_new(:FileName, Map.get(contract, :file_path, "") || "")
       |> insert_additional_sources(address)
     end
   end
@@ -160,7 +166,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
           Enum.map(additional_sources, fn src ->
             %{
               Filename: src.file_name,
-              SourceCode: SmartContract.add_submitted_comment(src.contract_source_code, src.inserted_at)
+              SourceCode: src.contract_source_code
             }
           end),
         else: []

@@ -3,14 +3,57 @@
 
   <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
-  <section>
+  <section id="tokens">
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
-        <h2 class="card-title list-title-description"><%= gettext "Tokens" %></h2>
+        <%= render BlockScoutWeb.AddressTokenView,
+          "overview.html",
+          address: @address,
+          exchange_rate: @exchange_rate
+        %>
 
         <div class="list-top-pagination-container-wrapper">
           <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        </div>
+
+        <div class="stakes-table-container">
+            <table style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">&nbsp;</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div>&nbsp;</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">Asset</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">Type</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">Amount</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">Symbol</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">Price</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">Value</div>
+                        </th>
+                        <th class="stakes-table-th">
+                            <div class="stakes-table-th-content">Contract Address</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody data-items data-selector="address-tokens-list">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 9 %>
+                </tbody>
+            </table>
         </div>
 
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
@@ -23,13 +66,7 @@
           </div>
         </div>
 
-        <div data-items>
-          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
-        </div>
-
-        <div class="transaction-bottom-panel">
-          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
-        </div>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
       </div>
     </div>

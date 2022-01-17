@@ -8,14 +8,10 @@
 <% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
 <% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
-  <div data-selector="channel-disconnected-message" class="d-none">
-    <div data-selector="reload-button" class="alert alert-danger">
-      <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
-    </div>
-  </div>
+  <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
   <div class="new-smart-contract-form">
-      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
+      <h1 class="smart-contract-title"><%= gettext "New Solidity Smart Contract Verification" %></h1>
 
       <%= form_for @changeset,
           address_contract_verification_path(@conn, :create),
@@ -33,49 +29,11 @@
           </div>
         </div>
 
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :name, gettext("Contract Name") %>
-            <div class="center-column">
-              <%= text_input f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name", value: contract_name_value %>
-              <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger form-error" %>
-            </div>
-            <div class="smart-contract-form-group-tooltip">Must match the name specified in the code. For example, in <span class="tooltip-quote">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name.</div>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name.", contract_name_value: contract_name_value %>
 
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, "Include nightly builds" %>
-            <div class="center-column">
-              <div class="form-radios-group">
-                <div class="radio-big">
-                  <%= radio_button f, :nightly_builds, false, checked: true, class: "form-check-input nightly-builds-false" %>
-                  <div class="radio-icon"></div>
-                  <%= label :nightly_builds, :false, gettext("No"), class: "radio-text" %>
-                </div>
-                <div class="radio-big">
-                  <%= radio_button f, :nightly_builds, true, class: "form-check-input nightly-builds-true", "aria-describedby": "nightly_builds-help-block" %>
-                  <div class="radio-icon"></div>
-                  <%= label :nightly_builds, :true, gettext("Yes"), class: "radio-text" %>
-                </div>
-              </div>
-              <%= error_tag f, :nightly_builds, id: "nightly_builds-help-block", class: "text-danger form-error" %>
-            </div>
-            <div class="smart-contract-form-group-tooltip">Select yes if you want to show nightly builds.</div>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :compiler_version, gettext("Compiler") %>
-            <div class="center-column">
-              <%= select f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: compiler_version, "aria-describedby": "compiler-help-block" %>
-              <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger form-error" %>
-            </div>
-            <div class="smart-contract-form-group-tooltip">The compiler version is specified in <span class="tooltip-quote">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class="tooltip-quote">solc —version</span> to check.</div>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
@@ -130,37 +88,9 @@
           </div>
         </div>
 
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, "Try to fetch constructor arguments automatically" %>
-            <div class="center-column">
-              <div class="form-radios-group">
-                <div class="radio-big">
-                  <%= radio_button f, :autodetect_constructor_args, false, checked: !fetch_constructor_arguments_automatically, class: "form-check-input autodetectfalse" %>
-                  <div class="radio-icon"></div>
-                  <%= label :autodetect_constructor_args, :false, gettext("No"), class: "radio-text" %>
-                </div>
-                <div class="radio-big">
-                  <%= radio_button f, :autodetect_constructor_args, true, checked: fetch_constructor_arguments_automatically, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_constructor_args-help-block" %>
-                  <div class="radio-icon"></div>
-                  <%= label :autodetect_constructor_args, :true, gettext("Yes"), class: "radio-text" %>
-                </div>
-              </div>
-              <%= error_tag f, :autodetect_constructor_args, id: "autodetect_constructor_args-help-block", class: "text-danger form-error" %>
-            </div>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_fetch_constructor_args.html", f: f, fetch_constructor_arguments_automatically: fetch_constructor_arguments_automatically %>
 
-        <div class="smart-contract-form-group constructor-arguments" style="display: <%= display_constructor_arguments_text_area %>">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :constructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
-            <div class="center-column">
-              <%= textarea f, :constructor_arguments, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-constructor-arguments-help-block" %>
-              <%= error_tag f, :constructor_arguments, id: "contract-constructor-arguments-help-block", class: "text-danger form-error", "data-test": "contract-constructor-arguments-error" %>
-            </div>
-            <div class="smart-contract-form-group-tooltip">Add arguments in <a href="https://solidity.readthedocs.io/en/develop/abi-spec.html" target="_blank">ABI hex encoded form</a>. Constructor arguments are written right to left, and will be found at the end of the input created bytecode. They may also be <a href="https://abi.hashex.org/" target="_blank">parsed here.</a></div>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: display_constructor_arguments_text_area %>
 
         <div class="add-contract-libraries-wrapper">
           <span class="btn-line js-btn-add-contract-libraries">Add Contract Libraries</span>
@@ -292,11 +222,7 @@
             name="button"
             type="button"
           >
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
-            <%= gettext("Loading....") %>
+            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
           </button>
           <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation"  %>
           <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>

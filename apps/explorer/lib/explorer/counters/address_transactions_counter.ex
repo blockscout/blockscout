@@ -48,12 +48,10 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
 
   def fetch(address) do
     if cache_expired?(address) do
-      Task.start_link(fn ->
-        update_cache(address)
-      end)
+      update_cache(address)
     end
 
-    address_hash_string = get_address_hash_string(address)
+    address_hash_string = to_string(address.hash)
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
@@ -61,7 +59,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
 
   defp cache_expired?(address) do
     cache_period = address_transactions_counter_cache_period()
-    address_hash_string = get_address_hash_string(address)
+    address_hash_string = to_string(address.hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -72,7 +70,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
   end
 
   defp update_cache(address) do
-    address_hash_string = get_address_hash_string(address)
+    address_hash_string = to_string(address.hash)
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
     new_data = Chain.address_to_transaction_count(address)
     put_into_cache("hash_#{address_hash_string}", new_data)
@@ -90,10 +88,6 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
 
   defp put_into_cache(key, value) do
     :ets.insert(@cache_name, {key, value})
-  end
-
-  defp get_address_hash_string(address) do
-    Base.encode16(address.hash.bytes, case: :lower)
   end
 
   defp current_time do

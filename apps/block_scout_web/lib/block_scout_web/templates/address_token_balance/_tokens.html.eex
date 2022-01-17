@@ -1,33 +1,50 @@
 <div data-token-type="<%= @type %>">
-  <h6 class="dropdown-header">
+  <h6 class="dropdown-header" style="margin-left: 5px;">
     <%= @type %> (<span data-number-of-tokens-by-type="<%= @type %>"><%= Enum.count(@token_balances)%></span>)
   </h6>
 
-  <%= for {token_balance, bridged_token} <- sort_by_usd_value_and_name(@token_balances) do %>
+  <%= for {token_balance, bridged_token, token} <- sort_by_usd_value_and_name(@token_balances) do %>
     <div
       class="border-bottom"
       data-dropdown-token-balance-test
       data-token-name="<%= token_name(token_balance.token) %>"
-      data-token-symbol="<%= token_balance.token.symbol %>"
+      data-token-symbol="<%= token_symbol(token_balance.token) %>"
     >
+      <% path = cond do
+          token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          token_balance.token_type == "ERC-1155" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
+          true -> token_path(@conn, :show, to_string(token_balance.token.contract_address_hash))
+        end
+      %>
       <%= link(
-            to: token_path(@conn, :show, to_string(token_balance.token.contract_address_hash)),
+            to: path,
             class: "dropdown-item"
           ) do %>
         <div class="row">
-          <p class="mb-0 col-md-6"><%= token_name(token_balance.token) %>
+          <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
+            <% chain_id_for_token_icon = if bridged_token && bridged_token.foreign_chain_id, do: bridged_token.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
+            <% address_hash = if bridged_token && bridged_token.foreign_token_contract_address_hash, do: bridged_token.foreign_token_contract_address_hash, else: token.contract_address_hash %>
+            <%=
+              render BlockScoutWeb.TokensView,
+              "_token_icon.html",
+              chain_id: chain_id_for_token_icon,
+              address: Address.checksum(address_hash),
+              style: "height: fit-content; margin-right: 5px; margin-top: -1px;"
+            %>
+          <% end %>
+          <p class="mb-0 col-md-6" style="padding-left: 0; padding-right: 0;"><%= token_name(token) %>
           <%= if bridged_token && bridged_token.custom_metadata do %>
             <%= "(" <> bridged_token.custom_metadata <> ")" %>
           <% end %>
           </p>
           <%= if bridged_token && bridged_token.lp_token && bridged_token.custom_cap do %>
-            <% lp_token_balance_usd = token_balance.value |> Decimal.div(token_balance.token.total_supply) |> Decimal.mult(bridged_token.custom_cap) |> Decimal.round(4) %>
-            <p class="mb-0 col-md-6 text-right">
+            <% lp_token_balance_usd = token_balance.value |> Decimal.div(token.total_supply) |> Decimal.mult(bridged_token.custom_cap) |> Decimal.round(4) %>
+            <p class="mb-0 col-md-6 text-right" style="padding-left: 5px; max-width: 40%;">
               <span data-selector="token-balance-usd" data-usd-value="<%= lp_token_balance_usd %>"></span>
             </p>
           <% else %>
             <%= if token_balance.token.usd_value do %>
-              <p class="mb-0 col-md-6 text-right">
+              <p class="mb-0 col-md-6 text-right" style="padding-left: 5px; max-width: 40%;">
                 <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(token_balance) %>"></span>
               </p>
             <% end %>
@@ -35,11 +52,18 @@
         </div>
         <div class="row">
           <% col_md = if token_balance.token.usd_value, do: "col-md-6", else: "col-md-12" %>
-          <p class="mb-0 <%= col_md %> ">
-            <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
+          <p class="mb-0 <%= col_md %> " style="margin-left: 5px;" >
+            <%= if token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) do %>
+              1
+            <% else %>
+              <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_symbol(token_balance.token) %>
+            <% end %>
+            <%= if (token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id)) or token_balance.token_type == "ERC-1155" do %>
+              <%= " TokenID " <> to_string(token_balance.token_id) %>
+            <% end %>
           </p>
           <%= if token_balance.token.usd_value do %>
-            <p class="mb-0 col-md-6 text-right text-muted">
+            <p class="mb-0 col-md-6 text-right text-muted" style="max-width: 40%; padding-right: 0;">
               <span data-selector="token-price" data-token-usd-value="<%= token_balance.token.usd_value %>"></span>
             </p>
           <% end %>

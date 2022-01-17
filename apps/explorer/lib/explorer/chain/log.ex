@@ -133,8 +133,24 @@ defmodule Explorer.Chain.Log do
 
         with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
              identifier <- Base.encode16(selector.method_id, case: :lower),
-             text <- function_call(selector.function, mapping),
-             do: {:ok, identifier, text, mapping}
+             text <- function_call(selector.function, mapping) do
+          {:ok, identifier, text, mapping}
+        else
+          {:error, :could_not_decode} ->
+            case find_candidates(log, transaction) do
+              {:error, :contract_not_verified, []} ->
+                {:error, :could_not_decode}
+
+              {:error, :contract_not_verified, candidates} ->
+                {:error, :contract_verified, candidates}
+
+              _ ->
+                {:error, :could_not_decode}
+            end
+
+          output ->
+            output
+        end
 
       _ ->
         find_candidates(log, transaction)

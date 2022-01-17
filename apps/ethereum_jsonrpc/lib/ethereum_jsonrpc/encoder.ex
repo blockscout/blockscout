@@ -23,39 +23,51 @@ defmodule EthereumJSONRPC.Encoder do
     "0x" <> encoded_args
   end
 
-  defp parse_args(args) do
+  defp parse_args(args) when is_list(args) do
     args
-    |> Enum.map(fn
-      <<"0x", hexadecimal_digits::binary>> ->
-        Base.decode16!(hexadecimal_digits, case: :mixed)
+    |> Enum.map(&parse_args/1)
+  end
 
-      item ->
-        if is_list(item) do
-          item
-          |> Enum.map(fn el ->
-            <<"0x", hexadecimal_digits::binary>> = el
-            Base.decode16!(hexadecimal_digits, case: :mixed)
-          end)
-        else
-          item
-        end
-    end)
+  defp parse_args(<<"0x", hexadecimal_digits::binary>>), do: Base.decode16!(hexadecimal_digits, case: :mixed)
+
+  defp parse_args(<<hexadecimal_digits::binary>>), do: try_to_decode(hexadecimal_digits)
+
+  defp parse_args(arg), do: arg
+
+  defp try_to_decode(hexadecimal_digits) do
+    case Base.decode16(hexadecimal_digits, case: :mixed) do
+      {:ok, decoded_value} ->
+        decoded_value
+
+      _ ->
+        hexadecimal_digits
+    end
   end
 
   @doc """
   Given a result from the blockchain, and the function selector, returns the result decoded.
   """
+  def decode_result(_, _, leave_error_as_map \\ false)
+
   @spec decode_result(map(), %ABI.FunctionSelector{} | [%ABI.FunctionSelector{}]) ::
           {String.t(), {:ok, any()} | {:error, String.t() | :invalid_data}}
-  def decode_result(%{error: %{code: code, data: data, message: message}, id: id}, _selector) do
-    {id, {:error, "(#{code}) #{message} (#{data})"}}
+  def decode_result(%{error: %{code: code, data: data, message: message}, id: id}, _selector, leave_error_as_map) do
+    if leave_error_as_map do
+      {id, {:error, %{code: code, message: message, data: data}}}
+    else
+      {id, {:error, "(#{code}) #{message} (#{data})"}}
+    end
   end
 
-  def decode_result(%{error: %{code: code, message: message}, id: id}, _selector) do
-    {id, {:error, "(#{code}) #{message}"}}
+  def decode_result(%{error: %{code: code, message: message}, id: id}, _selector, leave_error_as_map) do
+    if leave_error_as_map do
+      {id, {:error, %{code: code, message: message}}}
+    else
+      {id, {:error, "(#{code}) #{message}"}}
+    end
   end
 
-  def decode_result(result, selectors) when is_list(selectors) do
+  def decode_result(result, selectors, _leave_error_as_map) when is_list(selectors) do
     selectors
     |> Enum.map(fn selector ->
       try do
@@ -72,7 +84,7 @@ defmodule EthereumJSONRPC.Encoder do
     end)
   end
 
-  def decode_result(%{id: id, result: result}, function_selector) do
+  def decode_result(%{id: id, result: result}, function_selector, _leave_error_as_map) do
     types_list = List.wrap(function_selector.returns)
 
     decoded_data =
@@ -83,6 +95,7 @@ defmodule EthereumJSONRPC.Encoder do
       |> Enum.zip(types_list)
       |> Enum.map(fn
         {value, :address} -> "0x" <> Base.encode16(value, case: :lower)
+        {value, :string} -> unescape(value)
         {value, _} -> value
       end)
 
@@ -90,5 +103,16 @@ defmodule EthereumJSONRPC.Encoder do
   rescue
     MatchError ->
       {id, {:error, :invalid_data}}
+  end
+
+  def unescape(data) do
+    if String.starts_with?(data, "\\x") do
+      charlist = String.to_charlist(data)
+      erlang_literal = '"#{charlist}"'
+      {:ok, [{:string, _, unescaped_charlist}], _} = :erl_scan.string(erlang_literal)
+      List.to_string(unescaped_charlist)
+    else
+      data
+    end
   end
 end
