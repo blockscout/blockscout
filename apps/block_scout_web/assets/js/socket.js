@@ -1,7 +1,7 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
 
-const socket = new Socket('/etc/mainnet/socket', { params: { locale: locale } })
+const socket = new Socket(`${process.env.SOCKET_ROOT}/socket`, { params: { locale: locale } })
 socket.connect()
 
 export default socket
