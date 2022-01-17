@@ -24,13 +24,21 @@ defmodule Explorer.Accounts.Notify.Summary do
   def process(%Chain.Transaction{} = transaction) do
     preloaded_transaction = preload(transaction)
 
-    handle_collection(transaction, preloaded_transaction.token_transfers)
-    fetch_summary(transaction)
+    transfers_summaries = handle_collection(transaction, preloaded_transaction.token_transfers)
+
+    transaction_summary = fetch_summary(transaction)
+
+    [transaction_summary | transfers_summaries]
+    |> Enum.filter(fn summary ->
+      not (is_nil(summary) or
+             is_nil(summary.amount) or
+             summary.amount == Decimal.new(0))
+    end)
   end
 
   def process(_), do: nil
 
-  def handle_collection(_transaction, []), do: :nothing
+  def handle_collection(_transaction, []), do: []
 
   def handle_collection(transaction, transfers_list) do
     Enum.map(
@@ -38,11 +46,12 @@ defmodule Explorer.Accounts.Notify.Summary do
       fn transfer ->
         summary = fetch_summary(transaction, transfer)
         log_entry(summary)
+        summary
       end
     )
   end
 
-  def fetch_summary(%Chain.Transaction{block_number: nil}), do: :nothing
+  def fetch_summary(%Chain.Transaction{block_number: nil}), do: nil
 
   def fetch_summary(%Chain.Transaction{} = transaction) do
     %Summary{
@@ -60,7 +69,7 @@ defmodule Explorer.Accounts.Notify.Summary do
 
   def fetch_summary(_), do: :nothing
 
-  def fetch_summary(%Chain.Transaction{block_number: nil}, _), do: :nothing
+  def fetch_summary(%Chain.Transaction{block_number: nil}, _), do: nil
 
   def fetch_summary(
         %Chain.Transaction{} = transaction,
@@ -99,8 +108,29 @@ defmodule Explorer.Accounts.Notify.Summary do
     Wei.to(transaction.value, :ether)
   end
 
-  def amount(%Chain.TokenTransfer{} = transfer) do
-    transfer.amount / transfer.token.decimals
+  def amount(%Chain.TokenTransfer{amount: amount}) when is_nil(amount), do: nil
+
+  def amount(%Chain.TokenTransfer{amount: amount} = transfer) do
+    decimals =
+      Decimal.new(
+        Integer.pow(
+          10,
+          Decimal.to_integer(token_decimals(transfer))
+        )
+      )
+
+    Decimal.div(
+      amount,
+      decimals
+    )
+  end
+
+  # def transfer_amount(%Chain.TokenTransfer{} = transfer) do
+  #   transfer.amount || 0
+  # end
+
+  def token_decimals(%Chain.TokenTransfer{} = transfer) do
+    transfer.token.decimals || Decimal.new(1)
   end
 
   def type(%Chain.Transaction{}), do: :coin
