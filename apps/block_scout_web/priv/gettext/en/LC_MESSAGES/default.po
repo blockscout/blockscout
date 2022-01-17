@@ -398,7 +398,7 @@ msgid "Block number containing the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:258
+#: lib/block_scout_web/templates/address/overview.html.eex:274
 msgid "Block number in which the address was updated."
 msgstr ""
 
@@ -420,7 +420,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:48
-#: lib/block_scout_web/templates/address/overview.html.eex:275 lib/block_scout_web/templates/address_validation/index.html.eex:11
+#: lib/block_scout_web/templates/address/overview.html.eex:291 lib/block_scout_web/templates/address_validation/index.html.eex:11
 #: lib/block_scout_web/views/address_view.ex:356
 msgid "Blocks Validated"
 msgstr ""
@@ -1159,7 +1159,7 @@ msgid "Favorites"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:248
+#: lib/block_scout_web/templates/address/overview.html.eex:264
 msgid "Fetching gas used..."
 msgstr ""
 
@@ -1170,14 +1170,14 @@ msgid "Fetching tokens..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:208
-#: lib/block_scout_web/templates/address/overview.html.eex:212
+#: lib/block_scout_web/templates/address/overview.html.eex:211
+#: lib/block_scout_web/templates/address/overview.html.eex:219
 msgid "Fetching transactions..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:227
-#: lib/block_scout_web/templates/address/overview.html.eex:231
+#: lib/block_scout_web/templates/address/overview.html.eex:238
+#: lib/block_scout_web/templates/address/overview.html.eex:246
 msgid "Fetching transfers..."
 msgstr ""
 
@@ -1216,7 +1216,7 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:241
+#: lib/block_scout_web/templates/address/overview.html.eex:257
 #: lib/block_scout_web/templates/block/_tile.html.eex:73 lib/block_scout_web/templates/block/overview.html.eex:172
 msgid "Gas Used"
 msgstr ""
@@ -1227,8 +1227,8 @@ msgid "Gas Used by Transaction"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:240
-#: lib/block_scout_web/templates/address/overview.html.eex:274
+#: lib/block_scout_web/templates/address/overview.html.eex:256
+#: lib/block_scout_web/templates/address/overview.html.eex:290
 msgid "Gas used by the address."
 msgstr ""
 
@@ -1385,7 +1385,7 @@ msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:259
+#: lib/block_scout_web/templates/address/overview.html.eex:275
 msgid "Last Balance Update"
 msgstr ""
 
@@ -1695,7 +1695,7 @@ msgid "Number of transactions related to this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:221
+#: lib/block_scout_web/templates/address/overview.html.eex:229
 msgid "Number of transfers to/from this address."
 msgstr ""
 
@@ -2736,7 +2736,8 @@ msgstr ""
 
 #, elixir-format, fuzzy
 #: lib/block_scout_web/templates/address/_tabs.html.eex:7
-#: lib/block_scout_web/templates/address/overview.html.eex:203 lib/block_scout_web/templates/address_transaction/index.html.eex:13
+#: lib/block_scout_web/templates/address/overview.html.eex:203 lib/block_scout_web/templates/address/overview.html.eex:209
+#: lib/block_scout_web/templates/address/overview.html.eex:217 lib/block_scout_web/templates/address_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/block/overview.html.eex:74 lib/block_scout_web/templates/block_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:236 lib/block_scout_web/templates/layout/_topnav.html.eex:43
 #: lib/block_scout_web/views/address_view.ex:347
@@ -2754,7 +2755,8 @@ msgid "Transactions sent"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:222
+#: lib/block_scout_web/templates/address/overview.html.eex:230
+#: lib/block_scout_web/templates/address/overview.html.eex:236 lib/block_scout_web/templates/address/overview.html.eex:244
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:50
 msgid "Transfers"
 msgstr ""
