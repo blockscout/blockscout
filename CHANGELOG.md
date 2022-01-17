@@ -1,8 +1,17 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 4.1.1-beta
+
+### Features
 - [#5090](https://github.com/blockscout/blockscout/pull/5090) - Allotted rate limit by IP
-- [#5080](https://github.com/blockscout/blockscout/pull/5080) - Alloted rate limit by a global API key
+- [#5080](https://github.com/blockscout/blockscout/pull/5080) - Allotted rate limit by a global API key
 
 ### Fixes
 - [#5085](https://github.com/blockscout/blockscout/pull/5085) - Fix wallet style
