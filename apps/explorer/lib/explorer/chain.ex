@@ -101,10 +101,11 @@ defmodule Explorer.Chain do
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
-  @limit_showing_transaсtions 100_000
+  @limit_showing_transaсtions 10_000
   @default_page_size 50
   # seconds
   @check_bytecode_interval 86_400
+
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
@@ -4411,6 +4412,14 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
   end
 
+  defp handle_token_transfer_paging_options(query, nil), do: query
+
+  defp handle_token_transfer_paging_options(query, paging_options) do
+    query
+    |> TokenTransfer.page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
   defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
     do: limit(query, ^(@default_page_size + 1))
 
@@ -4451,14 +4460,6 @@ defmodule Explorer.Chain do
     do: page_size <= @limit_showing_transaсtions && @limit_showing_transaсtions - page_number * page_size >= 0
 
   def limit_shownig_transactions, do: @limit_showing_transaсtions
-
-  defp handle_token_transfer_paging_options(query, nil), do: query
-
-  defp handle_token_transfer_paging_options(query, paging_options) do
-    query
-    |> TokenTransfer.page_token_transfer(paging_options)
-    |> limit(^paging_options.page_size)
-  end
 
   defp join_association(query, [{association, nested_preload}], necessity)
        when is_atom(association) and is_atom(nested_preload) do
