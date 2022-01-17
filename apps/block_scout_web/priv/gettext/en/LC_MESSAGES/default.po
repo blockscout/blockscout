@@ -1243,6 +1243,11 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/common_components/_rap_pagination_container.html.eex:8
+msgid "Go to"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:128
 msgid "GraphQL"
 msgstr ""
@@ -1703,6 +1708,11 @@ msgstr ""
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:36
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:76
 msgid "OUT"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_rap_pagination_container.html.eex:13
+msgid "Only the first"
 msgstr ""
 
 #, elixir-format
@@ -3188,6 +3198,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:12
 msgid "custom RPC"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_rap_pagination_container.html.eex:13
+msgid "elements are displayed"
 msgstr ""
 
 #, elixir-format
