@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       full_options = supplement_page_options(options, params)
 
-      %{transactions_count: transactions_count, tranasctions: transactions_plus_one} =
+      %{transactions_count: transactions_count, transactions: transactions_plus_one} =
         Chain.address_to_transactions_rap(address_hash, full_options)
 
       {transactions, next_page} =

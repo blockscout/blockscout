@@ -342,7 +342,7 @@ defmodule Explorer.Chain do
   """
   @spec address_to_transactions_rap(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: %{
           transactions_count: nil | non_neg_integer(),
-          tranasctions: [Transaction.t()]
+          transactions: [Transaction.t()]
         }
   def address_to_transactions_rap(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -352,12 +352,12 @@ defmodule Explorer.Chain do
         do: address_to_available_transactions_count(address_hash, options),
         else: nil
 
-    tranasctions =
+    transactions =
       address_hash
       |> address_to_transactions_query_rap(options)
       |> Repo.all()
 
-    %{transactions_count: transactions_count, tranasctions: tranasctions}
+    %{transactions_count: transactions_count, transactions: transactions}
   end
 
   def address_to_transactions_query_rap(address_hash, options) do
