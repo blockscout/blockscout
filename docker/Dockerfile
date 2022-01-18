@@ -22,6 +22,10 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 EXPOSE 4000
 
 ENV MIX_ENV="prod"
+ENV CHAIN_ID="77"
+ENV JSON_RPC="https://sokol.poa.network"
+ENV SOCKET_ROOT="/poa/sokol"
+ENV NETWORK_PATH="/poa/sokol"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
