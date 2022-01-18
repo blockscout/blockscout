@@ -5,7 +5,15 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain,
+    only: [
+      fetch_page_number: 1,
+      current_filter: 1,
+      paging_options: 1,
+      next_page_params: 4,
+      split_list_by_page: 1,
+      supplement_page_options: 2
+    ]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.{Chain, Market}
@@ -44,48 +52,33 @@ defmodule BlockScoutWeb.AddressTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
-      {results, next_page} = split_list_by_page(results_plus_one)
+      full_options = supplement_page_options(options, params)
 
-      next_page_url =
-        case next_page_params(next_page, results, params) do
-          nil ->
-            nil
+      %{transactions_count: transactions_count, transactions: transactions_plus_one} =
+        Chain.address_to_transactions_rap(address_hash, full_options)
 
-          next_page_params ->
-            address_transaction_path(
-              conn,
-              :index,
-              address,
-              Map.delete(next_page_params, "type")
-            )
+      {transactions, next_page} =
+        if fetch_page_number(params) == 1 do
+          split_list_by_page(transactions_plus_one)
+        else
+          {transactions_plus_one, nil}
         end
 
-      items_json =
-        Enum.map(results, fn result ->
-          case result do
-            {%Chain.Block.Reward{} = emission_reward, %Chain.Block.Reward{} = validator_reward} ->
-              View.render_to_string(
-                TransactionView,
-                "_emission_reward_tile.html",
-                current_address: address,
-                emission_funds: emission_reward,
-                validator: validator_reward
-              )
+      next_page_params = next_page_params(params, transactions_count, next_page, transactions)
 
-            %Chain.Transaction{} = transaction ->
-              View.render_to_string(
-                TransactionView,
-                "_tile.html",
-                conn: conn,
-                current_address: address,
-                transaction: transaction,
-                burn_address_hash: @burn_address_hash
-              )
-          end
+      items_json =
+        Enum.map(transactions, fn transaction ->
+          View.render_to_string(
+            TransactionView,
+            "_tile.html",
+            conn: conn,
+            current_address: address,
+            transaction: transaction,
+            burn_address_hash: @burn_address_hash
+          )
         end)
 
-      json(conn, %{items: items_json, next_page_path: next_page_url})
+      json(conn, %{items: items_json, next_page_params: next_page_params})
     else
       :error ->
         unprocessable_entity(conn)
@@ -96,7 +89,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       {:error, :not_found} ->
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->
-            json(conn, %{items: [], next_page_path: ""})
+            json(conn, %{items: [], next_page_params: nil})
 
           _ ->
             not_found(conn)

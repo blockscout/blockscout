@@ -52,3 +52,15 @@
     margin-bottom: .5rem !important;
   }
 }
+
+.transactions-header {
+  @include media-breakpoint-down(sm) {
+    display: grid !important;
+  } 
+}
+
+.d-tc-sm-sc {
+  @include media-breakpoint-down(sm) {
+    display: grid !important;
+  }
+}

@@ -623,6 +623,23 @@ defmodule Explorer.Chain.Transaction do
     ]
   end
 
+  def matching_address_query(query, :from, address_hash) do
+    where(query, [t], t.from_address_hash == ^address_hash)
+  end
+
+  def matching_address_query(query, :to, address_hash) do
+    where(query, [t], t.to_address_hash == ^address_hash or t.created_contract_address_hash == ^address_hash)
+  end
+
+  def matching_address_query(query, _direction, address_hash) do
+    where(
+      query,
+      [t],
+      t.from_address_hash == ^address_hash or t.to_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
+  end
+
   def not_pending_transactions(query) do
     where(query, [t], not is_nil(t.block_number))
   end

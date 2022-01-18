@@ -31,4 +31,22 @@ $btn-dropdown-line-font: #333;
   &.no-rm {
     margin-right: 0;
   }
+
+  &:hover {
+    background-color: $btn-dropdown-line-color-hover;
+    border-color: $btn-dropdown-line-color;
+    color: $btn-dropdown-line-font;
+  }
+
+  &.addr-txs {
+    height: 24px;
+    font-size: 12px;
+    @include media-breakpoint-down(sm) {
+      margin: 0 0 10px 0 !important;
+    }
+  }
+}
+
+.js-end {
+  justify-self: end;
 }

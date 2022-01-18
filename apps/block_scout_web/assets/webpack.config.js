@@ -82,6 +82,7 @@ const appJs =
       'token-counters': './js/pages/token_counters.js',
       'token-transfers': './js/pages/token/token_transfers.js',
       'admin-tasks': './js/pages/admin/tasks.js',
+      'address-rewards': './js/pages/address/rewards.js',
       'read-token-contract': './js/pages/read_token_contract.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',

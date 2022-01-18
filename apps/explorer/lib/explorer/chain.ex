@@ -102,6 +102,7 @@ defmodule Explorer.Chain do
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
   @limit_showing_transaсtions 10_000
+  @limit_showing_address_transaсtions 10_000
   @default_page_size 50
   # seconds
   @check_bytecode_interval 86_400
@@ -327,19 +328,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Fetches the transactions related to the address with the given hash, including
-  transactions that only have the address in the `token_transfers` related table
-  and rewards for block validation.
-
-  This query is divided into multiple subqueries intentionally in order to
-  improve the listing performance.
-
-  The `token_trasfers` table tends to grow exponentially, and the query results
-  with a `transactions` `join` statement takes too long.
-
-  To solve this the `transaction_hashes` are fetched in a separate query, and
-  paginated through the `block_number` already present in the `token_transfers`
-  table.
+  Fetches the transactions related to the address with the given hash
 
   ## Options
 
@@ -351,82 +340,55 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
-          [
-            Transaction.t()
-          ]
-  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+  @spec address_to_transactions_rap(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: %{
+          transactions_count: nil | non_neg_integer(),
+          transactions: [Transaction.t()]
+        }
+  def address_to_transactions_rap(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
-      cond do
-        Keyword.get(options, :direction) == :from ->
-          address_to_transactions_without_rewards(address_hash, options)
+    transactions_count =
+      if is_nil(paging_options.key) or paging_options.page_number == 1,
+        do: address_to_available_transactions_count(address_hash, options),
+        else: nil
 
-        address_has_rewards?(address_hash) ->
-          %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(address_hash)
+    transactions =
+      address_hash
+      |> address_to_transactions_query_rap(options)
+      |> Repo.all()
 
-          if block_miner_payout_address && address_hash == block_miner_payout_address do
-            transactions_with_rewards_results(address_hash, options, paging_options)
-          else
-            address_to_transactions_without_rewards(address_hash, options)
-          end
-
-        true ->
-          address_to_transactions_without_rewards(address_hash, options)
-      end
-    else
-      address_to_transactions_without_rewards(address_hash, options)
-    end
+    %{transactions_count: transactions_count, transactions: transactions}
   end
 
-  defp transactions_with_rewards_results(address_hash, options, paging_options) do
-    blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+  def address_to_transactions_query_rap(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    rewards_task =
-      Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
-
-    [rewards_task | address_to_transactions_tasks(address_hash, options)]
-    |> wait_for_address_transactions()
-    |> Enum.sort_by(fn item ->
-      case item do
-        {%Reward{} = emission_reward, _} ->
-          {-emission_reward.block_number, 1}
-
-        item ->
-          block_number = if item.block_number, do: -item.block_number, else: 0
-          index = if item.index, do: -item.index, else: 0
-          {block_number, index}
-      end
-    end)
-    |> Enum.dedup_by(fn item ->
-      case item do
-        {%Reward{} = emission_reward, _} ->
-          {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
-
-        transaction ->
-          transaction.hash
-      end
-    end)
-    |> Enum.take(paging_options.page_size)
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_transactions_rap()
+    |> Transaction.not_dropped_or_replaced_transacions()
+    |> join_associations(necessity_by_association)
+    |> Transaction.matching_address_query(direction, address_hash)
   end
+
+  def address_to_available_transactions_count(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+
+    Transaction
+    |> Transaction.not_dropped_or_replaced_transacions()
+    |> Transaction.matching_address_query(direction, address_hash)
+    |> limit(^@limit_showing_address_transaсtions)
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  def limit_showing_address_transaсtions, do: @limit_showing_address_transaсtions
 
   def address_to_transactions_without_rewards(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     address_hash
     |> address_to_transactions_tasks(options)
-    |> wait_for_address_transactions()
-    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
-    |> Enum.dedup_by(& &1.hash)
-    |> Enum.take(paging_options.page_size)
-  end
-
-  def address_to_mined_transactions_without_rewards(address_hash, options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    address_hash
-    |> address_to_mined_transactions_tasks(options)
     |> wait_for_address_transactions()
     |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
     |> Enum.dedup_by(& &1.hash)
@@ -463,18 +425,6 @@ defmodule Explorer.Chain do
     |> address_to_transactions_tasks_query()
     |> Transaction.not_dropped_or_replaced_transacions()
     |> where_block_number_in_period(from_block, to_block)
-    |> join_associations(necessity_by_association)
-    |> Transaction.matching_address_queries_list(direction, address_hash)
-    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
-  end
-
-  defp address_to_mined_transactions_tasks(address_hash, options) do
-    direction = Keyword.get(options, :direction)
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
-    options
-    |> address_to_transactions_tasks_query()
-    |> Transaction.not_pending_transactions()
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
@@ -688,9 +638,8 @@ defmodule Explorer.Chain do
     )
   end
 
-  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
-    base_query
-  end
+  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block),
+    do: base_query
 
   def where_block_number_in_period(base_query, from_block, to_block) do
     from(q in base_query,
@@ -2478,6 +2427,11 @@ defmodule Explorer.Chain do
     Repo.exists?(from(b in Block, where: b.miner_hash == ^address_hash))
   end
 
+  def check_if_rewards_at_address(address_hash) do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] and
+      address_has_rewards?(address_hash)
+  end
+
   def check_if_logs_at_address(address_hash) do
     Repo.exists?(from(l in Log, where: l.address_hash == ^address_hash))
   end
@@ -3308,7 +3262,8 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    total_transactions_count = transactions_available_count()
+    total_transactions_count =
+      if is_nil(paging_options.key) or paging_options.page_number == 1, do: transactions_available_count(), else: nil
 
     fetched_transactions =
       if is_nil(paging_options.key) or paging_options.page_number == 1 do
@@ -4381,6 +4336,17 @@ defmodule Explorer.Chain do
       )
 
     if Repo.one(query), do: true, else: false
+  end
+
+  defp fetch_transactions_rap(paging_options) do
+    Transaction
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index,
+      desc: transaction.inserted_at,
+      desc: transaction.hash
+    )
+    |> handle_random_access_paging_options(paging_options)
   end
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
@@ -7300,5 +7266,31 @@ defmodule Explorer.Chain do
 
     query
     |> Repo.one()
+  end
+
+  def address_to_rewards(address_hash, options \\ []) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    with true <- Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds],
+         true <- address_has_rewards?(address_hash),
+         %{payout_key: block_miner_payout_address} <- Reward.get_validator_payout_key_by_mining(address_hash),
+         true <- block_miner_payout_address && address_hash == block_miner_payout_address do
+      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+
+      address_hash
+      |> Reward.fetch_emission_rewards_tuples(paging_options, blocks_range)
+      |> Enum.sort_by(fn item ->
+        {%Reward{} = emission_reward, _} = item
+        {-emission_reward.block.number, 1}
+      end)
+      |> Enum.dedup_by(fn item ->
+        {%Reward{} = emission_reward, _} = item
+        {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+      end)
+      |> Enum.take(paging_options.page_size)
+    else
+      _ ->
+        []
+    end
   end
 end
