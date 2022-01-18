@@ -18,6 +18,8 @@ defmodule Explorer.Accounts.Notify.Notifier do
   end
 
   defp process(%Transaction{} = transaction) do
+    AccountLogger.debug(transaction)
+
     transaction
     |> Summary.process()
     |> Enum.map(fn summary -> notify_watchlists(summary) end)
@@ -31,6 +33,9 @@ defmodule Explorer.Accounts.Notify.Notifier do
   defp notify_watchlists(%Summary{} = summary) do
     incoming_addresses = find_watchlists_addresses(summary.to_address_hash)
     outgoing_addresses = find_watchlists_addresses(summary.from_address_hash)
+
+    AccountLogger.debug("--- filled summary")
+    AccountLogger.debug(summary)
 
     Enum.each(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
     Enum.each(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)

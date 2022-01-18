@@ -28,6 +28,11 @@ defmodule Explorer.Accounts.Notify.Summary do
 
     transaction_summary = fetch_summary(transaction)
 
+    AccountLogger.debug("--- transaction summary")
+    AccountLogger.debug(transaction_summary)
+    AccountLogger.debug("--- transfer summary")
+    AccountLogger.debug(transfers_summaries)
+
     [transaction_summary | transfers_summaries]
     |> Enum.filter(fn summary ->
       not (is_nil(summary) or
@@ -75,17 +80,46 @@ defmodule Explorer.Accounts.Notify.Summary do
         %Chain.Transaction{} = transaction,
         %Chain.TokenTransfer{} = transfer
       ) do
-    %Summary{
-      transaction_hash: transaction.hash,
-      method: method(transfer),
-      from_address_hash: transfer.from_address_hash,
-      to_address_hash: transfer.to_address_hash,
-      block_number: transfer.block_number,
-      amount: amount(transfer),
-      tx_fee: fee(transaction),
-      name: transfer.token.name,
-      type: transfer.token.type
-    }
+    case transfer.token.type do
+      "ERC-20" ->
+        %Summary{
+          transaction_hash: transaction.hash,
+          method: method(transfer),
+          from_address_hash: transfer.from_address_hash,
+          to_address_hash: transfer.to_address_hash,
+          block_number: transfer.block_number,
+          amount: amount(transfer),
+          tx_fee: fee(transaction),
+          name: transfer.token.name,
+          type: transfer.token.type
+        }
+
+      "ERC-721" ->
+        %Summary{
+          transaction_hash: transaction.hash,
+          method: method(transfer),
+          from_address_hash: transfer.from_address_hash,
+          to_address_hash: transfer.to_address_hash,
+          block_number: transfer.block_number,
+          amount: "Token ID: " <> to_string(transfer.token_id),
+          tx_fee: fee(transaction),
+          name: transfer.token.name,
+          type: transfer.token.type
+        }
+
+      "ERC-1155" ->
+        %Summary{
+          transaction_hash: transaction.hash,
+          method: method(transfer),
+          from_address_hash: transfer.from_address_hash,
+          to_address_hash: transfer.to_address_hash,
+          block_number: transfer.block_number,
+          amount: "Token ID: " <> to_string(transfer.token_id),
+          tx_fee: fee(transaction),
+          name: transfer.token.name,
+          type: transfer.token.type
+        }
+    end
   end
 
   @burn_address "0x0000000000000000000000000000000000000000"
@@ -124,10 +158,6 @@ defmodule Explorer.Accounts.Notify.Summary do
       decimals
     )
   end
-
-  # def transfer_amount(%Chain.TokenTransfer{} = transfer) do
-  #   transfer.amount || 0
-  # end
 
   def token_decimals(%Chain.TokenTransfer{} = transfer) do
     transfer.token.decimals || Decimal.new(1)

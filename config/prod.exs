@@ -14,6 +14,6 @@ config :logger, :error,
   rotate: %{max_bytes: 52_428_800, keep: 3}
 
 config :logger, :account,
-  level: :debug,
+  level: :info,
   path: Path.absname("logs/prod/account.log"),
   metadata_filter: [fetcher: :account]
