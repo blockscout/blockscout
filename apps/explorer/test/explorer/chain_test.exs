@@ -399,10 +399,11 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(from_address: address)
         |> with_block()
-      
-      %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash, direction: :from)
-      
-        assert [transaction] ==
+
+      %{transactions_count: _, tranasctions: tranasctions} =
+        Chain.address_to_transactions_rap(address_hash, direction: :from)
+
+      assert [transaction] ==
                tranasctions
                |> Repo.preload([:block, :to_address, :from_address])
     end
@@ -415,7 +416,8 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash, direction: :to)
+      %{transactions_count: _, tranasctions: tranasctions} =
+        Chain.address_to_transactions_rap(address_hash, direction: :to)
 
       assert [transaction] ==
                tranasctions
@@ -429,8 +431,9 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(from_address: address)
         |> with_block()
-      
-      %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash, direction: :from)
+
+      %{transactions_count: _, tranasctions: tranasctions} =
+        Chain.address_to_transactions_rap(address_hash, direction: :from)
 
       # only contains "from" transaction
       assert [transaction] ==
@@ -445,8 +448,9 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(to_address: address)
         |> with_block()
-      
-      %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash, direction: :to)
+
+      %{transactions_count: _, tranasctions: tranasctions} =
+        Chain.address_to_transactions_rap(address_hash, direction: :to)
 
       assert [transaction] ==
                tranasctions
@@ -468,7 +472,7 @@ defmodule Explorer.ChainTest do
         |> with_block(block)
 
       %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash)
-      
+
       assert [transaction2, transaction1] ==
                tranasctions
                |> Repo.preload([:block, :to_address, :from_address])
@@ -529,7 +533,7 @@ defmodule Explorer.ChainTest do
         |> insert(from_address: address)
         |> with_block()
 
-      %{transactions_count: _, tranasctions: tranasctions} = 
+      %{transactions_count: _, tranasctions: tranasctions} =
         address_hash
         |> Chain.address_to_transactions_rap(
           paging_options: %PagingOptions{
@@ -538,7 +542,7 @@ defmodule Explorer.ChainTest do
             page_number: 2
           }
         )
-        
+
       assert second_page_hashes ==
                tranasctions
                |> Enum.map(& &1.hash)
@@ -582,10 +586,10 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block(b_block)
 
-      %{transactions_count: _, tranasctions: tranasctions} = 
+      %{transactions_count: _, tranasctions: tranasctions} =
         address_hash
         |> Chain.address_to_transactions_rap()
-      
+
       result =
         tranasctions
         |> Enum.map(& &1.hash)

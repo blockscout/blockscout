@@ -35,7 +35,6 @@ defmodule BlockScoutWeb.ViewingChainTest do
     test "search for address", %{session: session} do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
       address = insert(:address)
-      
 
       start_supervised!(AddressesCounter)
       AddressesCounter.consolidate()

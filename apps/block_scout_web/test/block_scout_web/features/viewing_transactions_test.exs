@@ -155,6 +155,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       transaction: transaction
     } do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+
       session
       |> TransactionLogsPage.visit_page(transaction)
       |> TransactionLogsPage.click_address(lincoln)
