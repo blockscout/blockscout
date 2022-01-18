@@ -252,46 +252,61 @@ defmodule Explorer.Etherscan do
   """
   @spec list_token_transfers(map()) :: [map()]
   def list_token_transfers(params) do
-    query =
+    subquery =
       from(
-        b in Block,
-        left_join: t in Transaction,
-        on: t.block_number == b.number,
-        left_join: tt in TokenTransfer,
-        on: tt.transaction_hash == t.hash,
+        tt in TokenTransfer,
+        inner_join: t in Transaction,
+        on: t.hash == tt.transaction_hash,
         left_join: l in Log,
         on: l.transaction_hash == t.hash and l.address_hash == ^params.address_hash and l.index == tt.log_index,
+        left_join: b in Block,
+        on: b.number == t.block_number,
         where:
-          b.number >= ^params.from_block and b.number <= ^params.to_block and
+          tt.block_number >= ^params.from_block and tt.block_number <= ^params.to_block and
             tt.token_contract_address_hash == ^params.address_hash,
-        order_by: [
-          {:asc, tt.block_number},
-          {:asc, t.index}
-        ],
-        select: %{
-          token_contract_address_hash: tt.token_contract_address_hash,
-          transaction_hash: tt.transaction_hash,
-          from_address_hash: tt.from_address_hash,
-          to_address_hash: tt.to_address_hash,
-          amount: tt.amount,
+        order_by: tt.block_number,
+        limit: ^params.limit * 2,
+        select:
+          map(tt, [
+            :token_contract_address_hash,
+            :transaction_hash,
+            :from_address_hash,
+            :to_address_hash,
+            :amount,
+            :block_number
+          ]),
+        select_merge:
+          map(l, [
+            :data,
+            :first_topic,
+            :second_topic,
+            :third_topic,
+            :fourth_topic
+          ]),
+        select_merge: %{
           block_timestamp: b.timestamp,
           transaction_index: t.index,
-          log_index: l.index,
-          data: l.data,
-          first_topic: l.first_topic,
-          second_topic: l.second_topic,
-          third_topic: l.third_topic,
-          fourth_topic: l.fourth_topic
+          log_index: l.index
         },
         select_merge:
           map(t, [
-            :block_number,
             :gas_price,
             :gas_currency_hash,
             :gas_fee_recipient_hash,
             :gas_used,
             :gateway_fee
           ])
+      )
+
+    query =
+      from(
+        s in subquery(subquery),
+        order_by: [
+          {:asc, s.block_number},
+          {:asc, s.transaction_index},
+          {:asc, s.log_index}
+        ],
+        limit: ^params.limit
       )
 
     Repo.all(query)

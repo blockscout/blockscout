@@ -205,6 +205,7 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
         to_address: address,
         token_contract_address: contract_address,
         block: transaction.block,
+        block_number: transaction.block_number,
         token_id: 10
       )
 
@@ -260,17 +261,24 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
 
       expected_result =
         for i <- 0..3, i > 0 do
-          log = insert(:log, address: contract_address, transaction: transaction)
+          log =
+            insert(:log,
+              address: contract_address,
+              transaction: transaction,
+              block: transaction.block
+            )
 
-          insert(:token_transfer,
-            log_index: log.index,
-            transaction: transaction,
-            from_address: contract_address,
-            to_address: address,
-            token_contract_address: contract_address,
-            block: transaction.block,
-            token_id: 10
-          )
+          transfer =
+            insert(:token_transfer,
+              log_index: log.index,
+              transaction: transaction,
+              from_address: contract_address,
+              to_address: address,
+              token_contract_address: contract_address,
+              block: transaction.block,
+              block_number: transaction.block_number,
+              token_id: 10
+            )
 
           %{
             "address" => "#{contract_address.hash}",
@@ -327,6 +335,7 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
         to_address: address,
         token_contract_address: contract_address,
         block: transaction.block,
+        block_number: transaction.block_number,
         token_id: 10
       )
 

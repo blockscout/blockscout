@@ -25,7 +25,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
     with {:required_params, {:ok, fetched_params}} <- fetch_required_params(params),
          {:format, {:ok, validated_params}} <- to_valid_format(fetched_params),
          {:token, {:ok, _}} <- {:token, Chain.token_from_address_hash(validated_params.address_hash)},
-         {:ok, token_transfers} <- list_token_transfers(validated_params) do
+         params = validated_params |> Map.put_new(:limit, 1_000),
+         {:ok, token_transfers} <- list_token_transfers(params) do
       render(conn, :tokentx, %{token_transfers: token_transfers})
     else
       {:required_params, {:error, missing_params}} ->

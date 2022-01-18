@@ -323,6 +323,37 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @token_tokentx_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "address" => "0x0000000000000000000000000000000000000001",
+        "amount" => "1",
+        "blockNumber" => "0",
+        "data" => "0x02",
+        "feeCurrency" => "",
+        "fromAddressHash" => "0x0000000000000000000000000000000000000001",
+        "gasPrice" => "16B969D00",
+        "gasUsed" => "12A71",
+        "gatewayFee" => "",
+        "gatewayFeeRecipient" => "",
+        "logIndex" => "2",
+        "timeStamp" => "61E67BBB",
+        "toAddressHash" => "0x0000000000000000000000000000000000000003",
+        "topics" => [nil, nil, nil, nil],
+        "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "transactionIndex" => "0"
+      }
+    ]
+  }
+
+  @token_tokentx_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid contract address format",
+    "result" => nil
+  }
+
   @stats_tokensupply_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -733,6 +764,18 @@ defmodule BlockScoutWeb.Etherscan do
     example: ~s("No credit of that type")
   }
 
+  @data_type %{
+    type: "data",
+    definition: "Non-indexed log parameters.",
+    example: ~s("0x")
+  }
+
+  @topics_type %{
+    type: "topics",
+    definition: "An array including the topics for the log.",
+    example: ~s(["0xf63780e752c6a54a94fc52715dbc5518a3b4c3c2833d301a204226548a2a8545"])
+  }
+
   @logs_details %{
     name: "Log Detail",
     fields: %{
@@ -742,11 +785,7 @@ defmodule BlockScoutWeb.Etherscan do
         definition: "An array including the topics for the log.",
         example: ~s(["0xf63780e752c6a54a94fc52715dbc5518a3b4c3c2833d301a204226548a2a8545"])
       },
-      data: %{
-        type: "data",
-        definition: "Non-indexed log parameters.",
-        example: ~s("0x")
-      },
+      data: @data_type,
       blockNumber: %{
         type: "block number",
         definition: "A nonnegative number used to identify blocks.",
@@ -818,6 +857,35 @@ defmodule BlockScoutWeb.Etherscan do
       cumulativeGasUsed: @gas_type,
       gasUsed: @gas_type,
       confirmations: @confirmation_type
+    }
+  }
+
+  @token_transfer_tx_model %{
+    name: "Token Transfer Transaction",
+    fields: %{
+      address: @address_hash_type,
+      amount: @wei_type,
+      blockNumber: @block_number_type,
+      data: @data_type,
+      feeCurrency: @address_hash_type,
+      fromAddressHash: @address_hash_type,
+      gasPrice: @wei_type,
+      gasUsed: @gas_type,
+      gatewayFee: @wei_type,
+      gatewayFeeRecipient: @address_hash_type,
+      logIndex: %{
+        type: "hexadecimal",
+        example: ~s("0x")
+      },
+      timeStamp: %{
+        type: "timestamp",
+        definition: "The transaction's block-timestamp.",
+        example: ~s("1439232889")
+      },
+      toAddressHash: @address_hash_type,
+      topics: @topics_type,
+      transactionHash: @transaction_hash_type,
+      transactionIndex: @transaction_index_type
     }
   }
 
@@ -937,16 +1005,8 @@ defmodule BlockScoutWeb.Etherscan do
     name: "Log",
     fields: %{
       address: @address_hash_type,
-      topics: %{
-        type: "topics",
-        definition: "An array including the topics for the log.",
-        example: ~s(["0xf63780e752c6a54a94fc52715dbc5518a3b4c3c2833d301a204226548a2a8545"])
-      },
-      data: %{
-        type: "data",
-        definition: "Non-indexed log parameters.",
-        example: ~s("0x")
-      },
+      topics: @topics_type,
+      data: @data_type,
       blockNumber: %{
         type: "block number",
         definition: "A nonnegative number used to identify blocks.",
@@ -2085,6 +2145,57 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @token_tokentx_action %{
+    name: "tokentx",
+    description: "Get token token transfers for the given contract address.",
+    required_params: [
+      %{
+        key: "contractaddress",
+        placeholder: "contractAddressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      },
+      %{
+        key: "fromBlock",
+        placeholder: "blockNumber",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the starting block number. The use of 'latest' is also supported."
+      },
+      %{
+        key: "toBlock",
+        placeholder: "blockNumber",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the ending block number. The use of 'latest' is also supported."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@token_tokentx_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @token_transfer_tx_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@token_tokentx_example_value_error)
+      }
+    ]
+  }
+
   @stats_tokensupply_action %{
     name: "tokensupply",
     description:
@@ -2991,7 +3102,8 @@ defmodule BlockScoutWeb.Etherscan do
     name: "token",
     actions: [
       @token_gettoken_action,
-      @token_gettokenholders_action
+      @token_gettokenholders_action,
+      @token_tokentx_action
     ]
   }
 
