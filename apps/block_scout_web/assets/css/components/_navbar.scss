@@ -10,7 +10,7 @@ $header-textfield-text-color: $header-links-color !default;
 $header-textfield-background-color: #f5f6fa !default;
 $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
-$navbar-logo-height: 28px !default;
+$navbar-logo-height:  48px !default;
 $navbar-logo-width: auto !default;
 
 .navbar.navbar-primary {
@@ -29,7 +29,7 @@ $navbar-logo-width: auto !default;
       align-items: center;
       color: $header-links-color;
       display: flex;
-      font-size: 14px;
+      font-size: 18px;
       position: relative;
       transition: $transition-cont;
 

@@ -3,4 +3,8 @@ $btn-line-color: $secondary !default;
 
 .btn-line {
   @include btn-line($btn-line-bg, $btn-line-color);
+  font-size: 15px;
+  font-weight: bold;
+  border-color: #000;
+  border-radius: 8px;
 }

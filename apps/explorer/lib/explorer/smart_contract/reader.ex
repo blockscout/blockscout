@@ -295,16 +295,17 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp get_abi_with_method_id(abi) do
+  def get_abi_with_method_id(abi) do
     abi
     |> Enum.map(fn method ->
-      parsed_method = [method] |> ABI.parse_specification() |> Enum.at(0)
-
-      if is_map(parsed_method) do
-        method_id = Map.get(parsed_method, :method_id)
+      with parsed_method <- [method] |> ABI.parse_specification() |> Enum.at(0),
+           true <- is_map(parsed_method),
+           method_id <- Map.get(parsed_method, :method_id),
+           true <- !is_nil(method_id) do
         Map.put(method, "method_id", Base.encode16(method_id, case: :lower))
       else
-        method
+        _ ->
+          method
       end
     end)
   end

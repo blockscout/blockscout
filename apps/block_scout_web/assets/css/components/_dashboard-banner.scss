@@ -3,7 +3,7 @@ $dashboard-banner-gradient-end: lighten(
   $dashboard-banner-gradient-start,
   5%
 ) !default;
-$dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%) !default;
+$dashboard-banner-network-plain-container-background-color: $primary !default;
 $dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-line-color-transactions: $warning !default;
@@ -196,7 +196,6 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     max-width: 100%;
     padding: 20px 0 20px 20px;
     width: 250px;
-    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
   }
 
   @include media-breakpoint-down(sm) {
@@ -213,7 +212,6 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     position: absolute;
     width: 9999px;
     z-index: -1;
-    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
     border-top-left-radius: 10px;
 
     @include media-breakpoint-down(md) {
@@ -245,6 +243,9 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
 
   .dashboard-banner-network-stats-item {
+    padding: 40px 40px 16px 24px;
+    background-color: rgba($secondary, .1);
+    border-radius: 8px;
     @media (max-width: 374px) {
       padding-left: calc(0.6rem + 4px);
       padding-right: 0.5rem;
@@ -252,6 +253,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   }
 
   .dashboard-banner-network-stats-value {
+    font-size: 1.2rem;
     @media (max-width: 374px) {
       font-size: 0.9rem;
     }

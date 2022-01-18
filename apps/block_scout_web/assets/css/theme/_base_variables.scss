@@ -17,7 +17,7 @@ $gray-500: #828ba0 !default;
 $gray-600: #cdcdcc !default;
 $gray-700: #495057 !default;
 $gray-800: #343a40 !default;
-$gray-900: #212529 !default;
+$gray-900: #28293D !default;
 $black: #000 !default;
 
 $grays: () !default;
@@ -169,7 +169,7 @@ $sizes: map-merge(
 // Settings for the `<body>` element.
 
 $body-bg: $white !default;
-$body-color: $gray-900 !default;
+$body-color: #28293D !default;
 
 // Links
 //
@@ -261,8 +261,7 @@ $transition-cont: all 0.4s ease-in-out !default;
 // Font, line-height, and color for body text, headings, and more.
 
 // stylelint-disable value-keyword-case
-$font-family: Nunito, "Helvetica Neue", Arial, sans-serif,
-  "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+$font-family: Inter;
 $font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas,
   "Liberation Mono", "Courier New", monospace !default;
 $font-family-base: $font-family !default;

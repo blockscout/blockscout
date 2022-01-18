@@ -21,7 +21,7 @@ $dark-primary-alternate: $dark-primary;
 		background-color: $dark-light-bg !important;
 	}
 	.navbar-brand .navbar-logo {
-		filter: brightness(0) invert(1);
+		filter: brightness(1) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
 		color: $labels-dark;
@@ -95,7 +95,7 @@ $dark-primary-alternate: $dark-primary;
 		background-color: $dark-primary;
 	}
 	.dashboard-banner-network-stats-item::before {
-		background-color: $dark-secondary;
+		background-color: $transition-fade;
 	}
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(2)::before {
 		background-color: $dark-secondary;

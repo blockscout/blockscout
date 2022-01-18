@@ -15,11 +15,6 @@
 
 @mixin gradient-container() {
   background-color: $primary;
-  background-image: linear-gradient(
-    to right,
-    $dashboard-banner-gradient-start,
-    $dashboard-banner-gradient-end
-  );
   box-shadow: 0 5px 40px -5px rgba(#000, 0.25);
   margin-top: -3rem;
 }
@@ -33,16 +28,6 @@
     padding-right: 1rem;
     position: relative;
 
-    &::before {
-      background-color: $border-color;
-      border-radius: 2px;
-      content: "";
-      height: 100%;
-      left: 0;
-      position: absolute;
-      top: 0;
-      width: 4px;
-    }
   }
 
   &-label {
@@ -81,7 +66,7 @@
   color: $text-color;
   cursor: pointer;
   display: flex;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
   height: 36px;
   justify-content: center;
