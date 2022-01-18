@@ -432,7 +432,7 @@ defmodule Explorer.ChainTest do
         |> insert(from_address: address)
         |> with_block()
 
-      %{transactions_count: _, transactions: transctions} =
+      %{transactions_count: _, transactions: transactions} =
         Chain.address_to_transactions_rap(address_hash, direction: :from)
 
       # only contains "from" transaction
