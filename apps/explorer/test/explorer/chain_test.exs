@@ -389,7 +389,7 @@ defmodule Explorer.ChainTest do
 
       assert Repo.aggregate(Transaction, :count, :hash) == 0
 
-      assert [] == Chain.address_to_transactions_rap(address_hash)
+      assert %{transactions_count: 0, tranasctions: []} == Chain.address_to_transactions_rap(address_hash)
     end
 
     test "with from transactions" do
@@ -399,9 +399,11 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(from_address: address)
         |> with_block()
-
-      assert [transaction] ==
-               Chain.address_to_transactions_rap(address_hash, direction: :from)
+      
+      %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash, direction: :from)
+      
+        assert [transaction] ==
+               tranasctions
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -413,8 +415,10 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
+      %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash, direction: :to)
+
       assert [transaction] ==
-               Chain.address_to_transactions_rap(address_hash, direction: :to)
+               tranasctions
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -425,10 +429,12 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(from_address: address)
         |> with_block()
+      
+      %{transactions_count: _, tranasctions: tranasctions} = Chain.address_to_transactions_rap(address_hash, direction: :from)
 
       # only contains "from" transaction
       assert [transaction] ==
-               Chain.address_to_transactions_rap(address_hash, direction: :from)
+               transactions
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -528,7 +534,8 @@ defmodule Explorer.ChainTest do
         |> Chain.address_to_transactions_rap(
           paging_options: %PagingOptions{
             key: {block_number, index},
-            page_size: 2
+            page_size: 2,
+            page_number: 2
           }
         )
         
@@ -695,7 +702,7 @@ defmodule Explorer.ChainTest do
         end
       )
 
-      assert [_, {_, _}] = Chain.address_to_rewards(block.miner.hash, direction: :to)
+      assert [{_, _}] = Chain.address_to_rewards(block.miner.hash, direction: :to)
 
       on_exit(fn ->
         Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)

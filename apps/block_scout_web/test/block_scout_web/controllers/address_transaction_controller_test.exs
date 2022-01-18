@@ -93,7 +93,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
           "block_number" => Integer.to_string(block_number),
           "index" => Integer.to_string(index),
-          "type" => "JSON"
+          "type" => "JSON",
+          "page_number" => "2"
         })
 
       transaction_tiles = json_response(conn, 200)["items"]
