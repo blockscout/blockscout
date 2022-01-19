@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
   alias Explorer.Chain.Cache.{AddressSum, AddressSumMinusBurnt}
   alias Explorer.Chain.Wei
 
+  @wpoa_address "0xD2CFBCDbDF02c42951ad269dcfFa27c02151Cebd"
+
   def tokensupply(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
@@ -51,12 +53,26 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
         Chain.get_last_fetched_counter("sum_coin_total_supply_minus_burnt")
       end
 
-    cached_coin_total_supply =
-      %Wei{value: Decimal.new(coin_total_supply_wei)}
-      |> Wei.to(:ether)
-      |> Decimal.to_string(:normal)
+    coin_total_supply_wei_decimal = Decimal.new(coin_total_supply_wei)
 
-    render(conn, "coinsupply.json", total_supply: cached_coin_total_supply)
+    with {:ok, address_hash} <- Chain.string_to_address_hash(@wpoa_address),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      circulating_supply =
+        if Decimal.cmp(coin_total_supply_wei_decimal, address.token.total_supply) == :gt do
+          Decimal.sub(coin_total_supply_wei_decimal, address.token.total_supply)
+        else
+          Decimal.new(0)
+        end
+
+      cached_coin_total_supply =
+        %Wei{value: circulating_supply}
+        |> Wei.to(:ether)
+        |> Decimal.to_string(:normal)
+
+      render(conn, "coinsupply.json", total_supply: cached_coin_total_supply)
+    else
+      _ -> render(conn, "coinsupply.json", total_supply: "0")
+    end
   end
 
   def coinprice(conn, _params) do
