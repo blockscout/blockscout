@@ -42,7 +42,7 @@ import '../app'
  *
  */
 
-var enableFirstLoading = true
+let enableFirstLoading = true
 
 export const asyncInitialState = {
   /* it will consider any query param in the current URI as paging */
@@ -234,7 +234,7 @@ export const elements = {
       $el.show()
       $el.attr('disabled', false)
 
-      var url
+      let url
       if (blockParam !== null) {
         url = firstPageHref + '?block_type=' + blockParam
       } else {

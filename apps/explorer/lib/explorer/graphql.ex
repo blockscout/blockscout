@@ -40,7 +40,7 @@ defmodule Explorer.GraphQL do
   """
   @spec get_internal_transaction(map()) :: {:ok, InternalTransaction.t()} | {:error, String.t()}
   def get_internal_transaction(%{transaction_hash: _, index: _} = clauses) do
-    if internal_transaction = Repo.get_by(InternalTransaction.where_nonpending_block(), clauses) do
+    if internal_transaction = Repo.replica().get_by(InternalTransaction.where_nonpending_block(), clauses) do
       {:ok, internal_transaction}
     else
       {:error, "Internal transaction not found."}
@@ -75,7 +75,7 @@ defmodule Explorer.GraphQL do
   """
   @spec get_token_transfer(map()) :: {:ok, TokenTransfer.t()} | {:error, String.t()}
   def get_token_transfer(%{transaction_hash: _, log_index: _} = clauses) do
-    if token_transfer = Repo.get_by(TokenTransfer, clauses) do
+    if token_transfer = Repo.replica().get_by(TokenTransfer, clauses) do
       {:ok, token_transfer}
     else
       {:error, "Token transfer not found."}

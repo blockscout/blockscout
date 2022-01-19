@@ -167,8 +167,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:token_transfer, transaction: transaction, from_address: address)
-      insert(:token_transfer, transaction: transaction, to_address: address)
+      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
+      insert(:token_transfer, transaction: transaction, to_address: address, block_number: transaction.block_number)
 
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)

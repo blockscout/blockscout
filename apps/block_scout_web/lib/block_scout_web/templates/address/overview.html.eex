@@ -205,11 +205,19 @@
             <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_transaction_count">
               <%= if @conn.request_path |> String.contains?("/transactions") do %>
                 <a href="#txs" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transaction-count">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transactions...") %>
+                  <%= if @address.transactions_count do %>
+                    <%= Number.Delimit.number_to_delimited(@address.transactions_count, precision: 0) %> <%= gettext("Transactions") %>
+                  <% else %>
+                    <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transactions...") %>
+                  <% end %>
                 </a>
               <% else %>
                 <a href="<%= AccessHelpers.get_path(@conn, :address_transaction_path, :index, @address.hash)%>#txs" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transaction-count">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transactions...") %>
+                  <%= if @address.token_transfers_count do %>
+                    <%= Number.Delimit.number_to_delimited(@address.transactions_count, precision: 0) %> <%= gettext("Transactions") %>
+                  <% else %>
+                    <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transactions...") %>
+                  <% end %>
                 </a>
               <% end %>
             </dd>
@@ -224,11 +232,19 @@
             <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_transfer_count">
               <%= if @conn.request_path |> String.contains?("/token-transfers") do %>
                 <a href="#transfers" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transfer-count">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %>
+                  <%= if @address.token_transfers_count do %>
+                    <%= Number.Delimit.number_to_delimited(@address.token_transfers_count, precision: 0) %> <%= gettext("Transfers") %>
+                  <% else %>
+                    <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %>
+                  <% end %>
                 </a>
               <% else %>
                 <a href="<%= AccessHelpers.get_path(@conn, :address_token_transfers_path, :index, @address.hash)%>#transfers" class="page-link bs-label large btn-no-border-link-to-tems" data-selector="transfer-count">
-                  <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %>
+                  <%= if @address.token_transfers_count do %>
+                    <%= Number.Delimit.number_to_delimited(@address.token_transfers_count, precision: 0) %> <%= gettext("Transfers") %>
+                  <% else %>
+                    <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %>
+                  <% end %>
                 </a>
               <% end %>
             </dd>
@@ -242,7 +258,11 @@
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_gas_used">
               <span data-selector="gas-usage-count">
-                <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching gas used...") %>
+                <%= if @address.gas_used do %>
+                  <%= Number.Delimit.number_to_delimited(@address.gas_used, precision: 0) %>
+                <% else %>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching gas used...") %>
+                <% end %>
               </span>
             </dd>
           </dl>
