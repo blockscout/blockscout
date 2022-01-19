@@ -642,6 +642,10 @@ defmodule Explorer.Chain.Transaction do
     where(query, [t], not is_nil(t.block_number))
   end
 
+  def pending_transactions(query) do
+    where(query, [t], is_nil(t.block_number))
+  end
+
   def not_dropped_or_replaced_transacions(query) do
     where(query, [t], is_nil(t.error) or t.error != "dropped/replaced")
   end
