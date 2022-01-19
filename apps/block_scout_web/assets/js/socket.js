@@ -1,7 +1,7 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
 
-const socket = new Socket('/xdai/aox/socket', { params: { locale: locale } })
+const socket = new Socket(`${process.env.NETWORK_PATH}/socket`, { params: { locale: locale } })
 socket.connect()
 
 export default socket

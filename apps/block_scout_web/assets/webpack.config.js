@@ -175,6 +175,7 @@ const appJs =
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
+        'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH),
         'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
         'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC)
       }),

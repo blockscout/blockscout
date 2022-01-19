@@ -33,6 +33,9 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 EXPOSE 4000
 
 ENV MIX_ENV="prod"
+ENV SOCKET_ROOT="/xdai/aox"
+ENV NETWORK_PATH="/xdai/aox"
+ENV CHAIN_ID="200"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
