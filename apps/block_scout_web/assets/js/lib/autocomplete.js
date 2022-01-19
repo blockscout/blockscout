@@ -16,7 +16,7 @@ const dataSrc = async (query, id) => {
 
     // Fetch External Data Source
     const source = await fetch(
-      `/poa/core/token-autocomplete?q=${query}`
+      `${process.env.NETWORK_PATH}/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
@@ -138,7 +138,7 @@ const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-m
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
-  const commonPath = '/poa/core'
+  const commonPath = process.env.NETWORK_PATH
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
     window.location = `${commonPath}/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {

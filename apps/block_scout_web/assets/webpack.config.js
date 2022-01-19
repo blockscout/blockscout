@@ -181,7 +181,8 @@ const appJs =
         'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN),
         'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL),
         'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
-        'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC)
+        'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC),
+        'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

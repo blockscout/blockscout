@@ -4425,8 +4425,6 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
   end
 
-<<<<<<< HEAD
-=======
   defp handle_token_transfer_paging_options(query, nil), do: query
 
   defp handle_token_transfer_paging_options(query, paging_options) do
@@ -4435,7 +4433,6 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
   end
 
->>>>>>> origin/master
   defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
     do: limit(query, ^(@default_page_size + 1))
 
