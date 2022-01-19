@@ -22,6 +22,8 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 EXPOSE 4000
 
 ENV MIX_ENV="prod"
+ENV SOCKET_ROOT="/rsk/mainnet"
+ENV CHAIN_ID="30"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
