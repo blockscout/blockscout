@@ -23,6 +23,9 @@ EXPOSE 4000
 
 ENV PORT=4000 \
     MIX_ENV="prod" \
+    SOCKET_ROOT="/lukso/l14" \
+    JSON_RPC="https://rpc.l14.lukso.network/" \
+    CHAIN_ID="22" \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 # Cache elixir deps
