@@ -1,6 +1,7 @@
 <% minimal_proxy_template = Chain.get_minimal_proxy_template(@address.hash) %>
 <% metadata_for_verification = minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
-<%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+<% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
+<%= unless smart_contract_verified do %>
   <%= if metadata_for_verification do %>
     <%= if minimal_proxy_template do %>
       <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: metadata_for_verification.address_hash, conn: @conn %>
@@ -16,6 +17,9 @@
       </div>
     <% end %>
   <% end %>
+<% end %>
+<%= if smart_contract_verified && @address.smart_contract.is_changed_bytecode do %>
+  <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
 <% end %>
 <%= if @action == "write" or (@read_functions_required_wallet && @read_functions_required_wallet != []) do %>
   <%= render BlockScoutWeb.SmartContractView, "_connect_container.html" %>
@@ -95,6 +99,7 @@
           </div>
         </form>
 
+        <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0; display: none;" input-parse-error-container></div>
         <%= if outputs?(function["outputs"]) do %>
           <div class='p-2 text-muted <%= if (queryable?(function["inputs"]) == true), do: "w-100" %>'>
             <%= if (queryable?(function["inputs"])), do: raw "&#8627;" %>

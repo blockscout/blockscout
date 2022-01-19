@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
-    alias BlockScoutWeb.API.{RPC, V1}
+    alias BlockScoutWeb.API.{EthRPC, RPC, V1}
     alias BlockScoutWeb.API.V1.{GasPriceOracleController, HealthController}
 
     get("/health", HealthController, :health)
@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     if Application.get_env(:block_scout_web, __MODULE__)[:reading_enabled] do
       get("/supply", V1.SupplyController, :supply)
-      post("/eth-rpc", RPC.EthController, :eth_request)
+      post("/eth-rpc", EthRPC.EthController, :eth_request)
     end
 
     if Application.get_env(:block_scout_web, __MODULE__)[:writing_enabled] do
@@ -52,10 +52,10 @@ defmodule BlockScoutWeb.ApiRouter do
   # For backward compatibility. Should be removed
   scope "/" do
     pipe_through(:api)
-    alias BlockScoutWeb.API.RPC
+    alias BlockScoutWeb.API.{EthRPC, RPC}
 
     if Application.get_env(:block_scout_web, __MODULE__)[:reading_enabled] do
-      post("/eth-rpc", RPC.EthController, :eth_request)
+      post("/eth-rpc", EthRPC.EthController, :eth_request)
 
       forward("/", RPCTranslatorForwarder, %{
         "block" => {RPC.BlockController, []},

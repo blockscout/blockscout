@@ -17,7 +17,7 @@ const groupedPagesNumber = 3
  *
  */
 
-var enableFirstLoading = true
+let enableFirstLoading = true
 
 export const asyncInitialState = {
   /* it will consider any query param in the current URI as paging */
@@ -50,15 +50,15 @@ export function asyncReducer (state = asyncInitialState, action) {
       return Object.assign({}, state, { itemKey: action.itemKey })
     }
     case 'START_REQUEST': {
-      var pageNumber = state.currentPageNumber
-      if (action.pageNumber) 
-        pageNumber = parseInt(action.pageNumber)
+      let pageNumber = state.currentPageNumber
+      if (action.pageNumber) { pageNumber = parseInt(action.pageNumber) }
 
       return Object.assign({}, state, {
         loading: true,
         requestError: false,
         currentPagePath: action.path,
-        currentPageNumber: pageNumber
+        currentPageNumber: pageNumber,
+        items: generateStub(state.items.length)
       })
     }
     case 'REQUEST_ERROR': {
@@ -71,7 +71,7 @@ export function asyncReducer (state = asyncInitialState, action) {
     }
     case 'ITEMS_FETCHED': {
       if (action.nextPageParams !== null) {
-        var pageNumber = parseInt(action.nextPageParams.pageNumber)
+        const pageNumber = parseInt(action.nextPageParams.pageNumber)
         if (typeof action.path !== 'undefined') {
           history.replaceState({}, null, URI(action.path).query(humps.decamelizeKeys(action.nextPageParams)))
         }
@@ -175,7 +175,7 @@ export const elements = {
       $el.show()
       if (state.requestError || state.currentPageNumber <= 1 || state.loading) {
         return $el.attr('disabled', 'disabled')
-      } 
+      }
 
       $el.attr('disabled', false)
       $el.attr('href', state.prevPagePath)
@@ -183,7 +183,7 @@ export const elements = {
   },
   '[data-async-listing] [pages-numbers-container]': {
     render ($el, state) {
-      if (typeof state.pagesLimit !== 'undefined') { pagesNumbersGenerate(state.pagesLimit, $el, state.currentPageNumber) }
+      if (typeof state.pagesLimit !== 'undefined') { pagesNumbersGenerate(state.pagesLimit, $el, state.currentPageNumber, state.loading) }
     }
   },
   '[data-async-listing] [data-loading-button]': {
@@ -246,7 +246,7 @@ export function refreshPage (store) {
 }
 
 export function loadPageByNumber (store, pageNumber) {
-  var path = $('[data-async-listing]').data('async-listing')
+  const path = $('[data-async-listing]').data('async-listing')
   store.dispatch({ type: 'START_REQUEST', path, pageNumber })
   if (URI(path).query() !== '' && typeof store.getState().nextPageParams === 'undefined') {
     $.getJSON(path, { type: 'JSON' })
@@ -297,10 +297,12 @@ function firstPageLoad (store) {
 
   $element.on('submit', '[input-page-number-form]', (event) => {
     event.preventDefault()
-    var $input = event.target.querySelector('#page-number')
-    var input = parseInt($input.value)
-    if (!isNaN(input) && input <= store.getState().pagesLimit) { loadPageByNumber(store, input) }
-    $input.value = ''
+    const $input = event.target.querySelector('#page-number')
+    const input = parseInt($input.value)
+    const loading = store.getState().loading
+    const pagesLimit = store.getState().pagesLimit
+    if (!isNaN(input) && input <= pagesLimit && !loading) { loadPageByNumber(store, input) }
+    if (!loading || isNaN(input) || input > pagesLimit) { $input.value = '' }
     return false
   })
 }
@@ -317,46 +319,51 @@ if ($element.length) {
   }
 }
 
-function pagesNumbersGenerate (pagesLimit, $container, currentPageNumber) {
-  var resultHTML = ''
+function pagesNumbersGenerate (pagesLimit, $container, currentPageNumber, loading) {
+  let resultHTML = ''
   if (pagesLimit < 1) { return }
   if (pagesLimit <= maxPageNumberInOneLine) {
-    resultHTML = renderPaginationElements(1, pagesLimit, currentPageNumber)
+    resultHTML = renderPaginationElements(1, pagesLimit, currentPageNumber, loading)
   } else if (currentPageNumber < groupedPagesNumber) {
-    resultHTML += renderPaginationElements(1, groupedPagesNumber, currentPageNumber)
-    resultHTML += renderPaginationElement('...', false)
-    resultHTML += renderPaginationElement(pagesLimit, currentPageNumber === pagesLimit)
+    resultHTML += renderPaginationElements(1, groupedPagesNumber, currentPageNumber, loading)
+    resultHTML += renderPaginationElement('...', false, loading)
+    resultHTML += renderPaginationElement(pagesLimit, currentPageNumber === pagesLimit, loading)
   } else if (currentPageNumber > pagesLimit - groupedPagesNumber) {
-    resultHTML += renderPaginationElement(1, currentPageNumber === 1)
-    resultHTML += renderPaginationElement('...', false)
-    resultHTML += renderPaginationElements(pagesLimit - groupedPagesNumber, pagesLimit, currentPageNumber)
+    resultHTML += renderPaginationElement(1, currentPageNumber === 1, loading)
+    resultHTML += renderPaginationElement('...', false, loading)
+    resultHTML += renderPaginationElements(pagesLimit - groupedPagesNumber, pagesLimit, currentPageNumber, loading)
   } else {
-    resultHTML += renderPaginationElement(1, currentPageNumber === 1)
-    var step = parseInt(groupedPagesNumber / 2)
+    resultHTML += renderPaginationElement(1, currentPageNumber === 1, loading)
+    const step = parseInt(groupedPagesNumber / 2)
     if (currentPageNumber - step - 1 === 2) {
-      resultHTML += renderPaginationElement(2, currentPageNumber === 2)
+      resultHTML += renderPaginationElement(2, currentPageNumber === 2, loading)
     } else if (currentPageNumber - step > 2) {
-      resultHTML += renderPaginationElement('...', false)
+      resultHTML += renderPaginationElement('...', false, loading)
     }
-    resultHTML += renderPaginationElements(currentPageNumber - step, currentPageNumber + step, currentPageNumber)
+    resultHTML += renderPaginationElements(currentPageNumber - step, currentPageNumber + step, currentPageNumber, loading)
     if (currentPageNumber + step + 1 === pagesLimit - 1) {
-      resultHTML += renderPaginationElement(pagesLimit - 1, pagesLimit - 1 === currentPageNumber)
+      resultHTML += renderPaginationElement(pagesLimit - 1, pagesLimit - 1 === currentPageNumber, loading)
     } else if (currentPageNumber + step < pagesLimit - 1) {
-      resultHTML += renderPaginationElement('...', false)
+      resultHTML += renderPaginationElement('...', false, loading)
     }
-    resultHTML += renderPaginationElement(pagesLimit, currentPageNumber === pagesLimit)
+    resultHTML += renderPaginationElement(pagesLimit, currentPageNumber === pagesLimit, loading)
   }
   $container.html(resultHTML)
 }
 
-function renderPaginationElements (start, end, currentPageNumber) {
-  var resultHTML = ''
-  for (var i = start; i <= end; i++) {
-    resultHTML += renderPaginationElement(i, i === currentPageNumber)
+function renderPaginationElements (start, end, currentPageNumber, loading) {
+  let resultHTML = ''
+  for (let i = start; i <= end; i++) {
+    resultHTML += renderPaginationElement(i, i === currentPageNumber, loading)
   }
   return resultHTML
 }
 
-function renderPaginationElement (text, active) {
-  return '<li class="page-item' + (active ? ' active' : '') + (text === '...' ? ' disabled' : '') + '"><a class="page-link" data-page-number=' + text + '>' + text + '</a></li>'
+function renderPaginationElement (text, active, loading) {
+  return '<li class="page-item' + (active ? ' active' : '') + (text === '...' || loading ? ' disabled' : '') + '"><a class="page-link page-link-light-hover" data-page-number=' + text + '>' + text + '</a></li>'
+}
+
+function generateStub (size) {
+  const stub = '<div data-loading-message data-selector="loading-message" class="tile tile-type-loading"> <div class="row tile-body"> <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column"> <span class="tile-label"> <span class="tile-loader tile-label-loader"></span> </span> <span class="tile-status-label ml-2 ml-md-0"> <span class="tile-loader tile-label-loader"></span> </span> </div> <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0"> <span class="tile-loader tile-address-loader"></span> <span class="tile-loader tile-address-loader"></span> </div> <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0 tile-bottom"> <span class="mr-2 mr-md-0 order-1"> <span class="tile-loader tile-label-loader"></span> </span> <span class="mr-2 mr-md-0 order-2"> <span class="tile-loader tile-label-loader"></span> </span> </div> </div> </div>'
+  return Array.from(Array(size > 10 ? 10 : 10), () => stub) // I decided to always put 10 lines in order to make page lighter
 }

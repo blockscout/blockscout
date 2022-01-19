@@ -101,7 +101,10 @@ defmodule Explorer.Chain do
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
-  @limit_showing_transaсtions 100_000
+  # seconds
+  @check_bytecode_interval 86_400
+
+  @limit_showing_transaсtions 10_000
   @default_page_size 50
 
   @typedoc """
@@ -559,20 +562,65 @@ defmodule Explorer.Chain do
   @spec address_hash_to_token_transfers_including_contract(Hash.Address.t(), Keyword.t()) :: [TokenTransfer.t()]
   def address_hash_to_token_transfers_including_contract(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    from_block = Keyword.get(options, :from_block)
+    to_block = Keyword.get(options, :to_block)
 
     query =
-      from(
-        token_transfer in TokenTransfer,
-        where: token_transfer.to_address_hash == ^address_hash,
-        or_where: token_transfer.from_address_hash == ^address_hash,
-        or_where: token_transfer.token_contract_address_hash == ^address_hash
-      )
+      from_block
+      |> query_address_hash_to_token_transfers_including_contract(to_block, address_hash)
+      |> order_by([token_transfer], asc: token_transfer.block_number, asc: token_transfer.log_index)
 
     query
-    |> handle_paging_options(paging_options)
+    |> handle_token_transfer_paging_options(paging_options)
     |> preload(transaction: :block)
     |> preload(:token)
     |> Repo.all()
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(nil, to_block, address_hash)
+       when not is_nil(to_block) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        (token_transfer.to_address_hash == ^address_hash or
+           token_transfer.from_address_hash == ^address_hash or
+           token_transfer.token_contract_address_hash == ^address_hash) and
+          token_transfer.block_number <= ^to_block
+    )
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(from_block, nil, address_hash)
+       when not is_nil(from_block) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        (token_transfer.to_address_hash == ^address_hash or
+           token_transfer.from_address_hash == ^address_hash or
+           token_transfer.token_contract_address_hash == ^address_hash) and
+          token_transfer.block_number >= ^from_block
+    )
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(from_block, to_block, address_hash)
+       when not is_nil(from_block) and not is_nil(to_block) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        (token_transfer.to_address_hash == ^address_hash or
+           token_transfer.from_address_hash == ^address_hash or
+           token_transfer.token_contract_address_hash == ^address_hash) and
+          (token_transfer.block_number >= ^from_block and token_transfer.block_number <= ^to_block)
+    )
+  end
+
+  defp query_address_hash_to_token_transfers_including_contract(_, _, address_hash) do
+    from(
+      token_transfer in TokenTransfer,
+      where:
+        token_transfer.to_address_hash == ^address_hash or
+          token_transfer.from_address_hash == ^address_hash or
+          token_transfer.token_contract_address_hash == ^address_hash
+    )
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
@@ -1703,7 +1751,7 @@ defmodule Explorer.Chain do
       case address_result do
         %{smart_contract: smart_contract} ->
           if smart_contract do
-            address_result
+            check_bytecode_matching(address_result)
           else
             address_verified_twin_contract =
               Chain.get_minimal_proxy_template(hash) ||
@@ -1730,6 +1778,46 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  defp check_bytecode_matching(address) do
+    now = DateTime.utc_now()
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    if !address.smart_contract.is_changed_bytecode and
+         address.smart_contract.bytecode_checked_at
+         |> DateTime.add(@check_bytecode_interval, :second)
+         |> DateTime.compare(now) != :gt do
+      case EthereumJSONRPC.fetch_codes(
+             [%{block_quantity: "latest", address: address.smart_contract.address_hash}],
+             json_rpc_named_arguments
+           ) do
+        {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
+          bytecode_from_node = fetched_codes |> List.first() |> Map.get(:code)
+          bytecode_from_db = "0x" <> (address.contract_code.bytes |> Base.encode16(case: :lower))
+
+          if bytecode_from_node == bytecode_from_db do
+            {:ok, smart_contract} =
+              address.smart_contract
+              |> Changeset.change(%{bytecode_checked_at: now})
+              |> Repo.update()
+
+            %{address | smart_contract: smart_contract}
+          else
+            {:ok, smart_contract} =
+              address.smart_contract
+              |> Changeset.change(%{bytecode_checked_at: now, is_changed_bytecode: true})
+              |> Repo.update()
+
+            %{address | smart_contract: smart_contract}
+          end
+
+        _ ->
+          address
+      end
+    else
+      address
     end
   end
 
@@ -4337,6 +4425,17 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
   end
 
+<<<<<<< HEAD
+=======
+  defp handle_token_transfer_paging_options(query, nil), do: query
+
+  defp handle_token_transfer_paging_options(query, paging_options) do
+    query
+    |> TokenTransfer.page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
+>>>>>>> origin/master
   defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
     do: limit(query, ^(@default_page_size + 1))
 
@@ -5785,16 +5884,22 @@ defmodule Explorer.Chain do
 
   @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
   def fetch_last_token_balance(address_hash, token_contract_address_hash) do
-    address_hash
-    |> CurrentTokenBalance.last_token_balance(token_contract_address_hash)
-    |> Repo.one() || Decimal.new(0)
+    if address_hash !== %{} do
+      address_hash
+      |> CurrentTokenBalance.last_token_balance(token_contract_address_hash) || Decimal.new(0)
+    else
+      Decimal.new(0)
+    end
   end
 
   # @spec fetch_last_token_balance_1155(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
   def fetch_last_token_balance_1155(address_hash, token_contract_address_hash, token_id) do
-    address_hash
-    |> CurrentTokenBalance.last_token_balance_1155(token_contract_address_hash, token_id)
-    |> Repo.one() || Decimal.new(0)
+    if address_hash !== %{} do
+      address_hash
+      |> CurrentTokenBalance.last_token_balance_1155(token_contract_address_hash, token_id) || Decimal.new(0)
+    else
+      Decimal.new(0)
+    end
   end
 
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []

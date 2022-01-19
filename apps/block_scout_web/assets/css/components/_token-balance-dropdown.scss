@@ -69,3 +69,40 @@
     display: none;
   }
 }
+
+.usd-total {
+  flex-grow: 1;
+  flex-basis: 10%;
+  padding-right: 0;
+  padding-left: 5px;
+}
+
+.usd-rate {
+  flex-grow: 1;
+  flex-basis: 10%;
+  padding-right: 0;
+}
+
+.el-1 {
+  flex-grow: 1;
+  flex-basis: 10%;
+}
+
+.wh-sp {
+  white-space: initial;
+}
+
+.token-wallet-icon {
+  margin-right: 5px;
+  margin-top: 0.5px !important;
+  flex-grow: 0;
+}
+
+.ml-5px {
+  margin-left: 5px;
+}
+
+.dropdown-row {
+  padding-left: 5px;
+  padding-right: 5px;
+}
