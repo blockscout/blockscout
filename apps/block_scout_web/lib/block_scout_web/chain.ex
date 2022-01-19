@@ -213,7 +213,31 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
+  def paging_options(%{"token_name" => name, "token_type" => type, "value" => value}) do
+    [paging_options: %{@default_paging_options | key: {name, type, value}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
+
+  def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
+    [paging_options: Map.put(paging_options, key, value)]
+  end
+
+  def fetch_page_number(%{"page_number" => page_number_string}) do
+    case Integer.parse(page_number_string) do
+      {number, ""} ->
+        number
+
+      _ ->
+        1
+    end
+  end
+
+  def fetch_page_number(_), do: 1
+
+  def update_page_parameters(new_page_number, new_page_size, %PagingOptions{} = options) do
+    %PagingOptions{options | page_number: new_page_number, page_size: new_page_size}
+  end
 
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
     case Integer.parse(formatted_number) do
@@ -316,6 +340,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
+  end
+
+  defp paging_params({%CurrentTokenBalance{value: value}, _, %Token{name: name, type: type}}) do
+    %{"token_name" => name, "token_type" => type, "value" => Decimal.to_integer(value)}
   end
 
   defp paging_params(%CoinBalance{block_number: block_number}) do

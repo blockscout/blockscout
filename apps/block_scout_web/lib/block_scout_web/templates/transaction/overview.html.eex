@@ -2,6 +2,23 @@
 <% from_address_hash = @transaction.from_address_hash %>
 <% to_address_hash = @transaction.to_address_hash %>
 <% created_address_hash = @transaction.created_contract_address_hash %>
+<% type = if @transaction.type == 2, do: "2 (EIP-1559)", else: @transaction.type %>
+<% base_fee_per_gas = if block, do: block.base_fee_per_gas, else: nil %>
+<% max_priority_fee_per_gas = @transaction.max_priority_fee_per_gas %>
+<% max_fee_per_gas = @transaction.max_fee_per_gas %>
+<% burned_fee = 
+  if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
+    if Decimal.cmp(max_fee_per_gas.value, 0) == :eq do
+      %Wei{value: Decimal.new(0)}
+    else
+      Wei.mult(base_fee_per_gas, @transaction.gas_used)
+    end
+  else
+    nil
+  end %>
+<% %Wei{value: burned_fee_decimal} = if is_nil(burned_fee), do: %Wei{value: Decimal.new(0)}, else: burned_fee %>
+<% priority_fee_per_gas = if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas), do: nil, else: Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x -> Wei.to(x, :wei) end) %>
+<% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
@@ -9,7 +26,7 @@
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-<section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
+<section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
       <!-- Transaction Details -->
@@ -41,21 +58,28 @@
               <%= gettext("This transaction is pending confirmation.") %>
             </div>
           <% end %>
+          <div class="d-flex flex-row">
+            <%= if show_tenderly_link?() do %>
+              <div class="mr-4 mb-4">
+                <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
+                    transaction_hash: @transaction.hash,
+                    tenderly_chain_path: tenderly_chain_path() %>
+              </div>
+            <% end %>
+          </div>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("A TxHash or transaction hash is a unique 66 characters identifier that is generated whenever a transaction is executed.") %>
+              text: gettext("Unique character string (TxID) assigned to every verified transaction.") %>
               <%= gettext "Transaction Hash" %>
             </dt>
-            <dd class="col-sm-9 col-lg-10 d-flex" style="word-break: break-all;">
+            <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
               <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction %> </span>
-              <span>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @transaction,
                   aria_label: gettext("Copy Transaction Hash"),
                   title: gettext("Copy Txn Hash") %>
-              </span>
             </dd>
           </dl>
           <!-- Verify in other explorers -->
@@ -64,7 +88,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("The result of the transaction: success, error, pending, awaiting internal transactions.") %>
+              text: gettext("Current transaction state: Success, Failed (Error), or Pending (In Process)") %>
               <%= gettext "Result" %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
@@ -76,7 +100,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("The status of the transaction: confirmed, unconfirmed.") %>
+              text: gettext("The status of the transaction: Confirmed or Unconfirmed.") %>
               <%= gettext "Status" %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
@@ -104,7 +128,19 @@
                 text: gettext("The revert reason of the transaction.") %>
               <%= gettext "Revert reason" %> </dt>
             <dd class="col-sm-9 col-lg-10">
-              <%= BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) %>
+              <%= case BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) do %>
+                <% {:error, _contract_not_verified, candidates} when candidates != [] -> %>
+                  <% {:ok, method_id, text, mapping} = Enum.at(candidates, 0) %>
+                  <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% {:ok, method_id, text, mapping} -> %>
+                  <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% _ -> %>
+                  <% hex = BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %>
+                  <% utf8 = BlockScoutWeb.TransactionView.decoded_revert_reason(@transaction) %>
+                  <div class="tile tile-muted">
+                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
+                  </div>
+              <% end %>
             </dd>
           </dl>
           <% end %>
@@ -112,7 +148,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The number of the block in which the transaction was recorded. Block confirmation indicate how many blocks since the transaction is mined.") %>
+                text: gettext("Block number containing the transaction.") %>
               <%= gettext "Block" %></dt>
             <dd class="col-sm-9 col-lg-10" data-selector="block-number">
               <%= if block do %>
@@ -131,7 +167,7 @@
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("The date and time at which a transaction is mined.") %>
+                  text: gettext("Date & time of transaction inclusion, including length of time for confirmation.") %>
                 <%= gettext "Timestamp" %>
               </dt>
               <dd class="col-sm-9 col-lg-10" data-selector="block-timestamp">
@@ -154,20 +190,18 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The sending party of the transaction (could be from a contract address).") %>
+                text: gettext("Address (external or contract) sending the transaction.") %>
               <%= gettext "From" %></dt>
-            <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container">
+            <dd class="col-sm-9 col-lg-10">
               <%= link(
                 from_address_hash,
                 to: address_path(@conn, :show, from_address_hash)
               ) %>
-              <span class="float-right">
-                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                  clipboard_text: from_address_hash,
-                  aria_label: gettext("Copy From Address"),
-                  title: gettext("Copy From Address") %>
-              </span>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                clipboard_text: from_address_hash,
+                aria_label: gettext("Copy From Address"),
+                title: gettext("Copy From Address") %>
             </dd>
           </dl>
           <!-- To -->
@@ -176,14 +210,14 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The receiving party of the transaction (could be a contract address).") %>
+                text: gettext("Address (external or contract) receiving the transaction.") %>
               <%= if BlockScoutWeb.AddressView.contract?(to_address) && !created_address_hash do %>
                 <%= gettext "Interacted With (To)" %>
               <% else %>
                 <%= gettext "To" %>
               <% end %>
             </dt>
-            <dd class="col-sm-9 col-lg-10 btn-copy-mobile-container">
+            <dd class="col-sm-9 col-lg-10">
               <%= cond do %>
                 <% created_address_hash -> %>
                   [<%= gettext("Contract") %>&nbsp;
@@ -192,27 +226,21 @@
                     to: address_path(@conn, :show, recipient_address_hash)
                   ) %> 
                   &nbsp;<%= gettext("created") %>]
-
-                  <span class="float-right">
-                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                      additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                      clipboard_text: recipient_address_hash,
-                      aria_label: gettext("Copy To Address"),
-                      title: gettext("Copy To Address") %>
-                  </span>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: recipient_address_hash,
+                    aria_label: gettext("Copy To Address"),
+                    title: gettext("Copy To Address") %>
                 <% recipient_address_hash -> %>
                   <%= link(
                     recipient_address_hash,
                     to: address_path(@conn, :show, recipient_address_hash)
                   ) %>
-
-                  <span class="float-right">
-                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-                      additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                      clipboard_text: recipient_address_hash,
-                      aria_label: gettext("Copy To Address"),
-                      title: gettext("Copy To Address") %>
-                  </span>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: recipient_address_hash,
+                    aria_label: gettext("Copy To Address"),
+                    title: gettext("Copy To Address") %>
                 <% true -> %>
               <% end %>
             </dd>
@@ -228,9 +256,11 @@
                       text: gettext("List of token transferred in the transaction.") %>
                     <%= gettext "Tokens Transferred" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
-                  <%= for transfer <- transfers do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
-                  <% end %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= for transfer <- transfers do %>
+                        <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
+                      <% end %>
+                    </table>
                   </dd>
                 </dl>
               <% end %>
@@ -243,9 +273,11 @@
                     <%= gettext "Tokens Minted" %>
                   </dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
-                  <%= for minting <- mintings do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, minting) %>
-                  <% end %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= for minting <- mintings do %>
+                        <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, minting) %>
+                      <% end %>
+                    </table>
                   </dd>
                 </dl>
               <% end %>
@@ -258,7 +290,9 @@
                     <%= gettext "Tokens Burnt" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for burning  <- burnings do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
+                    </table>
                   <% end %>
                   </dd>
                 </dl>
@@ -272,7 +306,9 @@
                     <%= gettext "Tokens Created" %></dt>
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for creation  <- creations do %>
-                    <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= render BlockScoutWeb.TransactionView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                    </table>
                   <% end %>
                   </dd>
                 </dl>
@@ -283,13 +319,12 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The value being transacted in Ether and fiat value. Note: You can click the fiat value (if available) to see historical value at the time of transaction.") %>
+                text: gettext("Value sent in the native token (and USD) if applicable.") %>
               <%= gettext "Value" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
             <%= if !empty_exchange_rate?(@exchange_rate) do %>
-              (<span class="address-current-balance large"
-                data-wei-value=<%= @transaction.value.value %>
+              (<span data-wei-value=<%= @transaction.value.value %>
                 data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
               </span>)
             <% end %>
@@ -299,7 +334,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Amount paid to the miner for processing the transaction.") %>
+                text: gettext("Total transaction fee.") %>
               <%= gettext "Transaction Fee" %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
@@ -314,45 +349,101 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Cost per unit of gas specified for the transaction, in Ether and Gwei. The higher the gas price the higher chance of getting included in a block.") %>
+                text: gettext("Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage.") %>
               <%= gettext "Gas Price" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= gas_price(@transaction, :gwei) %> </dd>
           </dl>
+          <%= if !is_nil(type) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Transaction type, introduced in EIP-2718.") %>
+                <%= gettext "Transaction Type" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= type %> </dd>
+            </dl>
+          <% end %>
           <hr>
           <!-- Gas Limit -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Maximum amount of gas provided for the transaction. For normal Eth transfers, the value is 21,000. For contract this value is higher and bound by block gas limit.") %>
+                text: gettext("Maximum gas amount approved for the transaction.") %>
               <%= gettext "Gas Limit" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= format_gas_limit(@transaction.gas) %> </dd>
           </dl>
+          <%= if !is_nil(max_fee_per_gas) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Maximum total amount per unit of gas a user is willing to pay for a transaction, including base fee and priority fee.") %>
+                <%= gettext "Max Fee per Gas" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(max_fee_per_gas, :gwei) %> </dd>
+            </dl>
+          <% end %>
+          <%= if !is_nil(max_priority_fee_per_gas) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("User defined maximum fee (tip) per unit of gas paid to validator for transaction prioritization.") %>
+                <%= gettext "Max Priority Fee per Gas" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(max_priority_fee_per_gas, :gwei) %> </dd>
+            </dl>
+          <% end %>
+          <%= if !is_nil(priority_fee) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("User-defined tip sent to validator for transaction priority/inclusion.") %>
+                <%= gettext "Priority Fee / Tip" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(priority_fee, :ether) %> </dd>
+            </dl>
+          <% end %> 
+           <%= if !is_nil(burned_fee) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Amount of") <> " " <> gettext("Ether") <> " " <> gettext("burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
+                <%= gettext "Transaction Burnt Fee" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %>
+                <%= unless empty_exchange_rate?(@exchange_rate) do %>
+                  (<span data-wei-value=<%= burned_fee_decimal %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+                <% end %>
+              </dd>
+            </dl>
+          <% end %>
           <!-- Gas Used by Transaction -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("The exact units of gas that was used for the transaction.") %>
+                text: gettext("Actual gas amount used by the transaction.") %>
               <%= gettext "Gas Used by Transaction" %>
             </dt>
             <% gas_used_perc = gas_used_perc(@transaction) %>
-            <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "(#{gas_used_perc} %)" %></dd>
+            <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
           </dl>
-          <!-- Nonce -->
+          <!-- Nonce, Index in Block -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Sequential running number for an address, beginning with 0 for the first transaction. For example, if the nonce of a transaction is 10, it would be the 11th transaction sent from the sender's address.") %>
-              <%= gettext "Nonce" %>
+                text: gettext("Transaction number from the sending address. Each transaction sent from an address increments the nonce by 1.") %>
+              <%= gettext "Nonce" %><span class="index-label ml-2"
+                                          data-toggle="tooltip"
+                                          title="<%= gettext("Index position of Transaction in the block.") %>"><%= gettext "Position" %></span>
             </dt>
-            <dd class="col-sm-9 col-lg-10"> <%= @transaction.nonce %> </dd>
+            <dd class="col-sm-9 col-lg-10"> <%= @transaction.nonce %><span class="index-label ml-2"><%= if block, do: @transaction.index, else: formatted_result(status) %></span> </dd>
           </dl>
           <%= unless value_transfer?(@transaction) do %>
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Additional information that is required for the transaction.") %>
+                  text: gettext("Binary data included with the transaction. See input / logs below for additional info.") %>
                 <%= gettext "Raw Input" %>
               </dt>
               <dd class="col-sm-9 col-lg-10">

@@ -1,10 +1,13 @@
 defmodule BlockScoutWeb.API.V1.DecompiledSmartContractController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.API.APILogger
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
 
   def create(conn, params) do
+    APILogger.log(conn)
+
     if auth_token(conn) == actual_token() do
       with {:ok, hash} <- validate_address_hash(params["address_hash"]),
            :ok <- Chain.check_address_exists(hash),

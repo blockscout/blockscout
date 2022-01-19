@@ -184,33 +184,24 @@ defmodule BlockScoutWeb.TransactionView do
       end)
 
     new_acc1 =
-      if token_transfer.token_id do
-        [new_entry | acc1]
-      else
-        if existing_entry do
-          acc1
-          |> Enum.map(fn entry ->
-            if entry.to_address_hash == token_transfer.to_address_hash &&
-                 entry.from_address_hash == token_transfer.from_address_hash &&
-                 entry.token == token_transfer.token do
-              updated_entry =
-                if new_entry.amount do
-                  %{
-                    entry
-                    | amount: Decimal.add(new_entry.amount, entry.amount)
-                  }
-                else
-                  entry
-                end
-
-              updated_entry
-            else
+      if existing_entry do
+        acc1
+        |> Enum.map(fn entry ->
+          if entry.to_address_hash == token_transfer.to_address_hash &&
+               entry.from_address_hash == token_transfer.from_address_hash &&
+               entry.token == token_transfer.token do
+            updated_entry = %{
               entry
-            end
-          end)
-        else
-          [new_entry | acc1]
-        end
+              | amount: Decimal.add(new_entry.amount, entry.amount)
+            }
+
+            updated_entry
+          else
+            entry
+          end
+        end)
+      else
+        [new_entry | acc1]
       end
 
     {new_acc1, acc2}
@@ -220,6 +211,7 @@ defmodule BlockScoutWeb.TransactionView do
     case type do
       :erc20 -> gettext("ERC-20 ")
       :erc721 -> gettext("ERC-721 ")
+      :erc1155 -> gettext("ERC-1155 ")
       _ -> ""
     end
   end
@@ -309,9 +301,6 @@ defmodule BlockScoutWeb.TransactionView do
 
   def contract_creation?(_), do: false
 
-  #  def utf8_encode() do
-  #  end
-
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
     value
@@ -336,8 +325,12 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def transaction_revert_reason(transaction) do
-    Chain.transaction_to_revert_reason(transaction)
+    transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction)
   end
+
+  def get_pure_transaction_revert_reason(nil), do: nil
+
+  def get_pure_transaction_revert_reason(transaction), do: Chain.transaction_to_revert_reason(transaction)
 
   def empty_exchange_rate?(exchange_rate) do
     Token.null?(exchange_rate)
@@ -377,6 +370,10 @@ defmodule BlockScoutWeb.TransactionView do
 
   def decoded_input_data(transaction) do
     Transaction.decoded_input_data(transaction)
+  end
+
+  def decoded_revert_reason(revert_reason, transaction) do
+    Transaction.decoded_revert_reason(transaction, revert_reason)
   end
 
   @doc """
@@ -537,6 +534,64 @@ defmodule BlockScoutWeb.TransactionView do
       Enum.count(token_transfers_types) == mintings_count -> @token_minting_type
       Enum.count(token_transfers_types) == creations_count -> @token_creation_type
       true -> @token_transfer_type
+    end
+  end
+
+  defp show_tenderly_link? do
+    System.get_env("SHOW_TENDERLY_LINK") == "true"
+  end
+
+  defp tenderly_chain_path do
+    System.get_env("TENDERLY_CHAIN_PATH") || "/"
+  end
+
+  def get_max_length do
+    string_value = Application.get_env(:block_scout_web, :max_length_to_show_string_without_trimming)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 2040
+    end
+  end
+
+  def trim(length, string) do
+    %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..String.length(string))}
+  end
+
+  defp template_to_string(template) when is_list(template) do
+    template_to_string(Enum.at(template, 1))
+  end
+
+  defp template_to_string(template) when is_tuple(template) do
+    safe_to_string(template)
+  end
+
+  # Function decodes revert reason of the transaction
+  @spec decoded_revert_reason(%Transaction{} | nil) :: binary() | nil
+  def decoded_revert_reason(transaction) do
+    revert_reason = get_pure_transaction_revert_reason(transaction)
+
+    case revert_reason do
+      "0x" <> hex_part ->
+        proccess_hex_revert_reason(hex_part)
+
+      hex_part ->
+        proccess_hex_revert_reason(hex_part)
+    end
+  end
+
+  # Function converts hex revert reason to the binary
+  @spec proccess_hex_revert_reason(nil) :: nil
+  defp proccess_hex_revert_reason(nil), do: nil
+
+  @spec proccess_hex_revert_reason(binary()) :: binary()
+  defp proccess_hex_revert_reason(hex_revert_reason) do
+    case Integer.parse(hex_revert_reason, 16) do
+      {number, ""} ->
+        :binary.encode_unsigned(number)
+
+      _ ->
+        hex_revert_reason
     end
   end
 end

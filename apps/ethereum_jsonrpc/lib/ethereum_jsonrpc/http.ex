@@ -141,9 +141,7 @@ defmodule EthereumJSONRPC.HTTP do
     case unstandardized do
       %{"result" => _, "error" => _} ->
         raise ArgumentError,
-              "result and error keys are mutually exclusive in JSONRPC 2.0 response objects, but got #{
-                inspect(unstandardized)
-              }"
+              "result and error keys are mutually exclusive in JSONRPC 2.0 response objects, but got #{inspect(unstandardized)}"
 
       %{"result" => result} ->
         Map.put(standardized, :result, result)

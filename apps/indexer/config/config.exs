@@ -36,7 +36,9 @@ config :indexer,
   # bytes
   memory_limit: 1 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || "",
-  last_block: System.get_env("LAST_BLOCK") || ""
+  last_block: System.get_env("LAST_BLOCK") || "",
+  trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
+  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu"
@@ -56,7 +58,11 @@ config :indexer, Indexer.Fetcher.TokenBalanceOnDemand, threshold: token_balance_
 # config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 if System.get_env("POS_STAKING_CONTRACT") do
   config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
+else
+  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: false
 end
+
+config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 

@@ -21,16 +21,6 @@
 
 ## Checklist for your Pull Request (PR)
 
-<!--
-  Ideally a PR has all of the checkmarks set.
-
-  If something in this list is irrelevant to your PR, you should still set this
-  checkmark indicating that you are sure it is dealt with (be that by irrelevance).
-
-  If you don't set a checkmark (e. g. don't add a test for new functionality),
-  please justify why.
--->
-
   - [ ] I added an entry to `CHANGELOG.md` with this PR
   - [ ] If I added new functionality, I added tests covering it.
   - [ ] If I fixed a bug, I added a regression test to prevent the bug from silently reappearing again.

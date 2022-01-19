@@ -11,125 +11,210 @@ on:
 
 env:
   MIX_ENV: test
+  OTP_VERSION: '24.2'
+  ELIXIR_VERSION: '1.12.3'
 
 jobs:
-  build:
+  build-and-cache:
+    name: Build and Cache deps
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
       - name: "ELIXIR_VERSION.lock"
         run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+
       - name: "OTP_VERSION.lock"
         run: echo "${OTP_VERSION}" > OTP_VERSION.lock
-      - run: mix deps.get
-      - run: npm install
+
+      - name: Restore Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-
+
+      - name: Conditionally build Mix deps cache
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix deps.compile
+          cd deps/libsecp256k1
+          make
+
+      - name: Restore Explorer NPM Cache
+        uses: actions/cache@v2
+        id: explorer-npm-cache
+        with:
+          path: apps/explorer/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-${{ hashFiles('apps/explorer/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
+
+      - name: Conditionally build Explorer NPM Cache
+        if: steps.explorer-npm-cache.outputs.cache-hit != 'true'
+        run: npm install
         working-directory: apps/explorer
-      - run: npm install
+
+      - name: Restore Blockscout Web NPM Cache
+        uses: actions/cache@v2
+        id: blockscoutweb-npm-cache
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
+
+      - name: Conditionally build Blockscout Web NPM Cache
+        if: steps.blockscoutweb-npm-cache.outputs.cache-hit != 'true'
+        run: npm install
         working-directory: apps/block_scout_web/assets
-      - run: npm rebuild node-sass
-        working-directory: apps/block_scout_web/assets
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
-      - name: Build assets
-        run: node node_modules/webpack/bin/webpack.js --mode development
-        working-directory: "apps/block_scout_web/assets"
+
   credo:
+    name: Credo
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+      
+      - name: Restore Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
       - run: mix credo
+
   check_formatted:
+    name: Code formatting checks
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Restore Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
       - run: mix format --check-formatted
   dialyzer:
+    name: Dialyzer static analysis
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
-      - name: Unpack PLT cache
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Restore Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
+      - name: Restore Dialyzer Cache
+        uses: actions/cache@v2
+        id: dialyzer-cache
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-"
+
+      - name: Conditionally build Dialyzer Cache
+        if: steps.dialyzer-cache.output.cache-hit != 'true'
         run: |
-          mkdir -p _build/test
-          cp plts/dialyxir*.plt _build/test/ || true
-          mkdir -p ~/.mix
-          cp plts/dialyxir*.plt ~/.mix/ || true
-      - run: mix dialyzer --plt
-      - name: Pack PLT cache
-        run: |
-          mkdir -p plts
-          cp _build/test/dialyxir*.plt plts/
-          cp ~/.mix/dialyxir*.plt plts/
+          mkdir -p priv/plts
+          mix dialyzer --plt
+
       - run: mix dialyzer --halt-exit-status
+        name: Run Dialyzer
+
   gettext:
+    name: Missing translation keys check
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Restore Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
       - run: |
           mix gettext.extract --merge | tee stdout.txt
           ! grep "Wrote " stdout.txt
         working-directory: "apps/block_scout_web"
   sobelow:
+    name: Sobelow security analysis
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: mix deps.compile
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
       - name: Scan explorer for vulnerabilities
         run: mix sobelow --config
         working-directory: "apps/explorer"
@@ -137,57 +222,99 @@ jobs:
         run: mix sobelow --config
         working-directory: "apps/block_scout_web"
   eslint:
+    name: ESLint
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: npm install
-        working-directory: apps/explorer
-      - run: npm install
-        working-directory: apps/block_scout_web/assets
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
+      - name: Restore Explorer NPM Cache
+        uses: actions/cache@v2
+        id: explorer-npm-cache
+        with:
+          path: apps/explorer/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-${{ hashFiles('apps/explorer/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
+
+      - name: Restore Blockscout Web NPM Cache
+        uses: actions/cache@v2
+        id: blockscoutweb-npm-cache
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
+
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
+
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
+
       - run: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**
         working-directory: apps/block_scout_web/assets
   jest:
+    name: JS Tests
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: npm install
-        working-directory: apps/explorer
-      - run: npm install
-        working-directory: apps/block_scout_web/assets
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
+      - name: Restore Blockscout Web NPM Cache
+        uses: actions/cache@v2
+        id: blockscoutweb-npm-cache
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
+
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
+
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
+
       - run: ./node_modules/.bin/jest
         working-directory: apps/block_scout_web/assets
+
   test_parity_mox_ethereum_jsonrpc:
+    name: EthereumJSONRPC Tests
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     services:
       postgres:
         image: postgres
@@ -209,31 +336,29 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: npm install
-        working-directory: apps/explorer
-      - run: npm install
-        working-directory: apps/block_scout_web/assets
-      - run: npm rebuild node-sass
-        working-directory: apps/block_scout_web/assets
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
-      - name: Build assets
-        run: node node_modules/webpack/bin/webpack.js --mode development
-        working-directory: "apps/block_scout_web/assets"
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
       - run: ./bin/install_chrome_headless.sh
       - name: mix test --exclude no_parity
         run: |
           cd apps/ethereum_jsonrpc
+          mix compile
           mix test --no-start --exclude no_parity
         env:
           # match POSTGRES_PASSWORD for postgres image below
@@ -243,7 +368,9 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   test_parity_mox_explorer:
+    name: Explorer Tests
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     services:
       postgres:
         image: postgres
@@ -265,33 +392,40 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: npm install
-        working-directory: apps/explorer
-      - run: npm install
-        working-directory: apps/block_scout_web/assets
-      - run: npm rebuild node-sass
-        working-directory: apps/block_scout_web/assets
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
-      - name: Build assets
-        run: node node_modules/webpack/bin/webpack.js --mode development
-        working-directory: "apps/block_scout_web/assets"
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
+      - name: Restore Explorer NPM Cache
+        uses: actions/cache@v2
+        id: explorer-npm-cache
+        with:
+          path: apps/explorer/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-${{ hashFiles('apps/explorer/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm
+
       - run: ./bin/install_chrome_headless.sh
       - name: mix test --exclude no_parity
         run: |
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/explorer
+          mix compile
           mix test --no-start --exclude no_parity
         env:
           # match POSTGRES_PASSWORD for postgres image below
@@ -301,7 +435,9 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   test_parity_mox_indexer:
+    name: Indexer Tests
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     services:
       postgres:
         image: postgres
@@ -323,33 +459,33 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: npm install
-        working-directory: apps/explorer
-      - run: npm install
-        working-directory: apps/block_scout_web/assets
-      - run: npm rebuild node-sass
-        working-directory: apps/block_scout_web/assets
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
-      - name: Build assets
-        run: node node_modules/webpack/bin/webpack.js --mode development
-        working-directory: "apps/block_scout_web/assets"
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
+
       - run: ./bin/install_chrome_headless.sh
+
       - name: mix test --exclude no_parity
         run: |
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/indexer
+          mix compile
           mix test --no-start --exclude no_parity
         env:
           # match POSTGRES_PASSWORD for postgres image below
@@ -358,8 +494,11 @@ jobs:
           PGUSER: postgres
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+
   test_parity_mox_block_scout_web:
+    name: Blockscout Web Tests
     runs-on: ubuntu-18.04
+    needs: build-and-cache
     services:
       postgres:
         image: postgres
@@ -381,33 +520,58 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
-          otp-version: '23.3.4.1'
-          elixir-version: '1.11.4'
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-      - run: mix deps.get
-      - run: npm install
-        working-directory: apps/explorer
-      - run: npm install
-        working-directory: apps/block_scout_web/assets
+
+      - name: Mix Deps Cache
+        uses: actions/cache@v2
+        id: deps-cache
+        with:
+          path: | 
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_7-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
+
+
+      - name: Restore Explorer NPM Cache
+        uses: actions/cache@v2
+        id: explorer-npm-cache
+        with:
+          path: apps/explorer/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-${{ hashFiles('apps/explorer/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
+
+      - name: Restore Blockscout Web NPM Cache
+        uses: actions/cache@v2
+        id: blockscoutweb-npm-cache
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
+
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - run: mix compile
-      - run: make
-        working-directory: "deps/libsecp256k1"
+
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
+
       - run: ./bin/install_chrome_headless.sh
+
       - name: mix test --exclude no_parity
         run: |
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/block_scout_web
+          mix compile
           mix test --no-start --exclude no_parity
         env:
           # match POSTGRES_PASSWORD for postgres image below

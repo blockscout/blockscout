@@ -39,6 +39,17 @@ defmodule BlockScoutWeb.SmartContractController do
           end
         end
 
+      read_functions_required_wallet =
+        if action == "read" do
+          if contract_type == "proxy" do
+            Reader.read_functions_required_wallet_proxy(implementation_address_hash_string)
+          else
+            Reader.read_functions_required_wallet(address_hash)
+          end
+        else
+          []
+        end
+
       contract_abi = Poison.encode!(address.smart_contract.abi)
 
       implementation_abi =
@@ -55,6 +66,7 @@ defmodule BlockScoutWeb.SmartContractController do
       |> put_layout(false)
       |> render(
         "_functions.html",
+        read_functions_required_wallet: read_functions_required_wallet,
         read_only_functions: functions,
         address: address,
         contract_abi: contract_abi,
@@ -90,16 +102,29 @@ defmodule BlockScoutWeb.SmartContractController do
 
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      contract_type = if Chain.proxy_contract?(address.hash, address.smart_contract.abi), do: :proxy, else: :regular
+         {:ok, _address} <- Chain.find_contract_address(address_hash, address_options, true) do
+      contract_type = if params["type"] == "proxy", do: :proxy, else: :regular
+
+      # we should convert: %{"0" => _, "1" => _} to [_, _]
+      args = params["args"] |> convert_map_to_array()
 
       %{output: outputs, names: names} =
-        Reader.query_function_with_names(
-          address_hash,
-          %{method_id: params["method_id"], args: params["args"]},
-          contract_type,
-          params["function_name"]
-        )
+        if params["from"] do
+          Reader.query_function_with_names(
+            address_hash,
+            %{method_id: params["method_id"], args: args},
+            contract_type,
+            params["function_name"],
+            params["from"]
+          )
+        else
+          Reader.query_function_with_names(
+            address_hash,
+            %{method_id: params["method_id"], args: args},
+            contract_type,
+            params["function_name"]
+          )
+        end
 
       conn
       |> put_status(200)
@@ -109,7 +134,8 @@ defmodule BlockScoutWeb.SmartContractController do
         function_name: params["function_name"],
         method_id: params["method_id"],
         outputs: outputs,
-        names: names
+        names: names,
+        smart_contract_address: address_hash
       )
     else
       :error ->
@@ -122,4 +148,38 @@ defmodule BlockScoutWeb.SmartContractController do
         not_found(conn)
     end
   end
+
+  defp convert_map_to_array(map) do
+    if is_turned_out_array?(map) do
+      map |> Map.values() |> try_to_map_elements()
+    else
+      try_to_map_elements(map)
+    end
+  end
+
+  defp try_to_map_elements(values) do
+    if Enumerable.impl_for(values) do
+      Enum.map(values, &convert_map_to_array/1)
+    else
+      values
+    end
+  end
+
+  defp is_turned_out_array?(map) when is_map(map), do: Enum.all?(Map.keys(map), &is_integer?/1)
+
+  defp is_turned_out_array?(_), do: false
+
+  defp is_integer?(string) when is_binary(string) do
+    case string |> String.trim() |> Integer.parse() do
+      {_, ""} ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp is_integer?(integer) when is_integer(integer), do: true
+
+  defp is_integer?(_), do: false
 end

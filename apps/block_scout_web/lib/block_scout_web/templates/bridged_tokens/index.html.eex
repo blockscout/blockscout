@@ -24,6 +24,9 @@
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">&nbsp;</div>
 	      </th>
+		  <th class="stakes-table-th">
+			<div>&nbsp;</div>
+	      </th>
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">Token</div>
 	      </th>
@@ -51,9 +54,9 @@
 	  </thead>
 	  <tbody data-items data-selector="top-bridged-tokens-list">
 	    <%= if @destination == :eth do %>
-	    	<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_eth_bridged_tokens_table: true %>
+	    	<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 7 %>
 		<% else %>
-			<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_bsc_bridged_tokens_table: true %>
+			<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 6 %>
 		<% end %>
 	  </tbody>
 	</table>

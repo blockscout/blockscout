@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.AddressController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressView, Controller}
-  alias Explorer.Counters.{AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
-  alias Explorer.{Chain, Market}
+  alias BlockScoutWeb.{AccessHelpers, AddressView, Controller, CurrencyHelpers}
+  alias Explorer.Counters.{AddressTokenTransfersCounter, AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
+  alias Explorer.{Chain, CustomContractsHelpers, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -84,36 +84,59 @@ defmodule BlockScoutWeb.AddressController do
   def address_counters(conn, %{"id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {transaction_count, gas_usage_count, validation_count} = transaction_and_validation_count(address)
+      {validation_count, crc_total_worth} = address_counters(address)
+
+      transactions_from_db = address.transactions_count || 0
+      token_transfers_from_db = address.token_transfers_count || 0
+      address_gas_usage_from_db = address.gas_used || 0
 
       json(conn, %{
-        transaction_count: transaction_count,
-        gas_usage_count: gas_usage_count,
-        validation_count: validation_count
+        transaction_count: transactions_from_db,
+        token_transfer_count: token_transfers_from_db,
+        gas_usage_count: address_gas_usage_from_db,
+        validation_count: validation_count,
+        crc_total_worth: crc_total_worth
       })
     else
-      _ -> not_found(conn)
+      _ ->
+        json(conn, %{
+          transaction_count: 0,
+          token_transfer_count: 0,
+          gas_usage_count: 0,
+          validation_count: 0,
+          crc_total_worth: 0
+        })
     end
   end
 
-  defp transaction_and_validation_count(address) do
-    transaction_count_task =
-      Task.async(fn ->
-        transaction_count(address)
-      end)
-
-    gas_usage_count_task =
-      Task.async(fn ->
-        gas_usage_count(address)
-      end)
-
+  defp address_counters(address) do
     validation_count_task =
       Task.async(fn ->
         validation_count(address)
       end)
 
-    [transaction_count_task, gas_usage_count_task, validation_count_task]
-    |> Task.yield_many(:timer.seconds(60))
+    crc_total_worth_task =
+      Task.async(fn ->
+        crc_total_worth(address)
+      end)
+
+    Task.start_link(fn ->
+      transaction_count(address)
+    end)
+
+    Task.start_link(fn ->
+      token_transfers_count(address)
+    end)
+
+    Task.start_link(fn ->
+      gas_usage_count(address)
+    end)
+
+    [
+      validation_count_task,
+      crc_total_worth_task
+    ]
+    |> Task.yield_many(:infinity)
     |> Enum.map(fn {_task, res} ->
       case res do
         {:ok, result} ->
@@ -133,11 +156,57 @@ defmodule BlockScoutWeb.AddressController do
     AddressTransactionsCounter.fetch(address)
   end
 
+  def token_transfers_count(address) do
+    AddressTokenTransfersCounter.fetch(address)
+  end
+
   def gas_usage_count(address) do
     AddressTransactionsGasUsageCounter.fetch(address)
   end
 
   defp validation_count(address) do
     Chain.address_to_validation_count(address.hash)
+  end
+
+  defp crc_total_worth(address) do
+    circles_total_balance(address.hash)
+  end
+
+  defp circles_total_balance(address_hash) do
+    circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses)
+
+    token_balances =
+      address_hash
+      |> Chain.fetch_last_token_balances()
+
+    token_balances_except_bridged =
+      token_balances
+      |> Enum.filter(fn {_, _, token} -> !token.bridged end)
+
+    circles_total_balance_raw =
+      if Enum.count(circles_addresses_list) > 0 do
+        token_balances_except_bridged
+        |> Enum.reduce(Decimal.new(0), fn {token_balance, _, token}, acc_balance ->
+          {:ok, token_address} = Chain.hash_to_address(token.contract_address_hash)
+
+          from_address = AddressView.from_address_hash(token_address)
+
+          created_from_address_hash =
+            if from_address,
+              do: "0x" <> Base.encode16(from_address.bytes, case: :lower),
+              else: nil
+
+          if Enum.member?(circles_addresses_list, created_from_address_hash) && token.name == "Circles" &&
+               token.symbol == "CRC" do
+            Decimal.add(acc_balance, token_balance.value)
+          else
+            acc_balance
+          end
+        end)
+      else
+        Decimal.new(0)
+      end
+
+    CurrencyHelpers.format_according_to_decimals(circles_total_balance_raw, Decimal.new(18))
   end
 end

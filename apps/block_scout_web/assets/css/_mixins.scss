@@ -135,7 +135,7 @@
   color: $text-color;
   cursor: pointer;
   display: flex;
-  font-size: 12px;
+  font-size: $font-size;
   font-weight: 600;
   height: 36px;
   justify-content: center;
@@ -188,6 +188,37 @@
   border-radius: 2px;
   cursor: pointer;
   display: flex;
+  height: $dimensions;
+  justify-content: center;
+  transition: $transition-cont;
+  width: $dimensions;
+
+  svg {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  path {
+    fill: $color;
+    transition: $transition-cont;
+  }
+
+  &:hover {
+    background-color: $color;
+
+    path {
+      fill: #fff;
+    }
+  }
+}
+
+@mixin square-icon-button-inline($color, $dimensions) {
+  align-items: center;
+  border: 1px solid $color;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline;
   height: $dimensions;
   justify-content: center;
   transition: $transition-cont;
