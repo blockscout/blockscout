@@ -29,6 +29,9 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: f
 # Configures Ueberauth
 config :ueberauth, Ueberauth,
   providers: [
-    auth0: {Ueberauth.Strategy.Auth0, []}
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: System.get_env("AUTH0_CALLBACK_URL")]
+    }
   ],
   logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")
