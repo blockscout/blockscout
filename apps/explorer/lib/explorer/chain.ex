@@ -356,18 +356,9 @@ defmodule Explorer.Chain do
     transactions =
       address_hash
       |> address_to_transactions_query_rap(options)
-      |> debug("query")
       |> Repo.all()
 
     %{transactions_count: transactions_count, transactions: transactions}
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.debug(key)
-    Logger.debug(Kernel.inspect(value))
-    value
   end
 
   def address_to_transactions_query_rap(address_hash, options) do
@@ -391,16 +382,13 @@ defmodule Explorer.Chain do
       |> Transaction.matching_address_query(direction, address_hash)
 
     final_query =
-      cond do
-        match?(%PagingOptions{is_pending_tx: true}, paging_options) or
-            paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1 ->
-          Transaction
-          |> where([tx], tx.block_number == -1)
-          |> union_all(^pending_transactions_query)
-          |> union_all(^confirmed_transactions_query)
-
-        true ->
-          confirmed_transactions_query
+      if match?(%PagingOptions{is_pending_tx: true}, paging_options) or
+          paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1 do
+        pending_transactions_query
+        |> subquery()
+        |> union_all(^confirmed_transactions_query)
+      else
+        confirmed_transactions_query
       end
 
     final_query
@@ -415,7 +403,6 @@ defmodule Explorer.Chain do
     |> Transaction.not_dropped_or_replaced_transacions()
     |> Transaction.matching_address_query(direction, address_hash)
     |> limit(^@limit_showing_address_transaсtions)
-    |> debug("count query")
     |> Repo.aggregate(:count, :hash)
   end
 
@@ -4325,19 +4312,24 @@ defmodule Explorer.Chain do
   defp fetch_confirmed_transactions_rap(paging_options) do
     base_query =
       Transaction
+      |> Transaction.not_pending_transactions()
       |> order_by([transaction],
         desc: transaction.block_number,
         desc: transaction.index
       )
 
-    case paging_options do
-      %PagingOptions{is_pending_tx: true} ->
-        base_query
+    final_query =
+      case paging_options do
+        %PagingOptions{is_pending_tx: true} ->
+          base_query
 
-      _ ->
-        base_query
-        |> handle_random_access_paging_options_without_handle_page(paging_options)
-    end
+        _ ->
+          base_query
+          |> handle_random_access_paging_options_without_handle_page(paging_options)
+      end
+
+    final_query
+    |> add_limit_with_page_size(paging_options)
   end
 
   defp fetch_pending_transactions_rap(paging_options) do
@@ -4349,15 +4341,44 @@ defmodule Explorer.Chain do
         desc: transaction.hash
       )
 
-    case paging_options do
-      %PagingOptions{is_pending_tx: true} ->
-        base_query
-        |> handle_random_access_paging_options_without_handle_page(paging_options)
+    final_query = 
+      case paging_options do
+        %PagingOptions{is_pending_tx: true} ->
+          base_query
+          |> handle_random_access_paging_options_without_handle_page(paging_options)
 
-      _ ->
-        base_query
+        _ ->
+          base_query
+      end
+
+    final_query
+    |> add_limit_with_page_size(paging_options)
+  end
+
+  defp add_limit_with_page_size(query, %PagingOptions{page_number: page_number} = paging_options) do
+    page_size = Map.get(paging_options, :page_size, @default_page_size)
+
+    will_use_both_queries? = match?(%PagingOptions{is_pending_tx: true}, paging_options) or
+          paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1
+
+    cond do
+      will_use_both_queries? and page_in_bounds?(page_number, page_size) && proccess_page_number(page_number) == 1 ->
+        query
+        |> limit(^(page_size + 1))
+
+      page_in_bounds?(page_number, page_size) ->
+        query
+        
+      will_use_both_queries? ->
+        query
+        |> limit(^(@default_page_size + 1))
+
+      true ->
+        query
     end
   end
+
+  defp add_limit_with_page_size(query, _), do: query
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
     Transaction
