@@ -393,6 +393,7 @@ defmodule Explorer.Chain do
     cond do
       match?(%PagingOptions{is_pending_tx: true}, paging_options) or (paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1) ->
         Transaction
+        |> where([tx], tx.block_number == -1)
         |> union_all(^pending_transactions_query)
         |> union_all(^confirmed_transactions_query)
 
