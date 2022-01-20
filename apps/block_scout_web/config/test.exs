@@ -30,4 +30,5 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: f
 config :ueberauth, Ueberauth,
   providers: [
     auth0: {Ueberauth.Strategy.Auth0, []}
-  ]
+  ],
+  logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")
