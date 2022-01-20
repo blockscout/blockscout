@@ -182,9 +182,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
         case URI.parse(image_url) do
           %URI{host: host} ->
             process_kudos_relative_url(image_url, host, token_contract_address_hash)
-
-          _ ->
-            image_url
         end
     end
   end

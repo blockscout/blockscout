@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.{AccessHelpers, Controller}
+  alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -67,6 +68,8 @@ defmodule BlockScoutWeb.Tokens.TransferController do
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       tags = AddressToTag.get_tags_on_address(address_hash)
+      current_user = AuthController.current_user(conn)
+      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
 
       render(
         conn,
@@ -75,7 +78,8 @@ defmodule BlockScoutWeb.Tokens.TransferController do
         current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
         token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(address_hash),
-        tags: tags
+        tags: tags,
+        private_tags: private_tags
       )
     else
       {:restricted_access, _} ->

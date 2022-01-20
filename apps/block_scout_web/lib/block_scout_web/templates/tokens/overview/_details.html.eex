@@ -3,6 +3,7 @@
 <% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <% tags = if assigns[:tags], do: @tags, else: [] %>
+<% private_tags = if assigns[:private_tags], do: @private_tags, else: [] %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
@@ -66,7 +67,7 @@
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: "Rinkeby", additional_classes: ["destination-rinkeby", "ml-1"] %>
               <% end %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: @token.type, additional_classes: ["token-type", "ml-1"] %>
-              <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @token.contract_address_hash, tags: tags %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @token.contract_address_hash, private_tags: private_tags, tags: tags %>
             </div>
             <!-- buttons -->
             <span class="overview-title-buttons token float-right">

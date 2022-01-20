@@ -87,3 +87,13 @@ config :logger, :api,
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
+
+# Configures Ueberauth
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: System.get_env("AUTH0_CALLBACK_URL")]
+    }
+  ],
+  logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")

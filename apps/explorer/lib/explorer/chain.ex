@@ -1589,7 +1589,7 @@ defmodule Explorer.Chain do
   end
 
   # depreciated function
-  @spec search_label(String.t()) :: [Map.t()]
+  @spec search_label(String.t()) :: [map()]
   def search_label(string) do
     case prepare_search_term(string) do
       {:some, term} ->

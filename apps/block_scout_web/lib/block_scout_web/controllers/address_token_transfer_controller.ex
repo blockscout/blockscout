@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
+  alias BlockScoutWeb.Account.AuthController
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -100,6 +101,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
          {:ok, token} <- Chain.token_from_address_hash(token_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       tags = AddressToTag.get_tags_on_address(address_hash)
+      current_user = AuthController.current_user(conn)
+      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
 
       render(
         conn,
@@ -110,7 +113,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         current_path: Controller.current_full_path(conn),
         token: token,
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-        tags: tags
+        tags: tags,
+        private_tags: private_tags
       )
     else
       {:restricted_access, _} ->
@@ -194,6 +198,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       tags = AddressToTag.get_tags_on_address(address_hash)
+      current_user = AuthController.current_user(conn)
+      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
 
       render(
         conn,
@@ -204,7 +210,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         filter: params["filter"],
         current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-        tags: tags
+        tags: tags,
+        private_tags: private_tags
       )
     else
       {:restricted_access, _} ->

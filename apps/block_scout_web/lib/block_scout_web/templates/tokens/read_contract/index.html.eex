@@ -5,6 +5,7 @@
     token: @token,
     counters_path: @counters_path,
     tags: (if assigns[:tags], do: @tags, else: []),
+    private_tags: (if assigns[:private_tags], do: @private_tags, else: []),
     conn: @conn
   ) %>
 

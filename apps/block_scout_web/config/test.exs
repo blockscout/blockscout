@@ -25,3 +25,9 @@ config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 config :explorer, Explorer.KnownTokens, enabled: false, store: :none
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
+
+# Configures Ueberauth
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {Ueberauth.Strategy.Auth0, []}
+  ]

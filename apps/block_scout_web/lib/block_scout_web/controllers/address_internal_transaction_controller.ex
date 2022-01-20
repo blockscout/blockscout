@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView}
+  alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Tags.AddressToTag
@@ -69,6 +70,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       tags = AddressToTag.get_tags_on_address(address_hash)
+      current_user = AuthController.current_user(conn)
+      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
 
       render(
         conn,
@@ -79,7 +82,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        tags: tags
+        tags: tags,
+        private_tags: private_tags
       )
     else
       {:restricted_access, _} ->

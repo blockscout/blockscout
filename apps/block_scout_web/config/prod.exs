@@ -42,3 +42,13 @@ config :logger, :api,
   path: Path.absname("logs/prod/api.log"),
   metadata_filter: [fetcher: :api],
   rotate: %{max_bytes: 52_428_800, keep: 19}
+
+# Configures Ueberauth
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: "https://blockscout.com/xdai/testnet/auth/auth0/callback"]
+    }
+  ],
+  logout_return_to_url: "https://blockscout.com/xdai/testnet/auth/logout"

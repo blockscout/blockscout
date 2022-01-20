@@ -1,11 +1,10 @@
 defmodule BlockScoutWeb.Tokens.InventoryController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.{AccessHelpers, Controller}
-  alias BlockScoutWeb.Tokens.InventoryView
-  alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, TokenTransfer}
-  alias Explorer.Tags.AddressToTag
+  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.Tokens.{HolderController, InventoryView}
+  alias Explorer.Chain
+  alias Explorer.Chain.TokenTransfer
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, default_paging_options: 0]
@@ -67,32 +66,8 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
     end
   end
 
-  def index(conn, %{"token_id" => address_hash_string} = params) do
-    options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
-
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      tags = AddressToTag.get_tags_on_address(address_hash)
-
-      render(
-        conn,
-        "index.html",
-        current_path: Controller.current_full_path(conn),
-        token: Market.add_price(token),
-        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
-        tags: tags
-      )
-    else
-      {:restricted_access, _} ->
-        not_found(conn)
-
-      :error ->
-        not_found(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
-    end
+  def index(conn, params) do
+    HolderController.index(conn, params)
   end
 
   defp unique_tokens_paging_options(%{"unique_token" => token_id}),

@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressDecompiledContractController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Tags.AddressToTag
@@ -12,6 +13,8 @@ defmodule BlockScoutWeb.AddressDecompiledContractController do
          {:ok, address} <- Chain.find_decompiled_contract_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       tags = AddressToTag.get_tags_on_address(address_hash)
+      current_user = AuthController.current_user(conn)
+      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
 
       render(
         conn,
@@ -20,7 +23,8 @@ defmodule BlockScoutWeb.AddressDecompiledContractController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        tags: tags
+        tags: tags,
+        private_tags: private_tags
       )
     else
       {:restricted_access, _} ->

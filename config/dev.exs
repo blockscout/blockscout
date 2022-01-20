@@ -15,3 +15,8 @@ config :logger, :error, path: Path.absname("logs/dev/error.log")
 config :ex_twilio,
   account_sid: {:system, "TWILIO_ACCOUNT_SID"},
   auth_token: {:system, "TWILIO_AUTH_TOKEN"}
+
+config :logger, :account,
+  level: :debug,
+  path: Path.absname("logs/dev/account.log"),
+  metadata_filter: [fetcher: :account]
