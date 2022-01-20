@@ -22,6 +22,10 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 EXPOSE 4000
 
 ENV MIX_ENV="prod"
+ENV NETWORK_PATH="/xdai/mainnet"
+ENV SOCKET_ROOT="/xdai/mainnet"
+ENV CHAIN_ID="100"
+ENV JSON_RPC="https://dai.poa.network"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./

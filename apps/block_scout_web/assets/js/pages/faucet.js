@@ -316,7 +316,7 @@ function onTransactionHash (txHash) {
     })
       .then(txReceipt => {
         if (txReceipt) {
-          const successMsg = `Successfully <a href="/xdai/mainnet/tx/${txHash}">sent coins</a> to faucet`
+          const successMsg = `Successfully <a href="${process.env.NETWORK_PATH}/tx/${txHash}">sent coins</a> to faucet`
           Swal.fire({
             title: 'Success',
             html: successMsg,
