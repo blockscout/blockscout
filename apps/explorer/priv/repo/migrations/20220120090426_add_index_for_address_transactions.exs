@@ -19,6 +19,7 @@ defmodule Explorer.Repo.Migrations.AddIndexForAddressTransactions do
         name: "to_address_hash_pending_transactions_index"
       )
     )
+
     create(
       index(
         :transactions,

@@ -383,7 +383,7 @@ defmodule Explorer.Chain do
 
     final_query =
       if match?(%PagingOptions{is_pending_tx: true}, paging_options) or
-          paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1 do
+           paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1 do
         pending_transactions_query
         |> subquery()
         |> union_all(^confirmed_transactions_query)
@@ -4341,7 +4341,7 @@ defmodule Explorer.Chain do
         desc: transaction.hash
       )
 
-    final_query = 
+    final_query =
       case paging_options do
         %PagingOptions{is_pending_tx: true} ->
           base_query
@@ -4358,8 +4358,9 @@ defmodule Explorer.Chain do
   defp add_limit_with_page_size(query, %PagingOptions{page_number: page_number} = paging_options) do
     page_size = Map.get(paging_options, :page_size, @default_page_size)
 
-    will_use_both_queries? = match?(%PagingOptions{is_pending_tx: true}, paging_options) or
-          paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1
+    will_use_both_queries? =
+      match?(%PagingOptions{is_pending_tx: true}, paging_options) or
+        paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1
 
     cond do
       will_use_both_queries? and page_in_bounds?(page_number, page_size) && proccess_page_number(page_number) == 1 ->
@@ -4368,7 +4369,7 @@ defmodule Explorer.Chain do
 
       page_in_bounds?(page_number, page_size) ->
         query
-        
+
       will_use_both_queries? ->
         query
         |> limit(^(@default_page_size + 1))
