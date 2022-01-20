@@ -1,19 +1,32 @@
 ## Current
 
 ### Features
-- [#5090](https://github.com/blockscout/blockscout/pull/5090) - Allotted rate limit by IP
-- [#5080](https://github.com/blockscout/blockscout/pull/5080) - Alloted rate limit by a global API key
+- [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+
+### Chore
+
+
+## 4.1.1-beta
+
+### Features
+- [#5090](https://github.com/blockscout/blockscout/pull/5090) - Allotted rate limit by IP
+- [#5080](https://github.com/blockscout/blockscout/pull/5080) - Allotted rate limit by a global API key
+
+### Fixes
+- [#5085](https://github.com/blockscout/blockscout/pull/5085) - Fix wallet style
 - [#5088](https://github.com/blockscout/blockscout/pull/5088) - Store address transactions/token transfers in the DB
 - [#5085](https://github.com/blockscout/blockscout/pull/5085) - Fix wallet style
 - [#5071](https://github.com/blockscout/blockscout/pull/5071) - Fix write page contract tuple input
 - [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug
-- [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transation page
+- [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transaction page
 - [#5025](https://github.com/blockscout/blockscout/pull/5025) - Add standard input JSON files validation
 - [#5051](https://github.com/blockscout/blockscout/pull/5051) - Fix 500 response when ABI method was parsed as nil
 
 ### Chore
+- [#5092](https://github.com/blockscout/blockscout/pull/5092) - Resolve vulnerable follow-redirects npm dep in ./apps/explorer
+- [#5091](https://github.com/blockscout/blockscout/pull/5091) - Refactor search page template
 - [#5081](https://github.com/blockscout/blockscout/pull/5081) - Add internal transactions fetcher disabled? config parameter
 - [#5063](https://github.com/blockscout/blockscout/pull/5063) - Resolve moderate NPM vulnerabilities with npm audit tool
 - [#5053](https://github.com/blockscout/blockscout/pull/5053) - Update ex_keccak lib

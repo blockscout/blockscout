@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
   end
 
   describe "logo/0" do
-    test "use the enviroment logo when it's configured" do
+    test "use the environment logo when it's configured" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, logo: "custom/logo.png")
 
       assert LayoutView.logo() == "custom/logo.png"
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
   end
 
   describe "subnetwork_title/0" do
-    test "use the enviroment subnetwork title when it's configured" do
+    test "use the environment subnetwork title when it's configured" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, subnetwork: "Subnetwork Test")
 
       assert LayoutView.subnetwork_title() == "Subnetwork Test"
@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
   end
 
   describe "network_title/0" do
-    test "use the enviroment network title when it's configured" do
+    test "use the environment network title when it's configured" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, network: "Custom Network")
 
       assert LayoutView.network_title() == "Custom Network"
@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
                 ~s(<a href="https://github.com/blockscout/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
     end
 
-    test "use the enviroment release link when it's configured" do
+    test "use the environment release link when it's configured" do
       Application.put_env(
         :block_scout_web,
         :release_link,
