@@ -373,7 +373,8 @@ defmodule Explorer.Chain do
   def address_to_transactions_query_rap(address_hash, options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = 
+
+    paging_options =
       options
       |> Keyword.get(:paging_options, @default_paging_options)
 
@@ -382,25 +383,26 @@ defmodule Explorer.Chain do
       |> fetch_confirmed_transactions_rap()
       |> Transaction.not_dropped_or_replaced_transacions()
       |> Transaction.matching_address_query(direction, address_hash)
-    
-    pending_transactions_query = 
+
+    pending_transactions_query =
       paging_options
       |> fetch_pending_transactions_rap()
       |> Transaction.not_dropped_or_replaced_transacions()
       |> Transaction.matching_address_query(direction, address_hash)
-    
+
     final_query =
-    cond do
-      match?(%PagingOptions{is_pending_tx: true}, paging_options) or (paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1) ->
-        Transaction
-        |> where([tx], tx.block_number == -1)
-        |> union_all(^pending_transactions_query)
-        |> union_all(^confirmed_transactions_query)
+      cond do
+        match?(%PagingOptions{is_pending_tx: true}, paging_options) or
+            paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1 ->
+          Transaction
+          |> where([tx], tx.block_number == -1)
+          |> union_all(^pending_transactions_query)
+          |> union_all(^confirmed_transactions_query)
 
         true ->
           confirmed_transactions_query
       end
-    
+
     final_query
     |> handle_page(paging_options)
     |> join_associations(necessity_by_association)
@@ -4321,7 +4323,7 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_confirmed_transactions_rap(paging_options) do
-    base_query = 
+    base_query =
       Transaction
       |> order_by([transaction],
         desc: transaction.block_number,
@@ -4330,16 +4332,16 @@ defmodule Explorer.Chain do
 
     case paging_options do
       %PagingOptions{is_pending_tx: true} ->
-        base_query      
+        base_query
 
       _ ->
         base_query
         |> handle_random_access_paging_options_without_handle_page(paging_options)
-      end
+    end
   end
 
   defp fetch_pending_transactions_rap(paging_options) do
-    base_query = 
+    base_query =
       Transaction
       |> Transaction.pending_transactions()
       |> order_by([transaction],
@@ -4351,7 +4353,7 @@ defmodule Explorer.Chain do
       %PagingOptions{is_pending_tx: true} ->
         base_query
         |> handle_random_access_paging_options_without_handle_page(paging_options)
-    
+
       _ ->
         base_query
     end
@@ -4395,7 +4397,7 @@ defmodule Explorer.Chain do
   end
 
   defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
-    do: handle_random_access_paging_options_without_handle_page(query, empty_options) 
+    do: handle_random_access_paging_options_without_handle_page(query, empty_options)
 
   defp handle_random_access_paging_options(query, paging_options) do
     query
@@ -4403,7 +4405,9 @@ defmodule Explorer.Chain do
     |> handle_page(paging_options)
   end
 
-  defp handle_random_access_paging_options_without_handle_page(query, empty_options) when empty_options in [nil, [], %{}], do: limit(query, ^(@default_page_size + 1))
+  defp handle_random_access_paging_options_without_handle_page(query, empty_options)
+       when empty_options in [nil, [], %{}],
+       do: limit(query, ^(@default_page_size + 1))
 
   defp handle_random_access_paging_options_without_handle_page(query, paging_options) do
     query
