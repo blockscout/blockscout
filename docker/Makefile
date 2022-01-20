@@ -436,4 +436,5 @@ run: start
 .PHONY: build \
 				migrate \
 				start \
+				postgres \
 				run 

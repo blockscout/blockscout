@@ -186,7 +186,7 @@
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: Conn.get_session(@conn, :current_user), conn: @conn %>
 
       <main class="js-ad-dependant-pt pt-5">
-        <p class="alert alert-info" style="padding: 1rem 3rem; margin-bottom: 3rem;" role="alert"><%= get_flash(@conn, :info) %></p>
+        <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
         <%= @inner_content %>
       </main>

@@ -171,8 +171,6 @@ defmodule Explorer.Accounts.Notify.Summary do
     fee
   end
 
-  defp log_entry(:nothing), do: nil
-
   defp log_entry(entry) do
     AccountLogger.info(entry)
   end
