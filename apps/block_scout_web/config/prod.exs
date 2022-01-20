@@ -48,7 +48,7 @@ config :ueberauth, Ueberauth,
   providers: [
     auth0: {
       Ueberauth.Strategy.Auth0,
-      [callback_url: "https://blockscout.com/xdai/testnet/auth/auth0/callback"]
+      [callback_url: "https://blockscout.com/xdai/mainnet/auth/auth0/callback"]
     }
   ],
-  logout_return_to_url: "https://blockscout.com/xdai/testnet/auth/logout"
+  logout_return_to_url: "https://blockscout.com/xdai/mainnet/auth/logout"
