@@ -35,18 +35,43 @@ defmodule AddWatchlistAddress do
     end
   end
 
-  defp params_to_attributes(address, params) do
+  defp params_to_attributes(
+         address,
+         %{
+           "name" => name,
+           "watch_coin_input" => watch_coin_input,
+           "watch_coin_output" => watch_coin_output,
+           "notify_email" => notify_email
+         }
+       ) do
     %{
-      "name" => name,
-      "watch_coin_input" => watch_coin_input,
-      "watch_coin_output" => watch_coin_output,
-      "watch_erc_20_input" => watch_erc_20_input,
-      "watch_erc_20_output" => watch_erc_20_output,
-      "watch_nft_input" => watch_nft_input,
-      "watch_nft_output" => watch_nft_output,
-      "notify_email" => notify_email
-    } = params
+      address_hash: address.hash,
+      name: name,
+      watch_coin_input: to_bool(watch_coin_input),
+      watch_coin_output: to_bool(watch_coin_output),
+      watch_erc_20_input: false,
+      watch_erc_20_output: false,
+      watch_erc_721_input: false,
+      watch_erc_721_output: false,
+      watch_erc_1155_input: false,
+      watch_erc_1155_output: false,
+      notify_email: to_bool(notify_email)
+    }
+  end
 
+  defp params_to_attributes(
+         address,
+         %{
+           "name" => name,
+           "watch_coin_input" => watch_coin_input,
+           "watch_coin_output" => watch_coin_output,
+           "watch_erc_20_input" => watch_erc_20_input,
+           "watch_erc_20_output" => watch_erc_20_output,
+           "watch_nft_input" => watch_nft_input,
+           "watch_nft_output" => watch_nft_output,
+           "notify_email" => notify_email
+         }
+       ) do
     %{
       address_hash: address.hash,
       name: name,
