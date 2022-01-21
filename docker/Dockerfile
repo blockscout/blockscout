@@ -26,6 +26,9 @@ ENV NETWORK_PATH="/xdai/mainnet"
 ENV SOCKET_ROOT="/xdai/mainnet"
 ENV CHAIN_ID="100"
 ENV JSON_RPC="https://dai.poa.network"
+ENV AUTH0_DOMAIN=login.blockscout.com
+ENV AUTH0_CALLBACK_URL='https://blockscout.com/xdai/mainnet/auth/auth0/callback'
+ENV AUTH0_LOGOUT_RETURN_URL='https://blockscout.com/xdai/mainnet/auth/logout'
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
