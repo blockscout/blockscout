@@ -270,7 +270,7 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
-  @logout_url "https://blockscoutcom.us.auth0.com/v2/logout"
+  @logout_url "https://dev-d1e3mu4f.us.auth0.com/v2/logout"
 
   def sign_out_link do
     client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
