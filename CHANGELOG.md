@@ -2,6 +2,7 @@
 
 ### Features
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
+- [#4995](https://github.com/blockscout/blockscout/pull/4995) - Add specific tx receipt fields for the GoQuorum client
 
 ### Fixes
 
