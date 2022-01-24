@@ -34,4 +34,5 @@ config :ueberauth, Ueberauth,
       [callback_url: System.get_env("AUTH0_CALLBACK_URL")]
     }
   ],
+  logout_url: System.get_env("AUTH0_LOGOUT_URL"),
   logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")

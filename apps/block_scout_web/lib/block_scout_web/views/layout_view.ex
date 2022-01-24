@@ -270,17 +270,16 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
-  @logout_url "https://dev-d1e3mu4f.us.auth0.com/v2/logout"
-
   def sign_out_link do
     client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
     return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
+    logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
 
     params = [
       client_id: client_id,
       returnTo: return_to
     ]
 
-    [@logout_url, "?", URI.encode_query(params)]
+    [logout_url, "?", URI.encode_query(params)]
   end
 end
