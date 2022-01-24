@@ -592,7 +592,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         transaction_receipt_from_node && transaction_receipt_from_node.cumulative_gas_used
       )
       |> Keyword.put_new(
-        :has_error_in_iternal_txs,
+        :has_error_in_internal_txs,
         if(Enum.member?(txs_with_error_in_internal_txs, first_trace.transaction_hash), do: true, else: false)
       )
 

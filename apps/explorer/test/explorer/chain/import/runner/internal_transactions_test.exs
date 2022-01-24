@@ -22,12 +22,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert :error == Repo.get(Transaction, transaction.hash).status
     end
 
-    test "transaction's has_error_in_iternal_txs become true when its internal_transaction (where index != 0) has an error" do
+    test "transaction's has_error_in_internal_txs become true when its internal_transaction (where index != 0) has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
       insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
 
       assert :ok == transaction.status
-      assert nil == transaction.has_error_in_iternal_txs
+      assert nil == transaction.has_error_in_internal_txs
 
       index = 0
       error = nil
@@ -43,15 +43,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       tx = Repo.get(Transaction, transaction.hash)
 
       assert :ok == tx.status
-      assert true == tx.has_error_in_iternal_txs
+      assert true == tx.has_error_in_internal_txs
     end
 
-    test "transaction's has_error_in_iternal_txs become false when its internal_transaction (where index == 0) has an error" do
+    test "transaction's has_error_in_internal_txs become false when its internal_transaction (where index == 0) has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
       insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
 
       assert :ok == transaction.status
-      assert nil == transaction.has_error_in_iternal_txs
+      assert nil == transaction.has_error_in_internal_txs
 
       index = 0
       error = "Reverted"
@@ -62,15 +62,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       tx = Repo.get(Transaction, transaction.hash)
 
       assert :error == tx.status
-      assert false == tx.has_error_in_iternal_txs
+      assert false == tx.has_error_in_internal_txs
     end
 
-    test "transaction's has_error_in_iternal_txs become false when its internal_transaction has no error" do
+    test "transaction's has_error_in_internal_txs become false when its internal_transaction has no error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
       insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
 
       assert :ok == transaction.status
-      assert nil == transaction.has_error_in_iternal_txs
+      assert nil == transaction.has_error_in_internal_txs
 
       index = 0
       error = nil
@@ -87,7 +87,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       tx = Repo.get(Transaction, transaction.hash)
 
       assert :ok == tx.status
-      assert false == tx.has_error_in_iternal_txs
+      assert false == tx.has_error_in_internal_txs
     end
 
     test "simple coin transfer's status becomes :error when its internal_transaction has an error" do
