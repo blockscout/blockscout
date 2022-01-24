@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Tokens.ReadContractView do
+defmodule BlockScoutWeb.Tokens.ContractView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.Tokens.OverviewView

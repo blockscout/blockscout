@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
 - [#5102](https://github.com/blockscout/blockscout/pull/5102) - Add new pagination to `address/transactions` page
 - [#5016](https://github.com/blockscout/blockscout/pull/5016) - Add view for internal transactions error
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page

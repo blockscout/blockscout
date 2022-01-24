@@ -627,6 +627,7 @@ msgid "Constructor Arguments"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:66
 #: lib/block_scout_web/templates/transaction/overview.html.eex:223
 msgid "Contract"
 msgstr ""
@@ -1355,7 +1356,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:15
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:17 lib/block_scout_web/views/tokens/overview_view.ex:44
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:19 lib/block_scout_web/views/tokens/overview_view.ex:44
 msgid "Inventory"
 msgstr ""
 
@@ -1449,7 +1450,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:54
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:79 lib/block_scout_web/templates/address_read_contract/index.html.eex:12
 #: lib/block_scout_web/templates/address_read_proxy/index.html.eex:12 lib/block_scout_web/templates/address_write_contract/index.html.eex:12
-#: lib/block_scout_web/templates/address_write_proxy/index.html.eex:12 lib/block_scout_web/templates/tokens/read_contract/index.html.eex:16
+#: lib/block_scout_web/templates/address_write_proxy/index.html.eex:12 lib/block_scout_web/templates/tokens/contract/index.html.eex:16
 msgid "Loading..."
 msgstr ""
 
@@ -2546,7 +2547,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/instance/holder/index.html.eex:16 lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:17
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:9 lib/block_scout_web/views/tokens/overview_view.ex:42
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:11 lib/block_scout_web/views/tokens/overview_view.ex:42
 msgid "Token Holders"
 msgstr ""
 
@@ -2570,7 +2571,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:13
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:19 lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:3
-#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16 lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:3
+#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16 lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:5
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:14 lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7 lib/block_scout_web/views/address_view.ex:348
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:186 lib/block_scout_web/views/tokens/overview_view.ex:41
@@ -2631,11 +2632,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:163
 msgid "Total Difficulty"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
-msgid "Total Supply"
 msgstr ""
 
 #, elixir-format
