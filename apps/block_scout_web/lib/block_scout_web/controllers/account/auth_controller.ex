@@ -50,7 +50,9 @@ defmodule BlockScoutWeb.Account.AuthController do
   end
 
   def current_user(conn) do
-    if Map.has_key?(conn, :current_user) do
+    session = conn.private.plug_session
+
+    if Map.has_key?(session, "current_user") do
       get_session(conn, :current_user)
     else
       nil
