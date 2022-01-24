@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressRewardController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.{Chain, Market}
@@ -28,7 +28,6 @@ defmodule BlockScoutWeb.AddressRewardController do
       options =
         @transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
-        |> Keyword.merge(current_filter(params))
 
       results_plus_one = Chain.address_to_rewards(address_hash, options)
       {results, next_page} = split_list_by_page(results_plus_one)

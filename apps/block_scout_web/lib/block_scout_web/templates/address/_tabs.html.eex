@@ -55,7 +55,6 @@
     <%= link(
       gettext("Rewards"),
       class: "card-tab #{tab_status("rewards", @conn.request_path)}",
-      "data-test": "validations_tab_link",
       to: AccessHelpers.get_path(@conn, :address_reward_path, :index, @address.hash)
     ) %>
   <% end %>

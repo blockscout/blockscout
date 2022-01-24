@@ -7369,19 +7369,8 @@ defmodule Explorer.Chain do
          true <- address_has_rewards?(address_hash),
          %{payout_key: block_miner_payout_address} <- Reward.get_validator_payout_key_by_mining(address_hash),
          true <- block_miner_payout_address && address_hash == block_miner_payout_address do
-      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
-
       address_hash
-      |> Reward.fetch_emission_rewards_tuples(paging_options, blocks_range)
-      |> Enum.sort_by(fn item ->
-        {%Reward{} = emission_reward, _} = item
-        {-emission_reward.block.number, 1}
-      end)
-      |> Enum.dedup_by(fn item ->
-        {%Reward{} = emission_reward, _} = item
-        {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
-      end)
-      |> Enum.take(paging_options.page_size)
+      |> Reward.fetch_emission_rewards_tuples(paging_options)
     else
       _ ->
         []

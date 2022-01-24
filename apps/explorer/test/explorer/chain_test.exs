@@ -718,35 +718,6 @@ defmodule Explorer.ChainTest do
       end)
     end
 
-    test "with transactions if rewards are not in the range of blocks" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
-
-      block = insert(:block)
-
-      insert(
-        :reward,
-        address_hash: block.miner_hash,
-        block_hash: block.hash,
-        address_type: :validator
-      )
-
-      insert(
-        :reward,
-        address_hash: block.miner_hash,
-        block_hash: block.hash,
-        address_type: :emission_funds
-      )
-
-      :transaction
-      |> insert(from_address: block.miner)
-      |> with_block()
-      |> Repo.preload(:token_transfers)
-
-      assert [] = Chain.address_to_rewards(block.miner.hash, direction: :from)
-
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
-    end
-
     test "with emissions rewards, but feature disabled" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
 
@@ -767,103 +738,6 @@ defmodule Explorer.ChainTest do
       )
 
       assert [] == Chain.address_to_rewards(block.miner.hash)
-    end
-  end
-
-  describe "address_to_transactions_tasks_range_of_blocks/2" do
-    test "returns empty extremums if no transactions" do
-      address = insert(:address)
-
-      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
-
-      assert extremums == %{
-               :min_block_number => nil,
-               :max_block_number => 0
-             }
-    end
-
-    test "returns correct extremums for from_address" do
-      address = insert(:address)
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block(insert(:block, number: 1000))
-
-      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
-
-      assert extremums == %{
-               :min_block_number => 1000,
-               :max_block_number => 1000
-             }
-    end
-
-    test "returns correct extremums for to_address" do
-      address = insert(:address)
-
-      :transaction
-      |> insert(to_address: address)
-      |> with_block(insert(:block, number: 1000))
-
-      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
-
-      assert extremums == %{
-               :min_block_number => 1000,
-               :max_block_number => 1000
-             }
-    end
-
-    test "returns correct extremums for created_contract_address" do
-      address = insert(:address)
-
-      :transaction
-      |> insert(created_contract_address: address)
-      |> with_block(insert(:block, number: 1000))
-
-      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
-
-      assert extremums == %{
-               :min_block_number => 1000,
-               :max_block_number => 1000
-             }
-    end
-
-    test "returns correct extremums for multiple number of transactions" do
-      address = insert(:address)
-
-      :transaction
-      |> insert(created_contract_address: address)
-      |> with_block(insert(:block, number: 1000))
-
-      :transaction
-      |> insert(created_contract_address: address)
-      |> with_block(insert(:block, number: 999))
-
-      :transaction
-      |> insert(created_contract_address: address)
-      |> with_block(insert(:block, number: 1003))
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block(insert(:block, number: 1001))
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block(insert(:block, number: 1004))
-
-      :transaction
-      |> insert(to_address: address)
-      |> with_block(insert(:block, number: 1002))
-
-      :transaction
-      |> insert(to_address: address)
-      |> with_block(insert(:block, number: 998))
-
-      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
-
-      assert extremums == %{
-               :min_block_number => 998,
-               :max_block_number => 1004
-             }
     end
   end
 
