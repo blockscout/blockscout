@@ -108,7 +108,6 @@ defmodule Explorer.Chain do
   # seconds
   @check_bytecode_interval 86_400
 
-
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """

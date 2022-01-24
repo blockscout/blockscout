@@ -203,11 +203,4 @@ defmodule Explorer.Chain.Block.Reward do
       _ -> @empty_address
     end
   end
-
-  defp join_associations(query) do
-    query
-    |> preload(:address)
-    |> join(:inner, [reward], block in assoc(reward, :block))
-    |> preload(:block)
-  end
 end
