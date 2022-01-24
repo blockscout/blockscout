@@ -50,7 +50,11 @@ defmodule BlockScoutWeb.Account.AuthController do
   end
 
   def current_user(conn) do
-    get_session(conn, :current_user)
+    if Map.has_key?(conn, :current_user) do
+      get_session(conn, :current_user)
+    else
+      nil
+    end
   end
 
   defp root do
