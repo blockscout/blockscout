@@ -72,7 +72,7 @@ defmodule Explorer.Accounts.Notify.Email do
        do: hash_string(address.hash)
 
   defp hash_string(hash) do
-    "0x" <> Base.encode16(hash.bytes)
+    String.downcase("0x" <> Base.encode16(hash.bytes))
   end
 
   defp direction(notification) do
