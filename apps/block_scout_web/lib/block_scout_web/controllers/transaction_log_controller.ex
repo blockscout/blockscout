@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionLogController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, TransactionController, TransactionLogView}
+  alias BlockScoutWeb.{AccessHelpers, Controller, TransactionController, TransactionLogView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
@@ -26,7 +26,8 @@ defmodule BlockScoutWeb.TransactionLogController do
           paging_options(params)
         )
 
-      logs_plus_one = Chain.transaction_to_logs(transaction_hash, full_options)
+      from_api = false
+      logs_plus_one = Chain.transaction_to_logs(transaction_hash, from_api, full_options)
 
       {logs, next_page} = split_list_by_page(logs_plus_one)
 
@@ -91,7 +92,7 @@ defmodule BlockScoutWeb.TransactionLogController do
         "index.html",
         block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         transaction: transaction,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       )

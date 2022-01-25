@@ -1,0 +1,7 @@
+<td class="stakes-td">
+    <%= if @result.name do %>
+        <a href="<%= address_path(@conn, :show, @result.address_hash) %>">
+            <%= highlight_search_result(@result.name, @query) %>
+        </a>
+    <% end %>
+</td>

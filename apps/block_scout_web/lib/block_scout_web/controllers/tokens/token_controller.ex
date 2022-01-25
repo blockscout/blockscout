@@ -12,18 +12,18 @@ defmodule BlockScoutWeb.Tokens.TokenController do
   end
 
   def token_counters(conn, %{"id" => address_hash_string}) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, token} <- Chain.token_from_address_hash(address_hash) do
-      {transfer_count, token_holder_count} = fetch_token_counters(token, address_hash, 200)
+    case Chain.string_to_address_hash(address_hash_string) do
+      {:ok, address_hash} ->
+        {transfer_count, token_holder_count} = fetch_token_counters(address_hash, 200)
 
-      json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
-    else
+        json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
+
       _ ->
         not_found(conn)
     end
   end
 
-  defp fetch_token_counters(token, address_hash, timeout) do
+  defp fetch_token_counters(address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
         TokenTransfersCounter.fetch(address_hash)
@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.Tokens.TokenController do
 
     total_token_holders_task =
       Task.async(fn ->
-        token.holder_count || TokenHoldersCounter.fetch(address_hash)
+        TokenHoldersCounter.fetch(address_hash)
       end)
 
     [total_token_transfers_task, total_token_holders_task]

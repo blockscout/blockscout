@@ -1,0 +1,10 @@
+<div class="smart-contract-form-group constructor-arguments" style="display: <%= @display_constructor_arguments_text_area %>">
+    <div class="smart-contract-form-group-inner-wrapper">
+        <%= label @f, :constructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
+        <div class="center-column">
+            <%= textarea @f, :constructor_arguments, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-constructor-arguments-help-block" %>
+            <%= error_tag @f, :constructor_arguments, id: "contract-constructor-arguments-help-block", class: "text-danger form-error", "data-test": "contract-constructor-arguments-error" %>
+        </div>
+        <div class="smart-contract-form-group-tooltip">Add arguments in <a href="https://solidity.readthedocs.io/en/develop/abi-spec.html" target="_blank">ABI hex encoded form</a>. Constructor arguments are written right to left, and will be found at the end of the input created bytecode. They may also be <a href="https://abi.hashex.org/" target="_blank">parsed here.</a></div>
+    </div>
+</div>

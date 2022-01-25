@@ -104,18 +104,28 @@ defmodule Explorer.Staking.ContractState do
       "2d21d217" => {:ok, [token_contract_address]},
       "dfc8bf4e" => {:ok, [validator_set_contract_address]}
     } =
-      Reader.query_contract(staking_contract_address, staking_abi, %{
-        "#{erc_677_token_contract_signature}" => [],
-        "#{validator_set_contract_signature}" => []
-      })
+      Reader.query_contract(
+        staking_contract_address,
+        staking_abi,
+        %{
+          "#{erc_677_token_contract_signature}" => [],
+          "#{validator_set_contract_signature}" => []
+        },
+        false
+      )
 
     # 56b54bae = keccak256(blockRewardContract())
     block_reward_contract_signature = "56b54bae"
 
     %{"56b54bae" => {:ok, [block_reward_contract_address]}} =
-      Reader.query_contract(validator_set_contract_address, validator_set_abi, %{
-        "#{block_reward_contract_signature}" => []
-      })
+      Reader.query_contract(
+        validator_set_contract_address,
+        validator_set_abi,
+        %{
+          "#{block_reward_contract_signature}" => []
+        },
+        false
+      )
 
     state = %__MODULE__{
       eth_blocknumber_pull_interval: eth_blocknumber_pull_interval,

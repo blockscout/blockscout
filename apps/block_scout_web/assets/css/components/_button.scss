@@ -95,3 +95,10 @@ $button-secondary-color: $secondary !default;
 .button-block + .button-block {
   margin-top: 5px;
 }
+
+.spinner {
+  background-image: url('/images/spinner.svg');
+  background-position: right;
+  background-repeat: no-repeat;
+  background-size: 30px;
+}

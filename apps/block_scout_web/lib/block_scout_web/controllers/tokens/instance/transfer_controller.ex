@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.Tokens.Instance.TransferController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.Controller
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -27,8 +28,8 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
             token_instance_transfer_path(
               conn,
               :index,
-              token_id,
               Address.checksum(token.contract_address_hash),
+              token_id,
               Map.delete(next_page_params, "type")
             )
         end
@@ -63,7 +64,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
         conn,
         "index.html",
         token_instance: token_transfer,
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
         total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
       )

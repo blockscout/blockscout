@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTokenTransferController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.{AccessHelpers, TransactionView}
+  alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         token: token,
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
@@ -196,7 +196,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        current_path: current_path(conn),
+        current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else

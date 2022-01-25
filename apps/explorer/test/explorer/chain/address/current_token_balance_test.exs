@@ -157,7 +157,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalanceTest do
         address.hash
         |> CurrentTokenBalance.last_token_balances()
         |> Repo.all()
-        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end
@@ -195,7 +195,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalanceTest do
         address.hash
         |> CurrentTokenBalance.last_token_balances()
         |> Repo.all()
-        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance_a.address_hash]
     end

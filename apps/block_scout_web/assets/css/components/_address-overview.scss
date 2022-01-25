@@ -1,10 +1,10 @@
 .address-detail-hash-title {
   color: #333;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
   line-height: 1.2;
-  margin: 0 0 12px;
   text-align: left;
+  word-break: break-all;
 }
 
 .overview-title-buttons {
@@ -66,8 +66,6 @@
 }
 
 .address-current-balance {
-  font-size: 12px;
-  font-weight: 200;
   line-height: 1.2;
   margin: 0 0 12px;
   font-weight: 400;
