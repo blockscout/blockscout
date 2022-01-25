@@ -1,8 +1,8 @@
 .bs-label {
     display: inline-block;
     padding: 0 5px;
-    background: #f5f6fa;
-    color: #77838f;
+    background:  rgb(151 153 180 / 10%);
+    color: #6619FF;
     border-radius: 5px;
     &.large {
         font-size: 14px;
@@ -44,7 +44,7 @@
         color: #fff;
     }
     &.method {
-        color: #1e2022;
+        color: #6619FF;
     }
     &.from-dropdown {
         margin-top: -3px;

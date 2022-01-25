@@ -1,6 +1,6 @@
-$body-dark: #1c1d31; // body background
-$dark-bg: #22223a; // hero shade
-$dark-light-bg: #282945; // pills bg shade
+$body-dark: #120E1C; // body background
+$dark-bg: #000; // hero shade
+$dark-light-bg: #120E1C; // pills bg shade
 $dark-light: #313355; // tile light top share
 $labels-dark: #8a8dba; // header nav, labels
 $dark-stakes-banned-background: #3e314c;
@@ -37,10 +37,10 @@ $dark-stakes-banned-background: #3e314c;
 
 	// navbar
 	.navbar.navbar-primary {
-		background-color: $dark-light-bg;
+		background-color: $dark-bg;
 		.input-group-text {
 			&.border {
-				background-color: $dark-light-bg;
+				background-color: $dark-bg;
 			}
 		}
 	}
@@ -67,7 +67,7 @@ $dark-stakes-banned-background: #3e314c;
 	}
 	.navbar.navbar-primary .form-control {
 		background-color: $dark-bg;
-		border-color: $dark-bg;
+		border-color: $dark-light-bg;
 		color: #fff;
 		&::placeholder {
 			color: $labels-dark;
@@ -79,7 +79,7 @@ $dark-stakes-banned-background: #3e314c;
 
 	// footer
 	.footer {
-		background: $dark-light-bg;
+		background: $dark-bg;
 		color: $labels-dark;
 	}
 	.footer-social-icon,
@@ -124,7 +124,7 @@ $dark-stakes-banned-background: #3e314c;
 	}
 
 	.card {
-		background-color: $dark-light-bg;
+		background-color: $dark-bg;
 		box-shadow: 0 0 30px 0 rgba(23, 24, 41, 0.5);
 	}
 
@@ -165,7 +165,7 @@ $dark-stakes-banned-background: #3e314c;
 		border-top-color: $dark-light;
 		border-bottom-color: $dark-light;
 		border-right-color: $dark-light;
-		background-color: $dark-light;
+		background-color: $dark-bg;
 		color: $labels-dark;
 		&:not([class^="tile tile-type"]) {
 			border-left-color: $dark-light;
