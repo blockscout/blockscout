@@ -188,11 +188,19 @@ defmodule EthereumJSONRPC.Contract do
         block_number -> integer_to_quantity(block_number)
       end
 
-    full_params = %{
-      id: id,
-      method: "eth_call",
-      params: [%{to: contract_address, data: data, from: from}, block]
-    }
+    full_params =
+      case from do
+        nil -> %{
+                 id: id,
+                 method: "eth_call",
+                 params: [%{to: contract_address, data: data}, block]
+               }
+        from ->  %{
+                   id: id,
+                   method: "eth_call",
+                   params: [%{to: contract_address, data: data, from: from}, block]
+                 }
+      end
 
     request(full_params)
   end
