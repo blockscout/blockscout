@@ -450,12 +450,32 @@ defmodule Explorer.Etherscan do
   end
 
   defp list_transactions(address_hash, max_block_number, options) do
+    [query_to_address_hash, query_from_address_hash, query_created_contract_address_hash] =
+      Enum.map(["to", "from", "created"], fn hash ->
+        transaction_with_address_query(hash, address_hash, max_block_number, options)
+      end)
+
+    addresses_subquery =
+      from(
+        s in subquery(query_to_address_hash),
+        union: ^query_from_address_hash,
+        union: ^query_created_contract_address_hash,
+        select: s
+      )
+
+    addresses_wrapped_subquery =
+      addresses_subquery
+      |> subquery()
+
     query =
       from(
         t in Transaction,
+        join: a in ^addresses_wrapped_subquery,
+        on: t.hash == a.hash,
         left_join: p in CeloParams,
         on: t.gas_currency_hash == p.address_value,
-        inner_join: b in assoc(t, :block),
+        inner_join: b in Block,
+        on: b.number == t.block_number,
         order_by: [{^options.order_by_direction, t.block_number}],
         limit: ^options.page_size,
         offset: ^offset(options),
@@ -476,12 +496,31 @@ defmodule Explorer.Etherscan do
     |> Repo.all()
   end
 
+  defp transaction_with_address_query(filter, address_hash, max_block_number, options) do
+    query =
+      from(
+        t in Transaction,
+        order_by: [{^options.order_by_direction, t.block_number}],
+        limit: ^options.page_size * 3,
+        select: %{
+          hash: t.hash
+        }
+      )
+
+    query
+    |> where_address_match(address_hash, %{filter_by: filter})
+  end
+
   defp where_address_match(query, address_hash, %{filter_by: "to"}) do
     where(query, [t], t.to_address_hash == ^address_hash)
   end
 
   defp where_address_match(query, address_hash, %{filter_by: "from"}) do
     where(query, [t], t.from_address_hash == ^address_hash)
+  end
+
+  defp where_address_match(query, address_hash, %{filter_by: "created"}) do
+    where(query, [t], t.created_contract_address_hash == ^address_hash)
   end
 
   defp where_address_match(query, address_hash, _) do

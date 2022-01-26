@@ -226,20 +226,20 @@ defmodule Explorer.EtherscanTest do
       third_block = insert(:block)
       address = insert(:address)
 
+      first_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(first_block)
+
       second_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(second_block)
 
-      first_block_transactions =
-        2
-        |> insert_list(:transaction, from_address: address)
-        |> with_block(third_block)
-
       third_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
-        |> with_block(first_block)
+        |> with_block(third_block)
 
       options = %{page_number: 1, page_size: 2}
 
@@ -249,7 +249,7 @@ defmodule Explorer.EtherscanTest do
 
       assert length(page1_transactions) == 2
 
-      for transaction <- first_block_transactions do
+      for transaction <- third_block_transactions do
         assert transaction.hash in page1_hashes
       end
 
@@ -273,7 +273,7 @@ defmodule Explorer.EtherscanTest do
 
       assert length(page3_transactions) == 2
 
-      for transaction <- third_block_transactions do
+      for transaction <- first_block_transactions do
         assert transaction.hash in page3_hashes
       end
 
