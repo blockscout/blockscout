@@ -21,7 +21,7 @@
                 </span>
             </td>
             <td class="stakes-td">
-                <% res = @result.name <> " (" <> @result.symbol <> ")" %>
+                <% res = AddressView.token_title(@result) <> " (" <> @result.symbol <> ")" %>
                 <a href="<%= token_path(@conn, :show, @result.address_hash) %>">
                     <%= highlight_search_result(res, @query) %>
                 </a>
