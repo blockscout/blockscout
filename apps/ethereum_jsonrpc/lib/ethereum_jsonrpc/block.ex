@@ -221,6 +221,8 @@ defmodule EthereumJSONRPC.Block do
       ) do
     %{
       difficulty: difficulty,
+      boundary: boundary,
+      seed_hash: seed_hash,
       extra_data: extra_data,
       gas_limit: gas_limit,
       gas_used: gas_used,
@@ -246,6 +248,8 @@ defmodule EthereumJSONRPC.Block do
   def elixir_to_params(
         %{
           "difficulty" => difficulty,
+          "boundary" => boundary,
+          "seedHash" => seed_hash,
           "extraData" => extra_data,
           "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
@@ -266,6 +270,8 @@ defmodule EthereumJSONRPC.Block do
       ) do
     %{
       difficulty: difficulty,
+      boundary: boundary,
+      seed_hash: seed_hash,
       extra_data: extra_data,
       gas_limit: gas_limit,
       gas_used: gas_used,
@@ -290,6 +296,8 @@ defmodule EthereumJSONRPC.Block do
   def elixir_to_params(
         %{
           "difficulty" => difficulty,
+          "boundary" => boundary,
+          "seedHash" => seed_hash,
           "extraData" => extra_data,
           "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
