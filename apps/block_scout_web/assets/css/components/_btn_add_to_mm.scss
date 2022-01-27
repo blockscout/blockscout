@@ -1,8 +1,10 @@
 .btn-add-to-mm {
-    background-image: url("/images/icons/metamask.png");
-    background-size: 15px 16px;
-    width: 15px;
-    height: 19px;
+    background-image: url("/images/icons/metamask-fox.svg");
+    background-position: center;
+    background-size: 22px 22px;
+    margin-bottom: 1px;
+    width: 22px;
+    height: 22px;
     background-repeat: no-repeat;
     display: inline-block;
     vertical-align: middle;
@@ -10,11 +12,12 @@
 }
 
 .btn-add-chain-to-mm {
-    background-image: url("/images/icons/metamask.png");
-    background-size: 15px 16px;
+    background-image: url("/images/icons/metamask-fox.svg");
+    background-position: center;
+    background-size: 20px 20px;
     background-repeat: no-repeat;
     background-position-x: 30px;
     background-position-y: center;
-    padding-left: 35px;
+    padding-left: 40px;
     outline: none;
 }
