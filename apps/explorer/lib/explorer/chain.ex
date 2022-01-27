@@ -7339,12 +7339,16 @@ defmodule Explorer.Chain do
 
   defp reddit_token?(contract_address, env_var) when not is_nil(contract_address) do
     token_addresses_string = Application.get_env(:block_scout_web, env_var)
-    contract_address_lower = Base.encode16(contract_address.bytes, case: :lower)
+    compare_address_hash_and_strings(contract_address, token_addresses_string)
+  end
 
-    if token_addresses_string do
+  def compare_address_hash_and_strings(address_hash, addresses_string) do
+    contract_address_lower = Base.encode16(address_hash.bytes, case: :lower)
+
+    if addresses_string do
       token_addresses =
         try do
-          token_addresses_string
+          addresses_string
           |> String.downcase()
           |> String.split(",")
         rescue

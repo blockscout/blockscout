@@ -111,13 +111,22 @@
                   contract_address: @token.contract_address,
                   symbol: @token.symbol
                 %>
+                <%= if Chain.compare_address_hash_and_strings(@token.contract_address_hash, "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83,0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d,0x4ECaBa5870353805a9F068101A40E0f32ed605C6") do %>
+                  <%= render BlockScoutWeb.CommonComponentsView,
+                    "_btn_swap_token_curve.html",
+                    contract_address: @token.contract_address,
+                    symbol: @token.symbol
+                  %>
+                <% end %>
+                <%= if Chain.compare_address_hash_and_strings(@token.contract_address_hash, "0xFe7ed09C4956f7cdb54eC4ffCB9818Db2D7025b8,0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83,0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d,0xFc8B2690F66B46fEC8B3ceeb95fF4Ac35a0054BC,0xD10Cc63531a514BBa7789682E487Add1f15A51E2") do %>
+                  <%= render BlockScoutWeb.CommonComponentsView,
+                    "_btn_swap_token_component.html",
+                    contract_address: @token.contract_address,
+                    symbol: @token.symbol
+                  %>
+                <% end %>
                 <%= render BlockScoutWeb.CommonComponentsView,
-                  "_btn_swap_token_curve.html",
-                  contract_address: @token.contract_address,
-                  symbol: @token.symbol
-                %>
-                <%= render BlockScoutWeb.CommonComponentsView,
-                  "_btn_swap_token_component.html",
+                  "_btn_swap_token_cowswap.html",
                   contract_address: @token.contract_address,
                   symbol: @token.symbol
                 %>
