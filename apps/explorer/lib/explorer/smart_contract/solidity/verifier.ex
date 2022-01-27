@@ -218,6 +218,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       compiler_version_from_input != generated_compiler_version ->
         {:error, :compiler_version}
 
+      bytecode <> arguments_data == blockchain_created_tx_input ->
+        {:ok, %{abi: abi, constructor_arguments: arguments_data}}
+
       generated_bytecode != blockchain_bytecode_without_whisper &&
           !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
         {:error, :generated_bytecode}
