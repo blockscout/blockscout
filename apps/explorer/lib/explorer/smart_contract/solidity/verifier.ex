@@ -203,7 +203,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init_without_0x
 
         _ ->
-          bytecode
+          ""
       end
 
     %{
