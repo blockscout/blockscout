@@ -16,8 +16,8 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav">
         <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
-          <li class="nav-item dropdown">
-            <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <li class="nav-item">
+            <a class="nav-link" href="<%= blocks_path(@conn, :index) %>" id="navbarBlocksDropdown" role="button">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
               </span>
@@ -173,8 +173,8 @@
             </div>
           </li>
         <% end %>
-        <li class="nav-item dropdown">
-          <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <li class="nav-item">
+          <a class="nav-link" id="navbarDropdown">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>
