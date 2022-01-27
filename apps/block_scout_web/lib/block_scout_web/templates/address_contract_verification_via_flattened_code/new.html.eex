@@ -79,16 +79,6 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
-            <%= label :evm_version, :evm_version, gettext("EVM Version") %>
-            <div class="center-column">
-              <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", selected: evm_version, "aria-describedby": "evm-version-help-block" %>
-            </div>
-            <div class="smart-contract-form-group-tooltip">The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version. <a href="https://forum.poa.network/t/smart-contract-verification-evm-version-details/2318" target="_blank">EVM version details</a>.</div>
-          </div>
-        </div>
-
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, "Optimization" %>
             <div class="center-column">
               <div class="form-radios-group">

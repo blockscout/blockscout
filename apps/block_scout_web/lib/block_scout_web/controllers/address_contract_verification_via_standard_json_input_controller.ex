@@ -1,10 +1,10 @@
-defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
+defmodule BlockScoutWeb.AddressContractVerificationViaStandardJsonInputController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Controller
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler, Solidity.PublisherWorker}
+  alias Explorer.SmartContract.CompilerVersion
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
@@ -39,22 +39,4 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
     end
   end
 
-  def create(
-        conn,
-        %{
-          "smart_contract" => smart_contract,
-          "external_libraries" => external_libraries
-        }
-      ) do
-    Que.add(PublisherWorker, {smart_contract["address_hash"], smart_contract, external_libraries, conn})
-
-    send_resp(conn, 204, "")
-  end
-
-  def parse_optimization_runs(%{"runs" => runs}) do
-    case Integer.parse(runs) do
-      {integer, ""} -> integer
-      _ -> 200
-    end
-  end
 end

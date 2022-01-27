@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{
     AddressContractVerificationViaFlattenedCodeView,
     AddressContractVerificationViaJsonView,
+    AddressContractVerificationViaStandardJsonInputView,
     AddressContractVerificationVyperView,
     Endpoint
   }
@@ -48,8 +49,9 @@ defmodule BlockScoutWeb.Notifier do
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
     verification_from_json_upload? = Map.has_key?(conn.params, "file")
+    verification_from_standard_json_input? = verification_from_json_upload? && Map.has_key?(conn.params, "smart_contract")
     verification_from_flattened_source? = Map.has_key?(conn.params, "external_libraries")
-    compiler = if verification_from_flattened_source?, do: :solc, else: :vyper
+    compiler = :solc
 
     contract_verification_result =
       case contract_verification_result do
@@ -68,6 +70,7 @@ defmodule BlockScoutWeb.Notifier do
 
           view =
             cond do
+              verification_from_standard_json_input? -> AddressContractVerificationViaStandardJsonInputView
               verification_from_json_upload? -> AddressContractVerificationViaJsonView
               verification_from_flattened_source? -> AddressContractVerificationViaFlattenedCodeView
               true -> AddressContractVerificationVyperView
@@ -78,7 +81,7 @@ defmodule BlockScoutWeb.Notifier do
             |> View.render_to_string("new.html",
               changeset: changeset,
               compiler_versions: compiler_versions,
-              evm_versions: CodeCompiler.allowed_evm_versions(),
+              evm_versions: "",
               address_hash: address_hash,
               conn: conn
             )
