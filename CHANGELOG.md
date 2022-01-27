@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#5138](https://github.com/blockscout/blockscout/pull/5138) - Webpack minor update
 - [#5119](https://github.com/blockscout/blockscout/pull/5119) - Inventory controller refactoring
 - [#5118](https://github.com/blockscout/blockscout/pull/5118) - Fix top navigation template
 
