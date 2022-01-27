@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
 - [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
 - [#5138](https://github.com/blockscout/blockscout/pull/5138) - Webpack minor update
 - [#5119](https://github.com/blockscout/blockscout/pull/5119) - Inventory controller refactoring
