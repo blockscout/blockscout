@@ -150,7 +150,7 @@
                   to: AccessHelpers.get_path(@conn, :address_path, :show, 
                   Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address",
-                  "class": "contract-address"
+                  class: "contract-address"
                   )
               %>
               <%= render BlockScoutWeb.CommonComponentsView,
