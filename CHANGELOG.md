@@ -9,6 +9,10 @@
 ### Fixes
 
 ### Chore
+- [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
+- [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
+- [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
+- [#5138](https://github.com/blockscout/blockscout/pull/5138) - Webpack minor update
 - [#5119](https://github.com/blockscout/blockscout/pull/5119) - Inventory controller refactoring
 - [#5118](https://github.com/blockscout/blockscout/pull/5118) - Fix top navigation template
 
