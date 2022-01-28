@@ -4,7 +4,7 @@
 <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-  <div class="row mb-5">
+  <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
     <div class="col-md-12 js-ad-dependant-mb-2">
       <div class="card js-ad-dependant-mb-2">
         <div class="card-body fs-14" style="line-height: 31px;" token-page data-async-counters="<%= @counters_path %>">
@@ -122,7 +122,8 @@
               <%= gettext("Holders") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <div token-holder-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching holders...") %></div>
+              <% link = if @conn.request_path |> String.contains?("/token-holders"), do: "", else: AccessHelpers.get_path(@conn, :token_holder_path, :index, @token.contract_address_hash) %>
+              <a href="<%= link %>#holders" class="page-link bs-label large btn-no-border-link-to-tems" token-holder-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching holders...") %></a>
             </dd>
           </dl>
           <dl class="row">
@@ -132,7 +133,8 @@
               <%= gettext("Transfers") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
-              <div token-transfer-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %></div>
+              <% link = if @conn.request_path |> String.contains?("/token-transfers"), do: "", else: AccessHelpers.get_path(@conn, :token_transfer_path, :index, @token.contract_address_hash) %>
+              <a href="<%= link %>#transfers" class="page-link bs-label large btn-no-border-link-to-tems" token-transfer-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %></a>
             </dd>
           </dl>
           <%= if decimals?(@token) do %>
