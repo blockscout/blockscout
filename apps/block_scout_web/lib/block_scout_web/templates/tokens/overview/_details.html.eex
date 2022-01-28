@@ -6,9 +6,9 @@
 <% private_tags = if assigns[:private_tags], do: @private_tags, else: [] %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-  <div class="row mb-2">
-    <div class="col-md-12 mb-2">
-      <div class="card mb-2">
+  <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
+    <div class="col-md-12 js-ad-dependant-mb-2">
+      <div class="card js-ad-dependant-mb-2">
         <div class="card-body fs-14" style="line-height: 31px;" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title d-flex" style="justify-content: space-between; margin-bottom: 0.75rem">
             <div style="line-height: 30px;">
@@ -144,12 +144,13 @@
               text: gettext("Address of the token contract") %>
               <%= gettext("Contract") %>
             </dt>
-            <dd class="col-sm-8 col-md-8 col-lg-9 contract-address">
+            <dd class="col-sm-8 col-md-8 col-lg-9">
               <%= link(
                   @token.contract_address_hash,
                   to: AccessHelpers.get_path(@conn, :address_path, :show, 
                   Address.checksum(@token.contract_address_hash)),
-                  "data-test": "token_contract_address"
+                  "data-test": "token_contract_address",
+                  "class": "contract-address"
                   )
               %>
               <%= render BlockScoutWeb.CommonComponentsView,
@@ -233,17 +234,7 @@
                 <%= @token.decimals %>
               </dd>
             </dl>
-          <% end %>  
-          <dl class="row">
-            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
-              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("Type of the token standard") %>
-              <%= gettext("Token type") %>
-            </dt>
-            <dd class="col-sm-8 col-md-8 col-lg-9">
-              <%= @token.type %>
-            </dd>
-          </dl>
+          <% end %>
         </div>
       </div>
     </div>
