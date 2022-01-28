@@ -1,7 +1,7 @@
-defmodule BlockScoutWeb.Tokens.ReadContractController do
+defmodule BlockScoutWeb.Tokens.ContractController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.{AccessHelpers, TabHelpers}
   alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -17,12 +17,26 @@ defmodule BlockScoutWeb.Tokens.ReadContractController do
       tags = AddressToTag.get_tags_on_address(address_hash)
       current_user = AuthController.current_user(conn)
       private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
+      %{type: type, action: action} =
+        cond do
+          TabHelpers.tab_active?("read-contract", conn.request_path) ->
+            %{type: :regular, action: :read}
+
+          TabHelpers.tab_active?("write-contract", conn.request_path) ->
+            %{type: :regular, action: :write}
+
+          TabHelpers.tab_active?("read-proxy", conn.request_path) ->
+            %{type: :proxy, action: :read}
+
+          TabHelpers.tab_active?("write-proxy", conn.request_path) ->
+            %{type: :proxy, action: :write}
+        end
 
       render(
         conn,
         "index.html",
-        type: :regular,
-        action: :read,
+        type: type,
+        action: action,
         token: Market.add_price(token),
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
         tags: tags,

@@ -266,9 +266,30 @@ defmodule BlockScoutWeb.WebRouter do
 
       resources(
         "/read-contract",
-        Tokens.ReadContractController,
+        Tokens.ContractController,
         only: [:index],
         as: :read_contract
+      )
+
+      resources(
+        "/write-contract",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_contract
+      )
+
+      resources(
+        "/read-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_proxy
       )
 
       resources(
@@ -324,9 +345,30 @@ defmodule BlockScoutWeb.WebRouter do
 
       resources(
         "/read-contract",
-        Tokens.ReadContractController,
+        Tokens.ContractController,
         only: [:index],
         as: :read_contract
+      )
+
+      resources(
+        "/write-contract",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_contract
+      )
+
+      resources(
+        "/read-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_proxy
       )
 
       resources(

@@ -9,7 +9,7 @@
     conn: @conn
   ) %>
 
-  <section data-page="token-holders-list">
+  <section data-page="token-holders-list" id="holders">
     <div class="card">
       <%= render OverviewView, "_tabs.html", assigns %>
       <!-- Token Holders -->

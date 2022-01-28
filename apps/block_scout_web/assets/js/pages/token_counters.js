@@ -52,20 +52,16 @@ const elements = {
   '[token-transfer-count]': {
     render ($el, state) {
       if (state.transferCount) {
-        $el.text(state.transferCount + ' Transfers')
+        $el.empty().text(state.transferCount + ' Transfers')
         return $el.show()
-      } else {
-        return $el.hide()
       }
     }
   },
   '[token-holder-count]': {
     render ($el, state) {
       if (state.tokenHolderCount) {
-        $el.text(state.tokenHolderCount + ' Addresses')
+        $el.empty().text(state.tokenHolderCount + ' Addresses')
         return $el.show()
-      } else {
-        return $el.hide()
       }
     }
   }
