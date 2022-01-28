@@ -7,6 +7,7 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5136](https://github.com/blockscout/blockscout/pull/5136) - Improve contract verification
 
 ### Chore
 - [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
