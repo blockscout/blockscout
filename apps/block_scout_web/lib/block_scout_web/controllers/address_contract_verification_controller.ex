@@ -190,7 +190,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       "abi" => abi,
       "secondary_sources" => secondary_sources,
       "compilation_target_file_path" => compilation_target_file_path
-    } = parse_params_from_sourcify(address_hash_string, verification_metadata)
+    } = Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata)
 
     ContractController.publish(conn, %{
       "addressHash" => address_hash_string,
@@ -225,98 +225,6 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
            valid?: false
          }}, conn}}
     ]
-  end
-
-  def parse_params_from_sourcify(address_hash_string, verification_metadata) do
-    [verification_metadata_json] =
-      verification_metadata
-      |> Enum.filter(&(Map.get(&1, "name") == "metadata.json"))
-
-    full_params_initial = parse_json_from_sourcify_for_insertion(verification_metadata_json)
-
-    verification_metadata_sol =
-      verification_metadata
-      |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".sol" end)
-
-    verification_metadata_sol
-    |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
-                                           full_params_acc ->
-      compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
-
-      if String.downcase(name) == String.downcase(compilation_target_file_name) do
-        %{
-          "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-          "abi" => Map.get(full_params_acc, "abi"),
-          "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-          "compilation_target_file_name" => compilation_target_file_name
-        }
-      else
-        secondary_sources = [
-          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
-        ]
-
-        %{
-          "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-          "abi" => Map.get(full_params_acc, "abi"),
-          "secondary_sources" => secondary_sources,
-          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-          "compilation_target_file_name" => compilation_target_file_name
-        }
-      end
-    end)
-  end
-
-  defp prepare_additional_source(address_hash_string, %{"name" => _name, "content" => content, "path" => path}) do
-    splitted_path =
-      path
-      |> String.split("/")
-
-    trimmed_path =
-      splitted_path
-      |> Enum.slice(9..Enum.count(splitted_path))
-      |> Enum.join("/")
-
-    %{
-      "address_hash" => address_hash_string,
-      "file_name" => "/" <> trimmed_path,
-      "contract_source_code" => content
-    }
-  end
-
-  defp extract_primary_source_code(content, params) do
-    params
-    |> Map.put("contract_source_code", content)
-  end
-
-  def parse_json_from_sourcify_for_insertion(verification_metadata_json) do
-    %{"name" => _, "content" => content} = verification_metadata_json
-    content_json = Sourcify.decode_json(content)
-    compiler_version = "v" <> (content_json |> Map.get("compiler") |> Map.get("version"))
-    abi = content_json |> Map.get("output") |> Map.get("abi")
-    settings = Map.get(content_json, "settings")
-    compilation_target_file_path = settings |> Map.get("compilationTarget") |> Map.keys() |> Enum.at(0)
-    compilation_target_file_name = compilation_target_file_path |> String.split("/") |> Enum.at(-1)
-    contract_name = settings |> Map.get("compilationTarget") |> Map.get("#{compilation_target_file_path}")
-    optimizer = Map.get(settings, "optimizer")
-
-    params =
-      %{}
-      |> Map.put("name", contract_name)
-      |> Map.put("compiler_version", compiler_version)
-      |> Map.put("evm_version", Map.get(settings, "evmVersion"))
-      |> Map.put("optimization", Map.get(optimizer, "enabled"))
-      |> Map.put("optimization_runs", Map.get(optimizer, "runs"))
-      |> Map.put("external_libraries", Map.get(settings, "libraries"))
-      |> Map.put("verified_via_sourcify", true)
-
-    %{
-      "params_to_publish" => params,
-      "abi" => abi,
-      "compilation_target_file_path" => compilation_target_file_path,
-      "compilation_target_file_name" => compilation_target_file_name,
-      "secondary_sources" => []
-    }
   end
 
   def parse_optimization_runs(%{"runs" => runs}) do
