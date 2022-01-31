@@ -2,11 +2,15 @@
     display: inline-block;
     padding: 0 5px;
     background: #f5f6fa;
-    color: #a3a9b5;
+    color: #77838f;
     border-radius: 5px;
-    font-size: 10px;
-    height: 25px;
-    line-height: 25px;
+    &.large {
+        font-size: 14px;
+    }
+    font-size: 12px;
+    padding: 5px;
+    line-height: normal;
+
     &.right {
         margin-left: auto;
         float: right;
@@ -15,16 +19,16 @@
         background: #6ca1e2;
         color: #fff;
     }
-    &.amb {
-        background: $secondary;
-        color: #fff;
-    }
     &.destination-eth {
         background: #253358;
         color: #fff;
     }
     &.destination-bsc {
         background: #e7b941;
+        color: #fff;
+    }
+    &.destination-rinkeby {
+        background: #153550;
         color: #fff;
     }
     &.bridged {
@@ -45,4 +49,50 @@
     &.from-dropdown {
         margin-top: -3px;
     }
+    &.success {
+        background: rgba(40, 167, 69, 0.2);
+        color: rgb(40, 167, 69);
+    }
+}
+
+.confirmations-label {
+    position: relative;
+    padding-left: 1.15rem;
+    border-top-right-radius: .25rem;
+    border-bottom-right-radius: .25rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-right: 10px;
+}
+
+.confirmations-label:after {
+    position: absolute;
+    left: 0;
+    top: 0;
+    content: "";
+    border-top: .9rem solid transparent;
+    border-bottom: .9rem solid transparent;
+    border-left: .9rem solid #fff;
+}
+
+.index-label {
+    position: relative;
+    padding-right: .3rem;
+    border-top-left-radius: .25rem;
+    border-bottom-left-radius: .25rem;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    background: #f5f6fa;
+    color: #77838f;
+    padding: .2rem .5rem;
+}
+
+.index-label:after {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    content: "";
+    border-top: .8rem solid transparent;
+    border-bottom: .8rem solid transparent;
+    border-left: .8rem solid rgba(245, 246, 250, 1);
 }

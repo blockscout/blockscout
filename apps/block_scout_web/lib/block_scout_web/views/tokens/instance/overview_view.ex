@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.CurrencyHelpers
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, Token}
   alias Explorer.SmartContract.Helper
   alias FileInfo
@@ -11,6 +12,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
 
   @tabs ["token-transfers", "metadata"]
+  @stub_image "/images/controller.svg"
 
   def token_name?(%Token{name: nil}), do: false
   def token_name?(%Token{name: _}), do: true
@@ -21,7 +23,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def total_supply?(%Token{total_supply: nil}), do: false
   def total_supply?(%Token{total_supply: _}), do: true
 
-  def media_src(nil), do: "/images/controller.svg"
+  def media_src(nil), do: @stub_image
 
   def media_src(instance) do
     result =
@@ -149,8 +151,15 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     |> tab_name()
   end
 
+  defp retrieve_image(image) when is_nil(image), do: @stub_image
+
   defp retrieve_image(image) when is_map(image) do
     image["description"]
+  end
+
+  defp retrieve_image(image) when is_list(image) do
+    image_url = image |> Enum.at(0)
+    retrieve_image(image_url)
   end
 
   defp retrieve_image(image_url) do

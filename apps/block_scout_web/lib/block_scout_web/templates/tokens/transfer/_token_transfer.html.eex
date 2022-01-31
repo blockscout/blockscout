@@ -3,14 +3,7 @@
     <!-- Color Block -->
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label">
-        <%= cond do %>
-          <% @token_transfer.to_address.hash == @burn_address_hash -> %>
-            <%= gettext("Token Burning") %>
-          <% @token_transfer.from_address.hash == @burn_address_hash -> %>
-            <%= gettext("Token Minting") %>
-          <% true -> %>
-            <%= gettext("Token Transfer") %>
-        <% end %>
+        <%= render(BlockScoutWeb.CommonComponentsView, "_token_transfer_type_display_name.html", type: Chain.get_token_transfer_type(@token_transfer)) %>
       </span>
     </div>
     <!-- Content -->

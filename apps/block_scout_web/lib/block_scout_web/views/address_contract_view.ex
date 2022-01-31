@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Data, InternalTransaction, SmartContract, Transaction}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
@@ -89,11 +89,10 @@ defmodule BlockScoutWeb.AddressContractView do
     end)
   end
 
-  def contract_lines_with_index(source_code, inserted_at \\ nil) do
+  def contract_lines_with_index(source_code) do
     contract_lines =
       source_code
       |> String.split("\n")
-      |> SmartContract.add_submitted_comment(inserted_at)
 
     max_digits =
       contract_lines
@@ -125,6 +124,10 @@ defmodule BlockScoutWeb.AddressContractView do
 
   def creation_code(%Address{contracts_creation_transaction: %Transaction{}} = address) do
     address.contracts_creation_transaction.input
+  end
+
+  def creation_code(%Address{contracts_creation_transaction: nil}) do
+    nil
   end
 
   def sourcify_repo_url(address_hash, partial_match) do

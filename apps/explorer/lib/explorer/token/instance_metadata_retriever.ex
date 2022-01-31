@@ -29,9 +29,36 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     }
   ]
 
+  @uri "0e89341c"
+
+  @abi_uri [
+    %{
+      "type" => "function",
+      "stateMutability" => "view",
+      "payable" => false,
+      "outputs" => [
+        %{
+          "type" => "string",
+          "name" => "",
+          "internalType" => "string"
+        }
+      ],
+      "name" => "uri",
+      "inputs" => [
+        %{
+          "type" => "uint256",
+          "name" => "_id",
+          "internalType" => "uint256"
+        }
+      ],
+      "constant" => true
+    }
+  ]
+
   @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
   @no_uri_error "no uri"
+  @vm_execution_error "VM execution error"
 
   def fetch_metadata(unquote(@cryptokitties_address_hash), token_id) do
     %{"tokenURI" => {:ok, ["https://api.cryptokitties.co/kitties/#{token_id}"]}}
@@ -42,24 +69,51 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     # c87b56dd =  keccak256(tokenURI(uint256))
     contract_functions = %{@token_uri => [token_id]}
 
-    contract_address_hash
-    |> query_contract(contract_functions)
-    |> fetch_json()
+    res =
+      contract_address_hash
+      |> query_contract(contract_functions, @abi)
+      |> fetch_json()
+
+    if res == {:ok, %{error: @vm_execution_error}} do
+      contract_functions_uri = %{@uri => [token_id]}
+
+      contract_address_hash
+      |> query_contract(contract_functions_uri, @abi_uri)
+      |> fetch_json()
+    else
+      res
+    end
   end
 
-  def query_contract(contract_address_hash, contract_functions) do
-    Reader.query_contract(contract_address_hash, @abi, contract_functions)
+  def query_contract(contract_address_hash, contract_functions, abi) do
+    Reader.query_contract(contract_address_hash, abi, contract_functions, false)
   end
 
-  def fetch_json(%{@token_uri => {:ok, [""]}}) do
+  def fetch_json(uri) when uri in [%{@token_uri => {:ok, [""]}}, %{@uri => {:ok, [""]}}] do
     {:ok, %{error: @no_uri_error}}
   end
 
-  def fetch_json(%{@token_uri => {:error, "(-32015) VM execution error."}}) do
-    {:ok, %{error: @no_uri_error}}
+  def fetch_json(uri)
+      when uri in [
+             %{@token_uri => {:error, "(-32015) VM execution error."}},
+             %{@uri => {:error, "(-32015) VM execution error."}}
+           ] do
+    {:ok, %{error: @vm_execution_error}}
+  end
+
+  def fetch_json(%{@token_uri => {:error, "(-32015) VM execution error." <> _}}) do
+    {:ok, %{error: @vm_execution_error}}
+  end
+
+  def fetch_json(%{@uri => {:error, "(-32015) VM execution error." <> _}}) do
+    {:ok, %{error: @vm_execution_error}}
   end
 
   def fetch_json(%{@token_uri => {:ok, ["http://" <> _ = token_uri]}}) do
+    fetch_metadata(token_uri)
+  end
+
+  def fetch_json(%{@uri => {:ok, ["http://" <> _ = token_uri]}}) do
     fetch_metadata(token_uri)
   end
 
@@ -67,7 +121,24 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_metadata(token_uri)
   end
 
+  def fetch_json(%{@uri => {:ok, ["https://" <> _ = token_uri]}}) do
+    fetch_metadata(token_uri)
+  end
+
   def fetch_json(%{@token_uri => {:ok, ["data:application/json," <> json]}}) do
+    decoded_json = URI.decode(json)
+
+    fetch_json(%{@token_uri => {:ok, [decoded_json]}})
+  rescue
+    e ->
+      Logger.debug(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
+
+      {:error, json}
+  end
+
+  def fetch_json(%{@uri => {:ok, ["data:application/json," <> json]}}) do
     decoded_json = URI.decode(json)
 
     fetch_json(%{@token_uri => {:ok, [decoded_json]}})
@@ -85,12 +156,35 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_metadata(ipfs_url)
   end
 
+  def fetch_json(%{@uri => {:ok, ["ipfs://ipfs/" <> ipfs_uid]}}) do
+    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
+    fetch_metadata(ipfs_url)
+  end
+
   def fetch_json(%{@token_uri => {:ok, ["ipfs://" <> ipfs_uid]}}) do
     ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
     fetch_metadata(ipfs_url)
   end
 
+  def fetch_json(%{@uri => {:ok, ["ipfs://" <> ipfs_uid]}}) do
+    ipfs_url = "https://ipfs.io/ipfs/" <> ipfs_uid
+    fetch_metadata(ipfs_url)
+  end
+
   def fetch_json(%{@token_uri => {:ok, [json]}}) do
+    {:ok, json} = decode_json(json)
+
+    check_type(json)
+  rescue
+    e ->
+      Logger.debug(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
+
+      {:error, json}
+  end
+
+  def fetch_json(%{@uri => {:ok, [json]}}) do
     {:ok, json} = decode_json(json)
 
     check_type(json)
@@ -109,11 +203,11 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     {:error, result}
   end
 
-  defp fetch_metadata(token_uri) do
-    case HTTPoison.get(token_uri) do
+  defp fetch_metadata(uri) do
+    case HTTPoison.get(uri) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         if Enum.member?(headers, {"Content-Type", "image/png"}) do
-          json = %{"image" => token_uri}
+          json = %{"image" => uri}
 
           check_type(json)
         else
@@ -135,7 +229,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     end
   rescue
     e ->
-      Logger.debug(["Could not send request to token uri #{inspect(token_uri)}. error #{inspect(e)}"],
+      Logger.debug(["Could not send request to token uri #{inspect(uri)}. error #{inspect(e)}"],
         fetcher: :token_instances
       )
 

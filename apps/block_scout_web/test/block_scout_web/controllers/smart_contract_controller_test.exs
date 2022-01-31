@@ -47,6 +47,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
       insert(:smart_contract, address_hash: token_contract_address.hash)
 
+      blockchain_get_code_mock()
       blockchain_get_function_mock()
 
       path =
@@ -83,6 +84,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         ]
       )
 
+      blockchain_get_code_mock()
+
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,
           hash: token_contract_address.hash,
@@ -117,6 +120,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         ]
       )
 
+      blockchain_get_code_mock()
       blockchain_get_implementation_mock()
 
       path =
@@ -153,6 +157,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         ]
       )
 
+      blockchain_get_code_mock()
       blockchain_get_implementation_mock_2()
 
       path =
@@ -232,8 +237,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       address = insert(:contract_address)
       smart_contract = insert(:smart_contract, address_hash: address.hash)
 
-      get_eip1967_implementation()
-
+      blockchain_get_code_mock()
       blockchain_get_function_mock()
 
       path =
@@ -271,6 +275,16 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     )
   end
 
+  defp blockchain_get_code_mock do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [%{id: id, method: "eth_getCode", params: [_, _]}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
+      end
+    )
+  end
+
   defp blockchain_get_implementation_mock do
     expect(
       EthereumJSONRPC.Mox,
@@ -292,16 +306,29 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   end
 
   def get_eip1967_implementation do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
       {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
     end)
   end

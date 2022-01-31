@@ -1,0 +1,14 @@
+<div class="mr-4 <%= if assigns[:container_classes] do @container_classes |> Enum.join(" ") end %>" data-test="<%= if assigns[:data_test_container], do: @data_test_container %>" style="padding: 10px;">
+    <div>
+        <div class="d-flex">
+            <h1 class="card-title mb-2"><%= @title %></h1>
+            <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip.html",
+                text: @tooltip,
+                additional_classes: ["ml-2"]
+            %>
+        </div>
+        <div data-test="<%= if assigns[:data_test], do: @data_test %>" class="<%= if assigns[:classes] do @classes |> Enum.join(" ") end %>"">
+            <%= @value %>
+        </div>
+    </div>
+</div>

@@ -1,5 +1,15 @@
 <%= if @address do %>
-  <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @address), "data-test": "address_hash_link", class: assigns[:class] do %>
-    <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address: @address, contract: @contract, truncate: assigns[:truncate], use_custom_tooltip: @use_custom_tooltip %>
+  <%= if assigns[:show_full_hash] do %>
+    <%= if name = primary_name(@address) do %>
+      <span><%= name %> | 
+    <% end %>
+    <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @address), "data-test": "address_hash_link", class: assigns[:class] do %>
+      <%= @address %>
+    <% end %>
+    </span>
+  <% else %>
+    <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @address), "data-test": "address_hash_link", class: assigns[:class] do %>
+      <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address: @address, contract: @contract, truncate: assigns[:truncate], use_custom_tooltip: @use_custom_tooltip, no_tooltip: assigns[:no_tooltip], custom_classes_tooltip: assigns[:custom_classes_tooltip] %>
+    <% end %>
   <% end %>
 <% end %>

@@ -5,11 +5,18 @@
         to: token_instance_path(@conn, :show, @token.contract_address_hash, to_string(@token_instance.token_id))
       )
     %>
-   <%= if @token_instance.instance do %>
+  <%= if @token_instance.instance do %>
     <%= link(
         gettext("Metadata"),
         to: token_instance_metadata_path(@conn, :index, Address.checksum(@token.contract_address_hash), to_string(@token_instance.token_id)),
         class: "card-tab #{tab_status("metadata", @conn.request_path)}")
+      %>
+  <% end %>
+  <%= if !Chain.token_id_1155_is_unique?(@token.contract_address_hash, @token_instance.token_id) and @token.type == "ERC-1155" do %>
+    <%= link(
+        gettext("Token Holders"),
+        to: token_instance_holder_path(@conn, :index, Address.checksum(@token.contract_address_hash), to_string(@token_instance.token_id)),
+        class: "card-tab #{tab_status("token-holders", @conn.request_path)}")
       %>
   <% end %>
 </div>

@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
+  alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
+  alias BlockScoutWeb.API.RPC.RPCView
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -167,6 +168,12 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   defp prepare_token_transfer(%{token_type: "ERC-721"} = token_transfer) do
+    token_transfer
+    |> prepare_common_token_transfer()
+    |> Map.put_new(:tokenID, token_transfer.token_id)
+  end
+
+  defp prepare_token_transfer(%{token_type: "ERC-1155"} = token_transfer) do
     token_transfer
     |> prepare_common_token_transfer()
     |> Map.put_new(:tokenID, token_transfer.token_id)

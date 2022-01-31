@@ -173,15 +173,12 @@
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
       <%= if show_maintenance_alert do %>
         <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
-          <%= System.get_env("MAINTENANCE_ALERT_MESSAGE") %>
+          <%= raw(System.get_env("MAINTENANCE_ALERT_MESSAGE")) %>
         </div>
       <% end %>
       <%= if not Explorer.Chain.finished_indexing?() do %>
         <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
+          <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html" %>
           <span data-indexed-ratio="<%=Explorer.Chain.indexed_ratio() %>"></span>
           <%= gettext("- We're indexing this chain right now. Some of the counts may be inaccurate.") %>
         </div>
@@ -219,6 +216,7 @@
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationVyperView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadProxyView &&
       @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&
@@ -232,7 +230,9 @@
       @view_module != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
-      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView
+      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
+      @view_module != Elixir.BlockScoutWeb.SearchView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>

@@ -49,7 +49,44 @@ config :block_scout_web,
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
   test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
-  max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50"))
+  max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50")),
+  max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
+  re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
+  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil)
+
+global_api_rate_limit_value =
+  "API_RATE_LIMIT"
+  |> System.get_env("50")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 50
+  end
+
+api_rate_limit_by_key_value =
+  "API_RATE_LIMIT_BY_KEY"
+  |> System.get_env("50")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 50
+  end
+
+api_rate_limit_by_ip_value =
+  "API_RATE_LIMIT_BY_IP"
+  |> System.get_env("50")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 50
+  end
+
+config :block_scout_web, :api_rate_limit,
+  global_limit: global_api_rate_limit_value,
+  limit_by_key: api_rate_limit_by_key_value,
+  limit_by_ip: api_rate_limit_by_ip_value,
+  static_api_key: System.get_env("API_RATE_LIMIT_STATIC_API_KEY", nil),
+  whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS", nil)
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
@@ -139,6 +176,9 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
   wobserver_enabled: System.get_env("WOBSERVER_ENABLED") == "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
+
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

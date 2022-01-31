@@ -20,4 +20,8 @@ $i-tooltip-background-active: $primary !default;
       fill: $i-tooltip-background-active;
     }
   }
+
+  &.ds-inline {
+    display: inline;
+  }
 }
