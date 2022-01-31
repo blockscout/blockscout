@@ -130,6 +130,11 @@
                   contract_address: @token.contract_address,
                   symbol: @token.symbol
                 %>
+                <%= render BlockScoutWeb.CommonComponentsView,
+                  "_btn_swap_token_1inch.html",
+                  contract_address: @token.contract_address,
+                  symbol: @token.symbol
+                %>
               </div>
             </div>
             <%= if Map.has_key?(@token, :custom_metadata) do %>

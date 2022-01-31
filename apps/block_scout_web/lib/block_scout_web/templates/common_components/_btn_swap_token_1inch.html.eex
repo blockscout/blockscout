@@ -1,0 +1,12 @@
+<a class="dropdown-item"
+    href="https://app.1inch.io/#/100/swap/<%= @contract_address %>/0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+    target="_blank"
+>
+    <div class="btn-swap oneinch mr-1"
+        aria-label='<%= gettext "Swap Token to WXDai through 1inch" %>'
+        data-token-symbol="<%= @symbol %>"
+        data-placement="top"
+        data-toggle="tooltip"
+    ></div>
+    <%= gettext "1inch" %>
+</a>
