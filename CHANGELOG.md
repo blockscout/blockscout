@@ -7,6 +7,7 @@
 ### Fixes
 
 ### Chore
+- [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
 - [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
 - [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
 - [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
