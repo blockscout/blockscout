@@ -1,6 +1,8 @@
 defmodule Explorer.Chain.TransactionTest do
   use Explorer.DataCase
 
+  import Mox
+
   alias Ecto.Changeset
   alias Explorer.Chain.Transaction
 
@@ -263,6 +265,40 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn %{
+             id: _id,
+             method: "eth_getStorageAt",
+             params: [
+               _,
+               "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+               "latest"
+             ]
+           },
+           _options ->
+          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+        end
+      )
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn %{
+             id: _id,
+             method: "eth_getStorageAt",
+             params: [
+               _,
+               "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+               "latest"
+             ]
+           },
+           _options ->
+          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+        end
+      )
+
       assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
     end
 
@@ -282,6 +318,40 @@ defmodule Explorer.Chain.TransactionTest do
         :transaction
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn %{
+             id: _id,
+             method: "eth_getStorageAt",
+             params: [
+               _,
+               "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+               "latest"
+             ]
+           },
+           _options ->
+          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+        end
+      )
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn %{
+             id: _id,
+             method: "eth_getStorageAt",
+             params: [
+               _,
+               "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+               "latest"
+             ]
+           },
+           _options ->
+          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+        end
+      )
 
       assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
     end
