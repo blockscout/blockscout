@@ -1,5 +1,11 @@
 import $ from 'jquery'
 
+if (localStorage.getItem('main-page-alert-read') === 'true') {
+  $('.js-warning-alert').hide()
+} else {
+  $('.js-warning-alert').show()
+}
+
 if (localStorage.getItem('stakes-alert-read') === 'true') {
   $('.js-stakes-welcome-alert').hide()
 } else {
@@ -15,6 +21,7 @@ if (localStorage.getItem('stakes-warning-read') === 'true') {
 $(document.body)
   .on('click', '.js-btn-close-warning', event => {
     $(event.target).closest('.card').hide()
+    localStorage.setItem('main-page-alert-read', 'true')
   })
   .on('click', '.js-stakes-btn-close-warning', event => {
     $(event.target).closest('.card').hide()
