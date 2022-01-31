@@ -503,11 +503,6 @@ msgid "Change Network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:41
-msgid "Chat"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:6
 msgid "Choose Pool"
 msgstr ""
@@ -2221,11 +2216,6 @@ msgid "Success"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:42
-msgid "Support"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:38
 msgid "Swap STAKE on Honeyswap"
 msgstr ""
@@ -3339,4 +3329,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:155
 msgid "Type of the token standard"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:41
+msgid "Chat (#blockscout)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:42
+msgid "Forum"
 msgstr ""
