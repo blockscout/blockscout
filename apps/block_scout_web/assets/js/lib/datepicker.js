@@ -26,41 +26,42 @@ const _instance2 = new Pikaday({
   format: DATE_FORMAT
 })
 
-$button.on('click', () => {
-  $button.addClass('spinner')
-  // eslint-disable-next-line
-  const resp = grecaptcha.getResponse()
-  if (resp) {
-    $.ajax({
-      url: './captcha?type=JSON',
-      type: 'POST',
-      headers: {
-        'x-csrf-token': $('[name=_csrf_token]').val()
-      },
-      data: {
-        type: 'JSON',
-        captchaResponse: resp
-      }
-    })
-      .done(function (data) {
-        // eslint-disable-next-line
-        grecaptcha.reset()
-        const dataJson = JSON.parse(data)
-        if (dataJson.success) {
-          $button.removeClass('spinner')
-          location.href = $button.data('link')
-        } else {
-          $button.removeClass('spinner')
-          return false
-        }
-      })
-      .fail(function (_jqXHR, textStatus) {
-        $button.removeClass('spinner')
-      })
-  } else {
-    $button.removeClass('spinner')
-  }
-})
+// TODO: uncomment captcha
+// $button.on('click', () => {
+//   $button.addClass('spinner')
+//   // eslint-disable-next-line
+//   const resp = grecaptcha.getResponse()
+//   if (resp) {
+//     $.ajax({
+//       url: './captcha?type=JSON',
+//       type: 'POST',
+//       headers: {
+//         'x-csrf-token': $('[name=_csrf_token]').val()
+//       },
+//       data: {
+//         type: 'JSON',
+//         captchaResponse: resp
+//       }
+//     })
+//       .done(function (data) {
+//         // eslint-disable-next-line
+//         grecaptcha.reset()
+//         const dataJson = JSON.parse(data)
+//         if (dataJson.success) {
+//           $button.removeClass('spinner')
+//           location.href = $button.data('link')
+//         } else {
+//           $button.removeClass('spinner')
+//           return false
+//         }
+//       })
+//       .fail(function (_jqXHR, textStatus) {
+//         $button.removeClass('spinner')
+//       })
+//   } else {
+//     $button.removeClass('spinner')
+//   }
+// })
 
 function onSelect (date, paramToReplace) {
   const formattedDate = moment(date).format(DATE_FORMAT)

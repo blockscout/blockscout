@@ -22,10 +22,14 @@
 
       <div id="recaptcha" class=mb-3></div>
       <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
-      <button id="export-csv-button" class="button button-primary" style="padding: 10px 25px;" data-link=<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>><%= gettext("Download") %></button>
+      <a href="<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>" download>
+        <button id="export-csv-button" class="button button-primary" style="padding: 10px 25px;"><%= gettext("Download") %></button>
+      </a>
       </a>
     </div>
   </div>
+  <!--
+  TODO: uncomment reCaptcha
   <script type="text/javascript">
     var widgetId1
     var onloadCallback = function() {
@@ -37,5 +41,6 @@
   </script>
   <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer>
   </script>
+  !-->
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/datepicker.js") %>"></script>
 </section>
