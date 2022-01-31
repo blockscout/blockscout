@@ -27,6 +27,7 @@ defmodule Explorer.Application do
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.Repo.PrometheusLogger
+  alias Explorer.ThirdPartyIntegrations.SourcifyFilePathBackfiller
 
   @impl Application
   def start(_type, _args) do
@@ -73,7 +74,9 @@ defmodule Explorer.Application do
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
 
-    Supervisor.start_link(children, opts)
+    started = Supervisor.start_link(children, opts)
+    Task.start(fn -> SourcifyFilePathBackfiller.perform_file_paths_filling() end)
+    started
   end
 
   defp configurable_children do
