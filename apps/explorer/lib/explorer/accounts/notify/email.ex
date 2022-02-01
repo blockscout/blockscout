@@ -41,7 +41,7 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("address_url", address_url(notification.watchlist_address.address_hash))
     |> add_dynamic_field("from_url", address_url(notification.from_address_hash))
     |> add_dynamic_field("to_url", address_url(notification.to_address_hash))
-    |> add_dynamic_field("block_url", transaction_url(notification))
+    |> add_dynamic_field("block_url", block_url(notification))
   end
 
   defp email(%WatchlistNotification{
@@ -101,6 +101,10 @@ defmodule Explorer.Accounts.Notify.Email do
 
   defp address_url(address_hash) do
     Helpers.address_url(uri(), :show, address_hash)
+  end
+
+  defp block_url(notification) do
+    URI.to_string(uri()) <> "block/" <> Integer.to_string(notification.block_number)
   end
 
   defp transaction_url(notification) do
