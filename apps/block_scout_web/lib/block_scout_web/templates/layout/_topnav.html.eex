@@ -35,7 +35,7 @@
               <% end %>
             </div>
           </li>
-          <li class="nav-item dropdown">            <li class="nav-item dropdown" id="activeTransactions">
+          <li class="nav-item dropdown" id="activeTransactions">
             <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
