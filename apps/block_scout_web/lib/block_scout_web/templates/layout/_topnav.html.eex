@@ -3,9 +3,11 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" id="navbar-logo" src="<%= static_path(@conn, logo()) %>" alt="<%= subnetwork_title() %>" />
+      <%= if logo() do %>
+        <img class="navbar-logo" id="navbar-logo" src="<%= static_path(@conn, logo()) %>" alt="<%= subnetwork_title() %>" />
+      <% end %>
       <%= if logo_text() do %>
-        <span class="logo-text"> <%= logo_text() %> </span>
+        <span class="logo-text <%= unless logo(), do: "no-logo" %>"> <%= logo_text() %> </span>
       <% end %>
     <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">

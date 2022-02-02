@@ -27,12 +27,12 @@
           <td><%= name %></td>
           <td><%= type %></td>
           <td align=left>
-            <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value) do %>
+            <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value, true) do %>
               <% :error -> %>
                 <div class="alert alert-danger">
                   <%= gettext "Error rendering value" %>
                 </div>
-              <% _value -> %>
+              <% value_with_no_links -> %>
                 <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
                   <% :error -> %>
                     <%= nil %>
@@ -50,9 +50,9 @@
                       </svg>
                     </span>
                 <% end %>
-                <% template = BlockScoutWeb.ABIEncodedValueView.value_html(type, value)%>
-                <% string = template_to_string(template) %>
-                <pre class="transaction-input-text pre-wrap" style="margin-bottom: 0px;"><code style="line-height: 25px;"><%= if String.length(string) > max_length do %><div data-input-container><% input = trim(max_length, string) %><%= input[:show] %><span data-placeholder-dots>...</span><button type="button" class="btn-line" id="button-expand" aria-label="Expand" button-expand-input><%= gettext "Expand" %></button><span class="more d-none" data-hidden-text><%= input[:hide] %></span><button type="button" class="btn-line d-none" aria-label="Collapse" button-collapse-input><%= gettext "Collapse" %></button></div><% else %><%= template %><% end %></code></pre>
+                <% value_with_links = BlockScoutWeb.ABIEncodedValueView.value_html(type, value, false)%>
+                <% string = template_to_string(value_with_no_links) %>
+                <pre class="transaction-input-text pre-wrap" style="margin-bottom: 0px;"><code style="line-height: 25px;"><%= if String.length(string) > max_length do %><div data-input-container><% input = trim(max_length, string) %><%= input[:show] %><span data-placeholder-dots>...</span><button type="button" class="btn-line" id="button-expand" aria-label="Expand" button-expand-input><%= gettext "Expand" %></button><span class="more d-none" data-hidden-text><%= input[:hide] %></span><button type="button" class="btn-line d-none" aria-label="Collapse" button-collapse-input><%= gettext "Collapse" %></button></div><% else %><%= value_with_links %><% end %></code></pre>
               <% end %>
           </td>
         </tr>

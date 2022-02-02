@@ -10,7 +10,7 @@ $(document).click(function (event) {
 
 const search = (value) => {
   if (value) {
-    window.location.href = `/poa/core/search?q=${value}`
+    window.location.href = `${process.env.NETWORK_PATH}/search?q=${value}`
   }
 }
 

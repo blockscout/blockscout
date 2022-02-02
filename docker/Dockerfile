@@ -22,6 +22,10 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 EXPOSE 4000
 
 ENV MIX_ENV="prod"
+ENV SOCKET_ROOT="/poa/core"
+ENV NETWORK_PATH="/poa/core"
+ENV CHAIN_ID="99"
+ENV JSON_RPC="https://core.poa.network"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
