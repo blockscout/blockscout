@@ -36,7 +36,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp verify(address_hash, params, json_input) do
     name = Map.get(params, "name", "")
 
-    compiler_version = Map.fetch!(params, "compiler_version")
+    compiler_version = Map.get(params, "compiler_version", "latest")
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
 
@@ -100,18 +100,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   end
 
-  defp extract_settings_from_json(json_input) when is_map(json_input) do
-    %{"enabled" => optimization, "runs" => optimization_runs} = json_input["settings"]["optimizer"]
-
-    %{"optimization" => optimization}
-    |> (&if(parse_boolean(optimization), do: Map.put(&1, "optimization_runs", optimization_runs), else: &1)).()
-  end
-
   defp verify(address_hash, params) do
     name = Map.fetch!(params, "name")
     contract_source_code = Map.fetch!(params, "contract_source_code")
     optimization = Map.fetch!(params, "optimization")
-    compiler_version = Map.fetch!(params, "compiler_version")
+    compiler_version = Map.get(params, "compiler_version", "latest")
     external_libraries = Map.get(params, "external_libraries", %{})
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
@@ -190,15 +183,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
          _contract_source_code,
          _contract_name
        ) do
-    %{
-      "metadata_hash" => _generated_metadata_hash,
-      "bytecode" => generated_bytecode,
-      "compiler_version" => _generated_compiler_version
-    } = extract_bytecode_and_metadata_hash(bytecode)
-
-    # generated_bytecode = solc_output from compile_solc
-
-    # blockchain_bytecode_without_whisper = blockchain_created_tx_input from local db
 
     blockchain_created_tx_input =
       case Chain.smart_contract_creation_tx_bytecode(address_hash) do
@@ -218,8 +202,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
-      generated_bytecode != blockchain_bytecode_without_whisper ->
-        {:error, :generated_bytecode}
+      bytecode != blockchain_bytecode_without_whisper ->
+        {:error, :bytecode}
 
       true ->
         {:ok, %{abi: abi}}
@@ -245,47 +229,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   defp try_library_verification(_, _) do
     false
-  end
-
-  @doc """
-  In order to discover the bytecode we need to remove the `swarm source` from
-  the hash.
-
-  For more information on the swarm hash, check out:
-  https://solidity.readthedocs.io/en/v0.5.3/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
-  """
-  def extract_bytecode_and_metadata_hash(nil) do
-    %{"metadata_hash" => nil, "bytecode" => nil, "compiler_version" => nil}
-  end
-
-  def extract_bytecode_and_metadata_hash("0x" <> code) do
-    %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version} =
-      extract_bytecode_and_metadata_hash(code)
-
-    %{"metadata_hash" => metadata_hash, "bytecode" => "0x" <> bytecode, "compiler_version" => compiler_version}
-  end
-
-  def extract_bytecode_and_metadata_hash(code) do
-    do_extract_bytecode_and_metadata_hash([], String.downcase(code), nil, nil)
-  end
-
-  defp do_extract_bytecode_and_metadata_hash(extracted, remaining, metadata_hash, compiler_version) do
-    case remaining do
-      <<>> ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      <<next::binary-size(2)>> <> rest ->
-        do_extract_bytecode_and_metadata_hash([next | extracted], rest, metadata_hash, compiler_version)
-    end
-  end
-
-  defp do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version) do
-    bytecode =
-      extracted
-      |> Enum.reverse()
-      |> :binary.list_to_bin()
-
-    %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version}
   end
 
   defp has_constructor_with_params?(abi) do

@@ -121,7 +121,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
 
-    compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
+    # compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
+    compiler_version = CompilerVersion.get_strict_compiler_version(:solc, "latest")
 
     %{
       address_hash: address_hash,
