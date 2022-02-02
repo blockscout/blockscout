@@ -32,7 +32,7 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("from_address_hash", hash_string(notification.from_address_hash))
     |> add_dynamic_field("to_address_hash", hash_string(notification.to_address_hash))
     |> add_dynamic_field("block_number", notification.block_number)
-    |> add_dynamic_field("amount", notification.amount)
+    |> add_dynamic_field("amount", amount(notification))
     |> add_dynamic_field("name", notification.name)
     |> add_dynamic_field("tx_fee", notification.tx_fee)
     |> add_dynamic_field("direction", direction(notification))
@@ -42,6 +42,22 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("from_url", address_url(notification.from_address_hash))
     |> add_dynamic_field("to_url", address_url(notification.to_address_hash))
     |> add_dynamic_field("block_url", block_url(notification))
+  end
+
+  defp amount(%WatchlistNotification{amount: amount, type: type}) do
+    case type do
+      "COIN" ->
+        amount
+
+      "ERC-20" ->
+        amount
+
+      "ERC-721" ->
+        "Token ID: " <> to_string(amount) <> " of "
+
+      "ERC-1155" ->
+        "Token ID: " <> to_string(amount) <> " of "
+    end
   end
 
   defp email(%WatchlistNotification{
