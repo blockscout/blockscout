@@ -174,8 +174,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
           {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
         end
       )
-
-      EthereumJSONRPC.Mox
       |> expect(
         :json_rpc,
         fn %{
@@ -191,8 +189,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
           {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
         end
       )
-
-      EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
         {:ok, "100"}
       end)
