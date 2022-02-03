@@ -2,10 +2,8 @@
 <% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "" %>
 <% optimization_runs_value = if metadata_for_verification, do: metadata_for_verification.optimization_runs, else: "200" %>
 <% optimization = if metadata_for_verification, do: metadata_for_verification.optimization, else: true %>
-<% evm_version = if metadata_for_verification, do: metadata_for_verification.evm_version, else: "default" %>
-<% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
 <% contract_source_code_value = if metadata_for_verification, do: metadata_for_verification.contract_source_code, else: "" %>
-<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
+<% fetch_constructor_arguments_automatically = true %>
 <% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
   <div data-selector="channel-disconnected-message" class="d-none">
