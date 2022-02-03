@@ -11,6 +11,8 @@ services:
     environment:
       ETH_ENDPOINT: ${ENDPOINT}
       PROXY_DOMAIN: ${SCHAIN_PROXY_DOMAIN}
+      FIRST_SCHAIN_ID: ${FIRST_SCHAIN_ID}
+      LAST_SCHAIN_ID: ${LAST_SCHAIN_ID}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/admin/data
