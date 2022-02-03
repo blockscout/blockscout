@@ -1,3 +1,4 @@
+import os
 import logging
 import json
 import socket
@@ -12,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 RESULTS_PATH = "/tmp/chains.json"
+SCHAIN_FIRST_INDEX = os.environ.get('FIRST_SCHAIN_ID')
+SCHAIN_LAST_INDEX = os.environ.get('LAST_SCHAIN_ID')
 
 PORTS_PER_SCHAIN = 64
 
@@ -117,7 +120,9 @@ def get_all_names():
 
     schains_internal_contract = web3.eth.contract(address=sm_abi['schains_internal_address'], abi=sm_abi['schains_internal_abi'])
     schain_ids = schains_internal_contract.functions.getSchains().call()
-    return [schains_internal_contract.functions.schains(id).call()[0] for id in schain_ids]
+    first = SCHAIN_FIRST_INDEX if SCHAIN_FIRST_INDEX else 0
+    last = SCHAIN_LAST_INDEX if SCHAIN_LAST_INDEX else len(schain_ids)
+    return [schains_internal_contract.functions.schains(id).call()[0] for id in schain_ids[first:last]]
 
 
 def is_dkg_passed(schain_name):
