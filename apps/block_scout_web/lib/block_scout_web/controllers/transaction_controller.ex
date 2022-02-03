@@ -3,15 +3,12 @@ defmodule BlockScoutWeb.TransactionController do
 
   import BlockScoutWeb.Chain,
     only: [
-      fetch_page_number: 1,
-      paging_options: 1,
-      next_page_params: 4,
-      split_list_by_page: 1,
+      next_page_params: 2,
       supplement_page_options: 2
     ]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Phoenix.View
 
@@ -19,6 +16,7 @@ defmodule BlockScoutWeb.TransactionController do
   @burn_address_hash burn_address_hash
 
   @default_options [
+    paging_options: %PagingOptions{page_size: Chain.default_page_size()},
     necessity_by_association: %{
       :block => :required,
       [created_contract_address: :names] => :optional,
@@ -33,21 +31,12 @@ defmodule BlockScoutWeb.TransactionController do
   def index(conn, %{"type" => "JSON"} = params) do
     options =
       @default_options
-      |> Keyword.merge(paging_options(params))
+      |> supplement_page_options(params)
 
-    full_options = supplement_page_options(options, params)
+    %{total_transactions_count: transactions_count, transactions: transactions} =
+      Chain.recent_collated_transactions_for_rap(options)
 
-    %{total_transactions_count: transactions_count, transactions: transactions_plus_one} =
-      Chain.recent_collated_transactions_for_rap(full_options)
-
-    {transactions, next_page} =
-      if fetch_page_number(params) == 1 do
-        split_list_by_page(transactions_plus_one)
-      else
-        {transactions_plus_one, nil}
-      end
-
-    next_page_params = next_page_params(params, transactions_count, next_page, transactions)
+    next_page_params = next_page_params(params, transactions_count)
 
     json(
       conn,
