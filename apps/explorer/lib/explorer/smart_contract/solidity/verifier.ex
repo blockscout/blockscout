@@ -179,9 +179,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
          address_hash,
          arguments_data,
-         _autodetect_constructor_arguments,
-         _contract_source_code,
-         _contract_name
+         autodetect_constructor_arguments,
+         contract_source_code,
+         contract_name
        ) do
 
     blockchain_created_tx_input =
@@ -195,7 +195,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       end
 
     %{
-      "data" => _constructor_data,
+      "data" => constructor_data,
       "factoryDeps" => blockchain_bytecode_without_whisper,
     } = deserialize_creation_tx(blockchain_created_tx_input)
 
@@ -204,6 +204,15 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     cond do
       bytecode != blockchain_bytecode_without_whisper ->
         {:error, :bytecode}
+
+      has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
+        result = ConstructorArguments.find_constructor_arguments(constructor_data, abi, contract_source_code, contract_name)
+
+        if result do
+          {:ok, %{abi: abi, constructor_arguments: result}}
+        else
+          {:error, :constructor_arguments}
+        end
 
       true ->
         {:ok, %{abi: abi}}
