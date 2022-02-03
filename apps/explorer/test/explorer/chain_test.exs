@@ -528,16 +528,16 @@ defmodule Explorer.ChainTest do
         |> with_block()
         |> Enum.map(& &1.hash)
 
-      %Transaction{block_number: block_number, index: index} =
-        :transaction
-        |> insert(from_address: address)
+      _first_page_hashes =
+        2
+        |> insert_list(:transaction, from_address: address)
         |> with_block()
+        |> Enum.map(& &1.hash)
 
       %{transactions_count: _, transactions: transactions} =
         address_hash
         |> Chain.address_to_transactions_rap(
           paging_options: %PagingOptions{
-            key: {block_number, index},
             page_size: 2,
             page_number: 2
           }
@@ -623,25 +623,6 @@ defmodule Explorer.ChainTest do
         address_type: :emission_funds
       )
 
-      # isValidator => true
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
-        end
-      )
-
-      # getPayoutByMining => 0x0000000000000000000000000000000000000001
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok, [%{id: id, result: "0x000000000000000000000000" <> block_miner_hash_string}]}
-        end
-      )
-
       res = Chain.address_to_rewards(block.miner.hash)
 
       assert [{_, _}] = res
@@ -686,25 +667,6 @@ defmodule Explorer.ChainTest do
       |> insert(to_address: block.miner)
       |> with_block(block)
       |> Repo.preload(:token_transfers)
-
-      # isValidator => true
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
-        end
-      )
-
-      # getPayoutByMining => 0x0000000000000000000000000000000000000001
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok, [%{id: id, result: "0x000000000000000000000000" <> block_miner_hash_string}]}
-        end
-      )
 
       assert [{_, _}] = Chain.address_to_rewards(block.miner.hash, direction: :to)
 
