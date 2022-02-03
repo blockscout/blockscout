@@ -21,6 +21,17 @@ defmodule Explorer.Accounts.Notify.Summary do
     :type
   ]
 
+  def process(%Chain.TokenTransfer{} = transfer) do
+    preloaded_transfer = preload(transfer)
+
+    summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
+
+    AccountLogger.debug("--- transfer summary")
+    AccountLogger.debug(summary)
+
+    [summary]
+  end
+
   def process(%Chain.Transaction{} = transaction) do
     preloaded_transaction = preload(transaction)
 

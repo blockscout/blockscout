@@ -5,7 +5,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
 
   alias Explorer.Accounts.Notify.{Email, Summary}
   alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{TokenTransfer, Transaction}
   alias Explorer.{Mailer, Repo}
 
   import Ecto.Query, only: [from: 2]
@@ -15,6 +15,14 @@ defmodule Explorer.Accounts.Notify.Notifier do
 
   def notify(transactions) when is_list(transactions) do
     Enum.map(transactions, fn transaction -> process(transaction) end)
+  end
+
+  defp process(%TokenTransfer{} = transfer) do
+    AccountLogger.debug(transfer)
+
+    transfer
+    |> Summary.process()
+    |> Enum.map(fn summary -> notify_watchlists(summary) end)
   end
 
   defp process(%Transaction{} = transaction) do
