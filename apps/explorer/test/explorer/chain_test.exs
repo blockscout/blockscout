@@ -528,10 +528,20 @@ defmodule Explorer.ChainTest do
         |> with_block()
         |> Enum.map(& &1.hash)
 
-      %Transaction{block_number: block_number, index: index} =
-        :transaction
-        |> insert(from_address: address)
+      _first_page_hashes =
+        2
+        |> insert_list(:transaction, from_address: address)
         |> with_block()
+        |> Enum.map(& &1.hash)
+
+      %{transactions_count: _, transactions: transactions} =
+        address_hash
+        |> Chain.address_to_transactions_rap(
+          paging_options: %PagingOptions{
+            page_size: 2,
+            page_number: 2
+          }
+        )
 
       %{transactions_count: _, transactions: transactions} =
         address_hash

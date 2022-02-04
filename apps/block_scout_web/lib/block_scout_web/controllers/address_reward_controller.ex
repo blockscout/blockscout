@@ -10,24 +10,13 @@ defmodule BlockScoutWeb.AddressRewardController do
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
-  @transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      :block => :optional
-    }
-  ]
-
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     address_options = [necessity_by_association: %{:names => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      options =
-        @transaction_necessity_by_association
-        |> Keyword.merge(paging_options(params))
+      options = paging_options(params)
 
       results_plus_one = Chain.address_to_rewards(address_hash, options)
       {results, next_page} = split_list_by_page(results_plus_one)

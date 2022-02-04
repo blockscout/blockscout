@@ -7,16 +7,13 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   import BlockScoutWeb.Chain,
     only: [
-      fetch_page_number: 1,
       current_filter: 1,
-      paging_options: 1,
-      next_page_params: 4,
-      split_list_by_page: 1,
+      next_page_params: 2,
       supplement_page_options: 2
     ]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
-  alias Explorer.{Chain, Market}
+  alias Explorer.{Chain, Market, PagingOptions}
 
   alias Explorer.Chain.{
     AddressInternalTransactionCsvExporter,
@@ -29,7 +26,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
-  @transaction_necessity_by_association [
+  @default_options [
+    paging_options: %PagingOptions{page_size: Chain.default_page_size()},
     necessity_by_association: %{
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
@@ -48,23 +46,14 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       options =
-        @transaction_necessity_by_association
-        |> Keyword.merge(paging_options(params))
+        @default_options
         |> Keyword.merge(current_filter(params))
+        |> supplement_page_options(params)
 
-      full_options = supplement_page_options(options, params)
+      %{transactions_count: transactions_count, transactions: transactions} =
+        Chain.address_to_transactions_rap(address_hash, options)
 
-      %{transactions_count: transactions_count, transactions: transactions_plus_one} =
-        Chain.address_to_transactions_rap(address_hash, full_options)
-
-      {transactions, next_page} =
-        if fetch_page_number(params) == 1 do
-          split_list_by_page(transactions_plus_one)
-        else
-          {transactions_plus_one, nil}
-        end
-
-      next_page_params = next_page_params(params, transactions_count, next_page, transactions)
+      next_page_params = next_page_params(params, transactions_count)
 
       items_json =
         Enum.map(transactions, fn transaction ->
