@@ -2407,16 +2407,21 @@ defmodule Explorer.Chain do
       |> page_tokens(paging_options)
       |> limit(^paging_options.page_size)
 
-    query =
-      if filter && filter !== "" do
-        base_query_with_paging
-        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
-      else
-        base_query_with_paging
-      end
+    case prepare_search_term(filter) do
+      {:some, term} ->
+        query =
+          if String.length(term) > 0 do
+            base_query_with_paging
+            |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term))
+          else
+            base_query_with_paging
+          end
 
-    query
-    |> Repo.all()
+        query |> Repo.all()
+
+      _ ->
+        []
+    end
   end
 
   defp fetch_top_bridged_tokens(destination, paging_options, filter) do
@@ -2444,16 +2449,21 @@ defmodule Explorer.Chain do
       |> page_tokens(paging_options)
       |> limit(^paging_options.page_size)
 
-    query =
-      if filter && filter !== "" do
-        base_query_with_paging
-        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
-      else
-        base_query_with_paging
-      end
+    case prepare_search_term(filter) do
+      {:some, term} ->
+        query =
+          if String.length(term) > 0 do
+            base_query_with_paging
+            |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term))
+          else
+            base_query_with_paging
+          end
 
-    query
-    |> Repo.all()
+        query |> Repo.all()
+
+      _ ->
+        []
+    end
   end
 
   defp translate_destination_to_chain_id(destination) do

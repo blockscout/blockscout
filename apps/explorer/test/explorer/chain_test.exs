@@ -5992,4 +5992,11 @@ defmodule Explorer.ChainTest do
              ]
     end
   end
+
+  describe "Bug fix" do
+    test "https://github.com/celo-org/data-services/issues/136" do
+      # Would create invalid ts_search statement and crash at the db layer
+      Chain.list_top_tokens("tsSLAueP<esi:include%20src=\"http://bxss.me/rpb.png\"/>")
+    end
+  end
 end
