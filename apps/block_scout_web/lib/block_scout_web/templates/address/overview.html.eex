@@ -313,7 +313,7 @@
           <dl class="row address-validation-count-item" style="display: none;">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-              text: gettext("Gas used by the address.") %>
+              text: gettext("Number of blocks validated by this validator.") %>
               <%= gettext("Blocks Validated") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_blocks_validated">
