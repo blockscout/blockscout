@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status
-                     to_address_hash revert_reason type)a
+                     to_address_hash revert_reason type l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -169,7 +169,13 @@ defmodule Explorer.Chain.Transaction do
           revert_reason: String.t() | nil,
           max_priority_fee_per_gas: wei_per_gas | nil,
           max_fee_per_gas: wei_per_gas | nil,
-          type: non_neg_integer() | nil
+          type: non_neg_integer() | nil,
+          l1_fee: wei_per_gas | nil,
+          l1_fee_scalar: Decimal.t() | nil,
+          l1_gas_price: wei_per_gas | nil,
+          l1_gas_used: Gas.t() | nil,
+          l1_tx_origin: Hash.t() | nil,
+          l1_block_number: Decimal.t() | nil
         }
 
   @derive {Poison.Encoder,
@@ -189,7 +195,13 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :l1_fee,
+             :l1_fee_scalar,
+             :l1_gas_price,
+             :l1_gas_used,
+             :l1_tx_origin,
+             :l1_block_number
            ]}
 
   @derive {Jason.Encoder,
@@ -209,7 +221,13 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :l1_fee,
+             :l1_fee_scalar,
+             :l1_gas_price,
+             :l1_gas_used,
+             :l1_tx_origin,
+             :l1_block_number
            ]}
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -234,6 +252,12 @@ defmodule Explorer.Chain.Transaction do
     field(:max_priority_fee_per_gas, Wei)
     field(:max_fee_per_gas, Wei)
     field(:type, :integer)
+    field(:l1_fee, Wei)
+    field(:l1_fee_scalar, :decimal)
+    field(:l1_gas_price, Wei)
+    field(:l1_gas_used, :decimal)
+    field(:l1_tx_origin, Hash.Full)
+    field(:l1_block_number, :integer)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated

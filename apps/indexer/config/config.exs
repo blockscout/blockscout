@@ -40,7 +40,7 @@ config :indexer,
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
 
-config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor, disabled?: true
+config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor, disabled?: false
 
 token_balance_on_demand_fetcher_threshold =
   if System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES") do
@@ -58,10 +58,10 @@ config :indexer, Indexer.Fetcher.TokenBalanceOnDemand, threshold: token_balance_
 if System.get_env("POS_STAKING_CONTRACT") do
   config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 else
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
+  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: false
 end
 
-config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: true
+config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
