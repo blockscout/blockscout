@@ -1,6 +1,6 @@
 SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
-DOCKER_IMAGE = blockscout_prod
+DOCKER_IMAGE = hermez-node-blockscout
 BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:12.5
@@ -422,6 +422,11 @@ start: build postgres
 					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
 
 run: start
+
+push:
+	@echo "==> Pushing image to docker hub"
+	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
+	@docker push hermeznetwork/hermez-node-blockscout:latest
 
 .PHONY: build \
 				migrate \
