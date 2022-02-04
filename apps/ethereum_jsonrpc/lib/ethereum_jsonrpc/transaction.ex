@@ -111,7 +111,9 @@ defmodule EthereumJSONRPC.Transaction do
           transaction_index: non_neg_integer(),
           max_priority_fee_per_gas: non_neg_integer(),
           max_fee_per_gas: non_neg_integer(),
-          type: non_neg_integer()
+          type: non_neg_integer(),
+          l1_tx_origin: EthereumJSONRPC.hash(),
+          l1_block_number: non_neg_integer()
         }
 
   @doc """
@@ -221,7 +223,9 @@ defmodule EthereumJSONRPC.Transaction do
           "value" => value,
           "type" => type,
           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
-          "maxFeePerGas" => max_fee_per_gas
+          "maxFeePerGas" => max_fee_per_gas,
+          "l1TxOrigin" => l1_tx_origin,
+          "l1BlockNumber" => l1_block_number
         } = transaction
       ) do
     result = %{
@@ -242,7 +246,9 @@ defmodule EthereumJSONRPC.Transaction do
       transaction_index: index,
       type: type,
       max_priority_fee_per_gas: max_priority_fee_per_gas,
-      max_fee_per_gas: max_fee_per_gas
+      max_fee_per_gas: max_fee_per_gas,
+      l1_tx_origin: l1_tx_origin,
+      l1_block_number: l1_block_number
     }
 
     put_if_present(transaction, result, [
@@ -316,7 +322,9 @@ defmodule EthereumJSONRPC.Transaction do
           "transactionIndex" => index,
           "v" => v,
           "value" => value,
-          "type" => type
+          "type" => type,
+          "l1TxOrigin" => l1_tx_origin,
+          "l1BlockNumber" => l1_block_number
         } = transaction
       ) do
     result = %{
@@ -335,7 +343,9 @@ defmodule EthereumJSONRPC.Transaction do
       v: v,
       value: value,
       transaction_index: index,
-      type: type
+      type: type,
+      l1_tx_origin: l1_tx_origin,
+      l1_block_number: l1_block_number
     }
 
     put_if_present(transaction, result, [
@@ -359,7 +369,9 @@ defmodule EthereumJSONRPC.Transaction do
           "to" => to_address_hash,
           "transactionIndex" => index,
           "v" => v,
-          "value" => value
+          "value" => value,
+          "l1TxOrigin" => l1_tx_origin,
+          "l1BlockNumber" => l1_block_number
         } = transaction
       ) do
     result = %{
@@ -377,7 +389,9 @@ defmodule EthereumJSONRPC.Transaction do
       to_address_hash: to_address_hash,
       v: v,
       value: value,
-      transaction_index: index
+      transaction_index: index,
+      l1_tx_origin: l1_tx_origin,
+      l1_block_number: l1_block_number
     }
 
     put_if_present(transaction, result, [
@@ -552,7 +566,8 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # quantity or nil for pending
-  defp entry_to_elixir({key, quantity_or_nil}) when key in ~w(blockNumber transactionIndex) do
+  defp entry_to_elixir({key, quantity_or_nil})
+       when key in ~w(blockNumber transactionIndex l1Fee l1FeeScalar l1GasPrice l1GasUsed l1TxOrigin l1BlockNumber) do
     elixir =
       case quantity_or_nil do
         nil -> nil
