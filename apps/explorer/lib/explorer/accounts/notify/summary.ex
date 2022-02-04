@@ -191,7 +191,7 @@ defmodule Explorer.Accounts.Notify.Summary do
   end
 
   def preload(%Chain.TokenTransfer{} = transfer) do
-    Repo.preload(transfer, [:transaction])
+    Repo.preload(transfer, [:transaction, :token])
   end
 
   def preload(_), do: nil
