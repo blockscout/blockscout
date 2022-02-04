@@ -496,7 +496,7 @@ defmodule Explorer.Etherscan do
     |> Repo.all()
   end
 
-  defp transaction_with_address_query(filter, address_hash, max_block_number, options) do
+  defp transaction_with_address_query(filter, address_hash, _max_block_number, options) do
     query =
       from(
         t in Transaction,

@@ -9,8 +9,6 @@ defmodule Explorer.Chain.Import.Runner.CeloUnlocked do
   alias Explorer.Chain.{CeloUnlocked, Import}
   alias Explorer.Chain.Import.Runner.Util
 
-  import Ecto.Query, only: [from: 2]
-
   @behaviour Import.Runner
 
   # milliseconds
@@ -46,7 +44,7 @@ defmodule Explorer.Chain.Import.Runner.CeloUnlocked do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [CeloUnlocked.t()]} | {:error, [Changeset.t()]}
-  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps}) when is_list(changes_list) do
     # Enforce ShareLocks order (see docs: sharelocks.md)
     uniq_changes_list =
       changes_list

@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.ImportTest do
   use Explorer.DataCase
 
+  alias Explorer.Celo.ContractEvents.EventMap
   alias Explorer.Chain
 
   alias Explorer.Chain.{
@@ -8,6 +9,7 @@ defmodule Explorer.Chain.ImportTest do
     Address.TokenBalance,
     Address.CurrentTokenBalance,
     Block,
+    CeloContractEvent,
     Data,
     Log,
     Hash,
@@ -2308,6 +2310,70 @@ defmodule Explorer.Chain.ImportTest do
                  token_contract_address_hash: token_contract_address_hash,
                  block_number: block_number
                )
+    end
+
+    test "inserts celo contract events " do
+      %Block{number: block_number} = insert(:block, consensus: true)
+      %Address{hash: address_hash} = address = insert(:address)
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      log = %{
+        address_hash: address_hash,
+        block_hash: block_hash_after,
+        block_number: block_number,
+        data:
+          "0x000000000000000000000000000000000000000000000003a188c31fefaa000000000000000000000000000000000012086cd1c417618770935790ad714d7730",
+        first_topic: "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe",
+        fourth_topic: nil,
+        index: 8,
+        second_topic: "0x00000000000000000000000088c1c759600ec3110af043c183a2472ab32d099c",
+        third_topic: "0x00000000000000000000000047b2db6af05a55d42ed0f3731735f9479abf0673",
+        transaction_hash: nil
+      }
+
+      events = EventMap.rpc_to_event_params([log])
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: address_hash},
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 },
+                 celo_contract_events: %{
+                   params: events
+                 }
+               })
+
+      result =
+        CeloContractEvent
+        |> Repo.all()
+        |> EventMap.celo_contract_event_to_concrete_event()
+
+      assert result = [%Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent{}]
     end
   end
 end

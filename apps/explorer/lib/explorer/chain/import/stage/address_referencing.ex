@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
       Runner.Address.Names,
       Runner.Blocks,
       Runner.CeloAccounts,
+      Runner.CeloContractEvent,
       Runner.CeloParams,
       Runner.CeloSigners,
       Runner.CeloValidators,
