@@ -272,6 +272,8 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     debug(constructor_arguments, "constructor_arguments")
     debug(contract_name, "contract_name")
     
+    check_func_result_before_removing_strings = check_func.(constructor_arguments)
+
     constructor_arguments =
       remove_require_messages_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name) |> debug("remove_require_messages_from_constructor_arguments")
 
@@ -280,9 +282,12 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
     check_func_result = check_func.(filtered_constructor_arguments)
 
-    if check_func_result do
-      check_func_result
-    else
+    cond do
+      check_func_result_before_removing_strings -> 
+        check_func_result_before_removing_strings
+      check_func_result ->
+        check_func_result
+    true ->
       output =
         extract_constructor_arguments(filtered_constructor_arguments, check_func, contract_source_code, contract_name)
 
