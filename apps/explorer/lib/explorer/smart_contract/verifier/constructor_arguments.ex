@@ -220,8 +220,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
         )
 
       <<>> ->
-        # we should consdider change: use just :false
-        check_func.("")
+        false
 
       <<_::binary-size(2)>> <> rest ->
         extract_constructor_arguments(rest, check_func, contract_source_code, contract_name)
@@ -236,6 +235,8 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
     constructor_arguments_parts > 1
   end
+
+  defp split_constructor_arguments_and_extract_check_func(constructor_arguments, nil, nil, nil, _metadata_hash_prefix), do: constructor_arguments
 
   defp split_constructor_arguments_and_extract_check_func(
          constructor_arguments,
@@ -268,11 +269,14 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   end
 
   defp extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name) do
+    debug(constructor_arguments, "constructor_arguments")
+    debug(contract_name, "contract_name")
+    
     constructor_arguments =
-      remove_require_messages_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name)
+      remove_require_messages_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name) |> debug("remove_require_messages_from_constructor_arguments")
 
     filtered_constructor_arguments =
-      remove_keccak256_strings_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name)
+      remove_keccak256_strings_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name) |> debug("remove_keccak256_strings_from_constructor_arguments")
 
     check_func_result = check_func.(filtered_constructor_arguments)
 
@@ -363,31 +367,43 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end)
   end
 
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.debug(key)
+    Logger.debug(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+    end  
+
   def find_constructor_arguments(address_hash, abi, contract_source_code, contract_name) do
     creation_code =
       address_hash
       |> Chain.contract_creation_input_data()
       |> String.replace("0x", "")
 
-    constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
+    check_func = parse_constructor_and_return_check_func(abi)
 
-    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
+    extract_constructor_arguments(creation_code, check_func, contract_source_code, contract_name)
+  end
 
-    check_func = fn assumed_arguments ->
+  defp parse_constructor_and_return_check_func(abi) do
+    constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end) |> debug("construcor abi")
+
+    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1) |> debug("input types")
+
+    fn assumed_arguments ->
       try do
         _ =
           assumed_arguments
           |> Base.decode16!(case: :mixed)
-          |> TypeDecoder.decode_raw(input_types)
+          |> TypeDecoder.decode_raw(input_types) |> debug("assumes args")
 
         assumed_arguments
       rescue
         _ ->
-          false
+          false |> debug("assumes args FAIL")
       end
     end
-
-    extract_constructor_arguments(creation_code, check_func, contract_source_code, contract_name)
   end
 
   def extract_require_messages_from_constructor(contract_source_code, _contract_name) do
@@ -497,5 +513,16 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     else
       nil
     end
+  end
+
+  def experimental_find_constructor_args(rest_creation, rest_generated, abi) do
+    got_args =
+      rest_creation
+      |> String.split(extract_constructor_arguments(rest_generated, nil, nil, nil))
+      |> List.last()
+    
+    abi
+    |> parse_constructor_and_return_check_func()
+    |> (&(&1.(got_args))).()
   end
 end
