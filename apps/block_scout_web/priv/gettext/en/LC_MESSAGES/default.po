@@ -3504,3 +3504,13 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:290
 msgid "Number of blocks validated by this validator."
 msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+msgid "Add"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+msgid "to MetaMask"
+msgstr ""
