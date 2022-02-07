@@ -226,12 +226,26 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         {:error, :generated_bytecode}
 
       has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
-        result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
+        result_1 =
+          try_to_verify_with_unknown_constructor_args(
+            blockchain_created_tx_input,
+            bytecode,
+            blockchain_bytecode_without_whisper,
+            abi
+          )
 
-        if result do
-          {:ok, %{abi: abi, constructor_arguments: result}}
-        else
-          {:error, :constructor_arguments}
+        result_2 =
+          ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
+
+        cond do
+          result_1 ->
+            {:ok, %{abi: abi, constructor_arguments: result_1}}
+
+          result_2 ->
+            {:ok, %{abi: abi, constructor_arguments: result_2}}
+
+          true ->
+            {:error, :constructor_arguments}
         end
 
       has_constructor_with_params?(abi) && empty_constructor_arguments ->
@@ -250,6 +264,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       true ->
         {:ok, %{abi: abi}}
     end
+  end
+
+  defp try_to_verify_with_unknown_constructor_args(creation_code, generated_bytecode, trimmed_bytecode, abi) do
+    ["", rest_blockchain] = String.split(creation_code, trimmed_bytecode)
+    ["", rest_generated] = String.split(generated_bytecode, trimmed_bytecode)
+    ConstructorArguments.experimental_find_constructor_args(rest_blockchain, rest_generated, abi)
   end
 
   # 730000000000000000000000000000000000000000 - default library address that returned by the compiler
