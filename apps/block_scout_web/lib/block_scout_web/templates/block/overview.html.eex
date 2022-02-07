@@ -262,4 +262,4 @@
     </div>
 </section>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_adbutler_banner.html", conn: @conn %> 

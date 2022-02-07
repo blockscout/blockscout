@@ -78,4 +78,4 @@
 </section>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@conn, @token_id, @token.contract_address_hash), title: @token.contract_address %>
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_adbutler_banner.html", conn: @conn %>

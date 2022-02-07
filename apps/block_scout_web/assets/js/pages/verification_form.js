@@ -183,7 +183,6 @@ if ($contractVerificationPage.length) {
         autoProcessQueue: false,
         acceptedFiles: acceptedFiles,
         parallelUploads: 100,
-        maxFiles: 1,
         uploadMultiple: true,
         addRemoveLinks: true,
         maxFilesize: 10,

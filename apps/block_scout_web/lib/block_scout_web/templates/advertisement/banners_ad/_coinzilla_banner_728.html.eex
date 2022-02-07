@@ -3,4 +3,4 @@
 <div class="ad-container mb-2" style="display: none;">
     <div class="coinzilla" data-zone="C-26660bf627543e46851"></div>
 </div>
-<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/banner.js") %>"></script>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/coinzilla_banner.js") %>"></script>

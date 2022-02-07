@@ -116,7 +116,7 @@ const config = {
   }
 }
 
-var gasUsageFontColor
+let gasUsageFontColor
 if (localStorage.getItem('current-color-mode') === 'dark') {
   gasUsageFontColor = sassVariables.dashboardBannerChartAxisFontColor
 } else {

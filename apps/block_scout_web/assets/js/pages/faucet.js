@@ -29,7 +29,7 @@ const faucetAddress = $('#faucetAddress').val()
 
 getFaucetBalance()
 
-var deviceKey = getCookie('faucet-device-key')
+let deviceKey = getCookie('faucet-device-key')
 const sessionKey = uuidv4()
 setCookie('faucet-session-key', sessionKey)
 if (!deviceKey) {
@@ -83,17 +83,17 @@ function validateInput (event) {
 }
 
 function onSMSButtonClick (event) {
-  var receiver = $receiverInput.val()
+  const receiver = $receiverInput.val()
   if (!receiver) {
     $receiverInput.addClass('invalid')
     return
   }
-  var phoneNumber = $phoneNumberInput.val()
+  let phoneNumber = $phoneNumberInput.val()
   if (!phoneNumber) {
     $phoneNumberInput.addClass('invalid')
     return
   }
-  var countryData = iti.getSelectedCountryData()
+  const countryData = iti.getSelectedCountryData()
   phoneNumber = countryData.dialCode + phoneNumber
   const saltedSessionKey = deviceKey.concat(sessionKey)
   const sessionKeyHash = Web3.utils.keccak256(saltedSessionKey)
@@ -154,19 +154,19 @@ function onSMSButtonClick (event) {
 
 $('#faucetForm').submit(function (event) {
   event.preventDefault()
-  var receiver = $receiverInput.val()
+  const receiver = $receiverInput.val()
   if (!receiver) {
     $receiverInput.addClass('invalid')
     return
   }
-  var phoneNumber = $phoneNumberInput.val()
+  let phoneNumber = $phoneNumberInput.val()
   if (!phoneNumber) {
     $phoneNumberInput.addClass('invalid')
     return
   }
-  var countryData = iti.getSelectedCountryData()
+  const countryData = iti.getSelectedCountryData()
   phoneNumber = countryData.dialCode + phoneNumber
-  var verificationCode = $verificationCodeInput.val()
+  const verificationCode = $verificationCodeInput.val()
   if (!verificationCode) {
     $verificationCodeInput.addClass('invalid')
     return
