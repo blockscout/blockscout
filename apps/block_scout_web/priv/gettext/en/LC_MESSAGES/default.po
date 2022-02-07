@@ -173,7 +173,7 @@ msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:116
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:124
 msgid "APIs"
 msgstr ""
 
@@ -198,7 +198,7 @@ msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:166
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:174
 msgid "Add Your App"
 msgstr ""
 
@@ -304,7 +304,7 @@ msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:178
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:186
 msgid "Apps"
 msgstr ""
 
@@ -480,7 +480,7 @@ msgid "Bridged from Ethereum"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:172
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:180
 msgid "Bridges"
 msgstr ""
 
@@ -973,7 +973,7 @@ msgid "Decompiler version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:148
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:156
 msgid "Defi"
 msgstr ""
 
@@ -1142,7 +1142,7 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:130
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:138
 msgid "Eth RPC"
 msgstr ""
 
@@ -1236,7 +1236,7 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:156
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:164
 msgid "Gas Tracker"
 msgstr ""
 
@@ -1269,7 +1269,7 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:120
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
 msgid "GraphQL"
 msgstr ""
 
@@ -1426,7 +1426,7 @@ msgid "Last Balance Update"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:192
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:200
 msgid "Learn"
 msgstr ""
 
@@ -1624,12 +1624,12 @@ msgid "Module"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:151
 msgid "More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:198
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:206
 msgid "More apps"
 msgstr ""
 
@@ -1915,7 +1915,7 @@ msgid "Query"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:125
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
 msgid "RPC"
 msgstr ""
 
@@ -1981,7 +1981,7 @@ msgid "Reset"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:186
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:194
 msgid "Resources"
 msgstr ""
 
@@ -2229,13 +2229,18 @@ msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:151
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:159
 msgid "Staking on xDai"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:24
 msgid "Static Call"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:115
+msgid "Stats"
 msgstr ""
 
 #, elixir-format

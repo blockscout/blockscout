@@ -1,0 +1,15 @@
+<%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+<section class="container" data-page="stats-list">
+<section class="fs-14" data-page="stats-details">
+  <div class="row">
+    <div class="col-md-12">
+      <!-- Stats Details -->
+      <div class="card js-ad-dependant-mb-3">
+        <div class="card-body">
+             <iframe width="1210" height="2700" src="https://datastudio.google.com/embed/reporting/e0a253b1-fa37-43d0-bbc3-2706a64f2211/page/hDehC?hl=en" frameborder="0" style="border:0" allowfullscreen></iframe>       
+      </div>
+    </div>
+  </div>
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
+</section>
+</section>
