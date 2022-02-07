@@ -236,7 +236,8 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     constructor_arguments_parts > 1
   end
 
-  defp split_constructor_arguments_and_extract_check_func(constructor_arguments, nil, nil, nil, _metadata_hash_prefix), do: constructor_arguments
+  defp split_constructor_arguments_and_extract_check_func(constructor_arguments, nil, nil, nil, _metadata_hash_prefix),
+    do: constructor_arguments
 
   defp split_constructor_arguments_and_extract_check_func(
          constructor_arguments,
@@ -268,7 +269,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end
   end
 
-  defp extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name) do   
+  defp extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name) do
     check_func_result_before_removing_strings = check_func.(constructor_arguments)
 
     constructor_arguments =
@@ -280,23 +281,25 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     check_func_result = check_func.(filtered_constructor_arguments)
 
     cond do
-      check_func_result_before_removing_strings -> 
+      check_func_result_before_removing_strings ->
         check_func_result_before_removing_strings
+
       check_func_result ->
         check_func_result
-    true ->
-      output =
-        extract_constructor_arguments(filtered_constructor_arguments, check_func, contract_source_code, contract_name)
 
-      if output do
-        output
-      else
-        # https://github.com/blockscout/blockscout/pull/4764
-        clean_constructor_arguments =
-          remove_substring_of_require_messages(filtered_constructor_arguments, contract_source_code, contract_name)
+      true ->
+        output =
+          extract_constructor_arguments(filtered_constructor_arguments, check_func, contract_source_code, contract_name)
 
-        check_func.(clean_constructor_arguments)
-      end
+        if output do
+          output
+        else
+          # https://github.com/blockscout/blockscout/pull/4764
+          clean_constructor_arguments =
+            remove_substring_of_require_messages(filtered_constructor_arguments, contract_source_code, contract_name)
+
+          check_func.(clean_constructor_arguments)
+        end
     end
   end
 
@@ -514,9 +517,9 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
       rest_creation
       |> String.split(extract_constructor_arguments(rest_generated, nil, nil, nil))
       |> List.last()
-    
+
     abi
     |> parse_constructor_and_return_check_func()
-    |> (&(&1.(got_args))).()
+    |> (& &1.(got_args)).()
   end
 end
