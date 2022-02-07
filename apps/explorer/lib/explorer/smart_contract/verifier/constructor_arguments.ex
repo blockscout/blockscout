@@ -268,17 +268,14 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end
   end
 
-  defp extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name) do
-    debug(constructor_arguments, "constructor_arguments")
-    debug(contract_name, "contract_name")
-    
+  defp extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name) do   
     check_func_result_before_removing_strings = check_func.(constructor_arguments)
 
     constructor_arguments =
-      remove_require_messages_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name) |> debug("remove_require_messages_from_constructor_arguments")
+      remove_require_messages_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name)
 
     filtered_constructor_arguments =
-      remove_keccak256_strings_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name) |> debug("remove_keccak256_strings_from_constructor_arguments")
+      remove_keccak256_strings_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name)
 
     check_func_result = check_func.(filtered_constructor_arguments)
 
@@ -372,14 +369,6 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end)
   end
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.debug(key)
-    Logger.debug(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-    end  
-
   def find_constructor_arguments(address_hash, abi, contract_source_code, contract_name) do
     creation_code =
       address_hash
@@ -392,21 +381,21 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   end
 
   defp parse_constructor_and_return_check_func(abi) do
-    constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end) |> debug("construcor abi")
+    constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
 
-    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1) |> debug("input types")
+    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
 
     fn assumed_arguments ->
       try do
         _ =
           assumed_arguments
           |> Base.decode16!(case: :mixed)
-          |> TypeDecoder.decode_raw(input_types) |> debug("assumes args")
+          |> TypeDecoder.decode_raw(input_types)
 
         assumed_arguments
       rescue
         _ ->
-          false |> debug("assumes args FAIL")
+          false
       end
     end
   end

@@ -144,7 +144,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         optimization_runs: optimization_runs,
         evm_version: evm_version,
         external_libs: external_libraries
-      ) |> debug("solc_output")
+      )
 
     compare_bytecodes(
       solc_output,
@@ -156,15 +156,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     )
   end
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.debug(key)
-    Logger.debug(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-    end
-  
-  
   defp compare_bytecodes({:error, :name}, _, _, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _, _, _), do: {:error, :compilation}
 
@@ -203,10 +194,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       "metadata_hash" => _generated_metadata_hash,
       "bytecode" => generated_bytecode,
       "compiler_version" => generated_compiler_version
-    } = extract_bytecode_and_metadata_hash(bytecode) |> debug("extract_bytecode_and_metadata_hash our")
+    } = extract_bytecode_and_metadata_hash(bytecode)
 
     blockchain_created_tx_input =
-      case Chain.smart_contract_creation_tx_bytecode(address_hash) |> debug("smart_contract_creation_tx_bytecode") do
+      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
         %{init: init, created_contract_code: _created_contract_code}->
           "0x" <> init_without_0x = init
           init_without_0x
@@ -219,7 +210,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       "metadata_hash" => _metadata_hash,
       "bytecode" => blockchain_bytecode_without_whisper,
       "compiler_version" => compiler_version_from_input
-    } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input) |> debug("extract_bytecode_and_metadata_hash blockchain")
+    } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input)
 
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
@@ -232,8 +223,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         {:error, :generated_bytecode}
 
       has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
-        result_1 = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name) |> debug("find_constructor_arguments")
-        result_2 = try_to_verify_with_unknown_constructor_args(blockchain_created_tx_input, bytecode, blockchain_bytecode_without_whisper, abi) |> debug("try_to_verify_with_unknown_constructor_args")
+        result_1 = try_to_verify_with_unknown_constructor_args(blockchain_created_tx_input, bytecode, blockchain_bytecode_without_whisper, abi)
+        result_2 = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
         cond do
           result_1 ->
             {:ok, %{abi: abi, constructor_arguments: result_1}}
