@@ -70,5 +70,45 @@
         "name": "SNAFU Collective",
         "url": "https://app.nftsnafu.org/#/swap"
     }
+},{
+    "ad": {
+        "thumbnail": "/images/in-house-ad/elk.png",
+        "description_short": "Earn dual-token rewards on high-yield Elk farms!",
+        "cta_button": "Start farming!",
+        "name": "Elk",
+        "url": "https://elk.finance/"
+    }
+},{
+    "ad": {
+        "thumbnail": "/images/in-house-ad/gardens.svg",
+        "description_short": "Decentralized interface to set up a covenant-based DAO.",
+        "cta_button": "Learn more",
+        "name": "Gardens",
+        "url": "https://gardens.1hive.org/"
+    }
+},{
+    "ad": {
+        "thumbnail": "/images/in-house-ad/xdai-tigers.svg",
+        "description_short": "Minting is live on Gnosis Chain! Join the community of builders today! Price for 1 xDai Tiger: 25 xDai.",
+        "cta_button": "Mint now",
+        "name": "xDai Tigers",
+        "url": "https://xdaitigers.com/"
+    }
+},{
+    "ad": {
+        "thumbnail": "/images/in-house-ad/daosquare.svg",
+        "description_short": "DAOSquare is an incubator for Web3, just like Y · Combinator for Web2.",
+        "cta_button": "Join us",
+        "name": "DAOSquare",
+        "url": "https://discord.gg/daosquare"
+    }
+},{
+    "ad": {
+        "thumbnail": "/images/in-house-ad/giveth.svg",
+        "description_short": "Building a culture of giving that rewards & empowers those who give - to projects, to society, & to the world.",
+        "cta_button": "Join the GIVeconomy",
+        "name": "Giveth",
+        "url": "https://giv.giveth.io/"
+    }
 }
 ]
