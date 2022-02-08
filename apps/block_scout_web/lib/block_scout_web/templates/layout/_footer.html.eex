@@ -41,7 +41,7 @@
           <li><a href="http://discord.gg/gnosischain" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
           <li><a href="https://forum.poa.network/c/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
           <%= if System.get_env("COIN_NAME") && System.get_env("NETWORK_PATH") && System.get_env("SUBNETWORK") && System.get_env("JSON_RPC") && System.get_env("CHAIN_ID") do %>
-            <li><a class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer" style="cursor: pointer;"><%= gettext("Add") <> " #{System.get_env("SUBNETWORK")} " <> gettext("to MetaMask") %></a></li>
+            <li><a class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer" style="cursor: pointer;"><%= gettext("Add") <> " #{System.get_env("SUBNETWORK")}" %></a></li>
           <% end %>
         </ul>
       </div>
