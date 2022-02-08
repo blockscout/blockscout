@@ -49,7 +49,7 @@
           <li><a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" class="footer-link"><%= gettext("Staking stats") %></a></li>
           <li><a href="https://duneanalytics.com/maxaleks/xDai-Usage" rel="noreferrer" class="footer-link"><%= gettext("Gnosis Chain Usage stats") %></a></li>
           <%= if System.get_env("COIN_NAME") && System.get_env("NETWORK_PATH") && System.get_env("SUBNETWORK") && System.get_env("JSON_RPC") && System.get_env("CHAIN_ID") do %>
-            <li><a class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer" style="cursor: pointer;"><%= gettext("Add") <> " #{System.get_env("SUBNETWORK")} " <> gettext("to MetaMask") %></a></li>
+            <li><a class="footer-link js-btn-add-chain-to-mm btn-add-chain-to-mm in-footer" style="cursor: pointer;"><%= gettext("Add") <> " #{System.get_env("SUBNETWORK")}" %></a></li>
           <% end %>
         </ul>
       </div>
