@@ -82,7 +82,7 @@ const appJs =
       'token-counters': './js/pages/token_counters.js',
       'token-transfers': './js/pages/token/token_transfers.js',
       'admin-tasks': './js/pages/admin/tasks.js',
-      'read-token-contract': './js/pages/read_token_contract.js',
+      'token-contract': './js/pages/token_contract.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'try-api': './js/lib/try_api.js',
@@ -177,7 +177,9 @@ const appJs =
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
         'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH),
         'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
-        'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC)
+        'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC),
+        'process.env.SUBNETWORK': JSON.stringify(process.env.SUBNETWORK),
+        'process.env.COIN_NAME': JSON.stringify(process.env.COIN_NAME)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
