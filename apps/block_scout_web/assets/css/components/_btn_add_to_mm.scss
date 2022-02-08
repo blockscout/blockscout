@@ -20,4 +20,9 @@
     background-position-y: center;
     padding-left: 40px;
     outline: none;
+
+    &.in-footer {
+        background-position-x: 0px;
+        padding-left: 25px;
+    }
 }
