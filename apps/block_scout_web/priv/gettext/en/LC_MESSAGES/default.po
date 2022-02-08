@@ -1487,7 +1487,7 @@ msgid "ME"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:49
+#: lib/block_scout_web/templates/layout/_footer.html.eex:52
 msgid "Main Networks"
 msgstr ""
 
@@ -1734,7 +1734,7 @@ msgid "Ordered"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:73
+#: lib/block_scout_web/templates/layout/_footer.html.eex:76
 msgid "Other Explorers"
 msgstr ""
 
@@ -2236,7 +2236,7 @@ msgid "Telegram"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:62
+#: lib/block_scout_web/templates/layout/_footer.html.eex:65
 msgid "Test Networks"
 msgstr ""
 
@@ -2936,7 +2936,7 @@ msgid "Verify the contract "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:88
+#: lib/block_scout_web/templates/layout/_footer.html.eex:91
 msgid "Version"
 msgstr ""
 
@@ -3343,4 +3343,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:290
 msgid "Number of blocks validated by this validator."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+msgid "Add"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+msgid "to MetaMask"
 msgstr ""
