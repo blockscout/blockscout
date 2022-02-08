@@ -1,6 +1,3 @@
-alias Explorer.Chain.{CeloContractEvent, Log}
-alias Explorer.Celo.ContractEvents.EventTransformer
-
 defmodule Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent do
   @moduledoc """
   Struct modelling the Election.ValidatorGroupVoteActivated event
@@ -12,6 +9,10 @@ defmodule Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
       uint256 units
     );
   """
+
+  alias Explorer.Celo.ContractEvents.EventTransformer
+  alias Explorer.Chain.{CeloContractEvent, Log}
+  import Ecto.Query
 
   @name "ValidatorGroupVoteActivated"
   @topic "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe"
@@ -30,6 +31,10 @@ defmodule Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
     :units,
     name: @name
   ]
+
+  def query do
+    from(c in CeloContractEvent, where: c.name == ^@name)
+  end
 
   defimpl EventTransformer do
     alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent

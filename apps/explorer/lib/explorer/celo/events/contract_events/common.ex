@@ -49,6 +49,7 @@ defmodule Explorer.Celo.ContractEvents.Common do
   def format_address_for_postgres_json(%Hash{} = address),
     do: address |> to_string() |> format_address_for_postgres_json()
 
+  def format_address_for_postgres_json(nil), do: "\\x"
   def format_address_for_postgres_json("\\x" <> _rest = address), do: address
   def format_address_for_postgres_json("0x" <> rest), do: format_address_for_postgres_json(rest)
   def format_address_for_postgres_json(address), do: "\\x" <> address

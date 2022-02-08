@@ -1,6 +1,3 @@
-alias Explorer.Chain.{CeloContractEvent, Log}
-alias Explorer.Celo.ContractEvents.EventTransformer
-
 defmodule Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent do
   @moduledoc """
   Struct modelling the Validators.ValidatorEpochPaymentDistributed event
@@ -12,6 +9,10 @@ defmodule Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistribut
         uint256 groupPayment
     );
   """
+
+  alias Explorer.Celo.ContractEvents.EventTransformer
+  alias Explorer.Chain.{CeloContractEvent, Log}
+  import Ecto.Query
 
   @name "ValidatorEpochPaymentDistributed"
   @topic "0x6f5937add2ec38a0fa4959bccd86e3fcc2aafb706cd3e6c0565f87a7b36b9975"
@@ -30,6 +31,10 @@ defmodule Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistribut
     :group_payment,
     name: @name
   ]
+
+  def query do
+    from(c in CeloContractEvent, where: c.name == ^@name)
+  end
 
   defimpl EventTransformer do
     alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent

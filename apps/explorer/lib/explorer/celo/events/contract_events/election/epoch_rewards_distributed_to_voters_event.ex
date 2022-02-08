@@ -1,6 +1,3 @@
-alias Explorer.Chain.{CeloContractEvent, Log}
-alias Explorer.Celo.ContractEvents.EventTransformer
-
 defmodule Explorer.Celo.ContractEvents.Election.EpochRewardsDistributedToVotersEvent do
   @moduledoc """
   Struct modelling the Election.EpochRewardsDistributedToVoters event
@@ -10,6 +7,10 @@ defmodule Explorer.Celo.ContractEvents.Election.EpochRewardsDistributedToVotersE
       uint256 value
     );
   """
+
+  alias Explorer.Celo.ContractEvents.EventTransformer
+  alias Explorer.Chain.{CeloContractEvent, Log}
+  import Ecto.Query
 
   @name "EpochRewardsDistributedToVoters"
   @topic "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7"
@@ -26,6 +27,10 @@ defmodule Explorer.Celo.ContractEvents.Election.EpochRewardsDistributedToVotersE
     :value,
     name: @name
   ]
+
+  def query do
+    from(c in CeloContractEvent, where: c.name == ^@name)
+  end
 
   defimpl EventTransformer do
     alias Explorer.Celo.ContractEvents.Election.EpochRewardsDistributedToVotersEvent

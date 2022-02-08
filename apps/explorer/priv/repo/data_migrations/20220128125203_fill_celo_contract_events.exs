@@ -53,12 +53,13 @@ defmodule Explorer.Repo.Migrations.FillCeloContractEvents do
         end)
       end)
 
-    {inserted_count, results} = repo().insert_all("celo_contract_events", params, returning: [:block_hash, :log_index])
+    {inserted_count, results} =
+      Explorer.Repo.insert_all("celo_contract_events", params, returning: [:block_hash, :log_index])
 
     if inserted_count != length(to_change) do
       not_inserted =
         to_change
-        |> Map.take([:block_hash, :log_index])
+        |> Enum.map(&Map.take(&1, [:block_hash, :log_index]))
         |> MapSet.new()
         |> MapSet.difference(MapSet.new(results))
         |> MapSet.to_list()

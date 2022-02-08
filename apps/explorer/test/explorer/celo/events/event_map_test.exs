@@ -1,7 +1,9 @@
 defmodule Explorer.Celo.ContractEvents.EventMapTest do
-  use ExUnit.Case, async: true
+  use Explorer.DataCase, async: true
 
+  alias Explorer.Celo.ContractEvents.Election.ValidatorGroupActiveVoteRevokedEvent
   alias Explorer.Celo.ContractEvents.EventMap
+  alias Explorer.Repo
 
   describe "event map" do
     test "Gets struct for topic" do
@@ -49,6 +51,33 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
       assert params.units == 6_136_281_451_163_456_507_329_304_650_157_103_347_504
       assert params.account == "\\x88c1c759600ec3110af043c183a2472ab32d099c"
       assert params.group == "\\x47b2db6af05a55d42ed0f3731735f9479abf0673"
+    end
+  end
+
+  describe "test event factory " do
+    test "Asserts factory functionality for events" do
+      block = insert(:block)
+      log = insert(:log, block: block)
+
+      event = %ValidatorGroupActiveVoteRevokedEvent{
+        block_hash: block.hash,
+        log_index: log.index,
+        account: address_hash(),
+        group: address_hash(),
+        units: 6_969_696_969,
+        value: 420_420_420
+      }
+
+      insert(:contract_event, %{event: event})
+
+      events =
+        ValidatorGroupActiveVoteRevokedEvent.query() |> Repo.all() |> EventMap.celo_contract_event_to_concrete_event()
+
+      assert length(events) == 1
+
+      [result] = events
+      assert result.units == 6_969_696_969
+      assert result.value == 420_420_420
     end
   end
 end

@@ -1,5 +1,5 @@
 defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
-  use ExUnit.Case, async: true
+  use Explorer.DataCase, async: true
 
   alias Explorer.Chain.Log
   alias Explorer.Celo.ContractEvents.EventTransformer

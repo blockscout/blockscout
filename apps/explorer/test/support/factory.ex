@@ -9,6 +9,7 @@ defmodule Explorer.Factory do
   alias Comeonin.Bcrypt
   alias Explorer.Accounts.{User, UserContact}
   alias Explorer.Admin.Administrator
+  alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
 
   alias Explorer.Chain.{
@@ -19,6 +20,7 @@ defmodule Explorer.Factory do
     Address.CoinBalanceDaily,
     Block,
     CeloAccount,
+    CeloContractEvent,
     CeloPendingEpochOperation,
     ContractMethod,
     Data,
@@ -721,5 +723,10 @@ defmodule Explorer.Factory do
       amount: Decimal.new(1),
       available: Timex.shift(Timex.now(), days: Enum.random(0..100) * -1)
     }
+  end
+
+  def contract_event_factory(%{event: event}) do
+    params = event |> EventTransformer.to_celo_contract_event_params()
+    struct(CeloContractEvent, params)
   end
 end
