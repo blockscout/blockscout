@@ -10,6 +10,7 @@
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 
 ### Chore
+- [#5170](https://github.com/blockscout/blockscout/pull/5170) - Token price row name fix
 - [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
 - [#5152](https://github.com/blockscout/blockscout/pull/5152) - Create backfiller paths for sources of contracts verified through Sourcify
 - [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages

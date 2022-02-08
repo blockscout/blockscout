@@ -1983,7 +1983,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:41
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:200
 msgid "Price"
-msgstr "xDai Price"
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:199
