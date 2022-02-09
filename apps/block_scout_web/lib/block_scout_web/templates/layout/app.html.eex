@@ -222,7 +222,7 @@
       @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressWriteProxyView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.ReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.ContractView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.InventoryView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.InstanceView &&
@@ -232,7 +232,8 @@
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
+      @view_module != Elixir.BlockScoutWeb.StakesView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>

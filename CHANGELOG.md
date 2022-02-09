@@ -1,6 +1,54 @@
 ## Current
 
 ### Features
+- [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
+- [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
+
+### Fixes
+- [#5160](https://github.com/blockscout/blockscout/pull/5160) - Fix blocks validated hint
+- [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
+- [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
+- [#4701](https://github.com/blockscout/blockscout/pull/4701) - Reduced the size of js bundles
+
+### Chore
+- [#5171](https://github.com/blockscout/blockscout/pull/5171) - Replace lodash NPM package with tiny lodash modules
+- [#5170](https://github.com/blockscout/blockscout/pull/5170) - Token price row name fix
+- [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
+- [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
+- [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
+- [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
+- [#5138](https://github.com/blockscout/blockscout/pull/5138) - Webpack minor update
+- [#5119](https://github.com/blockscout/blockscout/pull/5119) - Inventory controller refactoring
+- [#5118](https://github.com/blockscout/blockscout/pull/5118) - Fix top navigation template
+
+
+## 4.1.1-beta
+
+### Features
+- [#5090](https://github.com/blockscout/blockscout/pull/5090) - Allotted rate limit by IP
+- [#5080](https://github.com/blockscout/blockscout/pull/5080) - Allotted rate limit by a global API key
+
+### Fixes
+- [#5085](https://github.com/blockscout/blockscout/pull/5085) - Fix wallet style
+- [#5088](https://github.com/blockscout/blockscout/pull/5088) - Store address transactions/token transfers in the DB
+- [#5071](https://github.com/blockscout/blockscout/pull/5071) - Fix write page contract tuple input
+- [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug
+- [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transaction page
+- [#5025](https://github.com/blockscout/blockscout/pull/5025) - Add standard input JSON files validation
+- [#5051](https://github.com/blockscout/blockscout/pull/5051) - Fix 500 response when ABI method was parsed as nil
+
+### Chore
+- [#5092](https://github.com/blockscout/blockscout/pull/5092) - Resolve vulnerable follow-redirects npm dep in ./apps/explorer
+- [#5091](https://github.com/blockscout/blockscout/pull/5091) - Refactor search page template
+- [#5081](https://github.com/blockscout/blockscout/pull/5081) - Add internal transactions fetcher disabled? config parameter
+- [#5063](https://github.com/blockscout/blockscout/pull/5063) - Resolve moderate NPM vulnerabilities with npm audit tool
+- [#5053](https://github.com/blockscout/blockscout/pull/5053) - Update ex_keccak lib
+
+
+## 4.1.0-beta
+
+### Features
+- [#5030](https://github.com/blockscout/blockscout/pull/5030) - API rate limiting
 - [#4924](https://github.com/blockscout/blockscout/pull/4924) - Add daily bytecode verifcation to prevent metamorphic contracts vulnerablity
 - [#4908](https://github.com/blockscout/blockscout/pull/4908) - Add verification via standard JSON input
 - [#5004](https://github.com/blockscout/blockscout/pull/5004) - Add ability to set up a separate DB endpoint for the API endpoints
@@ -8,6 +56,7 @@
 - [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 
 ### Fixes
+- [#5045](https://github.com/blockscout/blockscout/pull/5045) - Contracts interaction improvements
 - [#5032](https://github.com/blockscout/blockscout/pull/5032) - Fix token transfer csv export 
 - [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display imrovement
 - [#5019](https://github.com/blockscout/blockscout/pull/5019) - Fix fetch_last_token_balance function termination
