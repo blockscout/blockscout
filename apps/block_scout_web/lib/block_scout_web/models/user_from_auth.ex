@@ -12,8 +12,8 @@ defmodule UserFromAuth do
   import Ecto.Query, only: [from: 2]
 
   def find_or_create(%Auth{} = auth) do
-    case List.first(find_identity(auth)) do
-      nil ->
+    case find_identity(auth) do
+      [] ->
         case create_identity(auth) do
           %{} = basic_info ->
             {:ok, basic_info}
@@ -22,21 +22,15 @@ defmodule UserFromAuth do
             {:error, changeset}
         end
 
-      %{} = identity ->
+      [%{} = identity | _] ->
         {:ok, basic_info(auth, identity)}
     end
   end
 
   defp create_identity(auth) do
-    case Repo.insert(new_identity(auth)) do
-      {:ok, %Identity{} = identity} ->
-        case add_watchlist(identity) do
-          {:ok, _watchlist} -> basic_info(auth, identity)
-          {:error, changeset} -> {:error, changeset}
-        end
-
-      {:error, changeset} ->
-        {:error, changeset}
+    with {:ok, %Identity{} = identity} <- Repo.insert(new_identity(auth)),
+         {:ok, _watchlist} <- add_watchlist(identity) do
+      basic_info(auth, identity)
     end
   end
 
@@ -51,10 +45,8 @@ defmodule UserFromAuth do
   defp add_watchlist(identity) do
     watchlist = Ecto.build_assoc(identity, :watchlists, %{})
 
-    case Repo.insert(watchlist) do
-      {:ok, _} -> {:ok, identity}
-      {:error, changeset} -> {:error, changeset}
-    end
+    with {:ok, _} <- Repo.insert(watchlist),
+         do: {:ok, identity}
   end
 
   defp find_identity(auth) do
@@ -66,8 +58,7 @@ defmodule UserFromAuth do
   end
 
   defp basic_info(auth, identity) do
-    identity_with_watchlists = Repo.preload(identity, :watchlists)
-    [watchlist | _] = identity_with_watchlists.watchlists
+    %{watchlists: [watchlist | _]} = Repo.preload(identity, :watchlists)
 
     %{
       id: identity.id,
@@ -97,18 +88,15 @@ defmodule UserFromAuth do
 
   defp nickname_from_auth(%{info: %{nickname: nickname}}), do: nickname
 
-  defp name_from_auth(auth) do
-    if auth.info.name do
-      auth.info.name
+  defp name_from_auth(%{info: %{name: name} = info} = auth) do
+    if name do
+      name
     else
-      name =
-        [auth.info.first_name, auth.info.last_name]
-        |> Enum.filter(&(&1 != nil and &1 != ""))
-
-      if Enum.empty?(name) do
-        auth.info.nickname
-      else
-        Enum.join(name, " ")
+      [info.first_name, info.last_name]
+      |> Enum.filter(&(&1 != nil and &1 != ""))
+      |> case do
+        [] -> info.nickname
+        name -> Enum.join(name, " ")
       end
     end
   end

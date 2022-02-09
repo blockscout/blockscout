@@ -149,6 +149,17 @@ config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   client_id: System.get_env("AUTH0_CLIENT_ID"),
   client_secret: System.get_env("AUTH0_CLIENT_SECRET")
 
+# Configures Ueberauth local settings
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: System.get_env("AUTH0_CALLBACK_URL")]
+    }
+  ],
+  logout_url: System.get_env("AUTH0_LOGOUT_URL"),
+  logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

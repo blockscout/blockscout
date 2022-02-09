@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.Notify.Email do
     Composing an email to sendgrid
   """
 
-  require AccountLogger
+  require Logger
 
   alias BlockScoutWeb.WebRouter.Helpers
   alias Explorer.Accounts.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
@@ -15,8 +15,8 @@ defmodule Explorer.Accounts.Notify.Email do
     notification = preload(notification)
 
     email = compose_email(notification)
-    AccountLogger.debug("--- composed email")
-    AccountLogger.debug(email)
+    Logger.debug("--- composed email", fetcher: :account)
+    Logger.debug(email, fetcher: :account)
     email
   end
 

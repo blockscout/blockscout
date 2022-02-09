@@ -43,7 +43,7 @@ defmodule UpdateWatchlistAddress do
   defp to_bool("true"), do: true
   defp to_bool("false"), do: false
 
-  def changeset(watchlist_address, attrs) do
+  defp changeset(watchlist_address, attrs) do
     Changeset.change(watchlist_address, attrs)
   end
 end

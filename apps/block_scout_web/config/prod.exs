@@ -39,14 +39,3 @@ config :logger, :api,
   path: Path.absname("logs/prod/api.log"),
   metadata_filter: [fetcher: :api],
   rotate: %{max_bytes: 52_428_800, keep: 19}
-
-# Configures Ueberauth
-config :ueberauth, Ueberauth,
-  providers: [
-    auth0: {
-      Ueberauth.Strategy.Auth0,
-      [callback_url: System.get_env("AUTH0_CALLBACK_URL")]
-    }
-  ],
-  logout_url: System.get_env("AUTH0_LOGOUT_URL"),
-  logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")

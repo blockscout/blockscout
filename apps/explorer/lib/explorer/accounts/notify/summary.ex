@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.Notify.Summary do
     Compose a summary from transactions
   """
 
-  require AccountLogger
+  require Logger
 
   alias Explorer.Accounts.Notify.Summary
   alias Explorer.{Chain, Repo}
@@ -26,8 +26,8 @@ defmodule Explorer.Accounts.Notify.Summary do
 
     summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
 
-    AccountLogger.debug("--- transfer summary")
-    AccountLogger.debug(summary)
+    Logger.debug("--- transfer summary", fetcher: :account)
+    Logger.debug(summary, fetcher: :account)
 
     [summary]
   end
@@ -39,10 +39,10 @@ defmodule Explorer.Accounts.Notify.Summary do
 
     transaction_summary = fetch_summary(transaction)
 
-    AccountLogger.debug("--- transaction summary")
-    AccountLogger.debug(transaction_summary)
-    AccountLogger.debug("--- transfer summary")
-    AccountLogger.debug(transfers_summaries)
+    Logger.debug("--- transaction summary", fetcher: :account)
+    Logger.debug(transaction_summary, fetcher: :account)
+    Logger.debug("--- transfers summaries", fetcher: :account)
+    Logger.debug(transfers_summaries, fetcher: :account)
 
     [transaction_summary | transfers_summaries]
     |> Enum.filter(fn summary ->
@@ -61,7 +61,7 @@ defmodule Explorer.Accounts.Notify.Summary do
       transfers_list,
       fn transfer ->
         summary = fetch_summary(transaction, transfer)
-        log_entry(summary)
+        Logger.info(summary, fetcher: :account)
         summary
       end
     )
@@ -180,10 +180,6 @@ defmodule Explorer.Accounts.Notify.Summary do
   def fee(%Chain.Transaction{} = transaction) do
     {_, fee} = Chain.fee(transaction, :gwei)
     fee
-  end
-
-  defp log_entry(entry) do
-    AccountLogger.info(entry)
   end
 
   def preload(%Chain.Transaction{} = transaction) do
