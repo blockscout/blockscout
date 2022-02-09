@@ -8,7 +8,7 @@ defmodule Explorer.Chain.CeloContractEvent do
   import Ecto.Query
 
   alias Explorer.Celo.ContractEvents.EventMap
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Log}
   alias Explorer.Chain.Hash.Address
   alias Explorer.Repo
 
@@ -17,7 +17,7 @@ defmodule Explorer.Chain.CeloContractEvent do
           name: String.t(),
           log_index: non_neg_integer(),
           contract_address_hash: Hash.Address.t(),
-          transaction_hash: Hash.Address.t(),
+          transaction_hash: Hash.Full.t(),
           params: map()
         }
 
@@ -31,7 +31,7 @@ defmodule Explorer.Chain.CeloContractEvent do
     field(:name, :string)
     field(:params, :map)
     field(:contract_address_hash, Address)
-    field(:transaction_hash, Address)
+    field(:transaction_hash, Hash.Full)
 
     timestamps(null: false, type: :utc_datetime_usec)
   end
@@ -46,7 +46,7 @@ defmodule Explorer.Chain.CeloContractEvent do
   def fetch_unprocessed_log_ids_query(topics) when is_list(topics) do
     from(l in "logs",
       select: {l.block_hash, l.index},
-      left_join: cce in CeloContractEvent,
+      left_join: cce in __MODULE__,
       on: {cce.block_hash, cce.log_index} == {l.block_hash, l.index},
       where: l.first_topic in ^topics and is_nil(cce.block_hash),
       order_by: [asc: l.block_number, asc: l.index]
@@ -55,6 +55,7 @@ defmodule Explorer.Chain.CeloContractEvent do
 
   @throttle_ms 100
   @batch_size 1000
+  @doc "Insert events as yet unprocessed from Log table into CeloContractEvents"
   def insert_unprocessed_events(events, batch_size \\ @batch_size) do
     # fetch ids of missing events
     ids =
@@ -72,6 +73,7 @@ defmodule Explorer.Chain.CeloContractEvent do
         |> fetch_params()
         |> Repo.all()
         |> EventMap.rpc_to_event_params()
+        |> set_timestamps()
 
       result = Repo.insert_all(__MODULE__, to_insert, returning: [:block_hash, :log_index])
 
@@ -81,22 +83,30 @@ defmodule Explorer.Chain.CeloContractEvent do
   end
 
   def fetch_params(ids) do
+    # convert list of {block_hash, index} tuples to two lists of [block_hash] and [index] because ecto can't handle
+    # direct tuple comparisons with a WHERE IN clause
+    {blocks, indices} =
+      ids
+      |> Enum.reduce([[], []], fn {block, index}, [blocks, indices] ->
+        [[block | blocks], [index | indices]]
+      end)
+      |> then(fn [blocks, indices] -> {Enum.reverse(blocks), Enum.reverse(indices)} end)
+
     from(
-      l in "logs",
-      select: %{
-        first_topic: l.first_topic,
-        second_topic: l.second_topic,
-        third_topic: l.third_topic,
-        fourth_topic: l.fourth_topic,
-        data: l.data,
-        address_hash: l.address_hash,
-        transaction_hash: l.transaction_hash,
-        block_number: l.block_number,
-        block_hash: l.block_hash,
-        index: l.index
-      },
-      join: v in fragment("(VALUES ?) AS j(bytea block_hash, int index)", ^ids),
+      l in Log,
+      join: v in fragment("SELECT * FROM unnest(?::bytea[], ?::int[]) AS v(block_hash,index)", ^blocks, ^indices),
       on: v.block_hash == l.block_hash and v.index == l.index
     )
+  end
+
+  defp set_timestamps(events) do
+    # Repo.insert_all does not handle timestamps, set explicitly here
+    timestamp = Timex.now()
+
+    Enum.map(events, fn e ->
+      e
+      |> Map.put(:inserted_at, timestamp)
+      |> Map.put(:updated_at, timestamp)
+    end)
   end
 end

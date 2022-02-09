@@ -1,8 +1,10 @@
 defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
   use Explorer.DataCase, async: true
 
+  alias Explorer.Chain.CeloContractEvent
   alias Explorer.Chain.Log
   alias Explorer.Celo.ContractEvents.EventTransformer
+  alias Explorer.Celo.ContractEvents.EventMap
   alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
 
   describe "Test conversion" do
@@ -48,7 +50,16 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
       assert result.log_index == 8
     end
 
-    test "converts from ethjsonrpc log to event type" do
+    test "converts from ethjsonrpc log to event type and insert into db" do
+      {:ok, hsh} = Explorer.Chain.Hash.Full.cast("0x42b21f09e9956d1a01195b1ca461059b2705fe850fc1977bd7182957e1b390d3")
+      insert(:block, hash: hsh)
+
+      {:ok, hsh} = Explorer.Chain.Hash.Full.cast("0xb8960575a898afa8a124cd7414f1261109a119dba3bed4489393952a1556a5f0")
+      insert(:transaction, hash: hsh)
+
+      {:ok, add} = Explorer.Chain.Hash.Address.cast("0x765de816845861e75a25fca122bb6898b8b1282a")
+      insert(:contract_address, hash: add)
+
       test_params = %{
         address_hash: "0x765de816845861e75a25fca122bb6898b8b1282a",
         block_hash: "0x42b21f09e9956d1a01195b1ca461059b2705fe850fc1977bd7182957e1b390d3",
@@ -64,6 +75,26 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
       }
 
       result = %ValidatorGroupVoteActivatedEvent{} |> EventTransformer.from_params(test_params)
+
+      assert result.value == 66_980_000_000_000_000_000
+      assert result.units == 6_136_281_451_163_456_507_329_304_650_157_103_347_504
+      assert result.account |> to_string() == "0x88c1c759600ec3110af043c183a2472ab32d099c"
+      assert result.group |> to_string() == "0x47b2db6af05a55d42ed0f3731735f9479abf0673"
+      assert result.log_index == 8
+
+      # explictly setting timestamps as insert_all doesn't do this
+      r =
+        result
+        |> EventMap.event_to_contract_event_params()
+        |> Map.put(:inserted_at, Timex.now())
+        |> Map.put(:updated_at, Timex.now())
+
+      {1, _} = Explorer.Repo.insert_all(CeloContractEvent, [r])
+
+      [result] =
+        ValidatorGroupVoteActivatedEvent.query()
+        |> Repo.all()
+        |> EventMap.celo_contract_event_to_concrete_event()
 
       assert result.value == 66_980_000_000_000_000_000
       assert result.units == 6_136_281_451_163_456_507_329_304_650_157_103_347_504

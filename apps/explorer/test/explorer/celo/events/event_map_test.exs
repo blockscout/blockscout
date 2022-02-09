@@ -41,9 +41,12 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
 
       assert result.name == "ValidatorGroupVoteActivated"
       assert result.log_index == 8
-      assert result.transaction_hash == "0xb8960575a898afa8a124cd7414f1261109a119dba3bed4489393952a1556a5f0"
-      assert result.contract_address_hash == "0x765de816845861e75a25fca122bb6898b8b1282a"
-      assert result.block_hash == "0x42b21f09e9956d1a01195b1ca461059b2705fe850fc1977bd7182957e1b390d3"
+
+      assert result.transaction_hash |> to_string() ==
+               "0xb8960575a898afa8a124cd7414f1261109a119dba3bed4489393952a1556a5f0"
+
+      assert result.contract_address_hash |> to_string() == "0x765de816845861e75a25fca122bb6898b8b1282a"
+      assert result.block_hash |> to_string() == "0x42b21f09e9956d1a01195b1ca461059b2705fe850fc1977bd7182957e1b390d3"
 
       %{params: params} = result
 
@@ -58,10 +61,12 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
     test "Asserts factory functionality for events" do
       block = insert(:block)
       log = insert(:log, block: block)
+      contract = insert(:contract_address)
 
       event = %ValidatorGroupActiveVoteRevokedEvent{
         block_hash: block.hash,
         log_index: log.index,
+        contract_address_hash: contract.hash,
         account: address_hash(),
         group: address_hash(),
         units: 6_969_696_969,

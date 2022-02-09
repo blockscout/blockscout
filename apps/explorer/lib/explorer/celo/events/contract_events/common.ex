@@ -3,7 +3,7 @@ defmodule Explorer.Celo.ContractEvents.Common do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Chain.{Data, Hash, Hash.Full}
 
   @doc "Decode a single point of event data of a given type from a given topic"
   def decode_event(topic, type) do
@@ -33,13 +33,22 @@ defmodule Explorer.Celo.ContractEvents.Common do
   end
 
   def extract_common_event_params(event) do
-    # set hashes explicitly to nil rather than empty string when they do not exist
-    [:transaction_hash, :contract_address_hash, :block_hash]
+    # set full hashes
+    [:transaction_hash, :block_hash]
     |> Enum.into(%{}, fn key ->
       case Map.get(event, key) do
-        nil -> {key, nil}
-        v -> {key, v}
+        nil ->
+          {key, nil}
+
+        v ->
+          {:ok, hsh} = Full.cast(v)
+          {key, hsh}
       end
+    end)
+    # set contract address hash
+    |> then(fn map ->
+      {:ok, hsh} = Address.cast(event.contract_address_hash)
+      Map.put(map, :contract_address_hash, hsh)
     end)
     |> Map.put(:name, event.name)
     |> Map.put(:log_index, event.log_index)

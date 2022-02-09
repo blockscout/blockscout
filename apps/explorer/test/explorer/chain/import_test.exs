@@ -2314,7 +2314,8 @@ defmodule Explorer.Chain.ImportTest do
 
     test "inserts celo contract events " do
       %Block{number: block_number} = insert(:block, consensus: true)
-      %Address{hash: address_hash} = address = insert(:address)
+      %Address{hash: address_hash} = insert(:address)
+      %Transaction{hash: transaction_hash} = insert(:transaction)
 
       miner_hash_after = address_hash()
       from_address_hash_after = address_hash()
@@ -2331,7 +2332,7 @@ defmodule Explorer.Chain.ImportTest do
         index: 8,
         second_topic: "0x00000000000000000000000088c1c759600ec3110af043c183a2472ab32d099c",
         third_topic: "0x00000000000000000000000047b2db6af05a55d42ed0f3731735f9479abf0673",
-        transaction_hash: nil
+        transaction_hash: transaction_hash
       }
 
       events = EventMap.rpc_to_event_params([log])
