@@ -1,5 +1,3 @@
-import '../../css/stakes.scss'
-
 import $ from 'jquery'
 import omit from 'lodash.omit'
 import { subscribeChannel } from '../socket'

@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.Notify.Summary do
     Compose a summary from transactions
   """
 
-  require AccountLogger
+  require Logger
 
   alias Explorer.Accounts.Notify.Summary
   alias Explorer.{Chain, Repo}
@@ -21,6 +21,17 @@ defmodule Explorer.Accounts.Notify.Summary do
     :type
   ]
 
+  def process(%Chain.TokenTransfer{} = transfer) do
+    preloaded_transfer = preload(transfer)
+
+    summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
+
+    Logger.debug("--- transfer summary", fetcher: :account)
+    Logger.debug(summary, fetcher: :account)
+
+    [summary]
+  end
+
   def process(%Chain.Transaction{} = transaction) do
     preloaded_transaction = preload(transaction)
 
@@ -28,10 +39,10 @@ defmodule Explorer.Accounts.Notify.Summary do
 
     transaction_summary = fetch_summary(transaction)
 
-    AccountLogger.debug("--- transaction summary")
-    AccountLogger.debug(transaction_summary)
-    AccountLogger.debug("--- transfer summary")
-    AccountLogger.debug(transfers_summaries)
+    Logger.debug("--- transaction summary", fetcher: :account)
+    Logger.debug(transaction_summary, fetcher: :account)
+    Logger.debug("--- transfers summaries", fetcher: :account)
+    Logger.debug(transfers_summaries, fetcher: :account)
 
     [transaction_summary | transfers_summaries]
     |> Enum.filter(fn summary ->
@@ -50,7 +61,7 @@ defmodule Explorer.Accounts.Notify.Summary do
       transfers_list,
       fn transfer ->
         summary = fetch_summary(transaction, transfer)
-        log_entry(summary)
+        Logger.info(summary, fetcher: :account)
         summary
       end
     )
@@ -101,7 +112,7 @@ defmodule Explorer.Accounts.Notify.Summary do
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          amount: "Token ID: " <> to_string(transfer.token_id),
+          amount: transfer.token_id,
           tx_fee: fee(transaction),
           name: transfer.token.name,
           type: transfer.token.type
@@ -114,7 +125,7 @@ defmodule Explorer.Accounts.Notify.Summary do
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          amount: "Token ID: " <> to_string(transfer.token_id),
+          amount: transfer.token_id,
           tx_fee: fee(transaction),
           name: transfer.token.name,
           type: transfer.token.type
@@ -171,16 +182,12 @@ defmodule Explorer.Accounts.Notify.Summary do
     fee
   end
 
-  defp log_entry(entry) do
-    AccountLogger.info(entry)
-  end
-
   def preload(%Chain.Transaction{} = transaction) do
     Repo.preload(transaction, [:internal_transactions, token_transfers: :token])
   end
 
   def preload(%Chain.TokenTransfer{} = transfer) do
-    Repo.preload(transfer, [:transaction])
+    Repo.preload(transfer, [:transaction, :token])
   end
 
   def preload(_), do: nil

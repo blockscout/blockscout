@@ -10,18 +10,14 @@ defmodule BlockScoutWeb.Account.AuthController do
     |> redirect(to: root())
   end
 
-  def profile(conn, _params) do
-    case get_session(conn, :current_user) do
-      nil ->
-        conn
-        # |> put_flash(:info, "You must sign in to view profile!")
-        |> redirect(to: root())
+  def profile(conn, _params),
+    do: conn |> get_session(:current_user) |> do_profile(conn)
 
-      %{} = user ->
-        conn
-        |> render(:profile, user: user)
-    end
-  end
+  defp do_profile(nil, conn),
+    do: redirect(conn, to: root())
+
+  defp do_profile(%{} = user, conn),
+    do: render(conn, :profile, user: user)
 
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
@@ -49,15 +45,10 @@ defmodule BlockScoutWeb.Account.AuthController do
     current_user(conn) || redirect(conn, to: root())
   end
 
-  def current_user(conn) do
-    session = Map.has_key?(conn.private, :plug_session) && conn.private.plug_session
+  def current_user(%{private: %{plug_session: %{"current_user" => _}}} = conn),
+    do: get_session(conn, :current_user)
 
-    if session && Map.has_key?(session, "current_user") do
-      get_session(conn, :current_user)
-    else
-      nil
-    end
-  end
+  def current_user(_), do: nil
 
   defp root do
     System.get_env("NETWORK_PATH") || "/"

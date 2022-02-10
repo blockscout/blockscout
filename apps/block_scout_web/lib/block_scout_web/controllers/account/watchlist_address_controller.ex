@@ -95,30 +95,17 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     |> Changeset.add_error(:address_hash, message)
   end
 
-  defp new_address do
-    WatchlistAddressForm.changeset(
-      %WatchlistAddressForm{
-        watch_coin_input: true,
-        watch_coin_output: true,
-        watch_erc_20_input: true,
-        watch_erc_20_output: true,
-        watch_nft_input: true,
-        watch_nft_output: true,
-        notify_email: true
-      },
-      %{}
-    )
-  end
+  defp new_address, do: WatchlistAddressForm.changeset(%WatchlistAddressForm{}, %{})
 
   defp watchlist(user) do
-    wl = Repo.get(Watchlist, user.watchlist_id)
-    Repo.preload(wl, watchlist_addresses: :address)
+    Watchlist
+    |> Repo.get(user.watchlist_id)
+    |> Repo.preload(watchlist_addresses: :address)
   end
 
   defp get_watchlist_address(conn, id) do
-    current_user = authenticate!(conn)
-    wl_id = current_user.watchlist_id
-    wla = Repo.get_by(WatchlistAddress, id: id, watchlist_id: wl_id)
-    Repo.preload(wla, :address)
+    WatchlistAddress
+    |> Repo.get_by(id: id, watchlist_id: authenticate!(conn).watchlist_id)
+    |> Repo.preload(:address)
   end
 end

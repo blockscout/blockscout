@@ -13,50 +13,29 @@ defmodule AddWatchlistAddress do
   alias Explorer.Accounts.{Watchlist, WatchlistAddress}
   alias Explorer.Chain.Address
 
-  def call(watchlist_id, params) do
-    %{"address_hash" => address_hash_string} = params
-
+  def call(watchlist_id, %{"address_hash" => address_hash_string} = params) do
     case format_address(address_hash_string) do
       {:ok, address_hash} ->
-        case find_watchlist_address(watchlist_id, address_hash) do
-          %WatchlistAddress{} ->
-            {:error, "Address already exists!"}
-
-          nil ->
-            address_hash
-            |> find_or_create_address()
-            |> params_to_attributes(params)
-            |> build_watchlist_address(watchlist(watchlist_id))
-            |> Repo.insert()
-        end
+        try_create_watchlist_address(watchlist_id, address_hash, params)
 
       :error ->
         {:error, "Wrong address, "}
     end
   end
 
-  defp params_to_attributes(
-         address,
-         %{
-           "name" => name,
-           "watch_coin_input" => watch_coin_input,
-           "watch_coin_output" => watch_coin_output,
-           "notify_email" => notify_email
-         }
-       ) do
-    %{
-      address_hash: address.hash,
-      name: name,
-      watch_coin_input: to_bool(watch_coin_input),
-      watch_coin_output: to_bool(watch_coin_output),
-      watch_erc_20_input: false,
-      watch_erc_20_output: false,
-      watch_erc_721_input: false,
-      watch_erc_721_output: false,
-      watch_erc_1155_input: false,
-      watch_erc_1155_output: false,
-      notify_email: to_bool(notify_email)
-    }
+  defp try_create_watchlist_address(watchlist_id, address_hash, params) do
+    case find_watchlist_address(watchlist_id, address_hash) do
+      %WatchlistAddress{} ->
+        {:error, "Address already exists!"}
+
+      nil ->
+        with {:ok, %Address{} = address} <- find_or_create_address(address_hash) do
+          address
+          |> params_to_attributes(params)
+          |> build_watchlist_address(watchlist(watchlist_id))
+          |> Repo.insert()
+        end
+    end
   end
 
   defp params_to_attributes(
@@ -90,28 +69,28 @@ defmodule AddWatchlistAddress do
   defp to_bool("true"), do: true
   defp to_bool("false"), do: false
 
-  def format_address(address_hash_string) do
+  defp format_address(address_hash_string) do
     Chain.string_to_address_hash(address_hash_string)
   end
 
-  def find_watchlist_address(watchlist_id, address_hash) do
+  defp find_watchlist_address(watchlist_id, address_hash) do
     Repo.get_by(WatchlistAddress,
       address_hash: address_hash,
       watchlist_id: watchlist_id
     )
   end
 
-  def find_or_create_address(address_hash) do
+  defp find_or_create_address(address_hash) do
     case find_address(address_hash) do
-      {:ok, address} -> address
+      {:ok, address} -> {:ok, address}
       {:error, :address_not_found} -> create_address(address_hash)
     end
   end
 
-  def create_address(address_hash) do
+  defp create_address(address_hash) do
     case Repo.insert(%Address{hash: address_hash}) do
-      {:ok, address} -> address
-      {:error, _} -> :wrong_address
+      {:ok, address} -> {:ok, address}
+      {:error, _} -> {:error, :wrong_address}
     end
   end
 

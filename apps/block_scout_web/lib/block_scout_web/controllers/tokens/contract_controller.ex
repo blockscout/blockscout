@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.Tokens.ContractController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.{AccessHelpers, TabHelpers}
   alias BlockScoutWeb.Account.AuthController
+  alias BlockScoutWeb.{AccessHelpers, TabHelpers}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.Tags.AddressToTag

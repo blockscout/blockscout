@@ -45,27 +45,27 @@
                   </div>
                 </div>
                 <div class="col-sm">
-                  <h3>ERC-20 tokens (Coming soon!)</h3>
+                  <h3>ERC-20 tokens (beta)</h3>
                   <div class="form-input">
-                    <%= checkbox f, :watch_erc_20_input, class: "form-checkbox", disabled: true %>
+                    <%= checkbox f, :watch_erc_20_input, class: "form-checkbox" %>
                     <%= label f, :watch_erc_20_input, "Incoming", class: "label-checkbox" %>
                     <%= error_tag f, :watch_erc_20_input %>
                   </div>
                   <div class="form-input">
-                    <%= checkbox f, :watch_erc_20_output, class: "form-checkbox", disabled: true  %>
+                    <%= checkbox f, :watch_erc_20_output, class: "form-checkbox" %>
                     <%= label f, :watch_erc_20_output, "Outgoing", class: "label-checkbox" %>
                     <%= error_tag f, :watch_erc_20_output %>
                   </div>
                 </div>
                 <div class="col-md">
-                  <h3>ERC-721, ERC-1155 tokens (NFT) (Coming soon!)</h3>
+                  <h3>ERC-721, ERC-1155 tokens (NFT) (beta)</h3>
                   <div class="form-input">
-                    <%= checkbox f, :watch_nft_input, class: "form-checkbox", disabled: true  %>
+                    <%= checkbox f, :watch_nft_input, class: "form-checkbox" %>
                     <%= label f, :watch_nft_input, "Incoming", class: "label-checkbox" %>
                     <%= error_tag f, :watch_nft_input %>
                   </div>
                   <div class="form-input">
-                    <%= checkbox f, :watch_nft_output, class: "form-checkbox", disabled: true  %>
+                    <%= checkbox f, :watch_nft_output, class: "form-checkbox" %>
                     <%= label f, :watch_nft_output, "Outgoing", class: "label-checkbox" %>
                     <%= error_tag f, :watch_nft_output %>
                   </div>

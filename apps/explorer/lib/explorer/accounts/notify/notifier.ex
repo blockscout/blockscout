@@ -5,8 +5,10 @@ defmodule Explorer.Accounts.Notify.Notifier do
 
   alias Explorer.Accounts.Notify.{Email, Summary}
   alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{TokenTransfer, Transaction}
   alias Explorer.{Mailer, Repo}
+
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
@@ -17,8 +19,16 @@ defmodule Explorer.Accounts.Notify.Notifier do
     Enum.map(transactions, fn transaction -> process(transaction) end)
   end
 
+  defp process(%TokenTransfer{} = transfer) do
+    Logger.debug(transfer, fetcher: :account)
+
+    transfer
+    |> Summary.process()
+    |> Enum.map(fn summary -> notify_watchlists(summary) end)
+  end
+
   defp process(%Transaction{} = transaction) do
-    AccountLogger.debug(transaction)
+    Logger.debug(transaction, fetcher: :account)
 
     transaction
     |> Summary.process()
@@ -34,35 +44,53 @@ defmodule Explorer.Accounts.Notify.Notifier do
     incoming_addresses = find_watchlists_addresses(summary.to_address_hash)
     outgoing_addresses = find_watchlists_addresses(summary.from_address_hash)
 
-    AccountLogger.debug("--- filled summary")
-    AccountLogger.debug(summary)
+    Logger.debug("--- filled summary", fetcher: :account)
+    Logger.debug(summary, fetcher: :account)
 
     Enum.each(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
     Enum.each(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
   end
 
   defp notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
-    notification =
-      build_watchlist_notification(
-        address,
-        summary,
-        direction
-      )
+    with %WatchlistNotification{} = notification <-
+           build_watchlist_notification(address, summary, direction) do
+      case Repo.all(query_notification(notification, address)) do
+        [] -> save_and_send_notification(notification, address)
+        _ -> nil
+      end
+    end
+  end
 
+  defp query_notification(notification, watchlist_address) do
+    from(wn in WatchlistNotification,
+      where:
+        wn.watchlist_address_id == ^watchlist_address.id and
+          wn.from_address_hash == ^notification.from_address_hash and
+          wn.to_address_hash == ^notification.to_address_hash and
+          wn.transaction_hash == ^notification.transaction_hash and
+          wn.block_number == ^notification.block_number and
+          wn.direction == ^notification.direction and
+          wn.amount == ^notification.amount
+    )
+  end
+
+  defp save_and_send_notification(%WatchlistNotification{} = notification, %WatchlistAddress{} = address) do
     Repo.insert(notification)
 
     email = Email.compose(notification, address)
 
     case Mailer.deliver_now(email, response: true) do
       {:ok, _email, response} ->
-        AccountLogger.info("--- email delivery response: SUCCESS")
-        AccountLogger.info(response)
+        Logger.info("--- email delivery response: SUCCESS", fetcher: :account)
+        Logger.info(response, fetcher: :account)
 
       {:error, error} ->
-        AccountLogger.info("--- email delivery response: FAILED")
-        AccountLogger.info(error)
+        Logger.info("--- email delivery response: FAILED", fetcher: :account)
+        Logger.info(error, fetcher: :account)
     end
   end
+
+  defp save_and_send_notification(_, _), do: nil
 
   @doc """
   direction  = :incoming || :outgoing

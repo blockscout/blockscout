@@ -53,21 +53,22 @@
     <%= case @view_module do %>
       <% Elixir.BlockScoutWeb.ChainView -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
-        <link rel="preload" href="<%= static_path(@conn, "/js/autocomplete.js") %>" as="script">
         <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
         <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
         <link rel="preload" href="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>" as="script">
-        <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/github.svg") %>" as="image" crossorigin>
-        <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/twitter.svg") %>" as="image" crossorigin>
-        <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/telegram.svg") %>" as="image" crossorigin>
-        <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/bar-chart.svg") %>" as="image" crossorigin>
-        <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/info-circle.svg") %>" as="image" crossorigin>
-        <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/tag.svg") %>" as="image" crossorigin>
       <% Elixir.BlockScoutWeb.StakesView -> %>
-        <link rel="stylesheet" href="<%= static_path(@conn, "/css/stakes.css") %>">
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/staking.css") %>">
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
       <% _ -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <% end %>
+    <link rel="preload" href="<%= static_path(@conn, "/js/autocomplete.js") %>" as="script">
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/github.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/twitter.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/telegram.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/bar-chart.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/info-circle.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/tag.svg") %>" as="image" crossorigin>
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     <link rel="dns-prefetch" href="https://www.google-analytics.com">
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">

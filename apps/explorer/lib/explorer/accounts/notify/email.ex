@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.Notify.Email do
     Composing an email to sendgrid
   """
 
-  require AccountLogger
+  require Logger
 
   alias BlockScoutWeb.WebRouter.Helpers
   alias Explorer.Accounts.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
@@ -15,8 +15,8 @@ defmodule Explorer.Accounts.Notify.Email do
     notification = preload(notification)
 
     email = compose_email(notification)
-    AccountLogger.debug("--- composed email")
-    AccountLogger.debug(email)
+    Logger.debug("--- composed email", fetcher: :account)
+    Logger.debug(email, fetcher: :account)
     email
   end
 
@@ -32,7 +32,7 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("from_address_hash", hash_string(notification.from_address_hash))
     |> add_dynamic_field("to_address_hash", hash_string(notification.to_address_hash))
     |> add_dynamic_field("block_number", notification.block_number)
-    |> add_dynamic_field("amount", notification.amount)
+    |> add_dynamic_field("amount", amount(notification))
     |> add_dynamic_field("name", notification.name)
     |> add_dynamic_field("tx_fee", notification.tx_fee)
     |> add_dynamic_field("direction", direction(notification))
@@ -41,7 +41,23 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("address_url", address_url(notification.watchlist_address.address_hash))
     |> add_dynamic_field("from_url", address_url(notification.from_address_hash))
     |> add_dynamic_field("to_url", address_url(notification.to_address_hash))
-    |> add_dynamic_field("block_url", transaction_url(notification))
+    |> add_dynamic_field("block_url", block_url(notification))
+  end
+
+  defp amount(%WatchlistNotification{amount: amount, type: type}) do
+    case type do
+      "COIN" ->
+        amount
+
+      "ERC-20" ->
+        amount
+
+      "ERC-721" ->
+        "Token ID: " <> to_string(amount) <> " of "
+
+      "ERC-1155" ->
+        "Token ID: " <> to_string(amount) <> " of "
+    end
   end
 
   defp email(%WatchlistNotification{
@@ -101,6 +117,10 @@ defmodule Explorer.Accounts.Notify.Email do
 
   defp address_url(address_hash) do
     Helpers.address_url(uri(), :show, address_hash)
+  end
+
+  defp block_url(notification) do
+    URI.to_string(uri()) <> "block/" <> Integer.to_string(notification.block_number)
   end
 
   defp transaction_url(notification) do

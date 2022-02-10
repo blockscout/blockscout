@@ -25,14 +25,3 @@ config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 config :explorer, Explorer.KnownTokens, enabled: false, store: :none
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
-
-# Configures Ueberauth
-config :ueberauth, Ueberauth,
-  providers: [
-    auth0: {
-      Ueberauth.Strategy.Auth0,
-      [callback_url: System.get_env("AUTH0_CALLBACK_URL")]
-    }
-  ],
-  logout_url: System.get_env("AUTH0_LOGOUT_URL"),
-  logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")
