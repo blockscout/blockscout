@@ -16,13 +16,15 @@ RUN set -ex && \
 # Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
+ARG MIX_ENV
+
 ENV PATH="$HOME/.cargo/bin:${PATH}"
 ENV RUSTFLAGS="-C target-feature=-crt-static"
+ENV MIX_ENV=${MIX_ENV}
 
 EXPOSE 4000
 
 ENV PORT=4000 \
-    MIX_ENV="prod" \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 # Cache elixir deps
@@ -45,13 +47,16 @@ RUN mix compile
 RUN npm install npm@latest
 
 # Add blockscout npm deps
-RUN cd apps/block_scout_web/assets/ && \
-    npm install && \
-    npm run deploy && \
-    cd -
-
 RUN cd apps/explorer/ && \
     npm install && \
-    apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+    cd -
+
+RUN cd apps/block_scout_web/assets/ && \
+    npm install && \
+    cd -
+
+RUN cd apps/block_scout_web/assets/ && \
+    if [ "$MIX_ENV" = "dev" ]; then npm run build; else npm run deploy; fi && \
+    cd -
 
 RUN mix phx.digest
