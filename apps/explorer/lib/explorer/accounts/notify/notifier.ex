@@ -52,27 +52,24 @@ defmodule Explorer.Accounts.Notify.Notifier do
   end
 
   defp notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
-    notification =
-      build_watchlist_notification(
-        address,
-        summary,
-        direction
-      )
-
-    existing = Repo.all(query_notification(notification))
-
-    if Enum.empty?(existing) do
-      save_and_send_notification(notification, address)
+    with %WatchlistNotification{} = notification <-
+           build_watchlist_notification(address, summary, direction) do
+      case Repo.all(query_notification(notification, address)) do
+        [] -> save_and_send_notification(notification, address)
+        _ -> nil
+      end
     end
   end
 
-  defp query_notification(notification) do
+  defp query_notification(notification, watchlist_address) do
     from(wn in WatchlistNotification,
       where:
-        wn.from_address_hash == ^notification.from_address_hash and
+        wn.watchlist_address_id == ^watchlist_address.id and
+          wn.from_address_hash == ^notification.from_address_hash and
           wn.to_address_hash == ^notification.to_address_hash and
           wn.transaction_hash == ^notification.transaction_hash and
           wn.block_number == ^notification.block_number and
+          wn.direction == ^notification.direction and
           wn.amount == ^notification.amount
     )
   end

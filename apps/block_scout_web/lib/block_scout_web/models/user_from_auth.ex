@@ -88,7 +88,7 @@ defmodule UserFromAuth do
 
   defp nickname_from_auth(%{info: %{nickname: nickname}}), do: nickname
 
-  defp name_from_auth(%{info: %{name: name} = info} = auth) do
+  defp name_from_auth(%{info: %{name: name} = info}) do
     if name do
       name
     else
