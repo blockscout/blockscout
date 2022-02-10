@@ -5,7 +5,16 @@ import '../css/app.scss'
 
 import './main_page'
 
-import './pages/stakes'
+// Import local files
+//
+// Local files can be imported directly using relative
+// paths "./socket" or full ones "web/static/js/socket".
+
+import './locale'
+
+import './pages/layout'
+import './pages/dark-mode-switcher'
+
 import './lib/clipboard_buttons'
 import './lib/currency'
 import './lib/pending_transactions_toggle'

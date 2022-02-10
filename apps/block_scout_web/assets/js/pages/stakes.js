@@ -1,7 +1,7 @@
 import '../../css/stakes.scss'
 
 import $ from 'jquery'
-import _ from 'lodash-core'
+import omit from 'lodash.omit'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
@@ -59,7 +59,7 @@ export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_CONNECTED': {
       return Object.assign({}, state, { channel: action.channel })

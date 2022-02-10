@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import { omit } from 'lodash-core'
+import omit from 'lodash.omit'
 import humps from 'humps'
 import socket from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
