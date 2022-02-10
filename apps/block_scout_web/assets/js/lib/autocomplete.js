@@ -16,7 +16,7 @@ const dataSrc = async (query, id) => {
 
     // Fetch External Data Source
     const source = await fetch(
-      `/token-autocomplete?q=${query}`
+      `${process.env.NETWORK_PATH}/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
