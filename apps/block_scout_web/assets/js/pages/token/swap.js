@@ -55,3 +55,25 @@ $(document.body)
       placement: 'top'
     }).tooltip('show')
   })
+  .on('mouseover', '.btn-swap.oneinch', event => {
+    const $btn = $(event.target)
+    const tokenSymbol = $btn.data('token-symbol')
+
+    $btn.tooltip('dispose')
+    $btn.tooltip({
+      title: `Swap ${tokenSymbol} to WXDAI through 1inch`,
+      trigger: 'hover',
+      placement: 'top'
+    }).tooltip('show')
+  })
+  .on('mouseover', '.btn-swap.cowswap', event => {
+    const $btn = $(event.target)
+    const tokenSymbol = $btn.data('token-symbol')
+
+    $btn.tooltip('dispose')
+    $btn.tooltip({
+      title: `Swap ${tokenSymbol} to WXDAI through CowSwap`,
+      trigger: 'hover',
+      placement: 'top'
+    }).tooltip('show')
+  })
