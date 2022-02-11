@@ -90,6 +90,7 @@ const appJs =
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
       'main-page': './css/main-page.scss',
+      'staking': './css/stakes.scss',
       'tokens': './js/pages/token/search.js',
       'ad': './js/lib/ad.js',
       'text_ad': './js/lib/text_ad.js',
