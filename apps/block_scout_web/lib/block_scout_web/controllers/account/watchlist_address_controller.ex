@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
   def edit(conn, %{"id" => id}) do
     authenticate!(conn)
 
-    case get_watchlist_address(conn, id) do
+    case get_watchlist_address!(conn, id) do
       nil ->
         conn
         |> put_status(404)
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
   def update(conn, %{"id" => id, "watchlist_address_form" => wa_params}) do
     authenticate!(conn)
 
-    wla = get_watchlist_address(conn, id)
+    wla = get_watchlist_address!(conn, id)
 
     case UpdateWatchlistAddress.call(wla, wa_params) do
       {:ok, _watchlist_address} ->
@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
   def delete(conn, %{"id" => id}) do
     authenticate!(conn)
 
-    wla = get_watchlist_address(conn, id)
+    wla = get_watchlist_address!(conn, id)
     Repo.delete(wla)
 
     conn
@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     |> Repo.preload(watchlist_addresses: :address)
   end
 
-  defp get_watchlist_address(conn, id) do
+  defp get_watchlist_address!(conn, id) do
     WatchlistAddress
     |> Repo.get_by(id: id, watchlist_id: authenticate!(conn).watchlist_id)
     |> Repo.preload(:address)

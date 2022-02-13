@@ -43,7 +43,5 @@ defmodule UpdateWatchlistAddress do
   defp to_bool("true"), do: true
   defp to_bool("false"), do: false
 
-  defp changeset(watchlist_address, attrs) do
-    Changeset.change(watchlist_address, attrs)
-  end
+  defdelegate changeset(watchlist_address, attrs), to: Changeset, as: :change
 end

@@ -88,16 +88,18 @@ defmodule UserFromAuth do
 
   defp nickname_from_auth(%{info: %{nickname: nickname}}), do: nickname
 
-  defp name_from_auth(%{info: %{name: name} = info}) do
-    if name do
-      name
-    else
-      [info.first_name, info.last_name]
-      |> Enum.filter(&(&1 != nil and &1 != ""))
-      |> case do
-        [] -> info.nickname
-        name -> Enum.join(name, " ")
-      end
+  defp name_from_auth(%{info: %{name: name}})
+       when name != "" and not is_nil(name),
+       do: name
+
+  defp name_from_auth(%{info: info}) do
+    [info.first_name, info.last_name, info.nickname]
+    |> Enum.map(&(&1 |> to_string() |> String.trim()))
+    |> case do
+      ["", "", nick] -> nick
+      ["", lastname, _] -> lastname
+      [name, "", _] -> name
+      [name, lastname, _] -> name <> " " <> lastname
     end
   end
 end

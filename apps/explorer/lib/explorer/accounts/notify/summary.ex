@@ -60,9 +60,9 @@ defmodule Explorer.Accounts.Notify.Summary do
     Enum.map(
       transfers_list,
       fn transfer ->
-        summary = fetch_summary(transaction, transfer)
-        Logger.info(summary, fetcher: :account)
-        summary
+        transaction
+        |> fetch_summary(transfer)
+        |> tap(&Logger.info(&1, fetcher: :account))
       end
     )
   end
