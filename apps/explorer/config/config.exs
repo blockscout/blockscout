@@ -158,7 +158,9 @@ exchange_rates_source =
 
 config :explorer, Explorer.ExchangeRates.Source, source: exchange_rates_source
 
-config :explorer, Explorer.KnownTokens, enabled: System.get_env("DISABLE_KNOWN_TOKENS") != "true", store: :ets
+config :explorer, Explorer.KnownTokens,
+  enabled: System.get_env("DISABLE_KNOWN_TOKENS") != "true",
+  store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
@@ -273,6 +275,14 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   enabled: System.get_env("ENABLE_SOURCIFY_INTEGRATION") == "true",
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
+
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("SENDGRID_API_KEY")
+
+config :explorer,
+  sendgrid_sender: System.get_env("SENDGRID_SENDER"),
+  sendgrid_template: System.get_env("SENDGRID_TEMPLATE")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
