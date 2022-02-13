@@ -1,0 +1,45 @@
+<section class="container">
+  <div class="row">
+    <div class="col-2 mb-3">
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="dropdown-item acc-link-active fs-14" aria-current="page" href="#">Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="dropdown-item fs-14" href="<%= watchlist_path(@conn, :show) %>">Watchlist</a>
+        </li>
+      </ul>
+    </div>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body" >
+          <h1 class="card-title list-title-description header-account">Profile</h1>
+          <br>
+          <div class="col-sm">
+            <img src="<%= @user.avatar %>" alt="<%= @user.nickname %>" size="42" height="42" width="42" >
+          </div>
+          <br>
+          <div class="col-sm">
+            <div class="mb-4 row">
+              <label for="static-name" class="col-sm-6 col-form-label label-account">Name</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext profile-item label" id="static-name" value="<%= @user.name %>">
+              </div>
+            </div>
+            <div class="mb-4 row">
+              <label for="static-nickname" class="col-sm-6 col-form-label label-account">Nickname</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext profile-item" id="static-nickname" value="<%= @user.nickname %>">
+              </div>
+            </div>
+            <div class="mb-4 row">
+              <label for="static-email" class="col-sm-6 col-form-label label-account">Email</label>
+              <div class="col-sm">
+                <input type="text" readonly class="form-control-plaintext profile-item" id="static-email" value="<%= @user.email %>">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</section>

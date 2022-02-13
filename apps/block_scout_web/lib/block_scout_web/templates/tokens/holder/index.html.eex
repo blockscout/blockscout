@@ -4,6 +4,7 @@
     "_details.html",
     token: @token,
     counters_path: @counters_path,
+    private_tags: (if assigns[:private_tags], do: @private_tags, else: []),
     conn: @conn
   ) %>
 

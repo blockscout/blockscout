@@ -252,4 +252,25 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   defp validate_url(_), do: :error
+
+  def sign_in_link do
+    if Mix.env() == :test do
+      "/auth/auth0"
+    else
+      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] <> "auth/auth0"
+    end
+  end
+
+  def sign_out_link do
+    client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
+    return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
+    logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
+
+    params = [
+      client_id: client_id,
+      returnTo: return_to
+    ]
+
+    [logout_url, "?", URI.encode_query(params)]
+  end
 end
