@@ -12,6 +12,10 @@ env:
   MIX_ENV: test
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
+  AUTH0_DOMAIN: 'blockscoutcom.us.auth0.com'
+  AUTH0_CALLBACK_URL: 'https://blockscout.com/auth/auth0/callback'
+  AUTH0_LOGOUT_URL: 'https://blockscoutcom.us.auth0.com/v2/logout'
+  AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/auth/logout'
 
 jobs:
   build-and-cache:
@@ -34,7 +38,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -89,12 +93,12 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      
+
       - name: Restore Mix Deps Cache
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -118,7 +122,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -141,7 +145,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -181,7 +185,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -207,7 +211,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -235,7 +239,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -281,7 +285,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -340,7 +344,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -396,7 +400,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -463,7 +467,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -524,7 +528,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}

@@ -446,4 +446,9 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
+
+  def tag_name_to_label(tag_name) do
+    tag_name
+    |> String.replace(" ", "-")
+  end
 end

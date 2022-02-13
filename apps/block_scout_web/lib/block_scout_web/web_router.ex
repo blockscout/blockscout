@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.WebRouter do
   Router for web app
   """
   use BlockScoutWeb, :router
+  require Ueberauth
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -11,6 +12,30 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
+  end
+
+  if Mix.env() == :dev do
+    forward("/sent_emails", Bamboo.SentEmailViewerPlug)
+  end
+
+  scope "/auth", BlockScoutWeb do
+    pipe_through(:browser)
+
+    get("/profile", Account.AuthController, :profile)
+    get("/logout", Account.AuthController, :logout)
+    get("/:provider", Account.AuthController, :request)
+    get("/:provider/callback", Account.AuthController, :callback)
+  end
+
+  scope "/account", BlockScoutWeb do
+    pipe_through(:browser)
+
+    resources("/watchlist", Account.WatchlistController, only: [:show], singleton: true, as: :watchlist)
+
+    resources("/watchlist_address", Account.WatchlistAddressController,
+      only: [:new, :create, :edit, :update, :delete],
+      as: :watchlist_address
+    )
   end
 
   # Disallows Iframes (write routes)
