@@ -32,6 +32,7 @@ config :logger,
     {LoggerFileBackend, :reading_token_functions},
     {LoggerFileBackend, :pending_transactions_to_refetch},
     {LoggerFileBackend, :empty_blocks_to_refetch},
+    {LoggerFileBackend, :account},
     {LoggerFileBackend, :api}
   ]
 

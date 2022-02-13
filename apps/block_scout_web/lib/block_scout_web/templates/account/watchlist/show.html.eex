@@ -1,0 +1,49 @@
+<section class="container">
+  <div class="row"> 
+    <div class="col-2 mb-3">
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="dropdown-item fs-14" aria-current="page"  href="<%= auth_path(@conn, :profile) %>">Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="dropdown-item acc-link-active fs-14" href="#">Watchlist</a>
+        </li>
+      </ul>
+    </div>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body" >
+          <h1 class="card-title list-title-description header-account">Watchlist</h1>
+          <br>
+          <div class="col-sm">
+            <div class="mb-4 row o-flow-x">
+              <%= if @watchlist.watchlist_addresses == [] do %>
+              <div style="min-width: 100%;">
+                <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
+                  You don't have addresses on you watchlist yet
+                </div>
+              </div>
+                <h2></h2>
+              <% else %>
+                <table class="table mb-4 table-watchlist">
+                  <thead style="font-size: 14px; color: #6c757d" >
+                    <tr>
+                      <th scope="col">Name</th>
+                      <th scope="col">Address</th>
+                      <th scope="col">Balance</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody style="font-size: 15px; color: #6c757d" >
+                    <%= Enum.map(@watchlist.watchlist_addresses, fn wa ->
+                      render(WatchlistAddressView, "row.html", watchlist_address: wa, exchange_rate: exchange_rate(), conn: @conn)
+                      end) %>
+                  </tbody>
+                </table>
+              <% end %>
+            </div>
+          </div>
+          <a class="button button-primary button-sm" href="<%= watchlist_address_path(@conn, :new) %>">Add address</a>
+        </div>
+      </div>
+</section>

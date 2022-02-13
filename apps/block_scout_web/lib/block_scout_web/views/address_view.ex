@@ -456,4 +456,9 @@ defmodule BlockScoutWeb.AddressView do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
   end
+
+  def tag_name_to_label(tag_name) do
+    tag_name
+    |> String.replace(" ", "-")
+  end
 end
