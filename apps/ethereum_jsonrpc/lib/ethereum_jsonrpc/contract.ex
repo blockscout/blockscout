@@ -228,6 +228,9 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp format_error(error) do
-    format_error(Exception.message(error))
+    error
+    |> Map.put(:hide_url, true)
+    |> Exception.message()
+    |> format_error()
   end
 end
