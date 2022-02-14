@@ -90,6 +90,7 @@ const appJs =
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
       'main-page': './css/main-page.scss',
+      'staking': './css/stakes.scss',
       'tokens': './js/pages/token/search.js',
       'ad': './js/lib/ad.js',
       'text_ad': './js/lib/text_ad.js',
@@ -175,8 +176,11 @@ const appJs =
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
+        'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH),
         'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
-        'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC)
+        'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC),
+        'process.env.SUBNETWORK': JSON.stringify(process.env.SUBNETWORK),
+        'process.env.COIN_NAME': JSON.stringify(process.env.COIN_NAME)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

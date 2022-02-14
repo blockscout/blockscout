@@ -1,5 +1,3 @@
-import '../../css/stakes.scss'
-
 import $ from 'jquery'
 import _ from 'lodash'
 import { subscribeChannel } from '../socket'
