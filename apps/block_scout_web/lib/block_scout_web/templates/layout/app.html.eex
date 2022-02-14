@@ -5,19 +5,25 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
-      <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
-      <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
-      <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
-      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/github.svg") %>" as="image" crossorigin>
-      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/twitter.svg") %>" as="image" crossorigin>
-      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/telegram.svg") %>" as="image" crossorigin>
-      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/bar-chart.svg") %>" as="image" crossorigin>
-      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/info-circle.svg") %>" as="image" crossorigin>
-      <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/tag.svg") %>" as="image" crossorigin>
-    <% else %>
-      <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+    <%= case @view_module do %>
+      <% Elixir.BlockScoutWeb.ChainView -> %>
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
+        <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
+        <link rel="preload" href="<%= static_path(@conn, "/js/chart-loader.js") %>" as="script">
+        <link rel="preload" href="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>" as="script">
+      <% Elixir.BlockScoutWeb.StakesView -> %>
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/staking.css") %>">
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+      <% _ -> %>
+        <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <% end %>
+    <link rel="preload" href="<%= static_path(@conn, "/js/autocomplete.js") %>" as="script">
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/github.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/twitter.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/telegram.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/bar-chart.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/info-circle.svg") %>" as="image" crossorigin>
+    <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/tag.svg") %>" as="image" crossorigin>
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
     <%= render_existing(@view_module, "styles.html", assigns) %>
@@ -283,7 +289,8 @@
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
+      @view_module != Elixir.BlockScoutWeb.StakesView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>

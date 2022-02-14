@@ -93,6 +93,7 @@ const appJs =
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
       'main-page': './css/main-page.scss',
+      'staking': './css/stakes.scss',
       'tokens': './js/pages/token/search.js',
       'faucet': './js/pages/faucet.js',
       'ad': './js/lib/ad.js',
@@ -187,7 +188,9 @@ const appJs =
         'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL),
         'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
         'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC),
-        'process.env.DISPLAY_TOKEN_ICONS': JSON.stringify(process.env.DISPLAY_TOKEN_ICONS)
+        'process.env.DISPLAY_TOKEN_ICONS': JSON.stringify(process.env.DISPLAY_TOKEN_ICONS),
+        'process.env.SUBNETWORK': JSON.stringify(process.env.SUBNETWORK),
+        'process.env.COIN_NAME': JSON.stringify(process.env.COIN_NAME)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
