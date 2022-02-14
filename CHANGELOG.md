@@ -13,6 +13,7 @@
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 
 ### Chore
+- [#5189](https://github.com/blockscout/blockscout/pull/5189) - ENV var to manage pending transactions fetcher switching off
 - [#5171](https://github.com/blockscout/blockscout/pull/5171) - Replace lodash NPM package with tiny lodash modules
 - [#5170](https://github.com/blockscout/blockscout/pull/5170) - Token price row name fix
 - [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
