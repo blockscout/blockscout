@@ -28,12 +28,13 @@ ENV PORT=4000 \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 # Cache elixir deps
-ADD mix.exs mix.lock ./
-ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
-ADD apps/explorer/mix.exs ./apps/explorer/
-ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
-ADD apps/indexer/mix.exs ./apps/indexer/
+ADD mix.exs mix.lock /src/
+ADD apps/block_scout_web/mix.exs /src/apps/block_scout_web/
+ADD apps/explorer/mix.exs /src/apps/explorer/
+ADD apps/ethereum_jsonrpc/mix.exs /src/apps/ethereum_jsonrpc/
+ADD apps/indexer/mix.exs /src/apps/indexer/
 
+WORKDIR /src
 RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
@@ -47,16 +48,16 @@ RUN mix compile
 RUN npm install npm@latest
 
 # Add blockscout npm deps
-RUN cd apps/explorer/ && \
-    npm install && \
-    cd -
+WORKDIR /src/apps/explorer
+RUN npm install
 
-RUN cd apps/block_scout_web/assets/ && \
-    npm install && \
-    cd -
+WORKDIR /src/apps/block_scout_web/assets/
+RUN npm install
+RUN if [ "$MIX_ENV" = "dev" ]; then npm run build; else npm run deploy; fi
 
-RUN cd apps/block_scout_web/assets/ && \
-    if [ "$MIX_ENV" = "dev" ]; then npm run build; else npm run deploy; fi && \
-    cd -
+# Generate self signed cert for dev env
+WORKDIR /src/apps/block_scout_web
+RUN if [ "$MIX_ENV" = "dev" ]; then mix phx.gen.cert blockscout blockscout.local; fi
 
-RUN mix phx.digest
+WORKDIR /src
+CMD ["mix phx.digest"]
