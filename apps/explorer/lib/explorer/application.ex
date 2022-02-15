@@ -63,8 +63,7 @@ defmodule Explorer.Application do
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       Transactions,
       Accounts,
-      Uncles,
-      MinMissingBlockNumber
+      Uncles
     ]
 
     children = base_children ++ configurable_children()
@@ -96,7 +95,8 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
-      configure(Explorer.Staking.ContractState)
+      configure(Explorer.Staking.ContractState),
+      configure(MinMissingBlockNumber)
     ]
     |> List.flatten()
   end

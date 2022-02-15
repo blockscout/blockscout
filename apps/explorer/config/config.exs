@@ -29,7 +29,7 @@ config :explorer, Explorer.Counters.AverageBlockTime,
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
-    if(System.get_env("DISABLE_WEBAPP") == nil && System.get_env("DISABLE_INDEXER") == nil,
+    if(System.get_env("DISABLE_WEBAPP") == "true" && System.get_env("DISABLE_INDEXER") == "true",
       do: false,
       else: true
     )
@@ -139,6 +139,8 @@ config :explorer, Explorer.KnownTokens, enabled: System.get_env("DISABLE_KNOWN_T
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
+
+config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: System.get_env("DISABLE_WRITE_API") != "true"
 
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
