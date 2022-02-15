@@ -6,16 +6,12 @@ PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 
-ifndef MIX_ENV
-	MIX_ENV=prod
-endif
-
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
 DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
-BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=$(MIX_ENV)' \
+BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															-e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
@@ -374,10 +370,10 @@ ifdef API_RATE_LIMIT_WHITELISTED_IPS
 endif
 
 build: 
-	@docker build --build-arg COIN="$(COIN)" --build-arg MIX_ENV="$(MIX_ENV)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+	@docker build --build-arg COIN="$(COIN)" --build-arg GEN_SELF_SIGNED_CERT=$(GEN_SELF_SIGNED_CERT) -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 
 build-m1:
-	@docker buildx build --build-arg COIN="$(COIN)" --build-arg MIX_ENV="$(MIX_ENV)" --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+	@docker buildx build --build-arg COIN="$(COIN)" --build-arg GEN_SELF_SIGNED_CERT=$(GEN_SELF_SIGNED_CERT) --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
 
 migrate_only:
 	@echo "==> Running migrations"

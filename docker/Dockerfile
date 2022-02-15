@@ -16,11 +16,10 @@ RUN set -ex && \
 # Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-ARG MIX_ENV
+ARG GEN_SELF_SIGNED_CERT=true
 
 ENV PATH="$HOME/.cargo/bin:${PATH}"
 ENV RUSTFLAGS="-C target-feature=-crt-static"
-ENV MIX_ENV=${MIX_ENV}
 
 EXPOSE 4000
 
@@ -53,11 +52,11 @@ RUN npm install
 
 WORKDIR /src/apps/block_scout_web/assets/
 RUN npm install
-RUN if [ "$MIX_ENV" = "dev" ]; then npm run build; else npm run deploy; fi
+RUN npm run deploy
 
 # Generate self signed cert for dev env
 WORKDIR /src/apps/block_scout_web
-RUN if [ "$MIX_ENV" = "dev" ]; then mix phx.gen.cert blockscout blockscout.local; fi
+RUN if [ $GEN_SELF_SIGNED_CERT ]; then mix phx.gen.cert blockscout blockscout.local; fi
 
 WORKDIR /src
 CMD ["mix phx.digest"]
