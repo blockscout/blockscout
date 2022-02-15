@@ -59,4 +59,4 @@ WORKDIR /src/apps/block_scout_web
 RUN if [ $GEN_SELF_SIGNED_CERT ]; then mix phx.gen.cert blockscout blockscout.local; fi
 
 WORKDIR /src
-CMD ["mix phx.digest"]
+CMD ["mix phx.digest", "mix phx.server"]

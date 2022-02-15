@@ -5,6 +5,7 @@ BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
+DOCKER_COMPOSE_PROJECT_NAME = blockscout
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
@@ -424,8 +425,14 @@ push:
 	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
 	@docker push hermeznetwork/hermez-node-blockscout:latest
 
+start-watch:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
+
+stop-watch:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
+
 .PHONY: build \
 				migrate \
 				start \
 				postgres \
-				run 
+				run
