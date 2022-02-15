@@ -6,6 +6,7 @@
 
 ### Fixes
 - [#5192](https://github.com/blockscout/blockscout/pull/5192) - Fix DATABASE_URL config parser
+- [#5191](https://github.com/blockscout/blockscout/pull/5191) - Add empty view for new addresses
 - [#5169](https://github.com/blockscout/blockscout/pull/5169) - Fix several UI bugs; Add tooltip to the prev/next block buttons
 - [#5184](https://github.com/blockscout/blockscout/pull/5184) - eth_call method: remove from param from the request, if it is null
 - [#5172](https://github.com/blockscout/blockscout/pull/5172), [#5182](https://github.com/blockscout/blockscout/pull/5182) - Reduced the size of js bundles
