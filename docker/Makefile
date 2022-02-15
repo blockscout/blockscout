@@ -373,25 +373,11 @@ ifdef API_RATE_LIMIT_WHITELISTED_IPS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'API_RATE_LIMIT_WHITELISTED_IPS=$(API_RATE_LIMIT_WHITELISTED_IPS)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
 build: 
-	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
-ifdef HAS_BLOCKSCOUT_IMAGE
-	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
-else
-	@echo "==> No image found trying to build one..."
 	@docker build --build-arg COIN="$(COIN)" --build-arg MIX_ENV="$(MIX_ENV)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-endif
 
 build-m1:
-	@echo $(MIX_ENV)
-	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
-ifdef HAS_BLOCKSCOUT_IMAGE
-	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
-else
-	@echo "==> No image found trying to build one..."
 	@docker buildx build --build-arg COIN="$(COIN)" --build-arg MIX_ENV="$(MIX_ENV)" --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-endif
 
 migrate_only:
 	@echo "==> Running migrations"
