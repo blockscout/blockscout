@@ -5,7 +5,7 @@ BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-DOCKER_COMPOSE_PROJECT_NAME = blockscout
+DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
@@ -370,11 +370,17 @@ ifdef API_RATE_LIMIT_WHITELISTED_IPS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'API_RATE_LIMIT_WHITELISTED_IPS=$(API_RATE_LIMIT_WHITELISTED_IPS)'
 endif
 
-build: 
-	@docker build --build-arg COIN="$(COIN)" --build-arg GEN_SELF_SIGNED_CERT=$(GEN_SELF_SIGNED_CERT) -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+build-dev:
+	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 
-build-m1:
-	@docker buildx build --build-arg COIN="$(COIN)" --build-arg GEN_SELF_SIGNED_CERT=$(GEN_SELF_SIGNED_CERT) --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+build-prod:
+	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+
+build-dev-m1:
+	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+
+build-prod-m1:
+	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
 
 migrate_only:
 	@echo "==> Running migrations"
