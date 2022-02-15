@@ -64,7 +64,8 @@ else
   config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: false
 end
 
-config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false
+config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
