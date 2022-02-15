@@ -5,6 +5,7 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5197](https://github.com/blockscout/blockscout/pull/5197) - Fix contract functions outputs
 - [#5196](https://github.com/blockscout/blockscout/pull/5196) - Various Docker setup fixes
 - [#5192](https://github.com/blockscout/blockscout/pull/5192) - Fix DATABASE_URL config parser
 - [#5191](https://github.com/blockscout/blockscout/pull/5191) - Add empty view for new addresses

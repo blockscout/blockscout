@@ -1029,7 +1029,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_token/overview.html.eex:1
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:93 lib/block_scout_web/templates/smart_contract/_functions.html.eex:93
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:133
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:135
 msgid "ETH"
 msgstr ""
 
@@ -3092,7 +3092,7 @@ msgid "Vyper contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:132
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:134
 msgid "WEI"
 msgstr ""
 
