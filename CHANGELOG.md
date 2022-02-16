@@ -18,6 +18,7 @@
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 
 ### Chore
+- [#5202](https://github.com/blockscout/blockscout/pull/5202) - Docker setup Makefile release/publish tasks
 - [#5195](https://github.com/blockscout/blockscout/pull/5195) - Add Berlin, London to the list of default EVM versions
 - [#5190](https://github.com/blockscout/blockscout/pull/5190) - Set 8545 as default port everywhere except Ganache JSON RPC variant
 - [#5189](https://github.com/blockscout/blockscout/pull/5189) - ENV var to manage pending transactions fetcher switching off
