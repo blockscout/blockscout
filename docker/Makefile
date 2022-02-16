@@ -438,7 +438,7 @@ stop-watch:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
 
 .PHONY: build \
-				migrate \
-				start \
-				postgres \
-				run
+		migrate \
+		start \
+		postgres \
+		run
