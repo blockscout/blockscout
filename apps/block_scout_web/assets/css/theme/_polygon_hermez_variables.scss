@@ -1,3 +1,7 @@
+$primary: #8248e5;
+$secondary: #ffc55a;
+$tertiary: #081132;
+
 // hermez global vars
 $hermez-text-contrast-color: #b2afc7;
 
@@ -9,27 +13,49 @@ $header-links-color-active: #fff;
 $header-icon-color-hover: #fff;
 $header-icon-border-color-hover: #fff;
 
-.navbar {
-  .input-group-text {
-    // We need #slash-icon to override the original value, already set as !important
-    &.border#slash-icon {
-      border-color: $hermez-text-contrast-color !important;
-      color: $hermez-text-contrast-color !important;
+// dashboard
+$hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
+
+.layout-container {
+  .navbar {
+    .input-group-text {
+      // We need #slash-icon to override the original value, already set as !important
+      &.border#slash-icon {
+        border-color: $hermez-text-contrast-color !important;
+        color: $hermez-text-contrast-color !important;
+        background-color: $hermez-search-box-background !important;
+      }
+    }
+    .search-control {
+      background: $hermez-search-box-background !important;
+      border-color: $hermez-search-box-background !important;
+      &.focused-field {
+        border: $hermez-search-box-background !important;
+      }
+    }
+    .main-search-autocomplete {
       background-color: $hermez-search-box-background !important;
     }
-  }
-  .search-control {
-    background: $hermez-search-box-background !important;
-    border-color: $hermez-search-box-background !important;
-    &.focused-field {
-      border: $hermez-search-box-background !important;
+    .main-search-autocomplete,
+    .main-search-autocomplete-mobile {
+      color: #b2afc7 !important;
     }
   }
-  .main-search-autocomplete {
-    background-color: $hermez-search-box-background !important;
-  }
-  .main-search-autocomplete,
-  .main-search-autocomplete-mobile {
-    color: #b2afc7 !important;
+  .dashboard-banner-container {
+    background-image: $hermez-dashboard-gradient;
+    .dashboard-banner-network-plain-container {
+      background-color: transparent;
+      &::after {
+        background-color: transparent;
+        box-shadow: none;
+      }
+      .dashboard-banner-network-stats {
+        div {
+          &::before {
+            background-color: $secondary;
+          }
+        }
+      }
+    }
   }
 }
