@@ -2,13 +2,21 @@ SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
 DOCKER_IMAGE = blockscout_prod_sokol
 BS_CONTAINER_NAME = blockscout_sokol
+PG_CONTAINER_NAME = db
+PG_CONTAINER_IMAGE = postgres:13.6
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
+ifdef DATABASE_URL
+	DB_URL = $(DATABASE_URL)
+else
+	DB_URL = postgresql://postgres:@$(HOST):5432/blockscout?ssl=false
+endif
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
+															 -e 'DATABASE_URL=$(DB_URL)'
 
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
@@ -75,9 +83,6 @@ ifdef SUPPLY_MODULE
 endif
 ifdef SOURCE_MODULE
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'SOURCE_MODULE=$(SOURCE_MODULE)'
-endif
-ifdef DATABASE_URL
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DATABASE_URL=$(DATABASE_URL)'
 endif
 ifdef POOL_SIZE
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'POOL_SIZE=$(POOL_SIZE)'
@@ -377,8 +382,14 @@ endif
 ifdef COIN_NAME
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'COIN_NAME=$(COIN_NAME)'
 endif
+ifdef INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER)'
+endif
+ifdef INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER)'
+endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${DOCKER_IMAGE} ")
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
@@ -398,18 +409,65 @@ migrate:
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 
 
-start:
-	@$(MAKE) -f $(THIS_FILE) build
-	@$(MAKE) -f $(THIS_FILE) migrate
+PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
+PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
+postgres:
+ifdef DATABASE_URL
+	@echo "==> DATABASE_URL of external DB provided. There is no need to start a container for DB."
+	@$(MAKE) -f $(THIS_FILE) migrate_only
+else
+ifdef PG_EXIST
+	@echo "==> Checking PostrgeSQL container"
+ifdef PG_STARTED
+	@echo "==> PostgreSQL Already started"
+	@$(MAKE) -f $(THIS_FILE) migrate_only
+else
+	@echo "==> Starting PostgreSQL container"
+	@docker start $(PG_CONTAINER_NAME)
+	@$(MAKE) -f $(THIS_FILE) migrate_only
+endif
+else
+	@echo "==> Creating new PostgreSQL container"
+	@docker run -d --name $(PG_CONTAINER_NAME) \
+					-e POSTGRES_PASSWORD="" \
+					-e POSTGRES_USER="postgres" \
+					-e POSTGRES_HOST_AUTH_METHOD="trust" \
+					-p 5432:5432 \
+					$(PG_CONTAINER_IMAGE)
+	@sleep 1
+	@$(MAKE) -f $(THIS_FILE) migrate_only
+endif
+endif
+
+start: build postgres 
 	@echo "==> Starting blockscout"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
-					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
+					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
+
+BS_STARTED := $(shell docker ps --filter name=${BS_CONTAINER_NAME} | grep ${BS_CONTAINER_NAME})
+stop:
+ifdef BS_STARTED
+	@echo "==> Stopping BlockScout container."
+	@docker stop $(BS_CONTAINER_NAME)
+	@echo "==> BlockScout container stopped."
+else
+	@echo "==> BlockScout container already stopped before."
+endif
+ifdef PG_STARTED
+	@echo "==> Stopping Postgres container."
+	@docker stop $(PG_CONTAINER_NAME)
+	@echo "==> Postgres container stopped."
+else
+	@echo "==> Postgres container already stopped before."
+endif
 
 run: start
 
 .PHONY: build \
 				migrate \
 				start \
-				run '
+				stop \
+				postgres \
+				run 

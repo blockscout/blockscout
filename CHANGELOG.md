@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration
 - [#5102](https://github.com/blockscout/blockscout/pull/5102) - Add new pagination to `address/transactions` page
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
 - [#5102](https://github.com/blockscout/blockscout/pull/5102) - Add new pagination to `address/transactions` page
@@ -8,15 +9,22 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
-- [#5169](https://github.com/blockscout/blockscout/pull/5169) - Fix several UI bugs; Add tooltip to the prev/next block buttons
+- [#5196](https://github.com/blockscout/blockscout/pull/5196) - Various Docker setup fixes
+- [#5192](https://github.com/blockscout/blockscout/pull/5192) - Fix DATABASE_URL config parser
+- [#5191](https://github.com/blockscout/blockscout/pull/5191) - Add empty view for new addresses
 - [#5184](https://github.com/blockscout/blockscout/pull/5184) - eth_call method: remove from param from the request, if it is null
 - [#5172](https://github.com/blockscout/blockscout/pull/5172), [#5182](https://github.com/blockscout/blockscout/pull/5182) - Reduced the size of js bundles
+- [#5169](https://github.com/blockscout/blockscout/pull/5169) - Fix several UI bugs; Add tooltip to the prev/next block buttons
+- [#5166](https://github.com/blockscout/blockscout/pull/5166) - Fix contracts verification bugs
 - [#5160](https://github.com/blockscout/blockscout/pull/5160) - Fix blocks validated hint
 - [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 - [#5136](https://github.com/blockscout/blockscout/pull/5136) - Improve contract verification
 
 ### Chore
+- [#5195](https://github.com/blockscout/blockscout/pull/5195) - Add Berlin, London to the list of default EVM versions
+- [#5190](https://github.com/blockscout/blockscout/pull/5190) - Set 8545 as default port everywhere except Ganache JSON RPC variant
+- [#5189](https://github.com/blockscout/blockscout/pull/5189) - ENV var to manage pending transactions fetcher switching off
 - [#5171](https://github.com/blockscout/blockscout/pull/5171) - Replace lodash NPM package with tiny lodash modules
 - [#5170](https://github.com/blockscout/blockscout/pull/5170) - Token price row name fix
 - [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
