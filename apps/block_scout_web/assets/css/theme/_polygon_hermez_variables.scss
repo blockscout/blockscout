@@ -1,0 +1,32 @@
+// hermez global vars
+$hermez-text-contrast-color: #b2afc7;
+
+// header
+$hermez-search-box-color: $hermez-text-contrast-color;
+$hermez-search-box-background: #000414;
+$header-background-color: #081132;
+$header-links-color: #b2afc7;
+$header-links-color-active: #fff;
+$header-icon-color-hover: #fff;
+$header-icon-border-color-hover: #fff;
+.navbar.navbar-primary {
+  .search-control {
+    background: $hermez-search-box-background;
+    border-color: $hermez-search-box-background;
+    &.focused-field {
+      border: $hermez-search-box-background !important;
+    }
+  }
+  .input-group-text.border {
+    border-color: $hermez-text-contrast-color !important;
+    color: $hermez-text-contrast-color;
+    background-color: $hermez-search-box-background;
+  }
+  .main-search-autocomplete {
+    background-color: $hermez-search-box-background !important;
+  }
+  .main-search-autocomplete,
+  .main-search-autocomplete-mobile {
+    color: #b2afc7 !important;
+  }
+}
