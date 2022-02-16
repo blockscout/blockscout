@@ -1,9 +1,9 @@
 SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
-DOCKER_IMAGE = blockscout_prod
+DOCKER_IMAGE = blockscout
 BS_CONTAINER_NAME = blockscout
-PG_CONTAINER_NAME = postgres
-PG_CONTAINER_IMAGE = postgres:12.5
+PG_CONTAINER_NAME = db
+PG_CONTAINER_IMAGE = postgres:13.6
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 
 ifeq ($(SYSTEM), Linux)
@@ -13,7 +13,7 @@ endif
 ifdef DATABASE_URL
 	DB_URL = $(DATABASE_URL)
 else
-	DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
+	DB_URL = postgresql://postgres:@$(HOST):5432/blockscout?ssl=false
 endif
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															 -e 'DATABASE_URL=$(DB_URL)'
@@ -382,7 +382,7 @@ ifdef INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${DOCKER_IMAGE} ")
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
