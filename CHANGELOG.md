@@ -3,6 +3,7 @@
 ### Features
 - [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
+- [#5016](https://github.com/blockscout/blockscout/pull/5016) - Add view for internal transactions error
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
