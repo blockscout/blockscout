@@ -12,7 +12,6 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Tags.AddressToTag
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -74,7 +73,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       current_user = AuthController.current_user(conn)
-      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
+      tags = GetAddressTags.call(address_hash, current_user)
 
       render(conn, "index.html",
         address: address,
@@ -82,7 +81,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-        private_tags: private_tags
+        tags: tags
       )
     else
       {:restricted_access, _} ->

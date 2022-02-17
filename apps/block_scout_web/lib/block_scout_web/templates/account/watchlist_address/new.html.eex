@@ -1,16 +1,6 @@
 <section class="container">
   <div class="row">
-    <div class="col-2 mb-3">
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <a class="dropdown-item fs-14" aria-current="page" href="<%= auth_path(@conn, :profile) %>">Profile</a>
-        </li>
-        <li class="nav-item">
-          <a class="dropdown-item acc-link-active fs-14" style="font-size: 14px;" href="#">Watchlist</a>
-        </li>
-      </ul>
-    </div>
-
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
     <div class="col-sm-10">
       <div class="card">
         <div class="card-body" >

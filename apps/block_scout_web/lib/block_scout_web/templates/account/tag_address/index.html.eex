@@ -1,40 +1,38 @@
 <section class="container">
   <div class="row"> 
-    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
+      <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
     <div class="col-md">
       <div class="card">
         <div class="card-body" >
-          <h1 class="card-title list-title-description header-account">Watchlist</h1>
+          <h1 class="card-title list-title-description header-account">Address Tags</h1>
           <br>
           <div class="col-sm">
-            <div class="mb-4 row o-flow-x">
-              <%= if @watchlist.watchlist_addresses == [] do %>
+            <div class="mb-3 row o-flow-x">
+              <%= if @address_tags == [] do %>
               <div style="min-width: 100%;">
                 <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
-                  You don't have addresses on you watchlist yet
+                  You don't have address tags yet
                 </div>
               </div>
                 <h2></h2>
               <% else %>
-                <table class="table mb-4 table-watchlist">
+                <table class="table mb-3 table-watchlist">
                   <thead style="font-size: 14px; color: #6c757d" >
                     <tr>
                       <th scope="col">Name</th>
                       <th scope="col">Address</th>
-                      <th scope="col">Balance</th>
-                      <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody style="font-size: 15px; color: #6c757d" >
-                    <%= Enum.map(@watchlist.watchlist_addresses, fn wa ->
-                      render(WatchlistAddressView, "row.html", watchlist_address: wa, exchange_rate: exchange_rate(), conn: @conn)
+                    <%= Enum.map(@address_tags, fn at ->
+                      render(TagAddressView, "row.html", address_tag: at, conn: @conn)
                       end) %>
                   </tbody>
                 </table>
               <% end %>
             </div>
           </div>
-          <a class="button button-primary button-sm" href="<%= watchlist_address_path(@conn, :new) %>">Add address</a>
+          <a class="button button-primary button-sm" href="<%= tag_address_path(@conn, :new) %>">Add address tag</a>
         </div>
       </div>
 </section>
