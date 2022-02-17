@@ -42,6 +42,8 @@ $secondary: #ffc55a;
 $tertiary: #081132;
 
 // hermez global vars
+$hermez-text-color: $tertiary;
+$hermez-text-light-color: #888baa;
 $hermez-text-contrast-color: #b2afc7;
 
 // header
@@ -54,6 +56,10 @@ $header-icon-border-color-hover: #fff;
 
 // dashboard
 $hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
+
+// tiles
+$tile-type-block-color: #7b3fe4;
+$tile-type-transaction-color: #5ea8ff;
 
 .layout-container {
   .navbar {
@@ -87,6 +93,7 @@ $hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
     background-image: $hermez-dashboard-gradient;
     .dashboard-banner-network-plain-container {
       background-color: transparent;
+      box-shadow: none;
       &::after {
         background-color: transparent;
         box-shadow: none;
@@ -104,6 +111,50 @@ $hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
       .dashboard-banner-chart-legend-item:nth-child(n + 1):nth-child(-n + 2) {
       // Hides Price and Market Cap info, keeping Tx/day
       display: none;
+    }
+  }
+  .card {
+    .card-body {
+      .card-title {
+        font-weight: 700;
+        font-size: 20px;
+      }
+    }
+    .btn-line {
+      background-color: rgba(136, 139, 170, 0.1);
+      border: none;
+      color: $hermez-text-color;
+      font-size: 14px;
+      &:hover {
+        background-color: rgba(178, 175, 199, 0.4);
+      }
+    }
+    .tile {
+      &.tile-type-transaction,
+      &.tile-type-block {
+        border-left-width: 7px;
+        border-radius: 7px;
+      }
+      .tile-title {
+        color: $hermez-text-color !important;
+        font-size: 16px;
+      }
+      .tile-bottom-contents {
+        background-color: transparent;
+        .tile-transactions {
+          span {
+            font-size: 14px;
+            color: $hermez-text-light-color;
+          }
+        }
+        .text-truncate {
+          font-size: 14px;
+          color: $hermez-text-light-color;
+          span[data-address-hash] {
+            color: $hermez-text-color;
+          }
+        }
+      }
     }
   }
 }
