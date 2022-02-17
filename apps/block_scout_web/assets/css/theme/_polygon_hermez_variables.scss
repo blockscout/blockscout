@@ -63,6 +63,9 @@ $tile-type-transaction-color: #5ea8ff;
 
 .layout-container {
   .navbar {
+    .dark-mode-changer {
+      display: none;
+    }
     .input-group-text {
       // We need #slash-icon to override the original value, already set as !important
       &.border#slash-icon {
