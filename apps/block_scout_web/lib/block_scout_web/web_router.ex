@@ -30,7 +30,16 @@ defmodule BlockScoutWeb.WebRouter do
   scope "/account", BlockScoutWeb do
     pipe_through(:browser)
 
-    resources("/watchlist", Account.WatchlistController, only: [:show], singleton: true, as: :watchlist)
+    resources("/tag_address", Account.TagAddressController,
+      only: [:index, :new, :create, :edit, :update, :delete],
+      as: :tag_address
+    )
+
+    resources("/watchlist", Account.WatchlistController,
+      only: [:show],
+      singleton: true,
+      as: :watchlist
+    )
 
     resources("/watchlist_address", Account.WatchlistAddressController,
       only: [:new, :create, :edit, :update, :delete],
@@ -65,7 +74,10 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/blocks", BlockController, as: :blocks, only: [:index])
 
-    resources "/blocks", BlockController, as: :block_secondary, only: [:show], param: "hash_or_number" do
+    resources "/blocks", BlockController,
+      as: :block_secondary,
+      only: [:show],
+      param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
 

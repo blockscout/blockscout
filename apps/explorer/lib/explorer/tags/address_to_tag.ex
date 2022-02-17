@@ -7,7 +7,6 @@ defmodule Explorer.Tags.AddressToTag do
 
   import Ecto.Changeset
 
-  alias Explorer.Accounts.WatchlistAddress
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Tags.{AddressTag, AddressToTag}
@@ -64,42 +63,6 @@ defmodule Explorer.Tags.AddressToTag do
 
     query
     |> Repo.all()
-  end
-
-  def get_tags_on_address(address_hash) when is_nil(address_hash), do: []
-
-  def get_tags_on_address(address_hash) do
-    query =
-      from(
-        tt in AddressTag,
-        left_join: att in AddressToTag,
-        on: tt.id == att.tag_id,
-        where: att.address_hash == ^address_hash,
-        where: tt.label != ^"validator",
-        select: tt
-      )
-
-    query
-    |> Repo.all()
-  end
-
-  def get_private_tags_on_address(address_hash, _current_user) when is_nil(address_hash), do: []
-
-  def get_private_tags_on_address(address_hash, current_user) do
-    if current_user do
-      query =
-        from(
-          wa in WatchlistAddress,
-          where: wa.address_hash == ^address_hash,
-          where: wa.watchlist_id == ^current_user.watchlist_id,
-          select: %{label: wa.name, display_name: wa.name}
-        )
-
-      query
-      |> Repo.all()
-    else
-      []
-    end
   end
 
   def set_tag_to_addresses(tag_id, address_hash_string_list) do

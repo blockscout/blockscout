@@ -5,12 +5,13 @@ defmodule Explorer.Accounts.Identity do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias Explorer.Accounts.Watchlist
+  alias Explorer.Accounts.{TagAddress, Watchlist}
 
   schema "account_identities" do
     field(:uid, :string)
     field(:email, :string)
     field(:name, :string)
+    has_many(:tag_addresses, TagAddress)
     has_many(:watchlists, Watchlist)
 
     timestamps()

@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias BlockScoutWeb.Account.AuthController
-  alias Explorer.Tags.AddressToTag
   alias Explorer.{Chain, Market}
 
   alias Explorer.Chain.{
@@ -117,7 +116,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       current_user = AuthController.current_user(conn)
-      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
+      tags = GetAddressTags.call(address_hash, current_user)
 
       render(
         conn,
@@ -128,7 +127,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         current_path: Controller.current_full_path(conn),
-        private_tags: private_tags
+        tags: tags
       )
     else
       :error ->

@@ -5,7 +5,6 @@
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
-  <% private_tags = if assigns[:private_tags], do: @private_tags, else: [] %>
   <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
     <!-- Address details -->
     <div class="col-md-12 js-ad-dependant-mb-2">
@@ -29,7 +28,7 @@
           <% end %>
           <h1 class="card-title lg-card-title mb-2-desktop">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
-            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash, private_tags: private_tags %>
+            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash, tags: @tags %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
