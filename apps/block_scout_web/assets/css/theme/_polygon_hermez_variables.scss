@@ -49,6 +49,7 @@ $tertiary: #081132;
 $hermez-text-color: $tertiary;
 $hermez-text-light-color: #888baa;
 $hermez-text-contrast-color: #b2afc7;
+$hermez-purple: #7b3fe4;
 
 // header
 $hermez-search-box-background: #000414;
@@ -62,8 +63,9 @@ $header-icon-border-color-hover: #fff;
 $hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
 
 // tiles
-$tile-type-block-color: #7b3fe4;
+$tile-type-block-color: $hermez-purple;
 $tile-type-transaction-color: #5ea8ff;
+$tile-body-a-color: $hermez-purple;
 
 .layout-container {
   .navbar {
@@ -160,6 +162,15 @@ $tile-type-transaction-color: #5ea8ff;
           span[data-address-hash] {
             color: $hermez-text-color;
           }
+        }
+      }
+      .tile-body {
+        .tile-label {
+          color: $hermez-text-color;
+          font-size: $font-size-base;
+        }
+        .tile-status-label {
+          color: $hermez-text-light-color;
         }
       }
     }
