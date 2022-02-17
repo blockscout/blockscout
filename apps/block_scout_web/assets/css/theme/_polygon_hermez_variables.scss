@@ -67,6 +67,9 @@ $tile-type-block-color: $hermez-purple;
 $tile-type-transaction-color: #5ea8ff;
 $tile-body-a-color: $hermez-purple;
 
+// footer
+$footer-background-color: $tertiary;
+
 .layout-container {
   .navbar {
     .dark-mode-changer {
@@ -173,6 +176,14 @@ $tile-body-a-color: $hermez-purple;
           color: $hermez-text-light-color;
         }
       }
+    }
+  }
+  .footer {
+    .footer-list {
+      display: none;
+    }
+    .footer-body > :last-child {
+      display: none;
     }
   }
 }
