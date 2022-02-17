@@ -57,5 +57,11 @@ $hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
         }
       }
     }
+    .dashboard-banner-network-graph
+      .dashboard-banner-chart-legend
+      .dashboard-banner-chart-legend-item:nth-child(n + 1):nth-child(-n + 2) {
+      // Hides Price and Market Cap info, keeping Tx/day
+      display: none;
+    }
   }
 }
