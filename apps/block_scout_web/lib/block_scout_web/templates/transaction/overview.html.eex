@@ -25,7 +25,7 @@
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-<% private_tags = if assigns[:private_tags], do: @private_tags, else: [] %>
+<% tags = if assigns[:tags], do: @tags, else: %{common_tags: [], personal_tags: [], watchlist_names: []} %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
@@ -49,7 +49,7 @@
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
             </div>
-            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash, private_tags: private_tags %>
+            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash, tags: tags %>
           </h1>
           <%= if status == :pending do %>
             <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
