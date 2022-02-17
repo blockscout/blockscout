@@ -8,7 +8,7 @@ $hermez-text-contrast-color: #b2afc7;
 // header
 $hermez-search-box-background: #000414;
 $header-background-color: #081132;
-$header-links-color: #b2afc7;
+$header-links-color: $hermez-text-contrast-color;
 $header-links-color-active: #fff;
 $header-icon-color-hover: #fff;
 $header-icon-border-color-hover: #fff;
@@ -32,13 +32,16 @@ $hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
       &.focused-field {
         border: $hermez-search-box-background !important;
       }
-    }
-    .main-search-autocomplete {
-      background-color: $hermez-search-box-background !important;
-    }
-    .main-search-autocomplete,
-    .main-search-autocomplete-mobile {
-      color: #b2afc7 !important;
+      .main-search-autocomplete {
+        background-color: $hermez-search-box-background !important;
+        &::placeholder {
+          color: $hermez-text-contrast-color;
+        }
+      }
+      .main-search-autocomplete,
+      .main-search-autocomplete-mobile {
+        color: $hermez-text-contrast-color !important;
+      }
     }
   }
   .dashboard-banner-container {
