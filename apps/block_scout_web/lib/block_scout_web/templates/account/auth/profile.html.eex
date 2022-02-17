@@ -8,6 +8,9 @@
         <li class="nav-item">
           <a class="dropdown-item fs-14" href="<%= watchlist_path(@conn, :show) %>">Watchlist</a>
         </li>
+        <li class="nav-item">
+          <a class="dropdown-item fs-14" href="<%= tag_address_path(@conn, :index) %>">Address Tags</a>
+        </li>
       </ul>
     </div>
     <div class="col-md">
