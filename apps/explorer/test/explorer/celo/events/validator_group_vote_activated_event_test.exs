@@ -101,6 +101,17 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
       assert result.account |> to_string() == "0x88c1c759600ec3110af043c183a2472ab32d099c"
       assert result.group |> to_string() == "0x47b2db6af05a55d42ed0f3731735f9479abf0673"
       assert result.log_index == 8
+
+      {:ok, account} = Explorer.Chain.Hash.Address.cast("0x88c1c759600ec3110af043c183a2472ab32d099c")
+      {:ok, group} = Explorer.Chain.Hash.Address.cast("0x47b2db6af05a55d42ed0f3731735f9479abf0673")
+
+      # test dynamic query methods
+      [account_query_result] =
+        ValidatorGroupVoteActivatedEvent.query()
+        |> ValidatorGroupVoteActivatedEvent.query_by_account(account)
+        |> EventMap.query_all()
+
+      assert result == account_query_result
     end
   end
 end
