@@ -9,6 +9,7 @@
 
 ### Fixes
 - [#5212](https://github.com/blockscout/blockscout/pull/5212) - Fix `gas_used` value bug
+- [#5197](https://github.com/blockscout/blockscout/pull/5197) - Fix contract functions outputs
 - [#5196](https://github.com/blockscout/blockscout/pull/5196) - Various Docker setup fixes
 - [#5192](https://github.com/blockscout/blockscout/pull/5192) - Fix DATABASE_URL config parser
 - [#5191](https://github.com/blockscout/blockscout/pull/5191) - Add empty view for new addresses
