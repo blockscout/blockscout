@@ -416,25 +416,6 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
-  @block_getblockreward_example_value %{
-    "status" => "1",
-    "message" => "OK",
-    "result" => %{
-      "blockNumber" => "2165403",
-      "timeStamp" => "1472533979",
-      "blockMiner" => "0x13a06d3dfe21e0db5c016c03ea7d2509f7f8d1e3",
-      "blockReward" => "5314181600000000000",
-      "uncles" => nil,
-      "uncleInclusionReward" => nil
-    }
-  }
-
-  @block_getblockreward_example_value_error %{
-    "status" => "0",
-    "message" => "Invalid block number",
-    "result" => nil
-  }
-
   @block_getblocknobytime_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -2454,43 +2435,6 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  @block_getblockreward_action %{
-    name: "getblockreward",
-    description: "Get block reward by block number.",
-    required_params: [
-      %{
-        key: "blockno",
-        placeholder: "blockNumber",
-        type: "integer",
-        description: "A nonnegative integer that represents the block number."
-      }
-    ],
-    optional_params: [],
-    responses: [
-      %{
-        code: "200",
-        description: "successful operation",
-        example_value: Jason.encode!(@block_getblockreward_example_value),
-        model: %{
-          name: "Result",
-          fields: %{
-            status: @status_type,
-            message: @message_type,
-            result: %{
-              type: "model",
-              model: @block_reward_model
-            }
-          }
-        }
-      },
-      %{
-        code: "200",
-        description: "error",
-        example_value: Jason.encode!(@block_getblockreward_example_value_error)
-      }
-    ]
-  }
-
   @block_getblocknobytime_action %{
     name: "getblocknobytime",
     description: "Get Block Number by Timestamp.",
@@ -3123,7 +3067,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_module %{
     name: "block",
-    actions: [@block_getblockreward_action, @block_getblocknobytime_action, @block_eth_block_number_action]
+    actions: [@block_getblocknobytime_action, @block_eth_block_number_action]
   }
 
   @contract_module %{
