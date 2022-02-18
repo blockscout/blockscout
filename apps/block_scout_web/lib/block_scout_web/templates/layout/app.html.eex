@@ -94,6 +94,7 @@
     <% raw_dark_forest_addresses_0_6_r2 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6_r2) || "" %>
     <% raw_dark_forest_addresses_0_6_r3 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6_r3) || "" %>
     <% raw_dark_forest_addresses_0_6_r4 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6_r4) || "" %>
+    <% raw_dark_forest_addresses_0_6_r5 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6_r5) || "" %>
     <% raw_dark_forest_addresses_dao = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_dao) || "" %>
     <% raw_dark_forest_addresses = raw_dark_forest_addresses_0_4 %>
     <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_5 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_5, else: raw_dark_forest_addresses %>
@@ -101,6 +102,7 @@
     <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_6_r2 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_6_r2, else: raw_dark_forest_addresses %>
     <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_6_r3 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_6_r3, else: raw_dark_forest_addresses %>
     <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_6_r4 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_6_r4, else: raw_dark_forest_addresses %>
+    <% raw_dark_forest_addresses = if raw_dark_forest_addresses_0_6_r5 !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_0_6_r5, else: raw_dark_forest_addresses %>
     <% raw_dark_forest_addresses = if raw_dark_forest_addresses_dao !== "", do: raw_dark_forest_addresses <> "," <> raw_dark_forest_addresses_dao, else: raw_dark_forest_addresses %>
 
     <% raw_circles_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:circles_addresses) %>
