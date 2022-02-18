@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView}
   alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
   alias Explorer.Tags.AddressToTag
   alias Indexer.Fetcher.CoinBalanceOnDemand
@@ -57,10 +58,16 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
       {:restricted_access, _} ->
         not_found(conn)
 
-      :error ->
-        not_found(conn)
-
       {:error, :not_found} ->
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            json(conn, %{items: [], next_page_path: ""})
+
+          _ ->
+            not_found(conn)
+        end
+
+      :error ->
         not_found(conn)
     end
   end
@@ -89,10 +96,28 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
       {:restricted_access, _} ->
         not_found(conn)
 
-      :error ->
-        not_found(conn)
-
       {:error, :not_found} ->
+        {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+        address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
+
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            render(
+              conn,
+              "index.html",
+              address: address,
+              filter: params["filter"],
+              coin_balance_status: nil,
+              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+              current_path: Controller.current_full_path(conn)
+            )
+
+          _ ->
+            not_found(conn)
+        end
+
+      :error ->
         not_found(conn)
     end
   end
