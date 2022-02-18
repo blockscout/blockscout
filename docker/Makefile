@@ -417,25 +417,19 @@ else
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
 
-start: build postgres 
-	@echo "==> Starting blockscout"
-	@docker run --rm --name $(BS_CONTAINER_NAME) \
-					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					-p 4000:4000 \
-					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
-
-run: start
-
 push:
 	@echo "==> Pushing image to docker hub"
 	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
 	@docker push hermeznetwork/hermez-node-blockscout:latest
 
-start-watch:
+start:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
 
-stop-watch:
+stop:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
+
+watch:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
 
 .PHONY: build \
 		migrate \
