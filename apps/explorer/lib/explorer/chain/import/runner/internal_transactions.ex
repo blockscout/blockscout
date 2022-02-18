@@ -597,14 +597,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       )
 
     set_with_gas_used =
-      if first_trace.gas_used do
-        Keyword.put_new(set, :gas_used, first_trace.gas_used)
+      if transaction_receipt_from_node && transaction_receipt_from_node.gas_used do
+        Keyword.put_new(set, :gas_used, transaction_receipt_from_node.gas_used)
       else
-        if transaction_receipt_from_node && transaction_receipt_from_node.gas_used do
-          Keyword.put_new(set, :gas_used, transaction_receipt_from_node.gas_used)
-        else
-          set
-        end
+        set
       end
 
     filtered_set = Enum.reject(set_with_gas_used, fn {_key, value} -> is_nil(value) end)
