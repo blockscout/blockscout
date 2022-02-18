@@ -376,11 +376,17 @@ build-dev:
 build-prod:
 	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 
+build-prod-no-cache:
+	@docker build --no-cache --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+
 build-dev-m1:
 	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
 
 build-prod-m1:
 	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+
+build-prod-m1-no-cache:
+	@docker buildx build --no-cache --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
 
 migrate_only:
 	@echo "==> Running migrations"
