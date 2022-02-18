@@ -431,8 +431,14 @@ stop:
 watch:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
 
-.PHONY: build \
+.PHONY: build-dev \
+		build-prod \
+		build-dev-m1 \
+		build-prod-m1 \
+		migrate_only \
 		migrate \
-		start \
 		postgres \
-		run
+		push \
+		start \
+		stop \
+		watch
