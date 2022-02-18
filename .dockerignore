@@ -1,9 +1,12 @@
-_build
-deps
-apps/block_scout_web/assets/node_modules
-apps/explorer/node_modules
-test
-.git
-.circleci
-logs
+# Ignore everything
+**
+
+# Unignore required files and directories
+!/mix.exs
+!/mix.lock
+!/apps/**
+!/config/**
+
+# Ignore inner stuff from the required directories
+**/node_modules
 apps/*/test
