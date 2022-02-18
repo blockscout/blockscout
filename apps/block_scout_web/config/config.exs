@@ -53,7 +53,8 @@ config :block_scout_web,
   max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   enable_gas_tracker: System.get_env("ENABLE_GAS_TRACKER", "false") == "true",
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
-  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil)
+  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
+  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
 config :block_scout_web, :faucet,
   enabled: if(System.get_env("ENABLE_FAUCET", "false") == "true", do: true, else: false),

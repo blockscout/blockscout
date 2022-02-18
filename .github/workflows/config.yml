@@ -581,3 +581,4 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_ID: "77"
+          ADMIN_PANEL_ENABLED: "true"
