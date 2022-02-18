@@ -4,11 +4,11 @@
 - [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration
 - [#5102](https://github.com/blockscout/blockscout/pull/5102) - Add new pagination to `address/transactions` page
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
-- [#5102](https://github.com/blockscout/blockscout/pull/5102) - Add new pagination to `address/transactions` page
 - [#5016](https://github.com/blockscout/blockscout/pull/5016) - Add view for internal transactions error
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5212](https://github.com/blockscout/blockscout/pull/5212) - Fix `gas_used` value bug
 - [#5196](https://github.com/blockscout/blockscout/pull/5196) - Various Docker setup fixes
 - [#5192](https://github.com/blockscout/blockscout/pull/5192) - Fix DATABASE_URL config parser
 - [#5191](https://github.com/blockscout/blockscout/pull/5191) - Add empty view for new addresses
@@ -23,6 +23,7 @@
 - [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 
 ### Chore
+- [#5202](https://github.com/blockscout/blockscout/pull/5202) - Docker setup Makefile release/publish tasks
 - [#5195](https://github.com/blockscout/blockscout/pull/5195) - Add Berlin, London to the list of default EVM versions
 - [#5190](https://github.com/blockscout/blockscout/pull/5190) - Set 8545 as default port everywhere except Ganache JSON RPC variant
 - [#5189](https://github.com/blockscout/blockscout/pull/5189) - ENV var to manage pending transactions fetcher switching off
