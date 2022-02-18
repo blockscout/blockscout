@@ -5999,4 +5999,22 @@ defmodule Explorer.ChainTest do
       Chain.list_top_tokens("tsSLAueP<esi:include%20src=\"http://bxss.me/rpb.png\"/>")
     end
   end
+
+  describe "get_last_fetched_counter/1" do
+    test "it returns zero if doesn't exist in db" do
+      value = Chain.get_last_fetched_counter("total_transaction_count")
+      assert 0 == Decimal.to_integer(value)
+    end
+
+    test "it returns previous value" do
+      params = %{
+        counter_type: "total_transaction_count",
+        value: 100
+      }
+
+      Chain.upsert_last_fetched_counter(params)
+
+      assert 100 == Decimal.to_integer(Chain.get_last_fetched_counter("total_transaction_count"))
+    end
+  end
 end

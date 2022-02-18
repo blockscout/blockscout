@@ -3118,10 +3118,7 @@ defmodule Explorer.Chain do
         select: last_fetched_counter.value
       )
 
-    case Repo.one(query) do
-      {:ok, result} -> result
-      _ -> Decimal.new(0)
-    end
+    Repo.one(query) || Decimal.new(0)
   end
 
   defp block_status({number, timestamp}) do
@@ -3607,10 +3604,19 @@ defmodule Explorer.Chain do
     cached_value = TransactionCount.get_count()
 
     if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[rows]]} =
-        SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+      count = Chain.get_last_fetched_counter("total_transaction_count")
 
-      rows
+      case count do
+        nil ->
+          %Postgrex.Result{rows: [[rows]]} =
+            SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+
+          rows
+
+        _ ->
+          count
+          |> Decimal.to_integer()
+      end
     else
       cached_value
     end

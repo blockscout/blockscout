@@ -15,8 +15,8 @@ defmodule Explorer.Chain.Cache.TransactionCount do
 
   require Logger
 
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Transaction
-  alias Explorer.Repo
 
   defp handle_fallback(:count) do
     # This will get the task PID if one exists and launch a new task if not
@@ -33,6 +33,13 @@ defmodule Explorer.Chain.Cache.TransactionCount do
       Task.start(fn ->
         try do
           result = Repo.aggregate(Transaction, :count, :hash, timeout: :infinity)
+
+          params = %{
+            counter_type: "total_transaction_count",
+            value: result
+          }
+
+          Chain.upsert_last_fetched_counter(params)
 
           set_count(result)
         rescue
