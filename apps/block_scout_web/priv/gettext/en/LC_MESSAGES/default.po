@@ -2,8 +2,8 @@
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
 msgid "%{blocks} block"
 msgid_plural "%{blocks} blocks"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%{blocks} batch"
+msgstr[1] "%{blocks} batches"
 
 #, elixir-format
 #: lib/block_scout_web/views/address_token_balance_view.ex:10
@@ -42,17 +42,17 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:12
 msgid "%{block_type} Details"
-msgstr ""
+msgstr "Batch Details"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:49
 msgid "%{block_type} Height"
-msgstr ""
+msgstr "Batch Height"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/index.html.eex:7
 msgid "%{block_type}s"
-msgstr ""
+msgstr "Batches"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:79
@@ -121,7 +121,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:91
 msgid "A block producer who successfully included the block onto the blockchain."
-msgstr ""
+msgstr "A batch producer who successfully included the batch onto the blockchain."
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:73
@@ -258,7 +258,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:230
 msgid "Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees."
-msgstr ""
+msgstr "Amount of distributed reward. Sequencers receive a static batch reward + Tx fees + uncle fees."
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:15
@@ -288,7 +288,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:123
 msgid "Average block time"
-msgstr ""
+msgstr "Average batch time"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:30
@@ -344,63 +344,63 @@ msgstr ""
 #: lib/block_scout_web/templates/address_coin_balance/_coin_balances.html.eex:8
 #: lib/block_scout_web/templates/block/overview.html.eex:26 lib/block_scout_web/templates/transaction/overview.html.eex:152
 msgid "Block"
-msgstr ""
+msgstr "Batch"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_link.html.eex:2
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:28 lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:43
 msgid "Block #%{number}"
-msgstr ""
+msgstr "Batch #%{number}"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_metatags.html.eex:3
 msgid "Block %{block_number} - %{subnetwork} Explorer"
-msgstr ""
+msgstr "Batch %{block_number} - %{subnetwork} Explorer"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block_transaction/404.html.eex:7
 msgid "Block Details"
-msgstr ""
+msgstr "Batch Details"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:47
 msgid "Block Height"
-msgstr ""
+msgstr "Batch Height"
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:40
 msgid "Block Mined, awaiting import..."
-msgstr ""
+msgstr "Batch Validated, awaiting import..."
 
 #, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:33
 msgid "Block Pending"
-msgstr ""
+msgstr "Batch Pending"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:152
 msgid "Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."
-msgstr ""
+msgstr "Batch difficulty for sequencer, used to calibrate batch generation time (Note: constant in POA based networks)."
 
 #, elixir-format
 #: lib/block_scout_web/views/block_transaction_view.ex:15
 msgid "Block not found, please try again later."
-msgstr ""
+msgstr "Batch not found, please try again later."
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:5
 msgid "Block number"
-msgstr ""
+msgstr "Batch number"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:151
 msgid "Block number containing the transaction."
-msgstr ""
+msgstr "Batch number containing the transaction."
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:274
 msgid "Block number in which the address was updated."
-msgstr ""
+msgstr "Batch number in which the address was updated."
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/_metatags.html.eex:4
@@ -411,19 +411,19 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:176
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:24 lib/block_scout_web/templates/layout/_topnav.html.eex:28
 msgid "Blocks"
-msgstr ""
+msgstr "Batches"
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:39
 msgid "Blocks Indexed"
-msgstr ""
+msgstr "Batches Indexed"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:48
 #: lib/block_scout_web/templates/address/overview.html.eex:291 lib/block_scout_web/templates/address_validation/index.html.eex:11
 #: lib/block_scout_web/views/address_view.ex:356
 msgid "Blocks Validated"
-msgstr ""
+msgstr "Batches Validated"
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:22
@@ -609,7 +609,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:12
 #: lib/block_scout_web/templates/block/index.html.eex:5
 msgid "Connection Lost, click to load newer blocks"
-msgstr ""
+msgstr "Connection Lost, click to load newer batches"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:15
@@ -880,7 +880,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:64
 msgid "Date & time at which block was produced."
-msgstr ""
+msgstr "Date & time at which batch was produced."
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:170
@@ -1032,7 +1032,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_transaction_view.ex:7
 msgid "Easy Cowboy! This block does not exist yet!"
-msgstr ""
+msgstr "Easy Cowboy! This batch does not exist yet!"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:5
@@ -1185,7 +1185,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:34
 msgid "Forked Blocks (Reorgs)"
-msgstr ""
+msgstr "Forked Batches (Reorgs)"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:38
@@ -1230,7 +1230,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:54
 msgid "Genesis Block"
-msgstr ""
+msgstr "Genesis Batch"
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:24
@@ -1318,12 +1318,12 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:438
 msgid "Index position of Transaction in the block."
-msgstr ""
+msgstr "Index position of Transaction in the batch."
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:243
 msgid "Index position(s) of referenced stale blocks."
-msgstr ""
+msgstr "Index position(s) of referenced stale batches."
 
 #, elixir-format
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:6
@@ -1548,13 +1548,13 @@ msgstr ""
 #: lib/block_scout_web/templates/block/_tile.html.eex:41
 #: lib/block_scout_web/templates/block/overview.html.eex:92 lib/block_scout_web/templates/chain/_block.html.eex:16
 msgid "Miner"
-msgstr ""
+msgstr "Sequencer"
 
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:61
 #: lib/block_scout_web/views/block_view.ex:66
 msgid "Miner Reward"
-msgstr ""
+msgstr "Sequencer Reward"
 
 #, elixir-format
 #: lib/block_scout_web/templates/common_components/_minimal_proxy_pattern.html.eex:3
@@ -2003,7 +2003,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_search.html.eex:3
 msgid "Search by address, token symbol name, transaction hash, or block number"
-msgstr ""
+msgstr "Search by address, token symbol name, transaction hash, or batch number"
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
@@ -2089,7 +2089,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:107
 msgid "Size of the block in bytes."
-msgstr ""
+msgstr "Size of the batch in bytes."
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:30
@@ -2253,7 +2253,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:116
 msgid "The SHA256 hash of the block."
-msgstr ""
+msgstr "The SHA256 hash of the batch."
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:39
@@ -2263,7 +2263,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:45
 msgid "The block height of a particular block is defined as the number of blocks preceding it in the blockchain."
-msgstr ""
+msgstr "The batch height of a particular batch is defined as the number of batches preceding it in the blockchain."
 
 #, elixir-format
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:41
@@ -2308,7 +2308,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:73
 msgid "The number of transactions in the block."
-msgstr ""
+msgstr "The number of transactions in the batch."
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:34
@@ -2343,22 +2343,22 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:58
 msgid "The table refreshed <span></span> block(s) ago."
-msgstr ""
+msgstr "The table refreshed <span></span> batch(es) ago."
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:171
 msgid "The total gas amount used in the block and its percentage of gas filled in the block."
-msgstr ""
+msgstr "The total gas amount used in the batch and its percentage of gas filled in the batch."
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_validation/index.html.eex:16
 msgid "There are no blocks validated by this address."
-msgstr ""
+msgstr "There are no batches validated by this address."
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/index.html.eex:17
 msgid "There are no blocks."
-msgstr ""
+msgstr "There are no batches."
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:28
@@ -2418,7 +2418,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:27
 msgid "There are no transactions for this block."
-msgstr ""
+msgstr "There are no transactions for this batch."
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/index.html.eex:31
@@ -2465,7 +2465,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_transaction_view.ex:11
 msgid "This block has not been processed yet."
-msgstr ""
+msgstr "This batch has not been processed yet."
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:41
@@ -2646,17 +2646,17 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:153
 msgid "Total blocks"
-msgstr ""
+msgstr "Total batches"
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:162
 msgid "Total difficulty of the chain until this block."
-msgstr ""
+msgstr "Total difficulty of the chain until this batch."
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:180
 msgid "Total gas limit provided by all transactions in the block."
-msgstr ""
+msgstr "Total gas limit provided by all transactions in the batch."
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:337
@@ -2958,7 +2958,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:175
 msgid "View All Blocks"
-msgstr ""
+msgstr "View All Batches"
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:235
@@ -2989,7 +2989,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_metatags.html.eex:10
 msgid "View the transactions, token transfers, and uncles for block number %{block_number}"
-msgstr ""
+msgstr "View the transactions, token transfers, and uncles for batch number %{block_number}"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_metatags.html.eex:10
@@ -3159,12 +3159,12 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:411
 msgid "burned for this transaction. Equals Block Base Fee per Gas * Gas Used."
-msgstr ""
+msgstr "burned for this transaction. Equals batch Base Fee per Gas * Gas Used."
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:209
 msgid "burned from transactions included in the block (Base fee (per unit of gas) * Gas Used)."
-msgstr ""
+msgstr "burned from transactions included in the batch (Base fee (per unit of gas) * Gas Used)."
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:27
@@ -3343,4 +3343,4 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:290
 msgid "Number of blocks validated by this validator."
-msgstr ""
+msgstr "Number of batches validated by this validator."
