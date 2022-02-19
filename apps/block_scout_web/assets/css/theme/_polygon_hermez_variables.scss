@@ -116,6 +116,11 @@ $footer-background-color: $tertiary;
             background-color: $secondary;
           }
         }
+        .dashboard-banner-network-stats-item {
+          .dashboard-banner-network-stats-label {
+            color: $hermez-text-contrast-color;
+          }
+        }
       }
     }
     .dashboard-banner-network-graph
