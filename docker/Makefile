@@ -12,8 +12,8 @@ ifeq ($(SYSTEM), Linux)
 endif
 
 DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
-BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
-															-e 'DATABASE_URL=$(DB_URL)'
+BLOCKSCOUT_CONTAINER_PARAMS = 	-e 'MIX_ENV=prod' \
+								-e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -371,7 +371,7 @@ ifdef API_RATE_LIMIT_WHITELISTED_IPS
 endif
 
 build-dev:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t "$(DOCKER_IMAGE)-dev" ../
 
 build-prod:
 	@docker build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../

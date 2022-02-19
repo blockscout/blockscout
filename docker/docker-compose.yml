@@ -6,7 +6,7 @@ networks:
 services:
     blockscout:
         container_name: blockscout
-        image: hermez-node-blockscout:latest
+        image: hermez-node-blockscout-dev:latest
         ports:
             - 4010:4010
         volumes:
