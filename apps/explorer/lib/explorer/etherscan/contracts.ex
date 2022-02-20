@@ -15,43 +15,67 @@ defmodule Explorer.Etherscan.Contracts do
 
   @spec address_hash_to_address_with_source_code(Hash.Address.t()) :: Address.t() | nil
   def address_hash_to_address_with_source_code(address_hash) do
-    case Repo.replica().get(Address, address_hash) do
-      nil ->
-        nil
+    result =
+      case Repo.replica().get(Address, address_hash) do
+        nil ->
+          nil
 
-      address ->
-        address_with_smart_contract =
-          Repo.replica().preload(address, [
-            :smart_contract,
-            :decompiled_smart_contracts,
-            :smart_contract_additional_sources
-          ])
+        address ->
+          address_with_smart_contract =
+            Repo.replica().preload(address, [
+              :smart_contract,
+              :decompiled_smart_contracts,
+              :smart_contract_additional_sources
+            ])
 
-        if address_with_smart_contract.smart_contract do
-          formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
-
-          %{
-            address_with_smart_contract
-            | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
-          }
-        else
-          address_verified_twin_contract =
-            Chain.get_minimal_proxy_template(address_hash) ||
-              Chain.get_address_verified_twin_contract(address_hash).verified_contract
-
-          if address_verified_twin_contract do
-            formatted_code = format_source_code_output(address_verified_twin_contract)
+          if address_with_smart_contract.smart_contract do
+            formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
 
             %{
               address_with_smart_contract
-              | smart_contract: %{address_verified_twin_contract | contract_source_code: formatted_code}
+              | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
             }
           else
-            address_with_smart_contract
+            address_verified_twin_contract =
+              Chain.get_minimal_proxy_template(address_hash) ||
+                Chain.get_address_verified_twin_contract(address_hash).verified_contract
+
+            if address_verified_twin_contract do
+              formatted_code = format_source_code_output(address_verified_twin_contract)
+
+              %{
+                address_with_smart_contract
+                | smart_contract: %{address_verified_twin_contract | contract_source_code: formatted_code}
+              }
+            else
+              address_with_smart_contract
+            end
           end
-        end
-    end
+      end
+
+    result
+    |> append_proxy_info()
   end
+
+  def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
+    updated_smart_contract =
+      if Chain.proxy_contract?(address.hash, smart_contract.abi) do
+        smart_contract
+        |> Map.put(:is_proxy, true)
+        |> Map.put(
+          :implementation_address_hash_string,
+          Chain.get_implementation_address_hash(address.hash, smart_contract.abi)
+        )
+      else
+        smart_contract
+        |> Map.put(:is_proxy, false)
+      end
+
+    address
+    |> Map.put(:smart_contract, updated_smart_contract)
+  end
+
+  def append_proxy_info(address), do: address
 
   def list_verified_contracts(limit, offset) do
     query =
