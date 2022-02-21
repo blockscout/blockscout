@@ -2,8 +2,7 @@
   font-family: "Modern Era";
   src: url("../static/fonts/modern-era/ModernEra-Regular.woff2") format("woff2"),
     url("../static/fonts/modern-era/ModernEra-Regular.woff") format("woff"),
-    url("../static/fonts/modern-era/ModernEra-Regular.ttf") format("truetype"),
-    local("Helvetica Neue"), local("Arial");
+    url("../static/fonts/modern-era/ModernEra-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
 }
@@ -12,8 +11,7 @@
   font-family: "Modern Era";
   src: url("../static/fonts/modern-era/ModernEra-Medium.woff2") format("woff2"),
     url("../static/fonts/modern-era/ModernEra-Medium.woff") format("woff"),
-    url("../static/fonts/modern-era/ModernEra-Medium.ttf") format("truetype"),
-    local("Helvetica Neue"), local("Arial");
+    url("../static/fonts/modern-era/ModernEra-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: "normal";
 }
@@ -22,8 +20,7 @@
   font-family: "Modern Era";
   src: url("../static/fonts/modern-era/ModernEra-Bold.woff2") format("woff2"),
     url("../static/fonts/modern-era/ModernEra-Bold.woff") format("woff"),
-    url("../static/fonts/modern-era/ModernEra-Bold.ttf") format("truetype"),
-    local("Helvetica Neue"), local("Arial");
+    url("../static/fonts/modern-era/ModernEra-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: "normal";
 }
@@ -33,13 +30,12 @@
   src: url("../static/fonts/modern-era/ModernEra-ExtraBold.woff2")
       format("woff2"),
     url("../static/fonts/modern-era/ModernEra-ExtraBold.woff") format("woff"),
-    url("../static/fonts/modern-era/ModernEra-ExtraBold.ttf") format("truetype"),
-    local("Helvetica Neue"), local("Arial");
+    url("../static/fonts/modern-era/ModernEra-ExtraBold.ttf") format("truetype");
   font-weight: 800;
   font-style: "normal";
 }
 
-$font-family: "Modern Era";
+$font-family: "Modern Era", "Helvetica Neue", Arial;
 
 $primary: #8248e5;
 $secondary: #ffc55a;
