@@ -1,7 +1,7 @@
 .btn-swap {
-    background-size: 15px 16px;
-    width: 15px;
-    height: 16px;
+    background-size: 20px 21px;
+    width: 20px;
+    height: 21px;
     background-repeat: no-repeat;
     display: inline-block;
     margin-bottom: 3px;
@@ -9,12 +9,24 @@
     cursor: pointer;
 
     &.honeypot {
-        background-image: url("/images/icons/exchanges/honeyswap.png");
+        background-image: url("/images/icons/swap/honeyswap.png");
     }
     &.sushi {
-        margin-top: -14px;
+        background-image: url("/images/icons/swap/sushi.svg");
     }
     &.swapr {
-        background-image: url("/images/icons/exchanges/swapr.png");
+        background-image: url("/images/icons/swap/swapr.svg");
+    }
+    &.curve {
+        background-image: url("/images/icons/swap/curve.svg");
+    }
+    &.component {
+        background-image: url("/images/icons/swap/component.png");
+    }
+    &.cowswap {
+        background-image: url("/images/icons/swap/cowswap.png");
+    }
+    &.oneinch {
+        background-image: url("/images/icons/swap/1inch.svg");
     }
 }

@@ -63,8 +63,8 @@ const dropzoneJs = {
 const appJs =
   {
     entry: {
-      app: './js/app.js',
-      stakes: './js/pages/stakes.js',
+      'app': './js/app.js',
+      'stakes': './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
       'chain': './js/pages/chain.js',
       'blocks': './js/pages/blocks.js',
@@ -92,8 +92,7 @@ const appJs =
       'main-page': './css/main-page.scss',
       'staking': './css/stakes.scss',
       'tokens': './js/pages/token/search.js',
-      'ad': './js/lib/ad.js',
-      'text_ad': './js/lib/text_ad.js',
+      'text-ad': './js/lib/text_ad.js',
       'banner': './js/lib/banner.js',
       'autocomplete': './js/lib/autocomplete.js',
       'search-results': './js/pages/search-results/search.js',
