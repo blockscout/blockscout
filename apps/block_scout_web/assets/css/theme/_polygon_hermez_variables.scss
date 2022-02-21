@@ -133,7 +133,7 @@ $footer-background-color: $tertiary;
   .card {
     .card-body {
       .card-title {
-        font-weight: 700;
+        font-weight: $font-weight-bold;
         font-size: $font-size-lg;
       }
     }
