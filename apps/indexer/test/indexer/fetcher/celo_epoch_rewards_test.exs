@@ -4,13 +4,10 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Explorer.Celo.CacheHelper
   import Mox
 
-  alias Explorer.Chain
   alias Explorer.Chain.{Block, CeloEpochRewards, CeloPendingEpochOperation, Hash}
-  alias Indexer.BufferedTask
   alias Indexer.Fetcher.CeloEpochRewards, as: CeloEpochRewardsFetcher
 
   @moduletag :capture_log
@@ -76,8 +73,7 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
       block: %Block{
         hash: block_hash,
         number: block_number
-      },
-      json_rpc_named_arguments: json_rpc_named_arguments
+      }
     } do
       setup_mox(%{
         id: 0,
@@ -135,7 +131,11 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
           number: 9_434_880
         )
 
-      insert(:celo_pending_epoch_operations, block_hash: block.hash, fetch_epoch_rewards: true)
+      insert(:celo_pending_epoch_operations,
+        block_hash: block.hash,
+        fetch_epoch_rewards: true,
+        fetch_validator_group_data: false
+      )
 
       rewards = [
         %{
@@ -180,35 +180,6 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
 
   defp count(schema) do
     Repo.one!(select(schema, fragment("COUNT(*)")))
-  end
-
-  defp wait_for_tasks(buffered_task) do
-    wait_until(:timer.seconds(10), fn ->
-      counts = BufferedTask.debug_count(buffered_task)
-      counts.buffer == 0 and counts.tasks == 0
-    end)
-  end
-
-  defp wait_until(timeout, producer) do
-    parent = self()
-    ref = make_ref()
-
-    spawn(fn -> do_wait_until(parent, ref, producer) end)
-
-    receive do
-      {^ref, :ok} -> :ok
-    after
-      timeout -> exit(:timeout)
-    end
-  end
-
-  defp do_wait_until(parent, ref, producer) do
-    if producer.() do
-      send(parent, {ref, :ok})
-    else
-      :timer.sleep(100)
-      do_wait_until(parent, ref, producer)
-    end
   end
 
   defp setup_mox(calculate_target_epoch_rewards_response) do

@@ -1,9 +1,11 @@
 defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
-  use ExUnit.Case, async: true
+  use Explorer.DataCase
 
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{Address, Log}
   alias Explorer.Celo.ContractEvents.EventTransformer
-  alias Explorer.Celo.ContractEvents.Election.EpochRewardsDistributedToVotersEvent
+  alias Explorer.Celo.ContractEvents.Election.{EpochRewardsDistributedToVotersEvent, ValidatorGroupVoteActivatedEvent}
+
+  import Explorer.Factory
 
   describe "Test conversion" do
     test "converts from db log to concrete event type" do
@@ -38,6 +40,67 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
       assert result.value == 411_618_438_366_361_072_744
       assert to_string(result.group) == "0xb33e9e01e561a1da60f7cb42508500e571afb6eb"
       assert result.log_index == 573
+    end
+  end
+
+  describe "elected_groups_for_block/1" do
+    test "fetches validator group hashes for a block hash" do
+      block_1 = insert(:block, number: 172_800)
+      log_1_1 = insert(:log, block: block_1, index: 1)
+      log_1_2 = insert(:log, block: block_1, index: 2)
+      log_1_3 = insert(:log, block: block_1, index: 3)
+      block_2 = insert(:block, number: 190_080)
+      log_2 = insert(:log, block: block_2, index: 1)
+      %Address{hash: group_address_1_hash} = insert(:address)
+      %Address{hash: group_address_2_hash} = insert(:address)
+      %Address{hash: contract_address_hash} = insert(:address)
+
+      insert(:contract_event, %{
+        event: %EpochRewardsDistributedToVotersEvent{
+          block_hash: block_1.hash,
+          log_index: log_1_1.index,
+          contract_address_hash: contract_address_hash,
+          group: group_address_1_hash,
+          value: 650
+        }
+      })
+
+      insert(:contract_event, %{
+        event: %ValidatorGroupVoteActivatedEvent{
+          block_hash: block_1.hash,
+          log_index: log_1_2.index,
+          account: group_address_1_hash,
+          contract_address_hash: contract_address_hash,
+          group: group_address_1_hash,
+          units: 10000,
+          value: 650
+        }
+      })
+
+      insert(:contract_event, %{
+        event: %EpochRewardsDistributedToVotersEvent{
+          block_hash: block_1.hash,
+          log_index: log_1_3.index,
+          contract_address_hash: contract_address_hash,
+          group: group_address_2_hash,
+          value: 650
+        }
+      })
+
+      insert(:contract_event, %{
+        event: %EpochRewardsDistributedToVotersEvent{
+          block_hash: block_2.hash,
+          log_index: log_2.index,
+          contract_address_hash: contract_address_hash,
+          group: group_address_2_hash,
+          value: 650
+        }
+      })
+
+      assert EpochRewardsDistributedToVotersEvent.elected_groups_for_block(block_1.hash) == [
+               group_address_1_hash,
+               group_address_2_hash
+             ]
     end
   end
 end

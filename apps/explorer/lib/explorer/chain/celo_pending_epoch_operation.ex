@@ -6,6 +6,7 @@ defmodule Explorer.Chain.CeloPendingEpochOperation do
   use Explorer.Schema
 
   alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Repo
 
   @required_attrs ~w(block_hash fetch_epoch_rewards)a
 
@@ -21,6 +22,7 @@ defmodule Explorer.Chain.CeloPendingEpochOperation do
   @primary_key false
   schema "celo_pending_epoch_operations" do
     field(:fetch_epoch_rewards, :boolean)
+    field(:fetch_validator_group_data, :boolean)
 
     timestamps()
 
@@ -48,5 +50,29 @@ defmodule Explorer.Chain.CeloPendingEpochOperation do
       ],
       where: fragment("EXCLUDED.fetch_epoch_rewards <> ?", celo_epoch_pending_ops.fetch_epoch_rewards)
     )
+  end
+
+  @spec falsify_or_delete_celo_pending_epoch_operation(
+          Hash.Full.t(),
+          :fetch_epoch_rewards | :fetch_validator_group_data
+        ) :: __MODULE__.t()
+  def falsify_or_delete_celo_pending_epoch_operation(block_hash, operation_type) do
+    celo_pending_operation = Repo.get(__MODULE__, block_hash)
+    new_celo_pending_operation = Map.put(celo_pending_operation, operation_type, false)
+
+    %{fetch_epoch_rewards: new_fetch_epoch_rewards, fetch_validator_group_data: new_fetch_validator_group_data} =
+      new_celo_pending_operation
+
+    if new_fetch_epoch_rewards || new_fetch_validator_group_data == true do
+      celo_pending_operation
+      |> changeset(%{
+        block_hash: block_hash,
+        fetch_epoch_rewards: new_fetch_epoch_rewards,
+        fetch_validator_group_data: new_fetch_validator_group_data
+      })
+      |> Repo.update()
+    else
+      Repo.delete(celo_pending_operation)
+    end
   end
 end

@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloContractEvent do
   use Explorer.Schema
   import Ecto.Query
 
-  alias Explorer.Celo.ContractEvents.EventMap
+  alias Explorer.Celo.ContractEvents.{Common, EventMap}
   alias Explorer.Chain.{Hash, Log}
   alias Explorer.Chain.Hash.Address
   alias Explorer.Repo
@@ -108,5 +108,21 @@ defmodule Explorer.Chain.CeloContractEvent do
       |> Map.put(:inserted_at, timestamp)
       |> Map.put(:updated_at, timestamp)
     end)
+  end
+
+  def query_by_voter_param(query, voter_address_hash) do
+    voter_address_for_pg = Common.fa(voter_address_hash)
+
+    from(c in query,
+      where: fragment("? ->> ? = ?", c.params, "account", ^voter_address_for_pg)
+    )
+  end
+
+  def query_by_group_param(query, group_address_hash) do
+    group_address_for_pg = Common.fa(group_address_hash)
+
+    from(c in query,
+      where: fragment("? ->> ? = ?", c.params, "group", ^group_address_for_pg)
+    )
   end
 end

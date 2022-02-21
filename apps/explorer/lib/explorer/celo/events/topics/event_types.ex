@@ -36,7 +36,7 @@ defmodule Explorer.Celo.EventTypes do
       @validator_score_updated "0xedf9f87e50e10c533bf3ae7f5a7894ae66c23e6cbbe8773d7765d20ad6f995e9"
       @validator_signer_authorized "0x16e382723fb40543364faf68863212ba253a099607bf6d3a5b47e50a8bf94943"
       @vote_signer_authorized "0xaab5f8a189373aaa290f42ae65ea5d7971b732366ca5bf66556e76263944af28"
-      @voter_rewards "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7"
+      @epoch_rewards_distributed_to_voters "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7"
     end
   end
 end

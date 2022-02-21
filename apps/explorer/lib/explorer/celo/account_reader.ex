@@ -57,7 +57,7 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_group_reward_data(%{block_number: bn, block_hash: block_hash}) do
+  def epoch_reward_data(%{block_number: bn, block_hash: block_hash}) do
     methods = [
       {:epochrewards, "calculateTargetEpochRewards", [], bn},
       {:epochrewards, "getTargetGoldTotalSupply", [], bn},
@@ -129,7 +129,7 @@ defmodule Explorer.Celo.AccountReader do
         stable_usd_total_supply: stable_usd_total_supply,
         block_hash: block_hash,
         block_number: bn,
-        epoch_number: div(bn, 17280)
+        epoch_number: epoch_by_block_number(bn)
       }
 
       if bn <= 155_520 do
@@ -153,6 +153,26 @@ defmodule Explorer.Celo.AccountReader do
       end
     else
       error -> error
+    end
+  end
+
+  def validator_group_votes(%{block_number: bn, block_hash: block_hash}, group_hash) do
+    data =
+      [{:election, "getActiveVotesForGroup", [to_string(group_hash)], bn - 1}]
+      |> call_methods()
+
+    case data["getActiveVotesForGroup"] do
+      {:ok, [active_votes]} ->
+        {:ok,
+         %{
+           block_hash: block_hash,
+           block_number: bn,
+           group_hash: group_hash,
+           previous_block_active_votes: active_votes
+         }}
+
+      error ->
+        error
     end
   end
 

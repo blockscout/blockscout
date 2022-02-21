@@ -88,4 +88,8 @@ defmodule Explorer.Celo.Util do
         @celo_token_contract_symbols[name]
     end
   end
+
+  def epoch_by_block_number(bn) do
+    div(bn, 17280)
+  end
 end

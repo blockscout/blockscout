@@ -9,12 +9,11 @@ defmodule Explorer.ChainTest do
   import Explorer.Factory
   import Mox
 
-  alias Explorer.{Chain, Factory, PagingOptions, Repo}
+  alias Explorer.{Chain, Factory, PagingOptions, Repo, SetupVoterRewardsTest}
 
   alias Explorer.Chain.{
     Address,
     Block,
-    CeloPendingEpochOperation,
     CeloUnlocked,
     Data,
     DecompiledSmartContract,
@@ -31,6 +30,12 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.InternalTransaction.Type
+
+  alias Explorer.Celo.ContractEvents.Election.{
+    EpochRewardsDistributedToVotersEvent,
+    ValidatorGroupActiveVoteRevokedEvent,
+    ValidatorGroupVoteActivatedEvent
+  }
 
   alias Explorer.Chain.Supply.ProofOfAuthority
   alias Explorer.Counters.AddressesWithBalanceCounter
@@ -5963,17 +5968,6 @@ defmodule Explorer.ChainTest do
       Chain.insert_celo_unlocked(account_address.hash, 2, 1_639_103_736)
 
       assert Repo.aggregate(CeloUnlocked, :count) == 1
-    end
-  end
-
-  describe "delete_celo_pending_epoch_operation/1" do
-    test "deletes an epoch block hash that was indexed from celo_pending_epoch_operations" do
-      block = insert(:block)
-      insert(:celo_pending_epoch_operations, block_hash: block.hash, fetch_epoch_rewards: true)
-
-      Chain.delete_celo_pending_epoch_operation(block.hash)
-
-      assert Repo.one!(select(CeloPendingEpochOperation, fragment("COUNT(*)"))) == 0
     end
   end
 
