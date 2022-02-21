@@ -32,40 +32,13 @@ const jsOptimizationParams = {
   parallel: true
 }
 
-const dropzoneJs = {
-  entry: {
-    dropzone: './js/lib/dropzone.js',
-  },
-  output: {
-    filename: '[name].min.js',
-    path: path.resolve(__dirname, '../priv/static/js')
-  },
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader',
-          }
-        ]
-      }
-    ]
-  },
-  optimization: {
-    minimizer: [
-      new TerserJSPlugin(jsOptimizationParams),
-    ]
-  }
-}
-
 const appJs =
   {
     entry: {
       'app': './js/app.js',
       'stakes': './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
+      'balance-chart-loader': './js/balance-chart-loader.js',
       'chain': './js/pages/chain.js',
       'blocks': './js/pages/blocks.js',
       'address': './js/pages/address.js',
@@ -98,7 +71,8 @@ const appJs =
       'search-results': './js/pages/search-results/search.js',
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js'
+      'datepicker': './js/lib/datepicker.js',
+      'dropzone': './js/lib/dropzone.js'
     },
     output: {
       filename: '[name].js',
@@ -119,8 +93,9 @@ const appJs =
         {
           test: /\.scss$/,
           use: [
-            MiniCssExtractPlugin.loader,
             {
+              loader: MiniCssExtractPlugin.loader
+            }, {
               loader: 'css-loader'
             }, {
               loader: 'postcss-loader'
@@ -190,4 +165,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, dropzoneJs)
+module.exports = viewScripts.concat(appJs)
