@@ -12,8 +12,8 @@ ifeq ($(SYSTEM), Linux)
 endif
 
 DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
-BLOCKSCOUT_CONTAINER_PARAMS = 	-e 'MIX_ENV=prod' \
-								-e 'DATABASE_URL=$(DB_URL)'
+BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
+															-e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -438,13 +438,13 @@ watch:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
 
 .PHONY: build-dev \
-		build-prod \
-		build-dev-m1 \
-		build-prod-m1 \
-		migrate_only \
-		migrate \
-		postgres \
-		push \
-		start \
-		stop \
-		watch
+				build-prod \
+				build-dev-m1 \
+				build-prod-m1 \
+				migrate_only \
+				migrate \
+				postgres \
+				push \
+				start \
+				stop \
+				watch
