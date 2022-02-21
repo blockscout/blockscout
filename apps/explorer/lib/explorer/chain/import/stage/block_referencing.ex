@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Transactions,
       Runner.Transaction.Forks,
       Runner.Logs,
+      Runner.CeloContractEvent,
       Runner.Tokens,
       Runner.TokenTransfers,
       Runner.Address.TokenBalances
