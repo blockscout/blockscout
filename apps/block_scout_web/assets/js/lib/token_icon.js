@@ -10,6 +10,12 @@ function getTokenIconUrl (chainID, addressHash) {
     case '100':
       chainName = 'xdai'
       break
+    case '2008':
+      chainName = 'cloudwalk_testnet'
+      break
+    case '2009':
+      chainName = 'cloudwalk_mainnet'
+      break
     default:
       chainName = null
       break

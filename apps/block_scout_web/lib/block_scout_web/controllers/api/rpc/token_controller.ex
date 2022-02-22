@@ -85,10 +85,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
   defp translate_chain_id_to_destination(destination) do
     case destination do
-      "1" -> :eth
-      "42" -> :kovan
-      "56" -> :bsc
-      "99" -> :poa
+      "2008" -> :cw_testnet
+      "2009" -> :cw_mainnet
       wrong_chain_id -> wrong_chain_id
     end
   end

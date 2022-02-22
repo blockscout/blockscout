@@ -2367,10 +2367,8 @@ defmodule Explorer.Chain do
 
   defp translate_destination_to_chain_id(destination) do
     case destination do
-      :eth -> 1
-      :kovan -> 42
-      :bsc -> 56
-      :poa -> 99
+      :cloudwalk_testnet -> 2008
+      :cloudwalk_mainnet -> 2009
       nil -> nil
       _ -> :undefined
     end
@@ -7145,14 +7143,11 @@ defmodule Explorer.Chain do
   def get_token_icon_url_by(chain_id, address_hash) do
     chain_name =
       case chain_id do
-        "1" ->
-          "ethereum"
+        "2008" ->
+          clouwalk_testnet
 
-        "99" ->
-          "poa"
-
-        "100" ->
-          "xdai"
+        "2009" ->
+          cloudwalk_mainnet
 
         _ ->
           nil
