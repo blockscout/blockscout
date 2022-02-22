@@ -67,7 +67,7 @@ defmodule Indexer.MixProject do
       {:spandex_datadog, "~> 1.0"},
       # Log json format
       {:logger_json, "~> 3.2"},
-      {:jason, "~> 1.1"},
+      {:jason, "~> 1.3"},
       # Metrics
       {:prometheus_ex, "~>3.0"},
       {:prometheus_plugs, "~> 1.1"},

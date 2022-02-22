@@ -69,7 +69,7 @@ defmodule EthereumJsonrpc.MixProject do
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 1.8"},
       # Decode/Encode JSON for JSONRPC
-      {:jason, "~> 1.2.2"},
+      {:jason, "~> 1.3"},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
@@ -81,7 +81,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments
-      {:ex_abi, "~> 0.4"},
+      {:ex_abi, "~> 0.5.10"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`

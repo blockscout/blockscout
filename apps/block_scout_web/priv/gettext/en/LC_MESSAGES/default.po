@@ -496,7 +496,7 @@ msgstr ""
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20 lib/block_scout_web/templates/layout/_topnav.html.eex:82
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:103 lib/block_scout_web/templates/layout/app.html.eex:45
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89 lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125 lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:126 lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:37 lib/block_scout_web/templates/transaction/overview.html.eex:400
 #: lib/block_scout_web/views/transaction_view.ex:506 lib/block_scout_web/views/wei_helpers.ex:80
 msgid "CELO"
@@ -3057,7 +3057,7 @@ msgid "Vyper contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:124
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:125
 msgid "WEI"
 msgstr ""
 
