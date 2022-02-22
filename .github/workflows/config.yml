@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - account
   pull_request:
     branches:
       - master
+      - account
       - staking
 
 env:
