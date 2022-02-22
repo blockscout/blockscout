@@ -1,4 +1,4 @@
-<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/text_ad.js") %>"></script>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/text-ad.js") %>"></script>
 <div class="ad mb-3" style="display: none;">
 <span class='ad-prefix'></span>: <img class="ad-img-url" width=20 height=20 /> <b><span class="ad-name"></span></b> - <span class="ad-short-description"></span> <a class="ad-url"><b><span class="ad-cta-button"></span></a></b>
 </div>
