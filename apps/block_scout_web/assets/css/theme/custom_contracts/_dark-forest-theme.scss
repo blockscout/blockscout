@@ -262,11 +262,11 @@ $dark-primary-alternate: $dark-primary;
 	}
 
 	.btn-copy-icon {
-		content: url(/images/custom-themes/dark-forest/copy-df.svg);
+		content: url(../static/images/custom-themes/dark-forest/copy-df.svg);
 	}
 
 	.btn-qr-icon {
-		content: url(/images/custom-themes/dark-forest/qr-df.svg);
+		content: url(../static/images/custom-themes/dark-forest/qr-df.svg);
 	}
 
 	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
@@ -930,7 +930,7 @@ $dark-primary-alternate: $dark-primary;
 	}
 
 	.custom-balance-icon {
-		content: url(/images/custom-themes/dark-forest/pic_balance.svg);
+		content: url(../static/images/custom-themes/dark-forest/pic_balance.svg);
 		margin-right: 0px;
 		margin-left: auto;
 		max-width: 70%;
@@ -949,7 +949,7 @@ $dark-primary-alternate: $dark-primary;
 	}
 
 	.custom-address-icon {
-		content: url(/images/custom-themes/dark-forest/dark_forest_logo.svg);
+		content: url(../static/images/custom-themes/dark-forest/dark_forest_logo.svg);
 
 		@media screen and (max-width: 768px) {
 			margin-bottom: 20px;
@@ -978,7 +978,7 @@ $dark-primary-alternate: $dark-primary;
 	}
 
 	.application-icon {
-		content: url(/images/custom-themes/dark-forest/planet.svg);
+		content: url(../static/images/custom-themes/dark-forest/planet.svg);
 		&:hover {
 			background-color: rgba(117, 249, 77, 0.4);
 		}
