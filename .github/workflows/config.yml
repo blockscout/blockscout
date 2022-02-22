@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - master
+      - account
   pull_request:
     branches:
       - master
+      - account
+
 
 env:
   MIX_ENV: test
