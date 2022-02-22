@@ -261,9 +261,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
 
-      - run: npm rebuild node-sass
-        working-directory: apps/block_scout_web/assets
-
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -300,9 +297,6 @@ jobs:
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
-
-      - run: npm rebuild node-sass
-        working-directory: apps/block_scout_web/assets
 
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
@@ -556,9 +550,6 @@ jobs:
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
-
-      - run: npm rebuild node-sass
-        working-directory: apps/block_scout_web/assets
 
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
