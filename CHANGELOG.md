@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5220](https://github.com/blockscout/blockscout/pull/5220) - Add info about proxy contracts to api methods response
 - [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration
 - [#5102](https://github.com/blockscout/blockscout/pull/5102) - Add new pagination to `address/transactions` page
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
