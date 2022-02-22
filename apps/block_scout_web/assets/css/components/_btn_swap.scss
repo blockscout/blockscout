@@ -9,24 +9,24 @@
     cursor: pointer;
 
     &.honeypot {
-        background-image: url("/images/icons/swap/honeyswap.png");
+        background-image: url(../static/images/icons/swap/honeyswap.png);
     }
     &.sushi {
-        background-image: url("/images/icons/swap/sushi.svg");
+        background-image: url(../static/images/icons/swap/sushi.svg);
     }
     &.swapr {
-        background-image: url("/images/icons/swap/swapr.svg");
+        background-image: url(../static/images/icons/swap/swapr.svg);
     }
     &.curve {
-        background-image: url("/images/icons/swap/curve.svg");
+        background-image: url(../static/images/icons/swap/curve.svg);
     }
     &.component {
-        background-image: url("/images/icons/swap/component.png");
+        background-image: url(../static/images/icons/swap/component.png);
     }
     &.cowswap {
-        background-image: url("/images/icons/swap/cowswap.png");
+        background-image: url(../static/images/icons/swap/cowswap.png);
     }
     &.oneinch {
-        background-image: url("/images/icons/swap/1inch.svg");
+        background-image: url(../static/images/icons/swap/1inch.svg);
     }
 }

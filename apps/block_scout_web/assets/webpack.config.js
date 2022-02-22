@@ -94,7 +94,10 @@ const appJs =
           test: /\.scss$/,
           use: [
             {
-              loader: MiniCssExtractPlugin.loader
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                esModule: false,
+              },
             }, {
               loader: 'css-loader'
             }, {
@@ -121,6 +124,11 @@ const appJs =
               outputPath: '../fonts/',
               publicPath: '../fonts/'
             }
+          }
+        }, {
+          test: /\.(png)$/,
+          use: {
+            loader: 'file-loader'
           }
         }
       ]
