@@ -93,8 +93,6 @@ defmodule Explorer.Accounts.Notify.Notifier do
     end
   end
 
-  defp save_and_send_notification(_, _), do: nil
-
   @doc """
   direction  = :incoming || :outgoing
   """
