@@ -6011,4 +6011,11 @@ defmodule Explorer.ChainTest do
       assert 100 == Decimal.to_integer(Chain.get_last_fetched_counter("total_transaction_count"))
     end
   end
+
+  describe "prepare_search_term/1" do
+    test "doesn't crash when given nil search term" do
+      term = Chain.prepare_search_term(nil)
+      assert true, "Didn't crash"
+    end
+  end
 end
