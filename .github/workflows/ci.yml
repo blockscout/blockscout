@@ -1,10 +1,7 @@
 name: CI
 
 on:
-  workflow_run:
-    workflows: ["Blockscout"]
-    types:
-      - completed
+  push:
     branches:
       - master
 
