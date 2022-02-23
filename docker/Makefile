@@ -371,7 +371,7 @@ ifdef API_RATE_LIMIT_WHITELISTED_IPS
 endif
 
 build-dev:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t "$(DOCKER_IMAGE)-dev" ../
+	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 
 build-prod:
 	@docker build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
