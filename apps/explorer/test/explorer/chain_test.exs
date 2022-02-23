@@ -6013,9 +6013,9 @@ defmodule Explorer.ChainTest do
   end
 
   describe "prepare_search_term/1" do
-    test "doesn't crash when given nil search term" do
+    test "returns empty string in tuple when given nil as search term" do
       term = Chain.prepare_search_term(nil)
-      assert true, "Didn't crash"
+      assert {:some, ""} == term, "nil value should result in empty string search term"
     end
   end
 end

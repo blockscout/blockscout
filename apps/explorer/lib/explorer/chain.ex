@@ -1260,7 +1260,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  def prepare_search_term(nil), do: ""
+  def prepare_search_term(nil), do: {:some, ""}
 
   def prepare_search_term(string) do
     case Regex.scan(~r/[a-zA-Z0-9]+/, string) do
