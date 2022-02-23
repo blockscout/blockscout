@@ -21,9 +21,9 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          context: docker
-          push: true
-          tags: hermeznetwork/hermez-node-blockscout:latest
+      - name: Build and push Docker image for production
+        working-directory: docker
+        run: |
+          make build-prod
+          make push
+
