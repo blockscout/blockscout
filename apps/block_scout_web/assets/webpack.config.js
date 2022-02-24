@@ -32,41 +32,13 @@ const jsOptimizationParams = {
   parallel: true
 }
 
-const dropzoneJs = {
-  entry: {
-    dropzone: './js/lib/dropzone.js',
-  },
-  output: {
-    filename: '[name].min.js',
-    path: path.resolve(__dirname, '../priv/static/js')
-  },
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader',
-          }
-        ]
-      }
-    ]
-  },
-  optimization: {
-    minimizer: [
-      new TerserJSPlugin(jsOptimizationParams),
-    ]
-  }
-}
-
 const appJs =
   {
     entry: {
-      app: './js/app.js',
-      stakes: './js/pages/stakes.js',
+      'app': './js/app.js',
+      'stakes': './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
-      'coin-balance-history-chart-loader': './js/coin-balance-history-chart-loader.js',
+      'balance-chart-loader': './js/balance-chart-loader.js',
       'gas-tracker-chart-loader': './js/gas-tracker-chart-loader.js',
       'chain': './js/pages/chain.js',
       'display-body': './js/display_body.js',
@@ -100,8 +72,7 @@ const appJs =
       'tokens': './js/pages/token/search.js',
       'add-to-mm': './js/pages/token/add_to_mm.js',
       'faucet': './js/pages/faucet.js',
-      'ad': './js/lib/ad.js',
-      'text_ad': './js/lib/text_ad.js',
+      'text-ad': './js/lib/text_ad.js',
       'coinzilla_banner': './js/lib/coinzilla_banner.js',
       'adbutler_banner': './js/lib/adbutler_banner.js',
       'autocomplete': './js/lib/autocomplete.js',
@@ -109,7 +80,8 @@ const appJs =
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
-      'modal': './js/pages/modal.js'
+      'modal': './js/pages/modal.js',
+      'dropzone': './js/lib/dropzone.js'
     },
     output: {
       filename: '[name].js',
@@ -130,8 +102,12 @@ const appJs =
         {
           test: /\.scss$/,
           use: [
-            MiniCssExtractPlugin.loader,
             {
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                esModule: false,
+              },
+            }, {
               loader: 'css-loader'
             }, {
               loader: 'postcss-loader'
@@ -157,6 +133,11 @@ const appJs =
               outputPath: '../fonts/',
               publicPath: '../fonts/'
             }
+          }
+        }, {
+          test: /\.(png)$/,
+          use: {
+            loader: 'file-loader'
           }
         }
       ]
@@ -205,4 +186,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, dropzoneJs)
+module.exports = viewScripts.concat(appJs)

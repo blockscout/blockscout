@@ -69,6 +69,7 @@ config :block_scout_web,
   chainlink_oracles: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
+  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true",
   new_tags: System.get_env("NEW_TAGS")
 
 config :block_scout_web, :faucet,

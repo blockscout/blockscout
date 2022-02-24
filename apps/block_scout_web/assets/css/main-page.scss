@@ -63,7 +63,6 @@
 @import "components/btn_line";
 @import "components/stakes_variables";
 @import "components/btn_add_to_mm";
-@import "components/btn_swap";
 @import "components/errors";
 @import "components/btn_no_border";
 @import "components/custom_tooltips";
@@ -76,15 +75,3 @@
 @import "components/_fontawesome_icon";
 
 @import "theme/dark-theme";
-
-:export {
-  dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
-  dashboardBannerChartAxisFontAltColor: $dashboard-banner-chart-axis-font-color-alt;
-  dashboardLineColorMarket: $dashboard-line-color-market;
-  dashboardLineColorPrice: $dashboard-line-color-price;
-  dashboardLineColorTransactions: $dashboard-line-color-transactions;
-  primary: $primary;
-  secondary: $secondary;
-  darkprimary: $dark-primary;
-  darksecondary: $dark-secondary;
-}
