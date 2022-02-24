@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
-        "/verify-via-json",
+        "/verify-via-metadata-json",
         AddressContractVerificationViaJsonController,
         only: [:new],
         as: :verify_contract_via_json
