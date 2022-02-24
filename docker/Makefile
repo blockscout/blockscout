@@ -2,7 +2,7 @@ SYSTEM := $(shell uname -s)
 HOST := host.docker.internal
 DOCKER_REPO := blockscout
 APP_NAME := blockscout
-BS_CONTAINER_IMAGE := ${APP_NAME}
+BS_CONTAINER_IMAGE := $(DOCKER_REPO)/$(APP_NAME)
 BS_CONTAINER_NAME := blockscout
 PG_CONTAINER_IMAGE := postgres:13.6
 PG_CONTAINER_NAME := db
@@ -473,22 +473,22 @@ publish: docker-login publish-latest publish-version ## publish the `{version}` 
 
 publish-latest: tag-latest ## publish the `latest` tagged container to hub
 	@echo 'publish latest to $(DOCKER_REPO)'
-	docker push $(DOCKER_REPO)/$(APP_NAME):latest
+	docker push BS_CONTAINER_IMAGE:latest
 
 publish-version: tag-version ## publish the `{version}` tagged container to hub
 	@echo 'publish $(TAG) to $(DOCKER_REPO)'
-	docker push $(DOCKER_REPO)/$(APP_NAME):$(TAG)
+	docker push BS_CONTAINER_IMAGE:$(TAG)
 
 # Docker tagging
 tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
 
 tag-latest: ## Generate container `latest` tag
 	@echo 'create latest tag'
-	docker tag $(APP_NAME) $(DOCKER_REPO)/$(APP_NAME):latest
+	docker tag $(APP_NAME) BS_CONTAINER_IMAGE:latest
 
 tag-version: ## Generate container `{version}` tag
 	@echo 'create tag $(TAG)'
-	docker tag $(APP_NAME) $(DOCKER_REPO)/$(APP_NAME):$(TAG)
+	docker tag $(APP_NAME) BS_CONTAINER_IMAGE:$(TAG)
 
 .PHONY: build \
 				migrate \
