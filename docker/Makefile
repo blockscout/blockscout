@@ -9,8 +9,6 @@ PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 BS_NEXT_RELEASE = 4.1.2
 TAG := $(BS_NEXT_RELEASE)-prerelease-$(shell git log -1 --pretty=format:"%h")
-DOCKER_IMAGE = hermez-node-blockscout
-DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
@@ -388,17 +386,15 @@ ifdef INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER)'
 endif
 
-build-dev:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-prod:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-dev-m1:
-	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-
-build-prod-m1:
-	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
+build: 
+	@echo "==> Checking for blockscout image $(BS_CONTAINER_IMAGE)"
+ifdef HAS_BLOCKSCOUT_IMAGE
+	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
+else
+	@echo "==> No image found, trying to build one..."
+	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
+endif
 
 migrate_only:
 	@echo "==> Running migrations"
@@ -466,17 +462,6 @@ endif
 
 run: start
 
-push:
-	@echo "==> Pushing image to docker hub"
-	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
-	@docker push hermeznetwork/hermez-node-blockscout:latest
-
-start-watch:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
-
-stop-watch:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
-
 docker-login: ## login to DockerHub with credentials found in env
 	docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
 
@@ -505,19 +490,12 @@ tag-version: ## Generate container `{version}` tag
 	@echo 'create tag $(TAG)'
 	docker tag $(APP_NAME) $(DOCKER_REPO)/$(APP_NAME):$(TAG)
 
-.PHONY: build-dev \
-				build-prod \
-				build-dev-m1 \
-				build-prod-m1 \
-				migrate_only \
+.PHONY: build \
 				migrate \
 				start \
 				stop \
 				postgres \
 				run \
-				push \
-				start-watch \
-				stop-watch \
 				docker-login \
 				release \
 				publish \
@@ -527,3 +505,50 @@ tag-version: ## Generate container `{version}` tag
 				tag-latest \
 				tag-version
 
+# Polygon Hermez
+
+DOCKER_IMAGE = hermez-node-blockscout
+DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
+
+build-dev:
+	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+
+build-prod:
+	@docker build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+
+build-prod-nc:
+	@make build-prod ARGS="--no-cache"
+
+build-dev-m1:
+	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+
+build-prod-m1:
+	@docker buildx build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+
+build-prod-m1-nc:
+	@make build-prod-m1 ARGS="--no-cache"
+
+push:
+	@echo "==> Pushing image to docker hub"
+	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
+	@docker push hermeznetwork/hermez-node-blockscout:latest
+
+start-compose:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
+
+stop-compose:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
+
+watch-compose:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
+
+.PHONY: build-dev \
+				build-prod \
+				build-prod-nc \
+				build-dev-m1 \
+				build-prod-m1 \
+				build-prod-m1-nc \
+				push \
+				start-compose \
+				stop-compose \
+				watch-compose

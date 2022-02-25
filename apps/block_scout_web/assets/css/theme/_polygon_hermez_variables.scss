@@ -1,0 +1,190 @@
+@font-face {
+  font-family: "Modern Era";
+  src: url("../static/fonts/modern-era/ModernEra-Regular.woff2") format("woff2"),
+    url("../static/fonts/modern-era/ModernEra-Regular.woff") format("woff"),
+    url("../static/fonts/modern-era/ModernEra-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Modern Era";
+  src: url("../static/fonts/modern-era/ModernEra-Medium.woff2") format("woff2"),
+    url("../static/fonts/modern-era/ModernEra-Medium.woff") format("woff"),
+    url("../static/fonts/modern-era/ModernEra-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: "normal";
+}
+
+@font-face {
+  font-family: "Modern Era";
+  src: url("../static/fonts/modern-era/ModernEra-Bold.woff2") format("woff2"),
+    url("../static/fonts/modern-era/ModernEra-Bold.woff") format("woff"),
+    url("../static/fonts/modern-era/ModernEra-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: "normal";
+}
+
+@font-face {
+  font-family: "Modern Era";
+  src: url("../static/fonts/modern-era/ModernEra-ExtraBold.woff2")
+      format("woff2"),
+    url("../static/fonts/modern-era/ModernEra-ExtraBold.woff") format("woff"),
+    url("../static/fonts/modern-era/ModernEra-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: "normal";
+}
+
+$font-family: "Modern Era", "Helvetica Neue", Arial;
+
+$primary: #8248e5;
+$secondary: #ffc55a;
+$tertiary: #081132;
+
+// hermez global vars
+$hermez-text-color: $tertiary;
+$hermez-text-light-color: #888baa;
+$hermez-text-contrast-color: #b2afc7;
+$hermez-purple: #7b3fe4;
+
+// header
+$hermez-search-box-background: #000414;
+$header-background-color: #081132;
+$header-links-color: $hermez-text-contrast-color;
+$header-links-color-active: #fff;
+$header-icon-color-hover: #fff;
+$header-icon-border-color-hover: #fff;
+
+// dashboard
+$hermez-dashboard-gradient: linear-gradient(180deg, #4e0fb7, #742fe8);
+
+// tiles
+$tile-type-block-color: $hermez-purple;
+$tile-type-transaction-color: #5ea8ff;
+$tile-body-a-color: $hermez-purple;
+
+// footer
+$footer-background-color: $tertiary;
+
+.layout-container {
+  .navbar {
+    .dark-mode-changer {
+      display: none;
+    }
+    .input-group-text {
+      // We need #slash-icon to override the original value, already set as !important
+      &.border#slash-icon {
+        border-color: $hermez-text-contrast-color !important;
+        color: $hermez-text-contrast-color !important;
+        background-color: $hermez-search-box-background !important;
+      }
+    }
+    .search-control {
+      background: $hermez-search-box-background !important;
+      border-color: $hermez-search-box-background !important;
+      &.focused-field {
+        border: $hermez-search-box-background !important;
+      }
+      .main-search-autocomplete {
+        background-color: $hermez-search-box-background !important;
+        &::placeholder {
+          color: $hermez-text-contrast-color;
+        }
+      }
+      .main-search-autocomplete,
+      .main-search-autocomplete-mobile {
+        color: $hermez-text-contrast-color !important;
+      }
+    }
+  }
+  .dashboard-banner-container {
+    background-image: $hermez-dashboard-gradient;
+    .dashboard-banner-network-plain-container {
+      background-color: transparent;
+      box-shadow: none;
+      &::after {
+        background-color: transparent;
+        box-shadow: none;
+      }
+      .dashboard-banner-network-stats {
+        div {
+          &::before {
+            background-color: $secondary;
+          }
+        }
+        .dashboard-banner-network-stats-item {
+          .dashboard-banner-network-stats-label {
+            color: $hermez-text-contrast-color;
+          }
+        }
+      }
+    }
+    .dashboard-banner-network-graph
+      .dashboard-banner-chart-legend
+      .dashboard-banner-chart-legend-item:nth-child(n + 1):nth-child(-n + 2) {
+      // Hides Price and Market Cap info, keeping Tx/day
+      display: none;
+    }
+  }
+  .card {
+    .card-body {
+      .card-title {
+        font-weight: $font-weight-bold;
+        font-size: $font-size-lg;
+      }
+    }
+    .btn-line {
+      background-color: rgba(136, 139, 170, 0.1);
+      border: none;
+      color: $hermez-text-color;
+      font-size: $font-size-sm;
+      &:hover {
+        background-color: rgba(178, 175, 199, 0.4);
+      }
+    }
+    .tile {
+      &.tile-type-transaction,
+      &.tile-type-block {
+        border-left-width: 7px;
+        border-radius: 7px;
+      }
+      .tile-title {
+        color: $hermez-text-color !important;
+        font-size: $font-size-base;
+      }
+      .tile-bottom-contents {
+        background-color: transparent;
+        .tile-transactions {
+          span {
+            font-size: $font-size-sm;
+            color: $hermez-text-light-color;
+          }
+        }
+        .text-truncate {
+          font-size: $font-size-sm;
+          color: $hermez-text-light-color;
+          span[data-address-hash] {
+            color: $hermez-text-color;
+          }
+        }
+      }
+      .tile-body {
+        .tile-label {
+          color: $hermez-text-color;
+          font-size: $font-size-base;
+        }
+        .tile-status-label {
+          color: $hermez-text-light-color;
+        }
+      }
+    }
+  }
+  .footer {
+    .footer-list {
+      display: none;
+    }
+    .footer-body > :last-child {
+      display: none;
+    }
+  }
+}
