@@ -256,7 +256,16 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
             contract_source_code,
             contract_name
           ) ->
-        {:error, :constructor_arguments}
+        if try_to_verify_with_unknown_constructor_args(
+             blockchain_created_tx_input,
+             bytecode,
+             blockchain_bytecode_without_whisper,
+             abi
+           ) == arguments_data |> String.trim_trailing() |> String.trim_leading("0x") do
+          {:ok, %{abi: abi}}
+        else
+          {:error, :constructor_arguments}
+        end
 
       true ->
         {:ok, %{abi: abi}}
