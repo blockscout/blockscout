@@ -8,7 +8,9 @@ defmodule BlockScoutWeb.Router do
     forward("/wobserver", Wobserver.Web.Router)
   end
 
-  forward("/admin", BlockScoutWeb.AdminRouter)
+  if Application.get_env(:block_scout_web, :admin_panel_enabled) do
+    forward("/admin", BlockScoutWeb.AdminRouter)
+  end
 
   pipeline :browser do
     plug(:accepts, ["html"])

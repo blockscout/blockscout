@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13.6
+    restart: always
+    container_name: 'postgres'
+    environment:
+        POSTGRES_PASSWORD: ''
+        POSTGRES_USER: 'postgres'
+        POSTGRES_HOST_AUTH_METHOD: 'trust'
+    ports:
+      - 7432:5432
+
+  blockscout:
+    depends_on:
+      - db
+    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'blockscout'
+    links:
+      - db:database
+    command: 'mix do ecto.create, ecto.migrate, phx.server'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ./envs/common-blockscout.env
+    environment:
+        ETHEREUM_JSONRPC_VARIANT: 'geth'
+        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
+        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
+        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: true
+        DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
+        ECTO_USE_SSL: false
+    ports:
+      - 4000:4000
+
