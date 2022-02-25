@@ -473,22 +473,22 @@ publish: docker-login publish-latest publish-version ## publish the `{version}` 
 
 publish-latest: tag-latest ## publish the `latest` tagged container to hub
 	@echo 'publish latest to $(DOCKER_REPO)'
-	docker push BS_CONTAINER_IMAGE:latest
+	docker push $(BS_CONTAINER_IMAGE):latest
 
 publish-version: tag-version ## publish the `{version}` tagged container to hub
 	@echo 'publish $(TAG) to $(DOCKER_REPO)'
-	docker push BS_CONTAINER_IMAGE:$(TAG)
+	docker push $(BS_CONTAINER_IMAGE):$(TAG)
 
 # Docker tagging
 tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
 
 tag-latest: ## Generate container `latest` tag
 	@echo 'create latest tag'
-	docker tag $(APP_NAME) BS_CONTAINER_IMAGE:latest
+	docker tag $(APP_NAME) $(BS_CONTAINER_IMAGE):latest
 
 tag-version: ## Generate container `{version}` tag
 	@echo 'create tag $(TAG)'
-	docker tag $(APP_NAME) BS_CONTAINER_IMAGE:$(TAG)
+	docker tag $(APP_NAME) $(BS_CONTAINER_IMAGE):$(TAG)
 
 .PHONY: build \
 				migrate \
