@@ -17,7 +17,7 @@
 - [#5184](https://github.com/blockscout/blockscout/pull/5184) - eth_call method: remove from param from the request, if it is null
 - [#5172](https://github.com/blockscout/blockscout/pull/5172), [#5182](https://github.com/blockscout/blockscout/pull/5182) - Reduced the size of js bundles
 - [#5169](https://github.com/blockscout/blockscout/pull/5169) - Fix several UI bugs; Add tooltip to the prev/next block buttons
-- [#5166](https://github.com/blockscout/blockscout/pull/5166) - Fix contracts verification bugs
+- [#5166](https://github.com/blockscout/blockscout/pull/5166), [#5198](https://github.com/blockscout/blockscout/pull/5198) - Fix contracts verification bugs
 - [#5160](https://github.com/blockscout/blockscout/pull/5160) - Fix blocks validated hint
 - [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
@@ -28,7 +28,7 @@
 - [#5226](https://github.com/blockscout/blockscout/pull/5226) - Update mini-css-extract-plugin, css-minimizer-webpack-plugin packages
 - [#5224](https://github.com/blockscout/blockscout/pull/5224) - Webpack config refactoring
 - [#5223](https://github.com/blockscout/blockscout/pull/5223) - Migrate fontawesome 5 -> 6
-- [#5202](https://github.com/blockscout/blockscout/pull/5202) - Docker setup Makefile release/publish tasks
+- [#5202](https://github.com/blockscout/blockscout/pull/5202), [#5229](https://github.com/blockscout/blockscout/pull/5229) - Docker setup Makefile release/publish tasks
 - [#5195](https://github.com/blockscout/blockscout/pull/5195) - Add Berlin, London to the list of default EVM versions
 - [#5190](https://github.com/blockscout/blockscout/pull/5190) - Set 8545 as default port everywhere except Ganache JSON RPC variant
 - [#5189](https://github.com/blockscout/blockscout/pull/5189) - ENV var to manage pending transactions fetcher switching off
