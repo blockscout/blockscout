@@ -29,7 +29,7 @@
     "bootstrap": "^4.6.0",
     "chart.js": "^3.7.0",
     "chartjs-adapter-moment": "^1.0.0",
-    "clipboard": "^2.0.9",
+    "clipboard": "^2.0.10",
     "core-js": "^2.6.12",
     "crypto-browserify": "^3.12.0",
     "dropzone": "^5.9.3",
