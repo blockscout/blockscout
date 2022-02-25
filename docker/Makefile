@@ -1,19 +1,26 @@
-SYSTEM = $(shell uname -s)
-HOST = host.docker.internal
-DOCKER_IMAGE = hermez-node-blockscout
-BS_CONTAINER_NAME = blockscout
-PG_CONTAINER_NAME = postgres
-PG_CONTAINER_IMAGE = postgres:12.5
+SYSTEM := $(shell uname -s)
+HOST := host.docker.internal
+DOCKER_REPO := blockscout
+APP_NAME := blockscout
+BS_CONTAINER_IMAGE := ${APP_NAME}
+BS_CONTAINER_NAME := blockscout
+PG_CONTAINER_IMAGE := postgres:13.6
+PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
+BS_NEXT_RELEASE = 4.1.2
+TAG := $(BS_NEXT_RELEASE)-prerelease-$(shell git log -1 --pretty=format:"%h")
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
+ifdef DATABASE_URL
+	DB_URL = $(DATABASE_URL)
+else
+	DB_URL = postgresql://postgres:@$(HOST):5432/blockscout?ssl=false
+endif
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
-															-e 'DATABASE_URL=$(DB_URL)'
+															 -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -369,30 +376,31 @@ endif
 ifdef API_RATE_LIMIT_WHITELISTED_IPS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'API_RATE_LIMIT_WHITELISTED_IPS=$(API_RATE_LIMIT_WHITELISTED_IPS)'
 endif
+ifdef COIN_NAME
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'COIN_NAME=$(COIN_NAME)'
+endif
+ifdef INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER)'
+endif
+ifdef INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER)'
+endif
 
-build-dev:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-prod:
-	@docker build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-prod-nc:
-	@make build-prod ARGS="--no-cache"
-
-build-dev-m1:
-	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-
-build-prod-m1:
-	@docker buildx build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-
-build-prod-m1-nc:
-	@make build-prod-m1 ARGS="--no-cache"
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
+build: 
+	@echo "==> Checking for blockscout image $(BS_CONTAINER_IMAGE)"
+ifdef HAS_BLOCKSCOUT_IMAGE
+	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
+else
+	@echo "==> No image found, trying to build one..."
+	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
+endif
 
 migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
@@ -401,6 +409,10 @@ migrate: build postgres
 PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 postgres:
+ifdef DATABASE_URL
+	@echo "==> DATABASE_URL of external DB provided. There is no need to start a container for DB."
+	@$(MAKE) -f $(THIS_FILE) migrate_only
+else
 ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"
 ifdef PG_STARTED
@@ -422,29 +434,121 @@ else
 	@sleep 1
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
+endif
+
+start: build postgres 
+	@echo "==> Starting blockscout"
+	@docker run --rm --name $(BS_CONTAINER_NAME) \
+					$(BLOCKSCOUT_CONTAINER_PARAMS) \
+					-p 4000:4000 \
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "mix phx.server"
+
+BS_STARTED := $(shell docker ps --filter name=${BS_CONTAINER_NAME} | grep ${BS_CONTAINER_NAME})
+stop:
+ifdef BS_STARTED
+	@echo "==> Stopping BlockScout container."
+	@docker stop $(BS_CONTAINER_NAME)
+	@echo "==> BlockScout container stopped."
+else
+	@echo "==> BlockScout container already stopped before."
+endif
+ifdef PG_STARTED
+	@echo "==> Stopping Postgres container."
+	@docker stop $(PG_CONTAINER_NAME)
+	@echo "==> Postgres container stopped."
+else
+	@echo "==> Postgres container already stopped before."
+endif
+
+run: start
+
+docker-login: ## login to DockerHub with credentials found in env
+	docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+
+# Docker release - build, tag and push the container
+release: build publish ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to hub
+
+# Docker publish
+publish: docker-login publish-latest publish-version ## publish the `{version}` ans `latest` tagged containers to hub
+
+publish-latest: tag-latest ## publish the `latest` tagged container to hub
+	@echo 'publish latest to $(DOCKER_REPO)'
+	docker push $(DOCKER_REPO)/$(APP_NAME):latest
+
+publish-version: tag-version ## publish the `{version}` tagged container to hub
+	@echo 'publish $(TAG) to $(DOCKER_REPO)'
+	docker push $(DOCKER_REPO)/$(APP_NAME):$(TAG)
+
+# Docker tagging
+tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
+
+tag-latest: ## Generate container `latest` tag
+	@echo 'create latest tag'
+	docker tag $(APP_NAME) $(DOCKER_REPO)/$(APP_NAME):latest
+
+tag-version: ## Generate container `{version}` tag
+	@echo 'create tag $(TAG)'
+	docker tag $(APP_NAME) $(DOCKER_REPO)/$(APP_NAME):$(TAG)
+
+.PHONY: build \
+				migrate \
+				start \
+				stop \
+				postgres \
+				run \
+				docker-login \
+				release \
+				publish \
+				publish-latest \
+				publish-version \
+				tag \
+				tag-latest \
+				tag-version
+
+# Polygon Hermez
+
+DOCKER_IMAGE = hermez-node-blockscout
+DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
+
+build-dev:
+	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+
+build-prod:
+	@docker build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+
+build-prod-nc:
+	@make build-prod ARGS="--no-cache"
+
+build-dev-m1:
+	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+
+build-prod-m1:
+	@docker buildx build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
+
+build-prod-m1-nc:
+	@make build-prod-m1 ARGS="--no-cache"
 
 push:
 	@echo "==> Pushing image to docker hub"
 	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
 	@docker push hermeznetwork/hermez-node-blockscout:latest
 
-start:
+start-compose:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
 
-stop:
+stop-compose:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
 
-watch:
+watch-compose:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
 
 .PHONY: build-dev \
 				build-prod \
+				build-prod-nc \
 				build-dev-m1 \
 				build-prod-m1 \
-				migrate_only \
-				migrate \
-				postgres \
+				build-prod-m1-nc \
 				push \
-				start \
-				stop \
-				watch
+				start-compose \
+				stop-compose \
+				watch-compose
