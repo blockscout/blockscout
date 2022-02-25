@@ -593,11 +593,11 @@ tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `
 
 tag-latest: ## Generate container `latest` tag
 	@echo 'create latest tag'
-	docker tag $(APP_NAME) $(BS_CONTAINER_IMAGE):latest
+	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):latest
 
 tag-version: ## Generate container `{version}` tag
 	@echo 'create tag $(TAG)'
-	docker tag $(APP_NAME) $(BS_CONTAINER_IMAGE):$(TAG)
+	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):$(TAG)
 
 .PHONY: build \
 				migrate \
