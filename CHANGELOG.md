@@ -540,6 +540,7 @@
 - [#3335](https://github.com/blockscout/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#5240](https://github.com/blockscout/blockscout/pull/5240) - Managing invalidation of address coin balance cache
 - [#3450](https://github.com/blockscout/blockscout/pull/3450) - Replace window.web3 with window.ethereum
 - [#3446](https://github.com/blockscout/blockscout/pull/3446), [#3448](https://github.com/blockscout/blockscout/pull/3448) - Set infinity timeout and increase cache invalidation period for counters
 - [#3431](https://github.com/blockscout/blockscout/pull/3431) - Standardize token name definition, if name is empty
