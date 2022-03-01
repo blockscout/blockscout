@@ -16,7 +16,7 @@ const dataSrc = async (query, id) => {
 
     // Fetch External Data Source
     const source = await fetch(
-      `/token-autocomplete?q=${query}`
+      `${process.env.NETWORK_PATH}/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
@@ -138,14 +138,15 @@ const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-m
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
+  const commonPath = process.env.NETWORK_PATH
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
-    window.location = `/address/${selectionValue.address_hash}`
+    window.location = `${commonPath}/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {
-    window.location = `/tokens/${selectionValue.address_hash}`
+    window.location = `${commonPath}/tokens/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'transaction') {
-    window.location = `/tx/${selectionValue.tx_hash}`
+    window.location = `${commonPath}/tx/${selectionValue.tx_hash}`
   } else if (selectionValue.type === 'block') {
-    window.location = `/blocks/${selectionValue.block_hash}`
+    window.location = `${commonPath}/blocks/${selectionValue.block_hash}`
   }
 }
 
