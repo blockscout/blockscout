@@ -8,6 +8,7 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5241](https://github.com/blockscout/blockscout/pull/5241) - Fix DB hostname Regex pattern
 - [#5216](https://github.com/blockscout/blockscout/pull/5216) - Add token-transfers-toggle.js to the `block_transaction/index.html.eex`
 - [#5212](https://github.com/blockscout/blockscout/pull/5212) - Fix `gas_used` value bug
 - [#5197](https://github.com/blockscout/blockscout/pull/5197) - Fix contract functions outputs
