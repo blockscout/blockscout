@@ -44,3 +44,4 @@ screenshots/
 /apps/block_scout_web/priv/cert
 
 /docker-compose/postgres-data
+/docker-compose/tmp
