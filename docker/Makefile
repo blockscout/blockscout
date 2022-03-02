@@ -385,6 +385,12 @@ endif
 ifdef INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER)'
 endif
+ifdef TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES=$(TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES)'
+endif
+ifdef COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES=$(COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES)'
+endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
 build: 
@@ -473,22 +479,22 @@ publish: docker-login publish-latest publish-version ## publish the `{version}` 
 
 publish-latest: tag-latest ## publish the `latest` tagged container to hub
 	@echo 'publish latest to $(DOCKER_REPO)'
-	docker push BS_CONTAINER_IMAGE:latest
+	docker push $(BS_CONTAINER_IMAGE):latest
 
 publish-version: tag-version ## publish the `{version}` tagged container to hub
 	@echo 'publish $(TAG) to $(DOCKER_REPO)'
-	docker push BS_CONTAINER_IMAGE:$(TAG)
+	docker push $(BS_CONTAINER_IMAGE):$(TAG)
 
 # Docker tagging
 tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
 
 tag-latest: ## Generate container `latest` tag
 	@echo 'create latest tag'
-	docker tag $(APP_NAME) BS_CONTAINER_IMAGE:latest
+	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):latest
 
 tag-version: ## Generate container `{version}` tag
 	@echo 'create tag $(TAG)'
-	docker tag $(APP_NAME) BS_CONTAINER_IMAGE:$(TAG)
+	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):$(TAG)
 
 .PHONY: build \
 				migrate \
