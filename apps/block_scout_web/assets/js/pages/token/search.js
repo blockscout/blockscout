@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import omit from 'lodash.omit'
 import humps from 'humps'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
 import '../address'

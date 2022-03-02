@@ -1,11 +1,27 @@
 ## Current
 
 ### Features
+- [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5169](https://github.com/blockscout/blockscout/pull/5169) - Fix several UI bugs; Add tooltip to the prev/next block buttons
+- [#5184](https://github.com/blockscout/blockscout/pull/5184) - eth_call method: remove from param from the request, if it is null
+- [#5172](https://github.com/blockscout/blockscout/pull/5172), [#5182](https://github.com/blockscout/blockscout/pull/5182) - Reduced the size of js bundles
+- [#5160](https://github.com/blockscout/blockscout/pull/5160) - Fix blocks validated hint
+- [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
+- [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 
 ### Chore
+- [#5171](https://github.com/blockscout/blockscout/pull/5171) - Replace lodash NPM package with tiny lodash modules
+- [#5170](https://github.com/blockscout/blockscout/pull/5170) - Token price row name fix
+- [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
+- [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
+- [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
+- [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
+- [#5138](https://github.com/blockscout/blockscout/pull/5138) - Webpack minor update
+- [#5119](https://github.com/blockscout/blockscout/pull/5119) - Inventory controller refactoring
+- [#5118](https://github.com/blockscout/blockscout/pull/5118) - Fix top navigation template
 
 
 ## 4.1.1-beta
