@@ -4177,47 +4177,48 @@ defmodule Explorer.Chain do
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
   which were verified previously, returns a single t:SmartContract.t/0
   """
-  def get_address_verified_twin_contract(address_hash) do
-    case Repo.get(Address, address_hash) do
-      nil ->
+  def get_address_verified_twin_contract(hash) when is_binary(hash) do
+    case string_to_address_hash(hash) do
+      {:ok, address_hash} -> get_address_verified_twin_contract(address_hash)
+      _ -> %{:verified_contract => nil, :additional_sources => nil}
+    end
+  end
+
+  def get_address_verified_twin_contract(%Explorer.Chain.Hash{} = address_hash) do
+    with target_address <- Repo.get(Address, address_hash),
+         false <- is_nil(target_address),
+         %{contract_code: %Chain.Data{bytes: contract_code_bytes}} <- target_address do
+      target_address_hash = target_address.hash
+
+      contract_code_md5 =
+        Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
+          case: :lower
+        )
+
+      verified_contract_twin_query =
+        from(
+          address in Address,
+          inner_join: smart_contract in SmartContract,
+          on: address.hash == smart_contract.address_hash,
+          where: fragment("md5(contract_code::text)") == ^contract_code_md5,
+          where: address.hash != ^target_address_hash,
+          select: smart_contract,
+          limit: 1
+        )
+
+      verified_contract_twin =
+        verified_contract_twin_query
+        |> Repo.one(timeout: 10_000)
+
+      verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
+
+      %{
+        :verified_contract => verified_contract_twin,
+        :additional_sources => verified_contract_twin_additional_sources
+      }
+    else
+      _ ->
         %{:verified_contract => nil, :additional_sources => nil}
-
-      target_address ->
-        target_address_hash = target_address.hash
-        contract_code = target_address.contract_code
-
-        case contract_code do
-          %Chain.Data{bytes: contract_code_bytes} ->
-            contract_code_md5 =
-              Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
-                case: :lower
-              )
-
-            verified_contract_twin_query =
-              from(
-                address in Address,
-                inner_join: smart_contract in SmartContract,
-                on: address.hash == smart_contract.address_hash,
-                where: fragment("md5(contract_code::text)") == ^contract_code_md5,
-                where: address.hash != ^target_address_hash,
-                select: smart_contract,
-                limit: 1
-              )
-
-            verified_contract_twin =
-              verified_contract_twin_query
-              |> Repo.one(timeout: 10_000)
-
-            verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
-
-            %{
-              :verified_contract => verified_contract_twin,
-              :additional_sources => verified_contract_twin_additional_sources
-            }
-
-          _ ->
-            %{:verified_contract => nil, :additional_sources => nil}
-        end
     end
   end
 

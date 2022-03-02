@@ -29,6 +29,7 @@
 - [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 
 ### Chore
+- [#5230](https://github.com/blockscout/blockscout/pull/5230) - Contract verification forms refactoring
 - [#5227](https://github.com/blockscout/blockscout/pull/5227) - Major update of css-loader npm package
 - [#5226](https://github.com/blockscout/blockscout/pull/5226) - Update mini-css-extract-plugin, css-minimizer-webpack-plugin packages
 - [#5224](https://github.com/blockscout/blockscout/pull/5224) - Webpack config refactoring
