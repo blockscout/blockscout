@@ -22,6 +22,7 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 EXPOSE 4000
 
 ENV MIX_ENV="prod"
+ENV COIN_NAME="POA"
 ENV SOCKET_ROOT="/poa/core"
 ENV NETWORK_PATH="/poa/core"
 ENV CHAIN_ID="99"
