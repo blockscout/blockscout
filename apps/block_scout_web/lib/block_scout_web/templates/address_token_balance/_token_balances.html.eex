@@ -19,13 +19,13 @@
     <%= if @conn.request_path |> String.contains?("/tokens") do %>
       <a href="#tokens" style="text-decoration: none;">
         <span class="btn-wallet-icon">
-          <i class="fas fa-wallet " style="line-height: 31px;"></i>
+          <i class="fa-solid fa-wallet " style="line-height: 31px;"></i>
         </span>
       </a>
     <% else %>
       <a href="<%= AccessHelpers.get_path(@conn, :address_token_path, :index, @address_hash) %>#tokens" style="text-decoration: none;">
         <span class="btn-wallet-icon">
-          <i class="fas fa-wallet" style="line-height: 31px;"></i>
+          <i class="fa-solid fa-wallet" style="line-height: 31px;"></i>
         </span>
       </a>
     <% end %>

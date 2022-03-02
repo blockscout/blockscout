@@ -215,7 +215,7 @@
                   text: gettext("Ether") <> " " <> gettext("burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
                   <%= gettext("Burnt Fees") %>
                 </dt>
-                <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %></dd>
+                <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %></dd>
             </dl>
             <!-- Priority Fee / Tip -->
             <dl class="row">

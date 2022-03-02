@@ -916,13 +916,13 @@
   .iti__flag {
     height: 15px;
     box-shadow: 0px 0px 1px 0px #888;
-    background-image: url("/images/icons/flags.png");
+    background-image: url("../static/images/icons/flags.png");
     background-repeat: no-repeat;
     background-color: #DBDBDB;
     background-position: 20px 0; }
     @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
       .iti__flag {
-        background-image: url("/images/icons/flags@2x.png"); } }
+        background-image: url("../static/images/icons/flags@2x.png"); } }
   
   .iti__flag.iti__np {
     background-color: transparent; }
