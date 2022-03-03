@@ -10,7 +10,19 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
   end
 
   def render("getvoterrewards.json", %{rewards: rewards}) do
-    prepared_rewards = prepare_rewards_for_all_groups(rewards)
+    prepared_rewards = prepare_generic_rewards(rewards)
+
+    RPCView.render("show.json", data: prepared_rewards)
+  end
+
+  def render("getvalidatorrewards.json", %{rewards: rewards}) do
+    prepared_rewards = prepare_generic_rewards(rewards)
+
+    RPCView.render("show.json", data: prepared_rewards)
+  end
+
+  def render("getvalidatorgrouprewards.json", %{rewards: rewards}) do
+    prepared_rewards = prepare_group_rewards(rewards)
 
     RPCView.render("show.json", data: prepared_rewards)
   end
@@ -36,13 +48,23 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
     }
   end
 
-  defp prepare_rewards_for_all_groups(rewards) do
+  defp prepare_generic_rewards(rewards) do
     %{
       totalRewardCelo: to_string(rewards.total_reward_celo),
-      voterAccount: to_string(rewards.voter_account),
+      account: to_string(rewards.account),
       from: to_string(rewards.from),
       to: to_string(rewards.to),
       rewards: Enum.map(rewards.rewards, &prepare_reward_for_all_groups(&1))
+    }
+  end
+
+  defp prepare_group_rewards(rewards) do
+    %{
+      totalRewardCelo: to_string(rewards.total_reward_celo),
+      from: to_string(rewards.from),
+      group: to_string(rewards.group),
+      to: to_string(rewards.to),
+      rewards: Enum.map(rewards.rewards, &prepare_group_epoch_rewards(&1))
     }
   end
 
@@ -54,6 +76,17 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
       date: reward.date,
       epochNumber: to_string(reward.epoch_number),
       group: to_string(reward.group)
+    }
+  end
+
+  defp prepare_group_epoch_rewards(reward) do
+    %{
+      amount: to_string(reward.amount),
+      blockHash: to_string(reward.block_hash),
+      blockNumber: to_string(reward.block_number),
+      date: reward.date,
+      epochNumber: to_string(reward.epoch_number),
+      validator: to_string(reward.validator)
     }
   end
 end

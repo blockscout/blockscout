@@ -18,7 +18,7 @@ defmodule Explorer.Celo.VoterRewardsTest do
       assert rewards ==
                %{
                  total_reward_celo: 300,
-                 voter_account: voter_address_1_hash,
+                 account: voter_address_1_hash,
                  from: ~U[2022-01-03 00:00:00.000000Z],
                  to: ~U[2022-01-06 00:00:00.000000Z],
                  rewards: [

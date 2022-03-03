@@ -1,16 +1,16 @@
-alias Explorer.Celo.ContractEvents.Election
-
-alias Election.{
-  EpochRewardsDistributedToVotersEvent,
-  ValidatorGroupActiveVoteRevokedEvent,
-  ValidatorGroupVoteActivatedEvent
-}
-
-alias Explorer.Chain.{Address, Hash}
-
-import Explorer.Factory
-
 defmodule Explorer.SetupVoterRewardsTest do
+  alias Explorer.Celo.ContractEvents.Election
+
+  alias Election.{
+    EpochRewardsDistributedToVotersEvent,
+    ValidatorGroupActiveVoteRevokedEvent,
+    ValidatorGroupVoteActivatedEvent
+  }
+
+  alias Explorer.Chain.{Address, Hash}
+
+  import Explorer.Factory
+
   def setup_for_group do
     validator_group_active_vote_revoked = ValidatorGroupActiveVoteRevokedEvent.name()
     %Address{hash: voter_address_1_hash} = insert(:address)

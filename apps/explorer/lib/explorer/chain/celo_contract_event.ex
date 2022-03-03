@@ -125,4 +125,12 @@ defmodule Explorer.Chain.CeloContractEvent do
       where: fragment("? ->> ? = ?", c.params, "group", ^group_address_for_pg)
     )
   end
+
+  def query_by_validator_param(query, validator_address_hash) do
+    validator_address_for_pg = Common.fa(validator_address_hash)
+
+    from(c in query,
+      where: fragment("? ->> ? = ?", c.params, "validator", ^validator_address_for_pg)
+    )
+  end
 end

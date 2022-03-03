@@ -79,7 +79,7 @@ defmodule Explorer.Celo.VoterRewards do
               rewards: rewards,
               to: to_date,
               total_reward_celo: total,
-              voter_account: voter_address_hash
+              account: voter_address_hash
             }
           end)
 
