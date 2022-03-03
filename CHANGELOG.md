@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5232](https://github.com/blockscout/blockscout/pull/5232) - Contract Read Page: Add functions overloading support
 - [#5220](https://github.com/blockscout/blockscout/pull/5220) - Add info about proxy contracts to api methods response
 - [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
