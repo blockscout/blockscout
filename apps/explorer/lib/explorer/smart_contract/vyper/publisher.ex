@@ -18,8 +18,10 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     end
   end
 
-  def publish_smart_contract(address_hash, params, abi) do
-    attrs = address_hash |> attributes(params, abi)
+  def publish_smart_contract(address_hash_string, params, abi) do
+    attrs =
+      address_hash_string
+      |> attributes(params, abi)
 
     Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
   end

@@ -83,7 +83,7 @@ defmodule Explorer.Chain do
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.SmartContract.Reader
+  alias Explorer.SmartContract.{Helper, Reader}
   alias Explorer.Staking.ContractState
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -3990,6 +3990,10 @@ defmodule Explorer.Chain do
   def create_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     new_contract = %SmartContract{}
 
+    attrs =
+      attrs
+      |> Helper.add_contract_code_md5(attrs.address_hash)
+
     smart_contract_changeset =
       new_contract
       |> SmartContract.changeset(attrs)
@@ -4184,41 +4188,45 @@ defmodule Explorer.Chain do
     end
   end
 
-  def get_address_verified_twin_contract(%Explorer.Chain.Hash{} = address_hash) do
-    with target_address <- Repo.get(Address, address_hash),
-         false <- is_nil(target_address),
-         %{contract_code: %Chain.Data{bytes: contract_code_bytes}} <- target_address do
-      target_address_hash = target_address.hash
-
-      contract_code_md5 =
-        Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
-          case: :lower
-        )
-
-      verified_contract_twin_query =
-        from(
-          address in Address,
-          inner_join: smart_contract in SmartContract,
-          on: address.hash == smart_contract.address_hash,
-          where: fragment("md5(contract_code::text)") == ^contract_code_md5,
-          where: address.hash != ^target_address_hash,
-          select: smart_contract,
-          limit: 1
-        )
-
-      verified_contract_twin =
-        verified_contract_twin_query
-        |> Repo.one(timeout: 10_000)
-
-      verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
-
-      %{
-        :verified_contract => verified_contract_twin,
-        :additional_sources => verified_contract_twin_additional_sources
-      }
-    else
-      _ ->
+  def get_address_verified_twin_contract(address_hash) do
+    case Repo.get(Address, address_hash) do
+      nil ->
         %{:verified_contract => nil, :additional_sources => nil}
+
+      target_address ->
+        target_address_hash = target_address.hash
+        contract_code = target_address.contract_code
+
+        case contract_code do
+          %Chain.Data{bytes: contract_code_bytes} ->
+            contract_code_md5 =
+              Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
+                case: :lower
+              )
+
+            verified_contract_twin_query =
+              from(
+                smart_contract in SmartContract,
+                where: smart_contract.contract_code_md5 == ^contract_code_md5,
+                where: smart_contract.address_hash != ^target_address_hash,
+                select: smart_contract,
+                limit: 1
+              )
+
+            verified_contract_twin =
+              verified_contract_twin_query
+              |> Repo.one(timeout: 10_000)
+
+            verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
+
+            %{
+              :verified_contract => verified_contract_twin,
+              :additional_sources => verified_contract_twin_additional_sources
+            }
+
+          _ ->
+            %{:verified_contract => nil, :additional_sources => nil}
+        end
     end
   end
 
