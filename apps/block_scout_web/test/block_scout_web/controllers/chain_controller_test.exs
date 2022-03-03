@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
 
     test "finds verified contract" do
-      insert(:smart_contract, name: "SuperToken")
+      insert(:smart_contract, name: "SuperToken", contract_code_md5: "123")
 
       conn =
         build_conn()
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
 
     test "finds verified contract and token" do
-      insert(:smart_contract, name: "MagicContract")
+      insert(:smart_contract, name: "MagicContract", contract_code_md5: "123")
       insert(:token, name: "magicToken")
 
       conn =
@@ -115,10 +115,10 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
 
     test "finds verified contracts and tokens" do
-      insert(:smart_contract, name: "something")
-      insert(:smart_contract, name: "MagicContract")
+      insert(:smart_contract, name: "something", contract_code_md5: "123")
+      insert(:smart_contract, name: "MagicContract", contract_code_md5: "123")
       insert(:token, name: "Magic3")
-      insert(:smart_contract, name: "magicContract2")
+      insert(:smart_contract, name: "magicContract2", contract_code_md5: "123")
       insert(:token, name: "magicToken")
       insert(:token, name: "OneMoreToken")
 
@@ -142,7 +142,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
     test "find by empty query" do
       insert(:token, name: "MaGiCt0k3n")
-      insert(:smart_contract, name: "MagicContract")
+      insert(:smart_contract, name: "MagicContract", contract_code_md5: "123")
 
       conn =
         build_conn()
