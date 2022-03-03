@@ -169,8 +169,9 @@ if ($contractVerificationPage.length) {
 
       this.on('removedfile', function (_file) {
         changeVisibilityOfVerifyButton(this.files.length)
-        $('#verify-via-metadata-json-submit').prop('disabled', true)
-        $('#dropzone-previews').removeClass('dz-started')
+        if (this.files.length === 0) {
+          $('#dropzone-previews').removeClass('dz-started')
+        }
       })
     }
 

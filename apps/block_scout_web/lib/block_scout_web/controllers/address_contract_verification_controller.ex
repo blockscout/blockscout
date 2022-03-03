@@ -215,7 +215,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
            errors: [
              file: {msg, []}
            ],
-           data: %SmartContract{},
+           data: %SmartContract{address_hash: address_hash_string},
            valid?: false
          }}, conn}}
     ]
