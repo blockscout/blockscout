@@ -190,7 +190,8 @@ defmodule Explorer.SmartContract.ReaderTest do
               "inputs" => [],
               "constant" => true
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       implementation_contract_address = insert(:contract_address)
@@ -216,7 +217,8 @@ defmodule Explorer.SmartContract.ReaderTest do
             "stateMutability" => "view",
             "type" => "function"
           }
-        ]
+        ],
+        contract_code_md5: "123"
       )
 
       implementation_contract_address_hash_string =
@@ -255,7 +257,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   describe "query_function/3" do
     test "given the arguments, fetches the function value from the blockchain" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
 
@@ -268,7 +270,7 @@ defmodule Explorer.SmartContract.ReaderTest do
     end
 
     test "nil arguments is treated as []" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
 
