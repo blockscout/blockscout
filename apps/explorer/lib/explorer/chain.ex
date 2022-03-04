@@ -83,7 +83,7 @@ defmodule Explorer.Chain do
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.SmartContract.Reader
+  alias Explorer.SmartContract.{Helper, Reader}
   alias Explorer.Staking.ContractState
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -3965,6 +3965,10 @@ defmodule Explorer.Chain do
   def create_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     new_contract = %SmartContract{}
 
+    attrs =
+      attrs
+      |> Helper.add_contract_code_md5()
+
     smart_contract_changeset =
       new_contract
       |> SmartContract.changeset(attrs)
@@ -4172,11 +4176,9 @@ defmodule Explorer.Chain do
 
       verified_contract_twin_query =
         from(
-          address in Address,
-          inner_join: smart_contract in SmartContract,
-          on: address.hash == smart_contract.address_hash,
-          where: fragment("md5(contract_code::text)") == ^contract_code_md5,
-          where: address.hash != ^target_address_hash,
+          smart_contract in SmartContract,
+          where: smart_contract.contract_code_md5 == ^contract_code_md5,
+          where: smart_contract.address_hash != ^target_address_hash,
           select: smart_contract,
           limit: 1
         )
