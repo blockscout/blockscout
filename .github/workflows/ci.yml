@@ -12,6 +12,7 @@ env:
 
 jobs:
   docker:
+    name: Build and update production image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
