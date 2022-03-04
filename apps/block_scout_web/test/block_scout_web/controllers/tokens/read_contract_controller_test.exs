@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.Tokens.ContractControllerTest do
     test "successfully renders the page when the token is a verified smart contract", %{conn: conn} do
       token_contract_address = insert(:contract_address)
 
-      insert(:smart_contract, address_hash: token_contract_address.hash)
+      insert(:smart_contract, address_hash: token_contract_address.hash, contract_code_md5: "123")
 
       token = insert(:token, contract_address: token_contract_address)
 
