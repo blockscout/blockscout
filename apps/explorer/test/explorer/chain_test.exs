@@ -2929,7 +2929,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
+      %InternalTransaction{transaction_hash: transaction_hash_1, index: index_1} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 1,
@@ -2939,13 +2939,23 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
+      %InternalTransaction{transaction_hash: transaction_hash_2, index: index_2} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 2,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 2,
+          transaction_index: transaction.index
+        )
+
       result =
         transaction.hash
         |> Chain.transaction_to_internal_transactions()
         |> Enum.map(&{&1.transaction_hash, &1.index})
 
       # excluding of internal transactions with type=call and index=0
-      assert [{second_transaction_hash, second_index}] == result
+      assert [{transaction_hash_1, index_1}, {transaction_hash_2, index_2}] == result
     end
 
     test "pages by index" do
@@ -5550,40 +5560,6 @@ defmodule Explorer.ChainTest do
       insert(:staking_pool, is_active: false, total_staked_amount: 1)
 
       assert Chain.total_staked_amount_sum(:inactive) == Decimal.new("6")
-    end
-  end
-
-  describe "extract_db_name/1" do
-    test "extracts correct db name" do
-      db_url = "postgresql://viktor:@localhost:5432/blockscout-dev-1"
-      assert Chain.extract_db_name(db_url) == "blockscout-dev-1"
-    end
-
-    test "returns empty db name" do
-      db_url = ""
-      assert Chain.extract_db_name(db_url) == ""
-    end
-
-    test "returns nil db name" do
-      db_url = nil
-      assert Chain.extract_db_name(db_url) == ""
-    end
-  end
-
-  describe "extract_db_host/1" do
-    test "extracts correct db host" do
-      db_url = "postgresql://viktor:@localhost:5432/blockscout-dev-1"
-      assert Chain.extract_db_host(db_url) == "localhost"
-    end
-
-    test "returns empty db name" do
-      db_url = ""
-      assert Chain.extract_db_host(db_url) == ""
-    end
-
-    test "returns nil db name" do
-      db_url = nil
-      assert Chain.extract_db_host(db_url) == ""
     end
   end
 

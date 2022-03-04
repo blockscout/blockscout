@@ -7,5 +7,5 @@
     data-toggle="tooltip"
     title="<%= @text %>"
 >
-    <i class="fas fa-info-circle"></i>
+    <i class="fa-solid fa-info-circle"></i>
 </span>
