@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5232](https://github.com/blockscout/blockscout/pull/5232) - Contract Read Page: Add functions overloading support
 - [#5220](https://github.com/blockscout/blockscout/pull/5220) - Add info about proxy contracts to api methods response
 - [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
@@ -8,6 +9,7 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5248](https://github.com/blockscout/blockscout/pull/5248) - Speedup query for getting verified smart-contract bytecode twin
 - [#5241](https://github.com/blockscout/blockscout/pull/5241) - Fix DB hostname Regex pattern
 - [#5216](https://github.com/blockscout/blockscout/pull/5216) - Add token-transfers-toggle.js to the `block_transaction/index.html.eex`
 - [#5212](https://github.com/blockscout/blockscout/pull/5212) - Fix `gas_used` value bug
@@ -25,6 +27,7 @@
 - [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 
 ### Chore
+- [#5230](https://github.com/blockscout/blockscout/pull/5230) - Contract verification forms refactoring
 - [#5227](https://github.com/blockscout/blockscout/pull/5227) - Major update of css-loader npm package
 - [#5226](https://github.com/blockscout/blockscout/pull/5226) - Update mini-css-extract-plugin, css-minimizer-webpack-plugin packages
 - [#5224](https://github.com/blockscout/blockscout/pull/5224) - Webpack config refactoring
