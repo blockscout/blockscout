@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
         block_index: 0
       )
 
-      insert(:smart_contract, address_hash: contract_address.hash)
+      insert(:smart_contract, address_hash: contract_address.hash, contract_code_md5: "123")
 
       get_eip1967_implementation()
 
