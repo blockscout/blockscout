@@ -26,6 +26,9 @@ ENV PORT=4000 \
     SOCKET_ROOT="/lukso/l14" \
     JSON_RPC="https://rpc.l14.lukso.network/" \
     CHAIN_ID="22" \
+    NETWORK_PATH="/lukso/l14" \
+    COIN_NAME="LYX" \
+    SUBNETWORK="LUKSO L14" \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 # Cache elixir deps
