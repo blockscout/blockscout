@@ -10,8 +10,8 @@ database_api_url =
 
 pool_size =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: String.to_integer(System.get_env("POOL_SIZE_API", "40")),
-    else: String.to_integer(System.get_env("POOL_SIZE_API", "50"))
+    do: String.to_integer(System.get_env("POOL_SIZE", "40")),
+    else: String.to_integer(System.get_env("POOL_SIZE", "50"))
 
 # Configure your database
 config :explorer, Explorer.Repo,

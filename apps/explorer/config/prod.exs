@@ -2,8 +2,8 @@ use Mix.Config
 
 pool_size =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),
-    do: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
-    else: String.to_integer(System.get_env("POOL_SIZE_API", "40"))
+    do: String.to_integer(System.get_env("POOL_SIZE", "50")),
+    else: String.to_integer(System.get_env("POOL_SIZE", "40"))
 
 # Configures the database
 config :explorer, Explorer.Repo,
