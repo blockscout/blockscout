@@ -12,13 +12,13 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   alias Explorer.SmartContract.Solidity.CodeCompiler
   alias Explorer.SmartContract.Verifier.ConstructorArguments
 
-  @metadata_hash_prefix_0_4_23 "a165627a7a72305820"
-  @metadata_hash_prefix_0_5_family_1 "65627a7a723"
-  @metadata_hash_prefix_0_5_family_2 "5820"
-  @metadata_hash_prefix_0_6_0 "a264697066735822"
+  # @metadata_hash_prefix_0_4_23 "a165627a7a72305820"
+  # @metadata_hash_prefix_0_5_family_1 "65627a7a723"
+  # @metadata_hash_prefix_0_5_family_2 "5820"
+  # @metadata_hash_prefix_0_6_0 "a264697066735822"
 
-  @experimental "6c6578706572696d656e74616cf5"
-  @metadata_hash_common_suffix "64736f6c63"
+  # @experimental "6c6578706572696d656e74616cf5"
+  # @metadata_hash_common_suffix "64736f6c63"
 
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
 
@@ -26,44 +26,92 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     do: {:error, :contract_source_code}
 
   def evaluate_authenticity(address_hash, params) do
-    latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
-    evm_version = Map.get(params, "evm_version", latest_evm_version)
+    verify(address_hash, params)
+  end
 
-    all_versions = [evm_version | previous_evm_versions(evm_version)]
+  def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
+    verify(address_hash, params, json_input)
+  end
 
-    all_versions_extra = all_versions ++ [evm_version]
+  defp verify(address_hash, params, json_input) do
+    name = Map.get(params, "name", "")
 
-    Enum.reduce_while(all_versions_extra, false, fn version, acc ->
-      case acc do
-        {:ok, _} = result ->
-          {:cont, result}
+    compiler_version = Map.get(params, "compiler_version", "latest")
+    constructor_arguments = Map.get(params, "constructor_arguments", "")
+    autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
 
-        {:error, :compiler_version} ->
-          {:halt, acc}
 
-        {:error, :name} ->
-          {:halt, acc}
 
-        _ ->
-          cur_params = Map.put(params, "evm_version", version)
-          {:cont, verify(address_hash, cur_params)}
-      end
-    end)
+    solc_output =
+      CodeCompiler.run(
+        [
+          name: name,
+          compiler_version: compiler_version
+        ],
+        json_input
+      )
+
+    case solc_output do
+      {:ok, candidates} ->
+        case Jason.decode(json_input) do
+          {:ok, map_json_input} ->
+            Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
+              file_path = candidate["file_path"]
+              source_code = map_json_input["input"]["sources"][file_path]["content"]
+              contract_name = candidate["name"]
+
+              case compare_bytecodes(
+                     candidate,
+                     address_hash,
+                     constructor_arguments,
+                     autodetect_constructor_arguments,
+                     source_code,
+                     contract_name
+                   ) do
+                {:ok, verified_data} ->
+                  secondary_sources =
+                    for {file, %{"content" => source}} <- map_json_input["input"]["sources"],
+                        file != file_path,
+                        do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
+
+                  additional_params =
+                    map_json_input["input"]
+                    |> Map.put("optimization", true)
+                    |> Map.put("optimization_runs", 200)
+                    |> Map.put("contract_source_code", source_code)
+                    |> Map.put("file_path", file_path)
+                    |> Map.put("name", contract_name)
+                    |> Map.put("secondary_sources", secondary_sources)
+
+                  {:halt, {:ok, verified_data, additional_params}}
+
+                err ->
+                  {:cont, {:error, err}}
+              end
+            end)
+
+          _ ->
+            {:error, :json}
+        end
+
+      error_response ->
+        error_response
+    end
+
   end
 
   defp verify(address_hash, params) do
     name = Map.fetch!(params, "name")
     contract_source_code = Map.fetch!(params, "contract_source_code")
     optimization = Map.fetch!(params, "optimization")
-    compiler_version = Map.fetch!(params, "compiler_version")
+    compiler_version = Map.get(params, "compiler_version", "latest")
     external_libraries = Map.get(params, "external_libraries", %{})
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
     optimization_runs = Map.get(params, "optimization_runs", 200)
     autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
 
-    solc_output =
-      CodeCompiler.run(
+    solc_output = CodeCompiler.run(
         name: name,
         compiler_version: compiler_version,
         code: contract_source_code,
@@ -90,6 +138,42 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     {:error, :compilation, error_message}
   end
 
+  defp compare_bytecodes(
+    %{"abi" => abi, "bytecode" => bytecode, "file_path" => _file_path, "name" => _name},
+    address_hash,
+    arguments_data,
+    autodetect_constructor_arguments,
+    contract_source_code,
+    contract_name
+  ),
+  do:
+    compare_bytecodes(
+      {:ok, %{"abi" => abi, "bytecode" => bytecode}},
+      address_hash,
+      arguments_data,
+      autodetect_constructor_arguments,
+      contract_source_code,
+      contract_name
+    )
+
+  defp compare_bytecodes(
+    %{"abi" => abi, "bytecode" => bytecode},
+    address_hash,
+    arguments_data,
+    autodetect_constructor_arguments,
+    contract_source_code,
+    contract_name
+  ),
+  do:
+    compare_bytecodes(
+      {:ok, %{"abi" => abi, "bytecode" => bytecode}},
+      address_hash,
+      arguments_data,
+      autodetect_constructor_arguments,
+      contract_source_code,
+      contract_name
+    )
+
   # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
@@ -99,16 +183,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
          contract_source_code,
          contract_name
        ) do
-    %{
-      "metadata_hash" => _generated_metadata_hash,
-      "bytecode" => generated_bytecode,
-      "compiler_version" => generated_compiler_version
-    } = extract_bytecode_and_metadata_hash(bytecode)
 
     blockchain_created_tx_input =
       case Chain.smart_contract_creation_tx_bytecode(address_hash) do
         %{init: init, created_contract_code: _created_contract_code} ->
-          "0x" <> init_without_0x = init
+          "0x70" <> init_without_0x = init
           init_without_0x
 
         _ ->
@@ -116,23 +195,18 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       end
 
     %{
-      "metadata_hash" => _metadata_hash,
-      "bytecode" => blockchain_bytecode_without_whisper,
-      "compiler_version" => compiler_version_from_input
-    } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input)
+      "data" => constructor_data,
+      "factoryDeps" => blockchain_bytecode_without_whisper,
+    } = deserialize_creation_tx(blockchain_created_tx_input)
 
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
-      compiler_version_from_input != generated_compiler_version ->
-        {:error, :compiler_version}
-
-      generated_bytecode != blockchain_bytecode_without_whisper &&
-          !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
-        {:error, :generated_bytecode}
+      bytecode != blockchain_bytecode_without_whisper ->
+        {:error, :bytecode}
 
       has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
-        result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
+        result = ConstructorArguments.find_constructor_arguments(constructor_data, abi, contract_source_code, contract_name)
 
         if result do
           {:ok, %{abi: abi, constructor_arguments: result}}
@@ -140,22 +214,18 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           {:error, :constructor_arguments}
         end
 
-      has_constructor_with_params?(abi) && empty_constructor_arguments ->
-        {:error, :constructor_arguments}
-
-      has_constructor_with_params?(abi) &&
-          !ConstructorArguments.verify(
-            address_hash,
-            blockchain_bytecode_without_whisper,
-            arguments_data,
-            contract_source_code,
-            contract_name
-          ) ->
-        {:error, :constructor_arguments}
-
       true ->
         {:ok, %{abi: abi}}
     end
+  end
+
+  def to_hex(bin), do: Base.encode16(bin, case: :lower)
+
+  defp deserialize_creation_tx(calldata) do
+    raw = calldata |> ExRLP.decode(encoding: :hex)
+    data = Enum.at(raw, 5) |> to_hex()
+    factoryDeps = Enum.at(Enum.at(raw, 16), 0) |> to_hex()
+    %{"data" => data, "factoryDeps" => factoryDeps}
   end
 
   # 730000000000000000000000000000000000000000 - default library address that returned by the compiler
@@ -168,190 +238,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   defp try_library_verification(_, _) do
     false
-  end
-
-  @doc """
-  In order to discover the bytecode we need to remove the `swarm source` from
-  the hash.
-
-  For more information on the swarm hash, check out:
-  https://solidity.readthedocs.io/en/v0.5.3/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
-  """
-  def extract_bytecode_and_metadata_hash(nil) do
-    %{"metadata_hash" => nil, "bytecode" => nil, "compiler_version" => nil}
-  end
-
-  def extract_bytecode_and_metadata_hash("0x" <> code) do
-    %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version} =
-      extract_bytecode_and_metadata_hash(code)
-
-    %{"metadata_hash" => metadata_hash, "bytecode" => "0x" <> bytecode, "compiler_version" => compiler_version}
-  end
-
-  def extract_bytecode_and_metadata_hash(code) do
-    do_extract_bytecode_and_metadata_hash([], String.downcase(code), nil, nil)
-  end
-
-  defp do_extract_bytecode_and_metadata_hash(extracted, remaining, metadata_hash, compiler_version) do
-    case remaining do
-      <<>> ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      @metadata_hash_prefix_0_4_23 <> <<metadata_hash::binary-size(64)>> <> "0029" <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      # Solidity >= 0.5 family && experimantal
-      <<_::binary-size(2)>> <>
-          @metadata_hash_prefix_0_5_family_1 <>
-          <<_::binary-size(1)>> <>
-          @metadata_hash_prefix_0_5_family_2 <>
-          <<metadata_hash::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <>
-          "43" <> <<compiler_version::binary-size(6)>> <> <<_::binary-size(4)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      <<_::binary-size(2)>> <>
-          @metadata_hash_prefix_0_5_family_1 <>
-          <<_::binary-size(1)>> <>
-          @metadata_hash_prefix_0_5_family_2 <>
-          <<metadata_hash::binary-size(64)>> <>
-          @experimental <>
-          <<_::binary-size(4)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      # Solidity >= 0.5.9; https://github.com/ethereum/solidity/blob/aa4ee3a1559ebc0354926af962efb3fcc7dc15bd/docs/metadata.rst
-      <<_::binary-size(2)>> <>
-          @metadata_hash_prefix_0_5_family_1 <>
-          <<_::binary-size(1)>> <>
-          @metadata_hash_prefix_0_5_family_2 <>
-          <<metadata_hash::binary-size(64)>> <>
-          @metadata_hash_common_suffix <>
-          "43" <> <<compiler_version::binary-size(6)>> <> "0032" <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      <<_::binary-size(2)>> <>
-          @metadata_hash_prefix_0_5_family_1 <>
-          <<_::binary-size(1)>> <>
-          @metadata_hash_prefix_0_5_family_2 <>
-          <<metadata_hash::binary-size(64)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(76)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      <<_::binary-size(2)>> <>
-          @metadata_hash_prefix_0_5_family_1 <>
-          <<_::binary-size(1)>> <>
-          @metadata_hash_prefix_0_5_family_2 <>
-          <<metadata_hash::binary-size(64)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(78)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      <<_::binary-size(2)>> <>
-          @metadata_hash_prefix_0_5_family_1 <>
-          <<_::binary-size(1)>> <>
-          @metadata_hash_prefix_0_5_family_2 <>
-          <<metadata_hash::binary-size(64)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(80)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      <<_::binary-size(2)>> <>
-          @metadata_hash_prefix_0_5_family_1 <>
-          <<_::binary-size(1)>> <>
-          @metadata_hash_prefix_0_5_family_2 <>
-          <<metadata_hash::binary-size(64)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(82)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
-      # https://github.com/ethereum/solidity/blob/26b700771e9cc9c956f0503a05de69a1be427963/docs/metadata.rst#encoding-of-the-metadata-hash-in-the-bytecode
-      # IPFS is used instead of Swarm
-      # The current version of the Solidity compiler usually adds the following to the end of the deployed bytecode:
-      # 0xa2
-      # 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
-      # 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
-      # 0x00 0x32
-      # Note: there is a bug in the docs. Instead of 0x32, 0x33 should be used.
-      # Fixing PR has been created https://github.com/ethereum/solidity/pull/8174
-      @metadata_hash_prefix_0_6_0 <>
-          <<metadata_hash::binary-size(68)>> <>
-          @metadata_hash_common_suffix <>
-          "43" <> <<compiler_version::binary-size(6)>> <> "0033" <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      @metadata_hash_prefix_0_6_0 <>
-          <<metadata_hash::binary-size(68)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(76)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      @metadata_hash_prefix_0_6_0 <>
-          <<metadata_hash::binary-size(68)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(78)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      @metadata_hash_prefix_0_6_0 <>
-          <<metadata_hash::binary-size(68)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(80)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      @metadata_hash_prefix_0_6_0 <>
-          <<metadata_hash::binary-size(68)>> <>
-          @metadata_hash_common_suffix <>
-          "78" <>
-          <<_::binary-size(2)>> <>
-          <<compiler_version::binary-size(82)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
-        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
-
-      <<next::binary-size(2)>> <> rest ->
-        do_extract_bytecode_and_metadata_hash([next | extracted], rest, metadata_hash, compiler_version)
-    end
-  end
-
-  defp do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version) do
-    bytecode =
-      extracted
-      |> Enum.reverse()
-      |> :binary.list_to_bin()
-
-    %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version}
-  end
-
-  def previous_evm_versions(current_evm_version) do
-    index = Enum.find_index(CodeCompiler.allowed_evm_versions(), fn el -> el == current_evm_version end)
-
-    cond do
-      index == 0 ->
-        []
-
-      index == 1 ->
-        [List.first(CodeCompiler.allowed_evm_versions())]
-
-      true ->
-        [
-          Enum.at(CodeCompiler.allowed_evm_versions(), index - 1),
-          Enum.at(CodeCompiler.allowed_evm_versions(), index - 2)
-        ]
-    end
   end
 
   defp has_constructor_with_params?(abi) do

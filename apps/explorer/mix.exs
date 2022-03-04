@@ -77,6 +77,7 @@ defmodule Explorer.Mixfile do
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
+      {:ex_rlp, "~> 0.5.2"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.2.2"},

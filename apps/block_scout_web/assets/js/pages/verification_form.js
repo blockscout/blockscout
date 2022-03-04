@@ -43,7 +43,7 @@ export function reducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
   '[data-page="contract-verification"]': {
@@ -91,26 +91,11 @@ const elements = {
 const $contractVerificationPage = $('[data-page="contract-verification"]')
 const $contractVerificationChooseTypePage = $('[data-page="contract-verification-choose-type"]')
 
-function filterNightlyBuilds (filter) {
-  const select = document.getElementById('smart_contract_compiler_version')
-  const options = select.getElementsByTagName('option')
-  for (const option of options) {
-    const txtValue = option.textContent || option.innerText
-    if (filter) {
-      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
-        option.style.display = 'none'
-      } else {
-        option.style.display = ''
-      }
-    } else {
-      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
-        option.style.display = ''
-      }
-    }
-  }
-}
-
 if ($contractVerificationPage.length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
@@ -138,24 +123,54 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
-    if ($('#metadata-json-dropzone').length) {
-      var dropzone = new Dropzone('#metadata-json-dropzone', {
+    function standardJSONBehavior () {
+      $('#json-dropzone-form').removeClass('dz-clickable')
+      this.on('addedfile', function (_file) {
+        $('#verify-via-standart-json-input-submit').prop('disabled', false)
+        $('#file-help-block').text('')
+        $('#dropzone-previews').addClass('dz-started')
+      })
+
+      this.on('removedfile', function (_file) {
+        if (this.files.length === 0) {
+          $('#verify-via-standart-json-input-submit').prop('disabled', true)
+          $('#dropzone-previews').removeClass('dz-started')
+        }
+      })
+    }
+
+    function metadataJSONBehavior () {
+      this.on('addedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+        $('#file-help-block').text('')
+      })
+
+      this.on('removedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+      })
+    }
+
+    const $jsonDropzoneMetadata = $('#metadata-json-dropzone')
+    const $jsonDropzoneStandardInput = $('#json-dropzone-form')
+
+    if ($jsonDropzoneMetadata.length || $jsonDropzoneStandardInput.length) {
+      const func = $jsonDropzoneMetadata.length ? metadataJSONBehavior : standardJSONBehavior
+      const maxFiles = $jsonDropzoneMetadata.length ? 100 : 1
+      const acceptedFiles = $jsonDropzoneMetadata.length ? 'text/plain,application/json,.sol,.json' : 'text/plain,application/json,.json'
+      const tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone' : '#json-dropzone-form'
+      const previewsContainer = $jsonDropzoneMetadata.length ? undefined : '#dropzone-previews'
+
+      var dropzone = new Dropzone(tag, {
         autoProcessQueue: false,
-        acceptedFiles: 'text/plain,application/json,.sol,.json',
+        acceptedFiles: acceptedFiles,
         parallelUploads: 100,
         uploadMultiple: true,
         addRemoveLinks: true,
+        maxFilesize: 10,
+        maxFiles: maxFiles,
+        previewsContainer: previewsContainer,
         params: { address_hash: $('#smart_contract_address_hash').val() },
-        init: function () {
-          this.on('addedfile', function (_file) {
-            changeVisibilityOfVerifyButton(this.files.length)
-            $('#file-help-block').text('')
-          })
-
-          this.on('removedfile', function (_file) {
-            changeVisibilityOfVerifyButton(this.files.length)
-          })
-        }
+        init: func
       })
     }
 
@@ -182,14 +197,6 @@ if ($contractVerificationPage.length) {
 
     $('.autodetecttrue').on('click', function () {
       if ($(this).prop('checked')) { $('.constructor-arguments').hide() }
-    })
-
-    $('.nightly-builds-true').on('click', function () {
-      if ($(this).prop('checked')) { filterNightlyBuilds(false) }
-    })
-
-    $('.nightly-builds-false').on('click', function () {
-      if ($(this).prop('checked')) { filterNightlyBuilds(true) }
     })
 
     $('.optimization-false').on('click', function () {
@@ -220,6 +227,15 @@ if ($contractVerificationPage.length) {
       }
     })
 
+    $('#verify-via-standart-json-input-submit').on('click', (event) => {
+      event.preventDefault()
+      if (dropzone.files.length > 0) {
+        dropzone.processQueue()
+      } else {
+        $('#loading').addClass('d-none')
+      }
+    })
+
     $('#verify-via-json-submit').on('click', function () {
       if (dropzone.files.length > 0) {
         dropzone.processQueue()
@@ -234,6 +250,7 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').show()
       $('#verify_via_sourcify_button').hide()
       $('#verify_vyper_contract_button').hide()
+      $('#verify_via_standard_json_input').hide()
     }
   })
 
@@ -242,6 +259,7 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').show()
       $('#verify_vyper_contract_button').hide()
+      $('#verify_via_standard_json_input').hide()
     }
   })
 
@@ -250,6 +268,16 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').hide()
       $('#verify_vyper_contract_button').show()
+      $('#verify_via_standard_json_input').hide()
+    }
+  })
+
+  $('.verify-via-standard-json-input').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').hide()
+      $('#verify_via_sourcify_button').hide()
+      $('#verify_vyper_contract_button').hide()
+      $('#verify_via_standard_json_input').show()
     }
   })
 }

@@ -1,16 +1,12 @@
 #!/usr/bin/env node
-
 var sourceCodePath = process.argv[2];
-var compilerVersionPath = process.argv[3];
-var optimize = process.argv[4];
-var optimizationRuns = parseInt(process.argv[5], 10);
-var newContractName = process.argv[6];
-var externalLibraries = JSON.parse(process.argv[7])
-var evmVersion = process.argv[8];
+var optimize = process.argv[3];
+var optimizationRuns = parseInt(process.argv[4], 10);
+var newContractName = process.argv[5];
 
-var solc = require('solc')
-var compilerSnapshot = require(compilerVersionPath);
-var solc = solc.setupMethods(compilerSnapshot);
+const child_process = require("child_process");
+
+// var externalLibraries = JSON.parse(process.argv[6])
 
 var fs = require('fs');
 var sourceCode = fs.readFileSync(sourceCodePath, 'utf8');
@@ -20,18 +16,11 @@ var settings = {
       enabled: optimize == '1',
       runs: optimizationRuns
     },
-    libraries: {
-      [newContractName]: externalLibraries
-    },
     outputSelection: {
       '*': {
-        '*': ['*']
+          '*': ['*']
       }
     }
-}
-
-if (evmVersion !== 'default') {
-    settings = Object.assign(settings, {evmVersion: evmVersion})
 }
 
 const input = {
@@ -44,6 +33,14 @@ const input = {
   settings: settings
 }
 
+// TODO: investigate why stringifying the input inline in the command doesnt work
+fs.writeFileSync("compile.tmp", JSON.stringify(input))
 
-const output = JSON.parse(solc.compile(JSON.stringify(input)))
+var execSync = require("child_process").execSync;
+var execString = `zksolc --standard-json --optimize < compile.tmp`
+var result = execSync(execString);
+
+fs.unlinkSync("compile.tmp")
+
+const output = JSON.parse(result.toString("utf8"))
 console.log(JSON.stringify(output));
