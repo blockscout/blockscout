@@ -2710,7 +2710,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
+      %InternalTransaction{transaction_hash: transaction_hash_1, index: index_1} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 1,
@@ -2720,13 +2720,23 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
+      %InternalTransaction{transaction_hash: transaction_hash_2, index: index_2} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 2,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 2,
+          transaction_index: transaction.index
+        )
+
       result =
         transaction.hash
         |> Chain.transaction_to_internal_transactions()
         |> Enum.map(&{&1.transaction_hash, &1.index})
 
       # excluding of internal transactions with type=call and index=0
-      assert [{second_transaction_hash, second_index}] == result
+      assert [{transaction_hash_1, index_1}, {transaction_hash_2, index_2}] == result
     end
 
     test "pages by index" do
@@ -4393,7 +4403,7 @@ defmodule Explorer.ChainTest do
 
   describe "address_hash_to_smart_contract/1" do
     test "fetches a smart contract" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       assert ^smart_contract = Chain.address_hash_to_smart_contract(smart_contract.address_hash)
     end
@@ -5334,40 +5344,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "extract_db_name/1" do
-    test "extracts correct db name" do
-      db_url = "postgresql://viktor:@localhost:5432/blockscout-dev-1"
-      assert Chain.extract_db_name(db_url) == "blockscout-dev-1"
-    end
-
-    test "returns empty db name" do
-      db_url = ""
-      assert Chain.extract_db_name(db_url) == ""
-    end
-
-    test "returns nil db name" do
-      db_url = nil
-      assert Chain.extract_db_name(db_url) == ""
-    end
-  end
-
-  describe "extract_db_host/1" do
-    test "extracts correct db host" do
-      db_url = "postgresql://viktor:@localhost:5432/blockscout-dev-1"
-      assert Chain.extract_db_host(db_url) == "localhost"
-    end
-
-    test "returns empty db name" do
-      db_url = ""
-      assert Chain.extract_db_host(db_url) == ""
-    end
-
-    test "returns nil db name" do
-      db_url = nil
-      assert Chain.extract_db_host(db_url) == ""
-    end
-  end
-
   describe "fetch_first_trace/2" do
     test "fetched first trace", %{
       json_rpc_named_arguments: json_rpc_named_arguments
@@ -5670,16 +5646,21 @@ defmodule Explorer.ChainTest do
 
     test "combine_proxy_implementation_abi/2 returns proxy abi if implementation is not verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
       assert Chain.combine_proxy_implementation_abi(proxy_contract_address, @proxy_abi) == @proxy_abi
     end
 
     test "combine_proxy_implementation_abi/2 returns proxy + implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
@@ -5752,16 +5733,21 @@ defmodule Explorer.ChainTest do
 
     test "get_implementation_abi_from_proxy/2 returns [] if implementation is not verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
       assert Chain.get_implementation_abi_from_proxy(proxy_contract_address, @proxy_abi) == []
     end
 
     test "get_implementation_abi_from_proxy/2 returns implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
@@ -5788,10 +5774,15 @@ defmodule Explorer.ChainTest do
 
     test "get_implementation_abi_from_proxy/2 returns implementation abi in case of EIP-1967 proxy pattern" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [])
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
@@ -5833,10 +5824,15 @@ defmodule Explorer.ChainTest do
 
     test "get_implementation_abi/1 returns implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)

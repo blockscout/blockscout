@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Helper do
   SmartContract helper functions
   """
 
+  alias Explorer.Chain
+
   def queriable_method?(method) do
     method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"
   end
@@ -36,4 +38,37 @@ defmodule Explorer.SmartContract.Helper do
       false
     end
   end
+
+  def add_contract_code_md5(%{address_hash: address_hash_string} = attrs) when is_binary(address_hash_string) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      contract_code_md5 =
+        :md5
+        |> :crypto.hash(address.contract_code.bytes)
+        |> Base.encode16(case: :lower)
+
+      attrs
+      |> Map.put_new(:contract_code_md5, contract_code_md5)
+    else
+      _ -> attrs
+    end
+  end
+
+  def add_contract_code_md5(%{address_hash: address_hash} = attrs) do
+    case Chain.hash_to_address(address_hash) do
+      {:ok, address} ->
+        contract_code_md5 =
+          :md5
+          |> :crypto.hash(address.contract_code.bytes)
+          |> Base.encode16(case: :lower)
+
+        attrs
+        |> Map.put_new(:contract_code_md5, contract_code_md5)
+
+      _ ->
+        attrs
+    end
+  end
+
+  def add_contract_code_md5(attrs), do: attrs
 end
