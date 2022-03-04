@@ -442,7 +442,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
               update_transactions_inner(
                 repo,
-                valid_internal_transactions_count,
+                valid_internal_transactions,
                 transaction_hashes,
                 transaction_hashes_iterator,
                 timeout,
@@ -454,7 +454,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             transaction_from_db && Map.get(transaction_from_db, :cumulative_gas_used) ->
               update_transactions_inner(
                 repo,
-                valid_internal_transactions_count,
+                valid_internal_transactions,
                 transaction_hashes,
                 transaction_hashes_iterator,
                 timeout,
@@ -468,7 +468,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
               update_transactions_inner(
                 repo,
-                valid_internal_transactions_count,
+                valid_internal_transactions,
                 transaction_hashes,
                 transaction_hashes_iterator,
                 timeout,
@@ -487,6 +487,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           {:ok, result}
       end
     end
+  end
+
+  defp get_trivial_tx_hashes_with_error_in_internal_tx(internal_transactions) do
+    internal_transactions
+    |> Enum.filter(fn internal_tx -> internal_tx[:index] != 0 && !is_nil(internal_tx[:error]) end)
+    |> Enum.map(fn internal_tx -> internal_tx[:transaction_hash] end)
+    |> MapSet.new()
   end
 
   defp fetch_transaction_receipt_from_node(transaction_hash, json_rpc_named_arguments) do
@@ -517,7 +524,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   defp update_transactions_inner(
          repo,
-         valid_internal_transactions_count,
+         valid_internal_transactions,
          transaction_hashes,
          transaction_hashes_iterator,
          timeout,
@@ -525,7 +532,16 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
          first_trace,
          transaction_receipt_from_node \\ nil
        ) do
-    set = generate_transaction_set_to_update(first_trace, transaction_receipt_from_node, timestamps)
+    valid_internal_transactions_count = Enum.count(valid_internal_transactions)
+    txs_with_error_in_internal_txs = get_trivial_tx_hashes_with_error_in_internal_tx(valid_internal_transactions)
+
+    set =
+      generate_transaction_set_to_update(
+        first_trace,
+        transaction_receipt_from_node,
+        timestamps,
+        txs_with_error_in_internal_txs
+      )
 
     update_query =
       from(
@@ -553,7 +569,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  def generate_transaction_set_to_update(first_trace, transaction_receipt_from_node, timestamps) do
+  def generate_transaction_set_to_update(
+        first_trace,
+        transaction_receipt_from_node,
+        timestamps,
+        txs_with_error_in_internal_txs
+      ) do
     default_set = [
       created_contract_address_hash: first_trace.created_contract_address_hash,
       error: first_trace.error,
@@ -570,16 +591,16 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :cumulative_gas_used,
         transaction_receipt_from_node && transaction_receipt_from_node.cumulative_gas_used
       )
+      |> Keyword.put_new(
+        :has_error_in_internal_txs,
+        if(Enum.member?(txs_with_error_in_internal_txs, first_trace.transaction_hash), do: true, else: false)
+      )
 
     set_with_gas_used =
-      if first_trace.gas_used do
-        Keyword.put_new(set, :gas_used, first_trace.gas_used)
+      if transaction_receipt_from_node && transaction_receipt_from_node.gas_used do
+        Keyword.put_new(set, :gas_used, transaction_receipt_from_node.gas_used)
       else
-        if transaction_receipt_from_node && transaction_receipt_from_node.gas_used do
-          Keyword.put_new(set, :gas_used, transaction_receipt_from_node.gas_used)
-        else
-          set
-        end
+        set
       end
 
     filtered_set = Enum.reject(set_with_gas_used, fn {_key, value} -> is_nil(value) end)

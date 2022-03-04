@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status
-                     to_address_hash revert_reason type l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
+                     to_address_hash revert_reason type has_error_in_internal_txs l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -135,6 +135,7 @@ defmodule Explorer.Chain.Transaction do
    * `max_priority_fee_per_gas` - User defined maximum fee (tip) per unit of gas paid to validator for transaction prioritization.
    * `max_fee_per_gas` - Maximum total amount per unit of gas a user is willing to pay for a transaction, including base fee and priority fee.
    * `type` - New transaction type identifier introduced in EIP 2718 (Berlin HF)
+   * `has_error_in_internal_txs` - shows if the internal transactions related to transaction have errors
   """
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
@@ -170,6 +171,7 @@ defmodule Explorer.Chain.Transaction do
           max_priority_fee_per_gas: wei_per_gas | nil,
           max_fee_per_gas: wei_per_gas | nil,
           type: non_neg_integer() | nil,
+          has_error_in_internal_txs: boolean(),
           l1_fee: wei_per_gas | nil,
           l1_fee_scalar: Decimal.t() | nil,
           l1_gas_price: wei_per_gas | nil,
@@ -252,6 +254,7 @@ defmodule Explorer.Chain.Transaction do
     field(:max_priority_fee_per_gas, Wei)
     field(:max_fee_per_gas, Wei)
     field(:type, :integer)
+    field(:has_error_in_internal_txs, :boolean)
     field(:l1_fee, Wei)
     field(:l1_fee_scalar, :decimal)
     field(:l1_gas_price, Wei)

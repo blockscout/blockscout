@@ -25,6 +25,7 @@ ENV MIX_ENV="prod"
 ENV NETWORK_PATH="/xdai/optimism"
 ENV SOCKET_ROOT="/xdai/optimism"
 ENV CHAIN_ID="300"
+ENV COIN_NAME="xDai"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
