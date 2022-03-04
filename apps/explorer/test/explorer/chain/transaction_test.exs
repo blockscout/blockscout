@@ -305,7 +305,7 @@ defmodule Explorer.Chain.TransactionTest do
       |> insert()
       |> Repo.preload(to_address: :smart_contract)
 
-      contract = insert(:smart_contract) |> Repo.preload(:address)
+      contract = insert(:smart_contract, contract_code_md5: "123") |> Repo.preload(:address)
 
       input_data =
         "set(uint)"

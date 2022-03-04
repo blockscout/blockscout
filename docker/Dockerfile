@@ -24,6 +24,10 @@ EXPOSE 4000
 ENV MIX_ENV="prod"
 ENV SOCKET_ROOT="/rsk/mainnet"
 ENV CHAIN_ID="30"
+ENV COIN_NAME="RBTC"
+ENV NETWORK_PATH="/rsk/mainnet"
+ENV SUBNETWORK="RSK"
+ENV JSON_RPC="https://public-node.rsk.co"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
