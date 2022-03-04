@@ -36,6 +36,7 @@ ENV MIX_ENV="prod"
 ENV SOCKET_ROOT="/xdai/aox"
 ENV NETWORK_PATH="/xdai/aox"
 ENV CHAIN_ID="200"
+ENV COIN_NAME="xDai"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
