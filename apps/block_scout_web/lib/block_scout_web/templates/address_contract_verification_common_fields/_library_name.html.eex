@@ -4,6 +4,6 @@
     <div class="center-column">
         <%= text_input :external_libraries, @library_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
     </div>
-    <div class="smart-contract-form-group-tooltip"></div>
+    <div class="smart-contract-form-group-tooltip"><%= if assigns[:tooltip_text] do @tooltip_text end %></div>
     </div>
 </div>

@@ -62,7 +62,8 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         conn,
         %{
           "smart_contract" => smart_contract,
-          "file" => files
+          "file" => files,
+          "verification_type" => "json:standard"
         }
       ) do
     files_array = prepare_files_array(files)
@@ -81,7 +82,8 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   def create(
         conn,
         %{
-          "smart_contract" => smart_contract
+          "smart_contract" => smart_contract,
+          "verification_type" => "vyper"
         }
       ) do
     Que.add(VyperPublisherWorker, {smart_contract["address_hash"], smart_contract, conn})
@@ -93,7 +95,8 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         conn,
         %{
           "address_hash" => address_hash_string,
-          "file" => files
+          "file" => files,
+          "verification_type" => "json:metadata"
         }
       ) do
     files_array = prepare_files_array(files)
@@ -140,19 +143,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   end
 
   defp verify_and_publish(address_hash_string, files_array, conn) do
-    case Sourcify.verify(address_hash_string, files_array) do
-      {:ok, _verified_status} ->
-        case Sourcify.check_by_address(address_hash_string) do
-          {:ok, _verified_status} ->
-            get_metadata_and_publish(address_hash_string, conn)
-
-          {:error, %{"error" => error}} ->
-            EventsPublisher.broadcast(
-              prepare_verification_error(error, address_hash_string, conn),
-              :on_demand
-            )
-        end
-
+    with {:ok, _verified_status} <- Sourcify.verify(address_hash_string, files_array),
+         {:ok, _verified_status} <- Sourcify.check_by_address(address_hash_string) do
+      get_metadata_and_publish(address_hash_string, conn)
+    else
       {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
           prepare_verification_error(error, address_hash_string, conn),
@@ -221,7 +215,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
            errors: [
              file: {msg, []}
            ],
-           data: %SmartContract{},
+           data: %SmartContract{address_hash: address_hash_string},
            valid?: false
          }}, conn}}
     ]

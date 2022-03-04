@@ -91,25 +91,17 @@
           <h2 class="smart-contract-title margin-bottom-md"><%= gettext "Contract Libraries" %></h2>
 
           <div class="contract-library-form-group js-contract-library-form-group active">
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library1, gettext("Library Name") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library1_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip">A library name called in the .sol file. Multiple libraries (up to 10) may be added for each contract. Click the Add Library button to add an additional one.</div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html",
+              library: :library1,
+              library_name: :library1_name,
+              tooltip_text: "A library name called in the .sol file. Multiple libraries (up to 10) may be added for each contract. Click the Add Library button to add an additional one."
+            %>
 
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library1, gettext("Library Address") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library1_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip">The 0x library address. This can be found in the generated json file or Truffle output (if using truffle).</div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html",
+              library: :library1,
+              library_address: :library1_address,
+              tooltip_text: "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
+            %>
           </div>
 
           <div class="contract-library-form-group js-contract-library-form-group">
