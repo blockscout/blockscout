@@ -241,7 +241,7 @@ ENV PORT=4000 \
     ETHEREUM_JSONRPC_VARIANT="geth" \
     ETHEREUM_JSONRPC_HTTP_URL="http://localhost:8545" \
     ETHEREUM_JSONRPC_WS_URL="ws://localhost:8546" \ 
-    DATABASE_URL="postgresql://postgres:@localhost:5432/explorer?ssl=false" \
+    DATABASE_URL="postgresql://postgres:@localhost:5432/blockscout?ssl=false" \
     POSTGRES_PASSWORD=\
     POSTGRES_USER=postgres\
     SUBNETWORK=\
