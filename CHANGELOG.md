@@ -4,7 +4,7 @@
 
 ### Fixes
 - [#5259](https://github.com/blockscout/blockscout/pull/5259) - Fix `coin-balances/by-day` bug
-
+- [#5264](https://github.com/blockscout/blockscout/pull/5264) - Fix bug with 500 response on `partial` sourcify status
 ### Chore
 
 - [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
