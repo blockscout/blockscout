@@ -6,6 +6,8 @@
 
 ### Chore
 
+- [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
+
 
 ## 4.1.2-beta
 
