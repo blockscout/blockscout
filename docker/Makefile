@@ -7,7 +7,7 @@ BS_CONTAINER_NAME := blockscout-harmony-mainnet-shard-0
 PG_CONTAINER_IMAGE := postgres:13.6
 PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-BS_NEXT_RELEASE = 4.1.2
+BS_NEXT_RELEASE = 4.1.3
 TAG := $(BS_NEXT_RELEASE)-prerelease-$(shell git log -1 --pretty=format:"%h")
 
 ifeq ($(SYSTEM), Linux)
