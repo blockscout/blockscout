@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5269](https://github.com/blockscout/blockscout/pull/5269) - Address Page: Fix implementation address align
 - [#5259](https://github.com/blockscout/blockscout/pull/5259) - Fix `coin-balances/by-day` bug
 
 ### Chore
