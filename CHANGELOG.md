@@ -1,12 +1,12 @@
 ## Current
 
 ### Features
+- [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
 - [#5259](https://github.com/blockscout/blockscout/pull/5259) - Fix `coin-balances/by-day` bug
 
 ### Chore
-
 - [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
 
 
