@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
 - [#5269](https://github.com/blockscout/blockscout/pull/5269) - Address Page: Fix implementation address align
