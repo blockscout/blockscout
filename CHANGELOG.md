@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
 - [#5264](https://github.com/blockscout/blockscout/pull/5264) - Fix bug with 500 response on `partial` sourcify status

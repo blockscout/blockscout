@@ -18,6 +18,7 @@ defmodule Explorer.Chain do
       select: 3,
       subquery: 1,
       union: 2,
+      update: 2,
       where: 2,
       where: 3
     ]
@@ -6785,6 +6786,7 @@ defmodule Explorer.Chain do
 
   def gnosis_safe_contract?(abi) when is_nil(abi), do: false
 
+  @spec get_implementation_address_hash(Hash.Address.t(), list()) :: String.t() | nil
   def get_implementation_address_hash(proxy_address_hash, abi)
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
     implementation_method_abi =
@@ -6799,16 +6801,19 @@ defmodule Explorer.Chain do
         master_copy_pattern?(method)
       end)
 
-    cond do
-      implementation_method_abi ->
-        get_implementation_address_hash_basic(proxy_address_hash, abi)
+    implementation_address =
+      cond do
+        implementation_method_abi ->
+          get_implementation_address_hash_basic(proxy_address_hash, abi)
 
-      master_copy_method_abi ->
-        get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
+        master_copy_method_abi ->
+          get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
 
-      true ->
-        get_implementation_address_hash_eip_1967(proxy_address_hash)
-    end
+        true ->
+          get_implementation_address_hash_eip_1967(proxy_address_hash)
+      end
+
+    save_implementation_name(implementation_address, proxy_address_hash)
   end
 
   def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
@@ -6938,6 +6943,33 @@ defmodule Explorer.Chain do
       Map.get(input, "name") == "_masterCopy"
     end)
   end
+
+  defp save_implementation_name(empty_address_hash_string, _)
+       when empty_address_hash_string in [
+              "0x",
+              "0x0",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              @burn_address_hash_str
+            ],
+       do: empty_address_hash_string
+
+  defp save_implementation_name(implementation_address_hash_string, proxy_address_hash)
+       when is_binary(implementation_address_hash_string) do
+    with {:ok, address_hash} <- string_to_address_hash(implementation_address_hash_string),
+         %SmartContract{name: name} <- address_hash_to_smart_contract(address_hash) do
+      SmartContract
+      |> where([sc], sc.address_hash == ^proxy_address_hash)
+      |> update(set: [implementation_name: ^name])
+      |> Repo.update_all([])
+
+      implementation_address_hash_string
+    else
+      _ ->
+        implementation_address_hash_string
+    end
+  end
+
+  defp save_implementation_name(other, _), do: other
 
   defp abi_decode_address_output(nil), do: nil
 
