@@ -4024,10 +4024,6 @@ defmodule Explorer.Chain do
       Multi.new()
       |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
       |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.run(:insert_address_name, fn repo, _ ->
-        name = Changeset.get_field(smart_contract_changeset, :name)
-        create_address_name(repo, name, address_hash)
-      end)
       |> Multi.insert(:smart_contract, smart_contract_changeset)
 
     insert_contract_query_with_additional_sources =
@@ -4040,6 +4036,8 @@ defmodule Explorer.Chain do
     insert_result =
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
+
+    create_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
       {:ok, %{smart_contract: smart_contract}} ->

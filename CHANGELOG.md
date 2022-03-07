@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5263](https://github.com/blockscout/blockscout/pull/5263) - Fix bug with name absence for contract
 - [#5259](https://github.com/blockscout/blockscout/pull/5259) - Fix `coin-balances/by-day` bug
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 

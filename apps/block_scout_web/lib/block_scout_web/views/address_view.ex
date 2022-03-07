@@ -180,8 +180,12 @@ defmodule BlockScoutWeb.AddressView do
   """
   def primary_name(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
-      nil -> nil
-      %Address.Name{name: name} -> name
+      nil ->
+        %Address.Name{name: name} = Enum.at(address_names, 0)
+        name
+
+      %Address.Name{name: name} ->
+        name
     end
   end
 
