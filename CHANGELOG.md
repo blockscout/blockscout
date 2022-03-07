@@ -3,8 +3,11 @@
 ### Features
 
 ### Fixes
+- [#5259](https://github.com/blockscout/blockscout/pull/5259) - Fix `coin-balances/by-day` bug
 
 ### Chore
+
+- [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
 
 
 ## 4.1.2-beta
