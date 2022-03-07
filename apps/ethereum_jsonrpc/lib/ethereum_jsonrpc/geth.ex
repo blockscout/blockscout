@@ -22,20 +22,20 @@ defmodule EthereumJSONRPC.Geth do
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_internal_transactions(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
-    id_to_params = id_to_params(transactions_params)
+  def fetch_internal_transactions(transactions_params, json_rpc_named_arguments) when is_list(transactions_params), do: :ignore
+    #id_to_params = id_to_params(transactions_params)
 
-    with {:ok, responses} <-
-           id_to_params
-           |> debug_trace_transaction_requests()
-           |> json_rpc(json_rpc_named_arguments) do
-      debug_trace_transaction_responses_to_internal_transactions_params(
-        responses,
-        id_to_params,
-        json_rpc_named_arguments
-      )
-    end
-  end
+    #with {:ok, responses} <-
+           #id_to_params
+           #|> debug_trace_transaction_requests()
+           #|> json_rpc(json_rpc_named_arguments) do
+      #debug_trace_transaction_responses_to_internal_transactions_params(
+        #responses,
+        #id_to_params,
+        #json_rpc_named_arguments
+      #)
+    #end
+  #end
 
   @doc """
   Fetches the first trace from the trace URL.
