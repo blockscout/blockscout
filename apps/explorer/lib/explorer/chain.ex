@@ -719,34 +719,39 @@ defmodule Explorer.Chain do
   """
   @spec block_reward(Block.block_number()) :: Wei.t()
   def block_reward(block_number) do
-    tx_and_emission_reward =
-      Repo.one!(
-        from(block in Block,
-          left_join: transaction in assoc(block, :transactions),
-          inner_join: emission_reward in EmissionReward,
-          on: fragment("? <@ ?", block.number, emission_reward.block_range),
-          where: block.number == ^block_number and block.consensus,
-          group_by: [emission_reward.reward, block.hash],
-          select: %{
-            value: %Wei{
+    block_hash =
+      Block
+      |> where([block], block.number == ^block_number and block.consensus)
+      |> select([block], block.hash)
+      |> Repo.one!()
+
+    case Repo.one!(
+           from(reward in Reward,
+             where: reward.block_hash == ^block_hash,
+             select: %Wei{
+               value: coalesce(sum(reward.reward), 0)
+             }
+           )
+         ) do
+      %Wei{
+        value: %Decimal{coef: 0}
+      } ->
+        Repo.one!(
+          from(block in Block,
+            left_join: transaction in assoc(block, :transactions),
+            inner_join: emission_reward in EmissionReward,
+            on: fragment("? <@ ?", block.number, emission_reward.block_range),
+            where: block.number == ^block_number and block.consensus,
+            group_by: [emission_reward.reward, block.hash],
+            select: %Wei{
               value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + emission_reward.reward
-            },
-            hash: block.hash
-          }
+            }
+          )
         )
-      )
 
-    block_rewards =
-      Repo.one!(
-        from(reward in Reward,
-          where: reward.block_hash == ^tx_and_emission_reward.hash,
-          select: %Wei{
-            value: coalesce(sum(reward.reward), 0)
-          }
-        )
-      )
-
-    Wei.sum(block_rewards, tx_and_emission_reward.value)
+      other_value ->
+        other_value
+    end
   end
 
   @doc """
