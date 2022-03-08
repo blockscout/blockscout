@@ -1,6 +1,7 @@
 name: Blockscout
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
