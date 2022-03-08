@@ -56,7 +56,7 @@
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "sweetalert2": "^10.16.9",
-    "urijs": "^1.19.8",
+    "urijs": "^1.19.10",
     "url": "^0.11.0",
     "util": "^0.12.4",
     "web3": "^1.7.0",
