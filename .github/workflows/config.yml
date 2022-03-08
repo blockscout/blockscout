@@ -558,6 +558,11 @@ jobs:
 
       - run: ./bin/install_chrome_headless.sh
 
+      - name: Copy default locales
+        run: |
+          cp apps/block_scout_web/priv/gettext/default.pot apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po
+          cp apps/block_scout_web/priv/gettext/errors.pot apps/block_scout_web/priv/gettext/en/LC_MESSAGES/errors.po
+
       - name: mix test --exclude no_parity
         run: |
           mix ecto.create --quiet
