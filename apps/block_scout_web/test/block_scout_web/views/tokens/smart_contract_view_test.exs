@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.SmartContractViewTest do
+defmodule BlockScoutWeb.Tokens.SmartContractViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
   @max_size Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
