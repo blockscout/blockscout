@@ -1,0 +1,35 @@
+version: '3.5'
+services:
+    blockscout-tests-db:
+        container_name: blockscout-tests-db
+        image: postgres
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_DB=explorer_test
+    blockscout-tests-runner:
+        container_name: blockscout-tests-runner
+        depends_on:
+            - blockscout-tests-db
+        image: hermez-node-blockscout:latest
+        environment:
+            - NETWORK=POE
+            - SUBNETWORK=Polygon Hermez
+            - ECTO_USE_SSL=false
+            - LOGO=/images/blockscout_logo.svg
+            - LOGO_FOOTER=/images/blockscout_logo.svg
+            - PGHOST=blockscout-tests-db
+            - PGPORT=5432
+            - PGDATABASE=explorer_test
+            - PGUSER=postgres
+            - PGPASSWORD=postgres
+            - ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Parity.Mox
+            - ETHEREUM_JSONRPC_WEB_SOCKET_CASE=EthereumJSONRPC.WebSocket.Case.Mox
+            - CHAIN_ID=77
+            - ADMIN_PANEL_ENABLED=true
+        command:
+            [
+                "/bin/sh",
+                "-c",
+                "mix do ecto.create, ecto.migrate; mix test --no-start --exclude no_parity"
+            ]
