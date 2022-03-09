@@ -12,6 +12,8 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5288](https://github.com/blockscout/blockscout/pull/5288) - Makefile: find exact container by name
+- [#5287](https://github.com/blockscout/blockscout/pull/5287) - Docker: modify native token symbol
 - [#5286](https://github.com/blockscout/blockscout/pull/5286) - Change namespace for one of the SmartContractViewTest test
 - [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
 
