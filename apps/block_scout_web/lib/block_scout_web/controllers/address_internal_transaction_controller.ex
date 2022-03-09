@@ -18,14 +18,18 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false),
+         {:ok, address} <-
+           Chain.hash_to_address(address_hash, [necessity_by_association: %{:smart_contract => :optional}], false),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       full_options =
         [
           necessity_by_association: %{
             [created_contract_address: :names] => :optional,
             [from_address: :names] => :optional,
-            [to_address: :names] => :optional
+            [to_address: :names] => :optional,
+            [created_contract_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :smart_contract] => :optional
           }
         ]
         |> Keyword.merge(paging_options(params))

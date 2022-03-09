@@ -7,8 +7,8 @@ BS_CONTAINER_NAME := blockscout-xdai
 PG_CONTAINER_IMAGE := postgres:13.6
 PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-BS_NEXT_RELEASE = 4.1.2
-TAG := $(BS_NEXT_RELEASE)-prerelease-$(shell git log -1 --pretty=format:"%h")
+TAG := $(RELEASE_VERSION)-prerelease-$(shell git log -1 --pretty=format:"%h")
+STABLE_TAG := $(RELEASE_VERSION)
 
 ifeq ($(SYSTEM), Linux)
 	HOST=localhost
@@ -581,10 +581,12 @@ docker-login: ## login to DockerHub with credentials found in env
 	docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
 
 # Docker release - build, tag and push the container
-release: build publish ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to hub
+pre-release: build publish ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to hub
+release: build publish-stable ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to hub
 
 # Docker publish
 publish: docker-login publish-latest publish-version ## publish the `{version}` ans `latest` tagged containers to hub
+publish-stable: docker-login publish-latest publish-stable-version ## publish the `{version}` ans `latest` tagged containers to hub
 
 publish-latest: tag-latest ## publish the `latest` tagged container to hub
 	@echo 'publish latest to $(DOCKER_REPO)'
@@ -594,8 +596,13 @@ publish-version: tag-version ## publish the `{version}` tagged container to hub
 	@echo 'publish $(TAG) to $(DOCKER_REPO)'
 	docker push $(BS_CONTAINER_IMAGE):$(TAG)
 
+publish-stable-version: tag-stable-version ## publish the `{version}` tagged container to hub
+	@echo 'publish $(STABLE_TAG) to $(DOCKER_REPO)'
+	docker push $(BS_CONTAINER_IMAGE):$(STABLE_TAG)
+
 # Docker tagging
 tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
+tag-stable: tag-latest tag-stable-version ## Generate container tags for the `{version}` ans `latest` tags
 
 tag-latest: ## Generate container `latest` tag
 	@echo 'create latest tag'
@@ -604,6 +611,10 @@ tag-latest: ## Generate container `latest` tag
 tag-version: ## Generate container `{version}` tag
 	@echo 'create tag $(TAG)'
 	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):$(TAG)
+
+tag-stable-version: ## Generate container `{version}` tag
+	@echo 'create tag $(STABLE_TAG)'
+	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):$(STABLE_TAG)
 
 .PHONY: build \
 				migrate \
