@@ -4187,10 +4187,7 @@ defmodule Explorer.Chain do
          %{contract_code: %Chain.Data{bytes: contract_code_bytes}} <- target_address do
       target_address_hash = target_address.hash
 
-      contract_code_md5 =
-        Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
-          case: :lower
-        )
+      contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
 
       verified_contract_twin_query =
         from(
