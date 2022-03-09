@@ -12,6 +12,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5289](https://github.com/blockscout/blockscout/pull/5289) - Bump ex_abi from 1.5.9 to 1.5.11
 - [#5288](https://github.com/blockscout/blockscout/pull/5288) - Makefile: find exact container by name
 - [#5287](https://github.com/blockscout/blockscout/pull/5287) - Docker: modify native token symbol
 - [#5286](https://github.com/blockscout/blockscout/pull/5286) - Change namespace for one of the SmartContractViewTest test
