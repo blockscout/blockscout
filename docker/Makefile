@@ -18,6 +18,7 @@ ifdef DATABASE_URL
 	DB_URL = $(DATABASE_URL)
 else
 	DB_URL = postgresql://postgres:@$(HOST):5432/blockscout?ssl=false
+	ECTO_USE_SSL = 'false'
 endif
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															 -e 'DATABASE_URL=$(DB_URL)'
@@ -411,9 +412,9 @@ migrate_only:
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 
+PG_EXIST := $(shell docker ps -a --no-trunc --filter name=^/${PG_CONTAINER_NAME}$ | grep ${PG_CONTAINER_NAME})
+PG_STARTED := $(shell docker ps --no-trunc --filter name=^/${PG_CONTAINER_NAME}$ | grep ${PG_CONTAINER_NAME})
 
-PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
-PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 postgres:
 ifdef DATABASE_URL
 	@echo "==> DATABASE_URL of external DB provided. There is no need to start a container for DB."
@@ -449,7 +450,7 @@ start: build postgres
 					-p 4000:4000 \
 					$(BS_CONTAINER_IMAGE) /bin/sh -c "mix phx.server"
 
-BS_STARTED := $(shell docker ps --filter name=${BS_CONTAINER_NAME} | grep ${BS_CONTAINER_NAME})
+BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
 stop:
 ifdef BS_STARTED
 	@echo "==> Stopping BlockScout container."
