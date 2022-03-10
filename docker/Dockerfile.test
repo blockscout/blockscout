@@ -52,6 +52,4 @@ RUN npm install && npm run deploy
 WORKDIR /src/apps/explorer/
 RUN npm install
 
-# Compile app
 WORKDIR /src/apps/block_scout_web
-RUN mix compile
