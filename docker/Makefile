@@ -574,7 +574,10 @@ stop-tests:
 				build-dev-m1 \
 				build-prod-m1 \
 				build-prod-m1-nc \
+				build-tests \
 				push \
 				start-compose \
 				stop-compose \
-				watch-compose
+				watch-compose \
+				start-tests \
+				stop-tests
