@@ -5,7 +5,7 @@ config :bcrypt_elixir, log_rounds: 4
 
 # Configure your database
 config :explorer, Explorer.Repo,
-  database: "explorer_test",
+  database: System.get_env("PGDATABASE") || "explorer_test",
   hostname: System.get_env("PGHOST") || "localhost",
   username: System.get_env("PGUSER") || "postgres",
   password: System.get_env("PGPASSWORD") || "postgres",
@@ -18,7 +18,7 @@ config :explorer, Explorer.Repo,
 
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
-  database: "explorer_test",
+  database: System.get_env("PGDATABASE") || "explorer_test",
   hostname: System.get_env("PGHOST") || "localhost",
   username: System.get_env("PGUSER") || "postgres",
   password: System.get_env("PGPASSWORD") || "postgres",
