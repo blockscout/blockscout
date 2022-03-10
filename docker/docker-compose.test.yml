@@ -18,6 +18,7 @@ services:
             - ECTO_USE_SSL=false
             - LOGO=/images/blockscout_logo.svg
             - LOGO_FOOTER=/images/blockscout_logo.svg
+            - DATABASE_URL=postgres://postgres:postgres@blockscout-tests-db:5432/explorer_test
             - PGHOST=blockscout-tests-db
             - PGPORT=5432
             - PGDATABASE=explorer_test
