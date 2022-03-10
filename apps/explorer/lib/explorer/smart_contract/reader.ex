@@ -367,13 +367,13 @@ defmodule Explorer.SmartContract.Reader do
     `type` could be :proxy or :reqular
     if ethereumJSONRPC will return some errors it will represented as map
   """
-  @spec query_function_with_names(Hash.t(), %{method_id: String.t(), args: [term()] | nil}, atom(), String.t()) :: %{
+  @spec query_function_with_names(Hash.t(), %{method_id: String.t(), args: [term()] | nil}, atom()) :: %{
           :names => [any()],
           :output => [%{}]
         }
-  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, function_name) do
+  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type) do
     outputs = query_function(contract_address_hash, %{method_id: method_id, args: args}, type, true)
-    names = parse_names_from_abi(get_abi(contract_address_hash, type), function_name)
+    names = parse_names_from_abi(get_abi(contract_address_hash, type), method_id)
     %{output: outputs, names: names}
   end
 
@@ -386,12 +386,11 @@ defmodule Explorer.SmartContract.Reader do
           Hash.t(),
           %{method_id: String.t(), args: [term()] | nil},
           atom(),
-          String.t(),
           String.t()
         ) :: %{:names => [any()], :output => [%{}]}
-  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, function_name, from) do
+  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, from) do
     outputs = query_function(contract_address_hash, %{method_id: method_id, args: args}, type, from, true)
-    names = parse_names_from_abi(get_abi(contract_address_hash, type), function_name)
+    names = parse_names_from_abi(get_abi(contract_address_hash, type), method_id)
     %{output: outputs, names: names}
   end
 
@@ -462,8 +461,10 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp parse_names_from_abi(abi, function_name) do
-    function = Enum.find(abi, fn el -> el["type"] == "function" and el["name"] == function_name end)
+  defp parse_names_from_abi(abi, method_id) do
+    function =
+      Enum.find(get_abi_with_method_id(abi), fn el -> el["type"] == "function" and el["method_id"] == method_id end)
+
     outputs_to_list(function["outputs"])
   end
 

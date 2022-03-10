@@ -14,11 +14,13 @@ services:
 
   blockscout:
     depends_on:
-      - postgres
+      - db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
+      args:
+        COIN: ""
     restart: always
     container_name: 'blockscout'
     links:
