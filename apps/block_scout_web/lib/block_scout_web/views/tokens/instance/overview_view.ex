@@ -44,6 +44,31 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     if String.trim(result) == "", do: media_src(nil), else: result
   end
 
+  def media_src_detail(nil), do: @stub_image
+
+  def media_src_detail(instance) do
+    result =
+      cond do
+        instance.metadata && instance.metadata["animation_url"] ->
+          retrieve_image(instance.metadata["animation_url"])
+
+        instance.metadata && instance.metadata["image_url"] ->
+          retrieve_image(instance.metadata["image_url"])
+
+        instance.metadata && instance.metadata["image"] ->
+          retrieve_image(instance.metadata["image"])
+
+        instance.metadata && instance.metadata["properties"]["image"]["description"] ->
+          instance.metadata["properties"]["image"]["description"]
+
+        true ->
+          media_src_detail(nil)
+      end
+
+    if String.trim(result) == "", do: media_src_detail(nil), else: result
+  end
+
+
   def media_type(media_src) when not is_nil(media_src) do
     ext = media_src |> Path.extname() |> String.trim()
 
