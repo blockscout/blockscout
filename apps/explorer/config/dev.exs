@@ -18,7 +18,8 @@ config :explorer, Explorer.Repo,
   database: database,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
-  pool_size: pool_size,
+  pool_size: 5,
+  ssl: true,
   timeout: :timer.seconds(80)
 
 database_api = if System.get_env("DATABASE_READ_ONLY_API_URL"), do: nil, else: database
