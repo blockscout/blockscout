@@ -1116,7 +1116,7 @@ defmodule Explorer.Chain do
       {:actual, Decimal.new(4)}
 
   """
-  @spec fee(%Transaction{gas_used: nil}, :ether | :gwei | :wei) :: {:maximum, Decimal.t()}
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t()}
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
     fee =
       gas_price
@@ -1126,7 +1126,6 @@ defmodule Explorer.Chain do
     {:maximum, fee}
   end
 
-  @spec fee(%Transaction{gas_used: Decimal.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
   def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
     fee =
       gas_price
@@ -1306,8 +1305,7 @@ defmodule Explorer.Chain do
       [_ | _] = words ->
         term_final =
           words
-          |> Enum.map(fn [word] -> word <> ":*" end)
-          |> Enum.join(" & ")
+          |> Enum.map_join(" & ", fn [word] -> word <> ":*" end)
 
         {:some, term_final}
 
@@ -4374,8 +4372,8 @@ defmodule Explorer.Chain do
 
   def get_address_verified_twin_contract(%Explorer.Chain.Hash{} = address_hash) do
     with target_address <- Repo.get(Address, address_hash),
-        false <- is_nil(target_address),
-        %{contract_code: %Chain.Data{bytes: contract_code_bytes}} <- target_address do
+         false <- is_nil(target_address),
+         %{contract_code: %Chain.Data{bytes: contract_code_bytes}} <- target_address do
       target_address_hash = target_address.hash
 
       contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
