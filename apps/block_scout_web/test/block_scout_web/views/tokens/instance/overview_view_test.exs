@@ -94,8 +94,29 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
 
       data = Jason.decode!(json)
 
-      assert OverviewView.media_src(%{metadata: data}) ==
+      assert OverviewView.media_src(%{metadata: data}, true) ==
                "https://assets.cargo.build/611a883b0d039100261bfe79/b89cf189-13e9-47ed-b801-a1f6aa15a7bf/376db72d-f8dc-44bb-b6ac-0e8a31fc6164-comp-1_8mp4.mp4"
+    end
+
+    test "doesn't fetch image from animation_url if high_quality_media? flag didn't passed" do
+      json = """
+        {
+          "name": "Zombie MILF",
+          "image": "https://assets.cargo.build/611a883b0d039100261bfe79/b89cf189-13e9-47ed-b801-a1f6aa15a7bf/a0784ea0-45be-41cd-9cdd-cc40ad20f20d-zombiepngpng.png",
+          "description": "grab your crossbow, ‘cause you’re gonna turn when this MILFy zombie bites you!",
+          "external_url": "https://app.cargo.build/marketplace?tokenDetail=611a876d0d14af00085bf25c:120",
+          "animation_url": "https://assets.cargo.build/611a883b0d039100261bfe79/b89cf189-13e9-47ed-b801-a1f6aa15a7bf/376db72d-f8dc-44bb-b6ac-0e8a31fc6164-comp-1_8mp4.mp4",
+          "cargoDisplayContent": {
+            "type": "video",
+            "files": ["https://assets.cargo.build/611a883b0d039100261bfe79/b89cf189-13e9-47ed-b801-a1f6aa15a7bf/376db72d-f8dc-44bb-b6ac-0e8a31fc6164-comp-1_8mp4.mp4"]
+          }
+        }
+      """
+
+      data = Jason.decode!(json)
+
+      assert OverviewView.media_src(%{metadata: data}) ==
+               "https://assets.cargo.build/611a883b0d039100261bfe79/b89cf189-13e9-47ed-b801-a1f6aa15a7bf/a0784ea0-45be-41cd-9cdd-cc40ad20f20d-zombiepngpng.png"
     end
   end
 end
