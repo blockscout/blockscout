@@ -292,24 +292,27 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
     end
 
     # flaky test
-    # test "returns error when bytecode doesn't match", %{contract_code_info: contract_code_info} do
-    #   contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
-    #   insert(:transaction, created_contract_address_hash: contract_address.hash)
+    test "returns error when bytecode doesn't match", %{contract_code_info: contract_code_info} do
+      contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
 
-    #   different_code = "pragma solidity ^0.4.24; contract SimpleStorage {}"
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash)
+      |> with_block(status: :ok)
 
-    #   params = %{
-    #     "contract_source_code" => different_code,
-    #     "compiler_version" => contract_code_info.version,
-    #     "evm_version" => "default",
-    #     "name" => contract_code_info.name,
-    #     "optimization" => contract_code_info.optimized
-    #   }
+      different_code = "pragma solidity ^0.4.24; contract SimpleStorage {}"
 
-    #   response = Verifier.evaluate_authenticity(contract_address.hash, params)
+      params = %{
+        "contract_source_code" => different_code,
+        "compiler_version" => contract_code_info.version,
+        "evm_version" => "default",
+        "name" => contract_code_info.name,
+        "optimization" => contract_code_info.optimized
+      }
 
-    #   assert {:error, :generated_bytecode} = response
-    # end
+      response = Verifier.evaluate_authenticity(contract_address.hash, params)
+
+      assert {:error, :generated_bytecode} = response
+    end
 
     # flaky test
     test "returns error when contract has constructor arguments and they were not provided" do
