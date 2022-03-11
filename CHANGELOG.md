@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
@@ -31,7 +32,6 @@
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
 - [#5016](https://github.com/blockscout/blockscout/pull/5016) - Add view for internal transactions error
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
-- [#4995](https://github.com/blockscout/blockscout/pull/4995) - Add specific tx receipt fields for the GoQuorum client
 
 ### Fixes
 - [#5248](https://github.com/blockscout/blockscout/pull/5248) - Speedup query for getting verified smart-contract bytecode twin
