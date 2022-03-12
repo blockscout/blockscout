@@ -6949,7 +6949,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp save_implementation_name(other, _), do: other
+  defp save_implementation_name(other, _), do: {other, nil}
 
   defp abi_decode_address_output(nil), do: nil
 
