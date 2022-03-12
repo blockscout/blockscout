@@ -18,8 +18,10 @@ defmodule BlockScoutWeb.SmartContractController do
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       implementation_address_hash_string =
         if contract_type == "proxy" do
-          Chain.get_implementation_address_hash(address.hash, address.smart_contract.abi) ||
-            @burn_address
+          (address.hash 
+          |> Chain.get_implementation_address_hash(address.smart_contract.abi)
+          |> Tuple.to_list()
+          |> List.first()) || @burn_address
         else
           @burn_address
         end
