@@ -9,7 +9,6 @@
 
 # Ignore inner stuff from the required directories
 **/node_modules
-apps/*/test
 apps/block_scout_web/priv/cert
 apps/block_scout_web/priv/static
 apps/explorer/priv/solc_compilers

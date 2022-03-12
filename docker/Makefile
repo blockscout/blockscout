@@ -545,6 +545,9 @@ build-prod-m1:
 build-prod-m1-nc:
 	@make build-prod-m1 ARGS="--no-cache"
 
+build-tests:
+	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=test -f ./Dockerfile.test -t $(DOCKER_IMAGE) ../
+
 push:
 	@echo "==> Pushing image to docker hub"
 	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
@@ -559,13 +562,22 @@ stop-compose:
 watch-compose:
 	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
 
+start-tests:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.test.yml up -d
+
+stop-tests:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.test.yml down --remove-orphans
+
 .PHONY: build-dev \
 				build-prod \
 				build-prod-nc \
 				build-dev-m1 \
 				build-prod-m1 \
 				build-prod-m1-nc \
+				build-tests \
 				push \
 				start-compose \
 				stop-compose \
-				watch-compose
+				watch-compose \
+				start-tests \
+				stop-tests

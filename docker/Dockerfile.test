@@ -1,0 +1,55 @@
+FROM davidkumru/elixir-phoenix
+
+RUN apt-get -y update
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+
+# Install build dependencies
+RUN apt-get -y install git build-essential autoconf libtool libgmp-dev
+
+# Install headless chrome
+WORKDIR /
+ENV CHROMEDRIVER_VERSION="99.0.4844.51"
+RUN apt-get -y install xvfb zip && \
+    curl -L -O "http://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" && \
+    unzip chromedriver_linux64.zip && \
+    chmod +x chromedriver && \
+    mv chromedriver /usr/local/bin && \
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt -y install ./google-chrome-stable_current_amd64.deb && \
+    apt-get -y install libstdc++6 
+
+# Cache deps
+COPY mix.exs mix.lock /src/
+COPY apps/block_scout_web/mix.exs /src/apps/block_scout_web/
+COPY apps/explorer/mix.exs /src/apps/explorer/
+COPY apps/ethereum_jsonrpc/mix.exs /src/apps/ethereum_jsonrpc/
+COPY apps/indexer/mix.exs /src/apps/indexer/
+
+WORKDIR /src
+RUN mix deps.get && \
+    mix local.rebar --force
+
+WORKDIR /src/deps/libsecp256k1
+RUN make
+
+WORKDIR /src
+RUN mix deps.compile
+
+COPY . .
+
+# Copy default locales since translations break the tests
+COPY apps/block_scout_web/priv/gettext/default.pot /src/apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po
+COPY apps/block_scout_web/priv/gettext/errors.pot apps/block_scout_web/priv/gettext/en/LC_MESSAGES/errors.po
+
+# Install npm deps and build
+WORKDIR /src/apps/block_scout_web/assets/
+RUN npm install && npm run deploy
+
+WORKDIR /src/apps/explorer/
+RUN npm install
+
+WORKDIR /src/apps/block_scout_web
