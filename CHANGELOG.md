@@ -6,6 +6,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5319](https://github.com/blockscout/blockscout/pull/5319) - Empty blocks sanitizer performance improvement
 - [#5310](https://github.com/blockscout/blockscout/pull/5310) - Fix flash on reload in dark mode
 - [#5306](https://github.com/blockscout/blockscout/pull/5306) - Fix indexer bug
 - [#5300](https://github.com/blockscout/blockscout/pull/5300), [#5305](https://github.com/blockscout/blockscout/pull/5305) - Token instance page: general video improvements
