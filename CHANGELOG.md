@@ -16,6 +16,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5317](https://github.com/blockscout/blockscout/pull/5317) - NPM audit
 - [#5303](https://github.com/blockscout/blockscout/pull/5303) - Besu: revertReason support in trace
 - [#5301](https://github.com/blockscout/blockscout/pull/5301) - Allow specific block keys for sgb/ava
 - [#5295](https://github.com/blockscout/blockscout/pull/5295) - CI pipeline: build and push Docker image to Docker Hub on every release
