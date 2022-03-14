@@ -5,6 +5,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5306](https://github.com/blockscout/blockscout/pull/5306) - Fix indexer bug
 - [#5300](https://github.com/blockscout/blockscout/pull/5300), [#5305](https://github.com/blockscout/blockscout/pull/5305) - Token instance page: general video improvements
 - [#5136](https://github.com/blockscout/blockscout/pull/5136) - Improve contract verification
 - [#5285](https://github.com/blockscout/blockscout/pull/5285) - Fix verified smart-contract bytecode twins feature
