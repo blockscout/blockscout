@@ -25,23 +25,31 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   def media_src(nil), do: @stub_image
 
-  def media_src(instance) do
-    result =
-      cond do
-        instance.metadata && instance.metadata["image_url"] ->
-          retrieve_image(instance.metadata["image_url"])
-
-        instance.metadata && instance.metadata["image"] ->
-          retrieve_image(instance.metadata["image"])
-
-        instance.metadata && instance.metadata["properties"]["image"]["description"] ->
-          instance.metadata["properties"]["image"]["description"]
-
-        true ->
-          media_src(nil)
-      end
+  def media_src(instance, high_quality_media? \\ nil) do
+    result = get_media_src(instance.metadata, high_quality_media?)
 
     if String.trim(result) == "", do: media_src(nil), else: result
+  end
+
+  defp get_media_src(nil, _), do: media_src(nil)
+
+  defp get_media_src(metadata, high_quality_media?) do
+    cond do
+      metadata["animation_url"] && high_quality_media? ->
+        retrieve_image(metadata["animation_url"])
+
+      metadata["image_url"] ->
+        retrieve_image(metadata["image_url"])
+
+      metadata["image"] ->
+        retrieve_image(metadata["image"])
+
+      metadata["properties"]["image"]["description"] ->
+        metadata["properties"]["image"]["description"]
+
+      true ->
+        media_src(nil)
+    end
   end
 
   def media_type(media_src) when not is_nil(media_src) do
