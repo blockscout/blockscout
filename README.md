@@ -1,6 +1,5 @@
-<p class="extended-markdown tip border rounded-1 p-3 color-border-accent-emphasis color-bg-accent f3">
-    Find [here](guides/update-blockscout/update-blockscout.md) a guide on how and when to update this repository from the Blockscout main repository
-<p>
+> :information_source: Find [here](guides/update-blockscout/update-blockscout.md) a guide on how and when to update this repository from the Blockscout main repository.
+
 <h1 align="center">BlockScout</h1>
 <p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
