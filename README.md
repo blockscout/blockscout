@@ -1,3 +1,9 @@
+{% note %}
+
+Find [here](guides/update-blockscout/update-blockscout.md) a guide on how and when should we update this repository from the main Blockscout repository
+
+{% endnote %}
+
 <h1 align="center">BlockScout</h1>
 <p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
