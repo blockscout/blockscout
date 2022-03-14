@@ -23,7 +23,18 @@ defmodule Explorer.Celo.ContractEvents.Common do
     |> decode_data(types)
   end
 
-  def decode_data(data, types) when is_binary(data), do: data |> TypeDecoder.decode_raw(types)
+  def decode_data(data, types) when is_binary(data) do
+    data
+    |> TypeDecoder.decode_raw(types)
+    |> Enum.zip(types)
+    |> Enum.map(fn
+      # list of bytes to 2d list of ints
+      {d, {:array, {:bytes, _}}} -> d |> Enum.map(&:binary.bin_to_list(&1))
+      # bytes to list of ints
+      {d, {:bytes, _}} -> :binary.bin_to_list(d)
+      {d, _} -> d
+    end)
+  end
 
   defp extract_hash(event_data), do: event_data |> String.trim_leading("0x") |> Base.decode16!(case: :lower)
 

@@ -1,0 +1,15 @@
+defmodule Explorer.Celo.ContractEvents.<%= module %> do
+  @moduledoc """
+  Struct modelling the <%= event.name %> event from the <%= case contract do
+    name when is_binary(name) -> "#{name} Celo core contract."
+    names when is_list(names) -> "#{Enum.join(names,", ")} Celo core contracts."
+  end
+  %>
+  """
+
+  use Explorer.Celo.ContractEvents.Base,
+    name: "<%= event.name %>",
+    topic: "<%= event.topic %>"
+
+<%= for {name, type, indexed} <- event.params do %>  event_param(<%= inspect(name) %>, <%= inspect(type) %>, <%= inspect(indexed) %>)
+<% end %>end
