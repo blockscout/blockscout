@@ -3583,15 +3583,11 @@ defmodule Explorer.Chain do
   def unprocessed_empty_blocks_query_list(limit) do
     query =
       from(block in Block,
-        as: :block,
-        where: block.consensus == true,
+        left_join: transaction in Transaction,
+        on: block.number == transaction.block_number,
+        where: is_nil(transaction.block_number),
         where: is_nil(block.is_empty),
-        where:
-          not exists(
-            from(transaction in Transaction,
-              where: transaction.block_number == parent_as(:block).number
-            )
-          ),
+        where: block.consensus == true,
         select: {block.number, block.hash},
         order_by: [desc: block.number],
         limit: ^limit
