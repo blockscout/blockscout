@@ -52,7 +52,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
     query =
       from(block in Block,
         left_join: transactions in assoc(block, :transactions),
-        where: block.consensus and block.refetch_needed,
+        where: block.consensus == true and block.refetch_needed,
         group_by: block.hash,
         select: {block.hash, count(transactions.hash)}
       )

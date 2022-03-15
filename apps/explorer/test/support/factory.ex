@@ -630,7 +630,8 @@ defmodule Explorer.Factory do
       s: sequence(:transaction_s, & &1),
       to_address: build(:address),
       v: Enum.random(27..30),
-      value: Enum.random(1..100_000)
+      value: Enum.random(1..100_000),
+      block_timestamp: DateTime.utc_now()
     }
   end
 

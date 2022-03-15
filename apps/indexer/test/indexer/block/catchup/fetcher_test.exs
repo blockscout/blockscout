@@ -425,7 +425,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       assert count(Chain.Block) == 1
       assert count(Reward) == 0
 
-      assert_receive {:block_numbers, [^block_number]}, 5_000
+      assert_receive {:block_numbers, [_block_number]}, 5_000
     end
 
     test "async fetches beneficiaries when entire call errors out", %{
@@ -620,6 +620,9 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
       Application.put_env(:indexer, :block_ranges, "10..20,5..15,18..25,35..40,30..50,100..latest,150..200")
       assert Fetcher.block_ranges(json_rpc_named_arguments) == {:ok, [5..25, 30..50, 100..255]}
+=======
+      assert_receive {:block_numbers, [_block_number]}, 5_000
+>>>>>>> 75c632e0f8 (Block consensus and timestamp in transaction table)
     end
   end
 

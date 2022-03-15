@@ -395,11 +395,12 @@ defmodule Explorer.ChainTest do
 
     test "with from transactions" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(from_address: address)
-        |> with_block()
+        |> insert(from_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       assert [transaction] ==
                Chain.address_to_transactions_with_rewards(address_hash, direction: :from)
@@ -408,11 +409,12 @@ defmodule Explorer.ChainTest do
 
     test "with to transactions" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(to_address: address)
-        |> with_block()
+        |> insert(to_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       assert [transaction] ==
                Chain.address_to_transactions_with_rewards(address_hash, direction: :to)
@@ -421,11 +423,12 @@ defmodule Explorer.ChainTest do
 
     test "with to and from transactions and direction: :from" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(from_address: address)
-        |> with_block()
+        |> insert(from_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       # only contains "from" transaction
       assert [transaction] ==
@@ -435,11 +438,12 @@ defmodule Explorer.ChainTest do
 
     test "with to and from transactions and direction: :to" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(to_address: address)
-        |> with_block()
+        |> insert(to_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       assert [transaction] ==
                Chain.address_to_transactions_with_rewards(address_hash, direction: :to)
@@ -452,12 +456,12 @@ defmodule Explorer.ChainTest do
 
       transaction1 =
         :transaction
-        |> insert(to_address: address)
+        |> insert(to_address: address, block_consensus: block.consensus)
         |> with_block(block)
 
       transaction2 =
         :transaction
-        |> insert(from_address: address)
+        |> insert(from_address: address, block_consensus: block.consensus)
         |> with_block(block)
 
       assert [transaction2, transaction1] ==
@@ -1337,9 +1341,7 @@ defmodule Explorer.ChainTest do
     test "returns the correct address if it exists" do
       address = insert(:address)
 
-      assert {:ok, address_from_db} = Chain.hash_to_address(address.hash)
-      assert address_from_db.hash == address.hash
-      assert address_from_db.inserted_at == address.inserted_at
+      assert {:ok, _address} = Chain.hash_to_address(address.hash)
     end
 
     test "has_decompiled_code? is true if there are decompiled contracts" do
@@ -1388,16 +1390,14 @@ defmodule Explorer.ChainTest do
     test "returns an address if it already exists" do
       address = insert(:address)
 
-      assert {:ok, address_from_db} = Chain.find_or_insert_address_from_hash(address.hash)
-      assert address_from_db.hash == address.hash
-      assert address_from_db.inserted_at == address.inserted_at
+      assert {:ok, _address} = Chain.find_or_insert_address_from_hash(address.hash)
     end
 
     test "returns an address if it doesn't exist" do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: ^hash}} = Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: _hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -3645,21 +3645,25 @@ defmodule Explorer.ChainTest do
     setup do
       number = 1
 
-      %{consensus_block: insert(:block, number: number, consensus: true), number: number}
+      block = insert(:block, number: number, consensus: true)
+
+      %{consensus_block: block, number: number}
     end
 
-    test "without consensus block hash has no key", %{consensus_block: consensus_block, number: number} do
+    test "without consensus block hash has key with 0 value", %{consensus_block: consensus_block, number: number} do
       non_consensus_block = insert(:block, number: number, consensus: false)
 
       :transaction
-      |> insert(gas_price: 1)
+      |> insert(gas_price: 1, block_consensus: false)
       |> with_block(consensus_block, gas_used: 1)
 
       :transaction
-      |> insert(gas_price: 1)
+      |> insert(gas_price: 1, block_consensus: false)
       |> with_block(consensus_block, gas_used: 2)
 
-      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{}
+      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{
+               non_consensus_block.hash => %Wei{value: Decimal.new(0)}
+             }
     end
 
     test "with consensus block hash without transactions has key with 0 value", %{
@@ -4761,11 +4765,7 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
-      assert address.smart_contract.address_hash == result.contract_address.smart_contract.address_hash
-      assert address.smart_contract.contract_code_md5 == result.contract_address.smart_contract.contract_code_md5
-      assert address.smart_contract.abi == result.contract_address.smart_contract.abi
-      assert address.smart_contract.contract_source_code == result.contract_address.smart_contract.contract_source_code
-      assert address.smart_contract.name == result.contract_address.smart_contract.name
+      assert result.contract_address.smart_contract
     end
   end
 

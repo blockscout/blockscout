@@ -8,7 +8,7 @@ defmodule Explorer.Etherscan.Logs do
   import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3, union: 2]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction}
+  alias Explorer.Chain.{InternalTransaction, Log, Transaction}
 
   @base_filter %{
     from_block: nil,
@@ -113,24 +113,25 @@ defmodule Explorer.Etherscan.Logs do
           gas_price: transaction.gas_price,
           gas_used: transaction.gas_used,
           transaction_index: transaction.index,
-          block_number: transaction.block_number
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number,
+          block_timestamp: transaction.block_timestamp,
+          block_consensus: transaction.block_consensus
         },
         union: ^internal_transaction_log_query
       )
 
     query_with_blocks =
       from(log_transaction_data in subquery(all_transaction_logs_query),
-        join: block in Block,
-        on: block.number == log_transaction_data.block_number,
         where: log_transaction_data.address_hash == ^address_hash,
-        order_by: block.number,
+        order_by: log_transaction_data.block_number,
         limit: 1000,
         select_merge: %{
           transaction_index: log_transaction_data.transaction_index,
-          block_hash: block.hash,
-          block_number: block.number,
-          block_timestamp: block.timestamp,
-          block_consensus: block.consensus
+          block_hash: log_transaction_data.block_hash,
+          block_number: log_transaction_data.block_number,
+          block_timestamp: log_transaction_data.block_timestamp,
+          block_consensus: log_transaction_data.block_consensus
         }
       )
 
@@ -138,8 +139,8 @@ defmodule Explorer.Etherscan.Logs do
       if Map.get(filter, :allow_non_consensus) do
         query_with_blocks
       else
-        from([_, block] in query_with_blocks,
-          where: block.consensus == true
+        from([transaction] in query_with_blocks,
+          where: transaction.block_consensus == true
         )
       end
 
@@ -161,18 +162,17 @@ defmodule Explorer.Etherscan.Logs do
 
     block_transaction_query =
       from(transaction in Transaction,
-        join: block in assoc(transaction, :block),
-        where: block.number >= ^prepared_filter.from_block,
-        where: block.number <= ^prepared_filter.to_block,
+        where: transaction.block_number >= ^prepared_filter.from_block,
+        where: transaction.block_number <= ^prepared_filter.to_block,
         select: %{
           transaction_hash: transaction.hash,
           gas_price: transaction.gas_price,
           gas_used: transaction.gas_used,
           transaction_index: transaction.index,
-          block_hash: block.hash,
-          block_number: block.number,
-          block_timestamp: block.timestamp,
-          block_consensus: block.consensus
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number,
+          block_timestamp: transaction.block_timestamp,
+          block_consensus: transaction.block_consensus
         }
       )
 
@@ -180,8 +180,8 @@ defmodule Explorer.Etherscan.Logs do
       if Map.get(filter, :allow_non_consensus) do
         block_transaction_query
       else
-        from([_, block] in block_transaction_query,
-          where: block.consensus == true
+        from([transaction] in block_transaction_query,
+          where: transaction.block_consensus == true
         )
       end
 
@@ -274,7 +274,10 @@ defmodule Explorer.Etherscan.Logs do
             gas_price: transaction.gas_price,
             gas_used: transaction.gas_used,
             transaction_index: transaction.index,
-            block_number: internal_transaction.block_number
+            block_hash: transaction.block_hash,
+            block_number: internal_transaction.block_number,
+            block_timestamp: transaction.block_timestamp,
+            block_consensus: transaction.block_consensus
           })
       )
 

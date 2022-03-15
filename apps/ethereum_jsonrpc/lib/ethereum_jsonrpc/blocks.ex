@@ -49,12 +49,13 @@ defmodule EthereumJSONRPC.Blocks do
     block_second_degree_relations_params = Uncles.elixir_to_params(elixir_uncles)
     transactions_params = Transactions.elixir_to_params(elixir_transactions)
     blocks_params = elixir_to_params(elixir_blocks)
+    transactions_params_with_block_timestamp = add_timestamp_to_transactions_params(transactions_params, blocks_params)
 
     %__MODULE__{
       errors: errors,
       blocks_params: blocks_params,
       block_second_degree_relations_params: block_second_degree_relations_params,
-      transactions_params: transactions_params
+      transactions_params: transactions_params_with_block_timestamp
     }
   end
 
@@ -334,5 +335,36 @@ defmodule EthereumJSONRPC.Blocks do
   @spec to_elixir([Block.t()]) :: elixir
   def to_elixir(blocks) when is_list(blocks) do
     Enum.map(blocks, &Block.to_elixir/1)
+  end
+
+  defp add_timestamp_to_transactions_params(transactions_params, blocks_params) do
+    block_hashes =
+      transactions_params
+      |> Enum.map(fn %{block_hash: block_hash} -> block_hash end)
+      |> Enum.uniq()
+
+    block_hash_timestamp_map =
+      block_hashes
+      |> Enum.map(fn block_hash ->
+        block =
+          Enum.find(blocks_params, fn block_param ->
+            block_param.hash == block_hash
+          end)
+
+        %{}
+        |> Map.put("#{block_hash}", block.timestamp)
+      end)
+      |> Enum.reduce(%{}, fn hash_timestamp_map_item, acc ->
+        Map.merge(acc, hash_timestamp_map_item)
+      end)
+
+    transactions_params
+    |> Enum.map(fn transactions_param ->
+      Map.put(
+        transactions_param,
+        :block_timestamp,
+        Map.get(block_hash_timestamp_map, "#{transactions_param.block_hash}")
+      )
+    end)
   end
 end
