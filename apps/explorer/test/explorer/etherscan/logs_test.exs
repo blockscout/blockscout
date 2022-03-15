@@ -38,12 +38,13 @@ defmodule Explorer.Etherscan.LogsTest do
 
     test "with address with one log response includes all required information" do
       contract_address = insert(:contract_address)
+      block = insert(:block)
 
       transaction =
-        %Transaction{block: block} =
+        %Transaction{} =
         :transaction
-        |> insert(to_address: contract_address)
-        |> with_block()
+        |> insert(to_address: contract_address, block_timestamp: block.timestamp)
+        |> with_block(block)
 
       log = insert(:log, address: contract_address, transaction: transaction)
 

@@ -147,8 +147,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
   def limit_time_interval(query, days_to_consider, nil) do
     query
     |> where(
-      [cb, b],
-      b.timestamp >=
+      [cb, block],
+      block.timestamp >=
         fragment("date_trunc('day', now() - CAST(? AS INTERVAL))", ^%Postgrex.Interval{days: days_to_consider})
     )
   end
@@ -156,8 +156,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
   def limit_time_interval(query, days_to_consider, %{timestamp: timestamp}) do
     query
     |> where(
-      [cb, b],
-      b.timestamp >=
+      [cb, block],
+      block.timestamp >=
         fragment(
           "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
           ^timestamp,
@@ -176,10 +176,10 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
     from(
       cb in subquery(coin_balance_query),
-      inner_join: b in Block,
-      on: cb.block_number == b.number,
-      where: b.consensus,
-      select: %{timestamp: b.timestamp, value: cb.value}
+      inner_join: block in Block,
+      on: cb.block_number == block.number,
+      where: block.consensus == true,
+      select: %{timestamp: block.timestamp, value: cb.value}
     )
   end
 
