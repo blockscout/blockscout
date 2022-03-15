@@ -580,15 +580,18 @@ defmodule Explorer.Chain do
   def gas_payment_by_block_hash(block_hashes) when is_list(block_hashes) do
     query =
       from(
-        block in Block,
-        left_join: transaction in assoc(block, :transactions),
-        where: block.hash in ^block_hashes and block.consensus == true,
-        group_by: block.hash,
-        select: {block.hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
+        transaction in Transaction,
+        where: transaction.block_hash in ^block_hashes and transaction.block_consensus == true,
+        group_by: transaction.block_hash,
+        select: {transaction.block_hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
       )
 
     query
     |> Repo.all()
+    |> (&if(Enum.count(&1) > 0,
+          do: &1,
+          else: Enum.zip([block_hashes, for(_ <- 1..Enum.count(block_hashes), do: %Wei{value: Decimal.new(0)})])
+        )).()
     |> Enum.into(%{})
   end
 
