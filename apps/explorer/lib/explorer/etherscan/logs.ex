@@ -361,7 +361,10 @@ defmodule Explorer.Etherscan.Logs do
             gas_price: transaction.gas_price,
             gas_used: transaction.gas_used,
             transaction_index: transaction.index,
-            block_number: internal_transaction.block_number
+            block_hash: transaction.block_hash,
+            block_number: internal_transaction.block_number,
+            block_timestamp: transaction.block_timestamp,
+            block_consensus: transaction.block_consensus
           })
       )
 
