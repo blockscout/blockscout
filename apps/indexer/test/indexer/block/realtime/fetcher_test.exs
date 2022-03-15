@@ -536,7 +536,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     }
                   ],
                   blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
-                  transactions: [%Transaction{hash: transaction_hash}]
+                  transactions: [%Transaction{hash: _transaction_hash}]
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)

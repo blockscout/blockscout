@@ -769,7 +769,7 @@ defmodule Explorer.Chain do
   def block_reward(block_number) do
     block_hash =
       Block
-      |> where([block], block.number == ^block_number and block.consensus)
+      |> where([block], block.number == ^block_number and block.consensus == true)
       |> select([block], block.hash)
       |> Repo.one!()
 
@@ -789,7 +789,7 @@ defmodule Explorer.Chain do
             left_join: transaction in assoc(block, :transactions),
             inner_join: emission_reward in EmissionReward,
             on: fragment("? <@ ?", block.number, emission_reward.block_range),
-            where: block.number == ^block_number and block.consensus,
+            where: block.number == ^block_number and block.consensus == true,
             group_by: [emission_reward.reward, block.hash],
             select: %Wei{
               value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + emission_reward.reward
@@ -811,15 +811,18 @@ defmodule Explorer.Chain do
   def gas_payment_by_block_hash(block_hashes) when is_list(block_hashes) do
     query =
       from(
-        block in Block,
-        left_join: transaction in assoc(block, :transactions),
-        where: block.hash in ^block_hashes and block.consensus == true,
-        group_by: block.hash,
-        select: {block.hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
+        transaction in Transaction,
+        where: transaction.block_hash in ^block_hashes and transaction.block_consensus == true,
+        group_by: transaction.block_hash,
+        select: {transaction.block_hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
       )
 
     query
     |> Repo.all()
+    |> (&if(Enum.count(&1) > 0,
+          do: &1,
+          else: Enum.zip([block_hashes, for(_ <- 1..Enum.count(block_hashes), do: %Wei{value: Decimal.new(0)})])
+        )).()
     |> Enum.into(%{})
   end
 
@@ -1150,10 +1153,10 @@ defmodule Explorer.Chain do
            min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
         query =
           from(
-            b in Block,
-            join: pending_ops in assoc(b, :pending_operations),
+            block in Block,
+            join: pending_ops in assoc(block, :pending_operations),
             where: pending_ops.fetch_internal_transactions,
-            where: b.consensus and b.number == ^min_block_number
+            where: block.consensus and block.number == ^min_block_number
           )
 
         !Repo.exists?(query)
@@ -2673,11 +2676,11 @@ defmodule Explorer.Chain do
   def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
     query =
       from(
-        b in Block,
-        join: pending_ops in assoc(b, :pending_operations),
+        block in Block,
+        join: pending_ops in assoc(block, :pending_operations),
         where: pending_ops.fetch_internal_transactions,
-        where: b.consensus,
-        select: b.number
+        where: block.consensus == true,
+        select: block.number
       )
 
     Repo.stream_reduce(query, initial, reducer)
@@ -7120,8 +7123,8 @@ defmodule Explorer.Chain do
 
   defp find_block_timestamp(number) do
     Block
-    |> where([b], b.number == ^number)
-    |> select([b], b.timestamp)
+    |> where([block], block.number == ^number)
+    |> select([block], block.timestamp)
     |> limit(1)
     |> Repo.one()
   end
