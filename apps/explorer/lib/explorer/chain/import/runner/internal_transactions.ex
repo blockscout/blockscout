@@ -695,7 +695,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     maximal_block = Application.get_env(:indexer, :trace_last_block)
 
     if Enum.count(invalid_block_numbers) > 0 do
-      update_query =
+      update_block_query =
         from(
           block in Block,
           where: block.number in ^invalid_block_numbers and block.consensus == true,
@@ -705,11 +705,24 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           update: [set: [consensus: false]]
         )
 
-      update_query =
-        if maximal_block, do: update_query |> where([block], block.number < ^maximal_block), else: update_query
+      update_block_query =
+        if maximal_block, do: update_block_query |> where([block], block.number < ^maximal_block), else: update_block_query
+
+      update_transaction_query =
+        from(
+          transaction in Transaction,
+          where: transaction.block_number in ^invalid_block_numbers and transaction.block_consensus,
+          where: transaction.block_number > ^minimal_block,
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [block_consensus: false]]
+        )
+
+      update_transaction_query =
+        if maximal_block, do: update_transaction_query |> where([transaction], transaction.block_number < ^maximal_block), else: update_transaction_query
 
       try do
-        {_num, result} = repo.update_all(update_query, [])
+        {_num, result} = repo.update_all(update_block_query, [])
+        {_num, _result} = repo.update_all(update_transaction_query, [])
 
         MissingRangesManipulator.add_ranges_by_block_numbers(invalid_block_numbers)
 
