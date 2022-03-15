@@ -693,7 +693,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
     if Enum.count(invalid_block_numbers) > 0 do
-      update_query =
+      update_block_query =
         from(
           block in Block,
           where: block.number in ^invalid_block_numbers and block.consensus == true,
@@ -703,8 +703,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           update: [set: [consensus: false]]
         )
 
+      update_transaction_query =
+        from(
+          transaction in Transaction,
+          where: transaction.block_number in ^invalid_block_numbers and transaction.block_consensus,
+          where: ^traceable_transactions_dynamic_query(),
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [block_consensus: false]]
+        )
+
       try do
-        {_num, result} = repo.update_all(update_query, [])
+        {_num, result} = repo.update_all(update_block_query, [])
+        {_num, _result} = repo.update_all(update_transaction_query, [])
 
         MissingRangesManipulator.add_ranges_by_block_numbers(invalid_block_numbers)
 
@@ -757,6 +767,19 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       Enum.reduce(block_ranges, dynamic([_], false), fn
         _from.._to = range, acc -> dynamic([block], ^acc or block.number in ^range)
         num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+      end)
+    else
+      dynamic([_], true)
+    end
+  end
+
+  defp traceable_transactions_dynamic_query do
+    if RangesHelper.trace_ranges_present?() do
+      block_ranges = RangesHelper.get_trace_block_ranges()
+
+      Enum.reduce(block_ranges, dynamic([_], false), fn
+        _from.._to = range, acc -> dynamic([transaction], ^acc or transaction.block_number in ^range)
+        num_to_latest, acc -> dynamic([transaction], ^acc or transaction.block_number >= ^num_to_latest)
       end)
     else
       dynamic([_], true)
