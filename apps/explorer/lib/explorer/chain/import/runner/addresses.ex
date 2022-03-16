@@ -81,7 +81,10 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Address ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = sort_changes_list(changes_list)
+    ordered_changes_list =
+      changes_list
+      |> Enum.sort_by(& &1.hash)
+      |> Enum.dedup_by(& &1.hash)
 
     Import.insert_changes_list(
       repo,
@@ -137,10 +140,6 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
             address.fetched_coin_balance_block_number
           ) or fragment("GREATEST(?, EXCLUDED.nonce) IS DISTINCT FROM  ?", address.nonce, address.nonce)
     )
-  end
-
-  defp sort_changes_list(changes_list) do
-    Enum.sort_by(changes_list, & &1.hash)
   end
 
   defp update_transactions(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
