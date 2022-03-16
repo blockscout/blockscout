@@ -99,7 +99,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:189
+#: lib/block_scout_web/templates/layout/app.html.eex:220
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
