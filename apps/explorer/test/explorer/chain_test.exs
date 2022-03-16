@@ -394,11 +394,12 @@ defmodule Explorer.ChainTest do
 
     test "with from transactions" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(from_address: address)
-        |> with_block()
+        |> insert(from_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       %{transactions_count: _, transactions: transactions} =
         Chain.address_to_transactions_rap(address_hash, direction: :from)
@@ -410,11 +411,12 @@ defmodule Explorer.ChainTest do
 
     test "with to transactions" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(to_address: address)
-        |> with_block()
+        |> insert(to_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       %{transactions_count: _, transactions: transactions} =
         Chain.address_to_transactions_rap(address_hash, direction: :to)
@@ -426,11 +428,12 @@ defmodule Explorer.ChainTest do
 
     test "with to and from transactions and direction: :from" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(from_address: address)
-        |> with_block()
+        |> insert(from_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       %{transactions_count: _, transactions: transactions} =
         Chain.address_to_transactions_rap(address_hash, direction: :from)
@@ -443,11 +446,12 @@ defmodule Explorer.ChainTest do
 
     test "with to and from transactions and direction: :to" do
       %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(to_address: address)
-        |> with_block()
+        |> insert(to_address: address, block_consensus: block.consensus)
+        |> with_block(block)
 
       %{transactions_count: _, transactions: transactions} =
         Chain.address_to_transactions_rap(address_hash, direction: :to)
@@ -463,12 +467,12 @@ defmodule Explorer.ChainTest do
 
       transaction1 =
         :transaction
-        |> insert(to_address: address)
+        |> insert(to_address: address, block_consensus: block.consensus)
         |> with_block(block)
 
       transaction2 =
         :transaction
-        |> insert(from_address: address)
+        |> insert(from_address: address, block_consensus: block.consensus)
         |> with_block(block)
 
       %{transactions_count: _, transactions: transactions} = Chain.address_to_transactions_rap(address_hash)
@@ -1234,7 +1238,7 @@ defmodule Explorer.ChainTest do
     test "returns the correct address if it exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.hash_to_address(address.hash)
+      assert {:ok, _address} = Chain.hash_to_address(address.hash)
     end
 
     test "has_decompiled_code? is true if there are decompiled contracts" do
@@ -1283,14 +1287,14 @@ defmodule Explorer.ChainTest do
     test "returns an address if it already exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert {:ok, _address} = Chain.find_or_insert_address_from_hash(address.hash)
     end
 
     test "returns an address if it doesn't exist" do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: hash}} = Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: _hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -3316,21 +3320,25 @@ defmodule Explorer.ChainTest do
     setup do
       number = 1
 
-      %{consensus_block: insert(:block, number: number, consensus: true), number: number}
+      block = insert(:block, number: number, consensus: true)
+
+      %{consensus_block: block, number: number}
     end
 
-    test "without consensus block hash has no key", %{consensus_block: consensus_block, number: number} do
+    test "without consensus block hash has key with 0 value", %{consensus_block: consensus_block, number: number} do
       non_consensus_block = insert(:block, number: number, consensus: false)
 
       :transaction
-      |> insert(gas_price: 1)
+      |> insert(gas_price: 1, block_consensus: false)
       |> with_block(consensus_block, gas_used: 1)
 
       :transaction
-      |> insert(gas_price: 1)
+      |> insert(gas_price: 1, block_consensus: false)
       |> with_block(consensus_block, gas_used: 2)
 
-      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{}
+      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{
+               non_consensus_block.hash => %Wei{value: Decimal.new(0)}
+             }
     end
 
     test "with consensus block hash without transactions has key with 0 value", %{
@@ -3833,7 +3841,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
+      assert {:ok, %SmartContract{}} =
                Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
@@ -3849,7 +3857,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} = Chain.update_smart_contract(%{address_hash: address.hash})
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
@@ -3875,8 +3883,7 @@ defmodule Explorer.ChainTest do
                  el.contract_source_code == Map.get(src, :contract_source_code)
              end)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
-               Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
 
       sc_after_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
 
@@ -4433,7 +4440,7 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
-      assert smart_contract = result.contract_address.smart_contract
+      assert result.contract_address.smart_contract
     end
   end
 
@@ -4669,7 +4676,7 @@ defmodule Explorer.ChainTest do
         cataloged: true
       }
 
-      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+      assert {:ok, _updated_token} = Chain.update_token(token, update_params)
     end
   end
 
