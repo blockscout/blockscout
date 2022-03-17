@@ -45,7 +45,7 @@ defmodule Explorer.Celo.ContractEvents.Common do
 
   def extract_common_event_params(event) do
     # set full hashes
-    [:transaction_hash, :block_hash]
+    [:transaction_hash]
     |> Enum.into(%{}, fn key ->
       case Map.get(event, key) do
         nil ->
@@ -62,6 +62,8 @@ defmodule Explorer.Celo.ContractEvents.Common do
       Map.put(map, :contract_address_hash, hsh)
     end)
     |> Map.put(:name, event.name)
+    |> Map.put(:topic, event.topic)
+    |> Map.put(:block_number, event.block_number)
     |> Map.put(:log_index, event.log_index)
   end
 

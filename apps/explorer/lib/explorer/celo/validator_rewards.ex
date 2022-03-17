@@ -32,12 +32,12 @@ defmodule Explorer.Celo.ValidatorRewards do
         to_date -> to_date
       end
 
-    validator_epoch_payment_distributed = ValidatorEpochPaymentDistributedEvent.name()
+    validator_epoch_payment_distributed = ValidatorEpochPaymentDistributedEvent.topic()
 
     query =
       from(event in CeloContractEvent,
         inner_join: block in Block,
-        on: event.block_hash == block.hash,
+        on: event.block_number == block.number,
         select: %{
           amount: json_extract_path(event.params, ["validator_payment"]),
           date: block.timestamp,
@@ -46,7 +46,7 @@ defmodule Explorer.Celo.ValidatorRewards do
           group: json_extract_path(event.params, ["group"])
         },
         order_by: [asc: block.number],
-        where: event.name == ^validator_epoch_payment_distributed,
+        where: event.topic == ^validator_epoch_payment_distributed,
         where: block.timestamp >= ^from_date,
         where: block.timestamp < ^to_date
       )

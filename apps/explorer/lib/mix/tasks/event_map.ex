@@ -39,8 +39,8 @@ defmodule Mix.Tasks.EventMap do
       |> Enum.reject(&is_nil/1)
     end
 
-    def celo_contract_event_to_concrete_event(%{name: name} = params) do
-      case event_for_name(name) do
+    def celo_contract_event_to_concrete_event(%{topic: topic} = params) do
+      case event_for_topic(topic) do
         nil ->
           nil
 
@@ -72,13 +72,8 @@ defmodule Mix.Tasks.EventMap do
       <%= module %>,
     <% end %>}
 
-    @name_to_event %{
-    <%= for module <- @modules do %>  "<%= module.name %>" =>
-      <%= module %>,
-    <% end %>}
-
     def event_for_topic(topic), do: Map.get(@topic_to_event, topic)
-    def event_for_name(name), do: Map.get(@name_to_event, name)
+    def map, do: @topic_to_event
 
   end
 

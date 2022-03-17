@@ -20,26 +20,23 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
     ValidatorGroupVoteActivatedEvent
   }
 
-  @validator_group_vote_activated ValidatorGroupVoteActivatedEvent.name()
+  @validator_group_vote_activated ValidatorGroupVoteActivatedEvent.topic()
 
   def calculate(voter_address_hash, group_address_hash, to_date \\ DateTime.utc_now()) do
-    validator_group_active_vote_revoked = ValidatorGroupActiveVoteRevokedEvent.name()
-    epoch_rewards_distributed_to_voters = EpochRewardsDistributedToVotersEvent.name()
+    validator_group_active_vote_revoked = ValidatorGroupActiveVoteRevokedEvent.topic()
+    epoch_rewards_distributed_to_voters = EpochRewardsDistributedToVotersEvent.topic()
 
     query =
       from(event in CeloContractEvent,
-        inner_join: block in Block,
-        on: event.block_hash == block.hash,
         select: %{
-          block_hash: event.block_hash,
-          block_number: block.number,
+          block_number: event.block_number,
           amount_activated_or_revoked: json_extract_path(event.params, ["value"]),
-          event: event.name
+          event: event.topic
         },
-        order_by: [asc: block.number],
+        order_by: [asc: event.block_number],
         where:
-          event.name == ^validator_group_active_vote_revoked or
-            event.name == ^@validator_group_vote_activated
+          event.topic == ^validator_group_active_vote_revoked or
+            event.topic == ^@validator_group_vote_activated
       )
 
     ordered_activated_or_revoked_events_for_voter_for_group =
@@ -57,20 +54,20 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
 
         query =
           from(event in CeloContractEvent,
-            inner_join: votes in CeloValidatorGroupVotes,
-            on: event.block_hash == votes.block_hash,
             inner_join: block in Block,
-            on: event.block_hash == block.hash,
+            on: event.block_number == block.number,
+            inner_join: votes in CeloValidatorGroupVotes,
+            on: votes.block_hash == block.hash,
             select: %{
-              block_hash: event.block_hash,
-              block_number: block.number,
+              block_hash: block.hash,
+              block_number: event.block_number,
               date: block.timestamp,
               epoch_reward: json_extract_path(event.params, ["value"]),
-              event: event.name,
+              event: event.topic,
               previous_block_group_votes: votes.previous_block_active_votes
             },
             where: block.number >= ^voter_activated_earliest_block.block_number,
-            where: event.name == ^epoch_rewards_distributed_to_voters,
+            where: event.topic == ^epoch_rewards_distributed_to_voters,
             where: block.timestamp < ^to_date
           )
 

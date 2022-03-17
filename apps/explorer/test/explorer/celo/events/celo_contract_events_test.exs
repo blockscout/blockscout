@@ -36,7 +36,7 @@ defmodule Explorer.Celo.Events.CeloContractEventsTest do
       test_log = %Log{
         address_hash: contract_address_hash,
         block_hash: block_1.hash,
-        block_number: 7_930_514,
+        block_number: 172_800,
         data: %Explorer.Chain.Data{
           bytes:
             <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0,

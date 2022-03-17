@@ -39,7 +39,7 @@ defmodule Explorer.Celo.ContractEvents.Base do
       def topic, do: @topic
 
       def query do
-        from(c in CeloContractEvent, where: c.name == ^@name)
+        from(c in CeloContractEvent, where: c.topic == ^@topic)
       end
     end
   end
@@ -59,10 +59,11 @@ defmodule Explorer.Celo.ContractEvents.Base do
     # finding all properties for the event struct
     common_event_properties = [
       :transaction_hash,
-      :block_hash,
+      :block_number,
       :contract_address_hash,
       :log_index,
-      name: Module.get_attribute(env.module, :name)
+      name: Module.get_attribute(env.module, :name),
+      topic: Module.get_attribute(env.module, :topic)
     ]
 
     struct_properties =
@@ -125,7 +126,8 @@ defmodule Explorer.Celo.ContractEvents.Base do
             # mapping common event properties
             common_event_properties = %{
               transaction_hash: params.transaction_hash,
-              block_hash: params.block_hash,
+              block_number: params.block_number,
+              topic: params.first_topic,
               contract_address_hash: params.address_hash,
               log_index: params.index
             }
@@ -154,7 +156,8 @@ defmodule Explorer.Celo.ContractEvents.Base do
 
             %{
               transaction_hash: contract.transaction_hash,
-              block_hash: contract.block_hash,
+              block_number: contract.block_number,
+              topic: contract.topic,
               contract_address_hash: contract.contract_address_hash,
               log_index: contract.log_index
             }

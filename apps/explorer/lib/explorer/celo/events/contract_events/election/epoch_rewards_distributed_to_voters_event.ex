@@ -18,10 +18,11 @@ defmodule Explorer.Celo.ContractEvents.Election.EpochRewardsDistributedToVotersE
   event_param(:group, :address, :indexed)
   event_param(:value, {:uint, 256}, :unindexed)
 
-  def elected_groups_for_block(block_hash) do
+  def elected_groups_for_block(block_number) do
     events =
       query()
-      |> where([e], e.block_hash == ^block_hash)
+      |> where([e], e.block_number == ^block_number)
+      |> order_by([e], asc: e.log_index)
       |> Repo.all()
       |> EventMap.celo_contract_event_to_concrete_event()
 

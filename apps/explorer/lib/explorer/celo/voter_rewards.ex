@@ -39,14 +39,13 @@ defmodule Explorer.Celo.VoterRewards do
       end
 
     voter_rewards_for_group = Application.get_env(:explorer, :voter_rewards_for_group)
-    validator_group_vote_activated = ValidatorGroupVoteActivatedEvent.name()
+    validator_group_vote_activated = ValidatorGroupVoteActivatedEvent.topic()
 
     query =
       ValidatorGroupVoteActivatedEvent.query()
-      |> join(:inner, [event], block in Block, on: event.block_hash == block.hash)
       |> distinct([event], [json_extract_path(event.params, ["voter"]), json_extract_path(event.params, ["group"])])
-      |> order_by([_, block], block.number)
-      |> where([event], event.name == ^validator_group_vote_activated)
+      |> order_by([event], event.block_number)
+      |> where([event], event.topic == ^validator_group_vote_activated)
 
     validator_group_vote_activated_events =
       query

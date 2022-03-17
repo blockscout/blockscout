@@ -13,22 +13,24 @@ defmodule Explorer.Chain.CeloContractEvent do
   alias Explorer.Repo
 
   @type t :: %__MODULE__{
-          block_hash: Hash.Full.t(),
           name: String.t(),
+          topic: String.t(),
           log_index: non_neg_integer(),
+          block_number: non_neg_integer(),
           contract_address_hash: Hash.Address.t(),
           transaction_hash: Hash.Full.t(),
           params: map()
         }
 
-  @attrs ~w( name contract_address_hash transaction_hash block_hash log_index params)a
-  @required ~w( name contract_address_hash block_hash log_index)a
+  @attrs ~w( name contract_address_hash transaction_hash log_index params topic block_number)a
+  @required ~w( name contract_address_hash log_index topic block_number)a
 
   @primary_key false
   schema "celo_contract_events" do
-    field(:block_hash, Hash.Full, primary_key: true)
+    field(:block_number, :integer, primary_key: true)
     field(:log_index, :integer, primary_key: true)
     field(:name, :string)
+    field(:topic, :string)
     field(:params, :map)
     field(:contract_address_hash, Address)
     field(:transaction_hash, Hash.Full)
@@ -45,10 +47,10 @@ defmodule Explorer.Chain.CeloContractEvent do
   @doc "returns ids of entries in log table that contain events not yet included in CeloContractEvents table"
   def fetch_unprocessed_log_ids_query(topics) when is_list(topics) do
     from(l in "logs",
-      select: {l.block_hash, l.index},
+      select: {l.block_number, l.index},
       left_join: cce in __MODULE__,
-      on: {cce.block_hash, cce.log_index} == {l.block_hash, l.index},
-      where: l.first_topic in ^topics and is_nil(cce.block_hash),
+      on: {cce.block_number, cce.log_index} == {l.block_number, l.index},
+      where: l.first_topic in ^topics and is_nil(cce.block_number),
       order_by: [asc: l.block_number, asc: l.index]
     )
   end
@@ -75,7 +77,7 @@ defmodule Explorer.Chain.CeloContractEvent do
         |> EventMap.rpc_to_event_params()
         |> set_timestamps()
 
-      result = Repo.insert_all(__MODULE__, to_insert, returning: [:block_hash, :log_index])
+      result = Repo.insert_all(__MODULE__, to_insert, returning: [:block_number, :log_index])
 
       Process.sleep(@throttle_ms)
       result
@@ -83,7 +85,7 @@ defmodule Explorer.Chain.CeloContractEvent do
   end
 
   def fetch_params(ids) do
-    # convert list of {block_hash, index} tuples to two lists of [block_hash] and [index] because ecto can't handle
+    # convert list of {block_number, index} tuples to two lists of [block_number] and [index] because ecto can't handle
     # direct tuple comparisons with a WHERE IN clause
     {blocks, indices} =
       ids
@@ -94,8 +96,8 @@ defmodule Explorer.Chain.CeloContractEvent do
 
     from(
       l in Log,
-      join: v in fragment("SELECT * FROM unnest(?::bytea[], ?::int[]) AS v(block_hash,index)", ^blocks, ^indices),
-      on: v.block_hash == l.block_hash and v.index == l.index
+      join: v in fragment("SELECT * FROM unnest(?::bytea[], ?::int[]) AS v(block_number,index)", ^blocks, ^indices),
+      on: v.block_number == l.block_number and v.index == l.index
     )
   end
 

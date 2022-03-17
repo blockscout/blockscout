@@ -14,14 +14,6 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
       assert result.name == "ValidatorGroupVoteActivated"
     end
 
-    test "Gets struct for name" do
-      result =
-        "ValidatorGroupVoteActivated"
-        |> EventMap.event_for_name()
-
-      assert result.topic == "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe"
-    end
-
     test "Converts jsonrpc log format to CeloContractEvent changeset params" do
       test_params = %{
         address_hash: "0x765de816845861e75a25fca122bb6898b8b1282a",
@@ -46,7 +38,8 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
                "0xb8960575a898afa8a124cd7414f1261109a119dba3bed4489393952a1556a5f0"
 
       assert result.contract_address_hash |> to_string() == "0x765de816845861e75a25fca122bb6898b8b1282a"
-      assert result.block_hash |> to_string() == "0x42b21f09e9956d1a01195b1ca461059b2705fe850fc1977bd7182957e1b390d3"
+      assert result.block_number == 10_913_664
+      assert result.topic == "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe"
 
       %{params: params} = result
 
@@ -59,12 +52,12 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
 
   describe "test event factory " do
     test "Asserts factory functionality for events" do
-      block = insert(:block)
+      block = insert(:block, number: 77)
       log = insert(:log, block: block)
       contract = insert(:contract_address)
 
       event = %ValidatorGroupActiveVoteRevokedEvent{
-        block_hash: block.hash,
+        block_number: 77,
         log_index: log.index,
         contract_address_hash: contract.hash,
         account: address_hash(),

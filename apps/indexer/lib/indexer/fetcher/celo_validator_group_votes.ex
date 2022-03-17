@@ -56,7 +56,7 @@ defmodule Indexer.Fetcher.CeloValidatorGroupVotes do
   def fetch_from_blockchain(blocks) do
     blocks
     |> Enum.flat_map(fn block ->
-      elected_groups = EpochRewardsDistributedToVotersEvent.elected_groups_for_block(block.block_hash)
+      elected_groups = EpochRewardsDistributedToVotersEvent.elected_groups_for_block(block.block_number)
 
       Enum.map(elected_groups, fn group_hash_string ->
         do_fetch_from_blockchain(block, group_hash_string)

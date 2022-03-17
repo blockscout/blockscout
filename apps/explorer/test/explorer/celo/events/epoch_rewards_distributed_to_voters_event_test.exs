@@ -57,7 +57,7 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_hash: block_1.hash,
+          block_number: 172_800,
           log_index: log_1_1.index,
           contract_address_hash: contract_address_hash,
           group: group_address_1_hash,
@@ -67,7 +67,7 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %ValidatorGroupVoteActivatedEvent{
-          block_hash: block_1.hash,
+          block_number: 172_800,
           log_index: log_1_2.index,
           account: group_address_1_hash,
           contract_address_hash: contract_address_hash,
@@ -79,7 +79,7 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_hash: block_1.hash,
+          block_number: 172_800,
           log_index: log_1_3.index,
           contract_address_hash: contract_address_hash,
           group: group_address_2_hash,
@@ -89,7 +89,7 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_hash: block_2.hash,
+          block_number: 190_080,
           log_index: log_2.index,
           contract_address_hash: contract_address_hash,
           group: group_address_2_hash,
@@ -97,7 +97,7 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
         }
       })
 
-      assert EpochRewardsDistributedToVotersEvent.elected_groups_for_block(block_1.hash) == [
+      assert EpochRewardsDistributedToVotersEvent.elected_groups_for_block(block_1.number) == [
                group_address_1_hash,
                group_address_2_hash
              ]

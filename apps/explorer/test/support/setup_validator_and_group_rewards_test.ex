@@ -18,7 +18,7 @@ defmodule Explorer.SetupValidatorAndGroupRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorEpochPaymentDistributedEvent{
-        block_hash: block_1_hash,
+        block_number: 10_696_320,
         contract_address_hash: contract_address_hash,
         log_index: log_1.index,
         validator: validator_address_1_hash,
@@ -36,7 +36,7 @@ defmodule Explorer.SetupValidatorAndGroupRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorEpochPaymentDistributedEvent{
-        block_hash: block_2_hash,
+        block_number: 10_730_880,
         contract_address_hash: contract_address_hash,
         log_index: log_2.index,
         validator: validator_address_1_hash,
@@ -48,7 +48,7 @@ defmodule Explorer.SetupValidatorAndGroupRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorEpochPaymentDistributedEvent{
-        block_hash: block_2.hash,
+        block_number: 10_730_880,
         contract_address_hash: contract_address_hash,
         log_index: log_3.index,
         validator: validator_address_2_hash,
@@ -66,7 +66,7 @@ defmodule Explorer.SetupValidatorAndGroupRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorEpochPaymentDistributedEvent{
-        block_hash: block_3_hash,
+        block_number: 10_748_160,
         contract_address_hash: contract_address_hash,
         log_index: log_4.index,
         validator: validator_address_1_hash,
@@ -78,7 +78,7 @@ defmodule Explorer.SetupValidatorAndGroupRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorEpochPaymentDistributedEvent{
-        block_hash: block_3.hash,
+        block_number: 10_748_160,
         contract_address_hash: contract_address_hash,
         log_index: log_5.index,
         validator: validator_address_2_hash,

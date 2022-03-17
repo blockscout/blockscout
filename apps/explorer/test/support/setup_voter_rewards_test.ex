@@ -12,7 +12,6 @@ defmodule Explorer.SetupVoterRewardsTest do
   import Explorer.Factory
 
   def setup_for_group do
-    validator_group_active_vote_revoked = ValidatorGroupActiveVoteRevokedEvent.name()
     %Address{hash: voter_address_1_hash} = insert(:address)
     %Address{hash: voter_address_2_hash} = insert(:address)
     %Address{hash: group_address_hash} = insert(:address)
@@ -24,7 +23,7 @@ defmodule Explorer.SetupVoterRewardsTest do
     # voter_1 activates votes for group_1 on January 1st and is the only voter
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_hash: block_1.hash,
+        block_number: 10_692_863,
         log_index: log_1.index,
         account: voter_address_1_hash,
         contract_address_hash: contract_address_hash,
@@ -40,7 +39,7 @@ defmodule Explorer.SetupVoterRewardsTest do
     # voter_2 activates votes for group_1 on January 3rd
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_hash: block_2.hash,
+        block_number: 10_727_421,
         log_index: log_2.index,
         account: voter_address_2_hash,
         contract_address_hash: contract_address_hash,
@@ -56,7 +55,7 @@ defmodule Explorer.SetupVoterRewardsTest do
     # voter_1 revokes votes for group_1 on January 4th
     insert(:contract_event, %{
       event: %ValidatorGroupActiveVoteRevokedEvent{
-        block_hash: block_3.hash,
+        block_number: 10_744_696,
         log_index: log_3.index,
         account: voter_address_1_hash,
         contract_address_hash: contract_address_hash,
@@ -72,7 +71,7 @@ defmodule Explorer.SetupVoterRewardsTest do
     # voter_2 revokes votes for group_1 on January 5th
     insert(:contract_event, %{
       event: %ValidatorGroupActiveVoteRevokedEvent{
-        block_hash: block_4.hash,
+        block_number: 10_761_966,
         log_index: log_4.index,
         account: voter_address_2_hash,
         contract_address_hash: contract_address_hash,
@@ -88,7 +87,7 @@ defmodule Explorer.SetupVoterRewardsTest do
     # voter_1 revokes votes for group_1 on January 7th
     insert(:contract_event, %{
       event: %ValidatorGroupActiveVoteRevokedEvent{
-        block_hash: block_5.hash,
+        block_number: 10_796_524,
         log_index: log_5.index,
         account: voter_address_1_hash,
         contract_address_hash: contract_address_hash,
@@ -119,7 +118,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %EpochRewardsDistributedToVotersEvent{
-        block_hash: block_6.hash,
+        block_number: 10_696_320,
         log_index: log_6.index,
         contract_address_hash: contract_address_hash,
         group: group_address_hash,
@@ -148,7 +147,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %EpochRewardsDistributedToVotersEvent{
-        block_hash: block_7.hash,
+        block_number: 10_713_600,
         log_index: log_7.index,
         contract_address_hash: contract_address_hash,
         group: group_address_hash,
@@ -177,7 +176,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %EpochRewardsDistributedToVotersEvent{
-        block_hash: block_8.hash,
+        block_number: 10_730_880,
         log_index: log_8.index,
         contract_address_hash: contract_address_hash,
         group: group_address_hash,
@@ -206,7 +205,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %EpochRewardsDistributedToVotersEvent{
-        block_hash: block_9.hash,
+        block_number: 10_748_160,
         log_index: log_9.index,
         contract_address_hash: contract_address_hash,
         group: group_address_hash,
@@ -235,7 +234,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %EpochRewardsDistributedToVotersEvent{
-        block_hash: block_10.hash,
+        block_number: 10_765_440,
         log_index: log_10.index,
         contract_address_hash: contract_address_hash,
         group: group_address_hash,
@@ -264,7 +263,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %EpochRewardsDistributedToVotersEvent{
-        block_hash: block_11.hash,
+        block_number: 10_782_720,
         log_index: log_11.index,
         contract_address_hash: contract_address_hash,
         group: group_address_hash,
@@ -301,7 +300,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_hash: block_1.hash,
+        block_number: 10_692_863,
         log_index: log_1.index,
         account: voter_address_1_hash,
         contract_address_hash: contract_address_hash,
@@ -316,7 +315,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_hash: block_2.hash,
+        block_number: 10_744_703,
         log_index: log_2.index,
         account: voter_address_1_hash,
         contract_address_hash: contract_address_hash,
@@ -331,7 +330,7 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_hash: block_3.hash,
+        block_number: 10_779_263,
         log_index: log_3.index,
         account: voter_address_2_hash,
         contract_address_hash: contract_address_hash,
