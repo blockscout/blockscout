@@ -8,21 +8,24 @@ defmodule Explorer.Chain.CeloPendingEpochOperation do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Repo
 
-  @required_attrs ~w(block_hash fetch_epoch_rewards)a
+  @required_attrs ~w(block_hash fetch_epoch_rewards fetch_validator_group_data fetch_voter_votes)a
 
   @typedoc """
    * `block_hash` - the hash of the epoch block that has pending operations.
    * `fetch_epoch_rewards` - if the epoch rewards should be fetched (or not)
+   * `fetch_voter_votes` - if the voter votes should be fetched (or not)
   """
   @type t :: %__MODULE__{
           block_hash: Hash.Full.t(),
-          fetch_epoch_rewards: boolean()
+          fetch_epoch_rewards: boolean(),
+          fetch_voter_votes: boolean()
         }
 
   @primary_key false
   schema "celo_pending_epoch_operations" do
     field(:fetch_epoch_rewards, :boolean)
     field(:fetch_validator_group_data, :boolean)
+    field(:fetch_voter_votes, :boolean)
 
     timestamps()
 
@@ -43,6 +46,7 @@ defmodule Explorer.Chain.CeloPendingEpochOperation do
       update: [
         set: [
           fetch_epoch_rewards: celo_epoch_pending_ops.fetch_epoch_rewards or fragment("EXCLUDED.fetch_epoch_rewards"),
+          fetch_voter_votes: celo_epoch_pending_ops.fetch_voter_votes or fragment("EXCLUDED.fetch_voter_votes"),
           # Don't update `block_hash` as it is used for the conflict target
           inserted_at: celo_epoch_pending_ops.inserted_at,
           updated_at: fragment("EXCLUDED.updated_at")
@@ -52,27 +56,28 @@ defmodule Explorer.Chain.CeloPendingEpochOperation do
     )
   end
 
-  @spec falsify_or_delete_celo_pending_epoch_operation(
+  @spec falsify_celo_pending_epoch_operation(
           Hash.Full.t(),
-          :fetch_epoch_rewards | :fetch_validator_group_data
+          :fetch_epoch_rewards | :fetch_validator_group_data | :fetch_voter_votes
         ) :: __MODULE__.t()
-  def falsify_or_delete_celo_pending_epoch_operation(block_hash, operation_type) do
+  def falsify_celo_pending_epoch_operation(block_hash, operation_type) do
     celo_pending_operation = Repo.get(__MODULE__, block_hash)
+
     new_celo_pending_operation = Map.put(celo_pending_operation, operation_type, false)
 
-    %{fetch_epoch_rewards: new_fetch_epoch_rewards, fetch_validator_group_data: new_fetch_validator_group_data} =
-      new_celo_pending_operation
+    %{
+      fetch_epoch_rewards: new_fetch_epoch_rewards,
+      fetch_validator_group_data: new_fetch_validator_group_data,
+      fetch_voter_votes: new_fetch_voter_votes
+    } = new_celo_pending_operation
 
-    if new_fetch_epoch_rewards || new_fetch_validator_group_data == true do
-      celo_pending_operation
-      |> changeset(%{
-        block_hash: block_hash,
-        fetch_epoch_rewards: new_fetch_epoch_rewards,
-        fetch_validator_group_data: new_fetch_validator_group_data
-      })
-      |> Repo.update()
-    else
-      Repo.delete(celo_pending_operation)
-    end
+    celo_pending_operation
+    |> changeset(%{
+      block_hash: block_hash,
+      fetch_epoch_rewards: new_fetch_epoch_rewards,
+      fetch_validator_group_data: new_fetch_validator_group_data,
+      fetch_voter_votes: new_fetch_voter_votes
+    })
+    |> Repo.update()
   end
 end

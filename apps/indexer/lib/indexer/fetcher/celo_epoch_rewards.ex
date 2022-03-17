@@ -9,12 +9,21 @@ defmodule Indexer.Fetcher.CeloEpochRewards do
 
   alias Explorer.Celo.AccountReader
   alias Explorer.Chain
-  alias Explorer.Chain.CeloEpochRewards
+  alias Explorer.Chain.{Block, CeloEpochRewards, Hash}
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
 
   @behaviour BufferedTask
+
+  @spec async_fetch([%{block_hash: Hash.Full.t(), block_number: Block.block_number()}]) :: :ok
+  def async_fetch(blocks) when is_list(blocks) do
+    filtered_blocks =
+      blocks
+      |> Enum.filter(&(rem(&1.block_number, 17_280) == 0))
+
+    BufferedTask.buffer(__MODULE__, filtered_blocks)
+  end
 
   @doc false
   def child_spec([init_options, gen_server_options]) do

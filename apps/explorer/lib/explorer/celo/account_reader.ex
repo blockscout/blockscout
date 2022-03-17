@@ -238,6 +238,33 @@ defmodule Explorer.Celo.AccountReader do
     ])
   end
 
+  def active_votes(%{
+        block_hash: block_hash,
+        block_number: block_number,
+        group_hash: group_hash,
+        account_hash: account_hash
+      }) do
+    data =
+      call_methods([
+        {:election, "getActiveVotesForGroupByAccount", [to_string(group_hash), to_string(account_hash)], block_number}
+      ])
+
+    case data["getActiveVotesForGroupByAccount"] do
+      {:ok, [active]} ->
+        {:ok,
+         %{
+           account_hash: account_hash,
+           active_votes: active,
+           block_hash: block_hash,
+           block_number: block_number,
+           group_hash: group_hash
+         }}
+
+      _ ->
+        :error
+    end
+  end
+
   def voter_data(group_address, voter_address) do
     data =
       call_methods([

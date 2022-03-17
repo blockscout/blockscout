@@ -2,7 +2,7 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
   use Explorer.DataCase, async: true
 
   alias Explorer.Chain.CeloContractEvent
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{Address, Block, Log}
   alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Celo.ContractEvents.EventMap
   alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
@@ -103,7 +103,6 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
       assert result.log_index == 8
 
       {:ok, account} = Explorer.Chain.Hash.Address.cast("0x88c1c759600ec3110af043c183a2472ab32d099c")
-      {:ok, group} = Explorer.Chain.Hash.Address.cast("0x47b2db6af05a55d42ed0f3731735f9479abf0673")
 
       # test dynamic query methods
       [account_query_result] =
@@ -112,6 +111,54 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
         |> EventMap.query_all()
 
       assert result == account_query_result
+    end
+  end
+
+  describe "get_previous_epoch_voters_and_groups/1" do
+    test "returns accounts that have activated votes for groups" do
+      %Address{hash: voter_1_address_hash} = insert(:address)
+      %Address{hash: group_1_address_hash} = insert(:address)
+      %Address{hash: voter_2_address_hash} = insert(:address)
+      %Address{hash: group_2_address_hash} = insert(:address)
+      %Address{hash: contract_address_hash} = insert(:address)
+
+      block_1 = insert(:block, number: 10_692_863, timestamp: ~U[2022-01-01 13:08:43.162804Z])
+      log_1 = insert(:log, block: block_1)
+
+      insert(:contract_event, %{
+        event: %ValidatorGroupVoteActivatedEvent{
+          block_number: block_1.number,
+          log_index: log_1.index,
+          account: voter_1_address_hash,
+          contract_address_hash: contract_address_hash,
+          group: group_1_address_hash,
+          units: 1000,
+          value: 650
+        }
+      })
+
+      block_2 = insert(:block, number: 10_710_143, timestamp: ~U[2022-01-02 13:08:43.162814Z])
+      log_2 = insert(:log, block: block_2)
+
+      insert(:contract_event, %{
+        event: %ValidatorGroupVoteActivatedEvent{
+          block_number: block_2.number,
+          log_index: log_2.index,
+          account: voter_2_address_hash,
+          contract_address_hash: contract_address_hash,
+          group: group_2_address_hash,
+          units: 1000,
+          value: 650
+        }
+      })
+
+      assert ValidatorGroupVoteActivatedEvent.get_account_group_pairs_with_activated_votes(10_696_320) ==
+               [
+                 %{
+                   account_hash: voter_1_address_hash,
+                   group_hash: group_1_address_hash
+                 }
+               ]
     end
   end
 end

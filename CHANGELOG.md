@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#581](https://github.com/celo-org/blockscout/pull/581) - Save voter active votes to db
 
 ### Fixes
 - [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug

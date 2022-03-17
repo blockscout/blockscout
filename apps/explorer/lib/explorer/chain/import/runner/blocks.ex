@@ -357,9 +357,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         |> Enum.map(& &1.number)
         |> MapSet.new()
         |> MapSet.to_list()
-        |> Enum.filter(&(rem(&1, 17280) == 0))
+        |> Enum.filter(&(rem(&1, 17_280) == 0))
         |> Enum.map(&Enum.find(changes_list, fn block -> block.number == &1 end))
-        |> Enum.map(&%{block_hash: &1.hash, fetch_epoch_rewards: true})
+        |> Enum.map(&%{block_hash: &1.hash, fetch_epoch_rewards: true, fetch_voter_votes: true})
 
       Import.insert_changes_list(
         repo,

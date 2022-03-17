@@ -173,7 +173,6 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
 
       CeloEpochRewardsFetcher.import_items(rewards)
 
-      assert count(CeloPendingEpochOperation) == 0
       assert count(CeloEpochRewards) == 1
     end
   end

@@ -90,6 +90,6 @@ defmodule Explorer.Celo.Util do
   end
 
   def epoch_by_block_number(bn) do
-    div(bn, 17280)
+    div(bn, 17_280)
   end
 end

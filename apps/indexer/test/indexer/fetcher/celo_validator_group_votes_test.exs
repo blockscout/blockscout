@@ -142,7 +142,6 @@ defmodule Indexer.Fetcher.CeloValidatorGroupVotesTest do
 
       CeloValidatorGroupVotesFetcher.import_items(votes)
 
-      assert count(CeloPendingEpochOperation) == 1
       assert count(CeloValidatorGroupVotes) == 2
     end
   end

@@ -23,6 +23,7 @@ defmodule Explorer.Factory do
     CeloContractEvent,
     CeloPendingEpochOperation,
     CeloValidatorGroupVotes,
+    CeloVoterVotes,
     ContractMethod,
     Data,
     DecompiledSmartContract,
@@ -322,7 +323,8 @@ defmodule Explorer.Factory do
       # caller MUST supply block
       # all operations will default to true
       fetch_epoch_rewards: true,
-      fetch_validator_group_data: true
+      fetch_validator_group_data: true,
+      fetch_voter_votes: true
     }
   end
 
@@ -730,6 +732,16 @@ defmodule Explorer.Factory do
       account_address: address_hash(),
       amount: Decimal.new(1),
       available: Timex.shift(Timex.now(), days: Enum.random(0..100) * -1)
+    }
+  end
+
+  def celo_voter_votes_factory do
+    %CeloVoterVotes{
+      account_hash: address_hash(),
+      active_votes: Decimal.new(1),
+      block_hash: block_hash(),
+      block_number: block_number(),
+      group_hash: address_hash()
     }
   end
 

@@ -109,7 +109,7 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
 
   def amount_activated_or_revoked_last_day(voter_activated_or_revoked, block_number) do
     voter_activated_or_revoked
-    |> Enum.filter(&(&1.block_number < block_number && &1.block_number >= block_number - 17280))
+    |> Enum.filter(&(&1.block_number < block_number && &1.block_number >= block_number - 17_280))
     |> Enum.reduce(0, fn x, acc ->
       if x.event == @validator_group_vote_activated do
         acc + x.amount_activated_or_revoked

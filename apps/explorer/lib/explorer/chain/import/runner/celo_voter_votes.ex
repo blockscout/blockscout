@@ -1,12 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.CeloValidatorGroupVotes do
+defmodule Explorer.Chain.Import.Runner.CeloVoterVotes do
   @moduledoc """
-  Bulk imports Celo voter rewards to the DB table.
+  Bulk imports Celo voter votes to the DB table.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{CeloPendingEpochOperation, CeloValidatorGroupVotes, Import}
+  alias Explorer.Chain.{CeloPendingEpochOperation, Import}
+  alias Explorer.Chain.CeloVoterVotes, as: CeloVoterVotesChain
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]
@@ -16,13 +17,13 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroupVotes do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [CeloValidatorGroupVotes.t()]
+  @type imported :: [CeloVoterVotesChain.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: CeloValidatorGroupVotes
+  def ecto_schema_module, do: CeloVoterVotesChain
 
   @impl Import.Runner
-  def option_key, do: :celo_validator_group_votes
+  def option_key, do: :celo_voter_votes
 
   @impl Import.Runner
   def imported_table_row do
@@ -38,18 +39,18 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroupVotes do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi_chain =
-      Multi.run(multi, :insert_group_vote_items, fn repo, _ ->
+      Multi.run(multi, :insert_celo_voter_votes_items, fn repo, _ ->
         insert(repo, changes_list, insert_options)
       end)
 
     multi_chain
-    |> Multi.run(:falsify_fetch_validator_group_data, fn _, _ ->
+    |> Multi.run(:falsify_fetch_voter_votes, fn _, _ ->
       changes =
         changes_list
-        |> Enum.each(fn reward ->
+        |> Enum.each(fn votes ->
           CeloPendingEpochOperation.falsify_celo_pending_epoch_operation(
-            reward.block_hash,
-            :fetch_validator_group_data
+            votes.block_hash,
+            :fetch_voter_votes
           )
         end)
 
@@ -61,7 +62,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroupVotes do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], Util.insert_options()) ::
-          {:ok, [CeloValidatorGroupVotes.t()]} | {:error, [Changeset.t()]}
+          {:ok, [CeloVoterVotesChain.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
@@ -69,15 +70,15 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroupVotes do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(&{&1.block_hash})
-      |> Enum.dedup_by(&{&1.block_hash})
+      |> Enum.dedup_by(&{&1.block_hash, &1.account_hash, &1.group_hash})
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
         uniq_changes_list,
-        conflict_target: [:block_hash, :group_hash],
+        conflict_target: [:account_hash, :block_hash, :group_hash],
         on_conflict: on_conflict,
-        for: CeloValidatorGroupVotes,
+        for: CeloVoterVotesChain,
         returning: true,
         timeout: timeout,
         timestamps: timestamps
@@ -86,10 +87,10 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroupVotes do
 
   defp default_on_conflict do
     from(
-      account in CeloValidatorGroupVotes,
+      account in CeloVoterVotesChain,
       update: [
         set: [
-          previous_block_active_votes: fragment("EXCLUDED.previous_block_active_votes"),
+          active_votes: fragment("EXCLUDED.active_votes"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]
