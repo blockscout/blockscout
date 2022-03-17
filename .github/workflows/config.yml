@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - account
+      - account-rebased
   pull_request:
     branches:
       - master
