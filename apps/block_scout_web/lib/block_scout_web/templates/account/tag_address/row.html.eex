@@ -5,7 +5,9 @@
       <%= link(trimmed_hash(@address_tag.address_hash), to: address_path(@conn, :show, @address_tag.address_hash)) %>
       <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @address_tag.address_hash, aria_label: gettext("Copy Address"), title: gettext("Copy Address"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
-              <%= link "Remove Tag", to: tag_address_path(@conn, :delete, @address_tag.id), method: :delete, class: "btn btn-danger white button-sm", style: "color: #fff !important;" %>
+  </td>
+  <td>
+              <%= link "Remove Tag", to: tag_address_path(@conn, :delete, @address_tag.id), method: :delete %>
     </div>
   </td>
 </tr>
