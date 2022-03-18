@@ -20,6 +20,9 @@ $navbar-logo-width: auto !default;
 
   .nav-item {
     font-size: 14px;
+    a {
+      font-family: inherit;
+    }
   }
 
   .navbar-nav {

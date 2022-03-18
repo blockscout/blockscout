@@ -1,93 +1,64 @@
+<% tx_type = type_suffix(@transaction) %>
 <% status = transaction_status(@transaction) %>
-<% error_in_internal_tx = @transaction.has_error_in_internal_txs %>
-<div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
-  <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
-    <!-- Color Block -->
-    <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
-      <div>
-        <%= if error_in_internal_tx do %>
-          <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", text: gettext("Error in internal transactions"), additional_classes: ["color-inherit"] %>
-        <% end %>
-        <span class="tile-label" data-test="transaction_type">
-          <%= transaction_display_type(@transaction) %>
-        </span>
+<div class="tile fade-in tx-tile" data-test="<%= tx_type %>" data-identifier-hash="<%= @transaction.hash %>">
+  <div class="tx-tile-info-block _1">
+    <span class="tx-tile-title"><%= render "_icon_selector.html", type: tx_type %><%= transaction_display_type(@transaction) %></span>
+    <%= render "_transaction_status_view.html", status: status %>
+  </div>
+  <div class="tx-tile-info-block _2">
+    <span class="tx-tile-hash">TX <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %></span>
+    <div class="tx-tile-addresses">
+      <div class="text-truncate tx-tile-address">
+        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address], true) |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </div>
-      <span class="tile-status-label ml-2 ml-md-0" data-test="transaction_status">
-        <%= if status_class(@transaction) == "tile-status--pending" do %>
-          <div class="loading-spinner-small">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </div>
-        <% end %>
-        <%= formatted_result(status) %>
-      </span>
+      <%= render BlockScoutWeb.IconsView, "_to_icon.html" %>
+      <div class="text-truncate tx-tile-address">
+        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address], true) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+      </div>
     </div>
-    <!-- Content -->
-    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
-      <span>
-      <div class="text-truncate d-flex">
-        <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %>
-        <% method_name = Transaction.get_method_name(@transaction) %>
-        <%= if method_name do %>
-          <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
-        <% end %>
-      </div>
-      </span>
-      <span>
-        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
-        &rarr;
-        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
-      </span>
-      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
-        <span class="tile-title">
+  </div>
+  <div class="tx-tile-info-block _6 d-xl-none">
+    <% method_name = Transaction.get_method_name(@transaction) %>
+    <%= if method_name do %>
+      <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
+    <% end %>
+  </div>
+  <div class="other flex-wrap">
+    <div class="central-block">
+      <div class="d-flex justify-content-end flex-wrap">
+        <div class="tx-tile-info-block _3 tx-expense">
+          <span><%= formatted_fee(@transaction, denomination: :ether, include_label: false) %><span class="tx-fee"><%= gettext "TX Fee" %></span></span>
+        </div>
+        <div class="tx-tile-info-block _4 tx-expense">
           <%= value(@transaction, include_label: false) %> <%= gettext "Ether" %>
-        </span>
-        <span class="ml-0 ml-md-1 text-nowrap">
-          <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
-        </span>
-      </span>
-
-      <!-- Transfer -->
+        </div>
+      </div>
       <%= if involves_token_transfers?(@transaction) do %>
         <div class="d-flex flex-column mt-2">
-          <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
-
-          <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
-
           <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
-            <%= for token_transfer <- remaining_token_transfers do %>
+            <%= for token_transfer <- @transaction.token_transfers do %>
               <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer, burn_address_hash: @burn_address_hash %>
             <% end %>
           </div>
         </div>
 
-        <%= if Enum.any?(remaining_token_transfers) do %>
+        <%= if Enum.any?(@transaction.token_transfers) do %>
           <div class="token-tile-view-more">
-              <%= link gettext("View More Transfers"), to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
-              <%= link gettext("View Less Transfers"), class: "d-none", to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
+              <%= link gettext("View Token Transfers"), to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
+              <%= link gettext("Close Token Transfers"), class: "d-none", to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
           </div>
         <% end %>
       <% end %>
     </div>
-    <!-- Block info -->
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0 tile-bottom">
-      <span class="mr-2 mr-md-0 order-1">
-        <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
-      </span>
-      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= block_timestamp(@transaction) %>"></span>
-      <%= if from_or_to_address?(@transaction, assigns[:current_address]) do %>
-        <span class="mr-2 mr-md-0 order-0 order-md-3">
-          <%= if @transaction.from_address_hash == assigns[:current_address].hash do %>
-            <span data-test="transaction_type" class="badge badge-danger tile-badge">
-              <%= gettext "OUT" %>
-            </span>
-          <% else %>
-            <span data-test="transaction_type" class="badge badge-success tile-badge">
-              <%= gettext "IN" %>
-            </span>
-          <% end %>
-        </span>
-      <% end %>
+    <div class="tx-tile-info-block _5 tx-block-info">
+      <span><%= render BlockScoutWeb.IconsView, "_block_new_icon.html" %> <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+      <span in-tile data-from-now="<%= block_timestamp(@transaction) %>"></span>
+    </div>
+    <div class="tx-tile-info-block _6 d-none d-xl-flex">
+      <% method_name = Transaction.get_method_name(@transaction) %>
+        <%= if method_name do %>
+          <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
+        <% end %>
     </div>
   </div>
 </div>

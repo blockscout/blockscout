@@ -1,4 +1,4 @@
-<%= link(@transaction_hash,
+<%= link(trimmed_tx_hash(@transaction_hash),
     to: transaction_path(BlockScoutWeb.Endpoint, :show, @transaction_hash),
     "data-test": "transaction_hash_link",
     class: "text-truncate") %>

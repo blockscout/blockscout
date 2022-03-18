@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
@@ -594,4 +594,15 @@ defmodule BlockScoutWeb.TransactionView do
         hex_revert_reason
     end
   end
+
+  def trimmed_tx_hash(%Hash{} = hash) do
+    string_hash = to_string(hash)
+    trimmed_tx_hash(string_hash)
+  end
+
+  def trimmed_tx_hash(hash) when is_binary(hash) do
+    "#{String.slice(hash, 0..13)}–#{String.slice(hash, -12..-1)}"
+  end
+
+  def trimmed_tx_hash(_), do: ""
 end

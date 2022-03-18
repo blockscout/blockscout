@@ -1,5 +1,5 @@
-<div class="text-nowrap-small-screen row mt-3 mt-sm-0" data-test="token_transfer">
-  <span class="col-xs-12 col-lg-5" style="display: inline-table;">
+<div class="text-nowrap-small-screen mt-3 mt-sm-0" data-test="token_transfer">
+  <span class="p-h-15" style="display: inline-table; width: fit-content;">
     <%= if from_or_to_address?(@token_transfer, @address) do %>
       <%= if @token_transfer.from_address_hash == @address.hash do %>
         <span data-test="transaction_type" class="text-danger">

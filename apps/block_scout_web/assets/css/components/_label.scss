@@ -44,7 +44,13 @@
         color: #fff;
     }
     &.method {
-        color: #1e2022;
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: #707886;
+        width: fit-content;
+        align-self: flex-end;
     }
     &.from-dropdown {
         margin-top: -3px;

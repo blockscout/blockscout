@@ -1,0 +1,231 @@
+$main-color: #8ECFF4;
+$main-text-color: #2D6CC9;
+$secondary-text-color: #68A2FA;
+$links-text-color: #275AA4;
+$chart-block-bg-color: #17314F;
+$counters-bg-color: #20446E;
+$counter-title-color: #96BDE8;
+$card-title-color: #707886;
+$card-btn-border-color: #A3A9B5;
+
+
+.main-block {
+    background-color: $main-color;
+    padding-top: 45px;
+    padding-bottom: 185px;
+}
+
+.main-text {
+    color: $main-text-color ;
+    font-family: 'Roboto';
+    font-style: normal;
+}
+
+.secondary-text {
+    color: $secondary-text-color;
+}
+
+.header-main {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 100%;
+}
+
+.info {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 120%;
+}
+
+.main-block-margin {
+    margin: 16px 0px;
+}
+
+.icon-link {
+    color: $links-text-color;
+    margin-right: 5px;
+    path {
+        fill: $links-text-color;
+        transition: $transition-cont;
+    }
+
+    svg {
+        margin-right: 4px;
+        margin-left: 4px;
+        margin-bottom: 6px;
+        height: 14px;
+        width: 14px;
+    }
+}
+
+.chart-block {
+    display: flex;
+    justify-content: flex-end;
+    background-color: $chart-block-bg-color;
+    min-height: 378px;
+    margin-top: -126px;
+    
+    @include media-breakpoint-down(lg) {
+        flex-direction: column;
+    }
+}
+
+.rounded-borders {
+    border-radius: 8px;
+    &.btn {
+        border-radius: 5px;
+    }
+}
+
+.black-fill {
+    path {
+        fill: black;
+    }
+}
+
+.focus-search {
+    color: $secondary-text-color !important;
+    border-color: $secondary-text-color !important;
+}
+
+.counters-container {
+    padding: 24px;
+    border-radius: 8px 0px 0px 8px;
+    background-color: $counters-bg-color;
+    margin-top: 32px;
+    justify-self: end;
+    height: fit-content;
+    @include media-breakpoint-down(lg) {
+        margin-left: 15px;
+        margin-right: 15px;
+        border-radius: 8px 8px 8px 8px;
+    }
+}
+
+.counters-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.counter-holder {
+    margin: 24px;
+    display: block;
+    width: fit-content;
+    height: fit-content;
+}
+
+.counter-value {
+    display: block;
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 120%;
+    color: $secondary-text-color;
+    margin-bottom: 4px;
+}
+
+.counter-title {
+    font-family: 'Roboto Condensed';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 16px;
+    letter-spacing: 1px;
+    color: $counter-title-color;
+}
+
+.form-control {
+    border-radius: 8px !important;
+}
+
+.container {
+    padding: 0 !important;
+    &.chart-block {
+        padding-bottom: 40px !important;
+    }
+}
+
+.new-blocks-block {
+    margin-left: 32px;
+    margin-right: 32px;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+}
+
+.title-row {
+    flex: none;
+    order: 0;
+    align-self: stretch;
+    flex-grow: 0;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0px;
+}
+
+.blocks-row {
+    order: 1;
+    align-self: stretch;
+    flex-grow: 0;
+    margin: 16px 0px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.card-title-new {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 120%;
+    color: $card-title-color;
+    flex: none;
+    order: 0;
+    flex-grow: 1;
+    margin: 0px 0px;
+}
+
+.card-button {
+    border: 1px solid $card-btn-border-color;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 130%;
+    color: $card-btn-border-color;
+    padding: 4px 8px;
+    height: 24px;
+}
+
+.blocks-container {
+    margin-top: -40px;
+}
+
+.blocks-container-shadow {
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.05), 0px 0px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.roboto-font {
+    font-family: 'Roboto';
+}
+
+.tile-label {
+    font-size: 14px;
+}
+
+.fee-info {
+    font-family: 'Roboto Mono';
+}
+
+.tile {
+    font-family: 'Roboto';
+}
+
+.f-g-1 {
+    flex-grow: 1;
+}

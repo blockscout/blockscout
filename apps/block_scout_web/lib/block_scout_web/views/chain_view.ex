@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.ChainView do
   end
 
   def format_currency_value(value, symbol) when is_float(value) and value < 0.000001 do
-    "Less than #{symbol}0.000001"
+    "< #{symbol}0.000001"
   end
 
   def format_currency_value(value, symbol) when is_float(value) and value < 1 do

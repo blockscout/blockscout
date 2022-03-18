@@ -166,8 +166,8 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 }
 
 // colors for light and dark theme
-const priceLineColor = sassVariables.dashboardLineColorPrice
-const mcapLineColor = sassVariables.dashboardLineColorMarket
+const priceLineColor = sassVariables.dashboardLineColor
+const mcapLineColor = sassVariables.dashboardLineColor
 
 class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
@@ -217,8 +217,8 @@ class MarketHistoryChart {
       cubicInterpolationMode: 'monotone',
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorTransactions,
-      borderColor: sassVariables.dashboardLineColorTransactions
+      backgroundColor: sassVariables.dashboardLineColor,
+      borderColor: sassVariables.dashboardLineColor
       // lineTension: 0
     }
 
@@ -227,8 +227,8 @@ class MarketHistoryChart {
       axes.numTransactions.display = false
     } else if (!priceActivated && !marketCapActivated) {
       axes.numTransactions.position = 'left'
-      this.numTransactions.backgroundColor = sassVariables.dashboardLineColorPrice
-      this.numTransactions.borderColor = sassVariables.dashboardLineColorPrice
+      this.numTransactions.backgroundColor = sassVariables.dashboardLineColor
+      this.numTransactions.borderColor = sassVariables.dashboardLineColor
     }
 
     this.availableSupply = availableSupply
@@ -243,6 +243,22 @@ class MarketHistoryChart {
     }
 
     this.chart = new Chart(el, config)
+  }
+
+  toogleNumTransactions (status) {
+    this.numTransactions.hidden = !status;
+  }
+
+  toogleMarketCap (status) {
+    this.marketCap.hidden = !status;
+  }
+
+  tooglePrice (status) {
+    this.price.hidden = !status;
+  }
+
+  update () {
+    this.chart.update()
   }
 
   updateMarketHistory (availableSupply, marketHistoryData) {

@@ -16,6 +16,8 @@ $tile-status-awaiting-internal-transactions: $warning !default;
 $tile-padding: 1rem;
 $tile-title-color: #333 !default;
 $tile-body-a-color: #5959d8 !default;
+$blue-links-color: #3683F8;
+$secondary-text-color: #BABFC8;
 
 @mixin generate-tile-block($prefix, $color, $label-color: false) {
   &#{ $prefix } {
@@ -124,12 +126,11 @@ $tile-body-a-color: #5959d8 !default;
 }
 
 .tile-transactions {
-  color: #a3a9b5;
-  font-size: 12px;
+  font-family: 'Roboto';
+  font-style: normal;
   font-weight: 400;
-  line-height: 1.2;
-  margin-bottom: 10px;
-  text-align: left;
+  font-size: 12px;
+  line-height: 120%;
 }
 
 .tile-badge {
@@ -600,4 +601,194 @@ $cube-quantity: 5;
     word-break: break-all;
     line-height: 20px;
   }
+}
+
+.block-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  padding: 10px;
+  align-items: center;
+}
+
+.new-link-text span,
+.new-link-text {
+  color: $blue-links-color !important;
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 120%;
+}
+
+.secondary-text-tile {
+  color: $secondary-text-color;
+}
+
+.other-block-text {
+  font-family: 'Roboto Condensed';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 16px;
+  letter-spacing: 1px;
+}
+
+.tx-tile {
+  display: flex;
+  padding: 0 !important;
+  min-height: 64px;
+  @include media-breakpoint-down(lg) {
+    flex-wrap: wrap;
+  }
+}
+
+.tx-tile-info-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  &._1 {
+    width: 147px;
+    padding: 6.5px 0px 8px 8px;
+    border-right: 1px solid #dee2e6;
+    @include media-breakpoint-down(lg) {
+      border-bottom: 1px solid #dee2e6;
+    }
+  }
+
+  &._2 {
+    padding: 6.5px 0px 8px 8px;
+  }
+
+  &._3 {
+    padding-top: 7.5px;
+    margin-right: 16px;
+    padding-left: 5px;
+  }
+
+  &._4 {
+    padding-top: 7.5px;
+    margin-right: 12px;
+    width: 168px;
+    text-align: end;
+  }
+
+  &._5 {
+    padding: 12px;
+  }
+
+  &._6 {
+    padding: 6px 8px 6px 0px;
+    width: 200px;
+    flex-grow: 1;
+  }
+
+  svg {
+    margin-bottom: 2px;
+    margin-right: 4px;
+  }
+}
+
+.status-tile {
+  border-right: 1px solid #D9DBE0;
+}
+
+.tx-tile-title {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 120%;
+  color: #707886;
+}
+
+.tx-tile-hash {
+  font-family: 'Roboto Condensed';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 16px;
+  letter-spacing: 1px;
+  color: #A3A9B5;
+}
+
+.tx-expense {
+  color: #4F545E;
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 120%;
+}
+
+.tx-fee {
+  color: #707886;
+  margin-left: 4px;
+}
+
+.tx-block-info {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 120%;
+  color: #BABFC8;
+}
+
+.status-box {
+  padding: 4px 8px;
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 130%;
+  width: fit-content;
+  border-radius: 4px;
+  align-self: start;
+  margin-left: 16px;
+
+  &.success {
+    background-color: #EEFBEC;
+    color: #22AE27;
+  }
+
+  &.unknown {
+    background-color: #F7F8F9;
+    color: #A3A9B5;
+  }
+
+  &.error {
+    background-color: #FED8DA;
+    color: #FA646D;
+  }
+}
+
+.icon-status {
+  margin-bottom: 2px;
+}
+
+.tx-tile-address {
+  width: 127px;
+  display: inline;
+}
+
+.tx-tile-addresses {
+  display: flex;
+  align-items: center;
+}
+
+.other {
+  flex-grow: 1;
+  display: flex;
+  justify-content: end;
+}
+
+.central-block {
+  flex-grow: 1;
+}
+
+.p-h-15 {
+  padding-left: 15px;
+  padding-right: 15px;
 }

@@ -45,7 +45,6 @@
         'Blocks Indexed': '<%= gettext("Blocks Indexed") %>',
         'Block Processing': '<%= gettext("Block Mined, awaiting import...") %>',
         'Indexing Tokens': '<%= gettext("Indexing Tokens") %>',
-        'Less than': '<%= gettext("Less than") %>',
         'Market Cap': '<%= gettext("Market Cap") %>',
         'Price': '<%= gettext("Price") %>',
         'Ether': '<%= gettext("Ether") %>',
@@ -222,7 +221,7 @@
       <% end %>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 
-      <main class="js-ad-dependant-pt pt-5">
+      <main class="<%= if @view_module != Elixir.BlockScoutWeb.ChainView, do: "js-ad-dependant-pt pt-5" %>">
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
         <%= @inner_content %>

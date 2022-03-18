@@ -1,0 +1,35 @@
+<!-- Search navbar -->
+<div class="search-form d-lg-flex <%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>">
+	<div class="input-group-new w-100" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
+		<div class="form-control me auto">
+			<input
+				id="<%= @id %>"
+				class="main-search-autocomplete"
+				data-test="search_input"
+				data-chain-id="<%= System.get_env("CHAIN_ID") %>"
+				data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
+				type="text"
+				tabindex="1"
+			>
+		</div>
+		<div class="input-group-append left">
+			<button class="input-group-text black-fill" id="search-icon">
+			<%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
+			</button>
+		</div>
+		<div class="input-group-append right desktop-only">
+			<div
+			id="slash-icon"
+			class="input-group-text border focus-search"
+			data-placement="bottom"
+			data-toggle="tooltip"
+			title=""
+			data-original-title='<%= gettext("Press / and focus will be moved to the search field") %>'
+			data-template="<div class='tooltip tooltip-pale-color' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+			>
+			/
+			</div>
+		</div>
+	</div>
+	<button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
+</div>

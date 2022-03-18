@@ -1,0 +1,16 @@
+<%= 
+  {status, text} = 
+    case @status do
+      :pending ->
+        {"unknown", "Pending"}
+      :awaiting_internal_transactions ->
+        {"unknown", "Awaiting"}
+      :success ->
+        {"success", "Success"}
+      {:error, reason} when is_binary(reason) ->
+        {"error", reason}
+      {:error, _} ->
+        {"error", "Failed"}
+    end
+  render "_transaction_status.html", status: status, text: text
+%>

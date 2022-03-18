@@ -33,6 +33,11 @@ $footer-logo-width: auto !default;
 .footer-info-text {
   margin: 0 0 25px;
   padding: 0 20px 0 0;
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 120%;
 }
 
 .footer-social-icons {
@@ -62,7 +67,9 @@ $footer-logo-width: auto !default;
 }
 
 .footer-link {
-  color: $footer-link-color;
+  color: $footer-link-color !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
 
   &:hover {
     color: $footer-link-color;
@@ -72,6 +79,9 @@ $footer-logo-width: auto !default;
 
 .footer-list {
   padding-top: 0;
+  font-family: 'Roboto' !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
 
   h3 {
     color: $footer-title-color;
@@ -79,6 +89,9 @@ $footer-logo-width: auto !default;
     font-weight: 300;
     line-height: 1.4;
     margin: 0 0 15px;
+    font-family: 'Roboto Condensed';
+    font-style: normal;
+    letter-spacing: 1px;
   }
 
   ul {
@@ -93,6 +106,8 @@ $footer-logo-width: auto !default;
       padding: 0;
 
       a {
+        font-size: inherit !important;
+        line-height: inherit !important;
         transition: $transition-cont;
         &:hover {
           text-decoration: none;
@@ -101,16 +116,6 @@ $footer-logo-width: auto !default;
         &:focus {
           color: darken($footer-text-color, 5);
         }
-      }
-
-      &::before {
-        background-color: $footer-item-disc-color;
-        border-radius: 50%;
-        content: "";
-        display: block;
-        height: 6px;
-        margin: 0 10px 0 0;
-        width: 6px;
       }
     }
   }

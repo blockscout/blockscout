@@ -1,21 +1,24 @@
 <div class="col-lg-3 fade-up-blocks-chain" data-selector="chain-block" data-block-number="<%= @block.number %>">
-  <div class="tile tile-type-block n-p d-flex flex-column">
-    <%= link(
+  <div class="tile n-p d-flex flex-column">
+    <div class="block-info">
+      <%= link(
           @block,
-          class: "tile-title",
+          class: "mb-0 p-0 new-link-text",
           to: block_path(BlockScoutWeb.Endpoint, :show, @block),
           "data-selector": "block-number"
         ) %>
-    <div class="tile-bottom-contents">
-      <div class="tile-transactions">
+      <div class="tile-transactions mb-0 secondary-text-tile">
         <span class="mr-2"><%= gettext("%{count} Transactions", count: Enum.count(@block.transactions)) %></span>
         <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
       </div>
+    </div>
+    <div class="tile-bottom-contents">
       <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
         <div class="text-truncate">
-          <%= gettext "Miner" %>
+          <span class="other-block-text secondary-text-tile"><%= gettext "Miner" %></span>
           <%= render BlockScoutWeb.AddressView,
             "_link.html",
+            class: "new-link-text",
             address: @block.miner,
             contract: false,
             use_custom_tooltip: false,
@@ -23,7 +26,7 @@
         </div>
       <% end %>
       <%= if BlockScoutWeb.BlockView.show_reward?(@block.rewards) do %>
-        <div class="text-truncate">
+        <div class="text-truncate other-block-text secondary-text-tile">
           <%= gettext "Reward" %> <%= BlockScoutWeb.BlockView.combined_rewards_value(@block) %>
         </div>
       <% end %>

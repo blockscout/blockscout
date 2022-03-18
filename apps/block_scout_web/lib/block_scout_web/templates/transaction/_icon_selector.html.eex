@@ -1,0 +1,14 @@
+<%=
+  icon = 
+    case @type do
+      "token-transfer" -> 
+        "_token_transfer_icon.html"
+      "contract-creation" -> 
+        "_contract_icon.html"
+      "contract-call" -> 
+        "_contract_icon.html"
+      _ -> 
+        "_transaction_new_icon.html"
+    end
+  render BlockScoutWeb.IconsView, icon
+%>
