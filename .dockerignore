@@ -7,3 +7,4 @@ test
 .circleci
 logs
 apps/*/test
+docker-compose
