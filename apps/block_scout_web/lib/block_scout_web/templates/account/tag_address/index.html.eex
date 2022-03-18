@@ -1,6 +1,6 @@
 <section class="container">
   <div class="row"> 
-      <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
     <div class="col-md">
       <div class="card">
         <div class="card-body" >
@@ -21,6 +21,7 @@
                     <tr>
                       <th scope="col">Name</th>
                       <th scope="col">Address</th>
+                      <th scope="col">Action</th>
                     </tr>
                   </thead>
                   <tbody style="font-size: 15px; color: #6c757d" >
