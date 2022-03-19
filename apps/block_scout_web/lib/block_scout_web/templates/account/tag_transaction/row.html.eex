@@ -1,0 +1,16 @@
+<tr>
+  <td><%= @tx_tag.name %></td>
+  <td>
+    <div>
+      <%= link(@tx_tag.tx_hash,
+        to: transaction_path(BlockScoutWeb.Endpoint, :show, @tx_tag.tx_hash),
+        "data-test": "transaction_hash_link",
+        class: "text-truncate") %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @tx_tag.tx_hash, aria_label: gettext("Copy Address"), title: gettext("Copy Address"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
+    </div>
+  </td>
+  <td>
+    <%= link "Remove Tag", to: tag_transaction_path(@conn, :delete, @tx_tag.id), method: :delete %>
+  </td>
+</tr>

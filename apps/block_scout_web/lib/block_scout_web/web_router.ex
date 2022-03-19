@@ -31,8 +31,13 @@ defmodule BlockScoutWeb.WebRouter do
     pipe_through(:browser)
 
     resources("/tag_address", Account.TagAddressController,
-      only: [:index, :new, :create, :edit, :update, :delete],
+      only: [:index, :new, :create, :delete],
       as: :tag_address
+    )
+
+    resources("/tag_transaction", Account.TagTransactionController,
+      only: [:index, :new, :create, :delete],
+      as: :tag_transaction
     )
 
     resources("/watchlist", Account.WatchlistController,
