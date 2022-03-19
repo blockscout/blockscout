@@ -5,11 +5,12 @@ on:
     branches:
       - master
       - account
-      - account-rebased
+      - account-tags
   pull_request:
     branches:
       - master
       - account
+      - account-tags
       - staking
 
 env:
