@@ -15,7 +15,6 @@ defmodule BlockScoutWeb.RecentTransactionsController do
       recent_transactions =
         Chain.recent_collated_transactions(true,
           necessity_by_association: %{
-            :block => :required,
             [created_contract_address: :names] => :optional,
             [from_address: :names] => :optional,
             [to_address: :names] => :optional,
