@@ -1,4 +1,4 @@
 <%= link(
   gettext("Block #%{number}", number: to_string(@block.number)),
-  to: block_path(BlockScoutWeb.Endpoint, :show, @block)
+  to: block_path(BlockScoutWeb.Endpoint, :show, @block.hash)
 ) %>
