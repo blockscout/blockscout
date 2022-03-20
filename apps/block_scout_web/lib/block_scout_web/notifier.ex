@@ -191,7 +191,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
-    preloads = [:block, created_contract_address: :names, from_address: :names, to_address: :names]
+    preloads = [created_contract_address: :names, from_address: :names, to_address: :names]
 
     transactions
     |> Enum.map(

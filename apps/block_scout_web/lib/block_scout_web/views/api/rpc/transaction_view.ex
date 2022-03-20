@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   defp prepare_transaction(transaction, block_height, logs, next_page_params) do
     %{
       "hash" => "#{transaction.hash}",
-      "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
+      "timeStamp" => "#{DateTime.to_unix(transaction.block_timestamp)}",
       "blockNumber" => "#{transaction.block_number}",
       "confirmations" => "#{block_height - transaction.block_number}",
       "success" => if(transaction.status == :ok, do: true, else: false),
