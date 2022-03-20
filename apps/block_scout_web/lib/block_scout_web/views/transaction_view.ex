@@ -31,10 +31,14 @@ defmodule BlockScoutWeb.TransactionView do
   defdelegate formatted_timestamp(block), to: BlockView
 
   def block_number(%Transaction{block_number: nil}), do: gettext("Block Pending")
-  def block_number(%Transaction{block: block}), do: [view_module: BlockView, partial: "_link.html", block: block]
+
+  def block_number(%Transaction{block_number: number, block_hash: hash}),
+    do: [view_module: BlockView, partial: "_link.html", block: %Block{number: number, hash: hash}]
+
   def block_number(%Reward{block: block}), do: [view_module: BlockView, partial: "_link.html", block: block]
 
   def block_timestamp(%Transaction{block_number: nil, inserted_at: time}), do: time
+  def block_timestamp(%Transaction{block_timestamp: time}), do: time
   def block_timestamp(%Transaction{block: %Block{timestamp: time}}), do: time
   def block_timestamp(%Reward{block: %Block{timestamp: time}}), do: time
 

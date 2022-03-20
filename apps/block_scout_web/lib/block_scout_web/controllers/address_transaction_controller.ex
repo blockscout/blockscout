@@ -26,7 +26,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
       [to_address: :names] => :optional,
-      :block => :optional,
       [created_contract_address: :smart_contract] => :optional,
       [from_address: :smart_contract] => :optional,
       [to_address: :smart_contract] => :optional

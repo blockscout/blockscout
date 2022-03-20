@@ -272,7 +272,7 @@ defmodule Explorer.Chain do
         desc: q.transaction_index,
         desc: q.index
       )
-      |> preload(transaction: :block)
+      |> preload(:transaction)
       |> join_associations(necessity_by_association)
       |> Repo.all()
     else
@@ -281,7 +281,7 @@ defmodule Explorer.Chain do
       |> InternalTransaction.where_address_fields_match(hash, direction)
       |> InternalTransaction.where_block_number_in_period(from_block, to_block)
       |> common_where_limit_order(paging_options)
-      |> preload(transaction: :block)
+      |> preload(:transaction)
       |> join_associations(necessity_by_association)
       |> Repo.all()
     end
@@ -573,7 +573,7 @@ defmodule Explorer.Chain do
 
     query
     |> handle_token_transfer_paging_options(paging_options)
-    |> preload(transaction: :block)
+    |> preload(:transaction)
     |> preload(:token)
     |> Repo.all()
   end

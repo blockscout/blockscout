@@ -22,8 +22,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
       [token_transfers: :token] => :optional,
       [token_transfers: :to_address] => :optional,
       [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
+      [token_transfers: :token_contract_address] => :optional
     }
   ]
 
