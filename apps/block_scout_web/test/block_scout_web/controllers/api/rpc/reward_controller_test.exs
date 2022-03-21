@@ -94,54 +94,47 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
     end
 
     test "with valid voter and group address", %{conn: conn} do
-      {voter_address_1_hash, group_address_hash} = SetupVoterRewardsTest.setup_for_group()
+      {
+        voter_hash,
+        group_hash,
+        block_2_hash,
+        block_3_hash,
+        block_5_hash,
+        block_7_hash
+      } = SetupVoterRewardsTest.setup_for_group()
 
       expected_result = %{
         "rewards" => [
           %{
             "amount" => "80",
-            "blockHash" => "0x0100000000000000000000000000000000000000000000000000000000000001",
+            "blockHash" => to_string(block_2_hash),
             "blockNumber" => "10696320",
             "date" => "2022-01-01T17:42:43.162804Z",
             "epochNumber" => "619"
           },
           %{
             "amount" => "20",
-            "blockHash" => "0x0100000000000000000000000000000000000000000000000000000000000002",
+            "blockHash" => to_string(block_3_hash),
             "blockNumber" => "10713600",
             "date" => "2022-01-02T17:42:43.162804Z",
             "epochNumber" => "620"
           },
           %{
             "amount" => "75",
-            "blockHash" => "0x0100000000000000000000000000000000000000000000000000000000000003",
+            "blockHash" => to_string(block_5_hash),
             "blockNumber" => "10730880",
             "date" => "2022-01-03T17:42:43.162804Z",
             "epochNumber" => "621"
           },
           %{
-            "amount" => "31",
-            "blockHash" => "0x0100000000000000000000000000000000000000000000000000000000000004",
+            "amount" => "0",
+            "blockHash" => to_string(block_7_hash),
             "blockNumber" => "10748160",
             "date" => "2022-01-04T17:42:43.162804Z",
             "epochNumber" => "622"
-          },
-          %{
-            "amount" => "77",
-            "blockHash" => "0x0100000000000000000000000000000000000000000000000000000000000005",
-            "blockNumber" => "10765440",
-            "date" => "2022-01-05T17:42:43.162804Z",
-            "epochNumber" => "623"
-          },
-          %{
-            "amount" => "67",
-            "blockHash" => "0x0100000000000000000000000000000000000000000000000000000000000006",
-            "blockNumber" => "10782720",
-            "date" => "2022-01-06T17:42:43.162804Z",
-            "epochNumber" => "624"
           }
         ],
-        "total" => "350"
+        "total" => "175"
       }
 
       response =
@@ -149,8 +142,8 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         |> get("/api", %{
           "module" => "reward",
           "action" => "getvoterrewardsforgroup",
-          "voterAddress" => to_string(voter_address_1_hash),
-          "groupAddress" => to_string(group_address_hash)
+          "voterAddress" => to_string(voter_hash),
+          "groupAddress" => to_string(group_hash)
         })
         |> json_response(200)
 

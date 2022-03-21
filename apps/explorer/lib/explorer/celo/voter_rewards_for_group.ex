@@ -9,23 +9,20 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
     ]
 
   alias Explorer.Celo.{ContractEvents, Util}
-  alias Explorer.Chain.{Block, CeloContractEvent, CeloValidatorGroupVotes, Wei}
+  alias Explorer.Chain.{Block, CeloContractEvent, CeloVoterVotes, Wei}
   alias Explorer.Repo
 
   alias ContractEvents.Election
 
   alias Election.{
-    EpochRewardsDistributedToVotersEvent,
     ValidatorGroupActiveVoteRevokedEvent,
     ValidatorGroupVoteActivatedEvent
   }
 
   @validator_group_vote_activated ValidatorGroupVoteActivatedEvent.topic()
+  @validator_group_active_vote_revoked ValidatorGroupActiveVoteRevokedEvent.topic()
 
   def calculate(voter_address_hash, group_address_hash, to_date \\ DateTime.utc_now()) do
-    validator_group_active_vote_revoked = ValidatorGroupActiveVoteRevokedEvent.topic()
-    epoch_rewards_distributed_to_voters = EpochRewardsDistributedToVotersEvent.topic()
-
     query =
       from(event in CeloContractEvent,
         select: %{
@@ -35,17 +32,17 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
         },
         order_by: [asc: event.block_number],
         where:
-          event.topic == ^validator_group_active_vote_revoked or
+          event.topic == ^@validator_group_active_vote_revoked or
             event.topic == ^@validator_group_vote_activated
       )
 
-    ordered_activated_or_revoked_events_for_voter_for_group =
+    voter_activated_or_revoked_votes_for_group_events =
       query
       |> CeloContractEvent.query_by_voter_param(voter_address_hash)
       |> CeloContractEvent.query_by_group_param(group_address_hash)
       |> Repo.all()
 
-    case ordered_activated_or_revoked_events_for_voter_for_group do
+    case voter_activated_or_revoked_votes_for_group_events do
       [] ->
         {:error, :not_found}
 
@@ -53,69 +50,84 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
         [voter_activated_earliest_block | _] = voter_activated_or_revoked
 
         query =
-          from(event in CeloContractEvent,
+          from(votes in CeloVoterVotes,
             inner_join: block in Block,
-            on: event.block_number == block.number,
-            inner_join: votes in CeloValidatorGroupVotes,
             on: votes.block_hash == block.hash,
             select: %{
-              block_hash: block.hash,
-              block_number: event.block_number,
+              block_hash: votes.block_hash,
+              block_number: votes.block_number,
               date: block.timestamp,
-              epoch_reward: json_extract_path(event.params, ["value"]),
-              event: event.topic,
-              previous_block_group_votes: votes.previous_block_active_votes
+              votes: votes.active_votes
             },
-            where: block.number >= ^voter_activated_earliest_block.block_number,
-            where: event.topic == ^epoch_rewards_distributed_to_voters,
+            where: votes.account_hash == ^voter_address_hash,
+            where: votes.group_hash == ^group_address_hash,
+            where: votes.block_number >= ^voter_activated_earliest_block.block_number,
             where: block.timestamp < ^to_date
           )
 
-        epoch_rewards_distributed_events_after_voter_first_activated_votes =
+        voter_votes_for_group =
           query
-          |> CeloContractEvent.query_by_group_param(group_address_hash)
           |> Repo.all()
 
-        {rewards, total} =
-          Enum.map_reduce(
-            epoch_rewards_distributed_events_after_voter_first_activated_votes,
-            0,
-            fn curr, amount ->
-              amount_activated_or_revoked =
-                amount_activated_or_revoked_last_day(voter_activated_or_revoked, curr.block_number)
-
-              amount = amount + amount_activated_or_revoked
-
-              {:ok, previous_block_group_votes_decimal} = Wei.dump(curr.previous_block_group_votes)
-
-              current_amount = div(curr.epoch_reward * amount, Decimal.to_integer(previous_block_group_votes_decimal))
-
-              {
-                %{
-                  amount: current_amount,
-                  block_hash: curr.block_hash,
-                  block_number: curr.block_number,
-                  date: curr.date,
-                  epoch_number: Util.epoch_by_block_number(curr.block_number)
-                },
-                amount + current_amount
-              }
-            end
+        events_and_votes_chunked_by_epoch =
+          merge_events_with_votes_and_chunk_by_epoch(
+            voter_activated_or_revoked_votes_for_group_events,
+            voter_votes_for_group
           )
 
-        {:ok, %{rewards: rewards, total: total, group: group_address_hash}}
+        {rewards, {rewards_sum, _}} =
+          Enum.map_reduce(events_and_votes_chunked_by_epoch, {0, 0}, fn epoch, {rewards_sum, previous_epoch_votes} ->
+            epoch_reward = calculate_single_epoch_reward(epoch, previous_epoch_votes)
+
+            current_epoch_votes = epoch |> Enum.reverse() |> hd()
+            %Wei{value: current_votes} = current_epoch_votes.votes
+            current_votes_integer = Decimal.to_integer(current_votes)
+
+            {
+              %{
+                amount: epoch_reward,
+                block_hash: current_epoch_votes.block_hash,
+                block_number: current_epoch_votes.block_number,
+                date: current_epoch_votes.date,
+                epoch_number: Util.epoch_by_block_number(current_epoch_votes.block_number)
+              },
+              {epoch_reward + rewards_sum, current_votes_integer}
+            }
+          end)
+
+        {:ok, %{rewards: rewards, total: rewards_sum, group: group_address_hash}}
     end
   end
 
-  def amount_activated_or_revoked_last_day(voter_activated_or_revoked, block_number) do
-    voter_activated_or_revoked
-    |> Enum.filter(&(&1.block_number < block_number && &1.block_number >= block_number - 17_280))
-    |> Enum.reduce(0, fn x, acc ->
-      if x.event == @validator_group_vote_activated do
-        acc + x.amount_activated_or_revoked
-      else
-        acc - x.amount_activated_or_revoked
-      end
+  def calculate_single_epoch_reward(epoch, previous_epoch_votes) do
+    Enum.reduce(epoch, -previous_epoch_votes, fn
+      %{votes: %Wei{value: votes}}, acc ->
+        acc + Decimal.to_integer(votes)
+
+      %{amount_activated_or_revoked: amount, event: @validator_group_vote_activated}, acc ->
+        acc - amount
+
+      %{amount_activated_or_revoked: amount, event: @validator_group_active_vote_revoked}, acc ->
+        acc + amount
     end)
+  end
+
+  def merge_events_with_votes_and_chunk_by_epoch(events, votes) do
+    chunk_fun = fn
+      %{votes: _} = element, acc ->
+        {:cont, Enum.reverse([element | acc]), []}
+
+      element, acc ->
+        {:cont, [element | acc]}
+    end
+
+    after_fun = fn
+      [] -> {:cont, []}
+      acc -> {:cont, Enum.reverse(acc), []}
+    end
+
+    (events ++ votes)
+    |> Enum.sort_by(& &1.block_number)
+    |> Enum.chunk_while([], chunk_fun, after_fun)
   end
 end
