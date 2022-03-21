@@ -1,11 +1,13 @@
 ## Current
 
 ### Features
+- [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
 - [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
 - [#5319](https://github.com/blockscout/blockscout/pull/5319) - Empty blocks sanitizer performance improvement
+- [#5310](https://github.com/blockscout/blockscout/pull/5310) - Fix flash on reload in dark mode
 - [#5306](https://github.com/blockscout/blockscout/pull/5306) - Fix indexer bug
 - [#5300](https://github.com/blockscout/blockscout/pull/5300), [#5305](https://github.com/blockscout/blockscout/pull/5305) - Token instance page: general video improvements
 - [#5136](https://github.com/blockscout/blockscout/pull/5136) - Improve contract verification
