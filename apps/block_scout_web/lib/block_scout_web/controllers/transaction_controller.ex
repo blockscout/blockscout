@@ -17,7 +17,6 @@ defmodule BlockScoutWeb.TransactionController do
   @default_options [
     paging_options: %PagingOptions{page_size: Chain.default_page_size()},
     necessity_by_association: %{
-      :block => :required,
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
       [to_address: :names] => :optional,
