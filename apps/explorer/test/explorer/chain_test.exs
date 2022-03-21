@@ -5609,37 +5609,7 @@ defmodule Explorer.ChainTest do
     test "combine_proxy_implementation_abi/2 returns [] abi for unverified proxy" do
       proxy_contract_address = insert(:contract_address)
 
-      EthereumJSONRPC.Mox
-      |> expect(
-        :json_rpc,
-        fn %{
-             id: _id,
-             method: "eth_getStorageAt",
-             params: [
-               _,
-               "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-               "latest"
-             ]
-           },
-           _options ->
-          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-        end
-      )
-      |> expect(
-        :json_rpc,
-        fn %{
-             id: _id,
-             method: "eth_getStorageAt",
-             params: [
-               _,
-               "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-               "latest"
-             ]
-           },
-           _options ->
-          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-        end
-      )
+      get_eip1967_implementation()
 
       assert Chain.combine_proxy_implementation_abi(proxy_contract_address, []) == []
     end
@@ -5696,37 +5666,7 @@ defmodule Explorer.ChainTest do
     test "get_implementation_abi_from_proxy/2 returns [] abi for unverified proxy" do
       proxy_contract_address = insert(:contract_address)
 
-      EthereumJSONRPC.Mox
-      |> expect(
-        :json_rpc,
-        fn %{
-             id: _id,
-             method: "eth_getStorageAt",
-             params: [
-               _,
-               "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-               "latest"
-             ]
-           },
-           _options ->
-          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-        end
-      )
-      |> expect(
-        :json_rpc,
-        fn %{
-             id: _id,
-             method: "eth_getStorageAt",
-             params: [
-               _,
-               "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-               "latest"
-             ]
-           },
-           _options ->
-          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-        end
-      )
+      get_eip1967_implementation()
 
       assert Chain.combine_proxy_implementation_abi(proxy_contract_address, []) == []
     end
@@ -5853,5 +5793,45 @@ defmodule Explorer.ChainTest do
                ordered_withdraw: Decimal.new(0)
              }
     end
+  end
+
+  def get_eip1967_implementation do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
   end
 end
