@@ -45,6 +45,7 @@ defmodule Explorer.Chain.Address do
    * `names` - names known for the address
    * `inserted_at` - when this address was inserted
    * `updated_at` when this address was last updated
+   * `location` - which chain in quai network
 
    `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
     They may also be updated when the balance is fetched via the on demand fetcher.
@@ -61,7 +62,8 @@ defmodule Explorer.Chain.Address do
           nonce: non_neg_integer() | nil,
           transactions_count: non_neg_integer() | nil,
           token_transfers_count: non_neg_integer() | nil,
-          gas_used: non_neg_integer() | nil
+          gas_used: non_neg_integer() | nil,
+          location: string()
         }
 
   @derive {Poison.Encoder,
@@ -73,7 +75,8 @@ defmodule Explorer.Chain.Address do
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
              :names,
-             :smart_contract_additional_sources
+             :smart_contract_additional_sources,
+             :location
            ]}
 
   @derive {Jason.Encoder,
@@ -85,7 +88,8 @@ defmodule Explorer.Chain.Address do
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
              :names,
-             :smart_contract_additional_sources
+             :smart_contract_additional_sources,
+             :location
            ]}
 
   @primary_key {:hash, Hash.Address, autogenerate: false}
@@ -101,6 +105,7 @@ defmodule Explorer.Chain.Address do
     field(:transactions_count, :integer)
     field(:token_transfers_count, :integer)
     field(:gas_used, :integer)
+    field(:location, :string)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
@@ -255,7 +260,7 @@ defmodule Explorer.Chain.Address do
     from(
       a in Address,
       select: fragment("COUNT(*)"),
-      where: a.fetched_coin_balance > ^0
+      where: a.fetched_coin_balance > ^0 and a.location == System.get_env("LOCATION")
     )
   end
 
@@ -265,7 +270,8 @@ defmodule Explorer.Chain.Address do
   def count do
     from(
       a in Address,
-      select: fragment("COUNT(*)")
+      select: fragment("COUNT(*)"),
+      where: a.location == System.get_env("LOCATION")
     )
   end
 

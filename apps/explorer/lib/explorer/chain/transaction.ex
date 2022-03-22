@@ -135,6 +135,7 @@ defmodule Explorer.Chain.Transaction do
    * `max_fee_per_gas` - Maximum total amount per unit of gas a user is willing to pay for a transaction, including base fee and priority fee.
    * `type` - New transaction type identifier introduced in EIP 2718 (Berlin HF)
    * `has_error_in_internal_txs` - shows if the internal transactions related to transaction have errors
+   * `location` - which chain in quai network
   """
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
@@ -170,7 +171,8 @@ defmodule Explorer.Chain.Transaction do
           max_priority_fee_per_gas: wei_per_gas | nil,
           max_fee_per_gas: wei_per_gas | nil,
           type: non_neg_integer() | nil,
-          has_error_in_internal_txs: boolean()
+          has_error_in_internal_txs: boolean(),
+          location: string()
         }
 
   @derive {Poison.Encoder,
@@ -190,7 +192,8 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :location
            ]}
 
   @derive {Jason.Encoder,
@@ -210,7 +213,8 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :location
            ]}
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -236,6 +240,7 @@ defmodule Explorer.Chain.Transaction do
     field(:max_fee_per_gas, Wei)
     field(:type, :integer)
     field(:has_error_in_internal_txs, :boolean)
+    field(:location, :string)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated
@@ -718,7 +723,9 @@ defmodule Explorer.Chain.Transaction do
       inner_join: tt in TokenTransfer,
       on: t.hash == tt.transaction_hash,
       where: tt.token_contract_address_hash == ^token_hash,
-      where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
+      where:
+        (tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash) and
+          tt.location == System.get_env("LOCATION"),
       distinct: :hash
     )
   end
@@ -738,7 +745,7 @@ defmodule Explorer.Chain.Transaction do
       t in Transaction,
       inner_join: tt in TokenTransfer,
       on: t.hash == tt.transaction_hash,
-      where: tt.from_address_hash == ^address_hash,
+      where: tt.from_address_hash == ^address_hash and tt.location == System.get_env("LOCATION"),
       distinct: :hash
     )
   end
@@ -748,7 +755,7 @@ defmodule Explorer.Chain.Transaction do
       t in Transaction,
       inner_join: tt in TokenTransfer,
       on: t.hash == tt.transaction_hash,
-      where: tt.to_address_hash == ^address_hash,
+      where: tt.to_address_hash == ^address_hash and tt.location == System.get_env("LOCATION"),
       distinct: :hash
     )
   end
@@ -758,7 +765,9 @@ defmodule Explorer.Chain.Transaction do
       t in Transaction,
       inner_join: tt in TokenTransfer,
       on: t.hash == tt.transaction_hash,
-      where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
+      where:
+        (tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash) and
+          tt.location == System.get_env("LOCATION"),
       distinct: :hash
     )
   end
@@ -769,7 +778,7 @@ defmodule Explorer.Chain.Transaction do
   def transactions_with_block_number(block_number) do
     from(
       t in Transaction,
-      where: t.block_number == ^block_number
+      where: t.block_number == ^block_number and t.location == System.get_env("LOCATION")
     )
   end
 
@@ -784,7 +793,7 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in Transaction,
       select: t.nonce,
-      where: t.from_address_hash == ^address_hash,
+      where: t.from_address_hash == ^address_hash and t.location == System.get_env("LOCATION"),
       order_by: [desc: :block_number],
       limit: 1
     )
