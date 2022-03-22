@@ -282,10 +282,6 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_internal_transaction(internal_transaction) do
-    Endpoint.broadcast("internal_transactions:new_internal_transaction", "new_internal_transaction", %{
-      internal_transaction: internal_transaction
-    })
-
     Endpoint.broadcast("addresses:#{internal_transaction.from_address_hash}", "internal_transaction", %{
       address: internal_transaction.from_address,
       internal_transaction: internal_transaction
@@ -328,15 +324,11 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_token_transfer(token_transfer) do
-    broadcast_token_transfer(token_transfer, "token_transfers:new_token_transfer", "token_transfer")
+    broadcast_token_transfer(token_transfer, "token_transfer")
   end
 
-  defp broadcast_token_transfer(token_transfer, token_transfer_channel, event) do
+  defp broadcast_token_transfer(token_transfer, event) do
     Endpoint.broadcast("token_transfers:#{token_transfer.transaction_hash}", event, %{})
-
-    Endpoint.broadcast(token_transfer_channel, event, %{
-      token_transfer: token_transfer
-    })
 
     Endpoint.broadcast("addresses:#{token_transfer.from_address_hash}", event, %{
       address: token_transfer.from_address,
