@@ -246,7 +246,8 @@ ENV PORT=4000 \
     POSTGRES_USER=postgres\
     SUBNETWORK=\
     COIN="ETH"\
-    POSTGRES_HOST_AUTH_METHOD="trust"
+    POSTGRES_HOST_AUTH_METHOD="trust"\
+    ECTO_USE_SSL=false
 
 COPY --from=builder /usr/local/bin/geth /usr/local/bin
 
