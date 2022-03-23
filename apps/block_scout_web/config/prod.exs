@@ -32,10 +32,10 @@ config :block_scout_web, BlockScoutWeb.Tracer, env: "production", disabled?: tru
 config :logger, :block_scout_web,
   level: :info,
   path: Path.absname("logs/prod/block_scout_web.log"),
-  rotate: %{max_bytes: 52_428_800, keep: 19}
+  rotate: %{max_bytes: 52_428_800, keep: 5}
 
 config :logger, :api,
   level: :debug,
   path: Path.absname("logs/prod/api.log"),
   metadata_filter: [fetcher: :api],
-  rotate: %{max_bytes: 52_428_800, keep: 19}
+  rotate: %{max_bytes: 52_428_800, keep: 5}
