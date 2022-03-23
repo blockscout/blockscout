@@ -1,0 +1,3 @@
+FROM matterlabs/zksolc as evm
+FROM image:latest
+COPY --from=evm /usr/local/bin/zksolc /usr/local/bin/
