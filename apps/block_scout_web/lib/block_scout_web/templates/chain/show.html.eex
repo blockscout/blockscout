@@ -1,9 +1,8 @@
 <div class='dashboard-banner-container' data-page="chain-details">
   <div class="container">
     <div class="dashboard-banner">
-      <!-- Graph and legend -->
+      <!-- Graph and legend
       <div class="dashboard-banner-network-graph">
-        <!-- Graph -->
         <div class="dashboard-banner-chart">
           <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
             <span><%= gettext("There was a problem loading the chart.") %></span>
@@ -20,7 +19,6 @@
                   width="350" height="152">
           </canvas>
         </div>
-        <!-- Legend -->
         <script>
          numChartData = <%= Enum.reduce(@chart_config, 0, fn (source, acc) ->
                         acc + length(elem(source, 1)) end) %>
@@ -111,6 +109,7 @@
           <% end %>
         </div>
       </div>
+       -->
       <!-- Stats -->
       <div class="dashboard-banner-network-plain-container">
         <div class="dashboard-banner-network-stats">
@@ -194,7 +193,7 @@
         <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
            <div class="tile tile-type-block n-p d-flex flex-column">
-             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
              <div class="tile-bottom-contents">
                <div class="dark-block-loader"></div>
                <div class="dark-block-loader"></div>
@@ -205,7 +204,7 @@
         <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
            <div class="tile tile-type-block n-p d-flex flex-column">
-             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
              <div class="tile-bottom-contents">
                <div class="dark-block-loader"></div>
                <div class="dark-block-loader"></div>
@@ -223,7 +222,7 @@
             </div>
            </div>
          </div>
-        </div>   
+        </div>
       </div>
     </div>
   </div>

@@ -212,7 +212,7 @@
             <dl class="row">
                 <dt class="col-sm-3 col-lg-2 text-muted">
                   <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Ether") <> " " <> gettext("burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
+                  text: gettext("Uptick") <> " " <> gettext("burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
                   <%= gettext("Burnt Fees") %>
                 </dt>
                 <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %></dd>
@@ -226,7 +226,7 @@
                 </dt>
                 <dd class="col-sm-9 col-lg-10"><%= format_wei_value(%Wei{value: priority_fee}, :ether) %></dd>
             </dl>
-          <% end %>  
+          <% end %>
           <%= if show_reward?(@block.rewards) do %>
             <hr>
             <%= for block_reward <- @block.rewards do %>
@@ -268,4 +268,4 @@
     </div>
 </section>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
