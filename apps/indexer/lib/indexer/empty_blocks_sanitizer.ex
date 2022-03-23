@@ -17,7 +17,7 @@ defmodule Indexer.EmptyBlocksSanitizer do
   alias Explorer.Chain.Import.Runner.Blocks
 
   # unprocessed emty blocks to fetch at once
-  @limit 400
+  @limit 1000
 
   @interval :timer.minutes(1)
 
@@ -72,13 +72,15 @@ defmodule Indexer.EmptyBlocksSanitizer do
 
     uniq_block_hashes = unprocessed_non_empty_blocks_from_db
 
-    Repo.update_all(
-      from(
-        block in Block,
-        where: block.hash in ^uniq_block_hashes
-      ),
-      set: [is_empty: false, updated_at: Timex.now()]
-    )
+    if Enum.count(uniq_block_hashes) > 0 do
+      Repo.update_all(
+        from(
+          block in Block,
+          where: block.hash in ^uniq_block_hashes
+        ),
+        set: [is_empty: false, updated_at: Timex.now()]
+      )
+    end
 
     unprocessed_empty_blocks_from_db = unprocessed_empty_blocks_query_list(@limit)
 
