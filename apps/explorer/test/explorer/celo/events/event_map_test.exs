@@ -3,6 +3,7 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
 
   alias Explorer.Celo.ContractEvents.Election.ValidatorGroupActiveVoteRevokedEvent
   alias Explorer.Celo.ContractEvents.EventMap
+  alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Repo
 
   describe "event map" do
@@ -76,6 +77,19 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
       [result] = events
       assert result.units == 6_969_696_969
       assert result.value == 420_420_420
+    end
+  end
+
+  describe "General functionality" do
+    test "event map should have definitions for all events" do
+      event_map_topic_set = EventMap.map() |> Map.keys() |> MapSet.new()
+
+      contract_events_topic_set =
+        EventTransformer.__protocol__(:impls)
+        |> then(fn {:consolidated, modules} -> Enum.map(modules, & &1.topic()) end)
+        |> MapSet.new()
+
+      assert MapSet.subset?(contract_events_topic_set, event_map_topic_set)
     end
   end
 end
