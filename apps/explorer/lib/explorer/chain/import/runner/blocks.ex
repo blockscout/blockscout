@@ -310,8 +310,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         join: s in subquery(acquire_query),
         on: transaction.block_hash == s.hash,
         # we don't want to remove consensus from blocks that will be upserted
-        where: transaction.block_hash not in ^hashes,
-        select: transaction.block_hash
+        where: transaction.block_hash not in ^hashes
       ),
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
