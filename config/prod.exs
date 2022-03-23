@@ -9,7 +9,7 @@ config :logger_json, :backend, level: :info
 config :logger, :ecto,
   level: :info,
   path: Path.absname("logs/prod/ecto.log"),
-  rotate: %{max_bytes: 52_428_800, keep: 19}
+  rotate: %{max_bytes: 52_428_800, keep: 5}
 
 config :logger, :error,
   path: Path.absname("logs/prod/error.log"),
