@@ -3,7 +3,6 @@
 <% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
-  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
     <div class="col-md-12 js-ad-dependant-mb-2">
       <div class="card js-ad-dependant-mb-2">
@@ -68,10 +67,10 @@
             <dd class="col-sm-8 col-md-8 col-lg-9 contract-address">
               <%= link(
                   @token.contract_address_hash,
-                  to: AccessHelpers.get_path(@conn, :address_path, :show, 
+                  to: AccessHelpers.get_path(@conn, :address_path, :show,
                   Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
-                  ) 
+                  )
               %>
             </dd>
           </dl>
@@ -112,7 +111,7 @@
                     <span data-selector="token-price" data-usd-value="<%= @token.usd_value %>"></span>
                   </dd>
                 </dl>
-              <% end %>  
+              <% end %>
             <% end %>
           <% end %>
           <dl class="row">
@@ -148,7 +147,7 @@
                 <%= @token.decimals %>
               </dd>
             </dl>
-          <% end %>  
+          <% end %>
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -166,5 +165,4 @@
 </section>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)), title: @token.contract_address %>
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-overview.js") %>"></script>
