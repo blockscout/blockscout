@@ -62,11 +62,6 @@ defmodule Explorer.Accounts.Notify.Notifier do
   end
 
   defp query_notification(notification, watchlist_address) do
-    Logger.info("--- notification", fetcher: :account)
-    Logger.info(notification, fetcher: :account)
-    Logger.info("--- watchlist_address", fetcher: :account)
-    Logger.info(watchlist_address, fetcher: :account)
-
     from(wn in WatchlistNotification,
       where:
         wn.watchlist_address_id == ^watchlist_address.id and
