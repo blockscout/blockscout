@@ -47,11 +47,11 @@ defmodule Explorer.Accounts.Notify.Notifier do
     Logger.debug("--- filled summary", fetcher: :account)
     Logger.debug(summary, fetcher: :account)
 
-    Enum.each(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
-    Enum.each(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
+    Enum.each(incoming_addresses, fn address -> notify_watchlist(address, summary, :incoming) end)
+    Enum.each(outgoing_addresses, fn address -> notify_watchlist(address, summary, :outgoing) end)
   end
 
-  defp notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
+  defp notify_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
     with %WatchlistNotification{} = notification <-
            build_watchlist_notification(address, summary, direction) do
       notification
@@ -73,6 +73,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
           wn.transaction_hash == ^notification.transaction_hash and
           wn.block_number == ^notification.block_number and
           wn.direction == ^notification.direction and
+          wn.subject == ^notification.subject and
           wn.amount == ^notification.amount
     )
   end
