@@ -1,3 +1,47 @@
 FROM matterlabs/zksolc as evm
-FROM image:latest
+FROM elixir:1.13-slim
+
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+
+ARG COIN
+EXPOSE 4000
+
+ENV PORT=4000 \
+    MIX_ENV="prod" \
+    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+
+RUN mix do local.hex --force, local.rebar --force
+
+# Cache elixir deps
+ADD mix.exs mix.lock ./
+ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
+ADD apps/explorer/mix.exs ./apps/explorer/
+ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
+ADD apps/indexer/mix.exs ./apps/indexer/
+ADD . .
+
+RUN apt-get update -y && apt-get install -y curl build-essential git && \
+    # Get Rust \
+    apt-get update -y && apt-get install -y curl && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . $HOME/.cargo/env && \
+    curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
+    apt-get install -y nodejs && \
+    ## \
+    mix do deps.get, local.rebar --force, deps.compile && \
+    if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi && \
+    # Run forderground build and phoenix digest \
+    mix compile --warnings-as-errors=false && \
+    # Add blockscout npm deps \
+    cd apps/block_scout_web/assets/ && \
+    npm install && \
+    npm run deploy && \
+    cd - && \
+    cd apps/explorer/ && \
+    npm install && \
+    mix phx.digest && \
+    # Cleanup \
+    rustup self uninstall -y && \
+    apt-get remove -y build-essential nodejs git && apt-get autoremove -y && apt-get clean
+
 COPY --from=evm /usr/local/bin/zksolc /usr/local/bin/
