@@ -73,18 +73,19 @@ config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on
 if System.get_env("POS_STAKING_CONTRACT") do
   config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 else
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: false
+  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 end
 
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
-  disabled?: System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
+  disabled?: System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "true") == "true"
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 config :indexer, Indexer.Tracer,
   service: :indexer,
   adapter: SpandexDatadog.Adapter,
-  trace_key: :blockscout
+  trace_key: :blockscout,
+  disabled?: true
 
 config :logger, :indexer,
   # keep synced with `config/config.exs`
