@@ -5,7 +5,9 @@ defmodule Explorer.GraphQL do
 
   import Ecto.Query,
     only: [
+      subquery: 1,
       from: 2,
+      fragment: 3,
       order_by: 3,
       or_where: 3,
       where: 3
@@ -28,11 +30,35 @@ defmodule Explorer.GraphQL do
   """
   @spec address_to_transactions_query(Hash.Address.t()) :: Ecto.Query.t()
   def address_to_transactions_query(address_hash) do
-    Transaction
+    ordered_query = Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> where([transaction], transaction.to_address_hash == ^address_hash)
     |> or_where([transaction], transaction.from_address_hash == ^address_hash)
     |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
+
+    # When using a cursor to iterate over the results of a query, it's possible that either a new block gets created or that a rollback happens
+    # this is problematic for pagination because the default cursor for absinthe is simply an offset in the SQL query
+    # this means that:
+    # - In the case of a new block (if you're using desc order), you will see the same transaction twice
+    # - In the case of a rollback, (if you're using desc order), you may skip a transcation (and not realize some of your prev fetched data is now incorrect)
+    # In order for programs paginating over results to fail-fast if the result is changing mid-iteration, we override the default cursor to contain CSV(offset, block_hash, tx_hash)
+    # This ensures that if the ordering changes, one (or both) of block_hash & tx_hash will no longer match so you'll get an error
+    #
+    # to avoid SQL injection, using a dynamic string for `fragment` is disallowed, so we instead inline this ugly string
+    # here is the explanation of each step:
+    # 1) Represent the offset as `'arrayconnection:', ROW_NUMBER () over () - 1`
+    #    This is done because absinthe requires the offset to contain `arrayconnection:` as a prefix
+    #    We use `ROW_NUMBER() over ()` to get the index of the row in the SQL output
+    #    We offset by `-1` because SQL rows are 1-indexed, but cursors are 0-indexed
+    #    Note: we're using `subquery` here because `SELECT` runs before `ORDER BY` in SQL
+    #          but we want to get the `ROW_NUMBER` after we formed `ordered_query`
+    #          the easiest way to do this is to wrap `ordered_query` into a new query so we can perform the `SELECT` after the `ORDER BY`
+    # 2) `CONCAT` <offset, block_hash, tx_hash>
+    # 3) `ENCODE` as base64 by going from string -> `convert_to` utf-8 bytes -> base64
+    #    This is required because absinthe expects cursors to be base64 encoded
+    # 4) `translate` to remove any \n newlines added by postgres
+    #    This is required because postgres splits up base64 strings in lines of 76 chars by default
+    subquery(ordered_query) |> select([transaction], {transaction, cursor: fragment("translate(ENCODE(convert_to(CONCAT('arrayconnection:', ROW_NUMBER () over () - 1, ',', encode(?, 'hex'), ',', encode(?, 'hex')), 'utf-8'), 'base64'), E'\n', '')", transaction.block_hash, transaction.hash)})
   end
 
   @doc """
