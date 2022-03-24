@@ -20,6 +20,8 @@ defmodule Explorer.Accounts.Notify.Email do
     email
   end
 
+  def compose(_, _), do: nil
+
   defp compose_email(notification) do
     email = new_email(from: sender(), to: email(notification))
 
@@ -44,7 +46,7 @@ defmodule Explorer.Accounts.Notify.Email do
     |> add_dynamic_field("block_url", block_url(notification))
   end
 
-  defp amount(%WatchlistNotification{amount: amount, type: type}) do
+  defp amount(%WatchlistNotification{amount: amount, subject: subject, type: type}) do
     case type do
       "COIN" ->
         amount
@@ -53,10 +55,10 @@ defmodule Explorer.Accounts.Notify.Email do
         amount
 
       "ERC-721" ->
-        "Token ID: " <> to_string(amount) <> " of "
+        "Token ID: " <> subject <> " of "
 
       "ERC-1155" ->
-        "Token ID: " <> to_string(amount) <> " of "
+        "Token ID: " <> subject <> " of "
     end
   end
 

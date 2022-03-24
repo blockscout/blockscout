@@ -18,6 +18,7 @@ defmodule Explorer.Accounts.Notify.Summary do
     :amount,
     :tx_fee,
     :name,
+    :subject,
     :type
   ]
 
@@ -39,8 +40,11 @@ defmodule Explorer.Accounts.Notify.Summary do
 
     transaction_summary = fetch_summary(transaction)
 
-    Logger.debug("--- transaction summary", fetcher: :account)
-    Logger.debug(transaction_summary, fetcher: :account)
+    if transaction_summary do
+      Logger.debug("--- transaction summary", fetcher: :account)
+      Logger.debug(transaction_summary, fetcher: :account)
+    end
+
     Logger.debug("--- transfers summaries", fetcher: :account)
     Logger.debug(transfers_summaries, fetcher: :account)
 
@@ -107,12 +111,13 @@ defmodule Explorer.Accounts.Notify.Summary do
 
       "ERC-721" ->
         %Summary{
+          amount: 0,
           transaction_hash: transaction.hash,
           method: method(transfer),
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          amount: transfer.token_id,
+          subject: to_string(transfer.token_id),
           tx_fee: fee(transaction),
           name: transfer.token.name,
           type: transfer.token.type
@@ -120,12 +125,13 @@ defmodule Explorer.Accounts.Notify.Summary do
 
       "ERC-1155" ->
         %Summary{
+          amount: 0,
           transaction_hash: transaction.hash,
           method: method(transfer),
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          amount: transfer.token_id,
+          subject: to_string(token_ids(transfer)),
           tx_fee: fee(transaction),
           name: transfer.token.name,
           type: transfer.token.type
@@ -168,6 +174,10 @@ defmodule Explorer.Accounts.Notify.Summary do
       amount,
       decimals
     )
+  end
+
+  def token_ids(%Chain.TokenTransfer{token_id: token_id, token_ids: token_ids}) do
+    token_id || token_ids
   end
 
   def token_decimals(%Chain.TokenTransfer{} = transfer) do
