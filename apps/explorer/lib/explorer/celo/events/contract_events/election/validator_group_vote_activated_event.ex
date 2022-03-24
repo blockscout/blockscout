@@ -11,7 +11,7 @@ defmodule Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
   """
 
   alias Explorer.Celo.ContractEvents.Common
-  alias Explorer.Chain.{Block, CeloContractEvent}
+  alias Explorer.Chain.CeloContractEvent
   alias Explorer.Repo
 
   use Explorer.Celo.ContractEvents.Base,

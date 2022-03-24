@@ -8,6 +8,15 @@ defmodule Explorer.Fakes.VoterRewardsForGroup do
     bytes: <<1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2>>
   }
 
+  @voter_address_1_hash %Explorer.Chain.Hash{
+    byte_count: 20,
+    bytes: <<2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1>>
+  }
+  @voter_address_2_hash %Explorer.Chain.Hash{
+    byte_count: 20,
+    bytes: <<2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2>>
+  }
+
   @block_1_number 10_696_320
   @block_1_hash %Explorer.Chain.Hash{
     byte_count: 32,
@@ -33,15 +42,10 @@ defmodule Explorer.Fakes.VoterRewardsForGroup do
     byte_count: 32,
     bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5>>
   }
-  @block_6_number 10_782_720
-  @block_6_hash %Explorer.Chain.Hash{
-    byte_count: 32,
-    bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6>>
-  }
 
-  def calculate(voter_address_hash, group_address_hash, to_date \\ DateTime.utc_now())
-
-  def calculate(voter_address_hash, group_address_hash, to_date) when group_address_hash == @group_address_1_hash do
+  def calculate(voter_address_hash, group_address_hash, _to_date)
+      when group_address_hash == @group_address_1_hash and
+             voter_address_hash == @voter_address_1_hash do
     {:ok,
      %{
        group: group_address_hash,
@@ -86,7 +90,26 @@ defmodule Explorer.Fakes.VoterRewardsForGroup do
      }}
   end
 
-  def calculate(voter_address_hash, group_address_hash, to_date) when group_address_hash == @group_address_2_hash do
+  def calculate(voter_address_hash, group_address_hash, _to_date)
+      when group_address_hash == @group_address_1_hash and
+             voter_address_hash == @voter_address_2_hash do
+    {:ok,
+     %{
+       group: group_address_hash,
+       total: 175,
+       rewards: [
+         %{
+           amount: 78,
+           block_hash: @block_5_hash,
+           block_number: @block_5_number,
+           date: ~U[2022-01-05 17:42:43.162804Z],
+           epoch_number: 623
+         }
+       ]
+     }}
+  end
+
+  def calculate(_voter_address_hash, group_address_hash, _to_date) when group_address_hash == @group_address_2_hash do
     {:ok,
      %{
        group: group_address_hash,

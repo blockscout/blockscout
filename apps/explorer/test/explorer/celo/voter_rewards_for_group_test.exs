@@ -6,8 +6,6 @@ defmodule Explorer.Celo.VoterRewardsForGroupTest do
   alias Explorer.SetupVoterRewardsTest
 
   describe "calculate/2" do
-    # to be changed by Vasileios in upcoming PR
-    @tag :skip
     test "returns all rewards for a voter voting for a specific group" do
       {
         voter_hash,
@@ -18,7 +16,7 @@ defmodule Explorer.Celo.VoterRewardsForGroupTest do
         block_7_hash
       } = SetupVoterRewardsTest.setup_for_group()
 
-      {:ok, rewards} = VoterRewardsForGroup.calculate(voter_hash, group_hash)
+      rewards = VoterRewardsForGroup.calculate(voter_hash, group_hash)
 
       assert rewards ==
                %{

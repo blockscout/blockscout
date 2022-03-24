@@ -760,7 +760,7 @@ defmodule BlockScoutWeb.Etherscan do
           "group" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
         }
       ],
-      "totalRewardCelo" => "300",
+      "totalRewardCelo" => "300000",
       "from" => "2022-01-03 00:00:00.000000Z",
       "to" => "2022-01-06 00:00:00.000000Z",
       "account" => "0x0000000000000000000000000000000000000001"
@@ -798,25 +798,25 @@ defmodule BlockScoutWeb.Etherscan do
 
   @reward_getvoterrewardsforgroup_example_value_error %{
     "status" => "0",
-    "message" => "Voter or group address does not exist",
+    "message" => "Invalid voter address hash",
     "result" => []
   }
 
   @reward_getvoterrewards_example_value_error %{
     "status" => "0",
-    "message" => "Voter address does not exist",
+    "message" => "Invalid voter address hash",
     "result" => []
   }
 
   @reward_getvalidatorrewards_example_value_error %{
     "status" => "0",
-    "message" => "Validator address does not exist",
+    "message" => "Invalid validator address hash",
     "result" => []
   }
 
   @reward_getvalidatorgrouprewards_example_value_error %{
     "status" => "0",
-    "message" => "Group address does not exist",
+    "message" => "Invalid group address hash",
     "result" => []
   }
 
@@ -1535,7 +1535,7 @@ defmodule BlockScoutWeb.Etherscan do
       from: %{type: "timestamp"},
       to: %{type: "timestamp"},
       group: @address_hash_type,
-      rewards: @generic_epoch_rewards
+      rewards: @group_epoch_rewards
     }
   }
 
@@ -3311,7 +3311,8 @@ defmodule BlockScoutWeb.Etherscan do
         key: "voterAddress",
         placeholder: "voterAddress",
         type: "string",
-        description: "Voter address hash for which you wish to get the rewards."
+        description:
+          "Voter address hash or list of coma separated voter address hashes for which you wish to get the rewards. Example: ?module=reward&action=getvotersrewards&voterAddresses=0x0000000000000000000000000000000000000001, 0x0000000000000000000000000000000000000002"
       }
     ],
     optional_params: [
@@ -3361,7 +3362,8 @@ defmodule BlockScoutWeb.Etherscan do
         key: "validatorAddress",
         placeholder: "validatorAddress",
         type: "string",
-        description: "Validator address hash for which you wish to get the rewards."
+        description:
+          "Validator address hash or list of comma separated validator address hashes for which you wish to get the rewards. Example: ?module=reward&action=getvalidatorrewards&validatorAddresses=0x0000000000000000000000000000000000000001, 0x0000000000000000000000000000000000000002"
       }
     ],
     optional_params: [
@@ -3411,7 +3413,8 @@ defmodule BlockScoutWeb.Etherscan do
         key: "groupAddress",
         placeholder: "groupAddress",
         type: "string",
-        description: "Validator group address hash for which you wish to get the rewards."
+        description:
+          "Validator group address hash or list of comma separated validator group address hashes for which you wish to get the rewards. Example: ?module=reward&action=getvalidatorgrouprewards&groupAddresses=0x0000000000000000000000000000000000000001, 0x0000000000000000000000000000000000000002"
       }
     ],
     optional_params: [

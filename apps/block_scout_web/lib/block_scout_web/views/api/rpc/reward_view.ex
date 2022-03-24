@@ -9,20 +9,24 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
     RPCView.render("show.json", data: prepared_rewards)
   end
 
-  def render("getvoterrewards.json", %{rewards: rewards}) do
-    prepared_rewards = prepare_generic_rewards(rewards)
-
-    RPCView.render("show.json", data: prepared_rewards)
-  end
-
-  def render("getvalidatorrewards.json", %{rewards: rewards}) do
-    prepared_rewards = prepare_generic_rewards(rewards)
+  def render(json, %{rewards: rewards}) when json in ~w(getvoterrewards.json getvalidatorrewards.json) do
+    prepared_rewards =
+      if Map.has_key?(rewards, :account) do
+        prepare_generic_rewards(rewards)
+      else
+        prepare_generic_rewards_multiple_accounts(rewards)
+      end
 
     RPCView.render("show.json", data: prepared_rewards)
   end
 
   def render("getvalidatorgrouprewards.json", %{rewards: rewards}) do
-    prepared_rewards = prepare_group_rewards(rewards)
+    prepared_rewards =
+      if Map.has_key?(rewards, :group) do
+        prepare_group_rewards(rewards)
+      else
+        prepare_group_rewards_multiple_accounts(rewards)
+      end
 
     RPCView.render("show.json", data: prepared_rewards)
   end
@@ -54,7 +58,16 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
       account: to_string(rewards.account),
       from: to_string(rewards.from),
       to: to_string(rewards.to),
-      rewards: Enum.map(rewards.rewards, &prepare_reward_for_all_groups(&1))
+      rewards: Enum.map(rewards.rewards, &prepare_generic_reward(&1))
+    }
+  end
+
+  defp prepare_generic_rewards_multiple_accounts(rewards) do
+    %{
+      totalRewardCelo: to_string(rewards.total_reward_celo),
+      from: to_string(rewards.from),
+      to: to_string(rewards.to),
+      rewards: Enum.map(rewards.rewards, &prepare_generic_reward_multiple_accounts(&1))
     }
   end
 
@@ -68,8 +81,29 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
     }
   end
 
-  defp prepare_reward_for_all_groups(reward) do
+  defp prepare_group_rewards_multiple_accounts(rewards) do
     %{
+      totalRewardCelo: to_string(rewards.total_reward_celo),
+      from: to_string(rewards.from),
+      to: to_string(rewards.to),
+      rewards: Enum.map(rewards.rewards, &prepare_group_epoch_rewards_multiple_accounts(&1))
+    }
+  end
+
+  defp prepare_generic_reward(reward) do
+    %{
+      amount: to_string(reward.amount),
+      blockHash: to_string(reward.block_hash),
+      blockNumber: to_string(reward.block_number),
+      date: reward.date,
+      epochNumber: to_string(reward.epoch_number),
+      group: to_string(reward.group)
+    }
+  end
+
+  defp prepare_generic_reward_multiple_accounts(reward) do
+    %{
+      account: to_string(reward.account),
       amount: to_string(reward.amount),
       blockHash: to_string(reward.block_hash),
       blockNumber: to_string(reward.block_number),
@@ -86,6 +120,18 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
       blockNumber: to_string(reward.block_number),
       date: reward.date,
       epochNumber: to_string(reward.epoch_number),
+      validator: to_string(reward.validator)
+    }
+  end
+
+  defp prepare_group_epoch_rewards_multiple_accounts(reward) do
+    %{
+      amount: to_string(reward.amount),
+      blockHash: to_string(reward.block_hash),
+      blockNumber: to_string(reward.block_number),
+      date: reward.date,
+      epochNumber: to_string(reward.epoch_number),
+      group: to_string(reward.group),
       validator: to_string(reward.validator)
     }
   end

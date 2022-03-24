@@ -44,7 +44,7 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
 
     case voter_activated_or_revoked_votes_for_group_events do
       [] ->
-        {:error, :not_found}
+        %{rewards: [], total: 0, group: group_address_hash}
 
       voter_activated_or_revoked ->
         [voter_activated_earliest_block | _] = voter_activated_or_revoked
@@ -95,7 +95,7 @@ defmodule Explorer.Celo.VoterRewardsForGroup do
             }
           end)
 
-        {:ok, %{rewards: rewards, total: rewards_sum, group: group_address_hash}}
+        %{rewards: rewards, total: rewards_sum, group: group_address_hash}
     end
   end
 
