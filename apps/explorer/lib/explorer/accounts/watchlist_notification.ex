@@ -21,6 +21,7 @@ defmodule Explorer.Accounts.WatchlistNotification do
     field(:direction, :string)
     field(:method, :string)
     field(:name, :string)
+    field(:subject, :string)
     field(:tx_fee, :decimal)
     field(:type, :string)
     field(:viewed_at, :integer)
