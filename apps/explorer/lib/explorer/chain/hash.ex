@@ -55,6 +55,9 @@ defmodule Explorer.Chain.Hash do
       <<"0x", hexadecimal_digits::binary>> ->
         cast_hexadecimal_digits(hexadecimal_digits, byte_count)
 
+      <<"\\x", hexadecimal_digits::binary>> ->
+        cast_hexadecimal_digits(hexadecimal_digits, byte_count)
+
       integer when is_integer(integer) ->
         cast_integer(integer, byte_count)
 

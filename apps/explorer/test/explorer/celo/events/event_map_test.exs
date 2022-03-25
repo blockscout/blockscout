@@ -6,6 +6,8 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
   alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Repo
 
+  import Explorer.Celo.CacheHelper
+
   describe "event map" do
     test "Gets struct for topic" do
       result =
@@ -49,18 +51,46 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
       assert params.account == "\\x88c1c759600ec3110af043c183a2472ab32d099c"
       assert params.group == "\\x47b2db6af05a55d42ed0f3731735f9479abf0673"
     end
+
+    test "filters celo contract events" do
+      celo_contract = insert(:core_contract)
+
+      [celo_contract.address_hash() |> to_string()] |> MapSet.new() |> set_cache_address_set()
+
+      test_event1 = %{
+        address_hash: celo_contract.address_hash() |> to_string(),
+        block_hash: "0x42b21f09e9956d1a01195b1ca461059b2705fe850fc1977bd7182957e1b390d3",
+        block_number: 10_913_664,
+        data:
+          "0x000000000000000000000000000000000000000000000003a188c31fefaa000000000000000000000000000000000012086cd1c417618770935790ad714d7730",
+        first_topic: "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe",
+        fourth_topic: nil,
+        index: 8,
+        second_topic: "0x00000000000000000000000088c1c759600ec3110af043c183a2472ab32d099c",
+        third_topic: "0x00000000000000000000000047b2db6af05a55d42ed0f3731735f9479abf0673",
+        transaction_hash: "0xb8960575a898afa8a124cd7414f1261109a119dba3bed4489393952a1556a5f0"
+      }
+
+      test_event2 = %{test_event1 | address_hash: "0x765de816845861e75a25fca122bb68invalidhsh"}
+      test_event3 = %{test_event1 | address_hash: "0x00000000000861e75a25fca122bb68invalidhsh"}
+
+      result = EventMap.filter_celo_contract_logs([test_event1, test_event2, test_event3])
+
+      # "Should only be core contract logs"
+      assert result == [test_event1]
+    end
   end
 
   describe "test event factory " do
     test "Asserts factory functionality for events" do
       block = insert(:block, number: 77)
       log = insert(:log, block: block)
-      contract = insert(:contract_address)
+      contract = insert(:core_contract)
 
       event = %ValidatorGroupActiveVoteRevokedEvent{
         block_number: 77,
         log_index: log.index,
-        contract_address_hash: contract.hash,
+        contract_address_hash: contract.address_hash,
         account: address_hash(),
         group: address_hash(),
         units: 6_969_696_969,

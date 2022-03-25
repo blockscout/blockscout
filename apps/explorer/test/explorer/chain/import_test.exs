@@ -2314,7 +2314,7 @@ defmodule Explorer.Chain.ImportTest do
 
     test "inserts celo contract events " do
       %Block{number: block_number} = insert(:block, consensus: true)
-      %Address{hash: address_hash} = insert(:address)
+      %Explorer.Chain.CeloCoreContract{address_hash: address_hash} = insert(:core_contract)
       %Transaction{hash: transaction_hash} = insert(:transaction)
 
       miner_hash_after = address_hash()

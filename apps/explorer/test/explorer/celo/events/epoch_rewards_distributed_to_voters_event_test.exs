@@ -53,7 +53,7 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
       log_2 = insert(:log, block: block_2, index: 1)
       %Address{hash: group_address_1_hash} = insert(:address)
       %Address{hash: group_address_2_hash} = insert(:address)
-      %Address{hash: contract_address_hash} = insert(:address)
+      %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{

@@ -21,6 +21,7 @@ defmodule Explorer.Factory do
     Block,
     CeloAccount,
     CeloContractEvent,
+    CeloCoreContract,
     CeloPendingEpochOperation,
     CeloValidatorGroupVotes,
     CeloVoterVotes,
@@ -748,5 +749,14 @@ defmodule Explorer.Factory do
   def contract_event_factory(%{event: event}) do
     params = event |> EventTransformer.to_celo_contract_event_params()
     struct(CeloContractEvent, params)
+  end
+
+  def core_contract_factory do
+    %CeloCoreContract{
+      address_hash: address_hash(),
+      block_number: block_number(),
+      log_index: 1,
+      name: "TestContract"
+    }
   end
 end

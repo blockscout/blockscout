@@ -7,7 +7,7 @@ defmodule Mix.Tasks.EventMap do
   require Logger
 
   @path "lib/explorer/celo/events/contract_events/event_map.ex"
-  @template "lib/explorer/mix.tasks/event_map_template.eex"
+  @template "lib/mix/tasks/event_map_template.eex"
   @shortdoc "Creates a module mapping topics to event names and vice versa"
   def run(args) do
     {options, _, _} = OptionParser.parse(args, strict: [verbose: :boolean])

@@ -65,7 +65,7 @@ defmodule Indexer.Fetcher.CeloValidatorGroupVotesTest do
     test "fetches validator group votes from blockchain" do
       %Address{hash: group_1_hash} = insert(:address)
       %Address{hash: group_2_hash} = insert(:address)
-      %Address{hash: contract_address_hash} = insert(:address)
+      %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
       block_1 = %Block{hash: block_1_hash, number: block_1_number} = insert(:block, number: 172_800)
       log_1 = insert(:log, block: block_1)

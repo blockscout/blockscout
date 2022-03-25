@@ -33,4 +33,10 @@ defmodule Explorer.Chain.Hash.AddressTest do
       assert Address.validate("0xc1912fEE45d61C87Cc5EA59DaE31190FFFFf232") == {:error, :invalid_length}
     end
   end
+
+  describe "cast" do
+    test "casts postgres style bytea addresses presented as strings" do
+      {:ok, _hsh} = Address.cast(~S(\xbb024e9cdcb2f9e34d893630d19611b8a5381b3c))
+    end
+  end
 end

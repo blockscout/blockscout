@@ -9,7 +9,7 @@ defmodule Explorer.SetupValidatorAndGroupRewardsTest do
     %Address{hash: validator_address_2_hash} = insert(:address)
     %Address{hash: group_address_1_hash} = insert(:address)
     %Address{hash: group_address_2_hash} = insert(:address)
-    %Address{hash: contract_address_hash} = insert(:address)
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
     block_1 = insert(:block, number: 10_696_320, timestamp: ~U[2022-01-01 17:42:43.162804Z])
 
@@ -95,7 +95,7 @@ defmodule Explorer.SetupValidatorAndGroupRewardsTest do
     %Address{hash: validator_address_2_hash} = insert(:address)
     %Address{hash: group_address_1_hash} = insert(:address)
     %Address{hash: group_address_2_hash} = insert(:address)
-    %Address{hash: contract_address_hash} = insert(:address)
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
     %Block{hash: block_1_hash} =
       block_1 = insert(:block, number: 10_730_880, timestamp: ~U[2022-01-03 17:42:43.162804Z])

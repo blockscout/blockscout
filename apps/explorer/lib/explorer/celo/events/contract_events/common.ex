@@ -43,6 +43,10 @@ defmodule Explorer.Celo.ContractEvents.Common do
     address
   end
 
+  defp convert_result(result, {:bytes, _size}) do
+    :binary.bin_to_list(result)
+  end
+
   def extract_common_event_params(event) do
     # set full hashes
     [:transaction_hash]

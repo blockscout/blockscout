@@ -2,6 +2,7 @@
 defmodule Explorer.Celo.ContractEvents.EventMap do
   @moduledoc "Map event names and event topics to concrete contract event structs"
 
+  alias Explorer.Celo.AddressCache
   alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Repo
 
@@ -21,6 +22,19 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       end
     end)
     |> Enum.reject(&is_nil/1)
+  end
+
+  @doc "Filter out log entries that do not come from celo core contracts"
+  def filter_celo_contract_logs(logs) do
+   logs
+   |> Enum.filter(fn %{address_hash: contract_address} -> AddressCache.is_core_contract_address?(contract_address) end)
+  end
+
+  @doc "Filter out log entries that don't come from celo core contracts and convert them into celo contract event changeset params"
+  def celo_rpc_to_event_params(logs) do
+    logs
+    |> filter_celo_contract_logs()
+    |> rpc_to_event_params()
   end
 
   @doc "Convert CeloContractEvent instance to their concrete types"

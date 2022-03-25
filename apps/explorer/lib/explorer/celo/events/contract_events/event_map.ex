@@ -1,8 +1,8 @@
 # This file is auto generated, changes will be lost upon regeneration
-
 defmodule Explorer.Celo.ContractEvents.EventMap do
   @moduledoc "Map event names and event topics to concrete contract event structs"
 
+  alias Explorer.Celo.AddressCache
   alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Repo
 
@@ -22,6 +22,19 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       end
     end)
     |> Enum.reject(&is_nil/1)
+  end
+
+  @doc "Filter out log entries that do not come from celo core contracts"
+  def filter_celo_contract_logs(logs) do
+    logs
+    |> Enum.filter(fn %{address_hash: contract_address} -> AddressCache.is_core_contract_address?(contract_address) end)
+  end
+
+  @doc "Filter out log entries that don't come from celo core contracts and convert them into celo contract event changeset params"
+  def celo_rpc_to_event_params(logs) do
+    logs
+    |> filter_celo_contract_logs()
+    |> rpc_to_event_params()
   end
 
   @doc "Convert CeloContractEvent instance to their concrete types"
@@ -68,6 +81,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Reserve.AssetAllocationSetEvent,
     "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7" =>
       Elixir.Explorer.Celo.ContractEvents.Election.EpochRewardsDistributedToVotersEvent,
+    "0x4166d073a7a5e704ce0db7113320f88da2457f872d46dc020c805c562c1582a0" =>
+      Elixir.Explorer.Celo.ContractEvents.Registry.RegistryUpdatedEvent,
     "0xe5d4e30fb8364e57bc4d662a07d0cf36f4c34552004c4c3624620a2c1d1c03dc" =>
       Elixir.Explorer.Celo.ContractEvents.Goldtoken.TransferCommentEvent,
     "0xae7458f8697a680da6be36406ea0b8f40164915ac9cc40c0dad05a2ff6e8c6a8" =>

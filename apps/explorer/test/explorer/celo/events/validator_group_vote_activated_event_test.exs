@@ -58,7 +58,7 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
       insert(:transaction, hash: hsh)
 
       {:ok, add} = Explorer.Chain.Hash.Address.cast("0x765de816845861e75a25fca122bb6898b8b1282a")
-      insert(:contract_address, hash: add)
+      insert(:core_contract, address_hash: add)
 
       test_params = %{
         address_hash: "0x765de816845861e75a25fca122bb6898b8b1282a",
@@ -120,7 +120,7 @@ defmodule Explorer.Celo.Events.ValidatorGroupVoteActivatedEventTest do
       %Address{hash: group_1_address_hash} = insert(:address)
       %Address{hash: voter_2_address_hash} = insert(:address)
       %Address{hash: group_2_address_hash} = insert(:address)
-      %Address{hash: contract_address_hash} = insert(:address)
+      %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
       block_1 = insert(:block, number: 10_692_863, timestamp: ~U[2022-01-01 13:08:43.162804Z])
       log_1 = insert(:log, block: block_1)

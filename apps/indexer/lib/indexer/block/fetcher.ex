@@ -10,7 +10,9 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Celo.ContractEvents.EventMap
+  alias Explorer.Celo.ContractEvents.{EventMap, EventTransformer}
+  alias Explorer.Celo.ContractEvents.Registry.RegistryUpdatedEvent
+  alias Explorer.Celo.{AddressCache, CoreContracts}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Block.Reward
@@ -129,6 +131,40 @@ defmodule Indexer.Block.Fetcher do
     e_logs
   end
 
+  @doc """
+  If a RegistryUpdated event was sent from the registry contract it is treated as a new core contract, inserted into
+  the database and used to update the contract cache.
+  """
+  defp process_celo_core_contracts(logs) do
+    logs
+    |> Enum.filter(fn log ->
+      log.first_topic == RegistryUpdatedEvent.topic() and log.address_hash == CoreContracts.registry_address()
+    end)
+    |> Enum.map(fn registry_updated_log ->
+      event =
+        %RegistryUpdatedEvent{}
+        |> EventTransformer.from_params(registry_updated_log)
+
+      {:ok, new_contract_address} = event.addr |> Explorer.Chain.Hash.Address.cast()
+
+      %{
+        name: event.identifier,
+        address_hash: new_contract_address,
+        block_number: event.block_number,
+        log_index: event.log_index
+      }
+    end)
+    |> tap(fn new_contracts ->
+      Enum.each(new_contracts, fn %{name: name, address_hash: address} ->
+        Logger.info(
+          "New celo core contract discovered: #{name} at address #{to_string(address)}, cache will be updated"
+        )
+
+        AddressCache.update_cache(name, to_string(address))
+      end)
+    end)
+  end
+
   defp add_celo_token_balances(celo_token, addresses, acc) do
     Enum.reduce(addresses, acc, fn
       %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
@@ -191,7 +227,8 @@ defmodule Indexer.Block.Fetcher do
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: tx_logs, receipts: receipts} = receipt_params,
          logs = tx_logs ++ process_extra_logs(extra_logs),
-         celo_contract_events = EventMap.rpc_to_event_params(logs),
+         new_core_contracts = process_celo_core_contracts(logs),
+         celo_contract_events = EventMap.celo_rpc_to_event_params(logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
          try_celo_token_enabled = config(:enable_gold_token),
@@ -318,6 +355,7 @@ defmodule Indexer.Block.Fetcher do
                account_names: %{params: account_names},
                celo_signers: %{params: signers},
                celo_contract_events: %{params: celo_contract_events},
+               celo_core_contracts: %{params: new_core_contracts},
                token_transfers: %{params: token_transfers},
                tokens: %{params: tokens, on_conflict: :nothing},
                transactions: %{params: transactions_with_receipts},

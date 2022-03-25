@@ -13,7 +13,7 @@ defmodule Explorer.SetupVoterRewardsTest do
   def setup_for_group do
     %Address{hash: voter_hash} = insert(:address)
     %Address{hash: group_hash} = insert(:address)
-    %Address{hash: contract_address_hash} = insert(:address)
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
     block_1_number = 619 * 17_280 - 1
     block_1 = insert(:block, number: block_1_number, timestamp: ~U[2022-01-01 17:42:38.162804Z])
@@ -146,7 +146,7 @@ defmodule Explorer.SetupVoterRewardsTest do
         }
       )
 
-    %Address{hash: contract_address_hash} = insert(:address)
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
     %Address{hash: group_1_hash} =
       insert(:address,
@@ -229,7 +229,7 @@ defmodule Explorer.SetupVoterRewardsTest do
         }
       )
 
-    %Address{hash: contract_address_hash} = insert(:address)
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
     %Address{hash: group_1_hash} =
       insert(:address,

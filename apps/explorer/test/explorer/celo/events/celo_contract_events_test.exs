@@ -29,7 +29,7 @@ defmodule Explorer.Celo.Events.CeloContractEventsTest do
   describe "event parameter conversion tests" do
     test "converts arrays of bytes and ints" do
       block_1 = insert(:block, number: 172_800)
-      %Address{hash: contract_address_hash} = insert(:address)
+      %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
 
       # assets allocation set event from reserve contract
       # has both uint32[] and bytes32[] parameters in log data
