@@ -93,7 +93,7 @@ defmodule Explorer.Celo.VoterRewardsTest do
   end
 
   describe "calculate_multiple_accounts/3" do
-    test "when all voters passed have rewards" do
+    test "when all input voters have rewards" do
       {voter_1_hash, voter_2_hash, group_1_hash, group_2_hash} = SetupVoterRewardsTest.setup_for_multiple_accounts()
 
       rewards =
@@ -197,7 +197,7 @@ defmodule Explorer.Celo.VoterRewardsTest do
                }
     end
 
-    test "when not all voters passed have rewards" do
+    test "when not all input voters have rewards" do
       {voter_1_hash, voter_2_hash, group_1_hash, group_2_hash} = SetupVoterRewardsTest.setup_for_multiple_accounts()
 
       rewards =
