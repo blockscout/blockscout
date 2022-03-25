@@ -7,7 +7,7 @@
 
 ### Fixes
 - [#5342](https://github.com/blockscout/blockscout/pull/5342) - Fix 500 error on NF token page with nil metadata
-- [#5319](https://github.com/blockscout/blockscout/pull/5319) - Empty blocks sanitizer performance improvement
+- [#5319](https://github.com/blockscout/blockscout/pull/5319), [#5357](https://github.com/blockscout/blockscout/pull/5357) - Empty blocks sanitizer performance improvement
 - [#5310](https://github.com/blockscout/blockscout/pull/5310) - Fix flash on reload in dark mode
 - [#5306](https://github.com/blockscout/blockscout/pull/5306) - Fix indexer bug
 - [#5300](https://github.com/blockscout/blockscout/pull/5300), [#5305](https://github.com/blockscout/blockscout/pull/5305) - Token instance page: general video improvements
@@ -20,6 +20,8 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5367](https://github.com/blockscout/blockscout/pull/5367) - Resolve Prototype Pollution in minimist dependency
+- [#5366](https://github.com/blockscout/blockscout/pull/5366) - Fix Vyper smart-contract verification form tooltips
 - [#5341](https://github.com/blockscout/blockscout/pull/5341) - Remove unused broadcasts
 - [#5318](https://github.com/blockscout/blockscout/pull/5318) - Eliminate Jquery import from chart-loader.js
 - [#5317](https://github.com/blockscout/blockscout/pull/5317) - NPM audit
