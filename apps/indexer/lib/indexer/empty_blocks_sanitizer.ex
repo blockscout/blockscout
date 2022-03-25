@@ -16,7 +16,7 @@ defmodule Indexer.EmptyBlocksSanitizer do
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Import.Runner.Blocks
 
-  # unprocessed emty blocks to fetch at once
+  # unprocessed empty blocks to fetch at once
   @limit 1000
 
   @interval :timer.minutes(1)
