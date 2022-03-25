@@ -38,11 +38,13 @@ kubernetes:
     #   targetCPUUtilizationPercentage: 50
     envs:
     - name: ETHEREUM_JSONRPC_WS_URL
-      value: ws://testnet.cloudwalk.io/ws
+      value: wss://testnet.cloudwalk.io/ws
     - name: ETHEREUM_JSONRPC_HTTP_URL
-      value: http://rpc.testnet.cloudwalk.io
+      value: https://rpc.testnet.cloudwalk.io
     - name: ETHEREUM_JSONRPC_VARIANT
       value: geth
+    - name: PORT
+      value: "4000"
     - name: NETWORK
       value: "CloudWalk"
     - name: SUBNETWORK
@@ -59,11 +61,11 @@ kubernetes:
     service:
       istio: false
       healthcheck:
-        initialDelaySeconds: 5
+        initialDelaySeconds: 240
         interval: 10
         path: /
         port: 4000
-        timeoutSeconds: 5
+        timeoutSeconds: 15
       ports:
         - containerPort: 4000
           name: app
