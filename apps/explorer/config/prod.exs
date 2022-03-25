@@ -8,7 +8,7 @@ pool_size =
 # Configures the database
 config :explorer, Explorer.Repo,
   url: System.get_env("DATABASE_URL"),
-  pool_size: pool_size,
+  pool_size: 5,
   ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
   prepare: :unnamed,
   timeout: :timer.seconds(60)
