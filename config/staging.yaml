@@ -73,3 +73,5 @@ kubernetes:
             gateway: default
             hosts:
               - blockscout.stg.services.issuing.infinitepay.io
+              - explorer.testnet.cloudwalk.io
+
