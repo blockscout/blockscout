@@ -16,29 +16,40 @@
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :address_hash, gettext("Contract Address") %>
-            <div class="center-column">
-              <%= text_input f, :address_hash, class: "form-control border-rounded", "aria-describedby": "contract-address-help-block", readonly: true %>
-              <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
+              <div class="center-column">
+                <%= text_input f, :address_hash, id: "smart_contract_address_hash", class: "form-control border-rounded", "aria-describedby": "contract-address-help-block", readonly: String.length(@address_hash) > 0 %>
+                <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
+
+                <%= if Chain.smart_contract_verified?(@address_hash) do %>
+                  <div id="message-address-verified">
+                      <%=
+                        link(
+                          gettext("Contract is already verified"),
+                          class: "alert-link",
+                          to: address_contract_path(@conn, :index, @address_hash)
+                          )
+                      %>
+                  </div>
+                <% else %>
+                  <div id= "message-address-verified" hidden="true">
+                    <a id= "message-link" class= "alert-link"> Contract is already verified</a>
+                  </div>
+                <% end %>
+              </div>
+              <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
             </div>
-            <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
           </div>
-        </div>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, "Verify" %>
             <div class="center-column">
               <div class="form-radios-group vertical">
-                <div class="radio-big mb-3">
-                  <%= radio_button f, :verify_via, true, checked: true, class: "form-check-input verify-via-flattened-code", "aria-describedby": "verify_via-help-block" %>
-                  <div class="radio-icon"></div>
-                  <%= label :verify_via, :true, gettext("Via flattened source code"), class: "radio-text" %>
-                </div>
                 <%= if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do %>
                   <div class="radio-big">
-                    <%= radio_button f, :verify_via, false, class: "form-check-input verify-via-sourcify" %>
+                    <%= radio_button f, :verify_via, true, checked: true, class: "form-check-input verify-via-sourcify" %>
                     <div class="radio-icon"></div>
-                    <%= label :verify_via, :false, gettext("Via Sourcify: Sources and metadata JSON file"), class: "radio-text" %>
+                    <%= label :verify_via, :true, gettext("Via Sourcify: Sources and metadata JSON file"), class: "radio-text" %>
                   </div>
                 <% end %>
                 <div class="radio-big">
@@ -50,66 +61,15 @@
               <%= error_tag f, :verify_via, id: "verify_via-help-block", class: "text-danger form-error" %>
             </div>
             <div class="smart-contract-form-group-tooltip">Choose a smart-contract verification method. Currently, Blockscout supports 2 methods:<br/>
-            1. Verification through flattened source code. <span
-                      data-toggle="tooltip"
-                      data-placement="top"
-                      data-html="true"
-                      data-template="<div class='tooltip' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                      title="If using a flat file for contract verification, you can use the POA Solidity flattener or the Truffle flattener">
-                      <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i></span><br/>
-            2. Verification through <a href="https://sourcify.dev">Sourcify</a>.<br/>
-              a) if smart-contract already verified on Sourcify, it will automatically fetch the data from the <a href="https://repo.sourcify.dev">repo</a><br/>
+            1. Verification through <a href="https://sourcify.dev">Sourcify</a>.<br/>
+              a) if smart-contract is already verified on Sourcify, it will automatically fetch the data from the <a href="https://repo.sourcify.dev">repo</a><br/>
               b) otherwise you will be asked to upload source files and JSON metadata file(s).<br/>
-            3. Verification of Vyper contract.
+            2. Verification of Vyper contract.
             </div>
-              
-          </div>
+            </div>
         </div>
-
         <div class="smart-contract-form-buttons">
-          <button
-            class="position-absolute w-118 btn-full-primary d-none mr-2"
-            disabled="true"
-            id="loading"
-            name="button"
-            type="button"
-          >
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
-            <%= gettext("Loading....") %>
-          </button>
-          <%= link(
-            gettext("Next"),
-            to: address_verify_contract_via_flattened_code_path(@conn, :new, @address_hash),
-            id: "verify_via_flattened_code_button",
-            class: "btn-full-primary mr-2",
-            "data-button-loading": "animation"
-          ) %>
-          <%= link(
-            gettext("Next"),
-            to: address_verify_contract_via_json_path(@conn, :new, @address_hash),
-            id: "verify_via_sourcify_button",
-            class: "btn-full-primary mr-2",
-            style: "display: none;",
-            "data-button-loading": "animation"
-          ) %>
-          <%= link(
-            gettext("Next"),
-            to: address_verify_vyper_contract_path(@conn, :new, @address_hash),
-            id: "verify_vyper_contract_button",
-            class: "btn-full-primary mr-2",
-            style: "display: none;",
-            "data-button-loading": "animation"
-          ) %>
-          <%=
-            link(
-              gettext("Cancel"),
-              class: "btn-no-border",
-              to: address_contract_path(@conn, :index, @address_hash)
-              )
-          %>
+          <input type="submit" id="data-button" value="Next" class="btn-full-primary mr-2" data-button-loading="animation" <%= if Chain.smart_contract_verified?(@address_hash) do "disabled" end %>>
         </div>
       <% end %>
     </div>

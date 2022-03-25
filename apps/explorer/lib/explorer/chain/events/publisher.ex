@@ -19,15 +19,8 @@ defmodule Explorer.Chain.Events.Publisher do
     :ok
   end
 
-  @max_payload 7500
-
   defp send_data(event_type) do
-    payload = encode_payload({:chain_event, event_type})
-
-    if byte_size(payload) < @max_payload do
-      # @sender.send_notify(payload)
-      sender().send_data(event_type)
-    end
+    sender().send_data(event_type)
   end
 
   defp sender do
@@ -40,17 +33,6 @@ defmodule Explorer.Chain.Events.Publisher do
   defp send_data(_event_type, :catchup, _event_data), do: :ok
 
   defp send_data(event_type, broadcast_type, event_data) do
-    payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
-
-    if byte_size(payload) < @max_payload do
-      #      @sender.send_notify(payload)
-      sender().send_data(event_type, broadcast_type, event_data)
-    end
-  end
-
-  defp encode_payload(payload) do
-    payload
-    |> :erlang.term_to_binary([:compressed])
-    |> Base.encode64()
+    sender().send_data(event_type, broadcast_type, event_data)
   end
 end

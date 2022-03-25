@@ -45,7 +45,47 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
         end
       end)
 
-    http_post_request(verify_url(), multipart_body)
+    missing_files = get_missing_file_sources(files)
+
+    case http_post_request(verify_url(), multipart_body) do
+      {:ok, response} ->
+        {:ok, response}
+
+      {:error, error} ->
+        if String.starts_with?(error["error"], "Resource missing") do
+          {:error, %{"error" => "Resources missing: " <> Enum.join(missing_files, ", ")}}
+        else
+          {:error, error}
+        end
+    end
+  end
+
+  # sobelow_skip ["Traversal"]
+  def get_missing_file_sources(files) do
+    json_file =
+      files
+      |> Enum.find(&String.ends_with?(&1.filename, ".json"))
+
+    with {:ok, body} <- File.read(json_file.path),
+         {:ok, json} <- Jason.decode(body),
+         {:ok, metadata} <-
+           json
+           |> Map.get("metadata")
+           |> Jason.decode() do
+      required_files =
+        metadata
+        |> Map.get("sources")
+        |> Map.keys()
+        |> List.flatten()
+        |> Enum.reject(&is_nil/1)
+        |> Enum.map(&Path.basename/1)
+
+      uploaded_files =
+        files
+        |> Enum.map(& &1.filename)
+
+      required_files -- uploaded_files
+    end
   end
 
   def http_get_request(url, params) do

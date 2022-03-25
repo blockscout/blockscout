@@ -1,0 +1,9 @@
+<div class="smart-contract-form-group">
+    <div class="smart-contract-form-group-inner-wrapper">
+        <label for="smart_contract_address_hash"><%= gettext("Contract Address") %></label>
+        <div class="center-column">
+            <input aria-describedby="contract-address-help-block" class="form-control border-rounded" id="smart_contract_address_hash" name="smart_contract[address_hash]" type="text" value=<%= @address_hash %> readonly="">
+        </div>
+        <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
+    </div>
+</div>

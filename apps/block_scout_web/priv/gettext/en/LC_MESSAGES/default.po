@@ -152,8 +152,8 @@ msgid "A string with the name of the module to be invoked."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_constructor_args.html.eex:3
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:156
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:66
 msgid "ABI-encoded Constructor Arguments (if required by the contract)"
 msgstr ""
 
@@ -528,10 +528,9 @@ msgid "Call Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:108
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:305
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:56
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:93 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:57 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:54
 msgid "Cancel"
 msgstr ""
@@ -625,8 +624,8 @@ msgid "Collapse"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_compiler_field.html.eex:3
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:71
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:44
 msgid "Compiler"
 msgstr ""
 
@@ -697,9 +696,9 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:18
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_address_field.html.eex:3
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:27
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:13
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:22 lib/block_scout_web/views/address_view.ex:159
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:13 lib/block_scout_web/views/address_view.ex:159
 msgid "Contract Address"
 msgstr ""
 
@@ -732,8 +731,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:93
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_name_field.html.eex:3
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:38
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:33
 msgid "Contract Name"
 msgstr ""
 
@@ -1101,7 +1100,7 @@ msgid "Enter the Solidity Contract Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:55
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:28
 msgid "Enter the Vyper Contract Code"
 msgstr ""
 
@@ -1501,10 +1500,9 @@ msgid "Loading..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:81
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:299
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:50
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:87
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:51
 msgid "Loading...."
 msgstr ""
 
@@ -1629,7 +1627,7 @@ msgid "More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:209
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:213
 msgid "More apps"
 msgstr ""
 
@@ -1689,12 +1687,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:13
 msgid "New Vyper Smart Contract Verification"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:84
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:91 lib/block_scout_web/templates/address_contract_verification/new.html.eex:99
-msgid "Next"
 msgstr ""
 
 #, elixir-format
@@ -1976,7 +1968,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:302
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:53
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:90
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:54
 msgid "Reset"
 msgstr ""
 
@@ -2985,7 +2977,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:301
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:52
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:89
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:53
 msgid "Verify & publish"
 msgstr ""
 
@@ -3001,13 +2993,8 @@ msgid "Version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:41
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:52
 msgid "Via Sourcify: Sources and metadata JSON file"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:35
-msgid "Via flattened source code"
 msgstr ""
 
 #, elixir-format
@@ -3052,7 +3039,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:47
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:58
 msgid "Vyper contract"
 msgstr ""
 
@@ -3317,3 +3304,23 @@ msgstr "CELO"
 # From templates/tokens/overview/details.html.eex#
 msgid "Celo Gold"
 msgstr "CELO"
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
+msgid "Tools"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:209
+msgid "Verified Contracts"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
+msgid "Verify Contract"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:27
+msgid "Contract is already verified"
+msgstr ""

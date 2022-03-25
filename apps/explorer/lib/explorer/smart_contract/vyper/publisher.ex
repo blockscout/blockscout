@@ -52,7 +52,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
     %{
       address_hash: address_hash,
-      name: "Vyper_contract",
+      name: Map.get(params, "name", "Vyper_contract"),
       compiler_version: compiler_version,
       evm_version: nil,
       optimization_runs: nil,

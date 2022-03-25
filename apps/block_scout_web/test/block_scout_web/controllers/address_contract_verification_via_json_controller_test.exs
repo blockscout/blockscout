@@ -1,14 +1,14 @@
-defmodule BlockScoutWeb.AddressContractVerificationControllerTest do
+defmodule BlockScoutWeb.AddressContractVerificationViaJsonControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  alias BlockScoutWeb.AddressContractVerificationController
+  alias BlockScoutWeb.AddressContractVerificationViaJsonController
 
   describe "sourcify integration" do
-    test "parses sourcify metadata correctly", %{conn: conn} do
+    test "parses sourcify metadata correctly" do
       data = failing_sourcify_metadata()
 
       %{"params_to_publish" => result} =
-        AddressContractVerificationController.parse_params_from_sourcify(
+        AddressContractVerificationViaJsonController.parse_params_from_sourcify(
           "0x0E7a0c8FAb504dbB94F1e33E0A09ab4506Ea2e9b",
           data
         )

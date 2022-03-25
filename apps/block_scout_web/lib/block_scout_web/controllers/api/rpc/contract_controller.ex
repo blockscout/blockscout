@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   require Logger
 
-  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
+  alias BlockScoutWeb.AddressContractVerificationViaJsonController, as: VerificationController
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher

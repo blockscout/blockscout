@@ -140,7 +140,7 @@ _Note: if your contract is verified on Sourcify via posting to IPFS during the m
 
 After navigating to your smart contract's address, the Code tab, and then the _Verify & Publish_ button, use the dropzone to add your build sources (either the JSON build artifact and optionally the original Solidity file).
 
-Example below from <https://alfajores-blockscout.celo-testnet.org/address/0x57f130e4873ac340cee867f64e4e203070984e9f/contract_verifications/new>
+Example below from <https://alfajores-blockscout.celo-testnet.org/address/0x57f130e4873ac340cee867f64e4e203070984e9f/contract-verifications/new>
 
 ![Verify upload screen](./verify_dropzone.png)
 

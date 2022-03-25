@@ -204,6 +204,10 @@
                 <%= for %{url: url, title: title} <- learning_list() do %>
                 <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                 <% end %>
+
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Tools") %></b></h3>
+                <a href="https://dhutch-test.celo-networks-dev.org/" class="dropdown-item" target="_blank"><%= gettext("Verified Contracts") %></a>
+                <a href="/contract-verification/new" class="dropdown-item" ><%= gettext("Verify Contract") %></a>
                 <!--
                 <hr class="menu-hr" />
                 <a href="https://celo.org/dapps" class="dropdown-item" target="_blank"><%= gettext("More apps") %></a>

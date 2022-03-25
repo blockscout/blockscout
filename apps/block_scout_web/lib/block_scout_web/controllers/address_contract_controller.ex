@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressContractController do
   require Logger
 
   alias BlockScoutWeb.AccessHelpers
-  alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
+  alias BlockScoutWeb.AddressContractVerificationViaJsonController, as: VerificationController
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
