@@ -94,4 +94,3 @@
     </div>
   </div>
 </div>
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

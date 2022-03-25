@@ -1,7 +1,6 @@
 <% burned_fee = if !is_nil(@block.base_fee_per_gas), do: Wei.mult(@block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(@block.hash)), else: nil %>
 <% priority_fee = if !is_nil(@block.base_fee_per_gas), do: BlockPriorityFeeCounter.fetch(@block.hash), else: nil %>
 <section>
-  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
     <div class="col-md-12 js-ad-dependant-mb-2">
       <!-- Block Details -->
@@ -226,7 +225,7 @@
                 </dt>
                 <dd class="col-sm-9 col-lg-10"><%= format_wei_value(%Wei{value: priority_fee}, :ether) %></dd>
             </dl>
-          <% end %>  
+          <% end %>
           <%= if show_reward?(@block.rewards) do %>
             <hr>
             <%= for block_reward <- @block.rewards do %>
@@ -268,4 +267,3 @@
     </div>
 </section>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 
