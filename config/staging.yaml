@@ -1,0 +1,73 @@
+kubernetes:
+  base:
+    sourceRepo:
+      name: blockscout
+      org: cloudwalk
+    monoRepo:
+      url: git@github.com:cloudwalk/monorepo-gitops.git
+      appsFolder: apps-config
+      argoCDValues: helms/argocd/values.yaml
+    containerRegistry:
+      url: gcr.io/infinitepay-issuing
+    deployConfig:
+      cluster: infinitepay-issuing-staging
+      environment: staging
+      steps:
+      - build
+      - push
+      - versioning
+      - deploy
+      service:
+        asmRevision: asm-managed
+  apps:
+  - name: blockscout
+    secretsManager:
+      enabled: true
+      provider: gcpsm
+    imageRepoName: blockscout
+    kind: deployment
+    replicas: 1
+    # hpa:
+    #   antiAffinity:
+    #     type: required
+    #     conditions:
+    #       - key: app
+    #         value: blockscout
+    #   maxReplicas: 5
+    #   minReplicas: 1
+    #   targetCPUUtilizationPercentage: 50
+    envs:
+    - name: ETHEREUM_JSONRPC_WS_URL
+      value: ws://testnet.cloudwalk.io/ws
+    - name: ETHEREUM_JSONRPC_HTTP_URL
+      value: http://rpc.testnet.cloudwalk.io
+    - name: ETHEREUM_JSONRPC_VARIANT
+      value: geth
+    - name: NETWORK
+      value: "CloudWalk"
+    - name: SUBNETWORK
+      value: "Testnet"
+    - name: SUPPORTED_CHAINS
+      value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 3Gi
+    service:
+      istio: false
+      healthcheck:
+        initialDelaySeconds: 5
+        interval: 10
+        path: /
+        port: 4000
+        timeoutSeconds: 5
+      ports:
+        - containerPort: 4000
+          name: app
+          virtualservice:
+            gateway: default
+            hosts:
+              - blockscout.stg.services.issuing.infinitepay.io

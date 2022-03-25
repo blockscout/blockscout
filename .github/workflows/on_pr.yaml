@@ -1,0 +1,57 @@
+name: GitHub Builder Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+          description: 'Target Deploy Environment'
+          type: string
+          required: true
+          default: 'staging'
+      configPath:
+          description: 'Declarative Manifest Path'
+          type: string
+          required: true
+          default: 'config'
+
+env:
+  ENVIRONMENT: ${{ github.event.inputs.environment }}
+  CONFIG_PATH: ${{ github.event.inputs.configPath }}
+  GIT_USERNAME: ${{ github.actor }}
+  GIT_EMAIL: 'github-actions@github.com'
+  PA_TOKEN: ${{ secrets.GHA_PAT }}
+
+jobs:
+  build-and-push-deploy:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
+      with:
+        repository: cloudwalk/github-builder
+        path: ./github-builder
+        token: ${{ secrets.GHA_PAT }}
+    - uses: actions/checkout@v2
+      with:
+        repository: cloudwalk/monorepo-gitops
+        path: ./monorepo-gitops
+        token: ${{ secrets.GHA_PAT }}
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v0'
+      with:
+          workload_identity_provider: 'projects/292944707346/locations/global/workloadIdentityPools/github-actions/providers/github-actions'
+          service_account: 'github-actions@infinitepay-issuing.iam.gserviceaccount.com'
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v0'
+    - name: 'Use gcloud CLI'
+      run: 'gcloud auth configure-docker'
+    - name: 'GitHub Builder'
+      run:  |
+        echo "monorepo-gitops" >> .dockerignore
+        echo "github-builder" >> .dockerignore
+        pip3 install -r ./github-builder/requirements.txt
+        python3 ./github-builder/src/main.py
