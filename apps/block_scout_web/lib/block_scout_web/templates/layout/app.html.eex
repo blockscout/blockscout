@@ -55,6 +55,37 @@
   </head>
 
   <body>
+    <script defer data-cfasync="false">
+      function applyDarkMode() {
+        if (localStorage.getItem("current-color-mode") === "dark") {
+          document.body.className += " " + "dark-theme-applied";
+          document.body.style.backgroundColor = "#1c1d31";
+        }
+      }
+      window.onload = applyDarkMode()
+    </script>
+    <script defer data-cfasync="false">
+      if (localStorage.getItem("current-color-mode") === "dark") {
+        document.getElementById("top-navbar").style.backgroundColor = "#282945";
+        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
+        let modeChanger = document.getElementById("dark-mode-changer");
+        modeChanger.className += " " + "dark-mode-changer--dark";
+      }
+    </script>
+    <script defer data-cfasync="false">
+      if (localStorage.getItem("current-color-mode") === "dark") {
+        const search = document.getElementById("main-search-autocomplete")
+        const searchMobile = document.getElementById("main-search-autocomplete-mobile")
+            if (search && search.style) {
+          search.style.backgroundColor = "#22223a";
+              search.style.borderColor = "#22223a";
+        }
+        if (searchMobile && searchMobile.style) {
+          searchMobile.style.backgroundColor = "#22223a";
+          searchMobile.style.borderColor = "#22223a";
+        }
+      }
+    </script>
     <% raw_dark_forest_addresses_0_4 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses) || "" %>
     <% raw_dark_forest_addresses_0_5 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_5) || "" %>
     <% raw_dark_forest_addresses_0_6 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6) || "" %>
@@ -254,37 +285,6 @@
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
     <% end %>
-    <script defer data-cfasync="false">
-      function applyDarkMode() {
-        if (localStorage.getItem("current-color-mode") === "dark") {
-          document.body.className += " " + "dark-theme-applied";
-          document.body.style.backgroundColor = "#1c1d31";
-        }
-      }
-      window.onload = applyDarkMode()
-    </script>
-    <script defer data-cfasync="false">
-      if (localStorage.getItem("current-color-mode") === "dark") {
-        document.getElementById("top-navbar").style.backgroundColor = "#282945";
-        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
-        let modeChanger = document.getElementById("dark-mode-changer");
-        modeChanger.className += " " + "dark-mode-changer--dark";
-      }
-    </script>
-    <script defer data-cfasync="false">
-      if (localStorage.getItem("current-color-mode") === "dark") {
-        const search = document.getElementById("main-search-autocomplete")
-        const searchMobile = document.getElementById("main-search-autocomplete-mobile")
-            if (search && search.style) {
-          search.style.backgroundColor = "#22223a";
-              search.style.borderColor = "#22223a";
-        }
-        if (searchMobile && searchMobile.style) {
-          searchMobile.style.backgroundColor = "#22223a";
-          searchMobile.style.borderColor = "#22223a";
-        }
-      }
-    </script>
     <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
   </body>
 </html>

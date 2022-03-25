@@ -3386,27 +3386,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns the list of empty blocks from the DB which have not marked with `t:Explorer.Chain.Block.is_empty/0`.
-  This query used for initializtion of Indexer.EmptyBlocksSanitizer
-  """
-  def unprocessed_empty_blocks_query_list(limit) do
-    query =
-      from(block in Block,
-        left_join: transaction in Transaction,
-        on: block.number == transaction.block_number,
-        where: is_nil(transaction.block_number),
-        where: is_nil(block.is_empty),
-        where: block.consensus == true,
-        select: {block.number, block.hash},
-        order_by: [desc: block.number],
-        limit: ^limit
-      )
-
-    query
-    |> Repo.all(timeout: :infinity)
-  end
-
-  @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.Address.t/0`.
 
       iex> Explorer.Chain.string_to_address_hash("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
@@ -6847,7 +6826,7 @@ defmodule Explorer.Chain do
          ) do
       {:ok, empty_address}
       when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
-        {:ok, "0x"}
+        fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
 
       {:ok, beacon_contract_address} ->
         case beacon_contract_address
@@ -6859,6 +6838,29 @@ defmodule Explorer.Chain do
           _ ->
             {:ok, beacon_contract_address}
         end
+
+      {:error, _} ->
+        {:ok, "0x"}
+    end
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/5292
+  defp fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
+    storage_slot_logic_contract_address = "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_logic_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+        {:ok, "0x"}
+
+      {:ok, logic_contract_address} ->
+        {:ok, logic_contract_address}
 
       {:error, _} ->
         {:ok, "0x"}
