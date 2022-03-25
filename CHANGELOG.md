@@ -20,6 +20,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5366](https://github.com/blockscout/blockscout/pull/5366) - Fix Vyper smart-contract verification form tooltips
 - [#5341](https://github.com/blockscout/blockscout/pull/5341) - Remove unused broadcasts
 - [#5318](https://github.com/blockscout/blockscout/pull/5318) - Eliminate Jquery import from chart-loader.js
 - [#5317](https://github.com/blockscout/blockscout/pull/5317) - NPM audit
