@@ -26,13 +26,34 @@ defmodule Explorer.GraphQL do
 
   Orders transactions by `block_number` and `index` according to to `order`
   """
-  @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc) :: Ecto.Query.t()
-  def address_to_transactions_query(address_hash, order) do
-    Transaction
+  @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc, nil | {:ok, {Explorer.Chain.Block.block_number(), non_neg_integer()}}, nil |  {:ok, pos_integer()}) :: Ecto.Query.t()
+  def address_to_transactions_query(address_hash, order, range_start \\ nil, range_end \\ nil) do
+    query =
+      Transaction
       |> where([transaction], transaction.to_address_hash == ^address_hash)
       |> or_where([transaction], transaction.from_address_hash == ^address_hash)
       |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
       |> order_by([transaction], [{^order, transaction.block_number}, {^order, transaction.index}])
+
+    query = case range_start do
+      nil -> query
+      {:ok, {block_num, tx_index}} ->
+        case order do
+          :asc -> query |> where([transaction], transaction.block_number > ^block_num or (transaction.block_number == ^block_num and transaction.index > ^tx_index))
+          :desc -> query |> where([transaction], transaction.block_number < ^block_num or (transaction.block_number == ^block_num and transaction.index < ^tx_index))
+        end
+    end
+
+    query = case range_end do
+      nil -> query
+      {:ok, block_num} ->
+        case order do
+          :asc -> query |> where([transaction], transaction.block_number <= ^block_num)
+          :desc -> query |> where([transaction], transaction.block_number >= ^block_num)
+        end
+    end
+
+    query
   end
 
   @doc """

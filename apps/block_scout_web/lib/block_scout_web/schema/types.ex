@@ -32,6 +32,8 @@ defmodule BlockScoutWeb.Schema.Types do
     end
 
     connection field(:transactions, node_type: :transaction) do
+      arg(:range_start, type: :block_tx_pair)
+      arg(:range_end, type: :full_hash)
       arg(:count, :integer)
       arg(:order, type: :sort_order, default_value: :desc)
       resolve(&Transaction.get_by/3)
@@ -129,6 +131,7 @@ defmodule BlockScoutWeb.Schema.Types do
   """
   node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
     field(:hash, :full_hash)
+    field(:block_hash, :full_hash)
     field(:block_number, :integer)
     field(:cumulative_gas_used, :decimal)
     field(:error, :string)

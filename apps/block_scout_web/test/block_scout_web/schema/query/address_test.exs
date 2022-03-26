@@ -418,6 +418,377 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
       assert error3["message"] =~ ~s(Operation is too complex)
     end
 
+    test "transactions can be paginated in ascending order", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query1 = """
+      query ($hash: AddressHash!, $first: Int!) {
+        address(hash: $hash) {
+          transactions(order: ASC, first: $first) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables1 = %{
+        "hash" => to_string(address.hash),
+        "first" => 3
+      }
+
+      conn = post(conn, "/graphql", query: query1, variables: variables1)
+
+      %{"data" => %{"address" => %{"transactions" => page1}}} = json_response(conn, 200)
+
+      assert Enum.all?(page1["edges"], &(&1["node"]["block_number"] == first_block.number))
+
+      last_elem_page1 = page1
+        |> Map.get("edges")
+        |> List.last()
+        |> Map.get("node")
+
+      query2 = """
+      query ($hash: AddressHash!, $first: Int!, $startBlockHash: FullHash!, $startTxHash: FullHash!) {
+        address(hash: $hash) {
+          transactions(order: ASC, first: $first, rangeStart: { blockHash: $startBlockHash, txHash: $startTxHash}) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables2 = %{
+        "first" => 3,
+        "hash" => to_string(address.hash),
+        "startBlockHash" => last_elem_page1["block_hash"],
+        "startTxHash" => last_elem_page1["hash"]
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables2)
+
+      %{"data" => %{"address" => %{"transactions" => page2}}} = json_response(conn, 200)
+
+      assert Enum.all?(page2["edges"], &(&1["node"]["block_number"] == second_block.number))
+
+      last_elem_page2 = page2
+        |> Map.get("edges")
+        |> List.last()
+        |> Map.get("node")
+
+      variables3 = %{
+        "first" => 3,
+        "hash" => to_string(address.hash),
+        "startBlockHash" => last_elem_page2["block_hash"],
+        "startTxHash" => last_elem_page2["hash"]
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables3)
+
+      %{"data" => %{"address" => %{"transactions" => page3}}} = json_response(conn, 200)
+
+      assert Enum.all?(page3["edges"], &(&1["node"]["block_number"] == third_block.number))
+    end
+
+    test "transactions can be paginated in descending order", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query1 = """
+      query ($hash: AddressHash!, $first: Int!) {
+        address(hash: $hash) {
+          transactions(first: $first) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables1 = %{
+        "hash" => to_string(address.hash),
+        "first" => 3
+      }
+
+      conn = post(conn, "/graphql", query: query1, variables: variables1)
+
+      %{"data" => %{"address" => %{"transactions" => page1}}} = json_response(conn, 200)
+
+      assert Enum.all?(page1["edges"], &(&1["node"]["block_number"] == third_block.number))
+
+      last_elem_page1 = page1
+        |> Map.get("edges")
+        |> List.last()
+        |> Map.get("node")
+
+      query2 = """
+      query ($hash: AddressHash!, $first: Int!, $startBlockHash: FullHash!, $startTxHash: FullHash!) {
+        address(hash: $hash) {
+          transactions(first: $first, rangeStart: { blockHash: $startBlockHash, txHash: $startTxHash}) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables2 = %{
+        "first" => 3,
+        "hash" => to_string(address.hash),
+        "startBlockHash" => last_elem_page1["block_hash"],
+        "startTxHash" => last_elem_page1["hash"]
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables2)
+
+      %{"data" => %{"address" => %{"transactions" => page2}}} = json_response(conn, 200)
+
+      assert Enum.all?(page2["edges"], &(&1["node"]["block_number"] == second_block.number))
+
+      last_elem_page2 = page2
+        |> Map.get("edges")
+        |> List.last()
+        |> Map.get("node")
+
+      variables3 = %{
+        "first" => 3,
+        "hash" => to_string(address.hash),
+        "startBlockHash" => last_elem_page2["block_hash"],
+        "startTxHash" => last_elem_page2["hash"]
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables3)
+
+      %{"data" => %{"address" => %{"transactions" => page3}}} = json_response(conn, 200)
+
+      assert Enum.all?(page3["edges"], &(&1["node"]["block_number"] == first_block.number))
+    end
+
+    test "pagination can specify a range end", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query2 = """
+      query ($hash: AddressHash!, $first: Int!, $rangeEnd: FullHash!) {
+        address(hash: $hash) {
+          transactions(order: ASC, first: $first, rangeEnd: $rangeEnd) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables2 = %{
+        "hash" => to_string(address.hash),
+        "first" => 20,
+        "rangeEnd" => "0x0000000000000000000000000000000000000000000000000000000000000002",
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables2)
+
+      %{"data" => %{"address" => %{"transactions" => transactions}}} = json_response(conn, 200)
+
+      assert Enum.all?(transactions["edges"], &(&1["node"]["block_number"] <=  second_block.number))
+    end
+
+    test "error on invalid pagination range end", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query2 = """
+      query ($hash: AddressHash!, $first: Int!, $rangeEnd: FullHash!) {
+        address(hash: $hash) {
+          transactions(order: ASC, first: $first, rangeEnd: $rangeEnd) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables2 = %{
+        "hash" => to_string(address.hash),
+        "first" => 20,
+        "rangeEnd" => "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables2)
+
+      %{"data" => %{"address" => %{"transactions" => transactions}}} = json_response(conn, 200)
+
+      assert %{"errors" => [error]} = json_response(conn, 200)
+      assert error["message"] =~ ~s(Range end block not found)
+    end
+
+    test "errors on transactions paginating tx missing", %{conn: conn} do
+      first_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query2 = """
+      query ($hash: AddressHash!, $first: Int!, $startBlockHash: FullHash!, $startTxHash: FullHash!) {
+        address(hash: $hash) {
+          transactions(first: $first, rangeStart: { blockHash: $startBlockHash, txHash: $startTxHash}) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables2 = %{
+        "hash" => to_string(address.hash),
+        "first" => 3,
+        "startBlockHash" => "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "startTxHash" => "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables2)
+
+      assert %{"errors" => [error]} = json_response(conn, 200)
+      assert error["message"] =~ ~s(Referenced transaction not found)
+    end
+
+    test "errors on transactions paginating block mismatch", %{conn: conn} do
+      first_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query2 = """
+      query ($hash: AddressHash!, $first: Int!, $startBlockHash: FullHash!, $startTxHash: FullHash!) {
+        address(hash: $hash) {
+          transactions(first: $first, rangeStart: { blockHash: $startBlockHash, txHash: $startTxHash}) {
+            edges {
+              node {
+                hash
+                block_hash
+                block_number
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables2 = %{
+        "hash" => to_string(address.hash),
+        "first" => 3,
+        "startBlockHash" => "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "startTxHash" => "0x0000000000000000000000000000000000000000000000000000000000000000"
+      }
+
+      conn = post(conn, "/graphql", query: query2, variables: variables2)
+
+      assert %{"errors" => [error]} = json_response(conn, 200)
+      assert error["message"] =~ ~s(Referenced block did not match)
+    end
+
     test "with 'last' and 'count' arguments", %{conn: conn} do
       # "`last: N` must always be acompanied by either a `before:` argument to
       # the query, or an explicit `count:` option to the `from_query` call.
