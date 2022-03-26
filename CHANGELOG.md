@@ -20,6 +20,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5368](https://github.com/blockscout/blockscout/pull/5368) - Refactoring from SourcifyFilePathBackfiller
 - [#5367](https://github.com/blockscout/blockscout/pull/5367) - Resolve Prototype Pollution in minimist dependency
 - [#5366](https://github.com/blockscout/blockscout/pull/5366) - Fix Vyper smart-contract verification form tooltips
 - [#5341](https://github.com/blockscout/blockscout/pull/5341) - Remove unused broadcasts
