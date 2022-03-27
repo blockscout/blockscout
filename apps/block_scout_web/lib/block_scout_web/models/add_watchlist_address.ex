@@ -9,24 +9,25 @@ defmodule AddWatchlistAddress do
   call(watchlist, params)
   """
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Accounts.Notify.ForbiddenAddress
   alias Explorer.Accounts.{Watchlist, WatchlistAddress}
   alias Explorer.Chain.Address
+  alias Explorer.Repo
 
   def call(watchlist_id, %{"address_hash" => address_hash_string} = params) do
-    case format_address(address_hash_string) do
+    case ForbiddenAddress.check(address_hash_string) do
       {:ok, address_hash} ->
         try_create_watchlist_address(watchlist_id, address_hash, params)
 
-      :error ->
-        {:error, "Wrong address, "}
+      {:error, message} ->
+        {:error, message}
     end
   end
 
   defp try_create_watchlist_address(watchlist_id, address_hash, params) do
     case find_watchlist_address(watchlist_id, address_hash) do
       %WatchlistAddress{} ->
-        {:error, "Address already exists!"}
+        {:error, "Address already added it this watchlist"}
 
       nil ->
         with {:ok, %Address{} = address} <- find_or_create_address(address_hash) do
@@ -68,10 +69,6 @@ defmodule AddWatchlistAddress do
 
   defp to_bool("true"), do: true
   defp to_bool("false"), do: false
-
-  defp format_address(address_hash_string) do
-    Chain.string_to_address_hash(address_hash_string)
-  end
 
   defp find_watchlist_address(watchlist_id, address_hash) do
     Repo.get_by(WatchlistAddress,

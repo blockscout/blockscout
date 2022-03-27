@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
     Composing notification, store and send it to email
   """
 
-  alias Explorer.Accounts.Notify.{Email, Summary}
+  alias Explorer.Accounts.Notify.{Email, ForbiddenAddress, Summary}
   alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Chain.{TokenTransfer, Transaction}
   alias Explorer.{Mailer, Repo}
@@ -52,12 +52,25 @@ defmodule Explorer.Accounts.Notify.Notifier do
   end
 
   defp notify_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
-    with %WatchlistNotification{} = notification <-
-           build_watchlist_notification(address, summary, direction) do
-      case Repo.all(query_notification(notification, address)) do
-        [] -> save_and_send_notification(notification, address)
-        _ -> nil
-      end
+    case ForbiddenAddress.check(address.address_hash) do
+      {:ok, _address_hash} ->
+        with %WatchlistNotification{} = notification <-
+               build_watchlist_notification(
+                 address,
+                 summary,
+                 direction
+               ) do
+          notification
+          |> query_notification(address)
+          |> Repo.all()
+          |> case do
+            [] -> save_and_send_notification(notification, address)
+            _ -> :ok
+          end
+        end
+
+      {:error, _message} ->
+        nil
     end
   end
 
