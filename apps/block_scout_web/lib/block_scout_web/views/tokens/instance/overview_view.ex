@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def media_src(nil, _), do: @stub_image
 
   def media_src(instance, high_quality_media?) do
-    result = get_media_src(instance.metadata, high_quality_media?)
+    result = get_media_src(instance, high_quality_media?)
 
     if String.trim(result) == "", do: media_src(nil), else: result
   end
