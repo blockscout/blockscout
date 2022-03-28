@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Accounts.Notify.Notifier
+  # alias Explorer.Accounts.Notify.Notifier
   alias Explorer.Chain.{Import, TokenTransfer}
 
   @behaviour Import.Runner
@@ -70,7 +70,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timestamps: timestamps
       )
 
-    Notifier.notify(inserted)
+    # Notifier.notify(inserted)
 
     {:ok, inserted}
   end
