@@ -136,7 +136,8 @@ defmodule Indexer.EmptyBlocksSanitizer do
       where: is_nil(block.is_empty),
       where: block.consensus == true,
       order_by: [desc: block.number],
-      limit: ^limit
+      limit: ^limit,
+      offset: 1000
     )
   end
 
