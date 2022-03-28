@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.Notifier do
           %{exchange_rate | available_supply: nil, market_cap_usd: RSK.market_cap(exchange_rate)}
 
         _ ->
-          exchange_rate
+          Map.from_struct(exchange_rate)
       end
 
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
