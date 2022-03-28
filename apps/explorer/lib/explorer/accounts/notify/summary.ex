@@ -83,6 +83,7 @@ defmodule Explorer.Accounts.Notify.Summary do
       amount: amount(transaction),
       tx_fee: fee(transaction),
       name: Application.get_env(:explorer, :coin_name),
+      subject: "Coin transaction",
       type: "COIN"
     }
   end
@@ -104,6 +105,7 @@ defmodule Explorer.Accounts.Notify.Summary do
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
           amount: amount(transfer),
+          subject: transfer.token.type,
           tx_fee: fee(transaction),
           name: transfer.token.name,
           type: transfer.token.type
@@ -131,7 +133,7 @@ defmodule Explorer.Accounts.Notify.Summary do
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          subject: to_string(token_ids(transfer)),
+          subject: token_ids(transfer),
           tx_fee: fee(transaction),
           name: transfer.token.name,
           type: transfer.token.type
@@ -177,7 +179,13 @@ defmodule Explorer.Accounts.Notify.Summary do
   end
 
   def token_ids(%Chain.TokenTransfer{token_id: token_id, token_ids: token_ids}) do
-    token_id || token_ids
+    case token_id do
+      nil ->
+        Enum.map_join(token_ids, ", ", fn id -> to_string(id) end)
+
+      _ ->
+        to_string(token_id)
+    end
   end
 
   def token_decimals(%Chain.TokenTransfer{} = transfer) do
