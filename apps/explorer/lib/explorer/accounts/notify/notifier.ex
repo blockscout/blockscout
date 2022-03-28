@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
     Composing notification, store and send it to email
   """
 
-  alias Explorer.Accounts.Notify.{Email, Summary}
+  alias Explorer.Accounts.Notify.{Email, ForbiddenAddress, Summary}
   alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Chain.{TokenTransfer, Transaction}
   alias Explorer.{Mailer, Repo}
@@ -47,20 +47,30 @@ defmodule Explorer.Accounts.Notify.Notifier do
     Logger.debug("--- filled summary", fetcher: :account)
     Logger.debug(summary, fetcher: :account)
 
-    Enum.each(incoming_addresses, fn address -> notity_watchlist(address, summary, :incoming) end)
-    Enum.each(outgoing_addresses, fn address -> notity_watchlist(address, summary, :outgoing) end)
+    Enum.each(incoming_addresses, fn address -> notify_watchlist(address, summary, :incoming) end)
+    Enum.each(outgoing_addresses, fn address -> notify_watchlist(address, summary, :outgoing) end)
   end
 
-  defp notity_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
-    with %WatchlistNotification{} = notification <-
-           build_watchlist_notification(address, summary, direction) do
-      notification
-      |> query_notification(address)
-      |> Repo.all()
-      |> case do
-        [] -> save_and_send_notification(notification, address)
-        _ -> :ok
-      end
+  defp notify_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
+    case ForbiddenAddress.check(address.address_hash) do
+      {:ok, _address_hash} ->
+        with %WatchlistNotification{} = notification <-
+               build_watchlist_notification(
+                 address,
+                 summary,
+                 direction
+               ) do
+          notification
+          |> query_notification(address)
+          |> Repo.all()
+          |> case do
+            [] -> save_and_send_notification(notification, address)
+            _ -> :ok
+          end
+        end
+
+      {:error, _message} ->
+        nil
     end
   end
 
@@ -73,6 +83,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
           wn.transaction_hash == ^notification.transaction_hash and
           wn.block_number == ^notification.block_number and
           wn.direction == ^notification.direction and
+          wn.subject == ^notification.subject and
           wn.amount == ^notification.amount
     )
   end
@@ -107,6 +118,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
         method: summary.method,
         block_number: summary.block_number,
         amount: summary.amount,
+        subject: summary.subject,
         tx_fee: summary.tx_fee,
         name: summary.name,
         type: summary.type
