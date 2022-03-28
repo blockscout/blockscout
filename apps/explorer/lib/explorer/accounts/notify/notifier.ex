@@ -118,6 +118,7 @@ defmodule Explorer.Accounts.Notify.Notifier do
         method: summary.method,
         block_number: summary.block_number,
         amount: summary.amount,
+        subject: summary.subject,
         tx_fee: summary.tx_fee,
         name: summary.name,
         type: summary.type
