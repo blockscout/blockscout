@@ -3,14 +3,8 @@ name: Blockscout
 on:
   push:
     branches:
-      - master
       - account
       - account-tags
-  pull_request:
-    branches:
-      - master
-      - account
-
 
 env:
   MIX_ENV: test
