@@ -8,9 +8,8 @@ defmodule Explorer.Accounts.Notify.ForbiddenAddress do
     "0x000000000000000000000000000000000000dEaD"
   ]
 
-  # alias Explorer.Repo
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Token}
+  alias Explorer.Chain.Token
+  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
   import Explorer.Chain, only: [string_to_address_hash: 1]
@@ -50,7 +49,7 @@ defmodule Explorer.Accounts.Notify.ForbiddenAddress do
   end
 
   defp format_address(address_hash_string) do
-    case Chain.string_to_address_hash(address_hash_string) do
+    case string_to_address_hash(address_hash_string) do
       {:ok, address_hash} ->
         address_hash
 
