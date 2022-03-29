@@ -6,6 +6,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
 - [#5375](https://github.com/blockscout/blockscout/pull/5375) - Fix pending transactions fetcher
 - [#5342](https://github.com/blockscout/blockscout/pull/5342) - Fix 500 error on NF token page with nil metadata
 - [#5319](https://github.com/blockscout/blockscout/pull/5319), [#5357](https://github.com/blockscout/blockscout/pull/5357) - Empty blocks sanitizer performance improvement
@@ -24,6 +25,7 @@
 - [#5368](https://github.com/blockscout/blockscout/pull/5368) - Refactoring from SourcifyFilePathBackfiller
 - [#5367](https://github.com/blockscout/blockscout/pull/5367) - Resolve Prototype Pollution in minimist dependency
 - [#5366](https://github.com/blockscout/blockscout/pull/5366) - Fix Vyper smart-contract verification form tooltips
+- [#5348](https://github.com/blockscout/blockscout/pull/5348) - Block data for Avalanche: pass blockExtraData param
 - [#5341](https://github.com/blockscout/blockscout/pull/5341) - Remove unused broadcasts
 - [#5318](https://github.com/blockscout/blockscout/pull/5318) - Eliminate Jquery import from chart-loader.js
 - [#5317](https://github.com/blockscout/blockscout/pull/5317) - NPM audit
