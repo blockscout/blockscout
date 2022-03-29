@@ -1,10 +1,12 @@
 defmodule BlockScoutWeb.TransactionInternalTransactionController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView, TransactionController}
-  alias Explorer.{Chain, Market}
+  alias Explorer.Accounts.TagTransaction
+  alias Explorer.{Chain, Market, Repo}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -103,7 +105,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         current_path: Controller.current_full_path(conn),
         block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
-        transaction: transaction
+        transaction: transaction,
+        personal_tx_tag: get_tag(conn, transaction_hash)
       )
     else
       {:restricted_access, _} ->
@@ -114,6 +117,12 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
       {:error, :not_found} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)
+    end
+  end
+
+  defp get_tag(conn, transaction_hash) do
+    if user = current_user(conn) do
+      Repo.get_by(TagTransaction, tx_hash: transaction_hash, identity_id: user.id)
     end
   end
 end

@@ -49,6 +49,10 @@
           <h1 class="card-title">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
+              <% personal_tx_tag = if assigns[:personal_tx_tag], do: @personal_tx_tag, else: nil %>
+              <%= if personal_tx_tag do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tx_tag.name, additional_classes: [tag_name_to_label(personal_tx_tag.name), "ml-1"] %>
+              <% end %>
             </div>
             <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash, tags: tags %>
           </h1>
