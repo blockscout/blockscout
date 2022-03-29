@@ -1,0 +1,8 @@
+<a
+    class="<%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>"
+    style="display: inline-flex;"
+    href="https://app.stakewise.io/"
+    target="_blank"
+>
+    <span class="btn-full-primary-text"><%= gettext("Stake on StakeWise") %></span>
+</a>

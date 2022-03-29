@@ -136,12 +136,20 @@
                   symbol: @token.symbol
                 %>
               </div>
+              <%= if Chain.compare_address_hash_and_strings(@token.contract_address_hash, "0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb") do %>
+                <%= render BlockScoutWeb.Tokens.OverviewView, "_stake_on_stakewise_link.html", additional_classes: ["ml-3"] %>
+              <% end %>
             </div>
             <%= if Map.has_key?(@token, :custom_metadata) do %>
               <div style="margin-top: 15px; font-size: 12px;">
                 <%= @token.custom_metadata %>
               </div>
             <% end %>
+          <% end %>
+          <%= if Chain.compare_address_hash_and_strings(@token.contract_address_hash, "0x722fc4DAABFEaff81b97894fC623f91814a1BF68") do %>
+            <div class="view-original-token-container">
+              <%= render BlockScoutWeb.Tokens.OverviewView, "_stake_on_stakewise_link.html" %>
+            </div>
           <% end %>
           <dl class="row mt-4">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
