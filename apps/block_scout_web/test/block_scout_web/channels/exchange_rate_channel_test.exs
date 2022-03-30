@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
     ExchangeRates.init([])
 
-    token = %Token{
+    token = %{
       available_supply: Decimal.new("1000000.0"),
       total_supply: Decimal.new("1000000.0"),
       btc_value: Decimal.new("1.000"),
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
       receive do
         %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
-          assert payload.exchange_rate == token
+          assert payload.exchange_rate == Map.from_struct(token)
           assert payload.market_history_data == []
       after
         :timer.seconds(5) ->
