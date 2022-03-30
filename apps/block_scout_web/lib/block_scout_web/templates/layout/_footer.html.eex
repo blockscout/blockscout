@@ -34,15 +34,15 @@
       <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
         <h3>zkScan</h3>
         <ul>
-          <li><a href="https://zksync.io/faq/intro.html" rel="noreferrer" class="footer-link"><%= gettext("Docs") %></a></li>
+          <li><a href="https://v2-docs.zksync.io/dev/" rel="noreferrer" class="footer-link"><%= gettext("Docs") %></a></li>
           <li><a href="https://zksync.io/legal/terms.html" rel="noreferrer" class="footer-link"><%= gettext("Terms") %></a></li>
           <li><a href="https://zksync.io/contact.html" rel="noreferrer" class="footer-link"><%= gettext("Contact") %></a></li>
         </ul>
       </div>
-      
-       
+
+
     </div>
 
-    
+
   </div>
 </footer>
