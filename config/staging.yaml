@@ -70,6 +70,7 @@ kubernetes:
         - containerPort: 4000
           name: app
           virtualservice:
+            xFrameOptions: SAMEORIGIN
             gateway: default
             hosts:
               - blockscout.stg.services.issuing.infinitepay.io
