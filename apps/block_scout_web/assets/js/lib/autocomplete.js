@@ -28,6 +28,9 @@ const dataSrc = async (query, id) => {
     return error
   }
 }
+const escapeHtml = (unsafe) => {
+  return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+}
 const resultsListElement = (list, data) => {
   const info = document.createElement('p')
   const adv = `
@@ -38,7 +41,7 @@ const resultsListElement = (list, data) => {
   if (data.results.length > 0) {
     info.innerHTML += `Displaying <strong>${data.results.length}</strong> results`
   } else if (data.query !== '###') {
-    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for <strong>"${data.query}"</strong>`
+    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for <strong>"${escapeHtml(data.query)}"</strong>`
   }
 
   list.prepend(info)
