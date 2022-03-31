@@ -68,5 +68,12 @@ defmodule BlockScoutWeb.Tokens.HelpersTest do
 
       assert Helpers.token_name(token) == "0xde3fa0-f2e65f"
     end
+
+    test "returns the token contract address hash when the name is empty" do
+      address = build(:address, hash: "de3fa0f9f8d47790ce88c2b2b82ab81f79f2e65f")
+      token = build(:token, name: "", contract_address_hash: address.hash)
+
+      assert Helpers.token_name(token) == "0xde3fa0-f2e65f"
+    end
   end
 end

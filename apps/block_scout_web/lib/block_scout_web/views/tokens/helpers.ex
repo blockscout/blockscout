@@ -69,6 +69,10 @@ defmodule BlockScoutWeb.Tokens.Helpers do
     AddressView.short_hash_left_right(address_hash)
   end
 
+  defp build_token_name(%{name: "", contract_address_hash: address_hash}) do
+    AddressView.short_hash_left_right(address_hash)
+  end
+
   defp build_token_name(%{name: name}) do
     name
   end
