@@ -7,6 +7,28 @@ defmodule BlockScoutWeb.ChainView do
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain.Supply.TokenBridge
 
+  def logo do
+    Keyword.get(application_config(), :logo_footer)
+  end
+
+  def webapp_url(conn) do
+    :block_scout_web
+    |> Application.get_env(:webapp_url)
+    |> validate_url()
+    |> case do
+      :error -> chain_path(conn, :show)
+      {:ok, url} -> url
+    end
+  end
+
+  def subnetwork_title do
+    Keyword.get(application_config(), :subnetwork) || "Sokol"
+  end
+
+  defp application_config do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Chain)
+  end
+
   defp market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
        when is_nil(available_supply) or is_nil(usd_value) do
     Decimal.new(0)
@@ -84,4 +106,13 @@ defmodule BlockScoutWeb.ChainView do
   def format_currency_value(value, symbol) when is_float(value) do
     "#{number_to_currency(value, unit: symbol, precision: 0)}"
   end
+
+  defp validate_url(url) when is_binary(url) do
+    case URI.parse(url) do
+      %URI{host: nil} -> :error
+      _ -> {:ok, url}
+    end
+  end
+
+  defp validate_url(_), do: :error
 end
