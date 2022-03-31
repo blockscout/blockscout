@@ -38,9 +38,9 @@ kubernetes:
     #   targetCPUUtilizationPercentage: 50
     envs:
     - name: ETHEREUM_JSONRPC_WS_URL
-      value: wss://testnet.cloudwalk.io/ws
+      value: wss://mainnet.cloudwalk.io/ws
     - name: ETHEREUM_JSONRPC_HTTP_URL
-      value: https://rpc.testnet.cloudwalk.io
+      value: https://rpc.mainnet.cloudwalk.io
     - name: ETHEREUM_JSONRPC_VARIANT
       value: geth
     - name: PORT
@@ -48,9 +48,9 @@ kubernetes:
     - name: NETWORK
       value: "CloudWalk"
     - name: SUBNETWORK
-      value: "Testnet"
+      value: "Mainnet"
     - name: SUPPORTED_CHAINS
-      value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
+      value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": true } ]'
     resources:
       limits:
         cpu: 1000m
@@ -70,6 +70,8 @@ kubernetes:
         - containerPort: 4000
           name: app
           virtualservice:
+            xFrameOptions: SAMEORIGIN
             gateway: default
             hosts:
               - blockscout.services.issuing.infinitepay.io
+              - explorer.mainnet.cloudwalk.io
