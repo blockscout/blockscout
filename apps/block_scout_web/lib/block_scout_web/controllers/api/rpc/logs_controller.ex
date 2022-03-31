@@ -42,7 +42,9 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
     # all_of: all of these parameters are required
     all_of: ["fromBlock", "toBlock"],
     # one_of: at least one of these parameters is required
-    one_of: ["address", "topic0", "topic1", "topic2", "topic3"]
+    one_of: ["address", "topic0", "topic1", "topic2", "topic3"],
+    # optional: these are optional parameters
+    optional: ["limit", "order"]
   }
 
   @doc """
@@ -54,26 +56,28 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
     all_of_params = fetch_required_params(params, :all_of)
     one_of_params = fetch_required_params(params, :one_of)
     maybe_params = fetch_required_params(params, :maybe)
+    optional_params =  fetch_required_params(params, :optional)
 
     result =
-      case {all_of_params, one_of_params, maybe_params} do
-        {{:error, missing_params}, {:error, _}, _} ->
+      case {all_of_params, one_of_params, maybe_params, optional_params} do
+        {{:error, missing_params}, {:error, _}, _, _} ->
           {:error, Enum.concat(missing_params, ["address and/or topic{x}"])}
 
-        {{:error, missing_params}, {:ok, _}, _} ->
+        {{:error, missing_params}, {:ok, _}, _, _} ->
           {:error, missing_params}
 
-        {{:ok, _}, {:error, _}, _} ->
+        {{:ok, _}, {:error, _}, _, _} ->
           {:error, ["address and/or topic{x}"]}
 
-        {{:ok, _}, {:ok, _}, {:error, missing_params}} ->
+        {{:ok, _}, {:ok, _}, {:error, missing_params}, _} ->
           {:error, missing_params}
 
-        {{:ok, all_of_params}, {:ok, one_of_params}, {:ok, maybe_params}} ->
+        {{:ok, all_of_params}, {:ok, one_of_params}, {:ok, maybe_params}, {:ok, optional_params}} ->
           fetched_params =
             all_of_params
             |> Map.merge(one_of_params)
             |> Map.merge(maybe_params)
+            |> Map.merge(optional_params)
 
           {:ok, fetched_params}
       end
@@ -92,6 +96,7 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
       with {:ok, from_block} <- to_block_number(params, "fromBlock"),
            {:ok, to_block} <- to_block_number(params, "toBlock"),
            {:ok, address_hash} <- to_address_hash(params["address"]),
+           limit <- limit_selector(params),
            :ok <- validate_topic_operators(params) do
         validated_params = %{
           from_block: from_block,
@@ -106,7 +111,9 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
           topic0_3_opr: params["topic0_3_opr"],
           topic1_2_opr: params["topic1_2_opr"],
           topic1_3_opr: params["topic1_3_opr"],
-          topic2_3_opr: params["topic2_3_opr"]
+          topic2_3_opr: params["topic2_3_opr"],
+          limit: limit,
+          order: params["order"]
         }
 
         {:ok, validated_params}
@@ -151,6 +158,12 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
     end
   end
 
+  defp fetch_required_params(params, :optional) do
+    fetched_params = Map.take(params, @required_params.optional)
+    found_keys = Map.keys(fetched_params)
+    {:ok, fetched_params}
+  end
+
   defp all_of_required_keys_found?(fetched_params) do
     Enum.all?(@required_params.all_of, &Map.has_key?(fetched_params, &1))
   end
@@ -188,6 +201,10 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
       _ ->
         to_integer(params, param_key)
     end
+  end
+
+  defp limit_selector(params) do
+    params["limit"] || 1000
   end
 
   defp to_integer(params, param_key) do

@@ -23,7 +23,9 @@ defmodule Explorer.Etherscan.Logs do
     topic0_3_opr: nil,
     topic1_2_opr: nil,
     topic1_3_opr: nil,
-    topic2_3_opr: nil
+    topic2_3_opr: nil,
+    limit: nil,
+    order: nil
   }
 
   @log_fields [
@@ -124,8 +126,7 @@ defmodule Explorer.Etherscan.Logs do
         join: block in Block,
         on: block.number == log_transaction_data.block_number,
         where: log_transaction_data.address_hash == ^address_hash,
-        order_by: block.number,
-        limit: 1000,
+        limit: ^prepared_filter.limit,
         select_merge: %{
           transaction_index: log_transaction_data.transaction_index,
           block_hash: block.hash,
@@ -135,17 +136,28 @@ defmodule Explorer.Etherscan.Logs do
         }
       )
 
-    query_with_consensus =
-      if Map.get(filter, :allow_non_consensus) do
-        query_with_blocks
+    query_with_order =
+      if Map.get(filter, :order) == "desc" do
+        from([_, block] in query_with_blocks,
+          order_by: [desc: block.number]
+        )
       else
         from([_, block] in query_with_blocks,
+          order_by: block.number
+        )
+      end
+
+
+    query_with_consensus =
+      if Map.get(filter, :allow_non_consensus) do
+        query_with_order
+      else
+        from([_, block] in query_with_order,
           where: block.consensus == true
         )
       end
 
     query_with_consensus
-    |> order_by([log], asc: log.index)
     |> page_logs(paging_options)
     |> Repo.replica().all()
   end
@@ -190,14 +202,25 @@ defmodule Explorer.Etherscan.Logs do
       from(log in logs_query,
         join: block_transaction_data in subquery(query_with_consensus),
         on: block_transaction_data.transaction_hash == log.transaction_hash,
-        order_by: block_transaction_data.block_number,
-        limit: 1000,
+        limit: ^prepared_filter.limit,
         select: block_transaction_data,
         select_merge: map(log, ^@log_fields)
       )
 
-    query_with_block_transaction_data
-    |> order_by([log], asc: log.index)
+    query_with_order =
+      if Map.get(filter, :order) == "desc" do
+        from([_, block_transaction_data] in query_with_block_transaction_data,
+          order_by: [desc: block_transaction_data.block_number]
+        )
+      else
+        from([_, block_transaction_data] in query_with_block_transaction_data,
+          order_by: block_transaction_data.block_number
+        )
+      end
+
+
+    query_with_order
+    |> order_by([log], desc: log.block_number)
     |> page_logs(paging_options)
     |> Repo.replica().all()
   end
