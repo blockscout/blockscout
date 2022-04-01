@@ -8,9 +8,9 @@ kubernetes:
       appsFolder: apps-config
       argoCDValues: helms/argocd/values.yaml
     containerRegistry:
-      url: gcr.io/infinitepay-issuing
+      url: gcr.io/infinitepay-mainnet
     deployConfig:
-      cluster: infinitepay-issuing-staging
+      cluster: infinitepay-mainnet
       environment: production
       steps:
       - build
@@ -73,5 +73,5 @@ kubernetes:
             xFrameOptions: SAMEORIGIN
             gateway: default
             hosts:
-              - blockscout.services.issuing.infinitepay.io
+              - blockscout.services.mainnet.cloudwalk.io
               - explorer.mainnet.cloudwalk.io
