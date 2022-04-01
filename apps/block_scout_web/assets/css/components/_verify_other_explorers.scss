@@ -183,6 +183,8 @@
 				@include image-2x('../static/images/icons/etherscan@2x.png', 15px, 16px);
 				background-image: url("../static/images/icons/etherscan.png");
 				background-repeat: no-repeat;
+			}
+		}
 	}
 	&:nth-child(3) {
 		.verify-other-explorers-cell.left {
