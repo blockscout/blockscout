@@ -138,7 +138,7 @@ const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-m
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
-  const commonPath = '/eth/mainnet'
+  const commonPath = process.env.NETWORK_PATH
 
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
     window.location = `${commonPath}/address/${selectionValue.address_hash}`
