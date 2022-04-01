@@ -29,13 +29,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - uses: actions/checkout@v2
       with:
+        fetch-depth: 0
         repository: cloudwalk/github-builder
         path: ./github-builder
         token: ${{ secrets.GHA_PAT }}
     - uses: actions/checkout@v2
       with:
+        fetch-depth: 0
         repository: cloudwalk/monorepo-gitops
         path: ./monorepo-gitops
         token: ${{ secrets.GHA_PAT }}
