@@ -38,9 +38,9 @@ kubernetes:
     #   targetCPUUtilizationPercentage: 50
     envs:
     - name: ETHEREUM_JSONRPC_WS_URL
-      value: wss://mainnet.cloudwalk.io/ws
+      value: ws://35.215.217.3:9945
     - name: ETHEREUM_JSONRPC_HTTP_URL
-      value: https://rpc.mainnet.cloudwalk.io
+      value: http://35.215.217.3:9933
     - name: ETHEREUM_JSONRPC_VARIANT
       value: geth
     - name: PORT
