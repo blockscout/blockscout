@@ -341,8 +341,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           old_value: current_token_balance.value,
           token_type: fragment("EXCLUDED.token_type"),
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at),
-          token_type: fragment("EXCLUDED.token_type")
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
         ]
       ],
       where:
