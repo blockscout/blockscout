@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # Lower hashing rounds for faster tests
 config :bcrypt_elixir, log_rounds: 4
