@@ -220,8 +220,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
         )
 
       <<>> ->
-        # we should consdider change: use just :false
-        check_func.("")
+        false
 
       <<_::binary-size(2)>> <> rest ->
         extract_constructor_arguments(rest, check_func, contract_source_code, contract_name)
@@ -236,6 +235,9 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
     constructor_arguments_parts > 1
   end
+
+  defp split_constructor_arguments_and_extract_check_func(constructor_arguments, nil, nil, nil, _metadata_hash_prefix),
+    do: constructor_arguments
 
   defp split_constructor_arguments_and_extract_check_func(
          constructor_arguments,
@@ -268,6 +270,8 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   end
 
   defp extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name) do
+    check_func_result_before_removing_strings = check_func.(constructor_arguments)
+
     constructor_arguments =
       remove_require_messages_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name)
 
@@ -276,21 +280,26 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
     check_func_result = check_func.(filtered_constructor_arguments)
 
-    if check_func_result do
-      check_func_result
-    else
-      output =
-        extract_constructor_arguments(filtered_constructor_arguments, check_func, contract_source_code, contract_name)
+    cond do
+      check_func_result_before_removing_strings ->
+        check_func_result_before_removing_strings
 
-      if output do
-        output
-      else
-        # https://github.com/blockscout/blockscout/pull/4764
-        clean_constructor_arguments =
-          remove_substring_of_require_messages(filtered_constructor_arguments, contract_source_code, contract_name)
+      check_func_result ->
+        check_func_result
 
-        check_func.(clean_constructor_arguments)
-      end
+      true ->
+        output =
+          extract_constructor_arguments(filtered_constructor_arguments, check_func, contract_source_code, contract_name)
+
+        if output do
+          output
+        else
+          # https://github.com/blockscout/blockscout/pull/4764
+          clean_constructor_arguments =
+            remove_substring_of_require_messages(filtered_constructor_arguments, contract_source_code, contract_name)
+
+          check_func.(clean_constructor_arguments)
+        end
     end
   end
 
@@ -369,11 +378,17 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
       |> Chain.contract_creation_input_data()
       |> String.replace("0x", "")
 
+    check_func = parse_constructor_and_return_check_func(abi)
+
+    extract_constructor_arguments(creation_code, check_func, contract_source_code, contract_name)
+  end
+
+  defp parse_constructor_and_return_check_func(abi) do
     constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
 
     input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
 
-    check_func = fn assumed_arguments ->
+    fn assumed_arguments ->
       try do
         _ =
           assumed_arguments
@@ -386,8 +401,6 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           false
       end
     end
-
-    extract_constructor_arguments(creation_code, check_func, contract_source_code, contract_name)
   end
 
   def extract_require_messages_from_constructor(contract_source_code, _contract_name) do
@@ -497,5 +510,16 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     else
       nil
     end
+  end
+
+  def experimental_find_constructor_args(rest_creation, rest_generated, abi) do
+    got_args =
+      rest_creation
+      |> String.split(extract_constructor_arguments(rest_generated, nil, nil, nil))
+      |> List.last()
+
+    abi
+    |> parse_constructor_and_return_check_func()
+    |> (& &1.(got_args)).()
   end
 end

@@ -221,7 +221,7 @@ defmodule EthereumJSONRPC do
   @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
           {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    min_block = first_block_to_fetch()
+    min_block = trace_first_block_to_fetch()
 
     filtered_block_numbers =
       block_numbers
@@ -318,7 +318,7 @@ defmodule EthereumJSONRPC do
   Fetches internal transactions for entire blocks from variant API.
   """
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    min_block = first_block_to_fetch()
+    min_block = trace_first_block_to_fetch()
 
     filtered_block_numbers =
       block_numbers
@@ -496,8 +496,12 @@ defmodule EthereumJSONRPC do
     end
   end
 
-  defp first_block_to_fetch do
-    string_value = Application.get_env(:indexer, :first_block)
+  defp trace_first_block_to_fetch do
+    first_block_to_fetch(:trace_first_block)
+  end
+
+  def first_block_to_fetch(config) do
+    string_value = Application.get_env(:indexer, config)
 
     case Integer.parse(string_value) do
       {integer, ""} -> integer

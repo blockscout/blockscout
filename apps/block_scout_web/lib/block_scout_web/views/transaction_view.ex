@@ -552,7 +552,7 @@ defmodule BlockScoutWeb.TransactionView do
 
     case Integer.parse(string_value) do
       {integer, ""} -> integer
-      _ -> 0
+      _ -> 2040
     end
   end
 
@@ -569,7 +569,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   # Function decodes revert reason of the transaction
-  @spec decoded_revert_reason(%Transaction{} | nil) :: binary() | nil
+  @spec decoded_revert_reason(Transaction.t() | nil) :: binary() | nil
   def decoded_revert_reason(transaction) do
     revert_reason = get_pure_transaction_revert_reason(transaction)
 

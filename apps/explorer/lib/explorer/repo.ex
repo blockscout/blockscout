@@ -6,13 +6,28 @@ defmodule Explorer.Repo do
   require Logger
 
   alias Explorer.Chain.Import.Runner.Blocks
+  alias Explorer.Repo.ConfigHelper
 
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    {:ok, Keyword.put(opts, :url, System.get_env("DATABASE_URL"))}
+    db_url = System.get_env("DATABASE_URL")
+    repo_conf = Application.get_env(:explorer, Explorer.Repo)
+
+    merged =
+      %{url: db_url}
+      |> ConfigHelper.get_db_config()
+      |> Keyword.merge(repo_conf, fn
+        _key, v1, nil -> v1
+        _key, nil, v2 -> v2
+        _, _, v2 -> v2
+      end)
+
+    Application.put_env(:explorer, Explorer.Repo, merged)
+
+    {:ok, Keyword.put(opts, :url, db_url)}
   end
 
   def logged_transaction(fun_or_multi, opts \\ []) do
@@ -120,5 +135,18 @@ defmodule Explorer.Repo do
 
   def stream_reduce(query, initial, reducer) when is_function(reducer, 2) do
     stream_in_transaction(query, &Enum.reduce(&1, initial, reducer))
+  end
+
+  if Mix.env() == :test do
+    def replica, do: __MODULE__
+  else
+    def replica, do: Explorer.Repo.Replica1
+  end
+
+  defmodule Replica1 do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres,
+      read_only: true
   end
 end

@@ -51,6 +51,79 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     end)
   end
 
+  def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
+    verify(address_hash, params, json_input)
+  end
+
+  defp verify(address_hash, params, json_input) do
+    name = Map.get(params, "name", "")
+    compiler_version = Map.fetch!(params, "compiler_version")
+    constructor_arguments = Map.get(params, "constructor_arguments", "")
+    autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "false") |> parse_boolean()
+
+    solc_output =
+      CodeCompiler.run(
+        [
+          name: name,
+          compiler_version: compiler_version
+        ],
+        json_input
+      )
+
+    case solc_output do
+      {:ok, candidates} ->
+        case Jason.decode(json_input) do
+          {:ok, map_json_input} ->
+            Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
+              file_path = candidate["file_path"]
+              source_code = map_json_input["sources"][file_path]["content"]
+              contract_name = candidate["name"]
+
+              case compare_bytecodes(
+                     candidate,
+                     address_hash,
+                     constructor_arguments,
+                     autodetect_constructor_arguments,
+                     source_code,
+                     contract_name
+                   ) do
+                {:ok, verified_data} ->
+                  secondary_sources =
+                    for {file, %{"content" => source}} <- map_json_input["sources"],
+                        file != file_path,
+                        do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
+
+                  additional_params =
+                    map_json_input
+                    |> extract_settings_from_json()
+                    |> Map.put("contract_source_code", source_code)
+                    |> Map.put("file_path", file_path)
+                    |> Map.put("name", contract_name)
+                    |> Map.put("secondary_sources", secondary_sources)
+
+                  {:halt, {:ok, verified_data, additional_params}}
+
+                err ->
+                  {:cont, {:error, err}}
+              end
+            end)
+
+          _ ->
+            {:error, :json}
+        end
+
+      error_response ->
+        error_response
+    end
+  end
+
+  defp extract_settings_from_json(json_input) when is_map(json_input) do
+    %{"enabled" => optimization, "runs" => optimization_runs} = json_input["settings"]["optimizer"]
+
+    %{"optimization" => optimization}
+    |> (&if(parse_boolean(optimization), do: Map.put(&1, "optimization_runs", optimization_runs), else: &1)).()
+  end
+
   defp verify(address_hash, params) do
     name = Map.fetch!(params, "name")
     contract_source_code = Map.fetch!(params, "contract_source_code")
@@ -90,6 +163,24 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     {:error, :compilation, error_message}
   end
 
+  defp compare_bytecodes(
+         %{"abi" => abi, "bytecode" => bytecode},
+         address_hash,
+         arguments_data,
+         autodetect_constructor_arguments,
+         contract_source_code,
+         contract_name
+       ),
+       do:
+         compare_bytecodes(
+           {:ok, %{"abi" => abi, "bytecode" => bytecode}},
+           address_hash,
+           arguments_data,
+           autodetect_constructor_arguments,
+           contract_source_code,
+           contract_name
+         )
+
   # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
@@ -112,7 +203,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           init_without_0x
 
         _ ->
-          bytecode
+          ""
       end
 
     %{
@@ -127,17 +218,34 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       compiler_version_from_input != generated_compiler_version ->
         {:error, :compiler_version}
 
+      bytecode <> arguments_data == blockchain_created_tx_input ->
+        {:ok, %{abi: abi, constructor_arguments: arguments_data}}
+
       generated_bytecode != blockchain_bytecode_without_whisper &&
           !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
         {:error, :generated_bytecode}
 
       has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
-        result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
+        result_1 =
+          try_to_verify_with_unknown_constructor_args(
+            blockchain_created_tx_input,
+            bytecode,
+            blockchain_bytecode_without_whisper,
+            abi
+          )
 
-        if result do
-          {:ok, %{abi: abi, constructor_arguments: result}}
-        else
-          {:error, :constructor_arguments}
+        result_2 =
+          ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
+
+        cond do
+          result_1 ->
+            {:ok, %{abi: abi, constructor_arguments: result_1}}
+
+          result_2 ->
+            {:ok, %{abi: abi, constructor_arguments: result_2}}
+
+          true ->
+            {:error, :constructor_arguments}
         end
 
       has_constructor_with_params?(abi) && empty_constructor_arguments ->
@@ -151,11 +259,26 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
             contract_source_code,
             contract_name
           ) ->
-        {:error, :constructor_arguments}
+        if try_to_verify_with_unknown_constructor_args(
+             blockchain_created_tx_input,
+             bytecode,
+             blockchain_bytecode_without_whisper,
+             abi
+           ) == arguments_data |> String.trim_trailing() |> String.trim_leading("0x") do
+          {:ok, %{abi: abi}}
+        else
+          {:error, :constructor_arguments}
+        end
 
       true ->
         {:ok, %{abi: abi}}
     end
+  end
+
+  defp try_to_verify_with_unknown_constructor_args(creation_code, generated_bytecode, trimmed_bytecode, abi) do
+    ["", rest_blockchain] = String.split(creation_code, trimmed_bytecode)
+    ["", rest_generated] = String.split(generated_bytecode, trimmed_bytecode)
+    ConstructorArguments.experimental_find_constructor_args(rest_blockchain, rest_generated, abi)
   end
 
   # 730000000000000000000000000000000000000000 - default library address that returned by the compiler
@@ -360,4 +483,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   defp parse_boolean("true"), do: true
   defp parse_boolean("false"), do: false
+
+  defp parse_boolean(true), do: true
+  defp parse_boolean(false), do: false
 end

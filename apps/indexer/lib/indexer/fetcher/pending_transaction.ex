@@ -141,8 +141,23 @@ defmodule Indexer.Fetcher.PendingTransaction do
 
         :ok
 
+      {:error, :econnrefused} ->
+        Logger.error("connection_refused")
+
+        :ok
+
       {:error, {:bad_gateway, _}} ->
         Logger.error("bad_gateway")
+
+        :ok
+
+      {:error, :closed} ->
+        Logger.error("closed")
+
+        :ok
+
+      {:error, reason} ->
+        Logger.error(inspect(reason))
 
         :ok
     end

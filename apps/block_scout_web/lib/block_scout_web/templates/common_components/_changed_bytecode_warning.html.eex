@@ -1,0 +1,4 @@
+<div class="mb-4" style="display: inline-table; font-size: 14px; background: bisque; padding: 10px; border-radius: 5px;">
+    <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %>
+    <span> <%= gettext("Warning! Contract bytecode has been changed and doesn't match the verified one. Therefore, interaction with this smart contract may be risky.") %></span>
+</div>

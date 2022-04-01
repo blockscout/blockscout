@@ -79,14 +79,14 @@ defmodule Explorer.Mixfile do
       {:ex_machina, "~> 2.3", only: [:test]},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.6"},
-      {:jason, "~> 1.2.2"},
+      {:jason, "~> 1.3"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
-      {:poison, "~> 4.0"},
+      {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
@@ -104,7 +104,7 @@ defmodule Explorer.Mixfile do
       # `:spandex` tracing of `:ecto`
       {:spandex_ecto, "~> 0.6.2"},
       # Attach `:prometheus_ecto` to `:ecto`
-      {:telemetry, "~> 0.4.1"},
+      {:telemetry, "~> 0.4.3"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},

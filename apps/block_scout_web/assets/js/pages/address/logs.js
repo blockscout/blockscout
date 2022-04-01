@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import omit from 'lodash.omit'
 import humps from 'humps'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'

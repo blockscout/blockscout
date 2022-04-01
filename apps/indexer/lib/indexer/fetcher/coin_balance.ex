@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.CoinBalance do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Fetcher.CoinBalance.Supervisor, as: CoinBalanceSupervisor
 
   @behaviour BufferedTask
 
@@ -34,9 +35,13 @@ defmodule Indexer.Fetcher.CoinBalance do
           %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
         ]) :: :ok
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
-    entries = Enum.map(balance_fields, &entry/1)
+    if CoinBalanceSupervisor.disabled?() do
+      :ok
+    else
+      entries = Enum.map(balance_fields, &entry/1)
 
-    BufferedTask.buffer(__MODULE__, entries)
+      BufferedTask.buffer(__MODULE__, entries)
+    end
   end
 
   @doc false
@@ -79,7 +84,7 @@ defmodule Indexer.Fetcher.CoinBalance do
 
     unique_filtered_entries =
       Enum.filter(unique_entries, fn {_hash, block_number} ->
-        block_number >= first_block_to_index()
+        block_number >= EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
       end)
 
     unique_entry_count = Enum.count(unique_filtered_entries)
@@ -103,15 +108,6 @@ defmodule Indexer.Fetcher.CoinBalance do
         )
 
         {:retry, unique_filtered_entries}
-    end
-  end
-
-  defp first_block_to_index do
-    string_value = Application.get_env(:indexer, :first_block)
-
-    case Integer.parse(string_value) do
-      {integer, ""} -> integer
-      _ -> 0
     end
   end
 

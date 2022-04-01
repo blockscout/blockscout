@@ -66,18 +66,18 @@
 		background-repeat: no-repeat;
 		background-position: center;
 		&.etherscan {
-			@include image-2x('/images/icons/etherscan@2x.png', 15px, 16px);
-			background-image: url("/images/icons/etherscan.png");
+			@include image-2x('../static/images/icons/etherscan@2x.png', 15px, 16px);
+			background-image: url("../static/images/icons/etherscan.png");
 			background-size: 15px 16px;
 		}
 		&.blockchair {
-			@include image-2x('/images/icons/blockchair@2x.png', 10px, 16px);
-			background-image: url("/images/icons/blockchair.png");
+			@include image-2x('../static/images/icons/blockchair@2x.png', 10px, 16px);
+			background-image: url("../static/images/icons/blockchair.png");
 			background-size: 10px 16px;
 		}
 		&.etherchain {
-			@include image-2x('/images/icons/etherchain@2x.png', 16px, 16px);
-			background-image: url("/images/icons/etherchain.png");
+			@include image-2x('../static/images/icons/etherchain@2x.png', 16px, 16px);
+			background-image: url("../static/images/icons/etherchain.png");
 			background-size: 16px 16px;
 		}
 	}
@@ -168,8 +168,8 @@
 	&:first-child {
 		.verify-other-explorers-cell.left {
 			.exp-logo {
-				@include image-2x('/images/icons/blockchair@2x.png', 10px, 16px);
-				background-image: url("/images/icons/blockchair.png");
+				@include image-2x('../static/images/icons/blockchair@2x.png', 10px, 16px);
+				background-image: url("../static/images/icons/blockchair.png");
 				background-repeat: no-repeat;
 				padding-left: 25px;
 				background-size: 10px 16px;
@@ -180,19 +180,15 @@
 	&:nth-child(2) {
 		.verify-other-explorers-cell.left {
 			.exp-logo {
-				@include image-2x('/images/icons/etherscan@2x.png', 15px, 16px);
-				background-image: url("/images/icons/etherscan.png");
+				@include image-2x('../static/images/icons/etherscan@2x.png', 15px, 16px);
+				background-image: url("../static/images/icons/etherscan.png");
 				background-repeat: no-repeat;
-				padding-left: 25px;
-				background-size: 15px 16px;
-			}
-		}
 	}
 	&:nth-child(3) {
 		.verify-other-explorers-cell.left {
 			.exp-logo {
-				@include image-2x('/images/icons/etherchain@2x.png', 16px, 16px);
-				background-image: url("/images/icons/etherchain.png");
+				@include image-2x('../static/images/icons/etherchain@2x.png', 16px, 16px);
+				background-image: url("../static/images/icons/etherchain.png");
 				background-repeat: no-repeat;
 				padding-left: 25px;
 				background-size: 16px 16px;
@@ -209,7 +205,7 @@
 }
 
 .link {
-	background-image: url("/images/icons/link.svg");
+	background-image: url("../static/images/icons/link.svg");
 	background-repeat: no-repeat;
 	padding-left: 15px;
 	background-size: 12px 12px;

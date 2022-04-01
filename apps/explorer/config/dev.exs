@@ -1,16 +1,42 @@
-use Mix.Config
+import Config
 
 database = if System.get_env("DATABASE_URL"), do: nil, else: "explorer_dev"
 hostname = if System.get_env("DATABASE_URL"), do: nil, else: "localhost"
+
+database_api_url =
+  if System.get_env("DATABASE_READ_ONLY_API_URL"),
+    do: System.get_env("DATABASE_READ_ONLY_API_URL"),
+    else: System.get_env("DATABASE_URL")
+
+pool_size =
+  if System.get_env("DATABASE_READ_ONLY_API_URL"),
+    do: String.to_integer(System.get_env("POOL_SIZE", "40")),
+    else: String.to_integer(System.get_env("POOL_SIZE", "50"))
 
 # Configure your database
 config :explorer, Explorer.Repo,
   database: database,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
+  pool_size: pool_size,
   timeout: :timer.seconds(80),
   queue_target: 2000
+
+database_api = if System.get_env("DATABASE_READ_ONLY_API_URL"), do: nil, else: database
+hostname_api = if System.get_env("DATABASE_READ_ONLY_API_URL"), do: nil, else: hostname
+
+pool_size_api =
+  if System.get_env("DATABASE_READ_ONLY_API_URL"),
+    do: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
+    else: String.to_integer(System.get_env("POOL_SIZE_API", "10"))
+
+# Configure API database
+config :explorer, Explorer.Repo.Replica1,
+  database: database_api,
+  hostname: hostname_api,
+  url: database_api_url,
+  pool_size: pool_size_api,
+  timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
 

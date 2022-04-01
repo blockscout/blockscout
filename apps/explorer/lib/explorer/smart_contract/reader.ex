@@ -295,43 +295,18 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp get_abi_with_method_id(abi) do
-    parsed_abi =
-      abi
-      |> ABI.parse_specification()
-
-    abi_with_method_id =
-      abi
-      |> Enum.map(fn target_method ->
-        methods =
-          parsed_abi
-          |> Enum.filter(fn method ->
-            Atom.to_string(method.type) == Map.get(target_method, "type") &&
-              method.function == Map.get(target_method, "name") &&
-              Enum.count(method.input_names) == Enum.count(Map.get(target_method, "inputs")) &&
-              input_types_matched?(method.types, target_method)
-          end)
-
-        if Enum.count(methods) > 0 do
-          method = Enum.at(methods, 0)
-          method_id = Map.get(method, :method_id)
-          method_with_id = Map.put(target_method, "method_id", Base.encode16(method_id, case: :lower))
-          method_with_id
-        else
-          target_method
-        end
-      end)
-
-    abi_with_method_id
-  end
-
-  defp input_types_matched?(types, target_method) do
-    types
-    |> Enum.with_index()
-    |> Enum.all?(fn {target_type, index} ->
-      type_to_compare = Map.get(Enum.at(Map.get(target_method, "inputs"), index), "type")
-      target_type_formatted = format_type(target_type)
-      target_type_formatted == type_to_compare
+  def get_abi_with_method_id(abi) do
+    abi
+    |> Enum.map(fn method ->
+      with parsed_method <- [method] |> ABI.parse_specification() |> Enum.at(0),
+           true <- is_map(parsed_method),
+           method_id <- Map.get(parsed_method, :method_id),
+           true <- !is_nil(method_id) do
+        Map.put(method, "method_id", Base.encode16(method_id, case: :lower))
+      else
+        _ ->
+          method
+      end
     end)
   end
 
@@ -392,13 +367,13 @@ defmodule Explorer.SmartContract.Reader do
     `type` could be :proxy or :reqular
     if ethereumJSONRPC will return some errors it will represented as map
   """
-  @spec query_function_with_names(Hash.t(), %{method_id: String.t(), args: [term()] | nil}, atom(), String.t()) :: %{
+  @spec query_function_with_names(Hash.t(), %{method_id: String.t(), args: [term()] | nil}, atom()) :: %{
           :names => [any()],
           :output => [%{}]
         }
-  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, function_name) do
+  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type) do
     outputs = query_function(contract_address_hash, %{method_id: method_id, args: args}, type, true)
-    names = parse_names_from_abi(get_abi(contract_address_hash, type), function_name)
+    names = parse_names_from_abi(get_abi(contract_address_hash, type), method_id)
     %{output: outputs, names: names}
   end
 
@@ -411,12 +386,11 @@ defmodule Explorer.SmartContract.Reader do
           Hash.t(),
           %{method_id: String.t(), args: [term()] | nil},
           atom(),
-          String.t(),
           String.t()
         ) :: %{:names => [any()], :output => [%{}]}
-  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, function_name, from) do
+  def query_function_with_names(contract_address_hash, %{method_id: method_id, args: args}, type, from) do
     outputs = query_function(contract_address_hash, %{method_id: method_id, args: args}, type, from, true)
-    names = parse_names_from_abi(get_abi(contract_address_hash, type), function_name)
+    names = parse_names_from_abi(get_abi(contract_address_hash, type), method_id)
     %{output: outputs, names: names}
   end
 
@@ -487,8 +461,10 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp parse_names_from_abi(abi, function_name) do
-    function = Enum.find(abi, fn el -> el["type"] == "function" and el["name"] == function_name end)
+  defp parse_names_from_abi(abi, method_id) do
+    function =
+      Enum.find(get_abi_with_method_id(abi), fn el -> el["type"] == "function" and el["method_id"] == method_id end)
+
     outputs_to_list(function["outputs"])
   end
 
@@ -566,8 +542,7 @@ defmodule Explorer.SmartContract.Reader do
     |> Tuple.to_list()
     |> Enum.map(fn value ->
       if is_list(value) do
-        value
-        |> Enum.join("")
+        parse_item(value)
       else
         hex =
           value
@@ -576,6 +551,10 @@ defmodule Explorer.SmartContract.Reader do
         "0x" <> hex
       end
     end)
+  end
+
+  defp parse_item(items) when is_list(items) do
+    Enum.map(items, &parse_item/1)
   end
 
   defp parse_item(item) do

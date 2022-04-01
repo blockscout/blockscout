@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import omit from 'lodash.omit'
 import humps from 'humps'
 import socket from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
@@ -38,12 +38,16 @@ export function reducer (state, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   }
 }
 
 if ($('[data-page="coin-balance-history"]').length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.blockNumber')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
 

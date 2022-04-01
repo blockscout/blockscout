@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{
     AddressContractVerificationViaFlattenedCodeView,
     AddressContractVerificationViaJsonView,
+    AddressContractVerificationViaStandardJsonInputView,
     AddressContractVerificationVyperView,
     Endpoint
   }
@@ -47,9 +48,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
-    verification_from_json_upload? = Map.has_key?(conn.params, "file")
-    verification_from_flattened_source? = Map.has_key?(conn.params, "external_libraries")
-    compiler = if verification_from_flattened_source?, do: :solc, else: :vyper
+    %{view: view, compiler: compiler} = select_contract_type_and_form_view(conn.params)
 
     contract_verification_result =
       case contract_verification_result do
@@ -57,21 +56,7 @@ defmodule BlockScoutWeb.Notifier do
           result
 
         {:error, changeset} ->
-          compiler_versions =
-            case CompilerVersion.fetch_versions(compiler) do
-              {:ok, compiler_versions} ->
-                compiler_versions
-
-              {:error, _} ->
-                []
-            end
-
-          view =
-            cond do
-              verification_from_json_upload? -> AddressContractVerificationViaJsonView
-              verification_from_flattened_source? -> AddressContractVerificationViaFlattenedCodeView
-              true -> AddressContractVerificationVyperView
-            end
+          compiler_versions = fetch_compiler_version(compiler)
 
           result =
             view
@@ -120,7 +105,7 @@ defmodule BlockScoutWeb.Notifier do
           %{exchange_rate | available_supply: nil, market_cap_usd: RSK.market_cap(exchange_rate)}
 
         _ ->
-          exchange_rate
+          Map.from_struct(exchange_rate)
       end
 
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
@@ -201,6 +186,39 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event(_), do: nil
 
+  def fetch_compiler_version(compiler) do
+    case CompilerVersion.fetch_versions(compiler) do
+      {:ok, compiler_versions} ->
+        compiler_versions
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  def select_contract_type_and_form_view(params) do
+    verification_from_metadata_json? =
+      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "json:metadata"
+
+    verification_from_standard_json_input? =
+      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "json:standard"
+
+    verification_from_vyper? =
+      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "vyper"
+
+    compiler = if verification_from_vyper?, do: :vyper, else: :solc
+
+    view =
+      cond do
+        verification_from_standard_json_input? -> AddressContractVerificationViaStandardJsonInputView
+        verification_from_metadata_json? -> AddressContractVerificationViaJsonView
+        verification_from_vyper? -> AddressContractVerificationVyperView
+        true -> AddressContractVerificationViaFlattenedCodeView
+      end
+
+    %{view: view, compiler: compiler}
+  end
+
   @doc """
   Broadcast the percentage of blocks indexed so far.
   """
@@ -265,10 +283,6 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_internal_transaction(internal_transaction) do
-    Endpoint.broadcast("internal_transactions:new_internal_transaction", "new_internal_transaction", %{
-      internal_transaction: internal_transaction
-    })
-
     Endpoint.broadcast("addresses:#{internal_transaction.from_address_hash}", "internal_transaction", %{
       address: internal_transaction.from_address,
       internal_transaction: internal_transaction
@@ -311,15 +325,11 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_token_transfer(token_transfer) do
-    broadcast_token_transfer(token_transfer, "token_transfers:new_token_transfer", "token_transfer")
+    broadcast_token_transfer(token_transfer, "token_transfer")
   end
 
-  defp broadcast_token_transfer(token_transfer, token_transfer_channel, event) do
+  defp broadcast_token_transfer(token_transfer, event) do
     Endpoint.broadcast("token_transfers:#{token_transfer.transaction_hash}", event, %{})
-
-    Endpoint.broadcast(token_transfer_channel, event, %{
-      token_transfer: token_transfer
-    })
 
     Endpoint.broadcast("addresses:#{token_transfer.from_address_hash}", event, %{
       address: token_transfer.from_address,

@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
+  alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
+  alias BlockScoutWeb.API.RPC.RPCView
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -204,6 +205,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "symbol" => token.symbol,
       "type" => token.type
     }
+    |> (&if(is_nil(token.id), do: &1, else: Map.put(&1, "id", token.id))).()
   end
 
   defp balance(address) do

@@ -84,10 +84,11 @@ defmodule BlockScoutWeb.Mixfile do
       {:floki, "~> 0.31"},
       {:flow, "~> 0.12"},
       {:gettext, "~> 0.18.2"},
+      {:hammer, "~> 6.0"},
       {:httpoison, "~> 1.6"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator
-      {:jason, "~> 1.2.2"},
+      {:jason, "~> 1.3"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
@@ -103,7 +104,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
-      {:poison, "~> 4.0"},
+      {:poison, "~> 4.0.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
@@ -113,6 +114,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:prometheus_plugs, "~> 1.1"},
       # OS process metrics for Prometheus
       {:prometheus_process_collector, "~> 1.3"},
+      {:remote_ip, "~> 1.0"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing

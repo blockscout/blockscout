@@ -1,5 +1,11 @@
+import Web3 from 'web3'
 import $ from 'jquery'
 import { props } from 'eth-net-props'
+
+export const connectSelector = '[connect-wallet]'
+export const disconnectSelector = '[disconnect-wallet]'
+const connectToSelector = '[connect-to]'
+const connectedToSelector = '[connected-to]'
 
 export function getContractABI ($form) {
   const implementationAbi = $form.data('implementation-abi')
@@ -30,26 +36,38 @@ export function prepareMethodArgs ($functionInputs, inputs) {
       if (sanitizedInputValue === '' || sanitizedInputValue === '[]') {
         return [[]]
       } else {
-        if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
-          sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
-        }
-        const inputValueElements = sanitizedInputValue.split(',')
-        const sanitizedInputValueElements = inputValueElements.map(elementValue => {
-          const elementInputType = inputType.split('[')[0]
-
-          var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
-          sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
-
-          if (isBoolInputType(elementInputType)) {
-            sanitizedElementValue = convertToBool(elementValue)
+        if (isArrayOfTuple(inputType)) {
+          const sanitizedInputValueElements = JSON.parse(sanitizedInputValue).map((elementValue, index) => {
+            return sanitizeMutipleInputValues(elementValue, inputType, inputComponents)
+          })
+          return [sanitizedInputValueElements]
+        } else {
+          if (sanitizedInputValue.startsWith('[') && sanitizedInputValue.endsWith(']')) {
+            sanitizedInputValue = sanitizedInputValue.substring(1, sanitizedInputValue.length - 1)
           }
-          return sanitizedElementValue
-        })
-        return [sanitizedInputValueElements]
+          const inputValueElements = sanitizedInputValue.split(',')
+          const sanitizedInputValueElements = sanitizeMutipleInputValues(inputValueElements, inputType, inputComponents)
+          return [sanitizedInputValueElements]
+        }
       }
-    } else if (isBoolInputType(inputType)) {
-      return convertToBool(sanitizedInputValue)
-    } else { return sanitizedInputValue }
+    } else { return convertToBool(sanitizedInputValue, inputType) }
+  })
+}
+
+function sanitizeMutipleInputValues (inputValueElements, inputType, inputComponents) {
+  return inputValueElements.map((elementValue, index) => {
+    let elementInputType
+    if (inputType.includes('tuple')) {
+      elementInputType = inputComponents[index].type
+    } else {
+      elementInputType = inputType.split('[')[0]
+    }
+
+    let sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+    sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
+    sanitizedElementValue = convertToBool(sanitizedElementValue, elementInputType)
+
+    return sanitizedElementValue
   })
 }
 
@@ -72,10 +90,10 @@ export const formatError = (error) => {
 
 export const formatTitleAndError = (error) => {
   let { message } = error
-  var title = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
+  let title = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
   title = title && title.split('{').length > 1 ? title.split('{')[0].replace(':', '') : title
-  var txHash = ''
-  var errorMap = ''
+  let txHash = ''
+  let errorMap = ''
   try {
     errorMap = message && message.indexOf('{') >= 0 ? JSON.parse(message && message.slice(message.indexOf('{'))) : ''
     message = errorMap.error || ''
@@ -86,7 +104,42 @@ export const formatTitleAndError = (error) => {
   return { title: title, message: message, txHash: txHash }
 }
 
-export const getCurrentAccount = () => {
+export const getCurrentAccountPromise = (provider) => {
+  return new Promise((resolve, reject) => {
+    if (provider && provider.wc) {
+      getCurrentAccountFromWCPromise(provider)
+        .then(account => resolve(account))
+        .catch(err => {
+          reject(err)
+        })
+    } else {
+      getCurrentAccountFromMMPromise()
+        .then(account => resolve(account))
+        .catch(err => {
+          reject(err)
+        })
+    }
+  })
+}
+
+export const getCurrentAccountFromWCPromise = (provider) => {
+  return new Promise((resolve, reject) => {
+  // Get a Web3 instance for the wallet
+    const web3 = new Web3(provider)
+
+    // Get list of accounts of the connected wallet
+    web3.eth.getAccounts()
+      .then(accounts => {
+        // MetaMask does not give you all accounts, only the selected account
+        resolve(accounts[0])
+      })
+      .catch(err => {
+        reject(err)
+      })
+  })
+}
+
+export const getCurrentAccountFromMMPromise = () => {
   return new Promise((resolve, reject) => {
     window.ethereum.request({ method: 'eth_accounts' })
       .then(accounts => {
@@ -99,10 +152,81 @@ export const getCurrentAccount = () => {
   })
 }
 
-function convertToBool (value) {
-  const boolVal = (value === 'true' || value === '1' || value === 1)
+function hideConnectedToContainer () {
+  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.add('hidden')
+}
 
-  return boolVal
+function showConnectedToContainer () {
+  document.querySelector(connectedToSelector) && document.querySelector(connectedToSelector).classList.remove('hidden')
+}
+
+function hideConnectContainer () {
+  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.add('hidden')
+}
+
+function showConnectContainer () {
+  document.querySelector(connectSelector) && document.querySelector(connectSelector).classList.remove('hidden')
+}
+
+function hideConnectToContainer () {
+  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.add('hidden')
+}
+
+function showConnectToContainer () {
+  document.querySelector(connectToSelector) && document.querySelector(connectToSelector).classList.remove('hidden')
+}
+
+export function showHideDisconnectButton () {
+  // Show disconnect button only in case of Wallet Connect
+  if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
+    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.remove('hidden')
+  } else {
+    document.querySelector(disconnectSelector) && document.querySelector(disconnectSelector).classList.add('hidden')
+  }
+}
+
+export function showConnectedToElements (account) {
+  hideConnectToContainer()
+  showConnectContainer()
+  showConnectedToContainer()
+  showHideDisconnectButton()
+  setConnectToAddress(account)
+}
+
+export function showConnectElements () {
+  showConnectToContainer()
+  showConnectContainer()
+  hideConnectedToContainer()
+}
+
+export function hideConnectButton () {
+  showConnectToContainer()
+  hideConnectContainer()
+  hideConnectedToContainer()
+}
+
+function setConnectToAddress (account) {
+  if (document.querySelector('[connected-to-address]')) {
+    document.querySelector('[connected-to-address]').innerHTML = `<a href='/address/${account}'>${trimmedAddressHash(account)}</a>`
+  }
+}
+
+function trimmedAddressHash (account) {
+  if ($(window).width() < 544) {
+    return `${account.slice(0, 7)}–${account.slice(-6)}`
+  } else {
+    return account
+  }
+}
+
+function convertToBool (value, type) {
+  if (isBoolInputType(type)) {
+    const boolVal = (value === 'true' || value === '1' || value === 1)
+
+    return boolVal
+  } else {
+    return value
+  }
 }
 
 function isArrayInputType (inputType) {
@@ -111,6 +235,10 @@ function isArrayInputType (inputType) {
 
 function isTupleInputType (inputType) {
   return inputType && inputType.includes('tuple') && !isArrayInputType(inputType)
+}
+
+function isArrayOfTuple (inputType) {
+  return inputType && inputType.includes('tuple') && isArrayInputType(inputType)
 }
 
 function isAddressInputType (inputType) {
@@ -125,12 +253,16 @@ function isStringInputType (inputType) {
   return inputType && inputType.includes('string') && !isArrayInputType(inputType)
 }
 
+function isBytesInputType (inputType) {
+  return inputType && inputType.includes('bytes') && !isArrayInputType(inputType)
+}
+
 function isBoolInputType (inputType) {
   return inputType && inputType.includes('bool') && !isArrayInputType(inputType)
 }
 
 function isNonSpaceInputType (inputType) {
-  return isAddressInputType(inputType) || inputType.includes('int') || inputType.includes('bool')
+  return isAddressInputType(inputType) || isBytesInputType(inputType) || inputType.includes('int') || inputType.includes('bool')
 }
 
 function replaceSpaces (value, type, components) {
@@ -151,7 +283,7 @@ function replaceSpaces (value, type, components) {
 }
 
 function replaceDoubleQuotes (value, type, components) {
-  if (isAddressInputType(type) || isUintInputType(type) || isStringInputType(type)) {
+  if (isAddressInputType(type) || isUintInputType(type) || isStringInputType(type) || isBytesInputType(type)) {
     if (typeof value.replaceAll === 'function') {
       return value.replaceAll('"', '')
     } else {

@@ -42,6 +42,7 @@ defmodule Explorer.Application do
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
+      Explorer.Repo.Replica1,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
@@ -64,8 +65,7 @@ defmodule Explorer.Application do
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       Transactions,
       Accounts,
-      Uncles,
-      MinMissingBlockNumber
+      Uncles
     ]
 
     children = base_children ++ configurable_children()
@@ -97,7 +97,8 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
-      configure(Explorer.Staking.ContractState)
+      configure(Explorer.Staking.ContractState),
+      configure(MinMissingBlockNumber)
     ]
     |> List.flatten()
   end
@@ -114,12 +115,51 @@ defmodule Explorer.Application do
     end
   end
 
+  defp datadog_port do
+    if System.get_env("DATADOG_PORT") do
+      case Integer.parse(System.get_env("DATADOG_PORT")) do
+        {integer, ""} -> integer
+        _ -> 8126
+      end
+    else
+      8126
+    end
+  end
+
+  defp spandex_batch_size do
+    if System.get_env("SPANDEX_BATCH_SIZE") do
+      case Integer.parse(System.get_env("SPANDEX_BATCH_SIZE")) do
+        {integer, ""} -> integer
+        _ -> 100
+      end
+    else
+      100
+    end
+  end
+
+  defp spandex_sync_threshold do
+    if System.get_env("SPANDEX_SYNC_THRESHOLD") do
+      case Integer.parse(System.get_env("SPANDEX_SYNC_THRESHOLD")) do
+        {integer, ""} -> integer
+        _ -> 100
+      end
+    else
+      100
+    end
+  end
+
   defp datadog_opts do
+    datadog_port = datadog_port()
+
+    spandex_batch_size = spandex_batch_size()
+
+    spandex_sync_threshold = spandex_sync_threshold()
+
     [
       host: System.get_env("DATADOG_HOST") || "localhost",
-      port: System.get_env("DATADOG_PORT") || 8126,
-      batch_size: System.get_env("SPANDEX_BATCH_SIZE") || 100,
-      sync_threshold: System.get_env("SPANDEX_SYNC_THRESHOLD") || 100,
+      port: datadog_port,
+      batch_size: spandex_batch_size,
+      sync_threshold: spandex_sync_threshold,
       http: HTTPoison
     ]
   end
