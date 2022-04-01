@@ -8,6 +8,8 @@ defmodule Explorer.Repo.Migrations.FillCeloContractEvents do
     EpochRewardsDistributedToVotersEvent
   }
 
+  alias Explorer.Chain.Hash.{Address, Full}
+
   alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent
 
   @disable_ddl_transaction true
@@ -30,14 +32,6 @@ defmodule Explorer.Repo.Migrations.FillCeloContractEvents do
   def down, do: execute("delete from celo_contract_events")
 
   def do_change(to_change) do
-    # map block hashes to numbers so we can index into the migration from a given blocknumber + log index for the next
-    # batch
-    hash_to_number =
-      to_change
-      |> Enum.reduce(%{}, fn %{block_number: bn, block_hash: bh}, acc ->
-        Map.put(acc, bh, bn)
-      end)
-
     params =
       to_change
       |> Explorer.Celo.ContractEvents.EventMap.rpc_to_event_params()
@@ -46,20 +40,33 @@ defmodule Explorer.Repo.Migrations.FillCeloContractEvents do
         t = Timex.now()
 
         events
-        |> Enum.map(fn e ->
-          e
+        |> Enum.map(fn event ->
+          {:ok, contract_address_hash} = Address.dump(event.contract_address_hash)
+
+          event =
+            case event.transaction_hash do
+              nil ->
+                event
+
+              hash ->
+                {:ok, transaction_hash} = Full.dump(hash)
+                event |> Map.put(:transaction_hash, transaction_hash)
+            end
+
+          event
           |> Map.put(:inserted_at, t)
           |> Map.put(:updated_at, t)
+          |> Map.put(:contract_address_hash, contract_address_hash)
         end)
       end)
 
     {inserted_count, results} =
-      Explorer.Repo.insert_all("celo_contract_events", params, returning: [:block_hash, :log_index])
+      Explorer.Repo.insert_all("celo_contract_events", params, returning: [:block_number, :log_index])
 
     if inserted_count != length(to_change) do
       not_inserted =
         to_change
-        |> Enum.map(&Map.take(&1, [:block_hash, :log_index]))
+        |> Enum.map(&Map.take(&1, [:block_number, :log_index]))
         |> MapSet.new()
         |> MapSet.difference(MapSet.new(results))
         |> MapSet.to_list()
@@ -69,9 +76,7 @@ defmodule Explorer.Repo.Migrations.FillCeloContractEvents do
 
     last_key =
       results
-      |> Enum.map(fn %{block_hash: hsh, log_index: index} ->
-        {Map.get(hash_to_number, hsh), index}
-      end)
+      |> Enum.map(fn %{block_number: block_number, log_index: index} -> {block_number, index} end)
       |> Enum.max()
 
     [last_key]
@@ -80,6 +85,8 @@ defmodule Explorer.Repo.Migrations.FillCeloContractEvents do
   def page_query({last_block_number, last_index}) do
     from(
       l in "logs",
+      left_join: e in "celo_contract_events",
+      on: e.topic == l.first_topic and e.block_number == l.block_number and e.log_index == l.index,
       select: %{
         first_topic: l.first_topic,
         second_topic: l.second_topic,
@@ -89,10 +96,10 @@ defmodule Explorer.Repo.Migrations.FillCeloContractEvents do
         address_hash: l.address_hash,
         transaction_hash: l.transaction_hash,
         block_number: l.block_number,
-        block_hash: l.block_hash,
         index: l.index
       },
-      where: l.first_topic in ^@topics and {l.block_number, l.index} > {^last_block_number, ^last_index},
+      where:
+        is_nil(e.topic) and l.first_topic in ^@topics and {l.block_number, l.index} > {^last_block_number, ^last_index},
       order_by: [asc: l.block_number, asc: l.index],
       limit: @batch_size
     )
