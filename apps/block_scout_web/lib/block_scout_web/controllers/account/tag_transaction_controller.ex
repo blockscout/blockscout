@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
   alias Explorer.Repo
 
   import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
+  import Ecto.Query, only: [from: 2]
 
   def index(conn, _params) do
     case AuthController.current_user(conn) do
@@ -59,9 +60,12 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
   end
 
   def tx_tags(user) do
-    TagTransaction
-    |> Repo.all(identity_id: user.id)
-    |> Repo.preload(:transaction)
+    query =
+      from(tt in TagTransaction,
+        where: tt.identity_id == ^user.id
+      )
+
+    Repo.all(query)
   end
 
   defp new_tag, do: TagTransaction.changeset(%TagTransaction{}, %{})

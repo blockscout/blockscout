@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Account.TagAddressController do
   alias Explorer.Repo
 
   import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
+  import Ecto.Query, only: [from: 2]
 
   def index(conn, _params) do
     case AuthController.current_user(conn) do
@@ -59,8 +60,13 @@ defmodule BlockScoutWeb.Account.TagAddressController do
   end
 
   def address_tags(user) do
-    TagAddress
-    |> Repo.all(identity_id: user.id)
+    query =
+      from(ta in TagAddress,
+        where: ta.identity_id == ^user.id
+      )
+
+    query
+    |> Repo.all()
     |> Repo.preload(:address)
   end
 
