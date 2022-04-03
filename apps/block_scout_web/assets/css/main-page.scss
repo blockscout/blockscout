@@ -7,6 +7,12 @@
 
 /* This file is for your main application css. */
 
+// Font Awesome
+$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+@import "fontawesome";
+@import "~@fortawesome/fontawesome-free/scss/regular";
+@import "~@fortawesome/fontawesome-free/scss/solid";
+
 // Bootstrap Core CSS
 @import "~bootstrap/scss/functions";
 @import "~bootstrap/scss/variables";

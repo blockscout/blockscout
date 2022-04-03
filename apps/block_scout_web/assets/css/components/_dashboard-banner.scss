@@ -100,7 +100,6 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   }
 
   .dashboard-banner-chart-legend-item {
-    cursor: pointer;
     padding-bottom: 3px;
     padding-left: 12px;
     padding-top: 3px;
@@ -186,6 +185,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
       fill: $dashboard-line-color-price;
     }
   }
+}
+
+.chart-tab {
+  cursor: pointer;
 }
 
 .dashboard-banner-network-plain-container {

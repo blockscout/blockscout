@@ -126,12 +126,14 @@ const config = (id) => {
       input: {
         focus: () => {
           if (autoCompleteJS.input.value.length) autoCompleteJS.start()
+          if (autoCompleteJSMain.input.value.length) autoCompleteJS.start()
         }
       }
     }
   }
 }
 const autoCompleteJS = new AutoComplete(config('main-search-autocomplete'))
+const autoCompleteJSMain = new AutoComplete(config('main-search-autocomplete-main'))
 // eslint-disable-next-line
 const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-mobile'))
 
@@ -152,6 +154,9 @@ const selection = (event) => {
 document.querySelector('#main-search-autocomplete').addEventListener('selection', function (event) {
   selection(event)
 })
+document.querySelector('#main-search-autocomplete-main').addEventListener('selection', function (event) {
+  selection(event)
+})
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('selection', function (event) {
   selection(event)
 })
@@ -163,6 +168,8 @@ const openOnFocus = (event, type) => {
       autoCompleteJS.start(query)
     } else if (type === 'mobile') {
       autoCompleteJSMobile.start(query)
+    } else if (type === 'desktop-main') {
+      autoCompleteJSMain.start(query)
     }
   } else {
     getTextAdData()
@@ -172,6 +179,8 @@ const openOnFocus = (event, type) => {
             autoCompleteJS.start('###')
           } else if (type === 'mobile') {
             autoCompleteJSMobile.start('###')
+          } else if (type === 'desktop-main') {
+            autoCompleteJSMain.start('###')
           }
         }
       })
@@ -180,6 +189,10 @@ const openOnFocus = (event, type) => {
 
 document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
   openOnFocus(event, 'desktop')
+})
+
+document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
+  openOnFocus(event, 'desktop-main')
 })
 
 document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {

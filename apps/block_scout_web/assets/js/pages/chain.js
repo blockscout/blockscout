@@ -377,11 +377,11 @@ export function placeHolderBlock (blockNumber) {
         class="col-lg-3 fade-up-blocks-chain" 
         data-block-number="${blockNumber}"
         data-selector="place-holder">
-      <div class="tile n-p d-flex flex-column h-100" data-selector="chain-block">
+      <div class="tile n-p d-flex flex-column" data-selector="chain-block">
         <div class="block-info pl-3 pr-3 justify-content-start">
           <a class="mb-0 p-0 new-link-text">${blockNumber}</a>
         </div>
-        <div class="tile-bottom-contents h-100 d-flex">
+        <div class="tile-bottom-contents d-flex" style="flex-grow: 1;">
           <span class="other-block-text secondary-text-tile align-self-center">${window.localized['Block Processing']}</span>
         </div>
       </div>

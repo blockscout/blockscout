@@ -2,7 +2,7 @@
   <div class="container">
     <div class="main-text header-main main-block-margin pl-1"><b><%= gettext "The Example Chain Explorer" %></b></div>
     <div class="main-text info main-block-margin pl-1"><%= gettext "The Default Chain provides stability, scalability and an extendable beacon chain framework." %></div>
-    <%= render BlockScoutWeb.LayoutView, "_search_new.html", conn: @conn, id: "main-search-autocomplete", additional_classes: ["main-block-margin"] %>
+    <%= render BlockScoutWeb.LayoutView, "_search_new.html", conn: @conn, id: "main-search-autocomplete-main", additional_classes: ["main-block-margin"] %>
     <div class="secondary-text info main-block-margin pl-1"><%= gettext "Search for" %> <span class="icon-link"><%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %><%= gettext "Addresses" %></span> <span class="icon-link"><%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %><%= gettext "Tokens" %></span> <span class="icon-link"><%= render BlockScoutWeb.IconsView, "_hashtag_icon.html" %><%= gettext "Names" %></span> <span class="icon-link"><%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %><%= gettext "Transactions" %></span> <span class="icon-link"><%= render BlockScoutWeb.IconsView, "_block_icon.html" %><%= gettext "Blocks" %></span></div>
   </div>
 </div>
@@ -42,8 +42,8 @@
             <% market_chart_config = @chart_config.market%>
 
             <%= if Enum.member?(market_chart_config, :price) do %>
-              <div class="dashboard-banner-chart-legend-item-outer">
-                <div class="dashboard-banner-chart-legend-item" chart-tab>
+              <div class="dashboard-banner-chart-legend-item-outer chart-tab" chart-tab>
+                <div class="dashboard-banner-chart-legend-item">
                   <div class="dashboard-banner-chart-legend-value-container">
                     <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
                     </span>
@@ -64,8 +64,8 @@
               </div>
             <% end %>
             <%= if Enum.member?(@chart_config.market, :market_cap) do %>
-              <div class="dashboard-banner-chart-legend-item-outer">
-                <div class="dashboard-banner-chart-legend-item" chart-tab>
+              <div class="dashboard-banner-chart-legend-item-outer chart-tab" chart-tab>
+                <div class="dashboard-banner-chart-legend-item">
                   <div class="dashboard-banner-chart-legend-value-container">
                     <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
                     <span style="display: contents;" class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= total_market_cap %>">
@@ -97,8 +97,8 @@
 
             <% transaction_chart_config = @chart_config.transactions%>
             <%= if Enum.member?(transaction_chart_config, :transactions_per_day) do %>
-              <div class="dashboard-banner-chart-legend-item-outer">
-                <div class="dashboard-banner-chart-legend-item" chart-tab>
+              <div class="dashboard-banner-chart-legend-item-outer chart-tab" chart-tab>
+                <div class="dashboard-banner-chart-legend-item">
                   <span class="dashboard-banner-chart-legend-value-container dashboard-banner-chart-legend-value" data-selector="tx_per_day">
                     <% num_of_transactions = BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
                     <%= num_of_transactions %>
@@ -142,7 +142,7 @@
       </div>
       <div class="counter-holder">
         <span class="counter-value" data-selector="transaction-count"><%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %></span>
-        <%= if @total_gas_usage > 0 do %>
+        <%= if !is_nil(assigns[:total_gas_usage]) and @total_gas_usage > 0 do %>
           <span
             data-toggle="tooltip"
             data-placement="top"

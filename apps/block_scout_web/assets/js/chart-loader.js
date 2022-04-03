@@ -56,12 +56,12 @@ function chartToggle (selector) {
 
 function addClass($tab, className) {
   $tab.classList.add(className)
-  $tab.parentElement.classList.add(className)
+  $tab.children[0].classList.add(className)
 }
 
 function removeClass($tab, className) {
   $tab.classList.remove(className)
-  $tab.parentElement.classList.remove(className)
+  $tab.children[0].classList.remove(className)
 }
 
 function initializeTabs () {

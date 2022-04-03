@@ -680,8 +680,7 @@ $cube-quantity: 5;
 
   &._6 {
     padding: 6px 8px 6px 0px;
-    width: 200px;
-    flex-grow: 1;
+    width: 165px;
   }
 
   svg {
@@ -746,7 +745,8 @@ $cube-quantity: 5;
   width: fit-content;
   border-radius: 4px;
   align-self: start;
-  margin-left: 16px;
+  margin-left: 2px;
+  display: inline;
 
   &.success {
     background-color: #EEFBEC;
@@ -771,6 +771,11 @@ $cube-quantity: 5;
 .tx-tile-address {
   width: 127px;
   display: inline;
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 120%;
 }
 
 .tx-tile-addresses {
@@ -784,8 +789,12 @@ $cube-quantity: 5;
   justify-content: end;
 }
 
-.central-block {
+.fg-1 {
   flex-grow: 1;
+}
+
+.ml-16 {
+  margin-left: 16px !important;
 }
 
 .p-h-15 {

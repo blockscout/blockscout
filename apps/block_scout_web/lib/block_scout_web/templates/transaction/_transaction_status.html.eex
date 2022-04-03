@@ -1,4 +1,4 @@
-<div class="status-box <%= @status %>">
+<div class="status-box <%= @status %> <%= if assigns[:class], do: @class %>">
   <%= case @status do %>
     <% "success" -> %>
       <svg class="icon-status" width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">

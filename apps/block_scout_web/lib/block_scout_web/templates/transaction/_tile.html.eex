@@ -1,9 +1,17 @@
 <% tx_type = type_suffix(@transaction) %>
 <% status = transaction_status(@transaction) %>
+<% error_in_internal_tx = @transaction.has_error_in_internal_txs %>
 <div class="tile fade-in tx-tile" data-test="<%= tx_type %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="tx-tile-info-block _1">
     <span class="tx-tile-title"><%= render "_icon_selector.html", type: tx_type %><%= transaction_display_type(@transaction) %></span>
-    <%= render "_transaction_status_view.html", status: status %>
+    <%= if error_in_internal_tx do %>
+      <div>
+        <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", text: gettext("Error in internal transactions"), additional_classes: ["color-inherit"] %>
+    <% end %>
+    <%= render "_transaction_status_view.html", status: status, class: (if error_in_internal_tx, do: "", else: "ml-16") %>
+    <%= if error_in_internal_tx do %>
+      </div>
+    <% end %>
   </div>
   <div class="tx-tile-info-block _2">
     <span class="tx-tile-hash">TX <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %></span>
@@ -17,14 +25,14 @@
       </div>
     </div>
   </div>
-  <div class="tx-tile-info-block _6 d-xl-none">
+  <div class="tx-tile-info-block _6 d-xl-none fg-1">
     <% method_name = Transaction.get_method_name(@transaction) %>
     <%= if method_name do %>
       <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
     <% end %>
   </div>
   <div class="other flex-wrap">
-    <div class="central-block">
+    <div class="fg-1">
       <div class="d-flex justify-content-end flex-wrap">
         <div class="tx-tile-info-block _3 tx-expense">
           <span><%= formatted_fee(@transaction, denomination: :ether, include_label: false) %><span class="tx-fee"><%= gettext "TX Fee" %></span></span>

@@ -12,5 +12,5 @@
       {:error, _} ->
         {"error", "Failed"}
     end
-  render "_transaction_status.html", status: status, text: text
+  render "_transaction_status.html", class: assigns[:class], status: status, text: text
 %>
