@@ -24,6 +24,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5407](https://github.com/blockscout/blockscout/pull/5407) - Update hackney, certifi, tzdata
 - [#5369](https://github.com/blockscout/blockscout/pull/5369) - Manage indexer memory limit
 - [#5368](https://github.com/blockscout/blockscout/pull/5368) - Refactoring from SourcifyFilePathBackfiller
 - [#5367](https://github.com/blockscout/blockscout/pull/5367) - Resolve Prototype Pollution in minimist dependency
