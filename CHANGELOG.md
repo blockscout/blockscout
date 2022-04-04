@@ -7,7 +7,7 @@
 
 ### Fixes
 - [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
-- [#5381](https://github.com/blockscout/blockscout/pull/5381) - Fix exchange rate broadcast error
+- [#5381](https://github.com/blockscout/blockscout/pull/5381), [#5397](https://github.com/blockscout/blockscout/pull/5397) - Fix exchange rate broadcast error
 - [#5375](https://github.com/blockscout/blockscout/pull/5375) - Fix pending transactions fetcher
 - [#5374](https://github.com/blockscout/blockscout/pull/5374) - Return all ERC-1155's token instances in tokenList api endpoint
 - [#5342](https://github.com/blockscout/blockscout/pull/5342) - Fix 500 error on NF token page with nil metadata
@@ -24,6 +24,8 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5407](https://github.com/blockscout/blockscout/pull/5407) - Update hackney, certifi, tzdata
+- [#5369](https://github.com/blockscout/blockscout/pull/5369) - Manage indexer memory limit
 - [#5368](https://github.com/blockscout/blockscout/pull/5368) - Refactoring from SourcifyFilePathBackfiller
 - [#5367](https://github.com/blockscout/blockscout/pull/5367) - Resolve Prototype Pollution in minimist dependency
 - [#5366](https://github.com/blockscout/blockscout/pull/5366) - Fix Vyper smart-contract verification form tooltips
