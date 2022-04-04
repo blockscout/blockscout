@@ -155,6 +155,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
         Logger.debug(fn -> ["Could not connect to websocket: #{inspect(reason)}. Continuing with polling."] end)
         state
     end
+  catch
+    :exit, _reason ->
+      if Map.get(state, :timer) && state.timer do
+        Process.cancel_timer(state.timer)
+      end
+
+      timer = schedule_polling()
+      %{state | timer: timer}
   end
 
   defp subscribe_to_new_heads(state, _), do: state
