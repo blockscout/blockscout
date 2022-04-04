@@ -15,6 +15,7 @@
 - [#5443](https://github.com/blockscout/blockscout/pull/5443) - Geth: display tx revert reason
 - [#5420](https://github.com/blockscout/blockscout/pull/5420) - Deduplicate addresses and coin balances before inserting to the DB
 - [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
+- [#5413](https://github.com/blockscout/blockscout/pull/5413) - Fix params encoding for read contracts methods
 - [#5411](https://github.com/blockscout/blockscout/pull/5411) - Fix character_not_in_repertoire error for tx revert reason
 - [#5410](https://github.com/blockscout/blockscout/pull/5410) - Handle exited realtime fetcher
 - [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
