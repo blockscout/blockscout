@@ -6,6 +6,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5413](https://github.com/blockscout/blockscout/pull/5413) - Fix params encoding for read contracts methods
 - [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
 - [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
 - [#5381](https://github.com/blockscout/blockscout/pull/5381), [#5397](https://github.com/blockscout/blockscout/pull/5397) - Fix exchange rate broadcast error

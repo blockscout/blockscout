@@ -278,7 +278,10 @@ function replaceSpaces (value, type, components) {
       })
       .join(',')
   } else {
-    return value.trim()
+    if (typeof value.trim === 'function') {
+      return value.trim()
+    }
+    return value
   }
 }
 
