@@ -413,32 +413,33 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
           importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-          block_numbers =
-            params_list
-            |> Enum.map(&Map.get(&1, :block_number))
-            |> Enum.sort()
-            |> Enum.dedup()
+          # todo
+          # block_numbers =
+          #   params_list
+          #   |> Enum.map(&Map.get(&1, :block_number))
+          #   |> Enum.sort()
+          #   |> Enum.dedup()
 
-          block_timestamp_map =
-            Enum.reduce(block_numbers, %{}, fn block_number, map ->
-              {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-                EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+          # block_timestamp_map =
+          #   Enum.reduce(block_numbers, %{}, fn block_number, map ->
+          #     {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
+          #       EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
 
-              day = DateTime.to_date(timestamp)
-              Map.put(map, "#{block_number}", day)
-            end)
+          #     day = DateTime.to_date(timestamp)
+          #     Map.put(map, "#{block_number}", day)
+          #   end)
 
-          importable_balances_daily_params =
-            Enum.map(params_list, fn param ->
-              day = Map.get(block_timestamp_map, "#{param.block_number}")
-              Map.put(param, :day, day)
-            end)
+          # importable_balances_daily_params =
+          #   Enum.map(params_list, fn param ->
+          #     day = Map.get(block_timestamp_map, "#{param.block_number}")
+          #     Map.put(param, :day, day)
+          #   end)
 
           {:ok,
            %{
              addresses_params: merged_addresses_params,
              balances_params: importable_balances_params,
-             balances_daily_params: importable_balances_daily_params
+             balances_daily_params: []
            }}
 
         {:error, _} = error ->

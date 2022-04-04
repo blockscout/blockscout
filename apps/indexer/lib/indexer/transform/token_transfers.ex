@@ -42,7 +42,9 @@ defmodule Indexer.Transform.TokenTransfers do
       token_transfer.token_contract_address_hash
     end)
     |> Enum.uniq()
-    |> Enum.each(&update_token/1)
+
+    # todo
+    # |> Enum.each(&update_token/1)
 
     tokens_uniq = tokens |> Enum.uniq()
 
