@@ -25,7 +25,8 @@ defmodule Explorer.Etherscan.Logs do
     topic1_3_opr: nil,
     topic2_3_opr: nil,
     limit: nil,
-    order: nil
+    order: nil,
+    ignore_methods: nil
   }
 
   @log_fields [
@@ -147,12 +148,22 @@ defmodule Explorer.Etherscan.Logs do
         )
       end
 
+    query_with_ignore_methods =
+      if Map.get(filter, :ignore_methods) != nil do
+        from([log_transaction_data] in query_with_order,
+          # where: log_transaction_data.first_topic in ^filter.ignore_methods
+          where: log_transaction_data.first_topic not in ^filter.ignore_methods
+        )
+      else
+        query_with_order
+      end
+
 
     query_with_consensus =
       if Map.get(filter, :allow_non_consensus) do
-        query_with_order
+        query_with_ignore_methods
       else
-        from([_, block] in query_with_order,
+        from([_, block] in query_with_ignore_methods,
           where: block.consensus == true
         )
       end
