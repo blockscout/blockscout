@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
     # one_of: at least one of these parameters is required
     one_of: ["address", "topic0", "topic1", "topic2", "topic3"],
     # optional: these are optional parameters
-    optional: ["limit", "order"]
+    optional: ["limit", "order", "ignore_methods"]
   }
 
   @doc """
@@ -97,6 +97,7 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
            {:ok, to_block} <- to_block_number(params, "toBlock"),
            {:ok, address_hash} <- to_address_hash(params["address"]),
            limit <- limit_selector(params),
+           methods <- ignorable_methods(params),
            :ok <- validate_topic_operators(params) do
         validated_params = %{
           from_block: from_block,
@@ -113,7 +114,8 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
           topic1_3_opr: params["topic1_3_opr"],
           topic2_3_opr: params["topic2_3_opr"],
           limit: limit,
-          order: params["order"]
+          order: params["order"],
+          ignore_methods: methods
         }
 
         {:ok, validated_params}
@@ -205,6 +207,15 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
 
   defp limit_selector(params) do
     params["limit"] || 1000
+  end
+
+  defp ignorable_methods(params) do
+    methods = params["ignore_methods"]
+    if methods != nil do
+      String.split(methods, ",")
+    else
+      nil
+    end
   end
 
   defp to_integer(params, param_key) do
