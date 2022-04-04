@@ -1,19 +1,54 @@
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <% stats_enabled = Application.get_env(:block_scout_web, :stats_enabled) %>
 <% stats_report_url = Application.get_env(:block_scout_web, :stats_report_url) %>
-<section class="container" data-page="stats-list">
+<%
+{:ok, urls} = stats_report_url |> Jason.decode()
+%{"overview" => overview_url, "addresses" => addresses_url, "cStables" => cstables_url, "transactions" => transactions_url, "reserve" => reserve_url} = urls
+%>
+
+<nav class="menu-wrap" data-selector="stats-nabvar">
+  <ul class="topnav" id="topnav">
+      <li class="stats-link selected" data-tab-id="1">
+        <a href="<%= overview_url %>" target="myiframe">
+          <%=  gettext("Overview") %>
+        </a>
+      </li>
+      <li class="stats-link" data-tab-id="2">
+        <a href="<%= addresses_url %>" target="myiframe">
+          <%=  gettext("Addresses") %>
+        </a>
+      </li>     
+      <li class="stats-link" data-tab-id="3">
+        <a  href="<%= cstables_url %>" target="myiframe" >
+          <%=  gettext("cStables") %>
+        </a>
+      </li>  
+      <li class="stats-link" data-tab-id="4">
+        <a href="<%= reserve_url %>" target="myiframe">
+          <%=  gettext("Celo Reserve") %>
+        </a>
+      </li> 
+      <li class="stats-link" data-tab-id="5">
+        <a href="<%= transactions_url %>" target="myiframe">
+          <%=  gettext("Transactions") %>
+        </a>
+      </li>  
+  </ul>
+</nav>      
+<section class="container" data-page="stats-list" id="stats-container">
 <section class="fs-14" data-page="stats-details">
+
   <div class="row">
     <div class="col-md-12">
       <%= if stats_enabled do %>
         <!-- Stats Details -->
-        <div class="card js-ad-dependant-mb-3">
-          <div class="card-body">
-              <iframe width="1210" height="2700" src="<%= stats_report_url %>" frameborder="0" style="border:0" allowfullscreen></iframe>
+        <div class="google-data-studio"> 
+          <iframe width=100%  src="<%= overview_url %>" name="myiframe" id="myiframe" frameborder="0" style="border:0;height:100vh;width:100%;" allowfullscreen></iframe>
         </div>
       <% end %>
     </div>
   </div>
   <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 </section>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/stats.js") %>"></script>
 </section>

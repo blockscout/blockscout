@@ -225,6 +225,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/index.html.eex:5
+#: lib/block_scout_web/templates/stats/index.html.eex:18
 msgid "Addresses"
 msgstr ""
 
@@ -546,6 +547,11 @@ msgid "Candidate’s Staked Amount"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/stats/index.html.eex:28
+msgid "Celo Reserve"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
 msgid "Change Network"
 msgstr ""
@@ -734,6 +740,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_name_field.html.eex:3
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:38
 msgid "Contract Name"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:27
+msgid "Contract is already verified"
 msgstr ""
 
 #, elixir-format
@@ -1766,6 +1777,11 @@ msgid "Other Explorers"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/stats/index.html.eex:13
+msgid "Overview"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:18
 msgid "Owner Address"
 msgstr ""
@@ -2662,6 +2678,11 @@ msgid "Tokens Transferred"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
+msgid "Tools"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address/_metatags.html.eex:13
 msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
@@ -2779,7 +2800,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:203 lib/block_scout_web/templates/address_transaction/index.html.eex:17
 #: lib/block_scout_web/templates/block/overview.html.eex:74 lib/block_scout_web/templates/block_signers/index.html.eex:10
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10 lib/block_scout_web/templates/chain/show.html.eex:235
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:36 lib/block_scout_web/views/address_view.ex:406
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:36 lib/block_scout_web/templates/stats/index.html.eex:33
+#: lib/block_scout_web/views/address_view.ex:406
 msgid "Transactions"
 msgstr ""
 
@@ -2962,6 +2984,11 @@ msgid "Value sent in CELO (and USD) if applicable."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:209
+msgid "Verified Contracts"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:86
 msgid "Verified at"
 msgstr ""
@@ -2979,6 +3006,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:52
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:53
 msgid "Verify & publish"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
+msgid "Verify Contract"
 msgstr ""
 
 #, elixir-format
@@ -3204,6 +3236,11 @@ msgid "button"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/stats/index.html.eex:23
+msgid "cStables"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:19
 msgid "candidate"
 msgstr ""
@@ -3304,23 +3341,3 @@ msgstr "CELO"
 # From templates/tokens/overview/details.html.eex#
 msgid "Celo Gold"
 msgstr "CELO"
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
-msgid "Tools"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:209
-msgid "Verified Contracts"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
-msgid "Verify Contract"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:27
-msgid "Contract is already verified"
-msgstr ""
