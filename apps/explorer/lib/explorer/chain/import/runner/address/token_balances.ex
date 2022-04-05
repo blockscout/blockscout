@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
   require Ecto.Query
   require Logger
 
-  import Ecto.Query, only: [from: 2]
+  # import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Address.TokenBalance
@@ -59,7 +59,8 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         }) ::
           {:ok, [TokenBalance.t()]}
           | {:error, [Changeset.t()]}
-  def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+  # def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+  def insert(_repo, changes_list, %{timeout: _timeout, timestamps: _timestamps} = _options) when is_list(changes_list) do
     {:ok, []}
     # todo
     # Logger.info("### Address_token_balances insert started changes_list length #{Enum.count(changes_list)} ###")
@@ -176,22 +177,22 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     # {:ok, inserted_changes_list}
   end
 
-  defp default_on_conflict do
-    from(
-      token_balance in TokenBalance,
-      update: [
-        set: [
-          value: fragment("EXCLUDED.value"),
-          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
-          token_type: fragment("EXCLUDED.token_type"),
-          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at)
-        ]
-      ],
-      where:
-        fragment("EXCLUDED.value IS NOT NULL") and
-          (is_nil(token_balance.value_fetched_at) or
-             fragment("? < EXCLUDED.value_fetched_at", token_balance.value_fetched_at))
-    )
-  end
+  # defp default_on_conflict do
+  #   from(
+  #     token_balance in TokenBalance,
+  #     update: [
+  #       set: [
+  #         value: fragment("EXCLUDED.value"),
+  #         value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+  #         token_type: fragment("EXCLUDED.token_type"),
+  #         inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
+  #         updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at)
+  #       ]
+  #     ],
+  #     where:
+  #       fragment("EXCLUDED.value IS NOT NULL") and
+  #         (is_nil(token_balance.value_fetched_at) or
+  #            fragment("? < EXCLUDED.value_fetched_at", token_balance.value_fetched_at))
+  #   )
+  # end
 end
