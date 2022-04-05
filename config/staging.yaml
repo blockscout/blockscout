@@ -1,4 +1,4 @@
-
+kubernetes:
   base:
     sourceRepo:
       name: blockscout
