@@ -7,6 +7,7 @@
 
 ### Fixes
 - [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
+- [#5413](https://github.com/blockscout/blockscout/pull/5413) - Fix params encoding for read contracts methods
 - [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
 - [#5381](https://github.com/blockscout/blockscout/pull/5381), [#5397](https://github.com/blockscout/blockscout/pull/5397) - Fix exchange rate broadcast error
 - [#5375](https://github.com/blockscout/blockscout/pull/5375) - Fix pending transactions fetcher
