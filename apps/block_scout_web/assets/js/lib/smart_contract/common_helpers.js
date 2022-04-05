@@ -266,9 +266,9 @@ function isNonSpaceInputType (inputType) {
 }
 
 function replaceSpaces (value, type, components) {
-  if (isNonSpaceInputType(type)) {
+  if (isNonSpaceInputType(type) && isFunction(value.replace)) {
     return value.replace(/\s/g, '')
-  } else if (isTupleInputType(type)) {
+  } else if (isTupleInputType(type) && isFunction(value.split)) {
     return value
       .split(',')
       .map((itemValue, itemIndex) => {
@@ -287,12 +287,13 @@ function replaceSpaces (value, type, components) {
 
 function replaceDoubleQuotes (value, type, components) {
   if (isAddressInputType(type) || isUintInputType(type) || isStringInputType(type) || isBytesInputType(type)) {
-    if (typeof value.replaceAll === 'function') {
+    if (isFunction(value.replaceAll)) {
       return value.replaceAll('"', '')
-    } else {
+    } else if (isFunction(value.replace)) {
       return value.replace(/"/g, '')
     }
-  } else if (isTupleInputType(type)) {
+    return value
+  } else if (isTupleInputType(type) && isFunction(value.split)) {
     return value
       .split(',')
       .map((itemValue, itemIndex) => {
@@ -304,4 +305,8 @@ function replaceDoubleQuotes (value, type, components) {
   } else {
     return value
   }
+}
+
+function isFunction (param) {
+  return typeof param === 'function'
 }
