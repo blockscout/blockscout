@@ -168,7 +168,7 @@
                 text: gettext("Total difficulty of the chain until this block.") %>
                 <%= gettext("Total Difficulty") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= @block.total_difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></dd>
+              <dd class="col-sm-9 col-lg-10"><%= @block.total_difficulty && (@block.total_difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string!) %></dd>
             </dl>
             <!-- Gas Used -->
             <dl class="row">
