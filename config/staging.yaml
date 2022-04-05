@@ -51,6 +51,10 @@ kubernetes:
       value: "Testnet"
     - name: SUPPORTED_CHAINS
       value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
+    - name: LOGO
+      value: /images/cloudwalk_logo.png
+    - name: LOGO_FOOTER
+      value: /images/cloudwalk_full.png
     resources:
       limits:
         cpu: 1000m
