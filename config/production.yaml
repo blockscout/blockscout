@@ -53,10 +53,10 @@ kubernetes:
       value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": true } ]'
     resources:
       limits:
-        cpu: 1500m
+        cpu: 1000m
         memory: 4Gi
       requests:
-        cpu: 1500m
+        cpu: 1000m
         memory: 3Gi
     service:
       istio: false
