@@ -1,0 +1,74 @@
+version: '3.8'
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:13.2
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234567890
+    volumes:
+      - ./pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrations:
+    container_name: blockscout-migrate
+    image: blockscout
+    environment:
+      - TZ=Asia/Bangkok
+      - MIX_ENV=prod
+      - DATABASE_URL=postgresql://postgres:1234567890@postgres:5432/explorer?ssl=false
+      - NETWORK=GBEX
+      - SUBNETWORK=Mainnet
+      - ETHEREUM_JSONRPC_VARIANT=geth
+      - ETHEREUM_JSONRPC_HTTP_URL=http://34.143.248.66:8545
+      - ETHEREUM_JSONRPC_WS_URL=ws://34.143.248.66:8546
+      - COIN=GBEX
+      - BLOCK_TRANSFORMER=clique
+      - BLOCKSCOUT_HOST=34.143.248.66
+      - BLOCKSCOUT_PROTOCOL=http
+      - PORT=4000
+#      - LOGO=/images/logo.png
+#      - LOGO_FOOTER=/images/logo.png
+    ports:
+      - 4000:4000
+    command: sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+
+  blockscout:
+    container_name: blockscout
+    image: blockscout
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+      - MIX_ENV=prod
+      - DATABASE_URL=postgresql://postgres:1234567890@postgres:5432/explorer?ssl=false
+      - CHAIN_ID=11
+      - ENABLE_SOURCIFY_INTEGRATION=true
+      - NETWORK=GBEX
+      - SUBNETWORK=Mainnet
+      - ETHEREUM_JSONRPC_VARIANT=geth
+      - ETHEREUM_JSONRPC_HTTP_URL=http://34.143.248.66:8545
+      - ETHEREUM_JSONRPC_WS_URL=ws://34.143.248.66:8546
+      - COIN=GBEX
+      - BLOCK_TRANSFORMER=clique
+      - BLOCKSCOUT_HOST=34.143.248.66
+      - BLOCKSCOUT_PROTOCOL=http
+      - PORT=4000
+#      - LOGO=/images/logo.png
+#      - LOGO_FOOTER=/images/logo.png
+      - LINK_TO_OTHER_EXPLORERS=false
+      - SUPPORTED_CHAINS=[]
+      - BLOCKSCOUT_VERSION=3.7.2-beta
+      - SHOW_TXS_CHART=true
+      - DISABLE_EXCHANGE_RATES=true
+      - DISABLE_KNOWN_TOKENS=true
+      - SHOW_PRICE_CHART=false
+      - ENABLE_TXS_STATS=true
+    ports:
+      - 127.0.0.1:4000:4000
+    command: sh -c "mix phx.server"
