@@ -3738,7 +3738,7 @@ defmodule Explorer.Chain do
           ""
       end
 
-    formatted_revert_reason = format_revert_reason_message(data)
+    formatted_revert_reason = data |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: data)).()
 
     if byte_size(formatted_revert_reason) > 0 do
       transaction
