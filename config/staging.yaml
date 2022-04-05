@@ -1,4 +1,4 @@
-kubernetes:
+
   base:
     sourceRepo:
       name: blockscout
@@ -25,7 +25,8 @@ kubernetes:
       enabled: true
       provider: gcpsm
     imageRepoName: blockscout
-    strategy: Recreate
+    strategy:
+      type: recreate
     kind: deployment
     replicas: 1
     # hpa:
