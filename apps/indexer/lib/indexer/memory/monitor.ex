@@ -10,12 +10,11 @@ defmodule Indexer.Memory.Monitor do
   require Bitwise
   require Logger
 
-  import Bitwise
   import Indexer.Logger, only: [process: 1]
 
   alias Indexer.Memory.Shrinkable
 
-  defstruct limit: 7 <<< 30,
+  defstruct limit: Application.get_env(:indexer, :memory_limit),
             timer_interval: :timer.minutes(1),
             timer_reference: nil,
             shrinkable_set: MapSet.new()
