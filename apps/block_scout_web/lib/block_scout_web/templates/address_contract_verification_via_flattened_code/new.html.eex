@@ -24,7 +24,7 @@
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions, tooltip: "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
