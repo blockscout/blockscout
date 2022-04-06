@@ -34,7 +34,7 @@ config :logger_json, :ethereum_jsonrpc,
 
 config :logger, :ethereum_jsonrpc, backends: [LoggerJSON]
 
-config :ethereum_jsonrpc, :internal_transaction_timeout, "360s"
+config :ethereum_jsonrpc, :internal_transaction_timeout, "900s"
 
 # config :logger, :ethereum_jsonrpc,
 #  # keep synced with `config/config.exs`
