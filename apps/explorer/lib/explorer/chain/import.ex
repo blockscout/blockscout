@@ -9,6 +9,8 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Chain.Import
   alias Explorer.Repo
 
+  require Logger
+
   @stages [
     Import.Stage.Addresses,
     Import.Stage.AddressReferencing,
@@ -303,7 +305,13 @@ defmodule Explorer.Chain.Import do
         Keyword.delete(options, :for)
       )
 
-    # Notifier.notify(inserted)
+    try do
+      Notifier.notify(inserted)
+    rescue
+      err ->
+        Logger.info("--- Notifier error", fetcher: :account)
+        Logger.info(err, fetcher: :account)
+    end
 
     {:ok, inserted}
   end
