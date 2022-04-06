@@ -239,6 +239,7 @@ defmodule Explorer.Etherscan do
         contract_address_hash,
         options \\ @default_options
       ) do
+    IO.inspect("Gimme list_token_transfers")
     case Chain.max_consensus_block_number() do
       {:ok, block_height} ->
         merged_options = Map.merge(@default_options, options)
