@@ -28,6 +28,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5419](https://github.com/blockscout/blockscout/pull/5419) - Add check if address exists for some api methods
 - [#5408](https://github.com/blockscout/blockscout/pull/5408) - Update websocket_client hex package
 - [#5407](https://github.com/blockscout/blockscout/pull/5407) - Update hackney, certifi, tzdata
 - [#5369](https://github.com/blockscout/blockscout/pull/5369) - Manage indexer memory limit
