@@ -4,12 +4,14 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
   # alias Explorer.Accounts.Notify.Notifier
   alias Explorer.Chain.{Import, TokenTransfer}
+
 
   @behaviour Import.Runner
 
@@ -70,7 +72,13 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timestamps: timestamps
       )
 
-    # Notifier.notify(inserted)
+    try do
+      Notifier.notify(inserted)
+    rescue
+      err ->
+        Logger.info("--- Notifier error", fetcher: :account)
+        Logger.info(err, fetcher: :account)
+    end
 
     {:ok, inserted}
   end
