@@ -6,6 +6,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5413](https://github.com/blockscout/blockscout/pull/5413) - Fix params encoding for read contracts methods
 - [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
 - [#5411](https://github.com/blockscout/blockscout/pull/5411) - Fix character_not_in_repertoire error for tx revert reason
 - [#5410](https://github.com/blockscout/blockscout/pull/5410) - Handle exited realtime fetcher
