@@ -48,6 +48,7 @@
 - [#5287](https://github.com/blockscout/blockscout/pull/5287) - Docker: modify native token symbol
 - [#5286](https://github.com/blockscout/blockscout/pull/5286) - Change namespace for one of the SmartContractViewTest test
 - [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
+- [#5082](https://github.com/blockscout/blockscout/pull/5082) - Elixir 1.12 -> 1.13
 
 
 ## 4.1.2-beta
