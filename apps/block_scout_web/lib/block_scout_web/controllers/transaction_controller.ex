@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Phoenix.View
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
@@ -94,7 +95,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def index(conn, _params) do
-    transaction_estimated_count = Chain.transaction_estimated_count()
+    transaction_estimated_count = TransactionCache.estimated_count()
 
     render(
       conn,
