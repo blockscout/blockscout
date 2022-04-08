@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@analytics/segment": "^0.6.0",
-    "analytics": "^0.8.0",
+    "analytics": "^0.8.1",
     "@fortawesome/fontawesome-free": "^5.15.4",
     "@tarekraafat/autocomplete.js": "^10.2.6",
     "assert": "^2.0.0",
