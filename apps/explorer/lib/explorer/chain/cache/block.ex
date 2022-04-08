@@ -1,9 +1,14 @@
-defmodule Explorer.Chain.Cache.BlockCount do
+defmodule Explorer.Chain.Cache.Block do
   @moduledoc """
   Cache for block count.
   """
 
   @default_cache_period :timer.hours(2)
+
+  import Ecto.Query,
+    only: [
+      from: 2
+    ]
 
   use Explorer.Chain.MapCache,
     name: :block_count,
@@ -15,7 +20,26 @@ defmodule Explorer.Chain.Cache.BlockCount do
 
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Block
+  alias Explorer.Repo
+
+  @doc """
+  Estimated count of `t:Explorer.Chain.Block.t/0`.
+
+  Estimated count of consensus blocks.
+  """
+  @spec estimated_count() :: non_neg_integer()
+  def estimated_count do
+    cached_value = __MODULE__.get_count()
+
+    if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
+
+      trunc(count * 0.90)
+    else
+      cached_value
+    end
+  end
 
   defp handle_fallback(:count) do
     # This will get the task PID if one exists and launch a new task if not
@@ -31,7 +55,7 @@ defmodule Explorer.Chain.Cache.BlockCount do
     {:ok, task} =
       Task.start(fn ->
         try do
-          result = Chain.fetch_count_consensus_block()
+          result = fetch_count_consensus_block()
 
           set_count(result)
         rescue
@@ -54,12 +78,23 @@ defmodule Explorer.Chain.Cache.BlockCount do
   defp async_task_on_deletion(_data), do: nil
 
   defp cache_period do
-    "BLOCK_COUNT_CACHE_PERIOD"
+    "CACHE_BLOCK_COUNT_PERIOD"
     |> System.get_env("")
     |> Integer.parse()
     |> case do
       {integer, ""} -> :timer.seconds(integer)
       _ -> @default_cache_period
     end
+  end
+
+  @spec fetch_count_consensus_block() :: non_neg_integer
+  defp fetch_count_consensus_block do
+    query =
+      from(block in Block,
+        select: count(block.hash),
+        where: block.consensus == true
+      )
+
+    Repo.one!(query, timeout: :infinity) || 0
   end
 end
