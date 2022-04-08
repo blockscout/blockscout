@@ -3386,31 +3386,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns the list of empty blocks from the DB which have not marked with `t:Explorer.Chain.Block.is_empty/0`.
-  This query used for initializtion of Indexer.EmptyBlocksSanitizer
-  """
-  def unprocessed_empty_blocks_query_list(limit) do
-    query =
-      from(block in Block,
-        as: :block,
-        where: block.consensus == true,
-        where: is_nil(block.is_empty),
-        where:
-          not exists(
-            from(transaction in Transaction,
-              where: transaction.block_number == parent_as(:block).number
-            )
-          ),
-        select: {block.number, block.hash},
-        order_by: [desc: block.number],
-        limit: ^limit
-      )
-
-    query
-    |> Repo.all(timeout: :infinity)
-  end
-
-  @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.Address.t/0`.
 
       iex> Explorer.Chain.string_to_address_hash("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
@@ -3763,7 +3738,7 @@ defmodule Explorer.Chain do
           ""
       end
 
-    formatted_revert_reason = format_revert_reason_message(data)
+    formatted_revert_reason = data |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: data)).()
 
     if byte_size(formatted_revert_reason) > 0 do
       transaction
@@ -5191,43 +5166,35 @@ defmodule Explorer.Chain do
          {:ok, "0x" <> token1_encoded} <-
            token1_signature
            |> Contract.eth_call_request(foreign_token_address_hash, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         token0_hash <- parse_contract_response(token0_encoded, :address),
+         token1_hash <- parse_contract_response(token1_encoded, :address),
+         false <- is_nil(token0_hash),
+         false <- is_nil(token1_hash),
+         token0_hash_str <- "0x" <> Base.encode16(token0_hash, case: :lower),
+         token1_hash_str <- "0x" <> Base.encode16(token1_hash, case: :lower),
+         {:ok, "0x" <> token0_name_encoded} <-
+           name_signature
+           |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_name_encoded} <-
+           name_signature
+           |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token0_symbol_encoded} <-
+           symbol_signature
+           |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_symbol_encoded} <-
+           symbol_signature
+           |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-      token0_hash = parse_contract_response(token0_encoded, :address)
-      token1_hash = parse_contract_response(token1_encoded, :address)
+      token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
+      token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
+      token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
+      token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
 
-      if token0_hash && token1_hash do
-        token0_hash_str = "0x" <> Base.encode16(token0_hash, case: :lower)
-        token1_hash_str = "0x" <> Base.encode16(token1_hash, case: :lower)
-
-        with {:ok, "0x" <> token0_name_encoded} <-
-               name_signature
-               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token1_name_encoded} <-
-               name_signature
-               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token0_symbol_encoded} <-
-               symbol_signature
-               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token1_symbol_encoded} <-
-               symbol_signature
-               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-          token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
-          token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
-          token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
-          token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
-
-          "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
-        else
-          _ ->
-            nil
-        end
-      else
-        nil
-      end
+      "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
     else
       _ ->
         nil
@@ -5334,16 +5301,14 @@ defmodule Explorer.Chain do
       |> parse_contract_response({:uint, 256})
       |> Decimal.new()
 
-    with {:ok, "0x" <> token_encoded} <-
-           token_signature
-           |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
-           |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-      token_hash = parse_contract_response(token_encoded, :address)
-
-      if token_hash do
-        token_hash_str = "0x" <> Base.encode16(token_hash, case: :lower)
-
-        with {:ok, "0x" <> token_decimals_encoded} <-
+    case token_signature
+         |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+         |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+      {:ok, "0x" <> token_encoded} ->
+        with token_hash <- parse_contract_response(token_encoded, :address),
+             false <- is_nil(token_hash),
+             token_hash_str <- "0x" <> Base.encode16(token_hash, case: :lower),
+             {:ok, "0x" <> token_decimals_encoded} <-
                decimals_signature
                |> Contract.eth_call_request(token_hash_str, 1, nil, nil)
                |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
@@ -5380,8 +5345,9 @@ defmodule Explorer.Chain do
             end
 
           {:ok, token_cap_usd}
+        else
+          _ -> :error
         end
-      end
     end
   end
 
@@ -6851,7 +6817,7 @@ defmodule Explorer.Chain do
          ) do
       {:ok, empty_address}
       when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
-        {:ok, "0x"}
+        fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments)
 
       {:ok, beacon_contract_address} ->
         case beacon_contract_address
@@ -6863,6 +6829,29 @@ defmodule Explorer.Chain do
           _ ->
             {:ok, beacon_contract_address}
         end
+
+      {:error, _} ->
+        {:ok, "0x"}
+    end
+  end
+
+  # changes requested by https://github.com/blockscout/blockscout/issues/5292
+  defp fetch_openzeppelin_proxy_implementation(proxy_address_hash, json_rpc_named_arguments) do
+    # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
+    storage_slot_logic_contract_address = "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
+
+    case Contract.eth_get_storage_at_request(
+           proxy_address_hash,
+           storage_slot_logic_contract_address,
+           nil,
+           json_rpc_named_arguments
+         ) do
+      {:ok, empty_address}
+      when empty_address in ["0x", "0x0", "0x0000000000000000000000000000000000000000000000000000000000000000"] ->
+        {:ok, "0x"}
+
+      {:ok, logic_contract_address} ->
+        {:ok, logic_contract_address}
 
       {:error, _} ->
         {:ok, "0x"}

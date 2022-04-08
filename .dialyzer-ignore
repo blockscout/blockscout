@@ -4,6 +4,7 @@
 :0: Unknown type 'Elixir.Hash':t/0
 :0: Unknown type 'Elixir.Address':t/0
 apps/ethereum_jsonrpc/lib/ethereum_jsonrpc.ex:400: Function timestamp_to_datetime/1 has no local return
+lib/ethereum_jsonrpc/rolling_window.ex:173
 lib/explorer/repo/prometheus_logger.ex:8
 lib/explorer/smart_contract/solidity/publisher_worker.ex:1
 lib/explorer/smart_contract/vyper/publisher_worker.ex:1
@@ -34,4 +35,4 @@ lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197
 lib/indexer/buffered_task.ex:402
 lib/indexer/buffered_task.ex:451
-lib/indexer/memory/monitor.ex:161
+lib/indexer/memory/monitor.ex:160
