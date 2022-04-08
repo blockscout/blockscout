@@ -1,16 +1,16 @@
-defmodule Explorer.Chain.Cache.BlockCountTest do
+defmodule Explorer.Chain.Cache.BlockTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.BlockCount
+  alias Explorer.Chain.Cache.Block
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, BlockCount.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, BlockCount.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Block.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Block.child_id())
     :ok
   end
 
   test "returns default block count" do
-    result = BlockCount.get_count()
+    result = Block.get_count()
 
     assert is_nil(result)
   end
@@ -20,11 +20,11 @@ defmodule Explorer.Chain.Cache.BlockCountTest do
     insert(:block, consensus: true)
     insert(:block, consensus: false)
 
-    _result = BlockCount.get_count()
+    _result = Block.get_count()
 
     Process.sleep(1000)
 
-    updated_value = BlockCount.get_count()
+    updated_value = Block.get_count()
 
     assert updated_value == 2
   end
@@ -34,22 +34,22 @@ defmodule Explorer.Chain.Cache.BlockCountTest do
     insert(:block, consensus: true)
     insert(:block, consensus: false)
 
-    _result = BlockCount.get_count()
+    _result = Block.get_count()
 
     Process.sleep(1000)
 
-    updated_value = BlockCount.get_count()
+    updated_value = Block.get_count()
 
     assert updated_value == 2
 
     insert(:block, consensus: true)
     insert(:block, consensus: true)
 
-    _updated_value = BlockCount.get_count()
+    _updated_value = Block.get_count()
 
     Process.sleep(1000)
 
-    updated_value = BlockCount.get_count()
+    updated_value = Block.get_count()
 
     assert updated_value == 2
   end
