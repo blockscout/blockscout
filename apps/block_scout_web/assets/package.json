@@ -55,7 +55,7 @@
     "lodash.rangeright": "^4.2.0",
     "lodash.reduce": "^4.6.0",
     "luxon": "^2.3.0",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",
     "os-browserify": "^0.3.0",
