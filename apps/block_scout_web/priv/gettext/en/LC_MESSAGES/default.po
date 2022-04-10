@@ -154,6 +154,19 @@ msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:13 lib/block_scout_web/templates/account/api_key/form.html.eex:14
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:23
+msgid "API key"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:16
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:219
+msgid "API keys"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:124
 msgid "APIs"
 msgstr ""
@@ -179,8 +192,14 @@ msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
 #: lib/block_scout_web/templates/layout/_footer.html.eex:44
 msgid "Add"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:38
+msgid "Add API key"
 msgstr ""
 
 #, elixir-format
@@ -275,6 +294,11 @@ msgid "Anything not in this list is not supported. Click on the method to be tak
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:7
+msgid "Api keys"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:80
 msgid "Approximate Current Annual Percentage Yield. If you see N/A, please reopen the popup in a few blocks (APY cannot be calculated at the very beginning of a staking epoch). Predicted Reward is the amount of %{symbol} a participant will receive for staking and can claim once the current epoch ends."
 msgstr ""
@@ -302,6 +326,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:30
 msgid "Back Home"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:25
+msgid "Back to API keys (Cancel)"
 msgstr ""
 
 #, elixir-format
@@ -726,6 +755,12 @@ msgid "Copy ABI"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:6
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:6
+msgid "Copy API key"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/account/tag_address/row.html.eex:7
 #: lib/block_scout_web/templates/account/tag_address/row.html.eex:7 lib/block_scout_web/templates/account/tag_transaction/row.html.eex:10
 #: lib/block_scout_web/templates/account/tag_transaction/row.html.eex:10 lib/block_scout_web/templates/account/watchlist_address/row.html.eex:7
@@ -1043,6 +1078,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_transaction_view.ex:7
 msgid "Easy Cowboy! This block does not exist yet!"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:12
+msgid "Edit"
 msgstr ""
 
 #, elixir-format
@@ -1652,10 +1692,16 @@ msgid "N/A bytes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:19
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:22 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59 lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
 msgid "Name"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:20
+msgid "Name this API key"
 msgstr ""
 
 #, elixir-format
@@ -1974,6 +2020,11 @@ msgid "Refresh now"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:9
+msgid "Remove"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:12
 msgid "Remove My Pool"
 msgstr ""
@@ -2032,6 +2083,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/admin/dashboard/index.html.eex:21
 msgid "Run"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:26
+msgid "Save"
 msgstr ""
 
 #, elixir-format
@@ -2908,6 +2964,11 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+msgid "Update"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
 msgid "Use the search box to find a hosted network, or select from the list of available networks below."
 msgstr ""
@@ -3172,6 +3233,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:52
 msgid "You can withdraw this amount right now."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:14
+msgid "You don't have API keys yet"
 msgstr ""
 
 #, elixir-format

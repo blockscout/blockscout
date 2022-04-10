@@ -50,6 +50,11 @@ defmodule BlockScoutWeb.WebRouter do
       only: [:new, :create, :edit, :update, :delete],
       as: :watchlist_address
     )
+
+    resources("/api_key", Account.ApiKeyController,
+      only: [:new, :create, :edit, :update, :delete, :index],
+      as: :api_key
+    )
   end
 
   # Disallows Iframes (write routes)
