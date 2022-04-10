@@ -1,0 +1,44 @@
+<section class="container">
+  <div class="row">
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title list-title-description header-account"><%= gettext "Api keys" %> </h1>
+          <br>
+          <div class="col-sm">
+            <div class="mb-3 row o-flow-x">
+              <%= if @api_keys == [] do %>
+              <div style="min-width: 100%;">
+                <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
+                  <%= gettext "You don't have API keys yet" %>
+                </div>
+              </div>
+                <h2></h2>
+              <% else %>
+                <table class="table mb-3 table-watchlist">
+                  <thead style="font-size: 14px; color: #6c757d" >
+                    <tr>
+                      <th scope="col"><%= gettext "Name" %></th>
+                      <th scope="col"><%= gettext "API key" %></th>
+                      <th scope="col"></th>
+                      <th scope="col"></th>
+                    </tr>
+                  </thead>
+                  <tbody style="font-size: 15px; color: #6c757d" >
+                    <%= Enum.map(@api_keys, fn key ->
+                      render("row.html", api_key: key, conn: @conn)
+                      end) %>
+                  </tbody>
+                </table>
+              <% end %>
+            </div>
+          </div>
+          <%= if Enum.count(@api_keys) < 3 do %>
+            <a class="button button-primary button-sm" href="<%= api_key_path(@conn, :new) %>"><%= gettext "Add API key" %></a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

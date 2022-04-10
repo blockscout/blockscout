@@ -179,6 +179,7 @@ msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
 #: lib/block_scout_web/templates/layout/_footer.html.eex:44
 msgid "Add"
 msgstr ""
@@ -1647,7 +1648,8 @@ msgid "N/A bytes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:19
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:22 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59 lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
 msgid "Name"
@@ -3342,4 +3344,68 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:11
 msgid "Error in internal transactions"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:13 lib/block_scout_web/templates/account/api_key/form.html.eex:14
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:23
+msgid "API key"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:16
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:219
+msgid "API keys"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:38
+msgid "Add API key"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:7
+msgid "Api keys"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:25
+msgid "Back to API keys (Cancel)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:6
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:6
+msgid "Copy API key"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:12
+msgid "Edit"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:20
+msgid "Name this API key"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:9
+msgid "Remove"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:26
+msgid "Save"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+msgid "Update"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:14
+msgid "You don't have API keys yet"
 msgstr ""
