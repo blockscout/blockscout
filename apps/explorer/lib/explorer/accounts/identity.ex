@@ -5,6 +5,7 @@ defmodule Explorer.Accounts.Identity do
 
   use Ecto.Schema
   import Ecto.Changeset
+  alias Explorer.Account.Api.Plan
   alias Explorer.Accounts.{TagAddress, Watchlist}
 
   schema "account_identities" do
@@ -13,6 +14,7 @@ defmodule Explorer.Accounts.Identity do
     field(:name, :string)
     has_many(:tag_addresses, TagAddress)
     has_many(:watchlists, Watchlist)
+    belongs_to(:plan, Plan)
 
     timestamps()
   end

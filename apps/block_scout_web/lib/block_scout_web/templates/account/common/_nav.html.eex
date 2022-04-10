@@ -12,5 +12,8 @@
     <li class="nav-item">
       <a class="dropdown-item fs-14" href="<%= tag_transaction_path(@conn, :index) %>">Transaction Tags</a>
     </li>
+      <li class="nav-item">
+      <a class="dropdown-item fs-14" href="<%= api_key_path(@conn, :index) %>"><%= gettext "API keys" %></a>
+    </li>
   </ul>
 </div>
