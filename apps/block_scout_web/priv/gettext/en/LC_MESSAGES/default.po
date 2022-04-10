@@ -121,6 +121,20 @@ msgstr ""
 msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:13
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:14
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:23
+#, elixir-autogen, elixir-format
+msgid "API key"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:16
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:181
+#, elixir-autogen, elixir-format
+msgid "API keys"
+msgstr ""
+
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:92
 #, elixir-autogen, elixir-format
 msgid "APIs"
@@ -136,9 +150,15 @@ msgstr ""
 msgid "Actual gas amount used by the transaction."
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
 #: lib/block_scout_web/templates/layout/_footer.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "Add"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:38
+#, elixir-autogen, elixir-format
+msgid "Add API key"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
@@ -214,6 +234,11 @@ msgstr ""
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Api keys"
+msgstr ""
+
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:120
 #, elixir-autogen, elixir-format
 msgid "Apps"
@@ -232,6 +257,11 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:30
 #, elixir-autogen, elixir-format
 msgid "Back Home"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:25
+#, elixir-autogen, elixir-format
+msgid "Back to API keys (Cancel)"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:148
@@ -579,6 +609,12 @@ msgstr ""
 msgid "Copy ABI"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:6
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:6
+#, elixir-autogen, elixir-format
+msgid "Copy API key"
+msgstr ""
+
 #: lib/block_scout_web/templates/account/tag_address/row.html.eex:7
 #: lib/block_scout_web/templates/account/tag_address/row.html.eex:7
 #: lib/block_scout_web/templates/account/tag_transaction/row.html.eex:10
@@ -876,6 +912,11 @@ msgstr ""
 #: lib/block_scout_web/views/block_transaction_view.ex:7
 #, elixir-autogen, elixir-format
 msgid "Easy Cowboy! This block does not exist yet!"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:12
+#, elixir-autogen, elixir-format
+msgid "Edit"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:5
@@ -1435,12 +1476,19 @@ msgstr ""
 msgid "N/A bytes"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:19
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:22
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
 #, elixir-autogen, elixir-format
 msgid "Name"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:20
+#, elixir-autogen, elixir-format
+msgid "Name this API key"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_token/overview.html.eex:44
@@ -1691,6 +1739,11 @@ msgstr ""
 msgid "Records"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:9
+#, elixir-autogen, elixir-format
+msgid "Remove"
+msgstr ""
+
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:155
 #, elixir-autogen, elixir-format
 msgid "Request URL"
@@ -1736,6 +1789,11 @@ msgstr ""
 #: lib/block_scout_web/templates/admin/dashboard/index.html.eex:21
 #, elixir-autogen, elixir-format
 msgid "Run"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:26
+#, elixir-autogen, elixir-format
+msgid "Save"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_logs/index.html.eex:16
@@ -2440,6 +2498,11 @@ msgstr ""
 msgid "Unique character string (TxID) assigned to every verified transaction."
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Update"
+msgstr ""
+
 #: lib/block_scout_web/templates/transaction/overview.html.eex:397
 #, elixir-autogen, elixir-format
 msgid "User defined maximum fee (tip) per unit of gas paid to validator for transaction prioritization."
@@ -2644,6 +2707,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:47
 #, elixir-autogen, elixir-format
 msgid "Yes"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:14
+#, elixir-autogen, elixir-format
+msgid "You don't have API keys yet"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:111
