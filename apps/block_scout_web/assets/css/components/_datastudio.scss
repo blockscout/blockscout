@@ -71,6 +71,7 @@ ul.topnav li a:hover:not(.active) {color: #00BE9C;}
 
 @media only screen and (max-width: 768px) {
         ul.topnav {background-color: #2F3237; overflow-x: scroll; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: -ms-autohiding-scrollbar;}
+        .dark-theme-applied ul.topnav {background-color: #282945; overflow-x: scroll; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: -ms-autohiding-scrollbar;}
         .topnav::-webkit-scrollbar {
                 display: none; }
         // ul.topnav li.right, 
