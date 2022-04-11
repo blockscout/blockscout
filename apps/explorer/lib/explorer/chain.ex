@@ -93,6 +93,8 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_2 "revert: "
   @revert_msg_prefix_3 "reverted "
   @revert_msg_prefix_4 "Reverted "
+  # Geth-like node
+  @revert_msg_prefix_5 "execution reverted: "
   # keccak256("Error(string)")
   @revert_error_method_id "08c379a0"
 
@@ -3655,16 +3657,20 @@ defmodule Explorer.Chain do
         Wei.hex_format(value)
       )
 
-    data =
+    revert_reason =
       case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
         {:error, %{data: data}} ->
           data
+
+        {:error, %{message: message}} ->
+          message
 
         _ ->
           ""
       end
 
-    formatted_revert_reason = data |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: data)).()
+    formatted_revert_reason =
+      revert_reason |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: revert_reason)).()
 
     if byte_size(formatted_revert_reason) > 0 do
       transaction
@@ -3687,6 +3693,9 @@ defmodule Explorer.Chain do
         extract_revert_reason_message_wrapper(rest)
 
       @revert_msg_prefix_4 <> rest ->
+        extract_revert_reason_message_wrapper(rest)
+
+      @revert_msg_prefix_5 <> rest ->
         extract_revert_reason_message_wrapper(rest)
 
       revert_reason_full ->
