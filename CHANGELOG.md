@@ -6,6 +6,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5443](https://github.com/blockscout/blockscout/pull/5443) - Geth: display tx revert reason
 - [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
 - [#5411](https://github.com/blockscout/blockscout/pull/5411) - Fix character_not_in_repertoire error for tx revert reason
 - [#5410](https://github.com/blockscout/blockscout/pull/5410) - Handle exited realtime fetcher
@@ -27,7 +28,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
-- [#5433](https://github.com/blockscout/blockscout/pull/5433) - Caching modules refactoring
+- [#5433](https://github.c\qom/blockscout/blockscout/pull/5433) - Caching modules refactoring
 - [#5419](https://github.com/blockscout/blockscout/pull/5419) - Add check if address exists for some api methods
 - [#5408](https://github.com/blockscout/blockscout/pull/5408) - Update websocket_client hex package
 - [#5407](https://github.com/blockscout/blockscout/pull/5407) - Update hackney, certifi, tzdata
