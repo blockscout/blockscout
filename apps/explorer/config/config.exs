@@ -1,9 +1,9 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Config module.
+# and its dependencies with the aid of the Mix.Config module.
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-import Config
+use Mix.Config
 
 # General application configuration
 config :explorer,
@@ -13,7 +13,7 @@ config :explorer,
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
@@ -21,7 +21,8 @@ config :explorer,
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    )
+    ),
+  enabled_1559_support: System.get_env("ENABLE_1559_SUPPORT") == "true"
 
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
@@ -29,7 +30,7 @@ config :explorer, Explorer.Counters.AverageBlockTime,
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
-    if(System.get_env("DISABLE_WEBAPP") == "true" && System.get_env("DISABLE_INDEXER") == "true",
+    if(System.get_env("DISABLE_WEBAPP") == nil && System.get_env("DISABLE_INDEXER") == nil,
       do: false,
       else: true
     )
@@ -46,7 +47,7 @@ config :explorer, Explorer.Chain.Cache.BlockNumber,
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 address_sum_global_ttl =
-  "CACHE_ADDRESS_SUM_PERIOD"
+  "ADDRESS_SUM_CACHE_PERIOD"
   |> System.get_env("")
   |> Integer.parse()
   |> case do
@@ -65,8 +66,8 @@ config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
   global_ttl: address_sum_global_ttl
 
 balances_update_interval =
-  if System.get_env("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
-    case Integer.parse(System.get_env("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do
+  if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
+    case Integer.parse(System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do
       {integer, ""} -> integer
       _ -> nil
     end
@@ -106,10 +107,6 @@ config :explorer, Explorer.Counters.AddressTransactionsCounter,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
-  enabled: true,
-  enable_consolidation: true
-
 config :explorer, Explorer.Counters.BlockBurnedFeeCounter,
   enabled: true,
   enable_consolidation: true
@@ -118,12 +115,9 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Chain.Cache.GasUsage,
-  enabled: System.get_env("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER") == "true"
-
 bridge_market_cap_update_interval =
-  if System.get_env("CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
-    case Integer.parse(System.get_env("CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL")) do
+  if System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
+    case Integer.parse(System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL")) do
       {integer, ""} -> integer
       _ -> nil
     end
@@ -142,8 +136,6 @@ config :explorer, Explorer.KnownTokens, enabled: System.get_env("DISABLE_KNOWN_T
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
-
-config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: System.get_env("DISABLE_WRITE_API") != "true"
 
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
@@ -245,6 +237,15 @@ config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
+config :explorer, Explorer.Chain.Cache.PendingTransactions,
+  enabled:
+    if(System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu",
+      do: false,
+      else: true
+    ),
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
 config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
@@ -257,4 +258,4 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{config_env()}.exs"
+import_config "#{Mix.env()}.exs"

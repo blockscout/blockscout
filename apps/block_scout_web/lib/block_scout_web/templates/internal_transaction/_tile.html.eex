@@ -1,5 +1,4 @@
-<% error = @internal_transaction.error %>
-<div class="tile tile-type-internal-transaction fade-in <%= if error, do: "tile-status--error--reason"%>" data-test="internal_transaction" data-key="<%= @internal_transaction.transaction_hash %>_<%= @internal_transaction.index %>" data-internal-transaction-transaction-hash="<%= @internal_transaction.transaction_hash %>" data-internal-transaction-index="<%= @internal_transaction.index %>">
+<div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-key="<%= @internal_transaction.transaction_hash %>_<%= @internal_transaction.index %>" data-internal-transaction-transaction-hash="<%= @internal_transaction.transaction_hash %>" data-internal-transaction-index="<%= @internal_transaction.index %>">
   <div class="row tile-body">
     <!-- Color Block -->
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
@@ -7,9 +6,6 @@
         <%= gettext("Internal Transaction") %>
       </span>
       <span class="tile-status-label ml-2 ml-md-0" data-internal-transaction-type="<%= type(@internal_transaction) %>"><%= type(@internal_transaction) %></span>
-      <%= if error do %>
-        <span class="tile-status-label ml-2 ml-md-0"><%= gettext "Error" %>: <%= error %></span>
-      <% end %>
     </div>
     <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
@@ -21,7 +17,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= BlockScoutWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Ether" %>
+          <%= BlockScoutWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Astra" %>
         </span>
       </span>
     </div>

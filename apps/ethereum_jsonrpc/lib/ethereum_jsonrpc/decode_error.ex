@@ -38,12 +38,10 @@ defmodule EthereumJSONRPC.DecodeError do
   @request_body_limit 700
 
   @impl Exception
-  def message(
-        %EthereumJSONRPC.DecodeError{
-          request: %EthereumJSONRPC.DecodeError.Request{url: request_url, body: request_body},
-          response: %EthereumJSONRPC.DecodeError.Response{status_code: response_status_code, body: response_body}
-        } = decode_error
-      ) do
+  def message(%EthereumJSONRPC.DecodeError{
+        request: %EthereumJSONRPC.DecodeError.Request{url: request_url, body: request_body},
+        response: %EthereumJSONRPC.DecodeError.Response{status_code: response_status_code, body: response_body}
+      }) do
     request_body_binary = IO.iodata_to_binary(request_body)
 
     truncated_request_body =
@@ -54,14 +52,12 @@ defmodule EthereumJSONRPC.DecodeError do
         result
       end
 
-    hide_url = Map.get(decode_error, :hide_url, false)
-
     """
     Failed to decode Ethereum JSONRPC response:
 
       request:
 
-        url: #{if hide_url, do: "hidden", else: request_url}
+        url: #{request_url}
 
         body: #{truncated_request_body}
 

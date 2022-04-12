@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash.omit'
+import omit from 'lodash/omit'
 import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
@@ -24,7 +24,6 @@ export const initialState = {
   balanceCard: null,
   fetchedCoinBalanceBlockNumber: null,
   transactionCount: null,
-  tokenTransferCount: null,
   gasUsageCount: null,
   validationCount: null,
   countersFetched: false
@@ -46,10 +45,8 @@ export function reducer (state = initialState, action) {
     case 'COUNTERS_FETCHED': {
       return Object.assign({}, state, {
         transactionCount: action.transactionCount,
-        tokenTransferCount: action.tokenTransferCount,
         gasUsageCount: action.gasUsageCount,
         validationCount: action.validationCount,
-        crcTotalWorth: action.crcTotalWorth,
         countersFetched: true
       })
     }
@@ -65,13 +62,6 @@ export function reducer (state = initialState, action) {
       const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
 
       return Object.assign({}, state, { transactionCount })
-    }
-    case 'RECEIVED_NEW_TOKEN_TRANSFER': {
-      if (state.channelDisconnected) return state
-
-      const tokenTransferCount = (action.msg.fromAddressHash === state.addressHash) ? state.tokenTransferCount + 1 : state.tokenTransferCount
-
-      return Object.assign({}, state, { tokenTransferCount })
     }
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
@@ -98,7 +88,7 @@ function loadTokenBalance (blockNumber) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected && !window.loading) $el.show()
+      if (state.channelDisconnected) $el.show()
     }
   },
   '[data-selector="balance-card"]': {
@@ -117,22 +107,14 @@ const elements = {
       return { transactionCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
-      if (state.countersFetched) {
+      if (state.countersFetched && state.transactionCount) {
         if (oldState.transactionCount === state.transactionCount) return
-        const transactionsDSName = (state.transactionCount === 1) ? ' Transaction' : ' Transactions'
-        $el.empty().append(numeral(state.transactionCount).format() + transactionsDSName)
-      }
-    }
-  },
-  '[data-selector="transfer-count"]': {
-    load ($el) {
-      return { tokenTransferCount: numeral($el.text()).value() }
-    },
-    render ($el, state, oldState) {
-      if (state.countersFetched) {
-        if (oldState.tokenTransferCount === state.tokenTransferCount) return
-        const transfersDSName = (state.tokenTransferCount === 1) ? ' Transfer' : ' Transfers'
-        $el.empty().append(numeral(state.tokenTransferCount).format() + transfersDSName)
+        $el.empty().append(numeral(state.transactionCount).format() + ' Transactions')
+        $el.show()
+        $el.parent('.address-detail-item').removeAttr('style')
+      } else {
+        $el.hide()
+        $el.parent('.address-detail-item').css('display', 'none')
       }
     }
   },
@@ -141,9 +123,14 @@ const elements = {
       return { gasUsageCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
-      if (state.countersFetched) {
+      if (state.countersFetched && state.gasUsageCount) {
         if (oldState.gasUsageCount === state.gasUsageCount) return
-        $el.empty().append(numeral(state.gasUsageCount).format())
+        $el.empty().append(numeral(state.gasUsageCount).format() + ' Gas used')
+        $el.show()
+        $el.parent('.address-detail-item').removeAttr('style')
+      } else {
+        $el.hide()
+        $el.parent('.address-detail-item').css('display', 'none')
       }
     }
   },
@@ -163,28 +150,10 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.validationCount) {
         if (oldState.validationCount === state.validationCount) return
-        $el.empty().append(numeral(state.validationCount).format())
-        $('.address-validation-count-item').removeAttr('style')
+        $el.empty().append(numeral(state.validationCount).format() + ' Blocks Validated')
+        $el.show()
       } else {
-        $('.address-validation-count-item').css('display', 'none')
-      }
-    }
-  },
-  '[data-test="address-tokens-panel-crc-total-worth"]': {
-    load ($el) {
-      return { countersFetched: numeral($el.text()).value() }
-    },
-    render ($el, state, oldState) {
-      if (state.countersFetched && state.crcTotalWorth) {
-        if (oldState.crcTotalWorth === state.crcTotalWorth) return
-        $el.empty().append(`${state.crcTotalWorth} CRC`)
-        if (state.crcTotalWorth !== '0') {
-          $('[data-test="address-tokens-panel-crc-total-worth-container"]').removeClass('d-none')
-        } else {
-          $('[data-test="address-tokens-panel-crc-total-worth-container"]').addClass('d-none')
-        }
-      } else {
-        $('[data-test="address-tokens-panel-crc-total-worth-container"]').addClass('d-none')
+        $el.hide()
       }
     }
   }
@@ -204,10 +173,6 @@ function loadCounters (store) {
 
 const $addressDetailsPage = $('[data-page="address-details"]')
 if ($addressDetailsPage.length) {
-  window.onbeforeunload = () => {
-    window.loading = true
-  }
-
   const store = createStore(reducer)
   const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
@@ -234,12 +199,6 @@ if ($addressDetailsPage.length) {
   addressChannel.on('transaction', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TRANSACTION',
-      msg: humps.camelizeKeys(msg)
-    })
-  })
-  addressChannel.on('transfer', (msg) => {
-    store.dispatch({
-      type: 'RECEIVED_NEW_TOKEN_TRANSFER',
       msg: humps.camelizeKeys(msg)
     })
   })

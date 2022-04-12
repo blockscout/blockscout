@@ -3,8 +3,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   alias Explorer.Chain.SmartContract
   alias Explorer.{Chain, Factory}
 
-  import Mox
-
   describe "listcontracts" do
     setup do
       %{params: %{"module" => "contract", "action" => "listcontracts"}}
@@ -36,7 +34,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     end
 
     test "with a verified smart contract, all contract information is shown", %{conn: conn, params: params} do
-      contract = insert(:smart_contract, contract_code_md5: "123")
+      contract = insert(:smart_contract)
 
       response =
         conn
@@ -82,7 +80,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
     test "filtering for only unverified contracts shows only unverified contracts", %{params: params, conn: conn} do
       address = insert(:contract_address)
-      insert(:smart_contract, contract_code_md5: "123")
+      insert(:smart_contract)
 
       response =
         conn
@@ -107,7 +105,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       conn: conn
     } do
       address = insert(:contract_address)
-      insert(:smart_contract, contract_code_md5: "123")
+      insert(:smart_contract)
       insert(:contract_address, contract_code: "0x")
 
       response =
@@ -130,7 +128,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
     test "filtering for only verified contracts shows only verified contracts", %{params: params, conn: conn} do
       insert(:contract_address)
-      contract = insert(:smart_contract, contract_code_md5: "123")
+      contract = insert(:smart_contract)
 
       response =
         conn
@@ -222,7 +220,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
     test "filtering for only not_decompiled (and by extension not verified contracts)", %{params: params, conn: conn} do
       insert(:decompiled_smart_contract)
-      insert(:smart_contract, contract_code_md5: "123")
+      insert(:smart_contract)
       contract_address = insert(:contract_address)
 
       response =
@@ -248,7 +246,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       conn: conn
     } do
       insert(:decompiled_smart_contract)
-      insert(:smart_contract, contract_code_md5: "123")
+      insert(:smart_contract)
       insert(:contract_address, contract_code: "0x")
       contract_address = insert(:contract_address)
 
@@ -328,7 +326,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     end
 
     test "with a verified contract address", %{conn: conn} do
-      contract = insert(:smart_contract, contract_code_md5: "123")
+      contract = insert(:smart_contract)
 
       params = %{
         "module" => "contract",
@@ -407,8 +405,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "EVMVersion" => "",
           "ExternalLibraries" => "",
           "OptimizationRuns" => "",
-          "FileName" => "",
-          "IsProxy" => "false"
+          "FileName" => ""
         }
       ]
 
@@ -424,13 +421,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     end
 
     test "with a verified contract address", %{conn: conn} do
-      contract =
-        insert(:smart_contract,
-          optimization: true,
-          optimization_runs: 200,
-          evm_version: "default",
-          contract_code_md5: "123"
-        )
+      contract = insert(:smart_contract, optimization: true, optimization_runs: 200, evm_version: "default")
 
       params = %{
         "module" => "contract",
@@ -451,12 +442,9 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "OptimizationUsed" => "true",
           "OptimizationRuns" => 200,
           "EVMVersion" => "default",
-          "FileName" => "",
-          "IsProxy" => "false"
+          "FileName" => ""
         }
       ]
-
-      get_implementation()
 
       assert response =
                conn
@@ -476,8 +464,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           optimization_runs: 200,
           evm_version: "default",
           constructor_arguments:
-            "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
-          contract_code_md5: "123"
+            "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546"
         )
 
       params = %{
@@ -498,12 +485,9 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "EVMVersion" => "default",
           "ConstructorArguments" =>
             "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
-          "FileName" => "",
-          "IsProxy" => "false"
+          "FileName" => ""
         }
       ]
-
-      get_implementation()
 
       assert response =
                conn
@@ -602,12 +586,9 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
             %{"name" => "Test", "address_hash" => "0xb18aed9518d735482badb4e8b7fd8d2ba425ce95"},
             %{"name" => "Test2", "address_hash" => "0x283539e1b1daf24cdd58a3e934d55062ea663c3f"}
           ],
-          "FileName" => "",
-          "IsProxy" => "false"
+          "FileName" => ""
         }
       ]
-
-      get_implementation()
 
       assert response =
                conn
@@ -672,8 +653,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "action" => "verify_via_sourcify",
         "addressHash" => "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2"
       }
-
-      get_implementation()
 
       conn
       |> get("/api", params)
@@ -858,45 +837,5 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     }
     |> put_in(["properties", "result"], result)
     |> ExJsonSchema.Schema.resolve()
-  end
-
-  def get_implementation do
-    EthereumJSONRPC.Mox
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
   end
 end

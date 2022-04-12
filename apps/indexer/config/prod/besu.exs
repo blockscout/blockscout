@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :indexer,
   block_interval: :timer.seconds(5),

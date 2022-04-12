@@ -10,11 +10,12 @@ defmodule Indexer.Memory.Monitor do
   require Bitwise
   require Logger
 
+  import Bitwise
   import Indexer.Logger, only: [process: 1]
 
   alias Indexer.Memory.Shrinkable
 
-  defstruct limit: Application.get_env(:indexer, :memory_limit),
+  defstruct limit: 1 <<< 30,
             timer_interval: :timer.minutes(1),
             timer_reference: nil,
             shrinkable_set: MapSet.new()
@@ -157,7 +158,7 @@ defmodule Indexer.Memory.Monitor do
 
       {:error, :minimum_size} ->
         Logger.error(fn ->
-          [process(pid), " is at its minimum size and could not shrink."]
+          [process(pid) | " is at its minimum size and could not shrink."]
         end)
 
         shrink(tail)

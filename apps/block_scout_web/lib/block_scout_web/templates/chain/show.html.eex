@@ -37,9 +37,9 @@
 
             <%= if Enum.member?(market_chart_config, :price) do %>
                 <div class="dashboard-banner-chart-legend-item">
-                    <span class="dashboard-banner-chart-legend-label">
-                    <%= System.get_env("COIN_NAME") || System.get_env("COIN") %> <%= gettext "Price" %>
-                    </span>
+                    <h2 class="dashboard-banner-chart-legend-label">
+                    <%= gettext "Price" %>
+                    </h2>
                     <div class="dashboard-banner-chart-legend-value-container">
                       <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
                       </span>
@@ -49,7 +49,7 @@
                             <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
                           </span>
                           <%= @gas_price <> " " %>
-                          <%= gettext "Gwei" %>
+                          <%= gettext "MicroAstra" %>
                         </span>
                       <% end %>
                     </div>
@@ -57,9 +57,9 @@
             <% end %>
             <%= if Enum.member?(@chart_config.market, :market_cap) do %>
             <div class="dashboard-banner-chart-legend-item">
-                <span class="dashboard-banner-chart-legend-label">
+                <h2 class="dashboard-banner-chart-legend-label">
                 <%= gettext "Market Cap" %>
-                </span>
+                </h2>
                 <div>
                   <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
                   <span style="display: contents;" class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= total_market_cap %>">
@@ -119,19 +119,19 @@
               <%= nil %>
             <% average_block_time -> %>
               <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-1">
-                <span class="dashboard-banner-network-stats-label">
+                <h2 class="dashboard-banner-network-stats-label">
                   <%= gettext "Average block time" %>
-                </span>
+                </h2>
                 <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
                   <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
                 </span>
               </div>
           <% end %>
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-2">
-            <span class="dashboard-banner-network-stats-label">
+            <h2 class="dashboard-banner-network-stats-label">
               <%= gettext "Total transactions" %>
-            </span>
-            <div class="d-flex">
+            </h2>
+            <div style="display: flex;">
               <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
                 <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
               </span>
@@ -149,17 +149,17 @@
             </div>
           </div>
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-3">
-            <span class="dashboard-banner-network-stats-label">
+            <h2 class="dashboard-banner-network-stats-label">
               <%= gettext "Total blocks" %>
-            </span>
+            </h2>
             <span class="dashboard-banner-network-stats-value" data-selector="block-count">
               <%= BlockScoutWeb.Cldr.Number.to_string!(@block_count, format: "#,###") %>
             </span>
           </div>
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-4">
-            <span class="dashboard-banner-network-stats-label">
+            <h2 class="dashboard-banner-network-stats-label">
               <%= gettext "Wallet addresses" %>
-            </span>
+            </h2>
             <span class="dashboard-banner-network-stats-value" data-selector="address-count">
               <%= BlockScoutWeb.Cldr.Number.to_string!(@address_count, format: "#,###") %>
             </span>
@@ -173,7 +173,7 @@
   <div class="card card-chain-blocks js-ad-dependant-mb-3">
     <div class="card-body">
       <%= link(gettext("View All Blocks"), to: blocks_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
-      <h2 class="card-title"><%= gettext "Blocks" %></h2>
+      <h1 class="card-title"><%= gettext "Blocks" %></h1>
       <div class="row" data-selector="chain-block-list" data-url="<%= chain_blocks_path(@conn, :chain_blocks) %>">
         <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
           <span class="alert-link">
@@ -194,7 +194,7 @@
         <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
            <div class="tile tile-type-block n-p d-flex flex-column">
-             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
              <div class="tile-bottom-contents">
                <div class="dark-block-loader"></div>
                <div class="dark-block-loader"></div>
@@ -205,7 +205,7 @@
         <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
            <div class="tile tile-type-block n-p d-flex flex-column">
-             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
              <div class="tile-bottom-contents">
                <div class="dark-block-loader"></div>
                <div class="dark-block-loader"></div>
@@ -223,7 +223,7 @@
             </div>
            </div>
          </div>
-        </div>   
+        </div>
       </div>
     </div>
   </div>
@@ -233,7 +233,7 @@
   <div class="card card-chain-transactions">
     <div class="card-body">
       <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
-      <h2 class="card-title lg-card-title"><%= gettext "Transactions" %></h2>
+      <h1 class="card-title lg-card-title"><%= gettext "Transactions" %></h1>
       <div data-selector="channel-batching-message" style="display: none;">
         <div data-selector="reload-transactions-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>

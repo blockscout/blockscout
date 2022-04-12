@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash.omit'
+import omit from 'lodash/omit'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
@@ -49,16 +49,20 @@ const elements = {
   '[token-transfer-count]': {
     render ($el, state) {
       if (state.transferCount) {
-        $el.empty().text(state.transferCount + ' Transfers')
+        $el.text(state.transferCount + ' Transfers')
         return $el.show()
+      } else {
+        return $el.hide()
       }
     }
   },
   '[token-holder-count]': {
     render ($el, state) {
       if (state.tokenHolderCount) {
-        $el.empty().text(state.tokenHolderCount + ' Addresses')
+        $el.text(state.tokenHolderCount + ' Addresses')
         return $el.show()
+      } else {
+        return $el.hide()
       }
     }
   }
@@ -91,14 +95,10 @@ function updateCounters () {
 }
 
 if ($('[data-page="token-holders-list"]').length) {
-  window.onbeforeunload = () => {
-    window.loading = true
-  }
-
   const asyncElements = {
     '[data-selector="channel-disconnected-message"]': {
       render ($el, state) {
-        if (state.channelDisconnected && !window.loading) $el.show()
+        if (state.channelDisconnected) $el.show()
       }
     }
   }

@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
 import { reducer, initialState } from '../../js/pages/transaction'
 
 test('RECEIVED_NEW_BLOCK', () => {

@@ -29,7 +29,8 @@ $navbar-logo-width: auto !default;
       align-items: center;
       color: $header-links-color;
       display: flex;
-      font-size: 14px;
+      font-size: 16px;
+      font-weight: 600;
       position: relative;
       transition: $transition-cont;
 
@@ -253,12 +254,8 @@ $navbar-logo-width: auto !default;
   margin-left: 5px;
   line-height: 28px;
 
-  &.in-footer {
+  &.footer {
     color: #fff;
-  }
-
-  &.no-logo {
-    margin-left: 0px;
   }
 }
 
@@ -283,7 +280,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-container, .navbar-primary {
-  @media (min-width: 992px) {
+  @include media-breakpoint-up(xl) {
     padding-right: 0;
   }
 }

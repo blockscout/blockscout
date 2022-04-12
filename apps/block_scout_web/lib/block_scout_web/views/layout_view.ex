@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.LayoutView do
       test_net?: true
     },
     %{
-      title: "Gnosis Chain",
+      title: "xDai",
       url: "https://blockscout.com/xdai/mainnet"
     },
     %{
@@ -37,11 +37,12 @@ defmodule BlockScoutWeb.LayoutView do
   alias BlockScoutWeb.SocialMedia
 
   def logo do
-    Keyword.get(application_config(), :logo)
+    Keyword.get(application_config(), :logo) || "/images/astra-white-logo.svg"
   end
 
   def logo_footer do
-    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo)
+    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo) ||
+      "/images/astra-white-logo.svg"
   end
 
   def logo_text do
@@ -49,11 +50,11 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "Sokol"
+    Keyword.get(application_config(), :subnetwork) || "Astra"
   end
 
   def network_title do
-    Keyword.get(application_config(), :network) || "POA"
+    Keyword.get(application_config(), :network) || "Testnet"
   end
 
   defp application_config do

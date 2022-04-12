@@ -194,12 +194,6 @@ defmodule Explorer.Chain.SmartContract do
     contract.
   * `verified_via_sourcify` - whether contract verified through Sourcify utility or not.
   * `partially_verified` - whether contract verified using partial matched source code or not.
-  * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
-  * `file_path` - show the filename or path to the file of the contract source file
-  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified 
-  * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
-  * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
-  * `implementation_name` - name of the proxy implementation
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -213,12 +207,7 @@ defmodule Explorer.Chain.SmartContract do
           abi: [function_description],
           verified_via_sourcify: boolean | nil,
           partially_verified: boolean | nil,
-          file_path: String.t(),
-          is_vyper_contract: boolean | nil,
-          is_changed_bytecode: boolean,
-          bytecode_checked_at: DateTime.t(),
-          contract_code_md5: String.t(),
-          implementation_name: String.t() | nil
+          file_path: String.t()
         }
 
   schema "smart_contracts" do
@@ -234,11 +223,6 @@ defmodule Explorer.Chain.SmartContract do
     field(:verified_via_sourcify, :boolean)
     field(:partially_verified, :boolean)
     field(:file_path, :string)
-    field(:is_vyper_contract, :boolean)
-    field(:is_changed_bytecode, :boolean, default: false)
-    field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
-    field(:contract_code_md5, :string)
-    field(:implementation_name, :string)
 
     has_many(
       :decompiled_smart_contracts,
@@ -275,33 +259,14 @@ defmodule Explorer.Chain.SmartContract do
       :optimization_runs,
       :verified_via_sourcify,
       :partially_verified,
-      :file_path,
-      :is_vyper_contract,
-      :is_changed_bytecode,
-      :bytecode_checked_at,
-      :contract_code_md5,
-      :implementation_name
+      :file_path
     ])
-    |> validate_required([
-      :name,
-      :compiler_version,
-      :optimization,
-      :contract_source_code,
-      :abi,
-      :address_hash,
-      :contract_code_md5
-    ])
+    |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
     |> prepare_changes(&upsert_contract_methods/1)
   end
 
-  def invalid_contract_changeset(
-        %__MODULE__{} = smart_contract,
-        attrs,
-        error,
-        error_message,
-        json_verification \\ false
-      ) do
+  def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error, error_message) do
     validated =
       smart_contract
       |> cast(attrs, [
@@ -315,24 +280,14 @@ defmodule Explorer.Chain.SmartContract do
         :constructor_arguments,
         :verified_via_sourcify,
         :partially_verified,
-        :file_path,
-        :is_vyper_contract,
-        :is_changed_bytecode,
-        :bytecode_checked_at,
-        :contract_code_md5,
-        :implementation_name
+        :file_path
       ])
-      |> (&if(json_verification,
-            do: &1,
-            else: validate_required(&1, [:name, :compiler_version, :optimization, :address_hash, :contract_code_md5])
-          )).()
-
-    field_to_put_message = if json_verification, do: :file, else: :contract_source_code
+      |> validate_required([:name, :compiler_version, :optimization, :address_hash])
 
     if error_message do
-      add_error(validated, field_to_put_message, error_message(error, error_message))
+      add_error(validated, :contract_source_code, error_message(error, error_message))
     else
-      add_error(validated, field_to_put_message, error_message(error))
+      add_error(validated, :contract_source_code, error_message(error))
     end
   end
 
@@ -395,7 +350,6 @@ defmodule Explorer.Chain.SmartContract do
   defp error_message(:generated_bytecode), do: "Bytecode does not match, please try again."
   defp error_message(:constructor_arguments), do: "Constructor arguments do not match, please try again."
   defp error_message(:name), do: "Wrong contract name, please try again."
-  defp error_message(:json), do: "Invalid JSON file."
   defp error_message(_), do: "There was an error validating your contract, please try again."
   defp error_message(:compilation, error_message), do: "There was an error compiling your contract: #{error_message}"
 end

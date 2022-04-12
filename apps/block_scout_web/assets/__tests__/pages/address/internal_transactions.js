@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
 import { reducer, initialState } from '../../../js/pages/address/internal_transactions'
 
 describe('RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', () => {

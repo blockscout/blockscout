@@ -139,8 +139,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
         3,
         :token_transfer,
         transaction: transaction,
-        token_contract_address: contract_token_address,
-        block: block
+        token_contract_address: contract_token_address
       )
 
       start_supervised!(AddressesCounter)

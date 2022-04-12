@@ -76,7 +76,5 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
     data: JSON.stringify(formData),
     dataType: 'json',
     contentType: 'application/json; charset=utf-8'
-  })
-    .then((_data, _status, xhr) => handleResponse(formData, xhr, clickedButton))
-    .fail((xhr) => handleResponse(formData, xhr, clickedButton))
+  }).then((_data, _status, xhr) => handleResponse(formData, xhr, clickedButton))
 })

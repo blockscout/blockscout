@@ -8,7 +8,6 @@ defmodule Explorer.Chain.Token do
 
   * ERC-20
   * ERC-721
-  * ERC-1155
 
   ## Token Specifications
 

@@ -98,10 +98,10 @@ defmodule Explorer.ChainSpec.POA.Importer do
       |> Enum.map(fn {key, _value} -> key end)
       |> List.first()
 
-    Reader.query_contract(address, abi, params, false)
+    Reader.query_contract(address, abi, params)
 
     value =
-      case Reader.query_contract(address, abi, params, false) do
+      case Reader.query_contract(address, abi, params) do
         %{^method_id => {:ok, [result]}} -> result
         _ -> 0
       end

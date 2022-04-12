@@ -8,9 +8,7 @@ defmodule BlockScoutWeb.Router do
     forward("/wobserver", Wobserver.Web.Router)
   end
 
-  if Application.get_env(:block_scout_web, :admin_panel_enabled) do
-    forward("/admin", BlockScoutWeb.AdminRouter)
-  end
+  forward("/admin", BlockScoutWeb.AdminRouter)
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -76,6 +74,28 @@ defmodule BlockScoutWeb.Router do
       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
     end
   end
+
+  # if path != api_path do
+  #   scope to_string(api_path) <> "/verify_smart_contract" do
+  #     pipe_through(:api)
+
+  #     if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+  #     else
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController, :create)
+  #     end
+  #   end
+  # else
+  #   scope "/verify_smart_contract" do
+  #     pipe_through(:api)
+
+  #     if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+  #     else
+  #       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController, :create)
+  #     end
+  #   end
+  # end
 
   if Application.get_env(:block_scout_web, WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)

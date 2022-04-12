@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :indexer, Indexer.Tracer, env: "dev", disabled?: true
 
@@ -25,11 +25,6 @@ config :logger, :pending_transactions_to_refetch,
   level: :debug,
   path: Path.absname("logs/dev/indexer/pending_transactions_to_refetch.log"),
   metadata_filter: [fetcher: :pending_transactions_to_refetch]
-
-config :logger, :empty_blocks_to_refetch,
-  level: :debug,
-  path: Path.absname("logs/dev/indexer/empty_blocks_to_refetch.log"),
-  metadata_filter: [fetcher: :empty_blocks_to_refetch]
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do

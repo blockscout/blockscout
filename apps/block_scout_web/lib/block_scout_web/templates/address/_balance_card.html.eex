@@ -15,7 +15,7 @@
             data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
             data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
           </span>
-          <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("Ether") %>)</small>
+          <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("Astra") %>)</small>
         </p>
       <% end %>
 
@@ -25,7 +25,11 @@
         data-api_path="<%= AccessHelpers.get_path(@conn, :address_token_balance_path, :index, Address.checksum(@address.hash)) %>"
       >
           <span data-loading class="mb-0">
-            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching tokens...") %>
+            <span class="loading-spinner-small mr-2">
+              <span class="loading-spinner-block-1"></span>
+              <span class="loading-spinner-block-2"></span>
+            </span>
+            <%= gettext("Fetching tokens...") %>
           </span>
           <span data-error-message class="mb-0" style="display: none;">
             <%= gettext("Error trying to fetch balances.") %>

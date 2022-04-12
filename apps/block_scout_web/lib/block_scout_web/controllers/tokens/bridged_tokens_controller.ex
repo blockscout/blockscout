@@ -62,8 +62,7 @@ defmodule BlockScoutWeb.BridgedTokensController do
       params
       |> paging_options()
 
-    from_api = false
-    tokens = Chain.list_top_bridged_tokens(destination, filter, from_api, paging_params)
+    tokens = Chain.list_top_bridged_tokens(destination, filter, paging_params)
 
     {tokens_page, next_page} = split_list_by_page(tokens)
 

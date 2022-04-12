@@ -1,15 +1,13 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Config module.
-import Config
+# and its dependencies with the aid of the Mix.Config module.
+use Mix.Config
 
 # By default, the umbrella project as well as each child
 # application will require this configuration file, ensuring
 # they all use the same configuration. While one could
 # configure all applications here, we prefer to delegate
 # back to each application for organization purposes.
-for config <- "../apps/*/config/config.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
-  import_config config
-end
+import_config "../apps/*/config/config.exs"
 
 config :phoenix, :json_library, Jason
 
@@ -32,9 +30,7 @@ config :logger,
     {LoggerFileBackend, :indexer_token_balances},
     {LoggerFileBackend, :token_instances},
     {LoggerFileBackend, :reading_token_functions},
-    {LoggerFileBackend, :pending_transactions_to_refetch},
-    {LoggerFileBackend, :empty_blocks_to_refetch},
-    {LoggerFileBackend, :api}
+    {LoggerFileBackend, :pending_transactions_to_refetch}
   ]
 
 config :logger, :console,
@@ -62,4 +58,4 @@ config :logger, :error,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{config_env()}.exs"
+import_config "#{Mix.env()}.exs"

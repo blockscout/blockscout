@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
 import { reducer, initialState } from '../../js/pages/transactions'
 
 test('CHANNEL_DISCONNECTED', () => {

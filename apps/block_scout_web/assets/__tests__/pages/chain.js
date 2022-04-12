@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
 import { reducer, initialState, placeHolderBlock } from '../../js/pages/chain'
 
 describe('ELEMENTS_LOAD', () => {

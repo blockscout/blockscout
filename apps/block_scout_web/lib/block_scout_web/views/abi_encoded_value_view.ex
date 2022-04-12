@@ -12,12 +12,10 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
 
   require Logger
 
-  def value_html(type, value, no_links \\ false)
-
-  def value_html(type, value, no_links) do
+  def value_html(type, value) do
     decoded_type = FunctionSelector.decode_type(type)
 
-    do_value_html(decoded_type, value, no_links)
+    do_value_html(decoded_type, value)
   rescue
     exception ->
       Logger.warn(fn ->
@@ -80,20 +78,20 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     to_string(value)
   end
 
-  defp do_value_html(type, value, no_links, depth \\ 0)
+  defp do_value_html(type, value, depth \\ 0)
 
-  defp do_value_html({:bytes, _}, value, no_links, depth) do
-    do_value_html(:bytes, value, no_links, depth)
+  defp do_value_html({:bytes, _}, value, depth) do
+    do_value_html(:bytes, value, depth)
   end
 
-  defp do_value_html({:array, type, _}, value, no_links, depth) do
-    do_value_html({:array, type}, value, no_links, depth)
+  defp do_value_html({:array, type, _}, value, depth) do
+    do_value_html({:array, type}, value, depth)
   end
 
-  defp do_value_html({:array, type}, value, no_links, depth) do
+  defp do_value_html({:array, type}, value, depth) do
     values =
       Enum.map(value, fn inner_value ->
-        do_value_html(type, inner_value, no_links, depth + 1)
+        do_value_html(type, inner_value, depth + 1)
       end)
 
     spacing = String.duplicate(" ", depth * 2)
@@ -102,48 +100,44 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     ~E|<%= spacing %>[<%= "\n" %><%= delimited %><%= "\n" %><%= spacing %>]|
   end
 
-  defp do_value_html({:tuple, types}, values, no_links, _) do
+  defp do_value_html({:tuple, types}, values, _) do
     values_list =
       values
       |> Tuple.to_list()
       |> Enum.with_index()
       |> Enum.map(fn {value, i} ->
-        do_value_html(Enum.at(types, i), value, no_links)
+        do_value_html(Enum.at(types, i), value)
       end)
 
     delimited = Enum.intersperse(values_list, ",")
     ~E|(<%= delimited %>)|
   end
 
-  defp do_value_html(type, value, no_links, depth) do
+  defp do_value_html(type, value, depth) do
     spacing = String.duplicate(" ", depth * 2)
-    ~E|<%= spacing %><%=base_value_html(type, value, no_links)%>|
-    [spacing, base_value_html(type, value, no_links)]
+    ~E|<%= spacing %><%=base_value_html(type, value)%>|
+    [spacing, base_value_html(type, value)]
   end
 
-  defp base_value_html(_, {:dynamic, value}, _no_links) do
+  defp base_value_html(_, {:dynamic, value}) do
     ~E|<%= hex(value) %>|
   end
 
-  defp base_value_html(:address, value, no_links) do
-    if no_links do
-      base_value_html(:address_text, value, no_links)
-    else
-      address = hex(value)
+  defp base_value_html(:address, value) do
+    address = hex(value)
 
-      ~E|<a href="<%= address_path(BlockScoutWeb.Endpoint, :show, address) %>" target="_blank"><%= address %></a>|
-    end
+    ~E|<a href="<%= address_path(BlockScoutWeb.Endpoint, :show, address) %>" target="_blank"><%= address %></a>|
   end
 
-  defp base_value_html(:address_text, value, _no_links) do
+  defp base_value_html(:address_text, value) do
     ~E|<%= hex(value) %>|
   end
 
-  defp base_value_html(:bytes, value, _no_links) do
+  defp base_value_html(:bytes, value) do
     ~E|<%= hex(value) %>|
   end
 
-  defp base_value_html(_, value, _no_links), do: HTML.html_escape(value)
+  defp base_value_html(_, value), do: HTML.html_escape(value)
 
   defp hex(value), do: "0x" <> Base.encode16(value, case: :lower)
 end

@@ -188,7 +188,7 @@ $tile-body-a-color: #5959d8 !default;
 
   .tile-title {
     color: $tile-title-color;
-    font-size: 12px;
+    font-size: 14px;
 
     &-hash {
       font-weight: 300;
@@ -589,8 +589,7 @@ $cube-quantity: 5;
 }
 
 .view-original-token-container {
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 15px;
   font-size: 12px;
 }
 

@@ -5,9 +5,15 @@ defmodule Explorer.Counters.BlockBurnedFeeCounter do
   use GenServer
 
   alias Explorer.Chain
-  alias Explorer.Counters.Helper
 
   @cache_name :block_burned_fee_counter
+
+  @ets_opts [
+    :set,
+    :named_table,
+    :public,
+    read_concurrency: true
+  ]
 
   config = Application.get_env(:explorer, Explorer.Counters.BlockBurnedFeeCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
@@ -62,7 +68,13 @@ defmodule Explorer.Counters.BlockBurnedFeeCounter do
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_cache(key, @cache_name)
+    case :ets.lookup(@cache_name, key) do
+      [{_, value}] ->
+        value
+
+      [] ->
+        0
+    end
   end
 
   defp put_into_cache(key, value) do
@@ -73,9 +85,11 @@ defmodule Explorer.Counters.BlockBurnedFeeCounter do
     Base.encode16(block_hash.bytes, case: :lower)
   end
 
-  defp create_cache_table do
-    Helper.create_cache_table(@cache_name)
+  def create_cache_table do
+    if :ets.whereis(@cache_name) == :undefined do
+      :ets.new(@cache_name, @ets_opts)
+    end
   end
 
-  defp enable_consolidation?, do: @enable_consolidation
+  def enable_consolidation?, do: @enable_consolidation
 end

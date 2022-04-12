@@ -26,10 +26,8 @@ defmodule EthereumJSONRPC.Contract do
   """
   @type call_result :: {:ok, term()} | {:error, String.t()}
 
-  @spec execute_contract_functions([call()], [map()], EthereumJSONRPC.json_rpc_named_arguments(), true | false) :: [
-          call_result()
-        ]
-  def execute_contract_functions(requests, abi, json_rpc_named_arguments, leave_error_as_map \\ false) do
+  @spec execute_contract_functions([call()], [map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [call_result()]
+  def execute_contract_functions(requests, abi, json_rpc_named_arguments) do
     parsed_abi =
       abi
       |> ABI.parse_specification()
@@ -70,7 +68,7 @@ defmodule EthereumJSONRPC.Contract do
         response ->
           selectors = define_selectors(parsed_abi, method_id)
 
-          {^index, result} = Encoder.decode_result(response, selectors, leave_error_as_map)
+          {^index, result} = Encoder.decode_result(response, selectors)
           result
       end
     end)
@@ -109,21 +107,16 @@ defmodule EthereumJSONRPC.Contract do
 
   defp convert_int_string_to_array(arg) when is_nil(arg), do: true
 
-  defp convert_int_string_to_array(arg) when is_list(arg), do: convert_int_string_to_array_inner(arg)
-
   defp convert_int_string_to_array(arg) when not is_nil(arg) do
     cond do
       String.starts_with?(arg, "[") && String.ends_with?(arg, "]") ->
         arg
         |> String.trim_leading("[")
         |> String.trim_trailing("]")
-        |> String.split(",")
         |> convert_int_string_to_array_inner()
 
       arg !== "" ->
-        arg
-        |> String.split(",")
-        |> convert_int_string_to_array_inner()
+        convert_int_string_to_array_inner(arg)
 
       true ->
         []
@@ -132,6 +125,7 @@ defmodule EthereumJSONRPC.Contract do
 
   defp convert_int_string_to_array_inner(arg) do
     arg
+    |> String.split(",")
     |> Enum.map(fn el ->
       {int, _} = Integer.parse(el)
       int
@@ -139,8 +133,6 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp convert_string_to_array(arg) when is_nil(arg), do: true
-
-  defp convert_string_to_array(arg) when is_list(arg), do: arg
 
   defp convert_string_to_array(arg) when not is_nil(arg) do
     cond do
@@ -188,14 +180,10 @@ defmodule EthereumJSONRPC.Contract do
         block_number -> integer_to_quantity(block_number)
       end
 
-    params =
-      %{to: contract_address, data: data}
-      |> (&if(is_nil(from), do: &1, else: Map.put(&1, :from, from))).()
-
     full_params = %{
       id: id,
       method: "eth_call",
-      params: [params, block]
+      params: [%{to: contract_address, data: data, from: from}, block]
     }
 
     request(full_params)
@@ -228,9 +216,6 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp format_error(error) do
-    error
-    |> Map.put(:hide_url, true)
-    |> Exception.message()
-    |> format_error()
+    format_error(Exception.message(error))
   end
 end

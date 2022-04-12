@@ -6,7 +6,7 @@
     <div class="col-md-12 js-ad-dependant-mb-2">
       <!-- Block Details -->
       <div class="card js-ad-dependant-mb-2">
-        <div class="card-body fs-14" style="line-height: 32px;">
+        <div class="card-body transaction-details">
           <dl class="pagination-container">
             <h1 class="card-title" data-test="detail_type">
               <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
@@ -17,10 +17,7 @@
                         <%= if false do %>disabled<% end %>
                         class="page-link"
                         href='<%= block_path(@conn, :show, @block.number - 1) %>'
-                        <%= if true do %>data-prev-page-button<% end %>
-                        data-placement="top"
-                        data-toggle="tooltip"
-                        title="<%= gettext "View previous block" %>">
+                        <%= if true do %>data-prev-page-button<% end %>>
                         <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
                             <path fill-rule="evenodd" d="M2.358 5l3.357 3.358a.959.959 0 1 1-1.357 1.357L.502 5.859c-.076-.042-.153-.08-.217-.144A.949.949 0 0 1 .011 5a.949.949 0 0 1 .274-.715c.064-.064.142-.102.217-.145L4.358.285a.959.959 0 1 1 1.357 1.357L2.358 5z"/>
                         </svg>
@@ -33,10 +30,7 @@
                         <%= if false do %>disabled<% end %>
                         class="page-link"
                         href='<%= block_path(@conn, :show, @block.number + 1) %>'
-                        <%= if true do %>data-next-page-button<% end %>
-                        data-placement="top"
-                        data-toggle="tooltip"
-                        title="<%= gettext "View next block" %>">
+                        <%= if true do %>data-next-page-button<% end %>>
                         <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
                             <path fill-rule="evenodd" d="M5.715 5.715c-.064.064-.141.102-.217.144L1.642 9.715A.959.959 0 1 1 .285 8.358L3.642 5 .285 1.642A.959.959 0 1 1 1.642.285L5.498 4.14c.075.043.153.081.217.145A.949.949 0 0 1 5.989 5a.949.949 0 0 1-.274.715z"/>
                         </svg>
@@ -80,7 +74,7 @@
               <%= gettext("Transactions") %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
-              <a href="#txs" class="page-link bs-label large btn-no-border-link-to-tems">
+              <a href="#txs" class="page-link bs-label large btn-no-border-transactions">
                 <%= if @block_transaction_count == 1 do %>
                   <%= gettext "%{count} Transaction", count: @block_transaction_count %>
                 <% else %>
@@ -95,7 +89,7 @@
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("A block producer who successfully included the block onto the blockchain.") %>
-                <%= gettext("Miner") %>
+                <%= gettext("Block Proposer") %>
               </dt>
               <dd class="col-sm-9 col-lg-10"><%= render BlockScoutWeb.AddressView, "_link.html", address: @block.miner, contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
@@ -113,7 +107,7 @@
               text: gettext("Size of the block in bytes.") %>
               <%= gettext("Size") %>
             </dt>
-            <dd class="col-sm-9 col-lg-10"><%= if !is_nil(@block.size), do: (Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!()), else: gettext("N/A bytes") %></dd>
+            <dd class="col-sm-9 col-lg-10"><%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %></dd>
           </dl>
           <!-- Hash -->
           <dl class="row">
@@ -177,7 +171,7 @@
                 text: gettext("The total gas amount used in the block and its percentage of gas filled in the block.") %>
                 <%= gettext("Gas Used") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %> | <%= if Decimal.cmp(@block.gas_limit, 0) == :eq, do: "0%", else: ((Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%")) %></dd>
+              <dd class="col-sm-9 col-lg-10"><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %> | <%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %></dd>
             </dl>
             <!-- Gas Limit -->
             <dl class="row">
@@ -212,10 +206,10 @@
             <dl class="row">
                 <dt class="col-sm-3 col-lg-2 text-muted">
                   <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Ether") <> " " <> gettext("burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
+                  text: gettext("xDai burned from transactions included in the block (Base fee (per unit of gas) * Gas Used).") %>
                   <%= gettext("Burnt Fees") %>
                 </dt>
-                <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %></dd>
+                <dd class="col-sm-9 col-lg-10"><i class="fas fa-fire i-tooltip-2"></i> <s><%= format_wei_value(burned_fee, :ether) %></s></dd>
             </dl>
             <!-- Priority Fee / Tip -->
             <dl class="row">

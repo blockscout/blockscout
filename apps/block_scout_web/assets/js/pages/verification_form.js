@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash.omit'
+import omit from 'lodash/omit'
 import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'
@@ -43,7 +43,7 @@ export function reducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected && !window.loading) $el.show()
+      if (state.channelDisconnected) $el.show()
     }
   },
   '[data-page="contract-verification"]': {
@@ -111,10 +111,6 @@ function filterNightlyBuilds (filter) {
 }
 
 if ($contractVerificationPage.length) {
-  window.onbeforeunload = () => {
-    window.loading = true
-  }
-
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
@@ -142,67 +138,32 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
-    function standardJSONBehavior () {
-      $('#standard-json-dropzone-form').removeClass('dz-clickable')
-      this.on('addedfile', function (_file) {
-        $('#verify-via-standard-json-input-submit').prop('disabled', false)
-        $('#file-help-block').text('')
-        $('#dropzone-previews').addClass('dz-started')
-      })
-
-      this.on('removedfile', function (_file) {
-        if (this.files.length === 0) {
-          $('#verify-via-standard-json-input-submit').prop('disabled', true)
-          $('#dropzone-previews').removeClass('dz-started')
-        }
-      })
-    }
-
-    function metadataJSONBehavior () {
-      $('#metadata-json-dropzone-form').removeClass('dz-clickable')
-      this.on('addedfile', function (_file) {
-        changeVisibilityOfVerifyButton(this.files.length)
-        $('#file-help-block').text('')
-        $('#dropzone-previews').addClass('dz-started')
-      })
-
-      this.on('removedfile', function (_file) {
-        changeVisibilityOfVerifyButton(this.files.length)
-        if (this.files.length === 0) {
-          $('#dropzone-previews').removeClass('dz-started')
-        }
-      })
-    }
-
-    const $jsonDropzoneMetadata = $('#metadata-json-dropzone-form')
-    const $jsonDropzoneStandardInput = $('#standard-json-dropzone-form')
-
-    if ($jsonDropzoneMetadata.length || $jsonDropzoneStandardInput.length) {
-      const func = $jsonDropzoneMetadata.length ? metadataJSONBehavior : standardJSONBehavior
-      const maxFiles = $jsonDropzoneMetadata.length ? 100 : 1
-      const acceptedFiles = $jsonDropzoneMetadata.length ? 'text/plain,application/json,.sol,.json' : 'text/plain,application/json,.json'
-      const tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone-form' : '#standard-json-dropzone-form'
-      const jsonVerificationType = $jsonDropzoneMetadata.length ? 'json:metadata' : 'json:standard'
-
-      var dropzone = new Dropzone(tag, {
+    if ($('#metadata-json-dropzone').length) {
+      var dropzone = new Dropzone('#metadata-json-dropzone', {
         autoProcessQueue: false,
-        acceptedFiles: acceptedFiles,
+        acceptedFiles: 'text/plain,application/json,.sol,.json',
         parallelUploads: 100,
         uploadMultiple: true,
         addRemoveLinks: true,
-        maxFilesize: 10,
-        maxFiles: maxFiles,
-        previewsContainer: '#dropzone-previews',
-        params: { address_hash: $('#smart_contract_address_hash').val(), verification_type: jsonVerificationType },
-        init: func
+        params: { address_hash: $('#smart_contract_address_hash').val() },
+        init: function () {
+          this.on('addedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+            $('#file-help-block').text('')
+          })
+
+          this.on('removedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+          })
+        }
       })
     }
 
     function changeVisibilityOfVerifyButton (filesLength) {
       if (filesLength > 0) {
-        $('#verify-via-metadata-json-submit').prop('disabled', false)
+        $('#verify-via-json-submit').prop('disabled', false)
       } else {
-        $('#verify-via-metadata-json-submit').prop('disabled', true)
+        $('#verify-via-json-submit').prop('disabled', true)
       }
     }
 
@@ -259,17 +220,7 @@ if ($contractVerificationPage.length) {
       }
     })
 
-    $('#verify-via-standard-json-input-submit').on('click', (event) => {
-      event.preventDefault()
-      if (dropzone.files.length > 0) {
-        dropzone.processQueue()
-      } else {
-        $('#loading').addClass('d-none')
-      }
-    })
-
-    $('#verify-via-metadata-json-submit').on('click', (event) => {
-      event.preventDefault()
+    $('#verify-via-json-submit').on('click', function () {
       if (dropzone.files.length > 0) {
         dropzone.processQueue()
       } else {
@@ -282,8 +233,6 @@ if ($contractVerificationPage.length) {
     if ($(this).prop('checked')) {
       $('#verify_via_flattened_code_button').show()
       $('#verify_via_sourcify_button').hide()
-      $('#verify_vyper_contract_button').hide()
-      $('#verify_via_standard_json_input').hide()
     }
   })
 
@@ -291,26 +240,6 @@ if ($contractVerificationPage.length) {
     if ($(this).prop('checked')) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').show()
-      $('#verify_vyper_contract_button').hide()
-      $('#verify_via_standard_json_input').hide()
-    }
-  })
-
-  $('.verify-vyper-contract').on('click', function () {
-    if ($(this).prop('checked')) {
-      $('#verify_via_flattened_code_button').hide()
-      $('#verify_via_sourcify_button').hide()
-      $('#verify_vyper_contract_button').show()
-      $('#verify_via_standard_json_input').hide()
-    }
-  })
-
-  $('.verify-via-standard-json-input').on('click', function () {
-    if ($(this).prop('checked')) {
-      $('#verify_via_flattened_code_button').hide()
-      $('#verify_via_sourcify_button').hide()
-      $('#verify_vyper_contract_button').hide()
-      $('#verify_via_standard_json_input').show()
     }
   })
 }

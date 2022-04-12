@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.BlockView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
-  alias BlockScoutWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
   alias Explorer.Chain.{Hash, Wei}
   alias Explorer.EthRPC, as: EthRPC
 

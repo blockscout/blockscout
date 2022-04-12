@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :indexer,
   json_rpc_named_arguments: [

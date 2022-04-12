@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
       receive do
         %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
-          assert payload.exchange_rate == Map.from_struct(token)
+          assert payload.exchange_rate == token
           assert payload.market_history_data == []
       after
         :timer.seconds(5) ->
@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
       receive do
         %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
-          assert payload.exchange_rate == Map.from_struct(token)
+          assert payload.exchange_rate == token
           assert payload.market_history_data == records
       after
         :timer.seconds(5) ->

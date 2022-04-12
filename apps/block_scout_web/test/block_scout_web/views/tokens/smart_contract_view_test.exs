@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Tokens.SmartContractViewTest do
+defmodule BlockScoutWeb.SmartContractViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
   @max_size Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
@@ -135,7 +135,7 @@ defmodule BlockScoutWeb.Tokens.SmartContractViewTest do
     if length > @max_size do
       "<details class=\"py-2 word-break-all\"><summary>Click to view</summary>#{output}</details>"
     else
-      "<span class=\"word-break-all\" style=\"line-height: 3;\">#{output}</span>"
+      "<div class=\"py-2 word-break-all\">#{output}</div>"
     end
   end
 

@@ -3,8 +3,6 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
   Extracts `Explorer.Chain.Address.CoinBalanceDaily` params from other schema's params.
   """
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1, request: 1]
-
   def params_set(%{coin_balances_params: coin_balances_params_set, blocks: blocks}) do
     coin_balances_params =
       coin_balances_params_set
@@ -21,27 +19,14 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
             block.number == block_number
           end)
 
-        day =
-          if block do
-            DateTime.to_date(block.timestamp)
-          else
-            json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-            with {:ok, %{"timestamp" => timestamp_raw}} <-
-                   %{id: 1, method: "eth_getBlockByNumber", params: [integer_to_quantity(block_number), false]}
-                   |> request()
-                   |> json_rpc(json_rpc_named_arguments) do
-              timestamp = quantity_to_integer(timestamp_raw)
-              DateTime.from_unix!(timestamp)
-            end
-          end
+        day = DateTime.to_date(block.timestamp)
 
         [%{address_hash: address_hash, day: day} | acc]
       end)
 
     coin_balances_daily_params_set =
       coin_balances_daily_params_list
-      |> Enum.uniq()
+      |> Enum.dedup()
       |> Enum.into(MapSet.new())
 
     coin_balances_daily_params_set
@@ -64,7 +49,7 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
 
     coin_balances_daily_params_set =
       coin_balances_daily_params_list
-      |> Enum.uniq()
+      |> Enum.dedup()
       |> Enum.into(MapSet.new())
 
     coin_balances_daily_params_set

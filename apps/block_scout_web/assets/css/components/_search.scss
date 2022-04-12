@@ -1,23 +1,21 @@
 .mobile-search-show {
-    @media screen and (max-width: 992px) {
+    @include media-breakpoint-down(lg) {
         width: 100%;
     }
-    @media screen and (min-width: 992px) {
+    @include media-breakpoint-up(lg) {
         display: none !important;
     }
 }
 
 .mobile-search-hide {
-    @media screen and (max-width: 992px) {
+    @include media-breakpoint-down(lg) {
         display: none !important;
     }
 }
 
 .search-control {
-    @media screen and (min-width: 992px) {
-        height: 57px !important;
-    }
-    @media screen and (max-width: 992px) {
+    height: 57px !important;
+    @include media-breakpoint-down(lg) {
         height: 33px !important;
     }
     &.focused-field {
@@ -35,7 +33,7 @@
     border: none !important;
     border-radius: 0 !important;
     background-color: #f5f6fa !important;
-    @media screen and (max-width: 992px) {
+    @include media-breakpoint-down(lg) {
         height: auto !important;
     }
 }

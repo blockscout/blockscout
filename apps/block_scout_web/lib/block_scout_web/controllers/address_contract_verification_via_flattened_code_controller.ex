@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
   alias BlockScoutWeb.Controller
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler, Solidity.PublisherWorker}
+  alias Explorer.SmartContract.{PublisherWorker, Solidity.CodeCompiler, Solidity.CompilerVersion}
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
         )
 
       compiler_versions =
-        case CompilerVersion.fetch_versions(:solc) do
+        case CompilerVersion.fetch_versions() do
           {:ok, compiler_versions} ->
             compiler_versions
 

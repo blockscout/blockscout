@@ -218,11 +218,11 @@ defmodule BlockScoutWeb.AddressViewTest do
       assert AddressView.primary_name(preloaded_address) == address_name.name
     end
 
-    test "returns any when no primary available" do
+    test "returns nil when no primary available" do
       address_name = insert(:address_name, name: "POA Wallet")
       preloaded_address = Explorer.Repo.preload(address_name.address, :names)
 
-      assert AddressView.primary_name(preloaded_address) == address_name.name
+      refute AddressView.primary_name(preloaded_address)
     end
   end
 
@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.AddressViewTest do
 
   describe "smart_contract_verified?/1" do
     test "returns true when smart contract is verified" do
-      smart_contract = insert(:smart_contract, contract_code_md5: "123")
+      smart_contract = insert(:smart_contract)
       address = insert(:address, smart_contract: smart_contract)
 
       assert AddressView.smart_contract_verified?(address)
@@ -263,8 +263,7 @@ defmodule BlockScoutWeb.AddressViewTest do
               "stateMutability" => "view",
               "type" => "function"
             }
-          ],
-          contract_code_md5: "123"
+          ]
         )
 
       address = insert(:address, smart_contract: smart_contract)
@@ -286,8 +285,7 @@ defmodule BlockScoutWeb.AddressViewTest do
               "stateMutability" => "nonpayable",
               "type" => "function"
             }
-          ],
-          contract_code_md5: "123"
+          ]
         )
 
       address = insert(:address, smart_contract: smart_contract)

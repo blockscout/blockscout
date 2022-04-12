@@ -130,7 +130,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     color: $dashboard-banner-chart-legend-label-color;
     display: block;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.2;
     margin: 0 0 5px;
 
@@ -248,6 +248,12 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     @media (max-width: 374px) {
       padding-left: calc(0.6rem + 4px);
       padding-right: 0.5rem;
+    }
+
+    .dashboard-banner-network-stats-label {
+      font-size: 12px;
+      font-weight: 700;
+      margin: 0;
     }
   }
 

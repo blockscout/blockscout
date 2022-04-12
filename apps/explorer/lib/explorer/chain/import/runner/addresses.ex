@@ -123,8 +123,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
               "GREATEST(EXCLUDED.fetched_coin_balance_block_number, ?)",
               address.fetched_coin_balance_block_number
             ),
-          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", address.updated_at)
+          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce)
         ]
       ],
       # where any of `set`s would make a change

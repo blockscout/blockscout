@@ -1,6 +1,7 @@
-import hljs from 'highlight.js/lib/core'
+import $ from 'jquery'
+import hljs from 'highlight.js'
 
 // only activate highlighting on pages with this selector
-if (document.querySelectorAll('[data-activate-highlight]').length > 0) {
-  hljs.highlightAll()
+if ($('[data-activate-highlight]').length > 0) {
+  hljs.initHighlightingOnLoad()
 }

@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
 import { reducer, initialState } from '../../../js/pages/address/validations'
 
 describe('RECEIVED_NEW_BLOCK', () => {

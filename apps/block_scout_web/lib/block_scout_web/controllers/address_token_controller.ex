@@ -14,12 +14,8 @@ defmodule BlockScoutWeb.AddressTokenController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash, [], false),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      token_balances_plus_one =
-        address_hash
-        |> Chain.fetch_last_token_balances(paging_options(params))
-        |> Market.add_price()
-
-      {tokens, next_page} = split_list_by_page(token_balances_plus_one)
+      tokens_plus_one = Chain.address_tokens_with_balance(address_hash, paging_options(params))
+      {tokens, next_page} = split_list_by_page(tokens_plus_one)
 
       next_page_path =
         case next_page_params(next_page, tokens, params) do
@@ -33,13 +29,11 @@ defmodule BlockScoutWeb.AddressTokenController do
       items =
         tokens
         |> Market.add_price()
-        |> Enum.map(fn {token_balance, bridged_token, token} ->
+        |> Enum.map(fn token ->
           View.render_to_string(
             AddressTokenView,
             "_tokens.html",
-            token_balance: token_balance,
             token: token,
-            bridged_token: bridged_token,
             address: address,
             conn: conn
           )

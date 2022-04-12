@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   alias Explorer.{Chain, CustomContractsHelpers}
   alias Explorer.Chain.{Address, SmartContract, Token}
-  alias Explorer.SmartContract.{Helper, Writer}
+  alias Explorer.SmartContract.Helper
 
   alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, LayoutView}
 
@@ -44,7 +44,6 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   defp tab_name(["inventory"]), do: gettext("Inventory")
 
   def display_inventory?(%Token{type: "ERC-721"}), do: true
-  def display_inventory?(%Token{type: "ERC-1155"}), do: true
   def display_inventory?(_), do: false
 
   def smart_contract_with_read_only_functions?(
@@ -55,28 +54,11 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
-  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: %SmartContract{}} = address}) do
-    Chain.proxy_contract?(address.hash, address.smart_contract.abi)
-  end
-
-  def smart_contract_is_proxy?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
-
-  def smart_contract_with_write_functions?(%Token{
-        contract_address: %Address{smart_contract: %SmartContract{}} = address
-      }) do
-    Enum.any?(
-      address.smart_contract.abi,
-      &Writer.write_function?(&1)
-    )
-  end
-
-  def smart_contract_with_write_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
-
   @doc """
   Get the total value of the token supply in USD.
   """
   def total_supply_usd(token) do
-    if Map.has_key?(token, :custom_cap) && token.custom_cap do
+    if token.custom_cap do
       token.custom_cap
     else
       tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
