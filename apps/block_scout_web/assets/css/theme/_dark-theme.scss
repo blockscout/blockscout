@@ -2,7 +2,7 @@ $body-dark: #1c1d31; // body background
 $dark-bg: #22223a; // hero shade
 $dark-light-bg: #282945; // pills bg shade
 $dark-light: #313355; // tile light top share
-$labels-dark: #8a8dba; // header nav, labels
+$labels-dark: #fff; // header nav, labels
 $dark-stakes-banned-background: #3e314c;
 
 // Switcher
@@ -43,9 +43,6 @@ $dark-stakes-banned-background: #3e314c;
 				background-color: $dark-light-bg;
 			}
 		}
-	}
-	.navbar-brand .navbar-logo {
-		filter: brightness(0) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
 		color: $labels-dark;
