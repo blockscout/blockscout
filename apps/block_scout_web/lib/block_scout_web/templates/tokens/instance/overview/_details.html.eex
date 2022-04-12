@@ -62,12 +62,12 @@
       <div class="card">
         <div class="card-body">
           <div class="erc721-media" >
-            <%= if media_type(media_src(@token_instance.instance)) == "video" do %>
-              <video autoplay style="width: 100%;">
-                <source src=<%= media_src(@token_instance.instance) %> type="video/mp4">
+            <%= if media_type(media_src(@token_instance.instance, true)) == "video" do %>
+              <video controls autoplay playsinline style="width: 100%;">
+                <source src=<%= media_src(@token_instance.instance, true) %> type="video/mp4">
               </video>
             <% else %>
-              <img src=<%= media_src(@token_instance.instance) %> />
+              <img src=<%= media_src(@token_instance.instance, true) %> />
             <% end %>
           </div>
         </div>
