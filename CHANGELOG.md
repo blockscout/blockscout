@@ -30,6 +30,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5458](https://github.com/blockscout/blockscout/pull/5458) - Decrease min safe polling period for realtime fetcher
 - [#5456](https://github.com/blockscout/blockscout/pull/5456) - Ignore arbitrary block details fields for custom Ethereum clients
 - [#5450](https://github.com/blockscout/blockscout/pull/5450) - Logging error in publishing of smart-contract
 - [#5433](https://github.com/blockscout/blockscout/pull/5433) - Caching modules refactoring
