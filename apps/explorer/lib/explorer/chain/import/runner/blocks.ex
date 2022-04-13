@@ -321,7 +321,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
-    if InternalTransactionSupervisor.disabled?() || Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
+    if InternalTransactionSupervisor.disabled?() ||
+         Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
       {:ok, []}
     else
       sorted_pending_ops =
