@@ -1,18 +1,6 @@
 <section class="container">
   <div class="row">
-    <div class="col-2 mb-3">
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <a class="dropdown-item acc-link-active fs-14" aria-current="page" href="#">Profile</a>
-        </li>
-        <li class="nav-item">
-          <a class="dropdown-item fs-14" href="<%= watchlist_path(@conn, :show) %>">Watchlist</a>
-        </li>
-        <li class="nav-item">
-          <a class="dropdown-item fs-14" href="<%= tag_address_path(@conn, :index) %>">Address Tags</a>
-        </li>
-      </ul>
-    </div>
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :profile %>
     <div class="col-md">
       <div class="card">
         <div class="card-body" >

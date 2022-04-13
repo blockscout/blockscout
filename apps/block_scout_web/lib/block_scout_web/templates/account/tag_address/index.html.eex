@@ -1,6 +1,6 @@
 <section class="container">
   <div class="row"> 
-    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :address_tags %>
     <div class="col-md">
       <div class="card">
         <div class="card-body" >
