@@ -6,6 +6,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5457](https://github.com/blockscout/blockscout/pull/5457) - Fix internal transaction fetching with `INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=true`
 - [#5455](https://github.com/blockscout/blockscout/pull/5455) - Fix unverified_smart_contract function: add md5 of bytecode to the changeset
 - [#5443](https://github.com/blockscout/blockscout/pull/5443) - Geth: display tx revert reason
 - [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
