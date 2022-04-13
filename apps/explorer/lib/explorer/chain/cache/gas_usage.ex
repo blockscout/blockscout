@@ -5,6 +5,11 @@ defmodule Explorer.Chain.Cache.GasUsage do
 
   require Logger
 
+  import Ecto.Query,
+    only: [
+      from: 2
+    ]
+
   @default_cache_period :timer.hours(2)
   config = Application.get_env(:explorer, __MODULE__)
   @enabled Keyword.get(config, :enabled)
@@ -17,7 +22,19 @@ defmodule Explorer.Chain.Cache.GasUsage do
     ttl_check_interval: :timer.minutes(15),
     callback: &async_task_on_deletion(&1)
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Transaction
+  alias Explorer.Repo
+
+  @spec total() :: non_neg_integer()
+  def total do
+    cached_value = __MODULE__.get_sum()
+
+    if is_nil(cached_value) do
+      0
+    else
+      cached_value
+    end
+  end
 
   defp handle_fallback(:sum) do
     # This will get the task PID if one exists and launch a new task if not
@@ -34,7 +51,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
       {:ok, task} =
         Task.start(fn ->
           try do
-            result = Chain.fetch_sum_gas_used()
+            result = fetch_sum_gas_used()
 
             set_sum(result)
           rescue
@@ -60,12 +77,23 @@ defmodule Explorer.Chain.Cache.GasUsage do
   defp async_task_on_deletion(_data), do: nil
 
   defp cache_period do
-    "TOTAL_GAS_USAGE_CACHE_PERIOD"
+    "CACHE_TOTAL_GAS_USAGE_PERIOD"
     |> System.get_env("")
     |> Integer.parse()
     |> case do
       {integer, ""} -> :timer.seconds(integer)
       _ -> @default_cache_period
     end
+  end
+
+  @spec fetch_sum_gas_used() :: non_neg_integer
+  defp fetch_sum_gas_used do
+    query =
+      from(
+        t0 in Transaction,
+        select: fragment("SUM(t0.gas_used)")
+      )
+
+    Repo.one!(query, timeout: :infinity) || 0
   end
 end
