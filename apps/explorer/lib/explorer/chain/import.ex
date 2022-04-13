@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Import do
   """
 
   alias Ecto.Changeset
-  alias Explorer.Accounts.Notify.Notifier
+  alias Explorer.Accounts.Notify
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
@@ -305,13 +305,7 @@ defmodule Explorer.Chain.Import do
         Keyword.delete(options, :for)
       )
 
-    try do
-      Notifier.notify(inserted)
-    rescue
-      err ->
-        Logger.info("--- Notifier error", fetcher: :account)
-        Logger.info(err, fetcher: :account)
-    end
+    Notify.async(inserted)
 
     {:ok, inserted}
   end

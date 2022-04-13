@@ -1,4 +1,4 @@
-defmodule Explorer.Accounts.Notify.ForbiddenAddress do
+defmodule Explorer.Accounts.Notifier.ForbiddenAddress do
   @moduledoc """
     Check if address is forbidden to notify
   """

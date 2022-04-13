@@ -1,4 +1,4 @@
-defmodule Explorer.Accounts.Notify.Email do
+defmodule Explorer.Accounts.Notifier.Email do
   @moduledoc """
     Composing an email to sendgrid
   """
