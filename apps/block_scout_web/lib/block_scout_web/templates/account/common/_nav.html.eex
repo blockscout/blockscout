@@ -1,16 +1,16 @@
 <div class="col-2 mb-3">
-  <ul class="nav flex-column">
+ <ul class="nav flex-column nav-pills">
     <li class="nav-item">
-      <a class="dropdown-item fs-14" aria-current="page"  href="<%= auth_path(@conn, :profile) %>">Profile</a>
+      <a class="<%= nav_class(@active_item, :profile) %>" aria-current="page"  href="<%= auth_path(@conn, :profile) %>">Profile</a>
     </li>
     <li class="nav-item">
-      <a class="dropdown-item fs-14" href="<%= watchlist_path(@conn, :show) %>">Watchlist</a>
+      <a class="<%= nav_class(@active_item, :watchlist) %>" href="<%= watchlist_path(@conn, :show) %>">Watchlist</a>
     </li>
     <li class="nav-item">
-      <a class="dropdown-item fs-14" href="<%= tag_address_path(@conn, :index) %>">Address Tags</a>
+      <a class="<%= nav_class(@active_item, :address_tags) %>" href="<%= tag_address_path(@conn, :index) %>">Address Tags</a>
     </li>
     <li class="nav-item">
-      <a class="dropdown-item fs-14" href="<%= tag_transaction_path(@conn, :index) %>">Transaction Tags</a>
+      <a class="<%= nav_class(@active_item, :transaction_tags) %>" href="<%= tag_transaction_path(@conn, :index) %>">Transaction Tags</a>
     </li>
   </ul>
 </div>
