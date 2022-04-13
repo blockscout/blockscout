@@ -28,7 +28,6 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.{TypeDecoder, TypeEncoder}
-  alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
   alias EthereumJSONRPC.Contract
@@ -69,12 +68,9 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.{
     Accounts,
-    BlockCount,
     BlockNumber,
     Blocks,
-    GasUsage,
     TokenExchangeRate,
-    TransactionCount,
     Transactions,
     Uncles
   }
@@ -97,6 +93,8 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_2 "revert: "
   @revert_msg_prefix_3 "reverted "
   @revert_msg_prefix_4 "Reverted "
+  # Geth-like node
+  @revert_msg_prefix_5 "execution reverted: "
   # keccak256("Error(string)")
   @revert_error_method_id "08c379a0"
 
@@ -2094,30 +2092,8 @@ defmodule Explorer.Chain do
       0
   end
 
-  @spec fetch_count_consensus_block() :: non_neg_integer
-  def fetch_count_consensus_block do
-    query =
-      from(block in Block,
-        select: count(block.hash),
-        where: block.consensus == true
-      )
-
-    Repo.one!(query, timeout: :infinity) || 0
-  end
-
   def fetch_block_by_hash(block_hash) do
     Repo.get(Block, block_hash)
-  end
-
-  @spec fetch_sum_gas_used() :: non_neg_integer
-  def fetch_sum_gas_used do
-    query =
-      from(
-        t0 in Transaction,
-        select: fragment("SUM(t0.gas_used)")
-      )
-
-    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @doc """
@@ -3473,54 +3449,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Estimated count of `t:Explorer.Chain.Transaction.t/0`.
-
-  Estimated count of both collated and pending transactions using the transactions table statistics.
-  """
-  @spec transaction_estimated_count() :: non_neg_integer()
-  def transaction_estimated_count do
-    cached_value = TransactionCount.get_count()
-
-    if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[rows]]} =
-        SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
-
-      rows
-    else
-      cached_value
-    end
-  end
-
-  @spec total_gas_usage() :: non_neg_integer()
-  def total_gas_usage do
-    cached_value = GasUsage.get_sum()
-
-    if is_nil(cached_value) do
-      0
-    else
-      cached_value
-    end
-  end
-
-  @doc """
-  Estimated count of `t:Explorer.Chain.Block.t/0`.
-
-  Estimated count of consensus blocks.
-  """
-  @spec block_estimated_count() :: non_neg_integer()
-  def block_estimated_count do
-    cached_value = BlockCount.get_count()
-
-    if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
-
-      trunc(count * 0.90)
-    else
-      cached_value
-    end
-  end
-
-  @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
 
   ## Options
@@ -3729,16 +3657,20 @@ defmodule Explorer.Chain do
         Wei.hex_format(value)
       )
 
-    data =
+    revert_reason =
       case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
         {:error, %{data: data}} ->
           data
+
+        {:error, %{message: message}} ->
+          message
 
         _ ->
           ""
       end
 
-    formatted_revert_reason = data |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: data)).()
+    formatted_revert_reason =
+      revert_reason |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: revert_reason)).()
 
     if byte_size(formatted_revert_reason) > 0 do
       transaction
@@ -3761,6 +3693,9 @@ defmodule Explorer.Chain do
         extract_revert_reason_message_wrapper(rest)
 
       @revert_msg_prefix_4 <> rest ->
+        extract_revert_reason_message_wrapper(rest)
+
+      @revert_msg_prefix_5 <> rest ->
         extract_revert_reason_message_wrapper(rest)
 
       revert_reason_full ->
