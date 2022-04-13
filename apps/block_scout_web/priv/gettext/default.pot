@@ -2630,7 +2630,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16 lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:5
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:15 lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7 lib/block_scout_web/views/address_view.ex:357
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:194 lib/block_scout_web/views/tokens/overview_view.ex:41
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:195 lib/block_scout_web/views/tokens/overview_view.ex:41
 #: lib/block_scout_web/views/transaction_view.ex:512
 msgid "Token Transfers"
 msgstr ""
