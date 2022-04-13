@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - account
-      - account-tags
 
 env:
   MIX_ENV: test
