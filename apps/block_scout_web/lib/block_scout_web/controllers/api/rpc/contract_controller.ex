@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
-  @smth_went_wrong "Something went wrong while publishing the contract."
+  @smth_went_wrong "Something went wrong while publishing the contract"
   @verified "Smart-contract already verified."
   @invalid_address "Invalid address hash"
   @invalid_args "Invalid args format"
@@ -46,10 +46,22 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         }}} ->
         render(conn, :error, error: @verified)
 
+      {:publish, {:error, error}} ->
+        Logger.error(fn ->
+          [
+            @smth_went_wrong,
+            ": ",
+            inspect(error)
+          ]
+        end)
+
+        render(conn, :error, error: "#{@smth_went_wrong}: #{inspect(error.errors)}")
+
       {:publish, error} ->
         Logger.error(fn ->
           [
             @smth_went_wrong,
+            ": ",
             inspect(error)
           ]
         end)
