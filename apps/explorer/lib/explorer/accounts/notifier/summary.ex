@@ -1,11 +1,11 @@
-defmodule Explorer.Accounts.Notify.Summary do
+defmodule Explorer.Accounts.Notifier.Summary do
   @moduledoc """
     Compose a summary from transactions
   """
 
   require Logger
 
-  alias Explorer.Accounts.Notify.Summary
+  alias Explorer.Accounts.Notifier.Summary
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Wei
 
