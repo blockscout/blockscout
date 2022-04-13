@@ -85,13 +85,12 @@ defmodule BlockScoutWeb.AccessHelpers do
       plan = get_plan(conn.query_params)
 
       cond do
-        conn.query_params && Map.has_key?(conn.query_params, "apikey") &&
-            Map.get(conn.query_params, "apikey") == static_api_key ->
+        check_api_key(conn) && get_api_key(conn) == static_api_key ->
           rate_limit_by_key(static_api_key, api_rate_limit_by_key)
 
-        conn.query_params && Map.has_key?(conn.query_params, "apikey") && !is_nil(plan) ->
-          conn.query_params
-          |> Map.get("apikey")
+        check_api_key(conn) && !is_nil(plan) ->
+          conn
+          |> get_api_key()
           |> rate_limit_by_key(plan.max_req_per_second)
 
         Enum.member?(api_rate_limit_whitelisted_ips(), ip_string) ->
@@ -101,6 +100,14 @@ defmodule BlockScoutWeb.AccessHelpers do
           global_rate_limit(global_api_rate_limit)
       end
     end
+  end
+
+  defp check_api_key(conn) do
+    conn.query_params && Map.has_key?(conn.query_params, "apikey")
+  end
+
+  defp get_api_key(conn) do
+    Map.get(conn.query_params, "apikey")
   end
 
   defp get_plan(query_params) do
