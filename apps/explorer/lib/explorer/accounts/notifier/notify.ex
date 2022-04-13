@@ -1,9 +1,9 @@
-defmodule Explorer.Accounts.Notify.Notifier do
+defmodule Explorer.Accounts.Notifier.Notify do
   @moduledoc """
     Composing notification, store and send it to email
   """
 
-  alias Explorer.Accounts.Notify.{Email, ForbiddenAddress, Summary}
+  alias Explorer.Accounts.Notifier.{Email, ForbiddenAddress, Summary}
   alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Chain.{TokenTransfer, Transaction}
   alias Explorer.{Mailer, Repo}
@@ -12,10 +12,10 @@ defmodule Explorer.Accounts.Notify.Notifier do
 
   import Ecto.Query, only: [from: 2]
 
-  def notify(nil), do: nil
-  def notify([]), do: nil
+  def call(nil), do: nil
+  def call([]), do: nil
 
-  def notify(transactions) when is_list(transactions) do
+  def call(transactions) when is_list(transactions) do
     Enum.map(transactions, fn transaction -> process(transaction) end)
   end
 
