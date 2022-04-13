@@ -30,13 +30,13 @@ defmodule BlockScoutWeb.Account.ApiKeyController do
   def index(conn, _params) do
     current_user = authenticate!(conn)
 
-    render(conn, "index.html", api_keys: ApiKey.get_api_keys_by_user_id(current_user.id))
+    render(conn, "index.html", api_keys: ApiKey.get_api_keys_by_identity_id(current_user.id))
   end
 
   def edit(conn, %{"id" => api_key}) do
     current_user = authenticate!(conn)
 
-    case ApiKey.api_key_by_api_key_and_identity_id(api_key, current_user.id) do
+    case ApiKey.api_key_by_value_and_identity_id(api_key, current_user.id) do
       nil ->
         conn
         |> put_status(:not_found)
@@ -48,10 +48,10 @@ defmodule BlockScoutWeb.Account.ApiKeyController do
     end
   end
 
-  def update(conn, %{"id" => api_key, "key" => %{"api_key" => api_key, "name" => name}}) do
+  def update(conn, %{"id" => api_key, "key" => %{"value" => api_key, "name" => name}}) do
     current_user = authenticate!(conn)
 
-    ApiKey.update_name_api_key(name, current_user.id, api_key)
+    ApiKey.update_api_key_name(name, current_user.id, api_key)
 
     redirect(conn, to: api_key_path(conn, :index))
   end

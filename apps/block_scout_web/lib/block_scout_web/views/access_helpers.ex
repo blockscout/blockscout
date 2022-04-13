@@ -112,9 +112,9 @@ defmodule BlockScoutWeb.AccessHelpers do
 
   defp get_plan(query_params) do
     with true <- query_params && Map.has_key?(query_params, "apikey"),
-         {:ok, casted_api_key} <- ApiKey.cast_api_key(Map.get(query_params, "apikey")),
-         api_key <- ApiKey.api_key_with_plan_by_api_key(casted_api_key),
-         true <- !is_nil(api_key) do
+         api_key_value <- Map.get(query_params, "apikey"),
+         api_key <- ApiKey.api_key_with_plan_by_value(api_key_value),
+         false <- is_nil(api_key) do
       api_key.identity.plan
     else
       _ ->

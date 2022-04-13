@@ -6,13 +6,13 @@
         <div class="card-body">
           <h1 class="card-title list-title-description header-account"><%=if @method == :update, do:  gettext("Update"), else: gettext("Add") %> <%= gettext "API key"%></h1>
           <div class="col-sm-10 card-body-account">
-            <% path = if @method == :update, do: api_key_path(@conn, @method, @api_key.data.api_key), else: api_key_path(@conn, @method) %>
+            <% path = if @method == :update, do: api_key_path(@conn, @method, @api_key.data.value), else: api_key_path(@conn, @method) %>
             <%= form_for @api_key, path, fn f -> %>
-              <%= if f.data.api_key do %>    
+              <%= if f.data.value do %>    
                 <div class="form-group">
-                  <%= label f, :api_key, gettext("API key"), class: "control-label", style: "font-size: 14px" %>
-                  <%= text_input f, :api_key, class: "form-control", placeholder: gettext("API key"), readonly: true %>
-                  <%= error_tag f, :api_key %>
+                  <%= label f, :value, gettext("API key"), class: "control-label", style: "font-size: 14px" %>
+                  <%= text_input f, :value, class: "form-control", placeholder: gettext("API key"), readonly: true %>
+                  <%= error_tag f, :value %>
                 </div>
               <% end %>
               <div class="form-group">
