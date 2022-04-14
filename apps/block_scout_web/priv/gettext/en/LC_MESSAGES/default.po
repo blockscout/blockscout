@@ -3354,19 +3354,14 @@ msgid "API key"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/common/_nav.html.eex:16
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:219
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:7
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:16 lib/block_scout_web/templates/layout/_topnav.html.eex:219
 msgid "API keys"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:38
 msgid "Add API key"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:7
-msgid "Api keys"
 msgstr ""
 
 #, elixir-format
@@ -3381,7 +3376,7 @@ msgid "Copy API key"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/api_key/row.html.eex:12
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:16
 msgid "Edit"
 msgstr ""
 
@@ -3391,7 +3386,7 @@ msgid "Name this API key"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/api_key/row.html.eex:9
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:13
 msgid "Remove"
 msgstr ""
 
