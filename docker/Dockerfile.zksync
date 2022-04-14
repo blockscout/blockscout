@@ -42,6 +42,6 @@ RUN apt-get update -y && apt-get install -y curl build-essential git && \
     mix phx.digest && \
     # Cleanup \
     rustup self uninstall -y && \
-    apt-get remove -y build-essential nodejs && apt-get autoremove -y && apt-get clean
+    apt-get remove -y build-essential && apt-get autoremove -y && apt-get clean
 
 COPY --from=evm /usr/local/bin/zksolc /usr/local/bin/solc /usr/local/bin/
