@@ -60,7 +60,8 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           {:ok, [TokenBalance.t()]}
           | {:error, [Changeset.t()]}
   # def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-  def insert(_repo, changes_list, %{timeout: _timeout, timestamps: _timestamps} = _options) when is_list(changes_list) do
+  def insert(_repo, changes_list, %{timeout: _timeout, timestamps: _timestamps} = _options)
+      when is_list(changes_list) do
     {:ok, []}
     # todo
     # Logger.info("### Address_token_balances insert started changes_list length #{Enum.count(changes_list)} ###")

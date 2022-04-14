@@ -26,7 +26,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-#  alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
+  #  alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
@@ -34,12 +34,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-#  alias Indexer.Transform.Addresses
+  #  alias Indexer.Transform.Addresses
   alias Timex.Duration
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(5)
+  @minimum_safe_polling_period :timer.seconds(1)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -395,9 +395,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   defp balances(
-        #  %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-        # %{addresses_params: addresses_params} = options
-        %Block.Fetcher{json_rpc_named_arguments: _json_rpc_named_arguments},
+         #  %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
+         # %{addresses_params: addresses_params} = options
+         %Block.Fetcher{json_rpc_named_arguments: _json_rpc_named_arguments},
          %{addresses_params: addresses_params} = _options
        ) do
     Logger.info("### Realtime fetcher balances collection started ###")
