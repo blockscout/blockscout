@@ -52,11 +52,19 @@ kubernetes:
     - name: SUBNETWORK
       value: "Testnet"
     - name: SUPPORTED_CHAINS
-      value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
+      value: '[ { "title": "CloudWalk Mainnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": false }, { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
     - name: LOGO
-      value: /images/cloudwalk_logo.png
+      value: /images/cloudwalk_full.png
     - name: LOGO_FOOTER
       value: /images/cloudwalk_full.png
+    - name: POOL_SIZE
+      value: '5'
+    - name: POOL_SIZE_API
+      value: '5'
+    - name: INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER
+      value: 'true'
+    - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+      value: 'true'
     resources:
       limits:
         cpu: 1000m
@@ -80,4 +88,3 @@ kubernetes:
             hosts:
               - blockscout.stg.services.issuing.infinitepay.io
               - explorer.testnet.cloudwalk.io
-
