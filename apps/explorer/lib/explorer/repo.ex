@@ -26,6 +26,13 @@ defmodule Explorer.Repo do
 
     Application.put_env(:explorer, Explorer.Repo, merged)
 
+    extra_postgres_parameters = [application_name: get_application_name()]
+
+    opts =
+      Keyword.update(opts, :parameters, extra_postgres_parameters, fn params ->
+        Keyword.merge(params, extra_postgres_parameters)
+      end)
+
     {:ok, Keyword.put(opts, :url, db_url)}
   end
 
@@ -120,5 +127,18 @@ defmodule Explorer.Repo do
 
   def stream_reduce(query, initial, reducer) when is_function(reducer, 2) do
     stream_in_transaction(query, &Enum.reduce(&1, initial, reducer))
+  end
+
+  def get_application_name do
+    case Mix.env() do
+      :dev ->
+        System.get_env("USER", "anon") <> "_dev_blockscout"
+
+      :prod ->
+        System.get_env("HOSTNAME", "blockscout_production")
+
+      _ ->
+        "blockscout"
+    end
   end
 end
