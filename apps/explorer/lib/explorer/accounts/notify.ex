@@ -1,4 +1,8 @@
 defmodule Explorer.Accounts.Notify do
+  @moduledoc """
+    Interface for notifier, for import and call from other modules
+  """
+
   alias Explorer.Accounts.Notifier.Notify
 
   require Logger
@@ -8,12 +12,10 @@ defmodule Explorer.Accounts.Notify do
   end
 
   defp process(transactions) do
-    try do
-      Notify.call(transactions)
-    rescue
-      err ->
-        Logger.info("--- Notifier error", fetcher: :account)
-        Logger.info(err, fetcher: :account)
-    end
+    Notify.call(transactions)
+  rescue
+    err ->
+      Logger.info("--- Notifier error", fetcher: :account)
+      Logger.info(err, fetcher: :account)
   end
 end
