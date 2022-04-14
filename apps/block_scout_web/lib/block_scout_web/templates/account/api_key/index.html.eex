@@ -1,10 +1,10 @@
 <section class="container">
   <div class="row">
-    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn %>
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :api_keys %>
     <div class="col-md">
       <div class="card">
         <div class="card-body">
-          <h1 class="card-title list-title-description header-account"><%= gettext "Api keys" %> </h1>
+          <h1 class="card-title list-title-description header-account"><%= gettext "API keys" %> </h1>
           <br>
           <div class="col-sm">
             <div class="mb-3 row o-flow-x">
@@ -41,4 +41,5 @@
       </div>
     </div>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/api-keys.js") %>"></script>
 </section>

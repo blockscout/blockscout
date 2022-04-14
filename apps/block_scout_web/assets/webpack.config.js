@@ -70,7 +70,9 @@ const appJs =
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
       'csv-download': './js/lib/csv_download.js',
-      'dropzone': './js/lib/dropzone.js'
+      'datepicker': './js/lib/datepicker.js',
+      'dropzone': './js/lib/dropzone.js',
+      'api-keys': './js/pages/api_keys.js'
     },
     output: {
       filename: '[name].js',

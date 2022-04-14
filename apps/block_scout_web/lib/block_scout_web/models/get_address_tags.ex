@@ -21,6 +21,8 @@ defmodule GetAddressTags do
     }
   end
 
+  def call(_, _), do: %{personal_tags: [], watchlist_names: []}
+
   def get_tags_on_address(%Hash{} = address_hash) do
     query =
       from(

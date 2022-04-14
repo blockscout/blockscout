@@ -13,7 +13,7 @@
       <a class="<%= nav_class(@active_item, :transaction_tags) %>" href="<%= tag_transaction_path(@conn, :index) %>">Transaction Tags</a>
     </li>
       <li class="nav-item">
-      <a class="dropdown-item fs-14" href="<%= api_key_path(@conn, :index) %>"><%= gettext "API keys" %></a>
+      <a class="<%= nav_class(@active_item, :api_keys) %>" href="<%= api_key_path(@conn, :index) %>"><%= gettext "API keys" %></a>
     </li>
   </ul>
 </div>
