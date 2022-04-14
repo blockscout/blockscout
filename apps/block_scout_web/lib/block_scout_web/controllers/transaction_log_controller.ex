@@ -1,7 +1,9 @@
 defmodule BlockScoutWeb.TransactionLogController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import GetTransactionTags, only: [get_transaction_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionController, TransactionLogView}
   alias Explorer.{Chain, Market}
@@ -96,7 +98,12 @@ defmodule BlockScoutWeb.TransactionLogController do
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
         current_path: Controller.current_full_path(conn),
         transaction: transaction,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        personal_tx_tag:
+          get_transaction_tags(
+            transaction_hash,
+            current_user(conn)
+          )
       )
     else
       {:restricted_access, _} ->
