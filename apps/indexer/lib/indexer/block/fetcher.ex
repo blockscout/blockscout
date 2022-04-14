@@ -131,10 +131,8 @@ defmodule Indexer.Block.Fetcher do
     e_logs
   end
 
-  @doc """
-  If a RegistryUpdated event was sent from the registry contract it is treated as a new core contract, inserted into
-  the database and used to update the contract cache.
-  """
+  # If a RegistryUpdated event was sent from the registry contract it is treated as a new core contract, inserted into
+  # the database and used to update the contract cache.
   defp process_celo_core_contracts(logs) do
     logs
     |> Enum.filter(fn log ->

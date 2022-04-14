@@ -44,7 +44,7 @@ variant =
     |> String.downcase()
   end
 
-config :explorer, Explorer.Celo.CoreContracts, enabled: true, refresh: :timer.hours(1)
+config :explorer, Explorer.Celo.CoreContracts, enabled: true, refresh: :timer.hours(1), refresh_concurrency: 5
 config :explorer, Explorer.Celo.AddressCache, Explorer.Celo.CoreContracts
 
 # Import variant specific config. This must remain at the bottom

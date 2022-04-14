@@ -5,7 +5,7 @@ defmodule Explorer.Chain.CeloValidatorGroupVotes do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Block, CeloValidatorGroup, Hash, Wei}
+  alias Explorer.Chain.{Block, Hash, Wei}
 
   @required_attrs ~w(block_hash group_hash previous_block_active_votes)a
 

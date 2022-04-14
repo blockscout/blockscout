@@ -4,7 +4,7 @@ defmodule Explorer.Celo.TelemetryTest do
   require Explorer.Celo.Telemetry, as: Telemetry
 
   @doc """
-    Create a telemetry event handler that will recieve telemetry events and resend as erlang process messages.
+    Create a telemetry event handler that will receive telemetry events and resend as erlang process messages.
 
     Accepts the event name and a unique reference to be sent with process messages.
   """
