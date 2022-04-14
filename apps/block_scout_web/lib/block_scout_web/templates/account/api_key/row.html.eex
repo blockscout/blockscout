@@ -6,7 +6,11 @@
           additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @api_key.value, aria_label: gettext("Copy API key"), title: gettext("Copy API key"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
   </td>
   <td>
-    <%= link gettext("Remove"), to: api_key_path(@conn, :delete, @api_key.value), method: :delete %>
+    <form method="post" action="<%= api_key_path(@conn, :delete, @api_key.value) %>">
+      <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
+      <input type="hidden" name="_method" value="delete">
+    </form>  
+    <a href="" delete-api-key><%= gettext("Remove") %></a>
   </td>
   <td>
     <%= link gettext("Edit"), to: api_key_path(@conn, :edit, @api_key.value) %>
