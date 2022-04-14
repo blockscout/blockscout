@@ -44,4 +44,4 @@ RUN apt-get update -y && apt-get install -y curl build-essential git && \
     rustup self uninstall -y && \
     apt-get remove -y build-essential nodejs && apt-get autoremove -y && apt-get clean
 
-COPY --from=evm /usr/local/bin/zksolc /usr/local/bin/
+COPY --from=evm /usr/local/bin/zksolc /usr/local/bin/solc /usr/local/bin/
