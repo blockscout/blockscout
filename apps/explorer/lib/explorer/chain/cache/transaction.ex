@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Cache.TransactionCount do
+defmodule Explorer.Chain.Cache.Transaction do
   @moduledoc """
   Cache for estimated transaction count.
   """
@@ -15,8 +15,28 @@ defmodule Explorer.Chain.Cache.TransactionCount do
 
   require Logger
 
+  alias Ecto.Adapters.SQL
   alias Explorer.Chain.Transaction
   alias Explorer.Repo
+
+  @doc """
+  Estimated count of `t:Explorer.Chain.Transaction.t/0`.
+
+  Estimated count of both collated and pending transactions using the transactions table statistics.
+  """
+  @spec estimated_count() :: non_neg_integer()
+  def estimated_count do
+    cached_value = __MODULE__.get_count()
+
+    if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[rows]]} =
+        SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+
+      rows
+    else
+      cached_value
+    end
+  end
 
   defp handle_fallback(:count) do
     # This will get the task PID if one exists and launch a new task if not
@@ -55,7 +75,7 @@ defmodule Explorer.Chain.Cache.TransactionCount do
   defp async_task_on_deletion(_data), do: nil
 
   defp cache_period do
-    "TXS_COUNT_CACHE_PERIOD"
+    "CACHE_TXS_COUNT_PERIOD"
     |> System.get_env("")
     |> Integer.parse()
     |> case do

@@ -2,13 +2,13 @@ defmodule BlockScoutWeb.GasTrackerController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.{AccessHelpers, ChainController}
-  alias Explorer.Chain
+  alias Explorer.Chain.Cache.GasUsage
 
   def index(conn, params) do
     case AccessHelpers.gas_tracker_restricted_access?(params) do
       {:ok, false} ->
         transaction_stats = ChainController.get_transaction_stats()
-        total_gas_usage = Chain.total_gas_usage()
+        total_gas_usage = GasUsage.total()
 
         chart_data_paths = %{
           gas_usage: gas_usage_history_chart_path(conn, :show)
