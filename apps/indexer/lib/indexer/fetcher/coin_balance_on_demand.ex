@@ -42,7 +42,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     latest_block_number = latest_block_number()
 
     case stale_balance_window(latest_block_number) do
-      {:error, err} ->
+      {:error, _} ->
         :current
 
       stale_balance_window ->

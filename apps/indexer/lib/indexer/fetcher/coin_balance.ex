@@ -148,50 +148,50 @@ defmodule Indexer.Fetcher.CoinBalance do
 
     importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    # json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    block_numbers =
-      params_list
-      |> Enum.map(&Map.get(&1, :block_number))
-      |> Enum.sort()
-      |> Enum.dedup()
+    # block_numbers =
+    #   params_list
+    #   |> Enum.map(&Map.get(&1, :block_number))
+    #   |> Enum.sort()
+    #   |> Enum.dedup()
 
-    block_timestamp_map =
-      Enum.reduce(block_numbers, %{}, fn block_number, map ->
-        case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
-          {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} ->
-            day = DateTime.to_date(timestamp)
-            Map.put(map, "#{block_number}", day)
+    # block_timestamp_map =
+    #   Enum.reduce(block_numbers, %{}, fn block_number, map ->
+    #     case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
+    #       {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} ->
+    #         day = DateTime.to_date(timestamp)
+    #         Map.put(map, "#{block_number}", day)
 
-          _ ->
-            %{}
-        end
-      end)
+    #       _ ->
+    #         %{}
+    #     end
+    #   end)
 
-    importable_balances_daily_params =
-      params_list
-      |> Enum.map(fn balance_param ->
-        if Map.has_key?(block_timestamp_map, "#{balance_param.block_number}") do
-          day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
+    # importable_balances_daily_params =
+    #   params_list
+    #   |> Enum.map(fn balance_param ->
+    #     if Map.has_key?(block_timestamp_map, "#{balance_param.block_number}") do
+    #       day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
 
-          incoming_balance_daily_param = %{
-            address_hash: balance_param.address_hash,
-            day: day,
-            value: balance_param.value
-          }
+    #       incoming_balance_daily_param = %{
+    #         address_hash: balance_param.address_hash,
+    #         day: day,
+    #         value: balance_param.value
+    #       }
 
-          incoming_balance_daily_param
-        else
-          nil
-        end
-      end)
+    #       incoming_balance_daily_param
+    #     else
+    #       nil
+    #     end
+    #   end)
 
     addresses_params = balances_params_to_address_params_light(importable_balances_params)
 
     Chain.import(%{
       addresses: %{params: addresses_params, with: :balance_changeset},
-      address_coin_balances: %{params: importable_balances_params},
-      address_coin_balances_daily: %{params: importable_balances_daily_params},
+      # address_coin_balances: %{params: importable_balances_params},
+      # address_coin_balances_daily: %{params: importable_balances_daily_params},
       broadcast: broadcast_type
     })
   end

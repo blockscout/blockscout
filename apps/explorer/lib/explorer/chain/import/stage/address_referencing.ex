@@ -11,11 +11,12 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
   @impl Stage
   def runners,
     do: [
-      Runner.Address.CoinBalances,
+      # Runner.Address.CoinBalances,
       Runner.Blocks,
       Runner.StakingPools,
-      Runner.StakingPoolsDelegators,
-      Runner.Address.CoinBalancesDaily
+      # ,
+      Runner.StakingPoolsDelegators
+      # Runner.Address.CoinBalancesDaily
     ]
 
   @impl Stage

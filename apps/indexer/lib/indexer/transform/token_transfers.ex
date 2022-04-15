@@ -11,7 +11,7 @@ defmodule Indexer.Transform.TokenTransfers do
   alias Explorer.Chain.TokenTransfer
   # alias Explorer.Token.MetadataRetriever
 
-  @burn_address "0x0000000000000000000000000000000000000000"
+  # @burn_address "0x0000000000000000000000000000000000000000"
 
   @doc """
   Returns a list of token transfers given a list of logs.
