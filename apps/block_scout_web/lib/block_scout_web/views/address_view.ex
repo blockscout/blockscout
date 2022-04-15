@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.AddressView do
   @dialyzer :no_match
 
   @tabs [
-    "coin-balances",
+    # "coin-balances",
     "contracts",
     "decompiled-contracts",
     "internal-transactions",
@@ -361,7 +361,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["read-proxy"]), do: gettext("Read Proxy")
   defp tab_name(["write-contract"]), do: gettext("Write Contract")
   defp tab_name(["write-proxy"]), do: gettext("Write Proxy")
-  defp tab_name(["coin-balances"]), do: gettext("Coin Balance History")
+  # defp tab_name(["coin-balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
 

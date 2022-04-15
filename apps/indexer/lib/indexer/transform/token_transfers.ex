@@ -35,16 +35,15 @@ defmodule Indexer.Transform.TokenTransfers do
     tokens = erc1155_token_transfers.tokens ++ erc20_and_erc721_token_transfers.tokens
     token_transfers = erc1155_token_transfers.token_transfers ++ erc20_and_erc721_token_transfers.token_transfers
 
-    token_transfers
-    |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
-    end)
-    |> Enum.map(fn token_transfer ->
-      token_transfer.token_contract_address_hash
-    end)
-    |> Enum.uniq()
-
     # todo
+    # token_transfers
+    # |> Enum.filter(fn token_transfer ->
+    #   token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address
+    # end)
+    # |> Enum.map(fn token_transfer ->
+    #   token_transfer.token_contract_address_hash
+    # end)
+    # |> Enum.uniq()
     # |> Enum.each(&update_token/1)
 
     tokens_uniq = tokens |> Enum.uniq()
