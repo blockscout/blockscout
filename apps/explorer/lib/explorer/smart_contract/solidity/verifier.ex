@@ -185,11 +185,13 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp compare_bytecodes(
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
          address_hash,
-         arguments_data,
+         uncasted_arguments_data,
          autodetect_constructor_arguments,
-         contract_source_code,
-         contract_name
+         _contract_source_code,
+         _contract_name
        ) do
+    arguments_data = cast_args_data(uncasted_arguments_data)
+
     %{
       "metadata_cbor_decoded" => _generated_metadata,
       "bytecode" => generated_bytecode,
@@ -206,11 +208,15 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           ""
       end |> debug("smart_contract_creation_tx_bytecode")
 
+    constructor_args = extract_constructor_args(generated_compiler_version, blockchain_created_tx_input) |> debug("extract_constructor_args")
+
+    blockchain_created_tx_input_without_constructor_args = if is_nil(constructor_args), do: blockchain_created_tx_input, else: String.trim_trailing(blockchain_created_tx_input, constructor_args)
+      
     %{
       "metadata_cbor_decoded" => _metadata,
       "bytecode" => blockchain_bytecode_without_whisper,
       "compiler_version" => compiler_version_from_input
-    } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input) |> debug("extract_bytecode_and_metadata_hash blockchain_created_tx_input")
+    } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input_without_constructor_args) |> debug("extract_bytecode_and_metadata_hash blockchain_created_tx_input")
 
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
@@ -225,61 +231,44 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
         {:error, :generated_bytecode}
 
-      has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
-        result_1 =
-          try_to_verify_with_unknown_constructor_args(
-            blockchain_created_tx_input,
-            bytecode,
-            blockchain_bytecode_without_whisper,
-            abi
-          )
-
-        result_2 =
-          ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
-
-        cond do
-          result_1 ->
-            {:ok, %{abi: abi, constructor_arguments: result_1}}
-
-          result_2 ->
-            {:ok, %{abi: abi, constructor_arguments: result_2}}
-
-          true ->
-            {:error, :constructor_arguments}
-        end
+      has_constructor_with_params?(abi) && autodetect_constructor_arguments && ConstructorArguments.check_constructor_args(constructor_args, abi) ->
+        {:ok, %{abi: abi, constructor_arguments: constructor_args}}
 
       has_constructor_with_params?(abi) && empty_constructor_arguments ->
         {:error, :constructor_arguments}
 
-      has_constructor_with_params?(abi) &&
-          !ConstructorArguments.verify(
-            address_hash,
-            blockchain_bytecode_without_whisper,
-            arguments_data,
-            contract_source_code,
-            contract_name
-          ) ->
-        if try_to_verify_with_unknown_constructor_args(
-             blockchain_created_tx_input,
-             bytecode,
-             blockchain_bytecode_without_whisper,
-             abi
-           ) == arguments_data |> String.trim_trailing() |> String.trim_leading("0x") do
-          {:ok, %{abi: abi}}
-        else
-          {:error, :constructor_arguments}
-        end
-
+      has_constructor_with_params?(abi) && ConstructorArguments.check_constructor_args(constructor_args, abi) && arguments_data == constructor_args ->
+        {:ok, %{abi: abi, constructor_arguments: constructor_args}}
+      
+      has_constructor_with_params?(abi) && (arguments_data != constructor_args || !ConstructorArguments.check_constructor_args(constructor_args, abi)) ->
+        {:error, :constructor_arguments}
+    
       true ->
         {:ok, %{abi: abi}}
     end
   end
 
-  defp try_to_verify_with_unknown_constructor_args(creation_code, generated_bytecode, trimmed_bytecode, abi) do
-    ["", rest_blockchain] = String.split(creation_code, trimmed_bytecode)
-    ["", rest_generated] = String.split(generated_bytecode, trimmed_bytecode)
-    ConstructorArguments.experimental_find_constructor_args(rest_blockchain, rest_generated, abi)
+  defp cast_args_data("0x" <> args_data), do: cast_args_data(args_data)
+
+  defp cast_args_data(args) when is_binary(args) do
+    args |> String.trim() |> String.downcase()
   end
+
+  defp cast_args_data(args), do: args
+
+  defp extract_constructor_args(compiler_version, created_tx_input) when is_binary(compiler_version) and is_binary(created_tx_input) and compiler_version != "" and created_tx_input != "" do
+    with assumed_args <- created_tx_input |> String.split(Base.encode16(compiler_version , case: :lower)) |> List.last(),
+         false <- is_nil(assumed_args),
+         false <- assumed_args == "",
+         <<_metadata_length::binary-size(4)>> <> args <- assumed_args do
+          args
+    else
+      _ ->
+        nil
+    end
+  end
+
+  defp extract_constructor_args(_, _), do: nil
 
   # 730000000000000000000000000000000000000000 - default library address that returned by the compiler
   defp try_library_verification(
@@ -315,7 +304,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def extract_bytecode_and_metadata_hash(code) do
     with {meta_length, ""} <- code |> String.slice(-4..-1) |> Integer.parse(16),
           meta <- String.slice(code, -(meta_length + 2) * 2 .. -5),
-          {:ok, meta_raw_binary} <- Base.decode16(meta, case: :mixed),
+          {:ok, meta_raw_binary} <- Base.decode16(meta, case: :lower),
           {:ok, decoded_meta, _remain} <- CBOR.decode(meta_raw_binary),
           bytecode <- String.slice(code, -String.length(code) .. -(meta_length + 2) * 2 - 1),
           false <- bytecode == "" do

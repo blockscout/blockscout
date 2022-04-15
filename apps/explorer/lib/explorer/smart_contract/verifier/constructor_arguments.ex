@@ -512,14 +512,9 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end
   end
 
-  def experimental_find_constructor_args(rest_creation, rest_generated, abi) do
-    got_args =
-      rest_creation
-      |> String.split(extract_constructor_arguments(rest_generated, nil, nil, nil))
-      |> List.last()
-
+  def check_constructor_args(args, abi) do
     abi
     |> parse_constructor_and_return_check_func()
-    |> (& &1.(got_args)).()
+    |> (& &1.(args)).()
   end
 end
