@@ -132,6 +132,17 @@ defmodule Indexer.Fetcher.CoinBalance do
     end)
   end
 
+  # No updates if fetched_coin_balance_block_number and fetched_coin_balance from the coin balances fetcher
+  def balances_params_to_address_params_light(balances_params) do
+    balances_params
+    |> Enum.group_by(fn %{address_hash: address_hash} -> address_hash end)
+    |> Map.values()
+    |> Stream.map(&Enum.max_by(&1, fn %{block_number: block_number} -> block_number end))
+    |> Enum.map(fn %{address_hash: address_hash} ->
+      %{hash: address_hash}
+    end)
+  end
+
   def import_fetched_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
     value_fetched_at = DateTime.utc_now()
 
@@ -175,7 +186,7 @@ defmodule Indexer.Fetcher.CoinBalance do
         end
       end)
 
-    addresses_params = balances_params_to_address_params(importable_balances_params)
+    addresses_params = balances_params_to_address_params_light(importable_balances_params)
 
     Chain.import(%{
       addresses: %{params: addresses_params, with: :balance_changeset},
@@ -221,7 +232,7 @@ defmodule Indexer.Fetcher.CoinBalance do
         incoming_balance_daily_param
       end)
 
-    addresses_params = balances_params_to_address_params(importable_balances_params)
+    addresses_params = balances_params_to_address_params_light(importable_balances_params)
 
     Chain.import(%{
       addresses: %{params: addresses_params, with: :balance_changeset},

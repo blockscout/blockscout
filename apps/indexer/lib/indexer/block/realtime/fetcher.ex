@@ -440,12 +440,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     #       #     Map.put(param, :day, day)
     #       #   end)
 
-    #       IO.inspect("Gimme merged_addresses_params")
-    #       IO.inspect(merged_addresses_params)
-
-    #       IO.inspect("Gimme importable_balances_params")
-    #       IO.inspect(importable_balances_params)
-
     #       {:ok,
     #        %{
     #          addresses_params: merged_addresses_params,
