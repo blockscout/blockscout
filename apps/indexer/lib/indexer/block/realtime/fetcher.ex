@@ -9,8 +9,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   require Indexer.Tracer
   require Logger
 
-  # import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
   import Indexer.Block.Fetcher,
     only: [
@@ -27,14 +26,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   alias Ecto.Changeset
   #  alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
-  alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  #  alias Indexer.Transform.Addresses
+   alias Indexer.Transform.Addresses
   alias Timex.Duration
 
   @behaviour Block.Fetcher
@@ -212,8 +211,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
               address_hash_to_block_number: address_hash_to_block_number,
               addresses_params: addresses_params,
               # balances_params: address_coin_balances_params,
-              balances_params: [],
               # balances_daily_params: address_coin_balances_daily_params
+              balances_params: [],
               balances_daily_params: []
             })},
          {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
@@ -363,6 +362,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp retry_fetch_and_import_block(%{retry: retry}) when retry < 1, do: :ignore
 
   defp retry_fetch_and_import_block(%{changesets: changesets} = params) do
+    IO.inspect("### RETRY FETCH AND IMPORT BLOCK ###")
     if unknown_block_number_error?(changesets) do
       # Wait half a second to give Parity time to sync.
       :timer.sleep(500)
@@ -399,105 +399,99 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp balances(
          #  %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          # %{addresses_params: addresses_params} = options
-         %Block.Fetcher{json_rpc_named_arguments: _json_rpc_named_arguments},
-         %{addresses_params: addresses_params} = _options
+         %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
+         %{addresses_params: addresses_params} = options
        ) do
     Logger.info("### Realtime fetcher balances collection started ###")
 
     # todo
-    # res =
-    #   case options
-    #        |> fetch_balances_params_list()
-    #        |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
-    #     {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
-    #       merged_addresses_params =
-    #         %{address_coin_balances: params_list}
-    #         |> Addresses.extract_addresses()
-    #         |> Kernel.++(addresses_params)
-    #         |> Addresses.merge_addresses()
+    case options
+          |> fetch_balances_params_list()
+          |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
+      {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
+        merged_addresses_params =
+          %{address_coin_balances: params_list}
+          |> Addresses.extract_addresses()
+          |> Kernel.++(addresses_params)
+          |> Addresses.merge_addresses()
 
-    #       value_fetched_at = DateTime.utc_now()
+        # value_fetched_at = DateTime.utc_now()
 
-    #       importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+        # importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-    #       # todo
-    #       # block_numbers =
-    #       #   params_list
-    #       #   |> Enum.map(&Map.get(&1, :block_number))
-    #       #   |> Enum.sort()
-    #       #   |> Enum.dedup()
+        # todo
+        # block_numbers =
+        #   params_list
+        #   |> Enum.map(&Map.get(&1, :block_number))
+        #   |> Enum.sort()
+        #   |> Enum.dedup()
 
-    #       # block_timestamp_map =
-    #       #   Enum.reduce(block_numbers, %{}, fn block_number, map ->
-    #       #     {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-    #       #       EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+        # block_timestamp_map =
+        #   Enum.reduce(block_numbers, %{}, fn block_number, map ->
+        #     {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
+        #       EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
 
-    #       #     day = DateTime.to_date(timestamp)
-    #       #     Map.put(map, "#{block_number}", day)
-    #       #   end)
+        #     day = DateTime.to_date(timestamp)
+        #     Map.put(map, "#{block_number}", day)
+        #   end)
 
-    #       # importable_balances_daily_params =
-    #       #   Enum.map(params_list, fn param ->
-    #       #     day = Map.get(block_timestamp_map, "#{param.block_number}")
-    #       #     Map.put(param, :day, day)
-    #       #   end)
+        # importable_balances_daily_params =
+        #   Enum.map(params_list, fn param ->
+        #     day = Map.get(block_timestamp_map, "#{param.block_number}")
+        #     Map.put(param, :day, day)
+        #   end)
 
-    #       {:ok,
-    #        %{
-    #          addresses_params: merged_addresses_params,
-    #          balances_params: importable_balances_params,
-    #          balances_daily_params: []
-    #        }}
+        Logger.info("### Realtime fetcher balances collection FINISHED ###")
 
-    #     {:error, _} = error ->
-    #       error
+        {:ok,
+          %{
+            addresses_params: merged_addresses_params,
+            balances_params: [],
+            balances_daily_params: []
+          }}
 
-    #     {:ok, %FetchedBalances{errors: errors}} ->
-    #       {:error, errors}
-    #   end
+      {:error, _} = error ->
+        Logger.info("### Realtime fetcher balances collection FINISHED WITH ERROR ###")
+        error
 
-    Logger.info("### Realtime fetcher balances collection FINISHED ###")
-
-    {:ok,
-     %{
-       addresses_params: addresses_params,
-       balances_params: [],
-       balances_daily_params: []
-     }}
+      {:ok, %FetchedBalances{errors: errors}} ->
+        Logger.info("### Realtime fetcher balances collection FINISHED WITH ERROR #2 ###")
+        {:error, errors}
+    end
   end
 
-  # defp fetch_balances_params_list(%{
-  #        addresses_params: addresses_params,
-  #        address_hash_to_block_number: address_hash_to_block_number,
-  #        balances_params: balances_params
-  #      }) do
-  #   addresses_params
-  #   |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})
-  #   |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
-  #   # stable order for easier moxing
-  #   |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
-  # end
+  defp fetch_balances_params_list(%{
+         addresses_params: addresses_params,
+         address_hash_to_block_number: address_hash_to_block_number,
+         balances_params: balances_params
+       }) do
+    addresses_params
+    |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})
+    |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
+    # stable order for easier moxing
+    |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
+  end
 
-  # defp addresses_params_to_fetched_balances_params_set(addresses_params, %{
-  #        address_hash_to_block_number: address_hash_to_block_number
-  #      }) do
-  #   Enum.into(addresses_params, MapSet.new(), fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
-  #     block_number =
-  #       case address_params do
-  #         %{fetched_coin_balance_block_number: block_number} when is_integer(block_number) ->
-  #           block_number
+  defp addresses_params_to_fetched_balances_params_set(addresses_params, %{
+         address_hash_to_block_number: address_hash_to_block_number
+       }) do
+    Enum.into(addresses_params, MapSet.new(), fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
+      block_number =
+        case address_params do
+          %{fetched_coin_balance_block_number: block_number} when is_integer(block_number) ->
+            block_number
 
-  #         _ ->
-  #           Map.fetch!(address_hash_to_block_number, address_hash)
-  #       end
+          _ ->
+            Map.fetch!(address_hash_to_block_number, address_hash)
+        end
 
-  #     %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
-  #   end)
-  # end
+      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
+    end)
+  end
 
-  # defp balances_params_to_fetch_balances_params_set(balances_params) do
-  #   Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
-  #     %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
-  #   end)
-  # end
+  defp balances_params_to_fetch_balances_params_set(balances_params) do
+    Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
+      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
+    end)
+  end
 end
