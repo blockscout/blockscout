@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.GasTrackerSpendersThreeHrsController do
 
   alias BlockScoutWeb.{ChainController, GasTrackerView}
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.Cache.GasUsage
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -73,7 +74,7 @@ defmodule BlockScoutWeb.GasTrackerSpendersThreeHrsController do
 
   def index(conn, _params) do
     transaction_stats = ChainController.get_transaction_stats()
-    total_gas_usage = Chain.total_gas_usage()
+    total_gas_usage = GasUsage.total()
 
     chart_data_paths = %{
       gas_usage: gas_usage_history_chart_path(conn, :show)

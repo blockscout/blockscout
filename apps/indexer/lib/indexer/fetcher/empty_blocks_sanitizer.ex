@@ -1,10 +1,11 @@
-defmodule Indexer.EmptyBlocksSanitizer do
+defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   @moduledoc """
   Periodically checks empty blocks starting from the head of the chain, detects for which blocks transactions should be refetched
   and lose consensus for block in order to refetch transactions.
   """
 
   use GenServer
+  use Indexer.Fetcher
 
   require Logger
 
@@ -16,10 +17,7 @@ defmodule Indexer.EmptyBlocksSanitizer do
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Import.Runner.Blocks
 
-  # unprocessed empty blocks to fetch at once
-  @limit 1000
-
-  @interval :timer.minutes(1)
+  @interval :timer.seconds(10)
 
   defstruct interval: @interval,
             json_rpc_named_arguments: []
@@ -41,6 +39,7 @@ defmodule Indexer.EmptyBlocksSanitizer do
     GenServer.start_link(__MODULE__, init_opts, gen_server_opts)
   end
 
+  @impl GenServer
   def init(opts) when is_list(opts) do
     state = %__MODULE__{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
@@ -52,11 +51,12 @@ defmodule Indexer.EmptyBlocksSanitizer do
     {:ok, state}
   end
 
+  @impl GenServer
   def handle_info(
         :sanitize_empty_blocks,
         %{interval: interval, json_rpc_named_arguments: json_rpc_named_arguments} = state
       ) do
-    Logger.info("Start sanitizing of empty blocks. Batch size is #{@limit}",
+    Logger.info("Start sanitizing of empty blocks. Batch size is #{limit()}",
       fetcher: :empty_blocks_to_refetch
     )
 
@@ -68,7 +68,7 @@ defmodule Indexer.EmptyBlocksSanitizer do
   end
 
   defp sanitize_empty_blocks(json_rpc_named_arguments) do
-    unprocessed_non_empty_blocks_from_db = unprocessed_non_empty_blocks_query_list(@limit)
+    unprocessed_non_empty_blocks_from_db = unprocessed_non_empty_blocks_query_list(limit())
 
     uniq_block_hashes = unprocessed_non_empty_blocks_from_db
 
@@ -82,7 +82,7 @@ defmodule Indexer.EmptyBlocksSanitizer do
       )
     end
 
-    unprocessed_empty_blocks_from_db = unprocessed_empty_blocks_query_list(@limit)
+    unprocessed_empty_blocks_from_db = unprocessed_empty_blocks_query_list(limit())
 
     unprocessed_empty_blocks_from_db
     |> Enum.with_index()
@@ -135,8 +135,10 @@ defmodule Indexer.EmptyBlocksSanitizer do
     from(block in Block,
       where: is_nil(block.is_empty),
       where: block.consensus == true,
-      order_by: [desc: block.number],
-      limit: ^limit
+      order_by: [asc: block.hash],
+      limit: ^limit,
+      offset: 1000,
+      lock: "FOR UPDATE"
     )
   end
 
@@ -148,7 +150,8 @@ defmodule Indexer.EmptyBlocksSanitizer do
         inner_join: transaction in Transaction,
         on: q.number == transaction.block_number,
         select: q.hash,
-        distinct: q.hash
+        distinct: q.hash,
+        order_by: [asc: q.hash]
       )
 
     query
@@ -163,10 +166,15 @@ defmodule Indexer.EmptyBlocksSanitizer do
         left_join: transaction in Transaction,
         on: q.number == transaction.block_number,
         where: is_nil(transaction.block_number),
-        select: {q.number, q.hash}
+        select: {q.number, q.hash},
+        order_by: [asc: q.hash]
       )
 
     query
     |> Repo.all(timeout: :infinity)
+  end
+
+  defp limit do
+    Application.get_env(:indexer, __MODULE__)[:batch_size]
   end
 end

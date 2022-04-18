@@ -82,6 +82,9 @@ config :indexer, Indexer.Fetcher.CoinBalance.Supervisor,
 config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER", "false") == "true"
 
+config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER", "false") == "true"
+
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 config :indexer, Indexer.Tracer,
