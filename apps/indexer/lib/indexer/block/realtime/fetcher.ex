@@ -192,8 +192,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %{
           # address_coin_balances: %{params: address_coin_balances_params},
           # address_coin_balances_daily: %{params: address_coin_balances_daily_params},
-          address_coin_balances: %{params: []},
-          address_coin_balances_daily: %{params: []},
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           addresses: %{params: addresses_params},
           block_rewards: block_rewards
@@ -204,9 +202,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     with {:balances,
           {:ok,
            %{
-             addresses_params: balances_addresses_params#,
-            #  balances_params: balances_params,
-            #  balances_daily_params: balances_daily_params
+             addresses_params: balances_addresses_params,
+             balances_params: _balances_params,
+             balances_daily_params: _balances_daily_params
            }}} <-
            {:balances,
             balances(block_fetcher, %{
@@ -214,8 +212,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
               addresses_params: addresses_params,
               # balances_params: address_coin_balances_params,
               # balances_daily_params: address_coin_balances_daily_params
-              balances_params: [],
-              balances_daily_params: []
             })},
          {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
          chain_import_options =
@@ -223,9 +219,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> put_in([:block_rewards], chain_import_block_rewards)
-           |> put_in([Access.key(:address_coin_balances, %{}), :params], [])
-           |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], []),
+           |> put_in([:block_rewards], chain_import_block_rewards),
          #  |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
          #  |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], balances_daily_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
@@ -460,12 +454,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp fetch_balances_params_list(%{
          addresses_params: addresses_params,
-         address_hash_to_block_number: address_hash_to_block_number,
-         balances_params: balances_params
+         address_hash_to_block_number: address_hash_to_block_number#,
+        #  balances_params: balances_params
        }) do
     addresses_params
     |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})
-    |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
+    # |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
     # stable order for easier moxing
     |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
   end
@@ -487,9 +481,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end)
   end
 
-  defp balances_params_to_fetch_balances_params_set(balances_params) do
-    Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
-      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
-    end)
-  end
+  # defp balances_params_to_fetch_balances_params_set(balances_params) do
+  #   Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
+  #     %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
+  #   end)
+  # end
 end

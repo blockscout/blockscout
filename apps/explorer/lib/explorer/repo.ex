@@ -5,7 +5,6 @@ defmodule Explorer.Repo do
 
   require Logger
 
-  alias Explorer.Chain.Import.Runner.Blocks
   alias Explorer.Repo.ConfigHelper
 
   @doc """
@@ -65,17 +64,6 @@ defmodule Explorer.Repo do
           insert_all(kind, chunk, opts)
         rescue
           exception ->
-            if kind == Explorer.Chain.Address.TokenBalance do
-              block_numbers =
-                elements
-                |> Enum.map(fn element ->
-                  element.block_number
-                end)
-                |> Enum.uniq()
-
-              Blocks.invalidate_consensus_blocks(block_numbers)
-            end
-
             old_truncate = Application.get_env(:logger, :truncate)
             Logger.configure(truncate: :infinity)
 

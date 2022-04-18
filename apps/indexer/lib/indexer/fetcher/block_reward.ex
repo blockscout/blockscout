@@ -288,8 +288,6 @@ defmodule Indexer.Fetcher.BlockReward do
       addresses: %{params: addresses_params},
       # address_coin_balances: %{params: address_coin_balances_params_set},
       # address_coin_balances_daily: %{params: address_coin_balances_daily_params_set},
-      address_coin_balances: %{params: []},
-      address_coin_balances_daily: %{params: []},
       block_rewards: %{params: block_rewards_params}
     })
   end

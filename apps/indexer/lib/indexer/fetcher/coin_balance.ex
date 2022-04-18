@@ -158,8 +158,6 @@ defmodule Indexer.Fetcher.CoinBalance do
       addresses: %{params: addresses_params, with: :balance_changeset},
       # address_coin_balances: %{params: importable_balances_params},
       # address_coin_balances_daily: %{params: importable_balances_daily_params},
-      address_coin_balances: %{params: []},
-      address_coin_balances_daily: %{params: []},
       broadcast: broadcast_type
     })
   end
@@ -178,7 +176,6 @@ defmodule Indexer.Fetcher.CoinBalance do
     Chain.import(%{
       addresses: %{params: addresses_params, with: :balance_changeset},
       # address_coin_balances_daily: %{params: importable_balances_daily_params},
-      address_coin_balances_daily: %{params: []},
       broadcast: broadcast_type
     })
   end
@@ -258,24 +255,24 @@ defmodule Indexer.Fetcher.CoinBalance do
     end)
   end
 
-  defp balances_daily_params(params_list, json_rpc_named_arguments) do
-    block_timestamp_map = block_timestamp_map(params_list, json_rpc_named_arguments)
+  # defp balances_daily_params(params_list, json_rpc_named_arguments) do
+  #   block_timestamp_map = block_timestamp_map(params_list, json_rpc_named_arguments)
 
-    params_list
-    |> Enum.map(fn balance_param ->
-      if Map.has_key?(block_timestamp_map, "#{balance_param.block_number}") do
-        day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
+  #   params_list
+  #   |> Enum.map(fn balance_param ->
+  #     if Map.has_key?(block_timestamp_map, "#{balance_param.block_number}") do
+  #       day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
 
-        incoming_balance_daily_param = %{
-          address_hash: balance_param.address_hash,
-          day: day,
-          value: balance_param.value
-        }
+  #       incoming_balance_daily_param = %{
+  #         address_hash: balance_param.address_hash,
+  #         day: day,
+  #         value: balance_param.value
+  #       }
 
-        incoming_balance_daily_param
-      else
-        nil
-      end
-    end)
-  end
+  #       incoming_balance_daily_param
+  #     else
+  #       nil
+  #     end
+  #   end)
+  # end
 end
