@@ -209,7 +209,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            {:balances,
             balances(block_fetcher, %{
               address_hash_to_block_number: address_hash_to_block_number,
-              addresses_params: addresses_params,
+              addresses_params: addresses_params
               # balances_params: address_coin_balances_params,
               # balances_daily_params: address_coin_balances_daily_params
             })},
@@ -384,7 +384,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          imported,
          %{block_rewards: %{errors: block_reward_errors}}
        ) do
-    Logger.info("### Realtime fetcher async_import_remaining_block_data started ###")
+    Logger.info("### Realtime fetcher async_import_remaining_block_data STARTED ###")
     async_import_block_rewards(block_reward_errors)
     async_import_created_contract_codes(imported)
     async_import_internal_transactions(imported)
@@ -392,7 +392,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_token_balances(imported)
     async_import_token_instances(imported)
     async_import_uncles(imported)
-    async_import_replaced_transactions(imported)
+    res = async_import_replaced_transactions(imported)
+
+    Logger.info("### Realtime fetcher async_import_remaining_block_data FINISHED ###")
+    res
   end
 
   defp balances(
@@ -401,7 +404,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params} = options
        ) do
-    Logger.info("### Realtime fetcher balances collection started ###")
+    Logger.info("### Realtime fetcher balances collection STARTED ###")
 
     # todo
     case options
@@ -454,8 +457,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp fetch_balances_params_list(%{
          addresses_params: addresses_params,
-         address_hash_to_block_number: address_hash_to_block_number#,
-        #  balances_params: balances_params
+         # ,
+         address_hash_to_block_number: address_hash_to_block_number
+         #  balances_params: balances_params
        }) do
     addresses_params
     |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})

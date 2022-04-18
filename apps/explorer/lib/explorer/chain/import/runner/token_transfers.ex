@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Token transfers run STARTED ###")
+    Logger.info("### Token transfers run STARTED length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -55,7 +55,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           {:ok, [TokenTransfer.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Token transfers insert started ###"])
+    Logger.info(["### Token transfers insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)

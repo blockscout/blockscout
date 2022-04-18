@@ -64,7 +64,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       when is_list(changes_list) do
     {:ok, []}
     # todo
-    # Logger.info("### Address_token_balances insert started changes_list length #{Enum.count(changes_list)} ###")
+    # Logger.info("### Address_token_balances insert STARTED length #{Enum.count(changes_list)} ###")
     # on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)

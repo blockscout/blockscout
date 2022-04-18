@@ -33,7 +33,7 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Block rewards run STARTED ###")
+    Logger.info("### Block rewards run STARTED length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -53,11 +53,12 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
         }) :: {:ok, [Reward.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
-    Logger.info(["### Block rewards insert started ###"])
+    Logger.info(["### Block rewards insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Reward ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.address_hash, &1.address_type})
+    Logger.info(["### Block rewards insert STARTED length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, block_rewards} =
       Import.insert_changes_list(

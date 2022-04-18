@@ -167,14 +167,14 @@ defmodule Indexer.Block.Fetcher do
          #      transactions_params: transactions_with_receipts
          #    }
          #    |> AddressCoinBalances.params_set(),
-        #  coin_balances_params_set =
-        #    %{
-        #      beneficiary_params: [],
-        #      blocks_params: [],
-        #      logs_params: [],
-        #      transactions_params: []
-        #    }
-        #    |> AddressCoinBalances.params_set(),
+         #  coin_balances_params_set =
+         #    %{
+         #      beneficiary_params: [],
+         #      blocks_params: [],
+         #      logs_params: [],
+         #      transactions_params: []
+         #    }
+         #    |> AddressCoinBalances.params_set(),
          Logger.info("### BEFORE coin_balances_params_daily_set CHANGESET ###"),
          #  coin_balances_params_daily_set =
          #    %{
@@ -182,12 +182,12 @@ defmodule Indexer.Block.Fetcher do
          #      blocks: blocks
          #    }
          #    |> AddressCoinBalancesDaily.params_set(),
-        #  coin_balances_params_daily_set =
-        #    %{
-        #      coin_balances_params: coin_balances_params_set,
-        #      blocks: []
-        #    }
-        #    |> AddressCoinBalancesDaily.params_set(),
+         #  coin_balances_params_daily_set =
+         #    %{
+         #      coin_balances_params: coin_balances_params_set,
+         #      blocks: []
+         #    }
+         #    |> AddressCoinBalancesDaily.params_set(),
          beneficiaries_with_gas_payment <-
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts, blocks)
@@ -200,8 +200,8 @@ defmodule Indexer.Block.Fetcher do
              state,
              %{
                addresses: %{params: addresses},
-              #  address_coin_balances: %{params: coin_balances_params_set},
-              #  address_coin_balances_daily: %{params: coin_balances_params_daily_set},
+               #  address_coin_balances: %{params: coin_balances_params_set},
+               #  address_coin_balances_daily: %{params: coin_balances_params_daily_set},
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},

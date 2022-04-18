@@ -37,7 +37,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Staking pools delegators run STARTED ###")
+    Logger.info("### Staking pools delegators run STARTED length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -96,11 +96,12 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
           {:ok, [StakingPoolsDelegator.t()]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Staking pools delegators insert started ###"])
+    Logger.info(["### Staking pools delegators insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce StackingPoolDelegator ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.staking_address_hash})
+    Logger.info(["### Staking pools delegators length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, staking_pools_delegators} =
       Import.insert_changes_list(

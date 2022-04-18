@@ -36,7 +36,7 @@ defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Transaction forks run STARTED ###")
+    Logger.info("### Transaction forks run STARTED length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -59,11 +59,12 @@ defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [%{uncle_hash: Hash.t(), hash: Hash.t()}]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Transaction forks insert started ###"])
+    Logger.info(["### Transaction forks insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Fork ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.uncle_hash, &1.index})
+    Logger.info(["### Transaction forks insert length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, forks} =
       Import.insert_changes_list(

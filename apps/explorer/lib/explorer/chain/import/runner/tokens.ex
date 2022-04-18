@@ -87,6 +87,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     tokens_with_token_id = (final_query_with_token_id && repo.all(final_query_with_token_id)) || []
     tokens = tokens_no_token_id ++ tokens_with_token_id
 
+    Logger.info(["### Blocks acquire_contract_address_tokens FINISHED ###"])
+
     {:ok, tokens}
   end
 
@@ -94,7 +96,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
         timeout: timeout,
         timestamps: %{updated_at: updated_at}
       }) do
-    Logger.info("### update_holder_counts_with_deltas started ###")
+    Logger.info("### update_holder_counts_with_deltas STARTED ###")
     # NOTE that acquire_contract_address_tokens needs to be called before this
     {hashes, deltas} =
       token_holder_count_deltas
@@ -150,7 +152,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Tokens run STARTED ###")
+    Logger.info("### Tokens run STARTED length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -173,7 +175,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Token.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Tokens insert started ###"])
+    Logger.info(["### Tokens insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     ordered_changes_list =
@@ -182,6 +184,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       |> Stream.map(&Map.put_new(&1, :holder_count, 0))
       # Enforce Token ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.contract_address_hash)
+
+    Logger.info(["### Tokens insert length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, tokens} =
       Import.insert_changes_list(

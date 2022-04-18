@@ -41,9 +41,9 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Addresses run started. Changes list length #{inspect(Enum.count(changes_list))} ###")
-    Logger.info("### multi #{inspect(multi)} ###")
-    Logger.info("### changes_list length #{inspect(Enum.count(changes_list))} ###")
+    Logger.info("### Addresses run STARTED length #{inspect(Enum.count(changes_list))} ###")
+    # Logger.info("### multi #{inspect(multi)} ###")
+    # Logger.info("### changes_list length #{inspect(Enum.count(changes_list))} ###")
 
     insert_options =
       options
@@ -113,7 +113,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     #   )
     # )
 
-    Logger.info("address changes list length " <> inspect(Enum.count(changes_list)))
+    # Logger.info("address changes list length " <> inspect(Enum.count(changes_list)))
 
     {:ok, addresses} =
       Import.insert_changes_list(

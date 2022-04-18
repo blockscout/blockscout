@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Transactions run STARTED ###")
+    Logger.info("### Transactions run STARTED length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -79,11 +79,12 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
          } = options
        )
        when is_list(changes_list) do
-    Logger.info(["### Transactions insert started ###"])
+    Logger.info(["### Transactions insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    Logger.info(["### Transactions insert length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, transactions} =
       Import.insert_changes_list(
@@ -171,6 +172,10 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
          timestamps: %{updated_at: updated_at}
        })
        when is_list(changes_list) do
+    Logger.info(
+      "### Transactions run discard_blocks_for_recollated_transactions STARTED length #{Enum.count(changes_list)} ###"
+    )
+
     {transactions_hashes, transactions_block_hashes} =
       changes_list
       |> Enum.filter(&Map.has_key?(&1, :block_hash))
@@ -201,6 +206,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Enum.uniq()
 
     if Enum.empty?(block_hashes) do
+      Logger.info("### Transactions run discard_blocks_for_recollated_transactions empty array ###")
       {:ok, []}
     else
       Logger.info(fn ->
@@ -220,6 +226,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         )
 
       try do
+        Logger.info("### Transactions run discard_blocks_for_recollated_transactions before update ###")
+
         {_, result} =
           repo.update_all(
             from(b in Block, join: s in subquery(query), on: b.hash == s.hash),

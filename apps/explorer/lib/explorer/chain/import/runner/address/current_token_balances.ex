@@ -52,7 +52,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
                value: Decimal.t()
              }
   def token_holder_count_deltas(%{deleted: deleted, inserted: inserted}) when is_list(deleted) and is_list(inserted) do
-    Logger.info("### Blocks token_holder_count_deltas started ###")
+    Logger.info("### Blocks token_holder_count_deltas STARTED ###")
 
     deleted_holder_address_hash_set_by_token_contract_address_hash =
       to_holder_address_hash_set_by_token_contract_address_hash(deleted)
@@ -107,7 +107,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info("### Address_current_token_balances tun STARTED changes_list length #{Enum.count(changes_list)} ###")
+    Logger.info("### Address_current_token_balances tun STARTED length #{Enum.count(changes_list)} ###")
 
     insert_options =
       options
@@ -220,7 +220,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_atom(repo) and is_list(changes_list) do
-    Logger.info("### Address_current_token_balances insert started changes_list length #{Enum.count(changes_list)} ###")
+    Logger.info("### Address_current_token_balances insert STARTED length #{Enum.count(changes_list)} ###")
 
     inserted_changes_list =
       insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options)
@@ -231,7 +231,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   end
 
   def insert_changes_list_with_and_without_token_id(changes_list, repo, timestamps, timeout, options) do
-    Logger.info("### Address_current_token_balances insert_changes_list_with_and_without_token_id started ###")
+    Logger.info(
+      "### Address_current_token_balances insert_changes_list_with_and_without_token_id STARTED length #{Enum.count(changes_list)} ###"
+    )
+
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)

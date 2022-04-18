@@ -39,7 +39,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
-    Logger.info(["### Blocks run STARTED ###"])
+    Logger.info(["### Blocks run STARTED length #{Enum.count(changes_list)} ###"])
 
     insert_options =
       options
@@ -120,7 +120,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   def timeout, do: @timeout
 
   defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
-    Logger.info(["### Blocks acquire_contract_address_tokens started ###"])
+    Logger.info(["### Blocks acquire_contract_address_tokens STARTED length #{Enum.count(consensus_block_numbers)} ###"])
 
     query =
       from(ctb in Address.CurrentTokenBalance,
@@ -140,7 +140,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{updated_at: updated_at},
          blocks_changes: blocks_changes
        }) do
-    Logger.info(["### Blocks fork_transactions started ###"])
+    Logger.info(["### Blocks fork_transactions STARTED ###"])
 
     query =
       from(
@@ -188,7 +188,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{inserted_at: inserted_at, updated_at: updated_at},
          transactions: transactions
        }) do
-    Logger.info(["### Blocks derive_transaction_forks started ###"])
+    Logger.info(["### Blocks derive_transaction_forks STARTED ###"])
 
     transaction_forks =
       transactions
@@ -203,6 +203,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       end)
       # Enforce Fork ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(&{&1.uncle_hash, &1.index})
+
+    Logger.info(["### Blocks derive_transaction_forks length #{Enum.count(transaction_forks)} ###"])
 
     {_total, forked_transaction} =
       repo.insert_all(
@@ -230,7 +232,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Block.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    Logger.info(["### Blocks insert started ###"])
+    Logger.info(["### Blocks insert STARTED ###"])
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Block ShareLocks order (see docs: sharelocks.md)
@@ -238,6 +240,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       changes_list
       |> Enum.sort_by(& &1.hash)
       |> Enum.dedup_by(& &1.hash)
+
+    Logger.info(["### Blocks insert length #{Enum.count(ordered_changes_list)} ###"])
 
     {:ok, blocks} =
       Import.insert_changes_list(
@@ -300,7 +304,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout,
         timestamps: %{updated_at: updated_at}
       }) do
-    Logger.info(["### Blocks lose_consensus started ###"])
+    Logger.info(["### Blocks lose_consensus STARTED ###"])
 
     acquire_query =
       from(
@@ -347,7 +351,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
-    Logger.info(["### Blocks new_pending_operations started ###"])
+    Logger.info(["### Blocks new_pending_operations STARTED ###"])
 
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
       {:ok, []}
@@ -361,23 +365,29 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           %{block_hash: hash, fetch_internal_transactions: true}
         end)
 
-      Import.insert_changes_list(
-        repo,
-        sorted_pending_ops,
-        conflict_target: :block_hash,
-        on_conflict: PendingBlockOperation.default_on_conflict(),
-        for: PendingBlockOperation,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
+      Logger.info(["### Blocks new_pending_operations length #{Enum.count(sorted_pending_ops)} ###"])
+
+      res =
+        Import.insert_changes_list(
+          repo,
+          sorted_pending_ops,
+          conflict_target: :block_hash,
+          on_conflict: PendingBlockOperation.default_on_conflict(),
+          for: PendingBlockOperation,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+
+      Logger.info(["### Blocks new_pending_operations FINISHED ###"])
+      res
     end
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
 
   defp delete_address_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
-    Logger.info(["### Blocks delete_address_token_balances started ###"])
+    Logger.info(["### Blocks delete_address_token_balances STARTED ###"])
 
     ordered_query =
       from(tb in Address.TokenBalance,
@@ -423,7 +433,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp delete_address_current_token_balances(_, [], _), do: {:ok, []}
 
   defp delete_address_current_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
-    Logger.info(["### Blocks delete_address_current_token_balances started ###"])
+    Logger.info(["### Blocks delete_address_current_token_balances STARTED ###"])
 
     ordered_query =
       from(ctb in Address.CurrentTokenBalance,
@@ -479,7 +489,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          %{timeout: timeout} = options
        )
        when is_list(deleted_address_current_token_balances) do
-    Logger.info(["### Blocks derive_address_current_token_balances started ###"])
+    Logger.info(["### Blocks derive_address_current_token_balances STARTED ###"])
 
     final_query = derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances)
 
@@ -569,7 +579,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
   # inserted, the old block rewards need to be deleted, so that the old and new rewards aren't combined.
   defp delete_rewards(repo, blocks_changes, %{timeout: timeout}) do
-    Logger.info(["### Blocks delete_rewards started ###"])
+    Logger.info(["### Blocks delete_rewards STARTED ###"])
 
     {hashes, numbers} =
       Enum.reduce(blocks_changes, {[], []}, fn
@@ -616,7 +626,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          timestamps: %{updated_at: updated_at}
        })
        when is_list(uncle_hashes) do
-    Logger.info(["### Blocks update_block_second_degree_relations started ###"])
+    Logger.info(["### Blocks update_block_second_degree_relations STARTED ###"])
 
     query =
       from(
