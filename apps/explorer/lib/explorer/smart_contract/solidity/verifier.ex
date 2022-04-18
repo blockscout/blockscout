@@ -12,6 +12,14 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   alias Explorer.SmartContract.Solidity.CodeCompiler
   alias Explorer.SmartContract.Verifier.ConstructorArguments
 
+  @metadata_hash_prefix_0_4_23 "a165627a7a72305820"
+  @metadata_hash_prefix_0_5_family_1 "65627a7a723"
+  @metadata_hash_prefix_0_5_family_2 "5820"
+  @metadata_hash_prefix_0_6_0 "a264697066735822"
+
+  @experimental "6c6578706572696d656e74616cf5"
+  @metadata_hash_common_suffix "64736f6c63"
+
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
 
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
@@ -185,6 +193,99 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp compare_bytecodes(
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
          address_hash,
+         arguments_data,
+         autodetect_constructor_arguments,
+         contract_source_code,
+         contract_name
+       ) do
+    %{
+      "metadata_hash" => _generated_metadata_hash,
+      "bytecode" => generated_bytecode,
+      "compiler_version" => generated_compiler_version
+    } = extract_bytecode_and_metadata_hash(bytecode)
+
+    blockchain_created_tx_input =
+      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+        %{init: init, created_contract_code: _created_contract_code} ->
+          "0x" <> init_without_0x = init
+          init_without_0x
+
+        _ ->
+          ""
+      end
+
+    %{
+      "metadata_hash" => _metadata_hash,
+      "bytecode" => blockchain_bytecode_without_whisper,
+      "compiler_version" => compiler_version_from_input
+    } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input)
+
+    empty_constructor_arguments = arguments_data == "" or arguments_data == nil
+
+    cond do
+      compiler_version_from_input != generated_compiler_version ->
+        {:error, :compiler_version}
+
+      bytecode <> arguments_data == blockchain_created_tx_input ->
+        {:ok, %{abi: abi, constructor_arguments: arguments_data}}
+
+      generated_bytecode != blockchain_bytecode_without_whisper &&
+          !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
+        {:error, :generated_bytecode}
+
+      has_constructor_with_params?(abi) && autodetect_constructor_arguments ->
+        result_1 =
+          try_to_verify_with_unknown_constructor_args(
+            blockchain_created_tx_input,
+            bytecode,
+            blockchain_bytecode_without_whisper,
+            abi
+          )
+
+        result_2 =
+          ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
+
+        cond do
+          result_1 ->
+            {:ok, %{abi: abi, constructor_arguments: result_1}}
+
+          result_2 ->
+            {:ok, %{abi: abi, constructor_arguments: result_2}}
+
+          true ->
+            {:error, :constructor_arguments}
+        end
+
+      has_constructor_with_params?(abi) && empty_constructor_arguments ->
+        {:error, :constructor_arguments}
+
+      has_constructor_with_params?(abi) &&
+          !ConstructorArguments.verify(
+            address_hash,
+            blockchain_bytecode_without_whisper,
+            arguments_data,
+            contract_source_code,
+            contract_name
+          ) ->
+        if try_to_verify_with_unknown_constructor_args(
+             blockchain_created_tx_input,
+             bytecode,
+             blockchain_bytecode_without_whisper,
+             abi
+           ) == arguments_data |> String.trim_trailing() |> String.trim_leading("0x") do
+          {:ok, %{abi: abi}}
+        else
+          {:error, :constructor_arguments}
+        end
+
+      true ->
+        {:ok, %{abi: abi}}
+    end
+  end
+
+  defp compare_bytecodes_via_cbor_decoding(
+         {:ok, %{"abi" => abi, "bytecode" => bytecode}},
+         address_hash,
          uncasted_arguments_data,
          autodetect_constructor_arguments,
          _contract_source_code,
@@ -196,7 +297,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       "metadata_cbor_decoded" => _generated_metadata,
       "bytecode" => generated_bytecode,
       "compiler_version" => generated_compiler_version
-    } = extract_bytecode_and_metadata_hash(bytecode) |> debug("extract_bytecode_and_metadata_hash bytecode" )
+    } = extract_bytecode_and_metadata_hash_via_cbor_decoding(bytecode) |> debug("extract_bytecode_and_metadata_hash bytecode" )
 
     blockchain_created_tx_input =
       case Chain.smart_contract_creation_tx_bytecode(address_hash) do
@@ -216,7 +317,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       "metadata_cbor_decoded" => _metadata,
       "bytecode" => blockchain_bytecode_without_whisper,
       "compiler_version" => compiler_version_from_input
-    } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input_without_constructor_args) |> debug("extract_bytecode_and_metadata_hash blockchain_created_tx_input")
+    } = extract_bytecode_and_metadata_hash_via_cbor_decoding(blockchain_created_tx_input_without_constructor_args) |> debug("extract_bytecode_and_metadata_hash blockchain_created_tx_input")
 
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
@@ -246,6 +347,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       true ->
         {:ok, %{abi: abi}}
     end
+  end
+
+  defp try_to_verify_with_unknown_constructor_args(creation_code, generated_bytecode, trimmed_bytecode, abi) do
+    ["", rest_blockchain] = String.split(creation_code, trimmed_bytecode)
+    ["", rest_generated] = String.split(generated_bytecode, trimmed_bytecode)
+    ConstructorArguments.experimental_find_constructor_args(rest_blockchain, rest_generated, abi)
   end
 
   defp cast_args_data("0x" <> args_data), do: cast_args_data(args_data)
@@ -290,24 +397,173 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   https://solidity.readthedocs.io/en/v0.5.3/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
   """
   def extract_bytecode_and_metadata_hash(nil) do
-    %{"metadata_cbor_decoded" => nil, "bytecode" => nil, "compiler_version" => nil}
+    %{"metadata_hash" => nil, "bytecode" => nil, "compiler_version" => nil}
   end
 
   def extract_bytecode_and_metadata_hash("0x" <> code) do
-    %{"metadata_cbor_decoded" => metadata_cbor_decoded, "bytecode" => bytecode, "compiler_version" => compiler_version} =
+    %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version} =
       extract_bytecode_and_metadata_hash(code)
 
-    %{"metadata_cbor_decoded" => metadata_cbor_decoded, "bytecode" => "0x" <> bytecode, "compiler_version" => compiler_version}
+    %{"metadata_hash" => metadata_hash, "bytecode" => "0x" <> bytecode, "compiler_version" => compiler_version}
   end
 
   # changes inspired by https://github.com/blockscout/blockscout/issues/5430
   def extract_bytecode_and_metadata_hash(code) do
-    with {meta_length, ""} <- code |> String.slice(-4..-1) |> Integer.parse(16),
-          meta <- String.slice(code, -(meta_length + 2) * 2 .. -5),
-          {:ok, meta_raw_binary} <- Base.decode16(meta, case: :lower),
-          {:ok, decoded_meta, _remain} <- CBOR.decode(meta_raw_binary),
-          bytecode <- String.slice(code, -String.length(code) .. -(meta_length + 2) * 2 - 1),
-          false <- bytecode == "" do
+    do_extract_bytecode_and_metadata_hash([], String.downcase(code), nil, nil)
+  end
+
+  defp do_extract_bytecode_and_metadata_hash(extracted, remaining, metadata_hash, compiler_version) do
+    case remaining do
+      <<>> ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_4_23 <> <<metadata_hash::binary-size(64)>> <> "0029" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      # Solidity >= 0.5 family && experimantal
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "43" <> <<compiler_version::binary-size(6)>> <> <<_::binary-size(4)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          <<_::binary-size(4)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      # Solidity >= 0.5.9; https://github.com/ethereum/solidity/blob/aa4ee3a1559ebc0354926af962efb3fcc7dc15bd/docs/metadata.rst
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "43" <> <<compiler_version::binary-size(6)>> <> "0032" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(76)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(78)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(80)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(82)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
+      # https://github.com/ethereum/solidity/blob/26b700771e9cc9c956f0503a05de69a1be427963/docs/metadata.rst#encoding-of-the-metadata-hash-in-the-bytecode
+      # IPFS is used instead of Swarm
+      # The current version of the Solidity compiler usually adds the following to the end of the deployed bytecode:
+      # 0xa2
+      # 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
+      # 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
+      # 0x00 0x32
+      # Note: there is a bug in the docs. Instead of 0x32, 0x33 should be used.
+      # Fixing PR has been created https://github.com/ethereum/solidity/pull/8174
+      @metadata_hash_prefix_0_6_0 <>
+          <<metadata_hash::binary-size(68)>> <>
+          @metadata_hash_common_suffix <>
+          "43" <> <<compiler_version::binary-size(6)>> <> "0033" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<metadata_hash::binary-size(68)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(76)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<metadata_hash::binary-size(68)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(78)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<metadata_hash::binary-size(68)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(80)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<metadata_hash::binary-size(68)>> <>
+          @metadata_hash_common_suffix <>
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(82)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      <<next::binary-size(2)>> <> rest ->
+        do_extract_bytecode_and_metadata_hash([next | extracted], rest, metadata_hash, compiler_version)
+    end
+  end
+
+  defp do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version) do
+    bytecode =
+      extracted
+      |> Enum.reverse()
+      |> :binary.list_to_bin()
+
+    %{"metadata_hash" => metadata_hash, "bytecode" => bytecode, "compiler_version" => compiler_version}
+  end
+
+  def extract_bytecode_and_metadata_hash_via_cbor_decoding(code_unknown_case) when is_binary(code_unknown_case) do
+    with code <- String.downcase(code_unknown_case),
+         {meta_length, ""} <- code |> String.slice(-4..-1) |> Integer.parse(16),
+         meta <- String.slice(code, -(meta_length + 2) * 2 .. -5),
+         {:ok, meta_raw_binary} <- Base.decode16(meta, case: :lower),
+         {:ok, decoded_meta, _remain} <- CBOR.decode(meta_raw_binary),
+         bytecode <- String.slice(code, -String.length(code) .. -(meta_length + 2) * 2 - 1),
+         false <- bytecode == "" do
       %{"metadata_cbor_decoded" => decoded_meta, "bytecode" => bytecode, "compiler_version" => decoded_meta["solc"]}
     else
       _ ->
