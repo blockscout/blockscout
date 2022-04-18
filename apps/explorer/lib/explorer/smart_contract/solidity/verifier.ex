@@ -224,7 +224,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp deserialize_creation_tx(calldata) do
     raw = calldata |> ExRLP.decode(encoding: :hex)
     data = Enum.at(raw, 5) |> to_hex()
-    factoryDeps = Enum.at(Enum.at(raw, 16), 0) |> to_hex()
+    factoryDeps = Enum.at(Enum.at(raw, 14), 0) |> to_hex()
     %{"data" => data, "factoryDeps" => factoryDeps}
   end
 
