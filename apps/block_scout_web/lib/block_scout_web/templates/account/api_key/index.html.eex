@@ -1,3 +1,4 @@
+<%= max_api_key_count = 3 %>
 <section class="container">
   <div class="row">
     <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :api_keys %>
@@ -6,16 +7,22 @@
         <div class="card-body">
           <h1 class="card-title list-title-description header-account"><%= gettext "API keys" %> </h1>
           <br>
+          <%= if Enum.count(@api_keys) < max_api_key_count do %>
+            <div style="min-width: 100%;">
+              <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
+                <%= gettext "Create an API key to use with your RPC и EthRPC API requests." %> <a href="https://docs.blockscout.com/for-users/api"> <%= gettext "Learn more" %></a>
+              </div>
+            </div>
+          <% else %>
+            <div style="min-width: 100%;">
+              <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
+                <%= gettext "You can create 3 API keys per account." %> <a href="https://docs.blockscout.com/for-users/api"> <%= gettext "Learn more" %></a>
+              </div>
+            </div>
+          <% end %>
           <div class="col-sm">
             <div class="mb-3 row o-flow-x">
-              <%= if @api_keys == [] do %>
-              <div style="min-width: 100%;">
-                <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
-                  <%= gettext "You don't have API keys yet" %>
-                </div>
-              </div>
-                <h2></h2>
-              <% else %>
+              <%= if @api_keys != [] do %>
                 <table class="table mb-3 table-watchlist">
                   <thead style="font-size: 14px; color: #6c757d" >
                     <tr>
@@ -34,7 +41,7 @@
               <% end %>
             </div>
           </div>
-          <%= if Enum.count(@api_keys) < 3 do %>
+          <%= if Enum.count(@api_keys) < max_api_key_count do %>
             <a class="button button-primary button-sm" href="<%= api_key_path(@conn, :new) %>"><%= gettext "Add API key" %></a>
           <% end %>
         </div>
