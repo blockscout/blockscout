@@ -25,7 +25,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-  #  alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
@@ -33,7 +32,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-   alias Indexer.Transform.Addresses
+  # alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Transform.Addresses
   alias Timex.Duration
 
   @behaviour Block.Fetcher
@@ -192,6 +192,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %{
           # address_coin_balances: %{params: address_coin_balances_params},
           # address_coin_balances_daily: %{params: address_coin_balances_daily_params},
+          address_coin_balances: %{params: []},
+          address_coin_balances_daily: %{params: []},
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           addresses: %{params: addresses_params},
           block_rewards: block_rewards
@@ -202,9 +204,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     with {:balances,
           {:ok,
            %{
-             addresses_params: balances_addresses_params
-             #  balances_params: balances_params,
-             #  balances_daily_params: balances_daily_params
+             addresses_params: balances_addresses_params#,
+            #  balances_params: balances_params,
+            #  balances_daily_params: balances_daily_params
            }}} <-
            {:balances,
             balances(block_fetcher, %{
@@ -221,7 +223,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> put_in([:block_rewards], chain_import_block_rewards),
+           |> put_in([:block_rewards], chain_import_block_rewards)
+           |> put_in([Access.key(:address_coin_balances, %{}), :params], [])
+           |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], []),
          #  |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
          #  |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], balances_daily_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
@@ -363,6 +367,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp retry_fetch_and_import_block(%{changesets: changesets} = params) do
     IO.inspect("### RETRY FETCH AND IMPORT BLOCK ###")
+
     if unknown_block_number_error?(changesets) do
       # Wait half a second to give Parity time to sync.
       :timer.sleep(500)
@@ -406,8 +411,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     # todo
     case options
-          |> fetch_balances_params_list()
-          |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
+         |> fetch_balances_params_list()
+         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
       {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
         merged_addresses_params =
           %{address_coin_balances: params_list}
@@ -426,14 +431,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         #   |> Enum.sort()
         #   |> Enum.dedup()
 
-        # block_timestamp_map =
-        #   Enum.reduce(block_numbers, %{}, fn block_number, map ->
-        #     {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-        #       EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
-
-        #     day = DateTime.to_date(timestamp)
-        #     Map.put(map, "#{block_number}", day)
-        #   end)
+        # block_timestamp_map = CoinBalance.block_timestamp_map(params_list, json_rpc_named_arguments)
 
         # importable_balances_daily_params =
         #   Enum.map(params_list, fn param ->
@@ -444,11 +442,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
         Logger.info("### Realtime fetcher balances collection FINISHED ###")
 
         {:ok,
-          %{
-            addresses_params: merged_addresses_params,
-            balances_params: [],
-            balances_daily_params: []
-          }}
+         %{
+           addresses_params: merged_addresses_params,
+           balances_params: [],
+           balances_daily_params: []
+         }}
 
       {:error, _} = error ->
         Logger.info("### Realtime fetcher balances collection FINISHED WITH ERROR ###")
