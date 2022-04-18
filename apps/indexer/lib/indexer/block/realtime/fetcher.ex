@@ -457,7 +457,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp fetch_balances_params_list(%{
          addresses_params: addresses_params,
-         # ,
          address_hash_to_block_number: address_hash_to_block_number
          #  balances_params: balances_params
        }) do

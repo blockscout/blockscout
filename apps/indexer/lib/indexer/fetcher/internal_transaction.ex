@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   require Logger
 
-  import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
+  # import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
   alias Explorer.Chain
   alias Explorer.Chain.Block
@@ -198,10 +198,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
         internal_transactions: internal_transactions_params_without_failed_creations
       })
 
-    address_hash_to_block_number =
-      Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-        {hash, block_number}
-      end)
+    # address_hash_to_block_number =
+    #   Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
+    #     {hash, block_number}
+    #   end)
 
     empty_block_numbers =
       unique_numbers
@@ -224,9 +224,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Accounts.drop(imported[:addreses])
         Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
 
-        async_import_coin_balances(imported, %{
-          address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-        })
+      # async_import_coin_balances(imported, %{
+      #   address_hash_to_fetched_balance_block_number: address_hash_to_block_number
+      # })
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(

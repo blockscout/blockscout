@@ -168,7 +168,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       where:
         fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
           fragment(
-            "EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
+            "EXCLUDED.fetched_coin_balance IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
             address.fetched_coin_balance_block_number,
             address.fetched_coin_balance_block_number
           )

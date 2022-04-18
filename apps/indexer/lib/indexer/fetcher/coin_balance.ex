@@ -152,7 +152,7 @@ defmodule Indexer.Fetcher.CoinBalance do
 
     # importable_balances_daily_params = balances_daily_params(params_list, json_rpc_named_arguments)
 
-    addresses_params = balances_params_to_address_params(importable_balances_params)
+    addresses_params = balances_params_to_address_params_light(importable_balances_params)
 
     Chain.import(%{
       addresses: %{params: addresses_params, with: :balance_changeset},
