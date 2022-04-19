@@ -9,7 +9,7 @@ defmodule AddWatchlistAddress do
   call(watchlist, params)
   """
 
-  alias Explorer.Accounts.Notify.ForbiddenAddress
+  alias Explorer.Accounts.Notifier.ForbiddenAddress
   alias Explorer.Accounts.{Watchlist, WatchlistAddress}
   alias Explorer.Chain.Address
   alias Explorer.Repo

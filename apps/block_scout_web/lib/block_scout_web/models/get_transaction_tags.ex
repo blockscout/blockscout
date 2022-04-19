@@ -6,7 +6,6 @@ defmodule GetTransactionTags do
   # import Ecto.Query, only: [from: 2]
 
   alias Explorer.Accounts.TagTransaction
-  alias Explorer.Chain.Hash
   alias Explorer.Repo
 
   def get_transaction_tags(transaction_hash, %{id: identity_id}) do

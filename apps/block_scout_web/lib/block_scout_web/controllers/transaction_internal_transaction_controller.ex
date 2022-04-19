@@ -6,8 +6,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
   import GetTransactionTags, only: [get_transaction_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView, TransactionController}
-  alias Explorer.Accounts.TagTransaction
-  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
