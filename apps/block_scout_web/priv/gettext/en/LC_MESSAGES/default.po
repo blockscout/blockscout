@@ -124,11 +124,12 @@ msgstr ""
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:7
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:13
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:14
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:23
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:30
 #, elixir-autogen, elixir-format
 msgid "API key"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:8
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:16
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:181
 #, elixir-autogen, elixir-format
@@ -156,7 +157,7 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:38
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:45
 #, elixir-autogen, elixir-format
 msgid "Add API key"
 msgstr ""
@@ -232,11 +233,6 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:15
 #, elixir-autogen, elixir-format
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
-msgstr ""
-
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:7
-#, elixir-autogen, elixir-format
-msgid "Api keys"
 msgstr ""
 
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:120
@@ -733,6 +729,11 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:13
+#, elixir-autogen, elixir-format
+msgid "Create an API key to use with your RPC и EthRPC API requests."
+msgstr ""
+
 #: lib/block_scout_web/views/internal_transaction_view.ex:26
 #, elixir-autogen, elixir-format
 msgid "Create2"
@@ -914,7 +915,7 @@ msgstr ""
 msgid "Easy Cowboy! This block does not exist yet!"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/row.html.eex:12
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr ""
@@ -1285,6 +1286,12 @@ msgstr ""
 msgid "Last Balance Update"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:13
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:19
+#, elixir-autogen, elixir-format
+msgid "Learn more"
+msgstr ""
+
 #: lib/block_scout_web/templates/layout/app.html.eex:45
 #, elixir-autogen, elixir-format
 msgid "Less than"
@@ -1477,7 +1484,7 @@ msgid "N/A bytes"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:19
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:22
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:29
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
@@ -1739,7 +1746,7 @@ msgstr ""
 msgid "Records"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/row.html.eex:9
+#: lib/block_scout_web/templates/account/api_key/row.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "Remove"
 msgstr ""
@@ -2709,9 +2716,9 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:14
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:19
 #, elixir-autogen, elixir-format
-msgid "You don't have API keys yet"
+msgid "You can create 3 API keys per account."
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:111
