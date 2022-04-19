@@ -90,9 +90,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transactions: transactions
       })
     end)
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      acquire_contract_address_tokens(repo, consensus_block_numbers)
-    end)
+    # todo: 
+    # |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+    #   acquire_contract_address_tokens(repo, consensus_block_numbers)
+    # end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       delete_address_token_balances(repo, consensus_block_numbers, insert_options)
     end)
