@@ -104,7 +104,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
 
     # Enforce CoinBalanceDaily ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(combined_changes_list, &{&1.address_hash, &1.day})
-    # Logger.info("Address_coin_balances_daily ordered_changes_list #{inspect(ordered_changes_list)}")
+    Logger.info("Address_coin_balances_daily ordered_changes_list #{inspect(ordered_changes_list)}")
 
     {:ok, _} =
       Import.insert_changes_list(

@@ -60,13 +60,15 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
+    Logger.info("### Token transfers length #{Enum.count(ordered_changes_list)} ###")
+
 
     {:ok, token_transfers} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
         conflict_target: [:transaction_hash, :log_index, :block_hash],
-        on_conflict: on_conflict,
+        on_conflict: :nothing,
         for: TokenTransfer,
         returning: true,
         timeout: timeout,
