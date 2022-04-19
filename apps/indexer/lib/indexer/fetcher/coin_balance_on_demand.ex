@@ -183,7 +183,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
         address_params = CoinBalanceFetcher.balances_params_to_address_params(params_list)
 
         Chain.import(%{
-          addresses: %{params: address_params, with: :balance_changeset},
+          addresses: %{params: address_params, with: :balance_changeset, on_conflict: :update_coin_balance},
           broadcast: :on_demand
         })
 

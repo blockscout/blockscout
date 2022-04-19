@@ -91,7 +91,14 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       "### Addresses insert started (internal). Changes list length #{inspect(Enum.count(changes_list))} ###"
     ])
 
-    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+    on_conflict = Map.get(options, :on_conflict, :nothing)
+
+    on_conflic_func =
+      case on_conflict do
+        :update_coin_balance -> default_on_conflict_update_coin_balance()
+        :update_contract_code -> default_on_conflict_update_contract_code()
+        _ -> :nothing
+      end
 
     # Enforce Address ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = sort_changes_list(changes_list)
@@ -120,7 +127,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         repo,
         ordered_changes_list,
         conflict_target: :hash,
-        on_conflict: on_conflict,
+        on_conflict: on_conflic_func,
         for: Address,
         returning: true,
         timeout: timeout,
@@ -131,11 +138,10 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     {:ok, addresses}
   end
 
-  defp default_on_conflict do
+  defp default_on_conflict_update_coin_balance do
     from(address in Address,
       update: [
         set: [
-          contract_code: fragment("COALESCE(EXCLUDED.contract_code, ?)", address.contract_code),
           # ARGMAX on two columns
           fetched_coin_balance:
             fragment(
@@ -159,19 +165,32 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
               "GREATEST(EXCLUDED.fetched_coin_balance_block_number, ?)",
               address.fetched_coin_balance_block_number
             ),
-          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", address.updated_at)
         ]
       ],
       # where any of `set`s would make a change
       # This is so that tuples are only generated when a change would occur
       where:
-        fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
-          fragment(
-            "EXCLUDED.fetched_coin_balance IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
-            address.fetched_coin_balance_block_number,
-            address.fetched_coin_balance_block_number
-          )
+        fragment(
+          "EXCLUDED.fetched_coin_balance IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
+          address.fetched_coin_balance_block_number,
+          address.fetched_coin_balance_block_number
+        )
+    )
+  end
+
+  defp default_on_conflict_update_contract_code do
+    from(address in Address,
+      update: [
+        set: [
+          contract_code: fragment("COALESCE(EXCLUDED.contract_code, ?)", address.contract_code),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", address.updated_at)
+        ]
+      ],
+      # where any of `set`s would make a change
+      # This is so that tuples are only generated when a change would occur
+      where:
+        fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code)
     )
   end
 
