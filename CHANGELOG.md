@@ -4,6 +4,7 @@
 - [#581](https://github.com/celo-org/blockscout/pull/581) - Save voter active votes to db
 
 ### Fixes
+- [#5212](https://github.com/blockscout/blockscout/pull/5212) - Fix `gas_used` value bug
 - [#5066](https://github.com/blockscout/blockscout/pull/5066) - Fix read contract page bug
 - [#5071](https://github.com/blockscout/blockscout/pull/5071) - Fix write page contract tuple input
 - [#5034](https://github.com/blockscout/blockscout/pull/5034) - Fix broken functions input at transation page
