@@ -1,10 +1,3 @@
-$body-dark: #121212; // body background
-$dark-bg: #212121; // hero shade
-$dark-light-bg: #212121; // pills bg shade
-$dark-light: #212121; // tile light top share
-$labels-dark: #fff; // header nav, labels
-$dark-stakes-banned-background: #212121;
-
 // Switcher
 .dark-mode-changer {
 	display: inline-flex;
@@ -37,10 +30,10 @@ $dark-stakes-banned-background: #212121;
 
 	// navbar
 	.navbar.navbar-primary {
-		background-color: $dark-light-bg !important;
+		background-color: $dark-bg !important;
 		.input-group-text {
 			&.border {
-				background-color: $dark-light-bg;
+				background-color: $dark-bg;
 			}
 		}
 	}
@@ -83,7 +76,7 @@ $dark-stakes-banned-background: #212121;
 
 	// footer
 	.footer {
-		background: $dark-light-bg;
+		background: $dark-bg;
 		color: $labels-dark;
 	}
 	.footer-social-icon,
@@ -111,7 +104,7 @@ $dark-stakes-banned-background: #212121;
 	}
 	.dashboard-banner-network-plain-container,
 	.dashboard-banner-network-plain-container::after {
-		background-color: $dark-light-bg;
+		background-color: $dark-bg;
 	}
 	.dashboard-banner-network-stats-label,
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
