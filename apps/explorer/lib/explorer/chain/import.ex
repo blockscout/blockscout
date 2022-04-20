@@ -336,6 +336,7 @@ defmodule Explorer.Chain.Import do
     # Logger.info("### multis #{inspect(multis)} ###")
 
     Enum.reduce_while(multis, {:ok, %{}}, fn multi, {:ok, acc_changes} ->
+      Logger.info("### import_transaction ###")
       case import_transaction(multi, options) do
         {:ok, changes} -> {:cont, {:ok, Map.merge(acc_changes, changes)}}
         {:error, _, _, _} = error -> {:halt, error}
