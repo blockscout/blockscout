@@ -148,13 +148,13 @@ defmodule Indexer.Block.Fetcher do
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          Logger.info("### BEFORE mint_transfers CHANGESET ###"),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
-        #  Logger.info("### BEFORE FetchedBeneficiaries CHANGESET ###"),
-        #  %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
-        #    fetch_beneficiaries(blocks, json_rpc_named_arguments),
+         #  Logger.info("### BEFORE FetchedBeneficiaries CHANGESET ###"),
+         #  %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
+         #    fetch_beneficiaries(blocks, json_rpc_named_arguments),
          Logger.info("### BEFORE addresses CHANGESET ###"),
          addresses =
            Addresses.extract_addresses(%{
-            #  block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
+             #  block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
@@ -191,10 +191,10 @@ defmodule Indexer.Block.Fetcher do
          #      blocks: []
          #    }
          #    |> AddressCoinBalancesDaily.params_set(),
-        #  beneficiaries_with_gas_payment <-
-        #    beneficiary_params_set
-        #    |> add_gas_payments(transactions_with_receipts, blocks)
-        #    |> BlockReward.reduce_uncle_rewards(),
+         #  beneficiaries_with_gas_payment <-
+         #    beneficiary_params_set
+         #    |> add_gas_payments(transactions_with_receipts, blocks)
+         #    |> BlockReward.reduce_uncle_rewards(),
          Logger.info("### BEFORE address_token_balances CHANGESET ###"),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          Logger.info("### BEFORE INSERT BLOCK CHANGESETS ###"),
@@ -208,7 +208,7 @@ defmodule Indexer.Block.Fetcher do
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
-              #  block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
+               #  block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                block_rewards: %{errors: [], params: []},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},

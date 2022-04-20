@@ -62,7 +62,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
     Logger.info("### Token transfers length #{Enum.count(ordered_changes_list)} ###")
 
-
     {:ok, token_transfers} =
       Import.insert_changes_list(
         repo,
