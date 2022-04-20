@@ -103,11 +103,17 @@ $navbar-logo-width: auto !default;
   }
   .search-form {
     display: flex;
-
+    .form-control {
+      border-top-right-radius: 0.25rem;
+      border-bottom-right-radius: 0.25rem;
+    }
+    @include media-breakpoint-up(lg) {
+      margin-right: 20px; // cloudwalk
+    }
     @include media-breakpoint-up(xl) {
-      height: 57px;
-      margin-bottom: -8px;
-      margin-top: -8px;
+      // height: 57px;
+      // margin-bottom: -8px;
+      // margin-top: -8px;
     }
   }
 

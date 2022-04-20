@@ -1,9 +1,9 @@
-$body-dark: #1c1d31; // body background
-$dark-bg: #22223a; // hero shade
-$dark-light-bg: #282945; // pills bg shade
-$dark-light: #313355; // tile light top share
-$labels-dark: #8a8dba; // header nav, labels
-$dark-stakes-banned-background: #3e314c;
+$body-dark: #121212; // body background
+$dark-bg: #212121; // hero shade
+$dark-light-bg: #212121; // pills bg shade
+$dark-light: #212121; // tile light top share
+$labels-dark: #fff; // header nav, labels
+$dark-stakes-banned-background: #212121;
 
 // Switcher
 .dark-mode-changer {
@@ -37,7 +37,7 @@ $dark-stakes-banned-background: #3e314c;
 
 	// navbar
 	.navbar.navbar-primary {
-		background-color: $dark-light-bg;
+		background-color: $dark-light-bg !important;
 		.input-group-text {
 			&.border {
 				background-color: $dark-light-bg;
@@ -66,11 +66,15 @@ $dark-stakes-banned-background: #3e314c;
 		}
 	}
 	.navbar.navbar-primary .form-control {
-		background-color: $dark-bg;
-		border-color: $dark-bg;
+		background-color: #424242;
+		border-color: #424242;
 		color: #fff;
+		height: 38px !important;
+		.autoComplete_wrapper > input {
+			height: 24px;
+		}
 		&::placeholder {
-			color: $labels-dark;
+			color: #9e9e9e;
 		}
 	}
 	.navbar.navbar-primary .navbar-toggler .navbar-toggler-icon {
@@ -88,7 +92,7 @@ $dark-stakes-banned-background: #3e314c;
 	}
 	.footer-social-icon:hover,
 	.footer-link:hover {
-		color: #fff;
+		color: $dark-primary-alternate;
 	}
 	.footer-list ul li::before {
 		background-color: $dark-secondary;
@@ -117,7 +121,8 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: $dark-primary;
 	}
 	.dashboard-banner-network-stats-item::before {
-		background-color: $dark-secondary;
+		// background-color: $dark-secondary;
+		background-color: #595959;
 	}
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(2)::before {
 		background-color: $dark-secondary;
@@ -129,8 +134,10 @@ $dark-stakes-banned-background: #3e314c;
 	}
 
 	.card {
-		background-color: $dark-light-bg;
-		box-shadow: 0 0 30px 0 rgba(23, 24, 41, 0.5);
+		// background-color: $dark-light-bg;
+		// box-shadow: 0 0 30px 0 rgba(23, 24, 41, 0.5);
+		box-shadow: none;
+		background-color: $body-dark;
 	}
 
 	.card-header {
@@ -182,7 +189,7 @@ $dark-stakes-banned-background: #3e314c;
 			color: #fff;
 		}
 		.tile-transaction-type-block {
-			background-color: transparent;
+			// background-color: transparent;
 		}
 	}
 	.tile-bottom-contents {
@@ -207,9 +214,10 @@ $dark-stakes-banned-background: #3e314c;
 		color: $labels-dark;
 	}
 	.tile .tile-body a,
-	.tile a:hover,
+	// .tile a:hover,
 	.tile span[data-address-hash],
-	.tile a[data-test=token_link] { color: $dark-primary; }
+	.tile a[data-test=token_link] { color: $dark-secondary; }
+	.tile a:hover, .tile a:hover span { color: $dark-primary-alternate !important; }
 	.fade-up-blocks-chain .tile-type-block-animation .tile-type-line-up {
 		background-color: $dark-primary;
 	}
@@ -237,12 +245,12 @@ $dark-stakes-banned-background: #3e314c;
 	// btns
 
 	.btn-line {
-		background-color: transparent;
-		border-color: $dark-primary;
-		color: $dark-primary;
+		background-color: #e0e0e0;
+		border-color: #e0e0e0;
+		color: #424242;
 		&:hover {
-			border-color: $dark-primary;
-			background-color: $dark-primary;
+			border-color: $dark-bg;
+			background-color: $dark-bg;
 			color: #fff;
 		}
 	}
@@ -1085,7 +1093,7 @@ $dark-stakes-banned-background: #3e314c;
 		  }
 	}
 	.main-search-autocomplete {
-		background-color: $dark-bg !important;
+		background-color: #424242 !important;
 		color: #fff !important;
 	}
 	.autocomplete-category {
@@ -1120,7 +1128,7 @@ $dark-stakes-banned-background: #3e314c;
 .dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
     background-image: none;
     width: 100%;
-    background-color: #3f426c !important;
+    background-color: $dark-primary !important;
 }
 
 @media (max-width: 991.98px) {
@@ -1166,4 +1174,36 @@ $dark-stakes-banned-background: #3e314c;
 .dark-theme-applied .btn-no-border-link-to-tems {
 	border-color: $dark-primary !important;
 	color: $dark-primary !important;
+}
+
+// CLOUDWALK OVERRIDES
+
+.navbar {
+	-webkit-box-shadow: none !important;
+	box-shadow: none !important;
+	border-bottom: 1px solid $body-dark;
+}
+
+.bs-label {
+	background: #424242;
+	color: #bdbdbd;
+	font-size: 10px;
+	line-height: 12px;
+	height: 19px;
+	padding: 4px 6px;
+}
+.bs-label.method {
+	color: #bdbdbd;
+}
+
+a .fontawesome-icon {
+	background-color: #fff;
+}
+
+a:hover .fontawesome-icon {
+	background-color: $dark-primary-alternate;
+}
+
+.navbar.navbar-primary .input-group-append * {
+	fill: #9e9e9e;
 }
