@@ -26,7 +26,7 @@
 }
 
 .dark-theme-applied {
-	color: #fff;
+	color: #ccc;
 
 	// navbar
 	.navbar.navbar-primary {
@@ -50,11 +50,11 @@
 		&.active, &:hover {
 			.nav-link-icon {
 				svg path {
-					fill: $dark-primary;
+					fill: #fff;
 				}
 			}
 			&:before {
-				background-color: $dark-primary;
+				background-color: $labels-dark;
 			}
 		}
 	}
@@ -146,13 +146,13 @@
 	}
 
 	.card-tab {
-		background-color: transparent;
+		background-color: rgba($dark-bg, .1);
 		&:hover:not(.active) {
-			background-color: rgba($dark-primary, .15);
+			background-color: rgba($dark-bg, .5);
 			color: $dark-primary;
 		}
 		&.active {
-			background-color: $dark-primary-alternate;
+			background-color: $dark-bg;
 			color: #fff;
 		}
 	}
@@ -163,7 +163,10 @@
 
 	// Components
 	a {
-		color: $dark-primary;
+		color: $dark-secondary;
+		&:hover {
+			color: $dark-primary-alternate;
+		}
 	}
 
 	.tile {
@@ -215,10 +218,10 @@
 		background-color: $dark-primary;
 	}
 	.tile.tile-type-block {
-		border-left-color: $dark-primary
+		border-left-color: $cw-tile-blue;
 	}
 	.tile.tile-type-block .tile-status-label {
-		color: $dark-primary;
+		color: $cw-tile-blue;
 	}
 	.tile.tile-type-block .tile-transaction-type-block {
 		border-right-color: $dark-primary;
@@ -279,6 +282,11 @@
 			background-color: $dark-light;
 		}
 	}
+	.pagination-container .pagination .page-item.active .page-link {
+		color: white;
+		border-color: $dark-primary;
+		background-color: $dark-primary;
+	}
 
 	// dropdown
 	.dropdown-menu {
@@ -318,7 +326,7 @@
 	}
 
 	.stakes-td {
-		border-bottom-color: darken($labels-dark, 30);
+		border-bottom-color: rgba($dark-bg, 0.5);
 	}
 
 	.stakes-tr-banned {
@@ -1115,7 +1123,10 @@
 
 .dark-theme-applied .dropdown-item {
 	background-color: $dark-light !important;
-	color: #fff !important;
+	color: $labels-dark !important;
+	&:hover, &.active {
+		color: white !important;
+	}
 }
 
 .dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
@@ -1157,7 +1168,10 @@
 	}
 }
 .dark-theme-applied .confirmations-label:after {
-    border-left: .9rem solid $dark-light-bg;
+    // border-left: .9rem solid $dark-light-bg;
+		border-top: 0.6rem solid transparent;
+    border-bottom: 0.6rem solid transparent;
+    border-left: 0.6rem solid $dark-light-bg;
 }
 
 .dark-theme-applied .i-tooltip-2:hover{
@@ -1165,8 +1179,10 @@
 }
 
 .dark-theme-applied .btn-no-border-link-to-tems {
-	border-color: $dark-primary !important;
-	color: $dark-primary !important;
+	// border-color: $dark-primary !important;
+	// color: $dark-primary !important;
+	background: #424242 !important;
+	color: #bdbdbd !important;
 }
 
 // CLOUDWALK OVERRIDES
@@ -1199,4 +1215,52 @@ a:hover .fontawesome-icon {
 
 .navbar.navbar-primary .input-group-append * {
 	fill: #9e9e9e;
+}
+
+.dark-theme-applied {
+	.card-tabs {
+		border-bottom: 1px solid rgba($dark-bg, .75);
+	}
+	
+	.pagination-container .pagination .page-link.no-hover {
+		background-color: $body-dark;
+		border-color: $body-dark;
+	}
+
+	.index-label {
+		background: #424242;
+		color: #bdbdbd;
+		&:after {
+			border-left-color: #424242;
+		}
+	}
+
+	.confirmations-label {
+		padding-left: 1.15rem !important;
+	}
+
+	.card-tabs + .card-body {
+		border: 1px solid rgba(33, 33, 33, 0.75);
+		border-bottom-left-radius: 10px;
+		border-bottom-right-radius: 10px;
+	}
+
+	.btn-wallet-icon {
+		background-color: transparent;
+		border-color: $dark-primary;
+		color: $dark-primary;
+		&:hover {
+			background-color: $dark-primary;
+			color: #fff;
+		}
+	}
+
+
+}
+	
+
+.alert-warning {
+	color: $cw-tile-blue;
+	background-color: rgba($cw-tile-blue, .1);
+	border: none;
 }
