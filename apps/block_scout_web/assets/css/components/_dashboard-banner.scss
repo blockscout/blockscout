@@ -29,9 +29,9 @@ $banner-logo-width: auto !default;
   @include media-breakpoint-down(sm) {
       height: auto;
   }
-  @include media-breakpoint-down(md) {
-      height: auto;
-  }
+  // @include media-breakpoint-down(md) {
+  //     height: auto;
+  // }
 }
 
 .dashboard-banner {
@@ -52,15 +52,15 @@ $banner-logo-width: auto !default;
 }
 
 .dashboard-banner-network-graph {
-  display: none; // cloudwalk
+  display: none !important; // cloudwalk
   flex-grow: 1;
   padding: 15px 0 0 0;
 
-  @include media-breakpoint-down(md) {
-    display: flex;
-    flex-direction: column;
-    padding-top: 20px;
-  }
+  // @include media-breakpoint-down(md) {
+  //   display: flex;
+  //   flex-direction: column;
+  //   padding-top: 20px;
+  // }
 }
 
 .dashboard-banner-chart {
@@ -71,12 +71,12 @@ $banner-logo-width: auto !default;
   min-height: 100px;
   height: calc(100% - 86px);
 
-  @include media-breakpoint-down(md) {
-    flex-grow: 0;
-    margin-top: 20px;
-    margin-bottom: auto;
-    max-width: 100%;
-  }
+  // @include media-breakpoint-down(md) {
+  //   flex-grow: 0;
+  //   margin-top: 20px;
+  //   margin-bottom: auto;
+  //   max-width: 100%;
+  // }
 
   > canvas {
     max-height: 100%;
@@ -98,10 +98,10 @@ $banner-logo-width: auto !default;
     position: relative;
     padding-right: 12px;
 
-    @include media-breakpoint-down(md) {
-      display: flex;
-      flex-direction: row;
-    }
+    // @include media-breakpoint-down(md) {
+    //   display: flex;
+    //   flex-direction: row;
+    // }
 
     @media (max-width: 599px) {
       padding-top: 0;
@@ -145,9 +145,9 @@ $banner-logo-width: auto !default;
       top: -2px;
     }
 
-    @include media-breakpoint-down(md) {
-      margin: 0 5px 0 0;
-    }
+    // @include media-breakpoint-down(md) {
+    //   margin: 0 5px 0 0;
+    // }
   }
 
   .dashboard-banner-chart-legend-value {
@@ -196,16 +196,16 @@ $banner-logo-width: auto !default;
     width: 550px;
   }
 
-  @include media-breakpoint-down(md) {
-    border-top-right-radius: 10px;
-    height: auto;
-    justify-content: flex-start;
-    margin-left: 0;
-    max-width: 100%;
-    padding: 20px 0 20px 20px;
-    width: 250px;
-    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
-  }
+  // @include media-breakpoint-down(md) {
+  //   border-top-right-radius: 10px;
+  //   height: auto;
+  //   justify-content: flex-start;
+  //   margin-left: 0;
+  //   max-width: 100%;
+  //   padding: 20px 0 20px 20px;
+  //   width: 250px;
+  //   box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
+  // }
 
   @include media-breakpoint-down(sm) {
     width: 100%;
@@ -225,9 +225,9 @@ $banner-logo-width: auto !default;
     box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
     border-top-left-radius: 10px;
 
-    @include media-breakpoint-down(md) {
-      display: none;
-    }
+    // @include media-breakpoint-down(md) {
+    //   display: none;
+    // }
   }
 }
 
@@ -242,10 +242,10 @@ $banner-logo-width: auto !default;
   //   row-gap: 20px;
   // }
 
-  @include media-breakpoint-down(md) {
-    grid-template-columns: 1fr;
-    row-gap: 20px;
-  }
+  // @include media-breakpoint-down(md) {
+  //   grid-template-columns: 1fr;
+  //   row-gap: 20px;
+  // }
 
   @include media-breakpoint-down(sm) {
     column-gap: 10px;
