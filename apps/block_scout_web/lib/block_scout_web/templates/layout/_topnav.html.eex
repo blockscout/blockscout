@@ -52,7 +52,7 @@
           <li class="nav-item">
            <%= link(
                     class: "nav-link topnav-nav-link",
-                    to: "https://faucet-edgenet.polygon.technology",
+                    to: "https://faucet.edgenet.psdk.io/",
                     target: "_blank"
                   ) do %>
               <span class="nav-link-icon">
