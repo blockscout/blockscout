@@ -104,7 +104,34 @@
             </li>
           <% end %>
         <% end %>
-        <li class="nav-item dropdown">
+
+        <li class="nav-item dropdown" id="activeTransactions">
+            <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+              </span>
+              <%= gettext("Resources") %>
+            </a>
+            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+              <%= link(
+                    gettext("Polygon Edge testnet Faucet"),
+                    class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
+                    to: "https://faucet-edgenet.polygon.technology/blocks"
+                  ) %>
+              <%= link(
+                    gettext("Polygon Edge Doc"),
+                    class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",\
+                    to: "https://edge-docs.polygon.technology/docs/overview/"
+                  ) %>
+               <%= link(
+                    gettext("Polygon Edge Repo"),
+                    class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",\
+                    to: "https://github.com/0xPolygon/polygon-edge"
+                  ) %>
+            </div>
+          </li>
+
+              <li class="nav-item dropdown">
           <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
@@ -126,6 +153,7 @@
             <% end %> 
           </div>
         </li>
+
       </ul>
       <!-- Dark mode changer -->
       <button class="dark-mode-changer" id="dark-mode-changer">

@@ -11,9 +11,12 @@ Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
 const grid = {
-  display: false,
-  drawBorder: false,
-  drawOnChartArea: false
+  display: true,
+  drawBorder: true,
+  drawOnChartArea: true,
+  color: function() {
+    return '#FFFFFF';
+  },
 }
 
 function xAxe (fontColor) {
