@@ -49,6 +49,18 @@
               <% end %>
             </div>
           </li>
+          <li class="nav-item">
+           <%= link(
+                    class: "nav-link topnav-nav-link",
+                    to: "https://faucet-edgenet.polygon.technology",
+                    target: "_blank"
+                  ) do %>
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+              </span>
+               <%= gettext("Polygon Edge Faucet") %>
+               <% end %>
+          </li>
           <%= if Chain.bridged_tokens_enabled?() do %>
             <li class="nav-item dropdown">
               <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -113,12 +125,6 @@
               <%= gettext("Resources") %>
             </a>
             <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
-              <%= link(
-                    gettext("Polygon Edge testnet Faucet"),
-                    class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
-                    to: "https://faucet-edgenet.polygon.technology/blocks",
-                    target: "_blank"
-                  ) %>
               <%= link(
                     gettext("Polygon Edge Doc"),
                     class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",\
