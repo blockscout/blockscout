@@ -1,11 +1,11 @@
-defmodule Explorer.Accounts.Notify.Summary do
+defmodule Explorer.Accounts.Notifier.Summary do
   @moduledoc """
     Compose a summary from transactions
   """
 
   require Logger
 
-  alias Explorer.Accounts.Notify.Summary
+  alias Explorer.Accounts.Notifier.Summary
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Wei
 
@@ -64,9 +64,9 @@ defmodule Explorer.Accounts.Notify.Summary do
     Enum.map(
       transfers_list,
       fn transfer ->
-        summary = fetch_summary(transaction, transfer)
-        Logger.info(summary, fetcher: :account)
-        summary
+        transaction
+        |> fetch_summary(transfer)
+        |> tap(&Logger.info(&1, fetcher: :account))
       end
     )
   end

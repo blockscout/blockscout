@@ -5,8 +5,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionController, TransactionTokenTransferView}
-  alias Explorer.Accounts.TagTransaction
-  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -102,6 +101,8 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
            ),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+      tags = GetAddressTags.call(transaction.to_address_hash, current_user(conn))
+
       render(
         conn,
         "index.html",
@@ -110,7 +111,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
         current_path: Controller.current_full_path(conn),
         show_token_transfers: true,
         transaction: transaction,
-        personal_tx_tag: get_tag(conn, transaction_hash)
+        tags: tags
       )
     else
       :not_found ->
@@ -124,12 +125,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
 
       {:restricted_access, _} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)
-    end
-  end
-
-  defp get_tag(conn, transaction_hash) do
-    if user = current_user(conn) do
-      Repo.get_by(TagTransaction, tx_hash: transaction_hash, identity_id: user.id)
     end
   end
 end

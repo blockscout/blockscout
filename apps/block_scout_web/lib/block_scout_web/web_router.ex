@@ -30,11 +30,30 @@ defmodule BlockScoutWeb.WebRouter do
   scope "/account", BlockScoutWeb do
     pipe_through(:browser)
 
-    resources("/watchlist", Account.WatchlistController, only: [:show], singleton: true, as: :watchlist)
+    resources("/tag_address", Account.TagAddressController,
+      only: [:index, :new, :create, :delete],
+      as: :tag_address
+    )
+
+    resources("/tag_transaction", Account.TagTransactionController,
+      only: [:index, :new, :create, :delete],
+      as: :tag_transaction
+    )
+
+    resources("/watchlist", Account.WatchlistController,
+      only: [:show],
+      singleton: true,
+      as: :watchlist
+    )
 
     resources("/watchlist_address", Account.WatchlistAddressController,
       only: [:new, :create, :edit, :update, :delete],
       as: :watchlist_address
+    )
+
+    resources("/api_key", Account.ApiKeyController,
+      only: [:new, :create, :edit, :update, :delete, :index],
+      as: :api_key
     )
   end
 
@@ -70,7 +89,10 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/blocks", BlockController, as: :blocks, only: [:index])
 
-    resources "/blocks", BlockController, as: :block_secondary, only: [:show], param: "hash_or_number" do
+    resources "/blocks", BlockController,
+      as: :block_secondary,
+      only: [:show],
+      param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
 
@@ -80,7 +102,11 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/validators", StakesController, :index, as: :validators, assigns: %{filter: :validator})
     get("/active-pools", StakesController, :index, as: :active_pools, assigns: %{filter: :active})
-    get("/inactive-pools", StakesController, :index, as: :inactive_pools, assigns: %{filter: :inactive})
+
+    get("/inactive-pools", StakesController, :index,
+      as: :inactive_pools,
+      assigns: %{filter: :inactive}
+    )
 
     resources("/pending-transactions", PendingTransactionController, only: [:index])
 

@@ -9,7 +9,7 @@ defmodule AddWatchlistAddress do
   call(watchlist, params)
   """
 
-  alias Explorer.Accounts.Notify.ForbiddenAddress
+  alias Explorer.Accounts.Notifier.ForbiddenAddress
   alias Explorer.Accounts.{Watchlist, WatchlistAddress}
   alias Explorer.Chain.Address
   alias Explorer.Repo
@@ -78,17 +78,13 @@ defmodule AddWatchlistAddress do
   end
 
   defp find_or_create_address(address_hash) do
-    case find_address(address_hash) do
-      {:ok, address} -> {:ok, address}
-      {:error, :address_not_found} -> create_address(address_hash)
-    end
+    with {:error, :address_not_found} <- find_address(address_hash),
+         do: create_address(address_hash)
   end
 
   defp create_address(address_hash) do
-    case Repo.insert(%Address{hash: address_hash}) do
-      {:ok, address} -> {:ok, address}
-      {:error, _} -> {:error, :wrong_address}
-    end
+    with {:error, _} <- Repo.insert(%Address{hash: address_hash}),
+         do: {:error, :wrong_address}
   end
 
   defp find_address(address_hash) do

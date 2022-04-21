@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.TransactionRawTraceController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   alias BlockScoutWeb.{AccessHelpers, TransactionController}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
@@ -86,6 +88,8 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   end
 
   defp render_raw_trace(conn, internal_transactions, transaction, hash) do
+    tags = GetAddressTags.call(transaction.to_address_hash, current_user(conn))
+
     render(
       conn,
       "index.html",
@@ -93,7 +97,8 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
       internal_transactions: internal_transactions,
       block_height: Chain.block_height(),
       show_token_transfers: Chain.transaction_has_token_transfers?(hash),
-      transaction: transaction
+      transaction: transaction,
+      tags: tags
     )
   end
 end

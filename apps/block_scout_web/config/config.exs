@@ -244,9 +244,6 @@ config :briefly,
   default_prefix: "briefly",
   default_extname: ""
 
-config :hammer,
-  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
-
 # Configures Ueberauth's Auth0 auth provider
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: System.get_env("AUTH0_DOMAIN"),

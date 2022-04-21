@@ -81,7 +81,8 @@ const appJs =
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
       'modal': './js/pages/modal.js',
-      'dropzone': './js/lib/dropzone.js'
+      'dropzone': './js/lib/dropzone.js',
+      'api-keys': './js/pages/api_keys.js'
     },
     output: {
       filename: '[name].js',

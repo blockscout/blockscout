@@ -25,8 +25,8 @@
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-<% tags = if assigns[:tags], do: @tags, else: [] %>
-<% private_tags = if assigns[:private_tags], do: @private_tags, else: [] %>
+<% tags = if assigns[:tags], do: @tags, else: %{common_tags: [], personal_tags: [], watchlist_names: []} %>
+<% IO.inspect("Gimme tags #{inspect(tags)}") %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
@@ -54,16 +54,7 @@
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tx_tag.name, additional_classes: [tag_name_to_label(personal_tx_tag.name), "ml-1"] %>
               <% end %>
             </div>
-            <!-- <%= if status == :pending do %>
-              <span class="btn btn-danger btn-full-primary ml-2 js-cancel-transaction"
-                style="display: inline-flex;"
-                data-from="<%= from_address_hash %>"
-                data-nonce="<%= @transaction.nonce %>"
-                data-chain-id="<%= Chain.Cache.NetVersion.get_version() %>"
-                data-placement="top"
-                data-toggle="tooltip">Cancel transaction</span>
-            <% end %> -->
-            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash, private_tags: private_tags, tags: tags %>
+            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash, tags: tags %>
           </h1>
           <%= if status == :pending do %>
             <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">

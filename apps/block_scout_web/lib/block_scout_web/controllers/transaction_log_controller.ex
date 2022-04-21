@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.TransactionLogController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionController, TransactionLogView}
@@ -87,6 +88,8 @@ defmodule BlockScoutWeb.TransactionLogController do
            ),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
+      tags = GetAddressTags.call(transaction.to_address_hash, current_user(conn))
+
       render(
         conn,
         "index.html",
@@ -94,7 +97,8 @@ defmodule BlockScoutWeb.TransactionLogController do
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
         current_path: Controller.current_full_path(conn),
         transaction: transaction,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        tags: tags
       )
     else
       {:restricted_access, _} ->

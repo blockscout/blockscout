@@ -21,7 +21,6 @@ defmodule BlockScoutWeb.TransactionController do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Tags.AddressToTag
   alias Phoenix.View
 
   @necessity_by_association %{
@@ -154,7 +153,7 @@ defmodule BlockScoutWeb.TransactionController do
                ),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
-          tags = AddressToTag.get_tags_on_address(transaction.to_address_hash)
+          tags = GetAddressTags.call(transaction.to_address_hash, nil)
 
           render(
             conn,
@@ -187,7 +186,7 @@ defmodule BlockScoutWeb.TransactionController do
                ),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
              {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
-          tags = AddressToTag.get_tags_on_address(transaction.to_address_hash)
+          tags = GetAddressTags.call(transaction.to_address_hash, nil)
 
           render(
             conn,

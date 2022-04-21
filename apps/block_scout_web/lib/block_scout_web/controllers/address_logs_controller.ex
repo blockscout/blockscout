@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.AddressLogsController do
   alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Tags.AddressToTag
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -59,9 +58,8 @@ defmodule BlockScoutWeb.AddressLogsController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      tags = AddressToTag.get_tags_on_address(address_hash)
       current_user = AuthController.current_user(conn)
-      private_tags = AddressToTag.get_private_tags_on_address(address_hash, current_user)
+      tags = GetAddressTags.call(address_hash, current_user)
 
       render(
         conn,
@@ -71,8 +69,7 @@ defmodule BlockScoutWeb.AddressLogsController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        tags: tags,
-        private_tags: private_tags
+        tags: tags
       )
     else
       _ ->
