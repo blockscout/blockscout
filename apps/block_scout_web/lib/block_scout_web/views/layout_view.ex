@@ -216,12 +216,32 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
-  def bridges_list do
-    list(:bridges)
+  def swap_list do
+    list(:swap)
   end
 
   def defi_list do
     list(:defi)
+  end
+
+  def wallet_list do
+    list(:wallet_list)
+  end
+
+  def nft_list do
+    list(:nft_list)
+  end
+
+  def connect_list do
+    list(:connect_list)
+  end
+
+  def spend_list do
+    list(:spend_list)
+  end
+
+  def finance_tools_list do
+    list(:finance_tools_list)
   end
 
   def resources_list do

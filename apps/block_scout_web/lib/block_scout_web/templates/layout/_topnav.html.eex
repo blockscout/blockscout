@@ -20,24 +20,14 @@
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
               </span>
-              <%= gettext("Blocks") %>
+              <%= gettext("Blockchain") %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
               <%= link to: blocks_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
                 <%= gettext("Blocks") %>
               <% end %>
-            </div>
-          </li>
-          <li class="nav-item dropdown">            <li class="nav-item dropdown" id="activeTransactions">
-            <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
-              </span>
-              <%= gettext("Transactions") %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
               <%= link(
-                    gettext("Validated"),
+                    gettext("Validated Txs"),
                     class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
                     to: transaction_path(@conn, :index)
                   ) %>
@@ -45,12 +35,17 @@
               <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
               <%= if variant !== EthereumJSONRPC.Besu do %>
                 <%= link(
-                      gettext("Pending"),
+                      gettext("Pending Txs"),
                       class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
                       "data-test": "pending_transactions_link",
                       to: pending_transaction_path(@conn, :index)
                     ) %>
               <% end %>
+              <%= link(
+                    gettext("Top Celo Holders"),
+                    class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
+                    to: address_path(@conn, :index)
+                  ) %>
             </div>
           </li>
           <%= if Chain.bridged_tokens_enabled?() do %>
@@ -91,19 +86,16 @@
                 <span class="nav-link-icon">
                   <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
                 </span>
-                <%= gettext("Tokens") %>
+                <%= gettext("Contracts") %>
               </a>
               <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
                 <%= link(
-                      gettext("All"),
+                      gettext("All Tokens"),
                       class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
                       to: tokens_path(@conn, :index)
                     ) %>
-                <%= link(
-                      gettext("CELO"),
-                      class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
-                      to: address_path(@conn, :index)
-                    ) %>
+              <a href="https://dhutch-test.celo-networks-dev.org/" class="dropdown-item" target="_blank"><%= gettext("Verified Contracts") %></a>
+              <a href="/contract-verifications/new" class="dropdown-item" ><%= gettext("Verify Contract") %></a>
               </div>
             </li>
           <% end %>
@@ -155,8 +147,8 @@
           </a>
           <div class="dropdown-menu dropdown-menu-apps large" aria-labeledby="navbarAppsDropdown">
             <div class="row" style="padding: 10px;">
+              <!--First Column -->
               <div class="col-xs-12 col-md-3 col-lg-3">
-                <h3 class="apps-menu-header pl-2"><b><%= gettext("Defi") %></b></h3>
                 <%= if staking_enabled_in_menu do %>
                 <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
                   <%= gettext("Staking on xDai") %>
@@ -169,6 +161,12 @@
                 </a>
                 <hr class="menu-hr" />
                 <% end %>
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Swap") %></b></h3>
+                <%= for %{url: url, title: title} <- swap_list() do %>
+                <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                <% end %>
+                <hr class="menu-hr" />
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Learn, Borrow, Earn") %></b></h3>
                 <%= for %{url: url, title: title} <- defi_list() do %>
                 <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                 <% end %>
@@ -177,37 +175,50 @@
                 <a href="https://airtable.com/shr7veBkE77k5p86b" class="dropdown-item" target="_blank"><%= gettext("Add Your App") %></a>
                 -->
               </div>
-
+              <!--Second Column -->
               <div class="col-xs-12 col-md-3 col-lg-3">
-                <% bridges = bridges_list() %>
-                <h3 class="apps-menu-header pl-2"><b><%= gettext("Bridges") %></b></h3>
-                <%= unless Enum.empty?(bridges) do %>
-                <%= for %{url: url, title: title} <- bridges do %>
+                <% wallets_apps = wallet_list() %>
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Wallet") %></b></h3>
+                <%= unless Enum.empty?(wallets_apps) do %>
+                <%= for %{url: url, title: title} <- wallets_apps do %>
+                <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                <% end %>
+                <% end %>
+                <hr class="menu-hr" />
+                <% nft_apps = nft_list() %>
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("NFT") %></b></h3>
+                <%= for %{url: url, title: title} <- nft_apps do %>
+                <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                <% end %>
+              </div>
+              <!--Third Column -->
+              <div class="col-xs-12 col-md-3 col-lg-3">
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Connect") %></b></h3>
+                <%= for %{url: url, title: title} <- connect_list() do %>
                 <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                 <% end %>
                 <hr class="menu-hr" />
-                <h3 class="apps-menu-header pl-2"><b><%= gettext("Apps") %></b></h3>
-                <%= for %{url: url, title: title} <- apps_list() do %>
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Spend") %></b></h3>
+                <%= for %{url: url, title: title} <- spend_list() do %>
                 <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                 <% end %>
-
-                  <% end %>
-              </div>
-              <div class="col-xs-12 col-md-3 col-lg-3">
-                <h3 class="apps-menu-header pl-2"><b><%= gettext("Resources") %></b></h3>
-                <%= for %{url: url, title: title} <- resources_list() do %>
+                <hr class="menu-hr" />
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Finance Tools") %></b></h3>
+                <%= for %{url: url, title: title} <- finance_tools_list() do %>
                 <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                 <% end %>
               </div>
+              <!--Fourth Column -->
               <div class="col-xs-12 col-md-3 col-lg-3">
                 <h3 class="apps-menu-header pl-2"><b><%= gettext("Learn") %></b></h3>
                 <%= for %{url: url, title: title} <- learning_list() do %>
                 <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                 <% end %>
-
-                <h3 class="apps-menu-header pl-2"><b><%= gettext("Tools") %></b></h3>
-                <a href="https://dhutch-test.celo-networks-dev.org/" class="dropdown-item" target="_blank"><%= gettext("Verified Contracts") %></a>
-                <a href="/contract-verification/new" class="dropdown-item" ><%= gettext("Verify Contract") %></a>
+                <hr class="menu-hr" />
+                <h3 class="apps-menu-header pl-2"><b><%= gettext("Resources") %></b></h3>
+                <%= for %{url: url, title: title} <- resources_list() do %>
+                <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                <% end %>
                 <!--
                 <hr class="menu-hr" />
                 <a href="https://celo.org/dapps" class="dropdown-item" target="_blank"><%= gettext("More apps") %></a>
