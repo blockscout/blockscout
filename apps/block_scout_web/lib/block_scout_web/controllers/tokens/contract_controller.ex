@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.Tokens.ContractController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import GetAddressTags, only: [get_address_tags: 2]
 
-  alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.{AccessHelpers, TabHelpers}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
