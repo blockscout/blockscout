@@ -300,6 +300,32 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   end
 
   def handle_info(
+        {ref, {:error, {:bad_gateway, _}}},
+        %__MODULE__{
+          task: %Task{ref: ref}
+        } = state
+      ) do
+    Logger.info("Index had to catch up, but the request returned Bad Gateway error. Restarting")
+
+    send(self(), :catchup_index)
+
+    {:noreply, %__MODULE__{state | task: nil}}
+  end
+
+  def handle_info(
+        {ref, {:error, reason}},
+        %__MODULE__{
+          task: %Task{ref: ref}
+        } = state
+      ) do
+    Logger.info("Index had to catch up, but the request returned: #{inspect(reason)}. Restarting")
+
+    send(self(), :catchup_index)
+
+    {:noreply, %__MODULE__{state | task: nil}}
+  end
+
+  def handle_info(
         {:DOWN, ref, :process, pid, reason},
         %__MODULE__{task: %Task{pid: pid, ref: ref}} = state
       ) do
