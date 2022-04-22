@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
-  alias BlockScoutWeb.Account.AuthController
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
