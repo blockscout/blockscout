@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.AddressWriteProxyController do
   import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.AccessHelpers
-  alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token

@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressDecompiledContractController do
   import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.AccessHelpers
-  alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
