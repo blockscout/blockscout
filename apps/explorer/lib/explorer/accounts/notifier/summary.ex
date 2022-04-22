@@ -27,8 +27,10 @@ defmodule Explorer.Accounts.Notifier.Summary do
 
     summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
 
-    Logger.debug("--- transfer summary", fetcher: :account)
-    Logger.debug(summary, fetcher: :account)
+    if summary do
+      Logger.debug("--- transfer summary", fetcher: :account)
+      Logger.debug(summary, fetcher: :account)
+    end
 
     [summary]
   end
