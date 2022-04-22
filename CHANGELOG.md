@@ -8,6 +8,7 @@
 ### Fixes
 - [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
 - [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
+- [#5482](https://github.com/blockscout/blockscout/pull/5482) - Fix for querying of the contract read functions
 - [#5455](https://github.com/blockscout/blockscout/pull/5455) - Fix unverified_smart_contract function: add md5 of bytecode to the changeset
 - [#5454](https://github.com/blockscout/blockscout/pull/5454) - Docker: Fix the qemu-x86_64 signal 11 error on Apple Silicon
 - [#5443](https://github.com/blockscout/blockscout/pull/5443) - Geth: display tx revert reason
