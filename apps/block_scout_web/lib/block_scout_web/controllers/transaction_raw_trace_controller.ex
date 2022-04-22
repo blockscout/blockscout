@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import GetAddressTags, only: [get_address_tags: 2]
   import GetTransactionTags, only: [get_transaction_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, TransactionController}
@@ -95,8 +96,11 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
       internal_transactions: internal_transactions,
       block_height: Chain.block_height(),
+      current_user: current_user(conn),
       show_token_transfers: Chain.transaction_has_token_transfers?(hash),
       transaction: transaction,
+      from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
+      to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
       personal_tx_tag:
         get_transaction_tags(
           transaction.hash,

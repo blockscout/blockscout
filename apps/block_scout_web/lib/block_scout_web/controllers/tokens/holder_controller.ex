@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.Tokens.HolderController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import GetAddressTags, only: [get_address_tags: 2]
+
   alias BlockScoutWeb.{AccessHelpers, Controller}
   alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.Tokens.HolderView
@@ -62,16 +65,13 @@ defmodule BlockScoutWeb.Tokens.HolderController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      current_user = AuthController.current_user(conn)
-      tags = GetAddressTags.call(address_hash, current_user)
-
       render(
         conn,
         "index.html",
         current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
-        tags: tags
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       {:restricted_access, _} ->
