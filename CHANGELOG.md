@@ -6,6 +6,7 @@
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5489](https://github.com/blockscout/blockscout/pull/5489) - Improve handling errors in catchup fetcher
 - [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
 - [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
 - [#5592](https://github.com/blockscout/blockscout/pull/5592) - Burn fees for legacy transactions
