@@ -1,11 +1,15 @@
 ## Current
 
 ### Features
+- [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
 - [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
 - [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
 - [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
+- [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
+- [#5482](https://github.com/blockscout/blockscout/pull/5482) - Fix for querying of the contract read functions
 - [#5455](https://github.com/blockscout/blockscout/pull/5455) - Fix unverified_smart_contract function: add md5 of bytecode to the changeset
 - [#5454](https://github.com/blockscout/blockscout/pull/5454) - Docker: Fix the qemu-x86_64 signal 11 error on Apple Silicon
 - [#5443](https://github.com/blockscout/blockscout/pull/5443) - Geth: display tx revert reason
@@ -32,6 +36,8 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5480](https://github.com/blockscout/blockscout/pull/5480) - Remove duplicate of balances_params_to_address_params function
+- [#5473](https://github.com/blockscout/blockscout/pull/5473) - Refactor daily coin balances fetcher
 - [#5458](https://github.com/blockscout/blockscout/pull/5458) - Decrease min safe polling period for realtime fetcher
 - [#5456](https://github.com/blockscout/blockscout/pull/5456) - Ignore arbitrary block details fields for custom Ethereum clients
 - [#5450](https://github.com/blockscout/blockscout/pull/5450) - Logging error in publishing of smart-contract

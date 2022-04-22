@@ -25,13 +25,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
+  alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.CoinBalance
   alias Indexer.Transform.Addresses
   alias Timex.Duration
 
@@ -407,20 +408,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
         importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-        block_numbers =
-          params_list
-          |> Enum.map(&Map.get(&1, :block_number))
-          |> Enum.sort()
-          |> Enum.dedup()
-
-        block_timestamp_map =
-          Enum.reduce(block_numbers, %{}, fn block_number, map ->
-            {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-              EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
-
-            day = DateTime.to_date(timestamp)
-            Map.put(map, "#{block_number}", day)
-          end)
+        block_timestamp_map = CoinBalance.block_timestamp_map(params_list, json_rpc_named_arguments)
 
         importable_balances_daily_params =
           Enum.map(params_list, fn param ->
