@@ -7,6 +7,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5489](https://github.com/blockscout/blockscout/pull/5489) - Improve handling errors in catchup fetcher
 - [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
 - [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
 - [#5482](https://github.com/blockscout/blockscout/pull/5482) - Fix for querying of the contract read functions
