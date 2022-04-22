@@ -1,4 +1,4 @@
-<%= max_api_key_count = 3 %>
+<% max_api_key_count = 3 %>
 <section class="container">
   <div class="row">
     <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :api_keys %>

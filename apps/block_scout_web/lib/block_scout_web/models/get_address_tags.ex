@@ -10,18 +10,10 @@ defmodule GetAddressTags do
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
-  def call(nil, nil),
+  def get_address_tags(nil, nil),
     do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
-  def call(%Hash{} = address_hash, nil) do
-    %{
-      common_tags: get_tags_on_address(address_hash),
-      personal_tags: [],
-      watchlist_names: []
-    }
-  end
-
-  def call(%Hash{} = address_hash, current_user) do
+  def get_address_tags(%Hash{} = address_hash, current_user) do
     %{
       common_tags: get_tags_on_address(address_hash),
       personal_tags: get_personal_tags(address_hash, current_user),
@@ -29,7 +21,7 @@ defmodule GetAddressTags do
     }
   end
 
-  def call(_, _), do: %{common_tags: [], personal_tags: [], watchlist_names: []}
+  def get_address_tags(_, _), do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
   def get_tags_on_address(%Hash{} = address_hash) do
     query =

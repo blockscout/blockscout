@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import GetAddressTags, only: [get_address_tags: 2]
+  import GetTransactionTags, only: [get_transaction_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}
@@ -97,17 +99,22 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
            ),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
-      tags = GetAddressTags.call(transaction.to_address_hash, current_user(conn))
-
       render(
         conn,
         "index.html",
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         current_path: Controller.current_full_path(conn),
+        current_user: current_user(conn),
         block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
         transaction: transaction,
-        tags: tags
+        from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
+        to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
+        personal_tx_tag:
+          get_transaction_tags(
+            transaction_hash,
+            current_user(conn)
+          )
       )
     else
       {:restricted_access, _} ->

@@ -26,7 +26,6 @@
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <% tags = if assigns[:tags], do: @tags, else: %{common_tags: [], personal_tags: [], watchlist_names: []} %>
-<% IO.inspect("Gimme tags #{inspect(tags)}") %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
@@ -211,6 +210,7 @@
                 from_address_hash,
                 to: address_path(@conn, :show, from_address_hash)
               ) %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: from_address_hash, tags: @from_tags %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                 additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                 clipboard_text: from_address_hash,
@@ -239,6 +239,7 @@
                     recipient_address_hash,
                     to: address_path(@conn, :show, recipient_address_hash)
                   ) %> 
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: recipient_address_hash, tags: @to_tags %>
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
@@ -250,6 +251,7 @@
                     recipient_address_hash,
                     to: address_path(@conn, :show, recipient_address_hash)
                   ) %>
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: recipient_address_hash, tags: @to_tags %>
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                     clipboard_text: recipient_address_hash,
