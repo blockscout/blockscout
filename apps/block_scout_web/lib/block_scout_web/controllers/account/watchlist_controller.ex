@@ -1,12 +1,13 @@
 defmodule BlockScoutWeb.Account.WatchlistController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Account.AuthController
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   alias Explorer.Accounts.Watchlist
   alias Explorer.Repo
 
   def show(conn, _params) do
-    case AuthController.current_user(conn) do
+    case current_user(conn) do
       nil ->
         conn
         |> put_flash(:info, "Sign in to see watchlist!")

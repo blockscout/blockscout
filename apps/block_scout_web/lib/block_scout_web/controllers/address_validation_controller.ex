@@ -12,7 +12,6 @@ defmodule BlockScoutWeb.AddressValidationController do
   import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, BlockView, Controller}
-  alias BlockScoutWeb.Account.AuthController
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.CoinBalanceOnDemand

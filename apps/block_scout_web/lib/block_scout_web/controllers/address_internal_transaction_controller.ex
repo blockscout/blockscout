@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView}
-  alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token

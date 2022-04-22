@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.Tokens.HolderController do
   import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller}
-  alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address

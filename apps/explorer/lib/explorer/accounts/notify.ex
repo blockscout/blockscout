@@ -12,7 +12,7 @@ defmodule Explorer.Accounts.Notify do
   end
 
   defp process(transactions) do
-    check_envs
+    check_envs()
     Notify.call(transactions)
   rescue
     err ->
@@ -21,8 +21,8 @@ defmodule Explorer.Accounts.Notify do
   end
 
   defp check_envs do
-    check_auth0
-    check_sendgrid
+    check_auth0()
+    check_sendgrid()
   end
 
   defp check_auth0 do
