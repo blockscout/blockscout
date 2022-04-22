@@ -1,16 +1,15 @@
 defmodule BlockScoutWeb.Account.TagAddressController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Account.AuthController
   alias Ecto.Changeset
   alias Explorer.Accounts.TagAddress
   alias Explorer.Repo
 
-  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
+  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1, current_user: 1]
   import Ecto.Query, only: [from: 2]
 
   def index(conn, _params) do
-    case AuthController.current_user(conn) do
+    case current_user(conn) do
       nil ->
         conn
         # |> put_flash(:info, "Sign in to see address tags")

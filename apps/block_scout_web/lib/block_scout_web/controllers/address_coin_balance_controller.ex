@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
   import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, AddressCoinBalanceView, Controller}
-  alias BlockScoutWeb.Account.AuthController
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
