@@ -141,7 +141,7 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% implementation_address = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || "0x0000000000000000000000000000000000000000" %>
+            <% {implementation_address, name} = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || "0x0000000000000000000000000000000000000000" %>
             <dl class="row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -150,7 +150,7 @@
               </dt>
               <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_contract_implementation">
                 <%= link(
-                  implementation_address,
+                  (if name, do: name <> " | " <> implementation_address, else: implementation_address),
                   to: address_path(@conn, :show, implementation_address),
                   class: "contract-address"
                 ) 
