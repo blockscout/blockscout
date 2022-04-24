@@ -51,6 +51,13 @@
       to: AccessHelpers.get_path(@conn, :address_validation_path, :index, @address.hash)
     ) %>
   <% end %>
+  <%= if Chain.check_if_rewards_at_address(@address.hash) do %>
+    <%= link(
+      gettext("Rewards"),
+      class: "card-tab #{tab_status("rewards", @conn.request_path)}",
+      to: AccessHelpers.get_path(@conn, :address_reward_path, :index, @address.hash)
+    ) %>
+  <% end %>
   <%= if contract?(@address) do %>
     <%= link(
         to: AccessHelpers.get_path(@conn, :address_contract_path, :index, @address.hash),

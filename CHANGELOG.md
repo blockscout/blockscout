@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5102](https://github.com/blockscout/blockscout/pull/5102) - Add new pagination to `address/transactions` page
 - [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
 - [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
 - [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client

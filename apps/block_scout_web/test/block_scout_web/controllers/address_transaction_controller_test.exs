@@ -84,16 +84,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> with_block()
         |> Enum.map(& &1.hash)
 
-      %Transaction{block_number: block_number, index: index} =
-        :transaction
-        |> insert(from_address: address)
+      _first_page_tx =
+        50
+        |> insert_list(:transaction, from_address: address)
         |> with_block()
 
       conn =
         get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
-          "block_number" => Integer.to_string(block_number),
-          "index" => Integer.to_string(index),
-          "type" => "JSON"
+          "type" => "JSON",
+          "page_number" => "2"
         })
 
       transaction_tiles = json_response(conn, 200)["items"]
@@ -113,7 +112,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address.hash), %{"type" => "JSON"}))
 
-      assert json_response(conn, 200)["next_page_path"]
+      assert json_response(conn, 200)["next_page_params"]["pages_limit"] > 1
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
@@ -125,7 +124,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address.hash), %{"type" => "JSON"}))
 
-      refute json_response(conn, 200)["next_page_path"]
+      response = json_response(conn, 200)["next_page_params"]
+      assert response["pages_limit"] == response["page_number"]
     end
 
     test "returns parent transaction for a contract address", %{conn: conn} do
