@@ -394,6 +394,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params} = options
        ) do
+    {:ok,
+     %{
+       addresses_params: addresses_params,
+       balances_params: [],
+       balances_daily_params: []
+     }}
+
     # todo
     # case options
     #      |> fetch_balances_params_list()
