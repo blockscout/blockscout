@@ -104,8 +104,8 @@ defmodule Explorer.Chain do
   # seconds
   @check_bytecode_interval 86_400
 
-  @limit_showing_transaсtions 50_000
-  @limit_showing_address_transaсtions 50_000
+  @limit_showing_transaсtions 10_000
+  @limit_showing_address_transaсtions 10_000
   @default_page_size 50
 
   @typedoc """
