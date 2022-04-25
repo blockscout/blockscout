@@ -101,7 +101,19 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       end
 
     # Enforce Address ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = sort_changes_list(changes_list)
+    ordered_changes_list =
+      changes_list
+      |> Enum.group_by(fn %{
+                            hash: hash
+                          } ->
+        {hash}
+      end)
+      |> Enum.map(fn {_, grouped_addresses} ->
+        Enum.max_by(grouped_addresses, fn address ->
+          address_max_by(address)
+        end)
+      end)
+      |> Enum.sort_by(& &1.hash)
 
     # Logger.info(
     #   inspect(
@@ -136,6 +148,19 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
     Logger.info(["### Addresses insert FINISHED ###"])
     {:ok, addresses}
+  end
+
+  defp address_max_by(address) do
+    cond do
+      Map.has_key?(address, :address) ->
+        address.fetched_coin_balance_block_number
+
+      Map.has_key?(address, :nonce) ->
+        address.nonce
+
+      true ->
+        address
+    end
   end
 
   defp default_on_conflict_update_coin_balance do
@@ -192,10 +217,6 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       where:
         fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code)
     )
-  end
-
-  defp sort_changes_list(changes_list) do
-    Enum.sort_by(changes_list, & &1.hash)
   end
 
   defp update_transactions(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do

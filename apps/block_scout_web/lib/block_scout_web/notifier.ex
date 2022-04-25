@@ -94,27 +94,7 @@ defmodule BlockScoutWeb.Notifier do
     blocks
     |> Enum.sort_by(& &1.number, :asc)
     |> Enum.each(fn block ->
-      cond do
-        last_broadcasted_block_number == 0 ->
-          broadcast_block(block)
-          :ets.insert(:last_broadcasted_block, {:number, block.number})
-
-        last_broadcasted_block_number == block.number - 1 ->
-          broadcast_block(block)
-          :ets.insert(:last_broadcasted_block, {:number, block.number})
-
-        last_broadcasted_block_number < block.number - 4 ->
-          broadcast_block(block)
-          :ets.insert(:last_broadcasted_block, {:number, block.number})
-
-        last_broadcasted_block_number > block.number - 1 ->
-          broadcast_block(block)
-
-        true ->
-          Task.start_link(fn ->
-            schedule_broadcasting(block)
-          end)
-      end
+      broadcast_latest_block?(block, last_broadcasted_block_number)
     end)
   end
 
@@ -255,6 +235,23 @@ defmodule BlockScoutWeb.Notifier do
       ratio: Decimal.to_string(ratio),
       finished: finished?
     })
+  end
+
+  defp broadcast_latest_block?(block, last_broadcasted_block_number) do
+    cond do
+      last_broadcasted_block_number == 0 || last_broadcasted_block_number == block.number - 1 ||
+          last_broadcasted_block_number < block.number - 4 ->
+        broadcast_block(block)
+        :ets.insert(:last_broadcasted_block, {:number, block.number})
+
+      last_broadcasted_block_number > block.number - 1 ->
+        broadcast_block(block)
+
+      true ->
+        Task.start_link(fn ->
+          schedule_broadcasting(block)
+        end)
+    end
   end
 
   defp schedule_broadcasting(block) do

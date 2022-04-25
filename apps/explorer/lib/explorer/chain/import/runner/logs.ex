@@ -60,7 +60,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     Logger.info(["### Logs insert STARTED ###"])
-    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+    # todo
+    # on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index})
