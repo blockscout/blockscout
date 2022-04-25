@@ -1,7 +1,8 @@
 <% status = transaction_status(@transaction) %>
 <% error_in_internal_tx = @transaction.has_error_in_internal_txs %>
 <% current_user = AuthController.current_user(@conn) %>
-<% tags = GetAddressTags.get_address_tags(@transaction.to_address_hash, current_user) %>
+<% from_tags = GetAddressTags.get_address_tags(@transaction.from_address_hash, current_user) %>
+<% to_tags = GetAddressTags.get_address_tags(@transaction.to_address_hash, current_user) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
     <!-- Color Block -->
@@ -33,7 +34,8 @@
         <%= if method_name do %>
           <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
         <% end %>
-        <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @transaction.to_address_hash, height_auto: true, tags: tags %>
+        <%= render BlockScoutWeb.AddressView, "_labels.html", tags: from_tags %>
+        <%= render BlockScoutWeb.AddressView, "_labels.html", tags: to_tags %>
       </div>
       </span>
       <span>
