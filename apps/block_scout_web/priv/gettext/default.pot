@@ -1184,7 +1184,7 @@ msgid "IMPORTANT: This information is a best guess based on similar functions fr
 msgstr ""
 
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:42
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:89
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:91
 #, elixir-autogen, elixir-format
 msgid "IN"
 msgstr ""
@@ -1571,7 +1571,7 @@ msgid "Number of transfers to/from this address."
 msgstr ""
 
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:40
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:85
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:87
 #, elixir-autogen, elixir-format
 msgid "OUT"
 msgstr ""
@@ -1951,7 +1951,7 @@ msgid "Success"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:49
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:51
 #, elixir-autogen, elixir-format
 msgid "TX Fee"
 msgstr ""
@@ -2627,12 +2627,12 @@ msgstr ""
 msgid "View Contract"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:70
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:72
 #, elixir-autogen, elixir-format
 msgid "View Less Transfers"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:69
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:71
 #, elixir-autogen, elixir-format
 msgid "View More Transfers"
 msgstr ""
