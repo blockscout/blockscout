@@ -52,69 +52,76 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    multi
-    |> Multi.run(:lose_consensus, fn repo, _ ->
-      lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
-    end)
-    |> Multi.run(:blocks, fn repo, _ ->
-      # Note, needs to be executed after `lose_consensus` for lock acquisition
-      insert(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
-      new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
-    end)
-    |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
-      update_block_second_degree_relations(repo, hashes, %{
+    {:ok, inserted} =
+      multi
+      |> Multi.run(:lose_consensus, fn repo, _ ->
+        lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+      end)
+      |> Multi.run(:blocks, fn repo, _ ->
+        # Note, needs to be executed after `lose_consensus` for lock acquisition
+        insert(repo, changes_list, insert_options)
+      end)
+      |> Multi.run(:fork_transactions, fn repo, %{lose_consensus: nonconsensus_hashes} ->
+        new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
+
+        fork_transactions(%{
+          repo: repo,
+          timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
+          timestamps: timestamps,
+          blocks_changes: changes_list
+        })
+      end)
+      |> Multi.run(:derive_transaction_forks, fn repo, %{fork_transactions: transactions} ->
+        derive_transaction_forks(%{
+          repo: repo,
+          timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
+          timestamps: timestamps,
+          transactions: transactions
+        })
+      end)
+      |> ExplorerRepo.transaction()
+
+    Task.start_link(fn ->
+      update_block_second_degree_relations(ExplorerRepo, hashes, %{
         timeout:
           options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
             Runner.Block.SecondDegreeRelations.timeout(),
         timestamps: timestamps
       })
     end)
-    |> Multi.run(:delete_rewards, fn repo, _ ->
-      delete_rewards(repo, changes_list, insert_options)
+
+    Task.start_link(fn ->
+      delete_rewards(ExplorerRepo, changes_list, insert_options)
     end)
-    |> Multi.run(:fork_transactions, fn repo, _ ->
-      fork_transactions(%{
-        repo: repo,
-        timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
-        timestamps: timestamps,
-        blocks_changes: changes_list
-      })
-    end)
-    |> Multi.run(:derive_transaction_forks, fn repo, %{fork_transactions: transactions} ->
-      derive_transaction_forks(%{
-        repo: repo,
-        timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
-        timestamps: timestamps,
-        transactions: transactions
-      })
-    end)
-    # todo: 
-    # |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-    #   acquire_contract_address_tokens(repo, consensus_block_numbers)
-    # end)
-    |> Multi.run(:delete_address_token_balances, fn repo, _ ->
-      delete_address_token_balances(repo, consensus_block_numbers, insert_options)
-    end)
-    |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
-      delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
-    end)
-    |> Multi.run(:derive_address_current_token_balances, fn repo,
-                                                            %{
-                                                              delete_address_current_token_balances:
-                                                                deleted_address_current_token_balances
-                                                            } ->
-      derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
-    end)
-    |> Multi.run(:blocks_update_token_holder_counts, fn repo,
-                                                        %{
-                                                          delete_address_current_token_balances: deleted,
-                                                          derive_address_current_token_balances: inserted
-                                                        } ->
-      deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
-      Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
-    end)
+
+    final_multi =
+      multi
+      |> Multi.run(:delete_address_token_balances, fn repo, _ ->
+        delete_address_token_balances(repo, consensus_block_numbers, insert_options)
+      end)
+      |> Multi.run(:address_current_token_balances, fn repo, _ ->
+        {:ok, deleted} = delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
+        {:ok, inserted} = derive_address_current_token_balances(repo, deleted, insert_options)
+
+        {:ok,
+         %{
+           delete_address_current_token_balances: deleted,
+           derive_address_current_token_balances: inserted
+         }}
+      end)
+      |> Multi.run(:blocks_update_token_holder_counts, fn repo,
+                                                          %{
+                                                            address_current_token_balances: %{
+                                                              delete_address_current_token_balances: deleted,
+                                                              derive_address_current_token_balances: inserted
+                                                            }
+                                                          } ->
+        acquire_contract_address_tokens(repo, consensus_block_numbers)
+        deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
+        Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
+      end)
+
+    [final_multi, inserted]
   end
 
   @impl Runner
@@ -419,7 +426,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     try do
-      {_count, deleted_address_token_balances} = repo.delete_all(query, timeout: timeout)
+      {count, deleted_address_token_balances} = repo.delete_all(query, timeout: timeout)
+      Logger.info(["### Blocks delete_address_token_balances length #{count} ###"])
 
       Logger.info(["### Blocks delete_address_token_balances FINISHED ###"])
 
@@ -445,8 +453,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           ctb.token_contract_address_hash,
           ctb.token_id,
           ctb.address_hash
-        ],
-        lock: "FOR UPDATE"
+        ]
+
+        # ,
+        # lock: "FOR UPDATE"
       )
 
     query =
@@ -471,7 +481,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     try do
-      {_count, deleted_address_current_token_balances} = repo.delete_all(query, timeout: timeout)
+      deleted_address_current_token_balances = repo.all(query, timeout: timeout)
+
+      Logger.info([
+        "### Blocks delete_address_current_token_balances length #{Enum.count(deleted_address_current_token_balances)} ###"
+      ])
 
       Logger.info(["### Blocks delete_address_current_token_balances FINISHED ###"])
       {:ok, deleted_address_current_token_balances}

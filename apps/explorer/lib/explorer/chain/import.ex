@@ -338,6 +338,15 @@ defmodule Explorer.Chain.Import do
     Enum.reduce_while(multis, {:ok, %{}}, fn multi, {:ok, acc_changes} ->
       Logger.info("### import_transaction ###")
 
+      [multi, acc_changes] =
+        case multi do
+          %Ecto.Multi{} ->
+            [multi, acc_changes]
+
+          _ ->
+            [Enum.at(multi, 0), Map.merge(acc_changes, Enum.at(multi, 1))]
+        end
+
       case import_transaction(multi, options) do
         {:ok, changes} -> {:cont, {:ok, Map.merge(acc_changes, changes)}}
         {:error, _, _, _} = error -> {:halt, error}
