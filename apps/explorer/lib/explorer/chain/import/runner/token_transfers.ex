@@ -56,8 +56,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     Logger.info(["### Token transfers insert STARTED ###"])
-    # todo
-    # on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
@@ -68,7 +67,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         repo,
         ordered_changes_list,
         conflict_target: [:transaction_hash, :log_index, :block_hash],
-        on_conflict: :nothing,
+        on_conflict: on_conflict,
         for: TokenTransfer,
         returning: true,
         timeout: timeout,
