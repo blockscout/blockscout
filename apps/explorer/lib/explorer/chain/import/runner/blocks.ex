@@ -554,7 +554,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     timestamps = Import.timestamps()
 
     result =
-      CurrentTokenBalances.insert_changes_list_with_and_without_token_id(
+      CurrentTokenBalances.insert_changes_list(
         current_token_balance,
         repo,
         timestamps,
