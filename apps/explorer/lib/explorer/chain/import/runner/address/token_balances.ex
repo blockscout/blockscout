@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     Logger.info("### Address_token_balances insert STARTED length #{Enum.count(changes_list)} ###")
-    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+    # on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
     %{
@@ -140,7 +140,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           ordered_changes_list_no_token_id,
           conflict_target:
             {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, block_number) WHERE token_id IS NULL>},
-          on_conflict: on_conflict,
+          on_conflict: :nothing,
           for: TokenBalance,
           returning: true,
           timeout: timeout,
@@ -158,7 +158,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           conflict_target:
             {:unsafe_fragment,
              ~s<(address_hash, token_contract_address_hash, token_id, block_number) WHERE token_id IS NOT NULL>},
-          on_conflict: on_conflict,
+          on_conflict: :nothing,
           for: TokenBalance,
           returning: true,
           timeout: timeout,
