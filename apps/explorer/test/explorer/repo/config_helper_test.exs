@@ -68,5 +68,46 @@ defmodule Explorer.Repo.ConfigHelperTest do
       assert result[:port] == "7777"
       assert result[:database] == "test_database"
     end
+
+    test "overwrite database password param with empty PGPASSWORD" do
+      database_url = "postgresql://test_username:test_password@127.8.8.1:7777/test_database"
+
+      vars = %{"PGUSER" => "postgrex_user", "PGPASSWORD" => ""}
+      func = fn v -> vars[v] end
+      result = ConfigHelper.get_db_config(%{url: database_url, env_func: func})
+
+      assert result[:username] == "postgrex_user"
+      assert result[:password] == ""
+      assert result[:hostname] == "127.8.8.1"
+      assert result[:port] == "7777"
+      assert result[:database] == "test_database"
+    end
+
+    test "uses only DATABASE_* env vars" do
+      env_db_user = "env-user"
+      env_db_password = "env-password"
+      env_db_host = "env-host"
+      env_db_port = "env-port"
+      env_db_name = "env-db-name"
+
+      vars = %{
+        "PGUSER" => "postgrex_user",
+        "PGPASSWORD" => "postgrex_password",
+        "DATABASE_USER" => env_db_user,
+        "DATABASE_PASSWORD" => env_db_password,
+        "DATABASE_HOSTNAME" => env_db_host,
+        "DATABASE_PORT" => env_db_port,
+        "DATABASE_DB" => env_db_name
+      }
+
+      func = fn v -> vars[v] end
+      result = ConfigHelper.get_db_config(%{url: "", env_func: func})
+
+      assert result[:username] == env_db_user
+      assert result[:password] == env_db_password
+      assert result[:hostname] == env_db_host
+      assert result[:port] == env_db_port
+      assert result[:database] == env_db_name
+    end
   end
 end

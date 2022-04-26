@@ -11,7 +11,7 @@ defmodule Explorer.Repo.ConfigHelper do
   @app_env_vars [
     username: "DATABASE_USER",
     password: "DATABASE_PASSWORD",
-    host: "DATABASE_HOST",
+    hostname: "DATABASE_HOSTNAME",
     port: "DATABASE_PORT",
     database: "DATABASE_DB"
   ]
@@ -20,7 +20,7 @@ defmodule Explorer.Repo.ConfigHelper do
   @postgrex_env_vars [
     username: "PGUSER",
     password: "PGPASSWORD",
-    host: "PGHOST",
+    hostname: "PGHOST",
     port: "PGPORT",
     database: "PGDATABASE"
   ]
@@ -54,7 +54,6 @@ defmodule Explorer.Repo.ConfigHelper do
     Enum.reduce(vars, [], fn {name, var}, opts ->
       case env_function.(var) do
         nil -> opts
-        "" -> opts
         env_value -> Keyword.put(opts, name, env_value)
       end
     end)
