@@ -350,10 +350,7 @@ defmodule Explorer.Chain do
         do: address_to_available_transactions_count(address_hash, options),
         else: nil
 
-    transactions =
-      address_hash
-      |> address_to_transactions_query_rap(options)
-      |> Repo.all()
+    transactions = address_to_transactions_without_rewards_rap(address_hash, options)
 
     %{transactions_count: transactions_count, transactions: transactions}
   end
@@ -377,6 +374,36 @@ defmodule Explorer.Chain do
     |> join_associations(necessity_by_association)
   end
 
+  def address_to_transactions_without_rewards_rap(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    page_size = Map.get(paging_options, :page_size, @default_page_size)
+
+    address_hash
+    |> address_to_transactions_tasks_rap(options)
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
+    |> Enum.dedup_by(& &1.hash)
+    |> Enum.take(page_size)
+  end
+
+  defp address_to_transactions_tasks_rap(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+
+    Transaction
+    |> Transaction.not_dropped_or_replaced_transacions()
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index
+    )    
+    |> handle_random_access_paging_options(paging_options)
+    |> join_associations(necessity_by_association)
+    |> Transaction.matching_address_queries_list(direction, address_hash)
+    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+  end
+
   def address_to_available_transactions_count(address_hash, options) do
     direction = Keyword.get(options, :direction)
 
@@ -384,7 +411,7 @@ defmodule Explorer.Chain do
     |> Transaction.not_dropped_or_replaced_transacions()
     |> Transaction.matching_address_query(direction, address_hash)
     |> limit(^@limit_showing_address_transaсtions)
-    |> Repo.aggregate(:count, :hash)
+    |> Repo.aggregate(:count)
   end
 
   def limit_showing_address_transaсtions, do: @limit_showing_address_transaсtions
