@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Hash
   alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Repo
   alias Explorer.Token.BalanceReader
   alias Timex.Duration
 
@@ -73,6 +74,19 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           nil
         end
       end)
+
+    # delete current token balances with nil token_id. Those current balances are obsolete.
+    # ERC-20 tokens have token_id = 1 in address_current_token_balances table now
+    stale_current_token_balances
+    |> Enum.map(fn {stale_current_token_balance, _, _} -> stale_current_token_balance end)
+    |> Enum.filter(fn current_token_balance ->
+      !current_token_balance.token_id
+    end)
+    |> Enum.each(fn current_token_balance_with_nil_token_id ->
+      current_token_balance_with_nil_token_id
+      |> CurrentTokenBalance.changeset(%{})
+      |> Repo.delete()
+    end)
 
     filtered_current_token_balances_update_params =
       current_token_balances_update_params

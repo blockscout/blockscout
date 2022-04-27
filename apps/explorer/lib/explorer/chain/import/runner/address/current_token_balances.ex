@@ -224,8 +224,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
        when is_atom(repo) and is_list(changes_list) do
     Logger.info("### Address_current_token_balances insert STARTED length #{Enum.count(changes_list)} ###")
 
-    inserted_changes_list =
-      insert_changes_list(changes_list, repo, timestamps, timeout, options)
+    inserted_changes_list = insert_changes_list(changes_list, repo, timestamps, timeout, options)
 
     Logger.info("### Address_current_token_balances insert FINISHED ###")
 
@@ -233,9 +232,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   end
 
   def insert_changes_list(changes_list, repo, timestamps, timeout, options) do
-    Logger.info(
-      "### Address_current_token_balances insert_changes_list STARTED length #{Enum.count(changes_list)} ###"
-    )
+    Logger.info("### Address_current_token_balances insert_changes_list STARTED length #{Enum.count(changes_list)} ###")
 
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
