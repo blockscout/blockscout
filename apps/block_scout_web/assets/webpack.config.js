@@ -3,6 +3,7 @@ const TerserJSPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
+const WebpackShellPluginNext = require('webpack-shell-plugin-next')
 const { ContextReplacementPlugin } = require('webpack')
 const glob = require('glob')
 const webpack = require('webpack')
@@ -168,7 +169,15 @@ const appJs =
         process: 'process/browser',
         Buffer: ['buffer', 'Buffer'],
       }),
-    ]
+      new WebpackShellPluginNext({
+        onDoneWatch:{
+          scripts: ['cd .. && mix phx.digest && cd -'],
+          blocking: false,
+          parallel: true
+        }
+      }),
+    ],
+    devtool: 'cheap-module-source-map',
   }
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
