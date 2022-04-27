@@ -38,6 +38,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5506](https://github.com/blockscout/blockscout/pull/5506) - Refactor config files
 - [#5480](https://github.com/blockscout/blockscout/pull/5480) - Remove duplicate of balances_params_to_address_params function
 - [#5473](https://github.com/blockscout/blockscout/pull/5473) - Refactor daily coin balances fetcher
 - [#5458](https://github.com/blockscout/blockscout/pull/5458) - Decrease min safe polling period for realtime fetcher
