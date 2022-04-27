@@ -20,7 +20,6 @@ import 'bootstrap'
 import './locale'
 
 import './pages/layout'
-import './pages/dark-mode-switcher'
 
 import './lib/clipboard_buttons'
 import './lib/currency'
