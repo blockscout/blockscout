@@ -111,7 +111,8 @@ defmodule Explorer.Mixfile do
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.3.3"}
+      {:tesla, "~> 1.3.3"},
+      {:sentry, "~> 8.0"}
     ]
   end
 

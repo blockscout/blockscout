@@ -24,3 +24,13 @@ config :logger, :account,
   level: :info,
   path: Path.absname("logs/prod/account.log"),
   metadata_filter: [fetcher: :account]
+
+config :sentry,
+  dsn: "https://fd7dceeeb4dd4fe1a0960a26d7d1260f@o1222505.ingest.sentry.io/6366450",
+  environment_name: :prod,
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!(),
+  tags: %{
+    env: "production"
+  },
+  included_environments: [:prod]
