@@ -146,6 +146,15 @@ $tile-body-a-color: #5959d8 !default;
   box-shadow: none;
 }
 
+.tile-code {
+  border-radius: 4px;
+  border: 1px solid $border-color;
+  flex-grow: 1;
+  font-size: 12px;
+  line-height: 1.4rem;
+  padding: $tile-padding;
+}
+
 .tile-function-response {
   span.function-response-item {
     display: block;
