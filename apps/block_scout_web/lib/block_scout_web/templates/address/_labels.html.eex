@@ -1,22 +1,22 @@
-<%= if is_omni_bridge?(@address_hash) do %>
+<%= if is_omni_bridge?(assigns[:address_hash] && @address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "OMNI", additional_classes: ["omni", "ml-1"] %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridge", additional_classes: ["bridge", "ml-1"] %>
 <% end %>
-<%= if is_omni_eth_bridge?(@address_hash) do %>
+<%= if is_omni_eth_bridge?(assigns[:address_hash] && @address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "ETH", additional_classes: ["destination-eth", "ml-1"] %>
 <% end %>
-<%= if is_omni_bsc_bridge?(@address_hash) do %>
+<%= if is_omni_bsc_bridge?(assigns[:address_hash] && @address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "BSC", additional_classes: ["destination-bsc", "ml-1"] %>
 <% end %>
-<%= if is_omni_poa_bridge?(@address_hash) do %>
+<%= if is_omni_poa_bridge?(assigns[:address_hash] && @address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "POA", additional_classes: ["destination-poa", "ml-1"] %>
 <% end %>
-<%= if is_xmoon_token?(@address_hash) || is_xbrick_token?(@address_hash) do %>
+<%= if is_xmoon_token?(assigns[:address_hash] && @address_hash) || is_xbrick_token?(assigns[:address_hash] && @address_hash) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridge", "ml-1"] %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "Rinkeby", additional_classes: ["destination-rinkeby", "ml-1"] %>
 <% end %>
 <% dark_forest_addresses_list_dao = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_dao) %>
-<%= if Enum.member?(dark_forest_addresses_list_dao, String.downcase(to_string(@address_hash))) do %>
+<%= if Enum.member?(dark_forest_addresses_list_dao, String.downcase(to_string(assigns[:address_hash] && @address_hash))) do %>
   <%= render BlockScoutWeb.FormView, "_tag.html", text: "☠️🪐", additional_classes: ["df", "df-dao", "ml-1"] %>
 <% end %>
 <%= for common_tag <- @tags.common_tags do %>

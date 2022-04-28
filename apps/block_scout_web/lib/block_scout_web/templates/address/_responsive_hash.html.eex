@@ -1,5 +1,5 @@
 <span class="<%= if @contract do %>contract-address<% end %>" data-address-hash="<%= @address %>">
-  <%= if name = implementation_name(@address) || primary_name(@address) do %>
+  <%= if name = if assigns[:ignore_implementation_name], do: primary_name(@address), else: implementation_name(@address) || primary_name(@address) do %>
     <%= if assigns[:no_tooltip] do %>
       <%= if @use_custom_tooltip == true do %>
         <span><%= name %> (<%= short_hash(@address) %>...)</span>
