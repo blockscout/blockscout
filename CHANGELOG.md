@@ -8,6 +8,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5508](https://github.com/blockscout/blockscout/pull/5508) - Hide indexing banner if we fetched internal transactions from TRACE_FIRST_BLOCK
 - [#5504](https://github.com/blockscout/blockscout/pull/5504) - Extend TRACE_FIRST_BLOCK env var to geth variant
 - [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
 - [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
