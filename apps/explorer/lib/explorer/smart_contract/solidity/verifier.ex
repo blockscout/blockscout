@@ -64,8 +64,21 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     end
   end
 
+  defp debug_contract_json_verification_with_sentry(result, params, address_hash, json) do
+    if !match?({:ok, _, _}, result) do
+      Sentry.capture_message("json verification failed", extra: %{result: Kernel.inspect(result, limit: :infinity, printable_limit: :infinity), params: params, address_hash: address_hash, json_input: json})
+    end
+  end
+
   def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
-    verify(address_hash, params, json_input)
+    try do
+      result = verify(address_hash, params, json_input)
+      debug_contract_json_verification_with_sentry(result, params, address_hash, json_input)
+      result
+    rescue
+      exception ->
+        Sentry.capture_exception(exception, [stacktrace: __STACKTRACE__, extra: %{address_hash: address_hash, params: params, json_input: json_input}])
+    end
   end
 
   defp verify(address_hash, params, json_input) do
