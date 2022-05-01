@@ -946,7 +946,7 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:12
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "Error in internal transactions"
 msgstr ""
@@ -992,7 +992,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:79
 #: lib/block_scout_web/templates/layout/app.html.eex:48
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:48
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:52
 #: lib/block_scout_web/templates/transaction/overview.html.eex:422
 #: lib/block_scout_web/views/wei_helpers.ex:78
 #, elixir-autogen, elixir-format
@@ -1194,7 +1194,7 @@ msgid "IMPORTANT: This information is a best guess based on similar functions fr
 msgstr ""
 
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:42
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:91
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:95
 #, elixir-autogen, elixir-format
 msgid "IN"
 msgstr ""
@@ -1577,7 +1577,7 @@ msgid "Number of transfers to/from this address."
 msgstr ""
 
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:40
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:87
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:91
 #, elixir-autogen, elixir-format
 msgid "OUT"
 msgstr ""
@@ -1950,7 +1950,7 @@ msgid "Success"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:51
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:55
 #, elixir-autogen, elixir-format
 msgid "TX Fee"
 msgstr ""
@@ -2625,12 +2625,12 @@ msgstr ""
 msgid "View Contract"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:72
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:76
 #, elixir-autogen, elixir-format
 msgid "View Less Transfers"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:71
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:75
 #, elixir-autogen, elixir-format
 msgid "View More Transfers"
 msgstr ""
