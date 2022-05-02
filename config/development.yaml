@@ -1,0 +1,93 @@
+kubernetes:
+  base:
+    sourceRepo:
+      name: blockscout
+      org: cloudwalk
+    monoRepo:
+      url: git@github.com:cloudwalk/monorepo-gitops.git
+      appsFolder: apps-config
+      argoCDValues: helms/argocd/values.yaml
+    containerRegistry:
+      url: gcr.io/infinitepay-issuing
+    deployConfig:
+      cluster: infinitepay-issuing-staging
+      environment: development
+      steps:
+      - build
+      - push
+      - versioning
+      - deploy
+      service:
+        asmRevision: asm-managed
+  apps:
+  - name: blockscout
+    secretsManager:
+      enabled: true
+      provider: gcpsm
+    imageRepoName: blockscout
+    strategy:
+      type: recreate
+    kind: deployment
+    replicas: 1
+    # hpa:
+    #   antiAffinity:
+    #     type: required
+    #     conditions:
+    #       - key: app
+    #         value: blockscout
+    #   maxReplicas: 5
+    #   minReplicas: 1
+    #   targetCPUUtilizationPercentage: 50
+    envs:
+    - name: ETHEREUM_JSONRPC_WS_URL
+      value: wss://testnet.cloudwalk.io/ws
+    - name: ETHEREUM_JSONRPC_HTTP_URL
+      value: https://rpc.testnet.cloudwalk.io
+    - name: ETHEREUM_JSONRPC_VARIANT
+      value: geth
+    - name: PORT
+      value: "4000"
+    - name: NETWORK
+      value: "CloudWalk"
+    - name: SUBNETWORK
+      value: "Testnet"
+    - name: SUPPORTED_CHAINS
+      value: '[ { "title": "CloudWalk Mainnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": false }, { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
+    - name: LOGO
+      value: /images/cloudwalk_full.png
+    - name: LOGO_FOOTER
+      value: /images/cloudwalk_full.png
+    - name: POOL_SIZE
+      value: '5'
+    - name: POOL_SIZE_API
+      value: '5'
+    - name: INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER
+      value: 'true'
+    - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+      value: 'true'
+    - name: BLOCKSCOUT_VERSION
+      value: 4.1.1-beta
+    - name: RELEASE_LINK
+      value: https://github.com/cloudwalk/blockscout/releases/tag/v4.1.1-beta
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 3Gi
+    service:
+      istio: false
+      healthcheck:
+        initialDelaySeconds: 300
+        interval: 10
+        path: /
+        port: 4000
+        timeoutSeconds: 15
+      ports:
+        - containerPort: 4000
+          name: app
+          virtualservice:
+            gateway: default
+            hosts:
+              - blockscout.dev.services.issuing.infinitepay.io
