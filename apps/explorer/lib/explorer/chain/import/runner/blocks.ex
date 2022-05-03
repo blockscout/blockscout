@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         insert(repo, changes_list, insert_options)
       end)
       |> Multi.run(:fork_transactions, fn repo, %{lose_consensus: nonconsensus_hashes} ->
-        new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
+        new_pending_operations(repo, nonconsensus_hashes, hashes_for_pending_block_operations, insert_options)
 
         fork_transactions(%{
           repo: repo,
