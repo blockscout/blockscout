@@ -49,13 +49,36 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Map.put(:timestamps, timestamps)
 
     hashes = Enum.map(changes_list, & &1.hash)
+
+    minimal_block_height = trace_minimal_block_height()
+
+    hashes_for_pending_block_operations =
+      if minimal_block_height > 0 do
+        changes_list
+        |> Enum.filter(&(&1.number >= minimal_block_height))
+        |> Enum.map(& &1.hash)
+      else
+        hashes
+      end
+
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     {:ok, inserted} =
       multi
       |> Multi.run(:lose_consensus, fn repo, _ ->
-        lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+        {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+
+        nonconsensus_hashes =
+          if minimal_block_height > 0 do
+            nonconsensus_items
+            |> Enum.filter(fn {number, _hash} -> number >= minimal_block_height end)
+            |> Enum.map(fn {_number, hash} -> hash end)
+          else
+            hashes
+          end
+
+        {:ok, nonconsensus_hashes}
       end)
       |> Multi.run(:blocks, fn repo, _ ->
         # Note, needs to be executed after `lose_consensus` for lock acquisition
@@ -334,7 +357,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           on: block.hash == s.hash,
           # we don't want to remove consensus from blocks that will be upserted
           where: block.hash not in ^hashes,
-          select: block.hash
+          select: {block.number, block.hash}
         ),
         [set: [consensus: false, updated_at: updated_at]],
         timeout: timeout
@@ -358,7 +381,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     lose_consensus(ExplorerRepo, [], block_numbers, [], opts)
   end
 
-  defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
+  defp trace_minimal_block_height do
+    EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+  end
+
+  defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{
+         timeout: timeout,
+         timestamps: timestamps
+       }) do
     Logger.info(["### Blocks new_pending_operations STARTED ###"])
 
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
