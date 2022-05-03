@@ -261,6 +261,7 @@
           document.body.style.backgroundColor = "#1c1d31";
         }
       }
+      window.onload = localStorage.setItem("current-color-mode", "dark")
       window.onload = applyDarkMode()
     </script>
     <script defer data-cfasync="false">
