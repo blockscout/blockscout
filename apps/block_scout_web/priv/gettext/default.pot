@@ -197,11 +197,6 @@ msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:175
-msgid "Add Your App"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20 lib/block_scout_web/views/address_view.ex:161
 msgid "Address"
@@ -655,7 +650,7 @@ msgid "Confirmed within"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:196
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:167
 msgid "Connect"
 msgstr ""
 
@@ -1215,7 +1210,7 @@ msgid "Fetching tokens..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:206
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
 msgid "Finance Tools"
 msgstr ""
 
@@ -1255,7 +1250,7 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:159
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:223
 msgid "Gas Tracker"
 msgstr ""
 
@@ -1445,12 +1440,12 @@ msgid "Last Balance Update"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:213
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:173
 msgid "Learn"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:169
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:181
 msgid "Learn, Borrow, Earn"
 msgstr ""
 
@@ -1652,11 +1647,6 @@ msgid "More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:224
-msgid "More apps"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:12
 msgid "More internal transactions have come in"
 msgstr ""
@@ -1687,7 +1677,7 @@ msgid "N/A"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:189
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:188
 msgid "NFT"
 msgstr ""
 
@@ -2012,7 +2002,7 @@ msgid "Reset"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:218
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:200
 msgid "Resources"
 msgstr ""
 
@@ -2208,7 +2198,7 @@ msgid "Sources and Metadata JSON"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:201
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:194
 msgid "Spend"
 msgstr ""
 
@@ -2265,7 +2255,7 @@ msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:154
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
 msgid "Staking on xDai"
 msgstr ""
 
@@ -2296,7 +2286,7 @@ msgid "Success"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:164
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:152
 msgid "Swap"
 msgstr ""
 
@@ -3117,7 +3107,7 @@ msgid "Waiting for transaction's confirmation..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:181
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:159
 msgid "Wallet"
 msgstr ""
 
