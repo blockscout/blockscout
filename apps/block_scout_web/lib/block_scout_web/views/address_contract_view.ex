@@ -33,21 +33,7 @@ defmodule BlockScoutWeb.AddressContractView do
       |> decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
-        formatted_val =
-          cond do
-            type =~ "address" ->
-              address_hash = "0x" <> Base.encode16(val, case: :lower)
-
-              address = get_address(address_hash)
-
-              get_formatted_address_data(address, address_hash, conn)
-
-            type =~ "bytes" ->
-              Base.encode16(val, case: :lower)
-
-            true ->
-              val
-          end
+        formatted_val = val_to_string(val, type, conn)
 
         {count + 1, "#{acc}Arg [#{count}] (<b>#{type}</b>) : #{formatted_val}\n"}
       end)
@@ -55,6 +41,31 @@ defmodule BlockScoutWeb.AddressContractView do
     result
   rescue
     _ -> contract.constructor_arguments
+  end
+
+  defp val_to_string(val, type, conn) do
+    cond do
+      type =~ "[]" ->
+        if is_list(val) or is_tuple(val) do
+          "[" <>
+            Enum.map_join(val, ", ", fn el -> val_to_string(el, String.replace_suffix(type, "[]", ""), conn) end) <> "]"
+        else
+          to_string(val)
+        end
+
+      type =~ "address" ->
+        address_hash = "0x" <> Base.encode16(val, case: :lower)
+
+        address = get_address(address_hash)
+
+        get_formatted_address_data(address, address_hash, conn)
+
+      type =~ "bytes" ->
+        Base.encode16(val, case: :lower)
+
+      true ->
+        to_string(val)
+    end
   end
 
   defp get_address(address_hash) do
