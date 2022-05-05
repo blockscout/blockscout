@@ -21,10 +21,12 @@ defmodule BlockScoutWeb.AddressValidationController do
         Keyword.merge(
           [
             necessity_by_association: %{
-              miner: :required,
-              nephews: :optional,
-              transactions: :optional,
-              rewards: :optional
+              :miner => :required,
+              [miner: :names] => :optional,
+              [celo_delegator: :celo_account] => :optional,
+              :nephews => :optional,
+              :transactions => :optional,
+              :rewards => :optional
             }
           ],
           paging_options(params)

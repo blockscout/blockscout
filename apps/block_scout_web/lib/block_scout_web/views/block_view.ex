@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.BlockView do
       named = %Address.Name{
         address: block.celo_delegator.celo_account.account_address,
         address_hash: block.celo_delegator.celo_account.address,
-        name: block.celo_delegator.celo_account.name <> " (signer)",
+        name: block.celo_delegator.celo_account.name,
         primary: true,
         metadata: %{}
       }

@@ -91,7 +91,7 @@
                 text: gettext("A block producer who successfully included the block onto the blockchain.") %>
                 <%= gettext("Validator") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= render BlockScoutWeb.AddressView, "_link.html", address: @block.miner, contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
+              <dd class="col-sm-9 col-lg-10"><%= render BlockScoutWeb.AddressView, "_link.html", address: block_miner(@block), contract: false, class: "", use_custom_tooltip: false, show_full_hash: true %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @block.miner,
@@ -240,7 +240,7 @@
                 </dt>
                 <dd class="col-sm-9 col-lg-10"><%= format_wei_value(%Wei{value: priority_fee}, :ether) %></dd>
             </dl>
-          <% end %>  
+          <% end %>
           <%= if show_reward?(@block.rewards) do %>
             <hr>
             <%= for block_reward <- @block.rewards do %>
