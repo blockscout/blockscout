@@ -1,4 +1,4 @@
-<div 
+<div
 class='pagination-container <%= if assigns[:position] == "top" do %>position-top<% end %> <%= if assigns[:position] == "bottom" do %>position-bottom<% end %>'
 data-pagination-container>
     <%= if false do %>
@@ -18,9 +18,9 @@ data-pagination-container>
         <!-- First -->
         <li class="page-item">
           <a
-                disabled
+                <%= if !assigns[:first_page_path] do %>disabled<% end %>
                 class="page-link"
-                href
+                href='<%= "#{assigns[:first_page_path]}" %>'
                 data-first-page-button
             >First</a>
         </li>

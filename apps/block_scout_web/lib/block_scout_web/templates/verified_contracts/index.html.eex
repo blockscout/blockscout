@@ -1,0 +1,117 @@
+<%
+	path_fun = fn conn, params -> verified_contracts_path(conn, :index, params) end
+	pagination_current_page = current_page(@params)
+	pagination_next_page_path = next_page_path(@conn, @params, @contract_count, path_fun)
+	pagination_prev_page_path = prev_page_path(@conn, @params, path_fun)
+	pagination_first_page_path = first_page_path(@conn, @params, path_fun)
+	pagination_last_page_path = last_page_path(@conn, @params, @contract_count, path_fun)
+%>
+<section
+		class="container"
+		data-page="verified_contracts"
+		data-chain-id="<%= System.get_env("CHAIN_ID") %>"
+		data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
+>
+	<%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+	<div class="card">
+		<div class="card-body" data-async-load data-async-listing="<#= @current_path %>">
+			<h1 class="card-title list-title-description"><%= gettext "Verified Contracts" %></h1>
+
+			<div class="list-top-pagination-container-wrapper verified_contracts-list-search-input-outer-container d-flex" style="float: right;">
+				<%= render BlockScoutWeb.CommonComponentsView,
+					"_pagination_container.html",
+					position: "top",
+					show_pagination_limit: true,
+					data_next_page_button: true,
+					data_prev_page_button: true,
+					cur_page_number: pagination_current_page,
+					next_page_path: pagination_next_page_path,
+					prev_page_path: pagination_prev_page_path,
+					first_page_path: pagination_first_page_path,
+					last_page_path: pagination_last_page_path
+				%>
+			</div>
+
+			<div class="addresses-table-container">
+				<div class="stakes-table-container">
+					<table class="verified-contracts-table">
+						<thead>
+						<tr>
+							<th class="stakes-table-th verified-contracts-table-th verified-contracts-table-cell-with-link">
+								<div class="stakes-table-th-content"><%= gettext("Address") %></div>
+							</th>
+							<th class="stakes-table-th verified-contracts-table-th verified-contracts-table-cell-with-link">
+								<div class="stakes-table-th-content">
+									<%= render BlockScoutWeb.CommonComponentsView,
+										"_pagination_sort_link.html",
+										link_order_field: "name",
+										link_path: sort_path(@conn, @params, "name", "asc", path_fun),
+										link_title: gettext("Contract Name"),
+										current_order_dir: @params.order_dir,
+										current_order_field: @params.order_field
+									%>
+								</div>
+							</th>
+							<th class="stakes-table-th verified-contracts-table-th">
+								<div class="stakes-table-th-content"><%= gettext("Compiler") %></div>
+							</th>
+							<th class="stakes-table-th verified-contracts-table-th">
+								<div class="stakes-table-th-content"><%= gettext("Balance") %></div>
+							</th>
+							<th class="stakes-table-th verified-contracts-table-th">
+								<div class="stakes-table-th-content">
+									<%= render BlockScoutWeb.CommonComponentsView,
+										"_pagination_sort_link.html",
+										link_order_field: "txns",
+										link_path: sort_path(@conn, @params, "txns", "desc", path_fun),
+										link_title: gettext("Txns (past 90 days)"),
+										current_order_dir: @params.order_dir,
+										current_order_field: @params.order_field
+									%>
+								</div>
+							</th>
+							<th class="stakes-table-th verified-contracts-table-th">
+								<div class="stakes-table-th-content"><%= gettext("Verified") %></div>
+							</th>
+							<th class="stakes-table-th verified-contracts-table-th">
+								<div class="stakes-table-th-content">
+									<%= render BlockScoutWeb.CommonComponentsView,
+										"_pagination_sort_link.html",
+										link_order_field: "date",
+										link_path: sort_path(@conn, @params, "date", "asc", path_fun),
+										link_title: gettext("Date Verified"),
+										current_order_dir: @params.order_dir,
+										current_order_field: @params.order_field
+									%>
+								</div>
+							</th>
+							<th class="stakes-table-th verified-contracts-table-th">
+								<div class="stakes-table-th-content">License</div>
+							</th>
+						</tr>
+						</thead>
+						<tbody data-items data-selector="top-verified_contracts-list">
+						<%= for contract <- @contracts do %>
+						<%= render BlockScoutWeb.VerifiedContractsView, "_tile.html", contract: contract %>
+
+						<% end %>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<%= render BlockScoutWeb.CommonComponentsView,
+				"_pagination_container.html",
+				position: "bottom",
+				show_pagination_limit: true,
+				data_next_page_button: true,
+				data_prev_page_button: true,
+				cur_page_number: pagination_current_page,
+				next_page_path: pagination_next_page_path,
+				prev_page_path: pagination_prev_page_path,
+				first_page_path: pagination_first_page_path,
+				last_page_path: pagination_last_page_path
+			%>
+		</div>
+	</div>
+</section>

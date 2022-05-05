@@ -1,0 +1,24 @@
+.verified-contracts-table {
+  .verified-contracts-table-th {
+    padding: 20px; 
+  }
+
+  .stakes-table-th-content {
+    text-align: center;
+    display: block;
+    padding: 0;
+  }
+
+  .stakes-td {
+    text-align: center;
+    padding: 0;
+  }
+
+  .verified-contracts-table-cell-with-link {
+    padding-left: 0;
+    
+    &, & .stakes-table-th-content {
+      text-align: left;
+    }
+  }
+}

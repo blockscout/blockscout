@@ -108,6 +108,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/btn_dropdown_line";
 @import "components/transaction";
 @import "components/api";
+@import "components/verification_label";
+@import "components/verification_mark";
 @import "components/verify_other_explorers";
 @import "components/errors";
 @import "components/log-search";
@@ -125,6 +127,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/_dropzone";
 @import "components/_search";
 @import "components/_ad";
+@import "components/verified_contracts_table";
 // Font Awesome
 @import "components/_fontawesome_icon";
 

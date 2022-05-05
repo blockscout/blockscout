@@ -1,0 +1,52 @@
+<% [contract, transaction_count] = @contract %>
+
+<tr data-identifier-hash="<%= contract.address_hash %>">
+    <td class="stakes-td verified-contracts-table-cell-with-link">
+        <span class="verification-mark">
+            <span class="material-icons">check</span>
+        </span>
+        <%= render BlockScoutWeb.AddressView,
+            "_link.html",
+            address: contract.address,
+            contract: true,
+            use_custom_tooltip: false,
+            truncate: true
+        %>
+    </td>
+    <td class="stakes-td verified-contracts-table-cell-with-link">
+        <%= link to: address_path(BlockScoutWeb.Endpoint, :show, contract.address), "data-test": "address_hash_link", class: assigns[:class] do %>
+            <%= contract.name %>
+        <% end %>
+    </td>
+    <td class="stakes-td">
+        <%= if contract.is_vyper_contract do %>
+        Vyper
+        <% else %>
+        Solidity
+        <% end %>
+    </td>
+    <td class="stakes-td">
+        <%= contract_balance(contract) %> <%= gettext "CELO" %>
+    </td>
+    <td class="stakes-td">
+        <%= unless is_nil(transaction_count) do %>
+            <%= transaction_count.transaction_count %>
+        <% else %>
+            0
+        <% end %>
+    </td>
+    <td class="stakes-td">
+        <span class="verification-label <%= if contract.partially_verified do %>partial<% else %>full<% end %>">
+        <%= if contract.partially_verified do %>
+        <%= gettext "Partially Verified" %>
+        <% else %>
+        <%= gettext "Verified" %>
+        <% end %>
+    </td>
+    <td class="stakes-td">
+        <%= contract.inserted_at |> Calendar.strftime("%m.%d.%y") %>
+    </td>
+    <td class="stakes-td">
+        <%= detect_license(contract) %>
+    </td>
+</tr>

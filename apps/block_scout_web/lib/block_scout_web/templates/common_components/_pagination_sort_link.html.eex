@@ -1,0 +1,10 @@
+<a class="pagination-sort-link <%= if @current_order_field == @link_order_field, do: "pagination-sort-link-active", else: "" %>" href='<%= @link_path %>'>
+    <%= @link_title %>
+    <%= if @current_order_field == @link_order_field do %>
+        <%= if @current_order_dir == "desc" do %>
+            <span class="material-icons pagination-sort-link-direction-arrow">south</span>
+        <% else %>
+            <span class="material-icons pagination-sort-link-direction-arrow">north</span>
+        <% end %>
+    <% end %>
+</a>

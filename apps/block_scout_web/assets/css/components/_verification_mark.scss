@@ -1,0 +1,16 @@
+$verification-color: #34D07E;
+
+.verification-mark {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: $verification-color;
+    color: #fff;
+    text-align: center;
+    vertical-align: middle;
+    
+    & > span {
+        font-size: 12px;
+    }
+}

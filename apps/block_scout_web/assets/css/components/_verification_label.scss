@@ -1,0 +1,25 @@
+$partial-verification-color: #FFE600;
+$full-verification-color: #34D07E;
+
+.verification-label {
+    display: inline-block;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 7px;
+    font-size: 10px;
+    width: 80px;
+    padding: 5px;
+    text-align: center;
+    box-sizing: content-box;
+    color: #616161;
+
+    &.full {
+        background-color: rgba($full-verification-color, 0.28);
+        border-color: $full-verification-color;
+    }
+
+    &.partial {
+        background-color: rgba($partial-verification-color, 0.28);
+        border-color: $partial-verification-color;
+    }
+}

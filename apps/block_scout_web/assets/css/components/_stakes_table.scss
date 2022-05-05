@@ -115,6 +115,18 @@ $stakes-link-color: $primary !default;
   &:first-child {
     min-width: 15px;
   }
+
+  .pagination-sort-link {
+    color: #2e3338;
+
+    * {
+      vertical-align: middle;
+    }
+
+    .pagination-sort-link-direction-arrow {
+      font-size: 14px;
+    }  
+  }
 }
 
 .stakes-table-th-content {
