@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
 
 
 ## 4.1.3-beta
