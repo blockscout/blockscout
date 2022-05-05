@@ -1,6 +1,5 @@
 <%= with {:ok, from_address} <- Chain.hash_to_address(@transfer.from_address_hash),
 {:ok, to_address} <- Chain.hash_to_address(@transfer.to_address_hash) do %>
-<%  IO.inspect @current_user %>
 <%  from_tags = GetAddressTags.get_address_tags(@transfer.from_address_hash, @current_user) %>
 <%  to_tags = GetAddressTags.get_address_tags(@transfer.to_address_hash, @current_user) %>
 <tr>
