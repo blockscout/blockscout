@@ -9,6 +9,7 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5528](https://github.com/blockscout/blockscout/pull/5528) - Token balances fetcher retry
 - [#5524](https://github.com/blockscout/blockscout/pull/5524) - ContractState module resistance to unresponsive archive node
 - [#5513](https://github.com/blockscout/blockscout/pull/5513) - Do not fill pending blocks ops with block numbers below TRACE_FIRST_BLOCK
 - [#5508](https://github.com/blockscout/blockscout/pull/5508) - Hide indexing banner if we fetched internal transactions from TRACE_FIRST_BLOCK
