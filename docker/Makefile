@@ -1,5 +1,8 @@
 HOST_SYSTEM ?= '$(shell uname -s)'
 HOST = host.docker.internal
+DB_USERNAME = postgres
+DB_PASSWORD = 
+DB_PORT = 5432
 DOCKER_IMAGE = blockscout_prod
 BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
@@ -10,7 +13,7 @@ ifeq ($(HOST_SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
+DB_URL = postgresql://$(DB_USERNAME):$(PASSWORD)@$(HOST):$(DB_PORT)/explorer?ssl=false
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															 -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(HOST_SYSTEM), Linux)
@@ -329,6 +332,9 @@ endif
 ifdef DISPLAY_TOKEN_ICONS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISPLAY_TOKEN_ICONS=$(DISPLAY_TOKEN_ICONS)'
 endif
+ifdef ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT=$(ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT)'
+endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
 build: 
@@ -365,7 +371,7 @@ else
 endif
 else
 	@echo "==> Creating new PostgreSQL container"
-	@docker run -d --name $(PG_CONTAINER_NAME) \
+	@docker run -d --restart unless-stopped --name $(PG_CONTAINER_NAME) \
 					-e POSTGRES_PASSWORD="" \
 					-e POSTGRES_USER="postgres" \
 					-e POSTGRES_HOST_AUTH_METHOD="trust" \
@@ -377,7 +383,7 @@ endif
 
 start: build postgres 
 	@echo "==> Starting blockscout"
-	@docker run --rm --name $(BS_CONTAINER_NAME) \
+	@docker run -d --restart unless-stopped --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
 					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"

@@ -43,4 +43,8 @@ RUN cd apps/explorer/ && \
     npm install && \
     apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
+RUN mkdir apps/block_scout_web/priv/static/ && \
+    mkdir apps/ethereum_jsonrpc/priv/static/ && \
+    mkdir apps/indexer/priv/static/
+
 RUN mix phx.digest
