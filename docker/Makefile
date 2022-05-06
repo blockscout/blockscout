@@ -383,7 +383,7 @@ endif
 
 start: build postgres 
 	@echo "==> Starting blockscout"
-	@docker run -d --restart unless-stopped --rm --name $(BS_CONTAINER_NAME) \
+	@docker run -d --restart unless-stopped --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
 					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
