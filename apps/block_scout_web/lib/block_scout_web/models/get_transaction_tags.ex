@@ -11,13 +11,16 @@ defmodule GetTransactionTags do
   alias Explorer.Chain.Transaction
   alias Explorer.Repo
 
-  def get_transaction_with_addresess_tags(%Transaction{} = transaction, %{id: identity_id}) do
+  def get_transaction_with_addresess_tags(
+        %Transaction{} = transaction,
+        %{id: identity_id, watchlist_id: watchlist_id}
+      ) do
     tx_tag = get_transaction_tags(transaction.hash, %{id: identity_id})
-    addresses_tags = get_addresses_tags_for_transaction(transaction, %{id: identity_id})
+    addresses_tags = get_addresses_tags_for_transaction(transaction, %{id: identity_id, watchlist_id: watchlist_id})
     Map.put(addresses_tags, :personal_tx_tag, tx_tag)
   end
 
-  def get_transaction_with_addresses_tags(_, _), do: %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+  def get_transaction_with_addresess_tags(_, _), do: %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
 
   def get_transaction_tags(transaction_hash, %{id: identity_id}) do
     Repo.get_by(TagTransaction, tx_hash: transaction_hash, identity_id: identity_id)
@@ -25,9 +28,12 @@ defmodule GetTransactionTags do
 
   def get_transaction_tags(_, _), do: nil
 
-  def get_addresses_tags_for_transaction(%Transaction{} = transaction, %{id: identity_id}) do
-    from_tags = get_address_tags(transaction.from_address_hash, %{id: identity_id})
-    to_tags = get_address_tags(transaction.to_address_hash, %{id: identity_id})
+  def get_addresses_tags_for_transaction(
+        %Transaction{} = transaction,
+        %{id: identity_id, watchlist_id: watchlist_id}
+      ) do
+    from_tags = get_address_tags(transaction.from_address_hash, %{id: identity_id, watchlist_id: watchlist_id})
+    to_tags = get_address_tags(transaction.to_address_hash, %{id: identity_id, watchlist_id: watchlist_id})
 
     %{
       personal_tags: Enum.dedup(from_tags.personal_tags ++ to_tags.personal_tags),
