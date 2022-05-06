@@ -52,6 +52,11 @@ if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
 
+  const pathParts = window.location.pathname.split('/')
+  if (pathParts.length > 3 && pathParts[3] !== '') {
+    document.getElementById('transaction-tabs').scrollIntoView()
+  }
+
   const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()
   blocksChannel.on('new_block', (msg) => store.dispatch({

@@ -1,6 +1,21 @@
 ## Current
 
 ### Features
+- [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
+
+### Fixes
+- [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
+
+### Chore
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
+
+
+## 4.1.3-beta
+
+### Features
+- [#5515](https://github.com/blockscout/blockscout/pull/5515) - Integrate ace editor to display contract sources
+- [#5505](https://github.com/blockscout/blockscout/pull/5505) - Manage debug_traceTransaction JSON RPC method timeout
+- [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
 - [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
 - [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
@@ -138,7 +153,7 @@
 
 ### Fixes
 - [#5045](https://github.com/blockscout/blockscout/pull/5045) - Contracts interaction improvements
-- [#5032](https://github.com/blockscout/blockscout/pull/5032) - Fix token transfer csv export 
+- [#5032](https://github.com/blockscout/blockscout/pull/5032) - Fix token transfer csv export
 - [#5020](https://github.com/blockscout/blockscout/pull/5020) - Token instance image display imrovement
 - [#5019](https://github.com/blockscout/blockscout/pull/5019) - Fix fetch_last_token_balance function termination
 - [#5011](https://github.com/blockscout/blockscout/pull/5011) - Fix `0x0` implementation address
@@ -281,7 +296,7 @@
 - [#4488](https://github.com/blockscout/blockscout/pull/4488) - Tx page: handle empty to_address
 - [#4483](https://github.com/blockscout/blockscout/pull/4483) - Fix copy-paste typo in `token_transfers_counter.ex`
 - [#4473](https://github.com/blockscout/blockscout/pull/4473), [#4481](https://github.com/blockscout/blockscout/pull/4481) - Search autocomplete: fix for address/block/tx hash
-- [#4472](https://github.com/blockscout/blockscout/pull/4472) - Search autocomplete: fix Cannot read property toLowerCase of undefined 
+- [#4472](https://github.com/blockscout/blockscout/pull/4472) - Search autocomplete: fix Cannot read property toLowerCase of undefined
 - [#4456](https://github.com/blockscout/blockscout/pull/4456) - URL encoding for NFT media files URLs
 - [#4453](https://github.com/blockscout/blockscout/pull/4453) - Unescape characters for string output type in the contract response
 - [#4401](https://github.com/blockscout/blockscout/pull/4401) - Fix displaying of token holders with the same amount
@@ -333,7 +348,7 @@
 - [#4299](https://github.com/blockscout/blockscout/pull/4299) - Added [Sourcify](https://sourcify.dev) verification API endpoint
 - [#4267](https://github.com/blockscout/blockscout/pull/4267) - Extend verification through [Sourcify](https://sourcify.dev) smart-contract verification: fetch smart contract metadata from Sourcify repo if it has been already verified there
 - [#4241](https://github.com/blockscout/blockscout/pull/4241) - Reload transactions on the main page without reloading of the whole page
-- [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contracts 
+- [#4218](https://github.com/blockscout/blockscout/pull/4218) - Hide long arrays in smart-contracts
 - [#4205](https://github.com/blockscout/blockscout/pull/4205) - Total transactions fees per day API endpoint
 - [#4158](https://github.com/blockscout/blockscout/pull/4158) - Calculate total fee per day
 - [#4067](https://github.com/blockscout/blockscout/pull/4067) - Display LP tokens USD value and custom metadata in tokens dropdown at address page
@@ -343,7 +358,7 @@
 - [#4346](https://github.com/blockscout/blockscout/pull/4346) - Fix internal server error on raw-trace transaction page
 - [#4345](https://github.com/blockscout/blockscout/pull/4345) - Fix bug on validator's address transactions page(Support effectiveGasPrice property in receipt (geth specific))
 - [#4342](https://github.com/blockscout/blockscout/pull/4342) - Remove dropped/replaced txs from address transactions page
-- [#4320](https://github.com/blockscout/blockscout/pull/4320) - Fix absence of imported smart-contracts' source code in `getsourcecode` API method 
+- [#4320](https://github.com/blockscout/blockscout/pull/4320) - Fix absence of imported smart-contracts' source code in `getsourcecode` API method
 - [#4274](https://github.com/blockscout/blockscout/pull/4302) - Fix search token-autocomplete
 - [#4316](https://github.com/blockscout/blockscout/pull/4316) - Fix `/decompiled-contracts` bug
 - [#4310](https://github.com/blockscout/blockscout/pull/4310) - Fix logo URL redirection, set font-family defaults for chart.js
@@ -486,7 +501,7 @@
 
 ### Features
 - [#3558](https://github.com/blockscout/blockscout/pull/3558) - Focus to search field with a forward slash key
-- [#3541](https://github.com/blockscout/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount 
+- [#3541](https://github.com/blockscout/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount
 - [#3540](https://github.com/blockscout/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances
 
 ### Fixes
