@@ -51,7 +51,9 @@ defmodule Explorer.Accounts.Notifier.Notify do
     Enum.each(outgoing_addresses, fn address -> notify_watchlist(address, summary, :outgoing) end)
   end
 
-  defp notify_watchlist(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
+  defp notify_watchlists(nil), do: nil
+
+  defp notify_watchlist(%WatchlistAddress{} = address, summary, direction) do
     case ForbiddenAddress.check(address.address_hash) do
       {:ok, _address_hash} ->
         with %WatchlistNotification{} = notification <-

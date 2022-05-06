@@ -22,27 +22,18 @@ defmodule Explorer.Accounts.Notifier.Summary do
     :type
   ]
 
-  def process(%Chain.TokenTransfer{} = transfer) do
-    preloaded_transfer = preload(transfer)
-
-    summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
-
-    if summary do
-      Logger.debug("--- transfer summary", fetcher: :account)
-      Logger.debug(summary, fetcher: :account)
-    end
-
-    [summary]
-  end
-
   def process(%Chain.Transaction{} = transaction) do
     preloaded_transaction = preload(transaction)
 
-    transfers_summaries = handle_collection(transaction, preloaded_transaction.token_transfers)
+    transfers_summaries =
+      handle_collection(
+        transaction,
+        preloaded_transaction.token_transfers
+      )
 
     transaction_summary = fetch_summary(transaction)
 
-    if transaction_summary do
+    if transaction_summary != :nothing do
       Logger.debug("--- transaction summary", fetcher: :account)
       Logger.debug(transaction_summary, fetcher: :account)
     end
@@ -53,9 +44,24 @@ defmodule Explorer.Accounts.Notifier.Summary do
     [transaction_summary | transfers_summaries]
     |> Enum.filter(fn summary ->
       not (is_nil(summary) or
+             summary == :nothing or
              is_nil(summary.amount) or
              summary.amount == Decimal.new(0))
     end)
+  end
+
+  def process(%Chain.TokenTransfer{} = transfer) do
+    preloaded_transfer = preload(transfer)
+
+    summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
+
+    if summary != :nothing do
+      Logger.debug("--- transfer summary", fetcher: :account)
+      Logger.debug(summary, fetcher: :account)
+      [summary]
+    else
+      []
+    end
   end
 
   def process(_), do: nil
@@ -73,7 +79,7 @@ defmodule Explorer.Accounts.Notifier.Summary do
     )
   end
 
-  def fetch_summary(%Chain.Transaction{block_number: nil}), do: nil
+  def fetch_summary(%Chain.Transaction{block_number: nil}), do: :nothing
 
   def fetch_summary(%Chain.Transaction{} = transaction) do
     %Summary{
@@ -92,7 +98,7 @@ defmodule Explorer.Accounts.Notifier.Summary do
 
   def fetch_summary(_), do: :nothing
 
-  def fetch_summary(%Chain.Transaction{block_number: nil}, _), do: nil
+  def fetch_summary(%Chain.Transaction{block_number: nil}, _), do: :nothing
 
   def fetch_summary(
         %Chain.Transaction{} = transaction,
@@ -142,6 +148,8 @@ defmodule Explorer.Accounts.Notifier.Summary do
         }
     end
   end
+
+  def fetch_summary(_, _), do: :nothing
 
   @burn_address "0x0000000000000000000000000000000000000000"
 
