@@ -60,4 +60,9 @@
       <% end %>
     </div>
   </div>
+  <script>
+    if (localStorage.getItem("next-color-mode") != "dark") {
+      document.getElementById("footer-logo").style.filter = "brightness(1) invert(0)";
+    }
+</script>
 </footer>
