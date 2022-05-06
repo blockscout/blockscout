@@ -55,7 +55,7 @@ $dark-btn-hover-bg: #646464;
 		}
 	}
 	.navbar-brand .navbar-logo {
-		filter: brightness(0) invert(1);
+		filter: brightness(1) invert(0);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
 		color: $labels-dark;
@@ -131,6 +131,11 @@ $dark-btn-hover-bg: #646464;
 	// main container, layout, cards
 	.layout-container main {
 		background-color: $body-dark;
+	}
+	.layout-container {
+		.footer-logo {
+			filter: brightness(1) invert(0);
+		}
 	}
 
 	.card {
