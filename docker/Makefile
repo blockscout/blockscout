@@ -13,7 +13,7 @@ ifeq ($(HOST_SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://$(DB_USERNAME):$(PASSWORD)@$(HOST):$(DB_PORT)/explorer?ssl=false
+DB_URL = postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(HOST):$(DB_PORT)/explorer?ssl=false
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															 -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(HOST_SYSTEM), Linux)
