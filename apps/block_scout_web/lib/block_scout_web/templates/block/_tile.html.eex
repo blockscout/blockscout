@@ -30,7 +30,10 @@
         </span>
         <%= if @block.size do %>
            <!-- size -->
-          <span class="mr-2"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+          <span class="mr-2">
+            <%# <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> <!-- Error with this function -->
+            <%= @block.size %> bytes
+          </span>
         <% end %>
         <!-- age -->
         <span data-from-now="<%= @block.timestamp %>"></span>
@@ -60,8 +63,8 @@
       <%= if !is_nil(@block.base_fee_per_gas) do %>
         <!-- Priority Fee -->
         <span>
-          <%# <%= format_wei_value(priority_fee, :astra) %> %>
-          <%# <%= gettext "Priority Fees" %> %>
+          <%= format_wei_value(%Wei{value: priority_fee}, :ether) %>
+          <%= gettext "Priority Fees" %>
         </span>
         <!-- Burnt Fees -->
         <span> <%= format_wei_value(burned_fee, :ether) %> <%= gettext "Burn Fees" %> </span>
