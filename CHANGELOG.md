@@ -1,10 +1,13 @@
 ## Current
 
 ### Features
+- [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
 
 ### Chore
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
 
 
 ## 4.1.3-beta

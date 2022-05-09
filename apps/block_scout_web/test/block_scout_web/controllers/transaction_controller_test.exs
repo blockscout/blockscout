@@ -126,5 +126,12 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
       assert html_response(conn, 422)
     end
+
+    test "no redirect from tx page", %{conn: conn} do
+      transaction = insert(:transaction)
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
+
+      assert html_response(conn, 200)
+    end
   end
 end
