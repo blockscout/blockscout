@@ -7,6 +7,7 @@
 - [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
 
 ### Chore
+- [#5543](https://github.com/blockscout/blockscout/pull/5543) - Increase max_restarts to 1_000 (from 3 by default) for explorer, block_scout_web supervisors
 - [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
 
 
