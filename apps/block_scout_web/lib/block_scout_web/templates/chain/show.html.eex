@@ -123,7 +123,7 @@
                   <%= gettext "Average block time" %>
                 </h2>
                 <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
-                  <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
+                  <%# <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %> %>
                 </span>
               </div>
           <% end %>
