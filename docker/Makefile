@@ -13,7 +13,7 @@ ifeq ($(HOST_SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://$(DB_USERNAME):$(PASSWORD)@$(HOST):$(DB_PORT)/explorer?ssl=false
+DB_URL = postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(HOST):$(DB_PORT)/explorer?ssl=false
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															 -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(HOST_SYSTEM), Linux)
@@ -383,7 +383,7 @@ endif
 
 start: build postgres 
 	@echo "==> Starting blockscout"
-	@docker run -d --restart unless-stopped --rm --name $(BS_CONTAINER_NAME) \
+	@docker run -d --restart unless-stopped --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
 					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"

@@ -250,7 +250,7 @@
     <% end %>
     <script defer data-cfasync="false">
       function applyDarkMode() {
-        if (localStorage.getItem("current-color-mode") != "dark") {
+        if (localStorage.getItem("next-color-mode") != "dark") {
           document.body.className += " " + "dark-theme-applied";
           document.body.style.backgroundColor = "#191919";
         }
@@ -258,15 +258,15 @@
       window.onload = applyDarkMode()
     </script>
     <script defer data-cfasync="false">
-      if (localStorage.getItem("current-color-mode") != "dark") {
-        document.getElementById("top-navbar").style.backgroundColor = "#191919";
-        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
+      if (localStorage.getItem("next-color-mode") != "dark") {
+        document.getElementById("top-navbar").style.backgroundColor = "#282945";
+        document.getElementById("navbar-logo").style.filter = "brightness(1) invert(0)";
         let modeChanger = document.getElementById("dark-mode-changer");
         modeChanger.className += " " + "dark-mode-changer--dark";
       }
     </script>
     <script defer data-cfasync="false">
-      if (localStorage.getItem("current-color-mode") != "dark") {
+      if (localStorage.getItem("next-color-mode") != "dark") {
         const search = document.getElementById("main-search-autocomplete")
         const searchMobile = document.getElementById("main-search-autocomplete-mobile")
             if (search && search.style) {
