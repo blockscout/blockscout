@@ -12,6 +12,7 @@
 ## 4.1.3-beta
 
 ### Features
+- [#5542](https://github.com/blockscout/blockscout/pull/5542) - Add `jq` in docker image
 - [#5515](https://github.com/blockscout/blockscout/pull/5515) - Integrate ace editor to display contract sources
 - [#5505](https://github.com/blockscout/blockscout/pull/5505) - Manage debug_traceTransaction JSON RPC method timeout
 - [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
