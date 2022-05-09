@@ -31,7 +31,8 @@
         <%= if @block.size do %>
            <!-- size -->
           <span class="mr-2">
-            <%# <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> <!-- Error with this function -->
+            <!-- Error with this function -->
+            <%# <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %>
             <%= @block.size %> bytes
           </span>
         <% end %>
