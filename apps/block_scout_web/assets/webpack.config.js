@@ -47,6 +47,7 @@ const appJs =
       'address-internal-transactions': './js/pages/address/internal_transactions.js',
       'address-logs': './js/pages/address/logs.js',
       'address-validations': './js/pages/address/validations.js',
+      'contract-read-write': './js/pages/address/contract_read_write.js',
       'validated-transactions': './js/pages/transactions.js',
       'pending-transactions': './js/pages/pending_transactions.js',
       'transaction': './js/pages/transaction.js',
@@ -72,7 +73,7 @@ const appJs =
       'csv-download': './js/lib/csv_download.js',
       'datepicker': './js/lib/datepicker.js',
       'dropzone': './js/lib/dropzone.js',
-      'api-keys': './js/pages/api_keys.js'
+      'delete-item-handler': './js/pages/account/delete_item_handler.js'
     },
     output: {
       filename: '[name].js',

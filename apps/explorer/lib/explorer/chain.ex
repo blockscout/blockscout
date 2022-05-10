@@ -6183,4 +6183,16 @@ defmodule Explorer.Chain do
     query
     |> Repo.one()
   end
+
+  def is_address_hash_is_smart_contract?(nil), do: false
+
+  def is_address_hash_is_smart_contract?(address_hash) do
+    with %Address{contract_code: bytecode} <- Repo.get_by(Address, hash: address_hash),
+         false <- is_nil(bytecode) do
+      true
+    else
+      _ ->
+        false
+    end
+  end
 end

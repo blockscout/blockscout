@@ -1,19 +1,23 @@
 defmodule BlockScoutWeb.SmartContractController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.AddressView
   alias Explorer.Chain
   alias Explorer.SmartContract.{Reader, Writer}
 
   @burn_address "0x0000000000000000000000000000000000000000"
 
-  def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
+  def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
       }
     ]
 
+    is_custom_abi = convert_bool(params["is_custom_abi"])
+
     with true <- ajax?(conn),
+         {:custom_abi, false} <- {:custom_abi, is_custom_abi},
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       implementation_address_hash_string =
@@ -78,6 +82,9 @@ defmodule BlockScoutWeb.SmartContractController do
         action: action
       )
     else
+      {:custom_abi, true} ->
+        custom_abi_render(conn, params)
+
       :error ->
         unprocessable_entity(conn)
 
@@ -91,6 +98,61 @@ defmodule BlockScoutWeb.SmartContractController do
 
   def index(conn, _), do: not_found(conn)
 
+  defp custom_abi_render(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
+    with custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
+         false <- is_nil(custom_abi),
+         abi <- custom_abi.abi,
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+      debug(abi, "abi")
+
+      functions =
+        if action == "write" do
+          Writer.filter_write_functions(abi) |> debug("write filter")
+        else
+          Reader.read_only_functions_from_abi(abi, address_hash) |> debug("read filter")
+        end
+
+      read_functions_required_wallet =
+        if action == "read" do
+          Reader.read_functions_required_wallet_from_abi(abi) |> debug("read wallet")
+        else
+          [] |> debug("read filter")
+        end
+
+      contract_abi = Poison.encode!(abi)
+
+      conn
+      |> put_status(200)
+      |> put_layout(false)
+      |> render(
+        "_functions.html",
+        read_functions_required_wallet: read_functions_required_wallet,
+        read_only_functions: functions,
+        address: %{hash: address_hash},
+        custom_abi: true,
+        contract_abi: contract_abi,
+        implementation_address: @burn_address,
+        implementation_abi: [],
+        contract_type: contract_type,
+        action: action
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      _ ->
+        not_found(conn)
+    end
+  end
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.debug(key)
+    Logger.debug(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+  end
+
   def show(conn, params) do
     address_options = [
       necessity_by_association: %{
@@ -101,6 +163,16 @@ defmodule BlockScoutWeb.SmartContractController do
         :contracts_creation_transaction => :optional
       }
     ]
+
+    debug(params["is_custom_abi"], "params")
+    debug(convert_bool(params["is_custom_abi"]), "convert")
+
+    custom_abi =
+      if convert_bool(params["is_custom_abi"]), do: AddressView.fetch_custom_abi(conn, params["id"]), else: nil
+
+    debug(custom_abi, "custom_abi")
+    debug(params["id"], "id")
+    debug(AddressView.fetch_custom_abi(conn, params["id"]), "custom_fetch")
 
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
@@ -115,18 +187,19 @@ defmodule BlockScoutWeb.SmartContractController do
           else: for(x <- 0..(args_count - 1), do: params["arg_" <> to_string(x)] |> convert_map_to_array())
 
       %{output: outputs, names: names} =
-        if params["from"] do
-          Reader.query_function_with_names(
+        if custom_abi do
+          Reader.query_function_with_names_custom_abi(
             address_hash,
             %{method_id: params["method_id"], args: args},
-            contract_type,
-            params["from"]
+            params["from"],
+            custom_abi.abi
           )
         else
           Reader.query_function_with_names(
             address_hash,
             %{method_id: params["method_id"], args: args},
-            contract_type
+            contract_type,
+            params["from"]
           )
         end
 
@@ -186,4 +259,10 @@ defmodule BlockScoutWeb.SmartContractController do
   defp is_integer?(integer) when is_integer(integer), do: true
 
   defp is_integer?(_), do: false
+
+  defp convert_bool("true"), do: true
+  defp convert_bool("false"), do: false
+  defp convert_bool(true), do: true
+  defp convert_bool(false), do: false
+  defp convert_bool(_), do: false
 end

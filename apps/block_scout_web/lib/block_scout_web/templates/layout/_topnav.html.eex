@@ -188,6 +188,7 @@
               <a href="<%= tag_address_path(@conn, :index) %>" class= "dropdown-item">Address Tags</a>
               <a href="<%= tag_transaction_path(@conn, :index) %>" class= "dropdown-item">Transaction Tags</a>
               <a href="<%= api_key_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "API keys" %></a>
+              <a href="<%= custom_abi_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Custom ABI" %></a>
               <a href="<%= BlockScoutWeb.LayoutView.sign_out_link %>" class= "dropdown-item">Sign out</a>
             </div>
           </li>
