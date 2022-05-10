@@ -327,3 +327,17 @@ $card-tab-icon-color-active: #fff !default;
 .function-output {
   margin-left: -1rem;
 }
+
+.functions-tabs input[type="radio"] {
+  display: none;
+}
+
+.card-misc-container {
+  padding-left: $card-horizontal-padding;
+  padding-top: $card-horizontal-padding;
+
+  .btn-line-inversed,
+  .btn-line {
+    display: inline-flex;
+  }
+}

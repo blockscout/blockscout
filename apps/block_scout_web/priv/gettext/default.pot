@@ -101,6 +101,11 @@ msgstr ""
 msgid "A string with the name of the module to be invoked."
 msgstr ""
 
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:24
+#, elixir-autogen, elixir-format
+msgid "ABI"
+msgstr ""
+
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_constructor_args.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "ABI-encoded Constructor Arguments (if required by the contract)"
@@ -152,6 +157,7 @@ msgid "Actual gas amount used by the transaction."
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
 #: lib/block_scout_web/templates/layout/_footer.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "Add"
@@ -162,9 +168,14 @@ msgstr ""
 msgid "Add API key"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:45
+#, elixir-autogen, elixir-format
+msgid "Add Custom ABI"
+msgstr ""
+
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
-#: lib/block_scout_web/views/address_view.ex:104
+#: lib/block_scout_web/views/address_view.ex:107
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr ""
@@ -258,6 +269,11 @@ msgstr ""
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:25
 #, elixir-autogen, elixir-format
 msgid "Back to API keys (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:30
+#, elixir-autogen, elixir-format
+msgid "Back to Custom ABIs (Cancel)"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:148
@@ -366,7 +382,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:48
 #: lib/block_scout_web/templates/address/overview.html.eex:273
 #: lib/block_scout_web/templates/address_validation/index.html.eex:11
-#: lib/block_scout_web/views/address_view.ex:371
+#: lib/block_scout_web/views/address_view.ex:374
 #, elixir-autogen, elixir-format
 msgid "Blocks Validated"
 msgstr ""
@@ -444,13 +460,13 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:149
-#: lib/block_scout_web/views/address_view.ex:364
+#: lib/block_scout_web/views/address_view.ex:367
 #, elixir-autogen, elixir-format
 msgid "Code"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:34
-#: lib/block_scout_web/views/address_view.ex:370
+#: lib/block_scout_web/views/address_view.ex:373
 #, elixir-autogen, elixir-format
 msgid "Coin Balance History"
 msgstr ""
@@ -534,15 +550,17 @@ msgstr ""
 msgid "Contract ABI"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:18
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:30
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_address_field.html.eex:3
-#: lib/block_scout_web/views/address_view.ex:102
+#: lib/block_scout_web/views/address_view.ex:105
 #, elixir-autogen, elixir-format
 msgid "Contract Address"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:16
-#: lib/block_scout_web/views/address_view.ex:42
-#: lib/block_scout_web/views/address_view.ex:76
+#: lib/block_scout_web/views/address_view.ex:45
+#: lib/block_scout_web/views/address_view.ex:79
 #, elixir-autogen, elixir-format
 msgid "Contract Address Pending"
 msgstr ""
@@ -624,6 +642,12 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "Copy Address"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/row.html.eex:6
+#: lib/block_scout_web/templates/account/custom_abi/row.html.eex:6
+#, elixir-autogen, elixir-format
+msgid "Copy Contract Address"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract/index.html.eex:140
@@ -734,6 +758,11 @@ msgstr ""
 msgid "Create an API key to use with your RPC и EthRPC API requests."
 msgstr ""
 
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:13
+#, elixir-autogen, elixir-format
+msgid "Create an Custom ABI to interact with contracts."
+msgstr ""
+
 #: lib/block_scout_web/views/internal_transaction_view.ex:26
 #, elixir-autogen, elixir-format
 msgid "Create2"
@@ -753,6 +782,24 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:96
 #, elixir-autogen, elixir-format
 msgid "Current transaction state: Success, Failed (Error), or Pending (In Process)"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:20
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:18
+#, elixir-autogen, elixir-format
+msgid "Custom"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:182
+#, elixir-autogen, elixir-format
+msgid "Custom ABI"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:19
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "Custom ABIs"
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:69
@@ -795,7 +842,7 @@ msgstr ""
 msgid "Decoded"
 msgstr ""
 
-#: lib/block_scout_web/views/address_view.ex:365
+#: lib/block_scout_web/views/address_view.ex:368
 #, elixir-autogen, elixir-format
 msgid "Decompiled Code"
 msgstr ""
@@ -892,9 +939,9 @@ msgid "ERC-721 "
 msgstr ""
 
 #: lib/block_scout_web/templates/address_token/overview.html.eex:1
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:104
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:104
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:146
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:95
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:95
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:137
 #, elixir-autogen, elixir-format
 msgid "ETH"
 msgstr ""
@@ -916,6 +963,7 @@ msgid "Easy Cowboy! This block does not exist yet!"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/row.html.eex:16
+#: lib/block_scout_web/templates/account/custom_abi/row.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr ""
@@ -1258,7 +1306,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:17
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
-#: lib/block_scout_web/views/address_view.ex:361
+#: lib/block_scout_web/views/address_view.ex:364
 #: lib/block_scout_web/views/transaction_view.ex:513
 #, elixir-autogen, elixir-format
 msgid "Internal Transactions"
@@ -1347,9 +1395,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:35
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:49
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:45
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:12
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:34
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:42
 #: lib/block_scout_web/templates/address_read_proxy/index.html.eex:12
-#: lib/block_scout_web/templates/address_write_contract/index.html.eex:12
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:32
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:40
 #: lib/block_scout_web/templates/address_write_proxy/index.html.eex:12
 #: lib/block_scout_web/templates/tokens/contract/index.html.eex:17
 #, elixir-autogen, elixir-format
@@ -1370,7 +1420,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:10
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
-#: lib/block_scout_web/views/address_view.ex:372
+#: lib/block_scout_web/views/address_view.ex:375
 #: lib/block_scout_web/views/transaction_view.ex:514
 #, elixir-autogen, elixir-format
 msgid "Logs"
@@ -1384,7 +1434,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:52
 #: lib/block_scout_web/templates/layout/app.html.eex:46
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:84
-#: lib/block_scout_web/views/address_view.ex:142
+#: lib/block_scout_web/views/address_view.ex:145
 #, elixir-autogen, elixir-format
 msgid "Market Cap"
 msgstr ""
@@ -1485,6 +1535,8 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:19
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:29
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:13
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:29
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
@@ -1496,6 +1548,11 @@ msgstr ""
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:20
 #, elixir-autogen, elixir-format
 msgid "Name this API key"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:14
+#, elixir-autogen, elixir-format
+msgid "Name this Custom ABI"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_token/overview.html.eex:44
@@ -1704,7 +1761,7 @@ msgstr ""
 msgid "QR Code"
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:109
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:100
 #, elixir-autogen, elixir-format
 msgid "Query"
 msgstr ""
@@ -1728,7 +1785,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:81
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:27
-#: lib/block_scout_web/views/address_view.ex:366
+#: lib/block_scout_web/views/address_view.ex:369
 #: lib/block_scout_web/views/tokens/overview_view.ex:41
 #, elixir-autogen, elixir-format
 msgid "Read Contract"
@@ -1736,7 +1793,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:88
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:41
-#: lib/block_scout_web/views/address_view.ex:367
+#: lib/block_scout_web/views/address_view.ex:370
 #, elixir-autogen, elixir-format
 msgid "Read Proxy"
 msgstr ""
@@ -1747,6 +1804,7 @@ msgid "Records"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/row.html.eex:13
+#: lib/block_scout_web/templates/account/custom_abi/row.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "Remove"
 msgstr ""
@@ -1799,6 +1857,7 @@ msgid "Run"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:26
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:31
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -1975,7 +2034,7 @@ msgstr ""
 msgid "The block height of a particular block is defined as the number of blocks preceding it in the blockchain."
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:41
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:38
 #, elixir-autogen, elixir-format
 msgid "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable."
 msgstr ""
@@ -2000,7 +2059,7 @@ msgstr ""
 msgid "The number of transactions in the block."
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:40
 #, elixir-autogen, elixir-format
 msgid "The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception."
 msgstr ""
@@ -2252,7 +2311,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:15
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
-#: lib/block_scout_web/views/address_view.ex:363
+#: lib/block_scout_web/views/address_view.ex:366
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:195
 #: lib/block_scout_web/views/tokens/overview_view.ex:39
 #: lib/block_scout_web/views/transaction_view.ex:512
@@ -2276,7 +2335,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:13
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:70
 #: lib/block_scout_web/templates/tokens/index.html.eex:10
-#: lib/block_scout_web/views/address_view.ex:360
+#: lib/block_scout_web/views/address_view.ex:363
 #, elixir-autogen, elixir-format
 msgid "Tokens"
 msgstr ""
@@ -2423,7 +2482,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:213
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:45
-#: lib/block_scout_web/views/address_view.ex:362
+#: lib/block_scout_web/views/address_view.ex:365
 #, elixir-autogen, elixir-format
 msgid "Transactions"
 msgstr ""
@@ -2506,6 +2565,7 @@ msgid "Unique character string (TxID) assigned to every verified transaction."
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "Update"
 msgstr ""
@@ -2558,6 +2618,12 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:330
 #, elixir-autogen, elixir-format
 msgid "Value sent in the native token (and USD) if applicable."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:18
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:16
+#, elixir-autogen, elixir-format
+msgid "Verified"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract/index.html.eex:82
@@ -2665,7 +2731,7 @@ msgstr ""
 msgid "Vyper contract"
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:145
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:136
 #, elixir-autogen, elixir-format
 msgid "WEI"
 msgstr ""
@@ -2690,21 +2756,21 @@ msgstr ""
 msgid "Wei"
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:109
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:100
 #, elixir-autogen, elixir-format
 msgid "Write"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:95
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:34
-#: lib/block_scout_web/views/address_view.ex:368
+#: lib/block_scout_web/views/address_view.ex:371
 #, elixir-autogen, elixir-format
 msgid "Write Contract"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/_tabs.html.eex:102
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:48
-#: lib/block_scout_web/views/address_view.ex:369
+#: lib/block_scout_web/views/address_view.ex:372
 #, elixir-autogen, elixir-format
 msgid "Write Proxy"
 msgstr ""
@@ -2714,6 +2780,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:47
 #, elixir-autogen, elixir-format
 msgid "Yes"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:19
+#, elixir-autogen, elixir-format
+msgid "You can create 15 Custom ABIs per account."
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:19
@@ -2766,7 +2837,7 @@ msgstr ""
 msgid "elements are displayed"
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:41
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:38
 #, elixir-autogen, elixir-format
 msgid "fallback"
 msgstr ""
@@ -2808,7 +2879,7 @@ msgstr ""
 msgid "page"
 msgstr ""
 
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:40
 #, elixir-autogen, elixir-format
 msgid "receive"
 msgstr ""
