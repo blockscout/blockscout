@@ -362,7 +362,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp retry_fetch_and_import_block(%{retry: retry}) when retry < 1, do: :ignore
 
   defp retry_fetch_and_import_block(%{changesets: changesets} = params) do
-    IO.inspect("### RETRY FETCH AND IMPORT BLOCK ###")
+    Logger.info("### RETRY FETCH AND IMPORT BLOCK ###")
 
     if unknown_block_number_error?(changesets) do
       # Wait half a second to give Parity time to sync.

@@ -9,7 +9,6 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Address, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner
-  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
 

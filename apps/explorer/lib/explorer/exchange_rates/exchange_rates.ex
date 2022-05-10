@@ -106,7 +106,7 @@ defmodule Explorer.ExchangeRates do
   @doc """
   Returns a specific rate from the tracked tickers by token address hash
   """
-  @spec lookup(String.t()) :: Token.t() | nil
+  @spec lookup_by_address(String.t(), String.t()) :: Token.t() | nil
   def lookup_by_address(token_address_hash, symbol) do
     if store() == :ets && enabled?() do
       case :ets.lookup(table_name(), symbol) do

@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.BlockReward do
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.BlockReward.Supervisor, as: BlockRewardSupervisor
-  alias Indexer.Fetcher.CoinBalance
+  # alias Indexer.Fetcher.CoinBalance
   # alias Indexer.Transform.{AddressCoinBalances, AddressCoinBalancesDaily, Addresses}
   alias Indexer.Transform.Addresses
 
@@ -133,10 +133,12 @@ defmodule Indexer.Fetcher.BlockReward do
         |> add_timestamp()
         |> import_block_reward_params()
         |> case do
-          {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
+          # todo
+          # {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
+          {:ok, %{addresses: addresses}} ->
             Accounts.drop(addresses)
 
-            CoinBalance.async_fetch_balances(address_coin_balances)
+            # CoinBalance.async_fetch_balances(address_coin_balances)
 
             retry_errors(errors)
 

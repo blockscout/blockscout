@@ -93,7 +93,9 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
         if Enum.count(grouped_address_token_balances) > 1 do
-          Enum.max_by(grouped_address_token_balances, fn %{value_fetched_at: value_fetched_at} -> value_fetched_at end)
+          Enum.max_by(grouped_address_token_balances, fn token_balance ->
+            Map.get(token_balance, :value_fetched_at)
+          end)
         else
           Enum.at(grouped_address_token_balances, 0)
         end
