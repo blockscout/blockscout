@@ -2998,7 +2998,8 @@ defmodule Explorer.Chain do
         on: b.number == missing_range.number,
         select: missing_range.number,
         order_by: missing_range.number,
-        distinct: missing_range.number
+        distinct: missing_range.number,
+        limit: 500_000
       )
 
     missing_blocks = Repo.all(ordered_missing_query, timeout: :infinity)
