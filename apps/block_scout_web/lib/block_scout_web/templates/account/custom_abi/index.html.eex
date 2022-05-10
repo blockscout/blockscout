@@ -1,48 +1,48 @@
-<% max_api_key_count = 3 %>
+<% max_custom_abi_count = 15 %>
 <section class="container">
   <div class="row">
-    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :api_keys %>
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :custom_abis %>
     <div class="col-md">
       <div class="card">
         <div class="card-body">
-          <h1 class="card-title list-title-description header-account"><%= gettext "API keys" %> </h1>
+          <h1 class="card-title list-title-description header-account"><%= gettext "Custom ABIs" %> </h1>
           <br>
-          <%= if Enum.count(@api_keys) < max_api_key_count do %>
+          <%= if Enum.count(@custom_abis) < max_custom_abi_count do %>
             <div style="min-width: 100%;">
               <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
-                <%= gettext "Create an API key to use with your RPC и EthRPC API requests." %> <a href="https://docs.blockscout.com/for-users/api"> <%= gettext "Learn more" %></a>
+                <%= gettext "Create an Custom ABI to interact with contracts." %>
               </div>
             </div>
           <% else %>
             <div style="min-width: 100%;">
               <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
-                <%= gettext "You can create 3 API keys per account." %> <a href="https://docs.blockscout.com/for-users/api"> <%= gettext "Learn more" %></a>
+                <%= gettext "You can create 15 Custom ABIs per account." %>
               </div>
             </div>
           <% end %>
           <div class="col-sm">
             <div class="mb-3 row o-flow-x">
-              <%= if @api_keys != [] do %>
+              <%= if @custom_abis != [] do %>
                 <table class="table mb-3 table-watchlist">
                   <thead style="font-size: 14px; color: #6c757d" >
                     <tr>
                       <th scope="col"><%= gettext "Name" %></th>
-                      <th scope="col"><%= gettext "API key" %></th>
+                      <th scope="col"><%= gettext "Contract Address" %></th>
                       <th scope="col"></th>
                       <th scope="col"></th>
                     </tr>
                   </thead>
                   <tbody style="font-size: 15px; color: #6c757d" >
-                    <%= Enum.map(@api_keys, fn key ->
-                      render("row.html", api_key: key, conn: @conn)
+                    <%= Enum.map(@custom_abis, fn key ->
+                      render("row.html", custom_abi: key, conn: @conn)
                       end) %>
                   </tbody>
                 </table>
               <% end %>
             </div>
           </div>
-          <%= if Enum.count(@api_keys) < max_api_key_count do %>
-            <a class="button button-primary button-sm" href="<%= api_key_path(@conn, :new) %>"><%= gettext "Add API key" %></a>
+          <%= if Enum.count(@custom_abis) < max_custom_abi_count do %>
+            <a class="button button-primary button-sm" href="<%= custom_abi_path(@conn, :new) %>"><%= gettext "Add Custom ABI" %></a>
           <% end %>
         </div>
       </div>
