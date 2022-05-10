@@ -3038,7 +3038,7 @@ defmodule Explorer.Chain do
         select: missing_range.number,
         order_by: missing_range.number,
         distinct: missing_range.number,
-        limit: 100000
+        limit: 500000
       )
 
     missing_blocks = Repo.all(ordered_missing_query, timeout: :infinity)
