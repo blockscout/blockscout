@@ -37,7 +37,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           updated_at: DateTime.t(),
           value: Decimal.t() | nil,
           token_id: non_neg_integer() | nil,
-          token_type: String.t()
+          token_type: String.t() | nil
         }
 
   schema "address_current_token_balances" do
@@ -64,8 +64,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     timestamps()
   end
 
-  @optional_fields ~w(value value_fetched_at token_id)a
-  @required_fields ~w(address_hash block_number token_contract_address_hash token_type)a
+  @optional_fields ~w(value value_fetched_at token_id token_type)a
+  @required_fields ~w(address_hash block_number token_contract_address_hash)a
   @allowed_fields @optional_fields ++ @required_fields
 
   @doc false
