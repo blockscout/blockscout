@@ -87,7 +87,13 @@ defmodule Indexer.TokenBalances do
     |> unfetched_token_balances(fetched_token_balances)
     |> schedule_token_balances
 
-    {:ok, fetched_token_balances}
+    failed_token_balances =
+      requested_token_balances
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(fetched_token_balances))
+      |> MapSet.to_list()
+
+    {:ok, %{fetched_token_balances: fetched_token_balances, failed_token_balances: failed_token_balances}}
   end
 
   def to_address_current_token_balances(address_token_balances) when is_list(address_token_balances) do

@@ -1,6 +1,19 @@
 ## Current
 
 ### Features
+- [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
+
+### Fixes
+- [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
+
+### Chore
+- [#5543](https://github.com/blockscout/blockscout/pull/5543) - Increase max_restarts to 1_000 (from 3 by default) for explorer, block_scout_web supervisors
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
+
+
+## 4.1.3-beta
+
+### Features
 - [#5515](https://github.com/blockscout/blockscout/pull/5515) - Integrate ace editor to display contract sources
 - [#5505](https://github.com/blockscout/blockscout/pull/5505) - Manage debug_traceTransaction JSON RPC method timeout
 - [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
@@ -10,6 +23,11 @@
 
 ### Fixes
 - [#5489](https://github.com/blockscout/blockscout/pull/5489) - Improve handling errors in catchup fetcher
+- [#5528](https://github.com/blockscout/blockscout/pull/5528) - Token balances fetcher retry
+- [#5524](https://github.com/blockscout/blockscout/pull/5524) - ContractState module resistance to unresponsive archive node
+- [#5513](https://github.com/blockscout/blockscout/pull/5513) - Do not fill pending blocks ops with block numbers below TRACE_FIRST_BLOCK
+- [#5508](https://github.com/blockscout/blockscout/pull/5508) - Hide indexing banner if we fetched internal transactions from TRACE_FIRST_BLOCK
+- [#5504](https://github.com/blockscout/blockscout/pull/5504) - Extend TRACE_FIRST_BLOCK env var to geth variant
 - [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
 - [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
 - [#5482](https://github.com/blockscout/blockscout/pull/5482) - Fix for querying of the contract read functions
@@ -39,6 +57,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5506](https://github.com/blockscout/blockscout/pull/5506) - Refactor config files
 - [#5480](https://github.com/blockscout/blockscout/pull/5480) - Remove duplicate of balances_params_to_address_params function
 - [#5473](https://github.com/blockscout/blockscout/pull/5473) - Refactor daily coin balances fetcher
 - [#5458](https://github.com/blockscout/blockscout/pull/5458) - Decrease min safe polling period for realtime fetcher

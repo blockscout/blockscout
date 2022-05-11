@@ -13,7 +13,7 @@ const editor = ace.edit('code_viewer_main')
 editor.session.setMode(new Mode())
 editor.setTheme('ace/theme/chrome')
 editor.setValue(code, -1)
-editor.setOptions({ maxLines: 40, readOnly: true })
+editor.setOptions({ maxLines: 40, readOnly: true, printMargin: false })
 
 const len = codeMain.data('additional-sources-length')
 for (let i = 0; i < len; i++) {
