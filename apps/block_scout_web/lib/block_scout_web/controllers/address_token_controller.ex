@@ -2,6 +2,8 @@ defmodule BlockScoutWeb.AddressTokenController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, AddressTokenView, Controller}
   alias Explorer.{Chain, Market}
@@ -74,7 +76,8 @@ defmodule BlockScoutWeb.AddressTokenController do
         current_path: Controller.current_full_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       {:restricted_access, _} ->

@@ -26,7 +26,6 @@
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-<% tags = if assigns[:tags], do: @tags, else: %{common_tags: [], personal_tags: [], watchlist_names: []} %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
@@ -207,6 +206,7 @@
                 clipboard_text: from_address_hash,
                 aria_label: gettext("Copy From Address"),
                 title: gettext("Copy From Address") %>
+                <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @from_tags %>
             </dd>
           </dl>
           <!-- To -->
