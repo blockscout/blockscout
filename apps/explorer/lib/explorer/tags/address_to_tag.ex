@@ -66,23 +66,6 @@ defmodule Explorer.Tags.AddressToTag do
     |> Repo.all()
   end
 
-  def get_tags_on_address(address_hash) when is_nil(address_hash), do: []
-
-  def get_tags_on_address(address_hash) do
-    query =
-      from(
-        tt in AddressTag,
-        left_join: att in AddressToTag,
-        on: tt.id == att.tag_id,
-        where: att.address_hash == ^address_hash,
-        where: tt.label != ^"validator",
-        select: tt
-      )
-
-    query
-    |> Repo.all()
-  end
-
   def get_private_tags_on_address(address_hash, _current_user) when is_nil(address_hash), do: []
 
   def get_private_tags_on_address(address_hash, current_user) do
