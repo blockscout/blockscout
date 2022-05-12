@@ -146,10 +146,10 @@ defmodule Explorer.Accounts.Notifier.Email do
   end
 
   defp sender do
-    Application.get_env(:explorer, :sendgrid_sender)
+    Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:sender]
   end
 
   defp template do
-    Application.get_env(:explorer, :sendgrid_template)
+    Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:template]
   end
 end

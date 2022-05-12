@@ -34,8 +34,8 @@ defmodule Explorer.Accounts.Notify do
   end
 
   defp check_sendgrid do
-    (Application.get_env(:explorer, :sendgrid_sender) &&
-       Application.get_env(:explorer, :sendgrid_template)) ||
+    (Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:sender] &&
+       Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:template]) ||
       raise "SendGrid not configured"
   end
 end
