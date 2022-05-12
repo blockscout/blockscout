@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.TransactionController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   import BlockScoutWeb.Chain,
     only: [
       fetch_page_number: 1,
@@ -9,6 +11,9 @@ defmodule BlockScoutWeb.TransactionController do
       update_page_parameters: 3,
       split_list_by_page: 1
     ]
+
+  import GetAddressTags, only: [get_address_tags: 2]
+  import GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
 
   alias BlockScoutWeb.{
     AccessHelpers,
@@ -160,7 +165,14 @@ defmodule BlockScoutWeb.TransactionController do
             block_height: Chain.block_height(),
             current_path: Controller.current_full_path(conn),
             show_token_transfers: true,
-            transaction: transaction
+            transaction: transaction,
+            from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
+            to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
+            tx_tags:
+              get_transaction_with_addresess_tags(
+                transaction,
+                current_user(conn)
+              )
           )
         else
           :not_found ->
@@ -190,7 +202,14 @@ defmodule BlockScoutWeb.TransactionController do
             current_path: Controller.current_full_path(conn),
             block_height: Chain.block_height(),
             show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
-            transaction: transaction
+            transaction: transaction,
+            from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
+            to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
+            tx_tags:
+              get_transaction_with_addresess_tags(
+                transaction,
+                current_user(conn)
+              )
           )
         else
           :not_found ->
