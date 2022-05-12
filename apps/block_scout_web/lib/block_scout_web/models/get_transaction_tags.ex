@@ -20,8 +20,13 @@ defmodule GetTransactionTags do
     Map.put(addresses_tags, :personal_tx_tag, tx_tag)
   end
 
-  def get_transaction_with_addresess_tags(_, _),
-    do: %{common_tags: [], personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+  def get_transaction_with_addresess_tags(%Transaction{} = transaction, _),
+    do: %{
+      common_tags: get_tags_on_address(transaction.to_address_hash),
+      personal_tags: [],
+      watchlist_names: [],
+      personal_tx_tag: nil
+    }
 
   def get_transaction_tags(transaction_hash, %{id: identity_id}) do
     Repo.get_by(TagTransaction, tx_hash: transaction_hash, identity_id: identity_id)
