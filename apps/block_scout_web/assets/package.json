@@ -19,6 +19,7 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
+    "@astraprotocol/address-converter": "^0.2.3",
     "@fortawesome/fontawesome-free": "^5.15.3",
     "@tarekraafat/autocomplete.js": "^10.2.6",
     "assert": "^2.0.0",
