@@ -744,8 +744,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/account/watchlist_address/row.html.eex:7
 #: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:17
-#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:18 lib/block_scout_web/templates/transaction/overview.html.eex:208
-#: lib/block_scout_web/templates/transaction/overview.html.eex:209
+#: lib/block_scout_web/templates/transaction/_total_transfers_from_to.html.eex:18 lib/block_scout_web/templates/transaction/overview.html.eex:209
+#: lib/block_scout_web/templates/transaction/overview.html.eex:210
 msgid "Copy From Address"
 msgstr ""
 
