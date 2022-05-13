@@ -8,6 +8,7 @@ BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
+GITHUB_TOKEN=
 
 ifeq ($(HOST_SYSTEM), Linux)
 	HOST=localhost
@@ -343,7 +344,7 @@ ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
 else
 	@echo "==> No image found trying to build one..."
-	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+	@docker build --build-arg COIN="$(COIN)" --build-arg GITHUB_TOKEN="$(GITHUB_TOKEN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 endif
 
 migrate_only:
