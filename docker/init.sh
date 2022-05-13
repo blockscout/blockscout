@@ -8,4 +8,5 @@ export NETWORK=Testnet
 export SHOW_ADDRESS_MARKETCAP_PERCENTAGE=false
 export HOST_SYSTEM=${HOST_SYSTEM:-$(uname -s)}
 echo $HOST_SYSTEM
+make build
 make start
