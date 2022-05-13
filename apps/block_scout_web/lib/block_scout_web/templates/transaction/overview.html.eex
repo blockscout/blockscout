@@ -206,7 +206,6 @@
                 clipboard_text: from_address_hash,
                 aria_label: gettext("Copy From Address"),
                 title: gettext("Copy From Address") %>
-                <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @from_tags %>
             </dd>
           </dl>
           <!-- To -->
