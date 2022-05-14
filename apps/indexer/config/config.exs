@@ -27,6 +27,12 @@ block_transformer =
   end
 
 config :indexer,
+  #QUAI adaptation for specific URLs defined at bottom of file
+  ETHEREUM_JSONRPC_HTTP_URL: "",
+  ETHEREUM_JSONRPC_WS_URL: "",
+  ETHEREUM_JSONRPC_TRACE_URL: "",
+
+
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],
   metadata_updater_seconds_interval:
@@ -35,6 +41,8 @@ config :indexer,
   last_block: System.get_env("LAST_BLOCK") || "",
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
+
+
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
@@ -99,6 +107,80 @@ config :logger, :indexer,
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :indexer]
+
+
+case System.get_env("QUAI_CHAIN") do
+  "PRIME" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8546")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8547")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8546")
+
+  "REGION1" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8578")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8579")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8578")
+
+  "REGION2" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8580")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8581")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8580")
+
+  "REGION3" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8582")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8583")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8582")
+
+  "ZONE11" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8610")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8611")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8610")
+
+  "ZONE12" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8542")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8543")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8542")
+
+  "ZONE13" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8674")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8675")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8674")
+
+  "ZONE21" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8512")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8513")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8512")
+
+  "ZONE22" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8544")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8545")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8544")
+
+  "ZONE23" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8576")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8577")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8576")
+
+  "ZONE31" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8614")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8615")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8614")
+
+  "ZONE32" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8646")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8647")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8646")
+
+  "ZONE33" ->
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8678")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8679")
+    Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8678")
+
+  _ ->
+    :ok
+end
+
+
+
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

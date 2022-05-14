@@ -1,5 +1,6 @@
 import Config
 
+
 config :indexer,
   block_interval: :timer.seconds(5),
   json_rpc_named_arguments: [
