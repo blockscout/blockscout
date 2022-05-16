@@ -21,7 +21,6 @@ defmodule Explorer.Chain do
       select: 3,
       subquery: 1,
       union: 2,
-      update: 2,
       where: 2,
       where: 3
     ]
@@ -6075,11 +6074,11 @@ defmodule Explorer.Chain do
   defp save_implementation_name(implementation_address_hash_string, proxy_address_hash)
        when is_binary(implementation_address_hash_string) do
     with {:ok, address_hash} <- string_to_address_hash(implementation_address_hash_string),
+         proxy_contract <- address_hash_to_smart_contract(proxy_address_hash),
          %SmartContract{name: name} <- address_hash_to_smart_contract(address_hash) do
-      SmartContract
-      |> where([sc], sc.address_hash == ^proxy_address_hash)
-      |> update(set: [implementation_name: ^name])
-      |> Repo.update_all([])
+      proxy_contract
+      |> SmartContract.changeset(%{implementation_name: name})
+      |> Repo.update()
 
       {implementation_address_hash_string, name}
     else
