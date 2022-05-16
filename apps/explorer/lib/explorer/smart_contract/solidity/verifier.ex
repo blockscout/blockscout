@@ -46,6 +46,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       result
     rescue
       exception ->
+        Logger.error(fn ->
+          ["Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ", Exception.format(:error, exception)]
+        end)
         Sentry.capture_exception(exception, [stacktrace: __STACKTRACE__, extra: %{address_hash: address_hash, params: params}])
     end
   end
@@ -69,6 +72,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       result
     rescue
       exception ->
+        Logger.error(fn ->
+          ["Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}, json_input: #{inspect(json_input, limit: :infinity, printable_limit: :infinity)}: ", Exception.format(:error, exception)]
+        end)
         Sentry.capture_exception(exception, [stacktrace: __STACKTRACE__, extra: %{address_hash: address_hash, params: params, json_input: json_input}])
     end
   end
