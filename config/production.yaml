@@ -51,6 +51,10 @@ kubernetes:
       value: "Mainnet"
     - name: SUPPORTED_CHAINS
       value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": true } ]'
+    - name: BLOCKSCOUT_VERSION
+      value: 4.1.1-beta
+    - name: RELEASE_LINK
+      value: https://github.com/cloudwalk/blockscout/releases/tag/v4.1.1-beta
     resources:
       limits:
         cpu: 1000m
