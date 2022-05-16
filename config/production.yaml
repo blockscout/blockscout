@@ -51,6 +51,10 @@ kubernetes:
       value: "Mainnet"
     - name: SUPPORTED_CHAINS
       value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": true } ]'
+    - name: LOGO
+      value: /images/cloudwalk_full.png
+    - name: LOGO_FOOTER
+      value: /images/cloudwalk_full.png
     - name: BLOCKSCOUT_VERSION
       value: 4.1.1-beta
     - name: RELEASE_LINK
