@@ -12,6 +12,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   alias Explorer.Chain
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
+  require Logger
+
   @bytecode_hash_options ["default", "none", "bzzr1"]
 
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
@@ -20,31 +22,51 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     do: {:error, :contract_source_code}
 
   def evaluate_authenticity(address_hash, params) do
-    latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
-    evm_version = Map.get(params, "evm_version", latest_evm_version)
+    try do
+      latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
+      evm_version = Map.get(params, "evm_version", latest_evm_version)
 
-    all_versions = [evm_version | previous_evm_versions(evm_version)]
+      all_versions = [evm_version | previous_evm_versions(evm_version)]
 
-    all_versions_extra = all_versions ++ [evm_version]
+      all_versions_extra = all_versions ++ [evm_version]
 
-    Enum.reduce_while(all_versions_extra, false, fn version, acc ->
-      case acc do
-        {:ok, _} = result ->
-          {:cont, result}
+      Enum.reduce_while(all_versions_extra, false, fn version, acc ->
+        case acc do
+          {:ok, _} = result ->
+            {:cont, result}
 
-        {:error, error}
-        when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
-          {:halt, acc}
+          {:error, error}
+          when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
+            {:halt, acc}
 
-        _ ->
-          cur_params = Map.put(params, "evm_version", version)
-          {:cont, verify(address_hash, cur_params)}
-      end
-    end)
+          _ ->
+            cur_params = Map.put(params, "evm_version", version)
+            {:cont, verify(address_hash, cur_params)}
+        end
+      end)
+    rescue
+      exception ->
+        Logger.error(fn ->
+          [
+            "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}: ",
+            Exception.format(:error, exception)
+          ]
+        end)
+    end
   end
 
   def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
-    verify(address_hash, params, json_input)
+    try do
+      verify(address_hash, params, json_input)
+    rescue
+      exception ->
+        Logger.error(fn ->
+          [
+            "Error while verifying smart-contract address: #{address_hash}, params: #{inspect(params, limit: :infinity, printable_limit: :infinity)}, json_input: #{inspect(json_input, limit: :infinity, printable_limit: :infinity)}: ",
+            Exception.format(:error, exception)
+          ]
+        end)
+    end
   end
 
   defp verify(address_hash, params, json_input) do
@@ -177,6 +199,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       )
     end
   end
+
+  defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
   defp is_compiler_version_at_least_0_6_0?(compiler_version) do
     [version, _] = compiler_version |> String.split("+", parts: 2)

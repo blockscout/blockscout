@@ -42,6 +42,9 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
       {:error, error, error_message} ->
         {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, error_message)}
+
+      _ ->
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, "Unexpected error", nil)}
     end
   end
 

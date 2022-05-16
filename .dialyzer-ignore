@@ -22,7 +22,7 @@ lib/explorer/smart_contract/reader.ex:435
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:110
 lib/explorer/exchange_rates/source.ex:113
-lib/explorer/smart_contract/solidity/verifier.ex:199
+lib/explorer/smart_contract/solidity/verifier.ex:223
 lib/block_scout_web/templates/address_contract/index.html.eex:158
 lib/block_scout_web/templates/address_contract/index.html.eex:195
 lib/explorer/staking/stake_snapshotting.ex:15: Function do_snapshotting/7 has no local return
