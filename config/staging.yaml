@@ -65,6 +65,10 @@ kubernetes:
       value: 'true'
     - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
       value: 'true'
+    - name: BLOCKSCOUT_VERSION
+      value: 4.1.1-beta
+    - name: RELEASE_LINK
+      value: https://github.com/cloudwalk/blockscout/releases/tag/v4.1.1-beta
     resources:
       limits:
         cpu: 1000m
