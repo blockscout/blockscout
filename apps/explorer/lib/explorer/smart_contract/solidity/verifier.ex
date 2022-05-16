@@ -12,6 +12,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   alias Explorer.Chain
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
+  require Logger
+
   @bytecode_hash_options ["default", "none", "bzzr1"]
 
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
@@ -33,9 +35,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           {:ok, _} = result ->
             {:cont, result}
 
-        {:error, error}
-        when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
-          {:halt, acc}
+          {:error, error}
+          when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
+            {:halt, acc}
 
           _ ->
             cur_params = Map.put(params, "evm_version", version)
@@ -209,6 +211,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       )
     end
   end
+
+  defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
   defp is_compiler_version_at_least_0_6_0?(compiler_version) do
     [version, _] = compiler_version |> String.split("+", parts: 2)
