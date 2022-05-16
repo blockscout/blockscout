@@ -424,7 +424,9 @@ defmodule Explorer.Chain.SmartContract do
   defp select_error_field(_), do: :contract_source_code
 
   def merge_twin_contract_with_changeset(%__MODULE__{} = twin_contract, %Changeset{} = _changeset) do
-    changeset(twin_contract, %{})
+    %__MODULE__{}
+    |> changeset(Map.from_struct(twin_contract))
+    |> Changeset.put_change(:autodetect_constructor_args, true)
   end
 
   def merge_twin_contract_with_changeset(nil, %Changeset{} = changeset) do
