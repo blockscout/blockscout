@@ -7,6 +7,7 @@
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5561](https://github.com/blockscout/blockscout/pull/5561) - Improve working with contracts implementations
 - [#5626](https://github.com/blockscout/blockscout/pull/5626) - Fix vyper compiler versions order
 - [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
 - [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
