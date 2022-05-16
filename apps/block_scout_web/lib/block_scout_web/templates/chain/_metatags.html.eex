@@ -1,5 +1,5 @@
 <title>
   <%= gettext("%{subnetwork} %{network} Explorer", subnetwork: LayoutView.subnetwork_title(), network: LayoutView.network_title()) %>
 </title>
-<meta name="description" content="Blockchain explorer for CloudWalk Testnet network">
+<meta name="description" content="Blockchain explorer for CloudWalk <%= LayoutView.subnetwork_title() %> network">
 <meta name="keywords" content="CloudWalk, blockchain, api, analytics, address, smart contract">
