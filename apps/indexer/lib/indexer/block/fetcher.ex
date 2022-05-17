@@ -181,7 +181,7 @@ defmodule Indexer.Block.Fetcher do
     with {:ok, celo_token} <- Util.get_address("GoldToken"),
          {:ok, stable_token_usd} <- Util.get_address("StableToken"),
          {:ok, stable_token_eur} <- Util.get_address("StableTokenEUR"),
-         {:ok, stable_token_real} <- Util.get_address("StableTokenREAL"),
+         {:ok, stable_token_real} <- Util.get_address("StableTokenBRL"),
          {:ok, oracle_address} <- Util.get_address("SortedOracles") do
       tokens = %{
         celo: celo_token,
