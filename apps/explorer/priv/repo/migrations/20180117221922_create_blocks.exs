@@ -1,6 +1,8 @@
 defmodule Explorer.Repo.Migrations.CreateBlocks do
   use Ecto.Migration
 
+  IO.puts("IN BLOCKS.EX")
+
   def change do
     create table(:blocks, primary_key: false) do
       add(:consensus, :boolean, null: false)
@@ -18,6 +20,9 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
       add(:size, :integer, null: false)
       add(:timestamp, :utc_datetime_usec, null: false)
       add(:total_difficulty, :numeric, precision: 50)
+
+      #Quai chain addition
+      add(:location, :string, null: false)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end

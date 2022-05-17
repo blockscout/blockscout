@@ -1,10 +1,25 @@
+defmodule Quaihelper do
+  defmacro system_env(name) do
+    env_name = Atom.to_string(name) |> String.upcase
+      quote do
+        def unquote(name)() do
+          System.get_env(unquote(env_name)) || nil
+        end
+      end
+  end
+end
+
 defmodule Explorer.Chain.Block do
+
+  IO.puts(System.get_env("QUAI_CHAIN"))
+  IO.puts("HERE")
+
   @moduledoc """
   A package of data that contains zero or more transactions, the hash of the previous block ("parent"), and optionally
   other data. Because each block (except for the initial "genesis block") points to the previous block, the data
   structure that they form is called a "blockchain".
   """
-
+  use Quaihelper
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Gas, Hash, PendingBlockOperation, Transaction, Wei}
@@ -47,7 +62,9 @@ defmodule Explorer.Chain.Block do
    * `total_difficulty` - the total `difficulty` of the chain until this block.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
+   * 'location'- QUAI chain
   """
+
   @type t :: %__MODULE__{
           consensus: boolean(),
           difficulty: difficulty(),
@@ -65,7 +82,8 @@ defmodule Explorer.Chain.Block do
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
           refetch_needed: boolean(),
           base_fee_per_gas: Wei.t(),
-          is_empty: boolean()
+          is_empty: boolean(),
+          location: String.t()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -82,6 +100,7 @@ defmodule Explorer.Chain.Block do
     field(:refetch_needed, :boolean)
     field(:base_fee_per_gas, Wei)
     field(:is_empty, :boolean)
+    field(:location, :string)
 
     timestamps()
 
@@ -136,9 +155,10 @@ defmodule Explorer.Chain.Block do
       b in subquery(consensus_blocks_query),
       left_join: r in subquery(validator_rewards),
       on: [block_hash: b.hash],
-      where: is_nil(r.block_hash)
+      where: is_nil(r.block_hash) and r.location == {:system, "QUAI_CHAIN"}
     )
   end
+
 
   @doc """
   Adds to the given block's query a `where` with conditions to filter by the type of block;

@@ -31,7 +31,7 @@ config :indexer,
   ETHEREUM_JSONRPC_HTTP_URL: "",
   ETHEREUM_JSONRPC_WS_URL: "",
   ETHEREUM_JSONRPC_TRACE_URL: "",
-
+  LOCATION: "",
 
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],
@@ -119,6 +119,7 @@ case System.get_env("QUAI_CHAIN") do
     Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8578")
     Application.put_env(:indexer, :ETHEREUM_JSONRPC_WS_URL, "http://localhost:8579")
     Application.put_env(:indexer, :ETHEREUM_JSONRPC_TRACE_URL, "http://localhost:8578")
+    Application.put_env(:indexer, :LOCATION, "REGION1")
 
   "REGION2" ->
     Application.put_env(:indexer, :ETHEREUM_JSONRPC_HTTP_URL, "http://localhost:8580")
