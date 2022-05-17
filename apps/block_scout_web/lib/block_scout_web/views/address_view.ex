@@ -288,6 +288,14 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def token_title(%Token{name: name, symbol: symbol, contract_address_hash: contract_address_hash} = token) do
+    token_title_inner(name, symbol, contract_address_hash, token)
+  end
+
+  def token_title(%{name: name, symbol: symbol, address_hash: contract_address_hash} = token) do
+    token_title_inner(name, symbol, contract_address_hash, token)
+  end
+
+  defp token_title_inner(name, symbol, contract_address_hash, token) do
     if Map.has_key?(token, :bridged) && token.bridged do
       bridged_token = Repo.get(BridgedToken, contract_address_hash)
       Chain.token_display_name_based_on_bridge_destination(name, symbol, bridged_token.foreign_chain_id)
@@ -295,8 +303,6 @@ defmodule BlockScoutWeb.AddressView do
       "#{name} (#{symbol})"
     end
   end
-
-  def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
