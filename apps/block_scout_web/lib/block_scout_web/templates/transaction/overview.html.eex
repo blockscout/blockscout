@@ -209,6 +209,7 @@
                 from_address_hash,
                 to: address_path(@conn, :show, from_address_hash)
               ) %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @from_tags %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                 additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                 clipboard_text: from_address_hash,

@@ -23,4 +23,5 @@ config :ex_twilio,
 config :logger, :account,
   level: :info,
   path: Path.absname("logs/prod/account.log"),
+  rotate: %{max_bytes: 52_428_800, keep: 19},
   metadata_filter: [fetcher: :account]
