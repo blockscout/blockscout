@@ -130,7 +130,7 @@ defmodule Explorer.Chain.Token do
           |> HTML.html_escape()
           |> HTML.safe_to_string()
 
-        put_change(changeset, key, String.trim(property))
+        put_change(changeset, key, String.trim(safe_property))
     end
   end
 
