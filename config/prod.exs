@@ -25,3 +25,12 @@ config :logger, :account,
   path: Path.absname("logs/prod/account.log"),
   rotate: %{max_bytes: 52_428_800, keep: 19},
   metadata_filter: [fetcher: :account]
+
+config :sentry,
+  environment_name: :prod,
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!(),
+  tags: %{
+    env: "production"
+  },
+  included_environments: [:prod]

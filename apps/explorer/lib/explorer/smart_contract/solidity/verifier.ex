@@ -26,33 +26,59 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     do: {:error, :contract_source_code}
 
   def evaluate_authenticity(address_hash, params) do
-    latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
-    evm_version = Map.get(params, "evm_version", latest_evm_version)
+    try do
+      latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
+      evm_version = Map.get(params, "evm_version", latest_evm_version)
 
-    all_versions = [evm_version | previous_evm_versions(evm_version)]
+      all_versions = [evm_version | previous_evm_versions(evm_version)]
 
-    all_versions_extra = all_versions ++ [evm_version]
+      all_versions_extra = all_versions ++ [evm_version]
 
-    Enum.reduce_while(all_versions_extra, false, fn version, acc ->
-      case acc do
-        {:ok, _} = result ->
-          {:cont, result}
+      result = Enum.reduce_while(all_versions_extra, false, fn version, acc ->
+        case acc do
+          {:ok, _} = result ->
+            {:cont, result}
 
-        {:error, :compiler_version} ->
-          {:halt, acc}
+          {:error, :compiler_version} ->
+            {:halt, acc}
 
-        {:error, :name} ->
-          {:halt, acc}
+          {:error, :name} ->
+            {:halt, acc}
 
-        _ ->
-          cur_params = Map.put(params, "evm_version", version)
-          {:cont, verify(address_hash, cur_params)}
-      end
-    end)
+          _ ->
+            cur_params = Map.put(params, "evm_version", version)
+            {:cont, verify(address_hash, cur_params)}
+        end
+      end)
+      debug_contract_verification_with_sentry(result, params, address_hash)
+      result
+    rescue
+      exception ->
+        Sentry.capture_exception(exception, [stacktrace: __STACKTRACE__, extra: %{address_hash: address_hash, params: params}])
+    end
+  end
+
+  defp debug_contract_verification_with_sentry(result, params, address_hash) do
+    if !match?({:ok, _}, result) do
+      Sentry.capture_message("verification failed", extra: %{result: Kernel.inspect(result, limit: :infinity, printable_limit: :infinity), params: params, address_hash: address_hash})
+    end
+  end
+
+  defp debug_contract_json_verification_with_sentry(result, params, address_hash, json) do
+    if !match?({:ok, _, _}, result) do
+      Sentry.capture_message("json verification failed", extra: %{result: Kernel.inspect(result, limit: :infinity, printable_limit: :infinity), params: params, address_hash: address_hash, json_input: json})
+    end
   end
 
   def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
-    verify(address_hash, params, json_input)
+    try do
+      result = verify(address_hash, params, json_input)
+      debug_contract_json_verification_with_sentry(result, params, address_hash, json_input)
+      result
+    rescue
+      exception ->
+        Sentry.capture_exception(exception, [stacktrace: __STACKTRACE__, extra: %{address_hash: address_hash, params: params, json_input: json_input}])
+    end
   end
 
   defp verify(address_hash, params, json_input) do
