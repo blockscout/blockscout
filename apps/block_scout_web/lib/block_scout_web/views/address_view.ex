@@ -296,6 +296,8 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
+  def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
+
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
     trimmed_hash(string_hash)
