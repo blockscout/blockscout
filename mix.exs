@@ -46,7 +46,8 @@ defmodule BlockScout.Mixfile do
     [
       # to match behavior of `mix test` in `apps/indexer`, which needs to not start applications for `indexer` to
       # prevent its supervision tree from starting, which is undesirable in test
-      test: "test --no-start"
+      test: "test --no-start",
+      data_migrate: "ecto.migrate --migrations-path=apps/explorer/priv/repo/data_migrations -n 1 --log-sql"
     ] ++ env_aliases(env)
   end
 
