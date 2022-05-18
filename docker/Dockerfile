@@ -1,6 +1,6 @@
-FROM bitwalker/alpine-elixir-phoenix:1.13
+FROM bitwalker/alpine-elixir-phoenix:1.12
 
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file
 
 ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc
 ENV GLIBC_VERSION=2.30-r0
@@ -19,12 +19,6 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="$HOME/.cargo/bin:${PATH}"
 ENV RUSTFLAGS="-C target-feature=-crt-static"
 
-EXPOSE 4000
-
-ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
-
 # Cache elixir deps
 ADD mix.exs mix.lock ./
 ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
@@ -32,7 +26,7 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
-RUN mix do deps.get, local.rebar --force, deps.compile
+RUN HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 
@@ -61,3 +55,15 @@ RUN cd apps/explorer/ && \
     apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
 RUN mix phx.digest
+
+RUN cd apps/block_scout_web && \
+    mix phx.gen.cert blockscout blockscout.local && \
+    cd -
+
+COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY docker-compose/envs/common-blockscout.env $HOME.env
+RUN source $HOME.env
+
+EXPOSE 4000
+
+ENTRYPOINT ["docker-entrypoint"]

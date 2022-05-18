@@ -25,11 +25,14 @@ services:
     container_name: 'blockscout'
     links:
       - db:database
-    command: 'mix do ecto.create, ecto.migrate, phx.server'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ./envs/common-blockscout.env
+    environment:
+      SECRET_KEY_BASE: 'test'
+      DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
+      SUBNETWORK: "the padok's chain"
     ports:
       - 4000:4000
 
