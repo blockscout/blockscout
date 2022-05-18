@@ -63,7 +63,7 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
     |> celo_contract_event_to_concrete_event()
   end
 
-  @doc "Convert concrete event to CeloContractEvent insertion parameters"
+  @doc "Convert concrete event to CeloContractEvent changeset parameters"
   def event_to_contract_event_params(events) when is_list(events) do
     events |> Enum.map(&event_to_contract_event_params/1)
   end

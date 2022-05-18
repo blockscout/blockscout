@@ -30,8 +30,10 @@ defmodule Explorer.Celo.ContractEvents.Common do
     |> Enum.map(fn
       # list of bytes to 2d list of ints
       {d, {:array, {:bytes, _}}} -> d |> Enum.map(&:binary.bin_to_list(&1))
+      {d, {:array, :bytes}} -> d |> Enum.map(&:binary.bin_to_list(&1))
       # bytes to list of ints
       {d, {:bytes, _}} -> :binary.bin_to_list(d)
+      {d, :bytes} -> :binary.bin_to_list(d)
       {d, _} -> d
     end)
   end
@@ -43,9 +45,8 @@ defmodule Explorer.Celo.ContractEvents.Common do
     address
   end
 
-  defp convert_result(result, {:bytes, _size}) do
-    :binary.bin_to_list(result)
-  end
+  defp convert_result(result, {:bytes, _size}), do: :binary.bin_to_list(result)
+  defp convert_result(result, :bytes), do: :binary.bin_to_list(result)
 
   def extract_common_event_params(event) do
     # set full hashes
