@@ -103,7 +103,7 @@ defmodule Explorer.Chain do
   # seconds
   @check_bytecode_interval 86_400
 
-  @limit_showing_transaсtions 10_000
+  @limit_showing_transactions 10_000
   @default_page_size 50
 
   @typedoc """
@@ -3360,7 +3360,7 @@ defmodule Explorer.Chain do
   def transactions_available_count do
     Transaction
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> limit(^@limit_showing_transaсtions)
+    |> limit(^@limit_showing_transactions)
     |> Repo.aggregate(:count, :hash)
   end
 
@@ -3465,6 +3465,8 @@ defmodule Explorer.Chain do
     Hash.Address.cast(string)
   end
 
+  def string_to_address_hash(_), do: :error
+
   @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
 
@@ -3490,6 +3492,8 @@ defmodule Explorer.Chain do
     Hash.Full.cast(string)
   end
 
+  def string_to_block_hash(_), do: :error
+
   @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
 
@@ -3514,6 +3518,8 @@ defmodule Explorer.Chain do
   def string_to_transaction_hash(string) when is_binary(string) do
     Hash.Full.cast(string)
   end
+
+  def string_to_transaction_hash(_), do: :error
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
@@ -4399,9 +4405,9 @@ defmodule Explorer.Chain do
   defp proccess_page_number(number), do: number
 
   defp page_in_bounds?(page_number, page_size),
-    do: page_size <= @limit_showing_transaсtions && @limit_showing_transaсtions - page_number * page_size >= 0
+    do: page_size <= @limit_showing_transactions && @limit_showing_transactions - page_number * page_size >= 0
 
-  def limit_shownig_transactions, do: @limit_showing_transaсtions
+  def limit_showing_transactions, do: @limit_showing_transactions
 
   defp join_association(query, [{association, nested_preload}], necessity)
        when is_atom(association) and is_atom(nested_preload) do
