@@ -833,7 +833,7 @@ defmodule Explorer.Chain do
 
     has_uncles? = is_list(block.uncles) and not Enum.empty?(block.uncles)
 
-    burned_fees = base_fee_per_gas && Wei.mult(base_fee_per_gas, burned_fee_counter)
+    burned_fees = base_fee_per_gas && Wei.mult(%Wei{value: Decimal.new(base_fee_per_gas)}, burned_fee_counter)
     uncle_reward = (has_uncles? && Wei.mult(static_reward, Decimal.from_float(@uncle_reward_coef))) || nil
 
     %{

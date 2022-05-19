@@ -3421,7 +3421,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "without uncles", %{emission_reward: %{reward: reward, block_range: range}} do
-      block = build(:block, number: range.from, base_fee_per_gas: %Wei{value: Decimal.new(5)}, uncles: [])
+      block = build(:block, number: range.from, base_fee_per_gas: 5, uncles: [])
 
       tx1 = build(:transaction, gas_price: 1, gas_used: 1, block_number: block.number, block_hash: block.hash)
       tx2 = build(:transaction, gas_price: 1, gas_used: 2, block_number: block.number, block_hash: block.hash)
