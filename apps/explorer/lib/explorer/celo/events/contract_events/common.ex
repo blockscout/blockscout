@@ -49,27 +49,25 @@ defmodule Explorer.Celo.ContractEvents.Common do
   defp convert_result(result, :bytes), do: :binary.bin_to_list(result)
 
   def extract_common_event_params(event) do
-    # set full hashes
-    [:transaction_hash]
-    |> Enum.into(%{}, fn key ->
-      case Map.get(event, key) do
+    # handle optional transaction hash
+    common_properties =
+      case Map.get(event, :__transaction_hash) do
         nil ->
-          {key, nil}
+          %{transaction_hash: nil}
 
         v ->
           {:ok, hsh} = Full.cast(v)
-          {key, hsh}
+          %{transaction_hash: hsh}
       end
-    end)
-    # set contract address hash
-    |> then(fn map ->
-      {:ok, hsh} = Address.cast(event.contract_address_hash)
-      Map.put(map, :contract_address_hash, hsh)
-    end)
-    |> Map.put(:name, event.name)
-    |> Map.put(:topic, event.topic)
-    |> Map.put(:block_number, event.block_number)
-    |> Map.put(:log_index, event.log_index)
+
+    {:ok, hsh} = Address.cast(event.__contract_address_hash)
+
+    common_properties
+    |> Map.put(:contract_address_hash, hsh)
+    |> Map.put(:name, event.__name)
+    |> Map.put(:topic, event.__topic)
+    |> Map.put(:block_number, event.__block_number)
+    |> Map.put(:log_index, event.__log_index)
   end
 
   @doc "Store address in postgres json format to make joins work with indices"

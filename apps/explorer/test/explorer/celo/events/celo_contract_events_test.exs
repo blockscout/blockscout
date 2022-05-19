@@ -5,6 +5,7 @@ defmodule Explorer.Celo.Events.CeloContractEventsTest do
   alias Explorer.Celo.ContractEvents.EventMap
   alias Explorer.Celo.ContractEvents.Reserve.AssetAllocationSetEvent
   alias Explorer.Chain.{Address, CeloContractEvent, Log}
+  alias Explorer.Test.TestParamCollisionEvent
 
   describe "overall generic tests" do
     @tag :skip
@@ -15,14 +16,58 @@ defmodule Explorer.Celo.Events.CeloContractEventsTest do
         |> MapSet.new()
 
       blockscout_events =
-        EventTransformer.__protocol__(:impls)
-        |> then(fn {:consolidated, modules} -> Enum.map(modules, & &1.name()) end)
+        EventMap.map()
+        |> Map.values()
+        |> Enum.map(fn module -> module |> Atom.to_string() |> String.split(".") |> List.last() end)
         |> MapSet.new()
 
       missing_events = MapSet.difference(exportisto_events, blockscout_events)
 
       assert MapSet.equal?(MapSet.new(), missing_events),
              "Blockscout events should be a superset of exsportisto events, found #{Enum.count(missing_events)} missing events: #{Enum.join(missing_events, ", ")}"
+    end
+
+    test "handling new events with property name collisions" do
+      test_name = "event_parameter_test_name"
+      test_topic = "event_parameter_test_topic"
+      test_log_index = 555
+      test_block_number = 444
+      test_transaction_hash = "0x00000000000000000000000088c1c759600ec3110af043c183a2472ab32d099c"
+
+      data =
+        ABI.TypeEncoder.encode(
+          [test_name, test_topic, test_log_index, test_block_number],
+          [:string, :string, {:uint, 256}, {:uint, 256}],
+          :output
+        )
+        |> Base.encode16(case: :lower)
+
+      test_params = %{
+        address_hash: "0x765de816845861e75a25fca122bb6898b8b1282a",
+        block_hash: "0x42b21f09e9956d1a01195b1ca461059b2705fe850fc1977bd7182957e1b390d3",
+        block_number: 10_913_664,
+        data: "0x" <> data,
+        first_topic: TestParamCollisionEvent.topic(),
+        fourth_topic: nil,
+        index: 8,
+        second_topic: test_transaction_hash,
+        third_topic: nil,
+        transaction_hash: "0xb8960575a898afa8a124cd7414f1261109a119dba3bed4489393952a1556a5f0"
+      }
+
+      event = TestParamCollisionEvent |> struct!() |> EventTransformer.from_params(test_params)
+
+      assert(
+        event.__name == TestParamCollisionEvent.name(),
+        "Event name should be available with underscored property name"
+      )
+
+      assert(event.name == test_name, "Generated property value should be available under the name")
+
+      celo_event = event |> EventTransformer.to_celo_contract_event_params()
+
+      assert(celo_event.name == TestParamCollisionEvent.name(), "CeloContractEvent name should be name of the event")
+      assert(celo_event.params.name == test_name, "CeloContractEvent params should contain event property")
     end
   end
 

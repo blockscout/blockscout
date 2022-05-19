@@ -39,7 +39,7 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       assert result.value == 411_618_438_366_361_072_744
       assert to_string(result.group) == "0xb33e9e01e561a1da60f7cb42508500e571afb6eb"
-      assert result.log_index == 573
+      assert result.__log_index == 573
     end
   end
 
@@ -57,9 +57,9 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_number: 172_800,
-          log_index: log_1_1.index,
-          contract_address_hash: contract_address_hash,
+          __block_number: 172_800,
+          __log_index: log_1_1.index,
+          __contract_address_hash: contract_address_hash,
           group: group_address_1_hash,
           value: 650
         }
@@ -67,10 +67,10 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %ValidatorGroupVoteActivatedEvent{
-          block_number: 172_800,
-          log_index: log_1_2.index,
+          __block_number: 172_800,
+          __log_index: log_1_2.index,
           account: group_address_1_hash,
-          contract_address_hash: contract_address_hash,
+          __contract_address_hash: contract_address_hash,
           group: group_address_1_hash,
           units: 10000,
           value: 650
@@ -79,9 +79,9 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_number: 172_800,
-          log_index: log_1_3.index,
-          contract_address_hash: contract_address_hash,
+          __block_number: 172_800,
+          __log_index: log_1_3.index,
+          __contract_address_hash: contract_address_hash,
           group: group_address_2_hash,
           value: 650
         }
@@ -89,9 +89,9 @@ defmodule Explorer.Celo.Events.EpochRewardsDistributedToVotersEventTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_number: 190_080,
-          log_index: log_2.index,
-          contract_address_hash: contract_address_hash,
+          __block_number: 190_080,
+          __log_index: log_2.index,
+          __contract_address_hash: contract_address_hash,
           group: group_address_2_hash,
           value: 650
         }

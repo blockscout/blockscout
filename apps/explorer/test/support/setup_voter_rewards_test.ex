@@ -21,10 +21,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: block_1_number,
-        log_index: log_1.index,
+        __block_number: block_1_number,
+        __log_index: log_1.index,
         account: voter_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_hash,
         units: 1000,
         value: 650
@@ -65,10 +65,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: block_4_number,
-        log_index: log_4.index,
+        __block_number: block_4_number,
+        __log_index: log_4.index,
         account: voter_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_hash,
         units: 1000,
         value: 250
@@ -95,10 +95,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupActiveVoteRevokedEvent{
-        block_number: block_6_number,
-        log_index: log_6.index,
+        __block_number: block_6_number,
+        __log_index: log_6.index,
         account: voter_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_hash,
         units: 1000,
         value: 1075
@@ -169,10 +169,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: 10_692_863,
-        log_index: log_1.index,
+        __block_number: 10_692_863,
+        __log_index: log_1.index,
         account: voter_1_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_1_hash,
         units: 1000,
         value: 650
@@ -184,10 +184,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: 10_744_703,
-        log_index: log_2.index,
+        __block_number: 10_744_703,
+        __log_index: log_2.index,
         account: voter_1_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_2_hash,
         units: 1000,
         value: 250
@@ -199,10 +199,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: 10_779_263,
-        log_index: log_3.index,
+        __block_number: 10_779_263,
+        __log_index: log_3.index,
         account: voter_2_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_1_hash,
         units: 1000,
         value: 650
@@ -252,10 +252,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: 10_692_863,
-        log_index: log_1.index,
+        __block_number: 10_692_863,
+        __log_index: log_1.index,
         account: voter_1_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_1_hash,
         units: 1000,
         value: 650
@@ -267,10 +267,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: 10_744_703,
-        log_index: log_2.index,
+        __block_number: 10_744_703,
+        __log_index: log_2.index,
         account: voter_1_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_2_hash,
         units: 1000,
         value: 250
@@ -282,10 +282,10 @@ defmodule Explorer.SetupVoterRewardsTest do
 
     insert(:contract_event, %{
       event: %ValidatorGroupVoteActivatedEvent{
-        block_number: 10_761_983,
-        log_index: log_3.index,
+        __block_number: 10_761_983,
+        __log_index: log_3.index,
         account: voter_2_hash,
-        contract_address_hash: contract_address_hash,
+        __contract_address_hash: contract_address_hash,
         group: group_1_hash,
         units: 1000,
         value: 650

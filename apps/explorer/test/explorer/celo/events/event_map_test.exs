@@ -88,9 +88,9 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
       contract = insert(:core_contract)
 
       event = %ValidatorGroupActiveVoteRevokedEvent{
-        block_number: 77,
-        log_index: log.index,
-        contract_address_hash: contract.address_hash,
+        __block_number: 77,
+        __log_index: log.index,
+        __contract_address_hash: contract.address_hash,
         account: address_hash(),
         group: address_hash(),
         units: 6_969_696_969,
@@ -118,6 +118,8 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
         EventTransformer.__protocol__(:impls)
         |> then(fn {:consolidated, modules} -> Enum.map(modules, & &1.topic()) end)
         |> MapSet.new()
+        # only for test suite - not a real event
+        |> MapSet.delete(Explorer.Test.TestParamCollisionEvent.topic())
 
       assert MapSet.subset?(contract_events_topic_set, event_map_topic_set)
     end

@@ -72,9 +72,9 @@ defmodule Indexer.Fetcher.CeloValidatorGroupVotesTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_number: 172_800,
-          contract_address_hash: contract_address_hash,
-          log_index: log_1.index,
+          __block_number: 172_800,
+          __contract_address_hash: contract_address_hash,
+          __log_index: log_1.index,
           group: group_1_hash,
           value: 650
         }
@@ -85,9 +85,9 @@ defmodule Indexer.Fetcher.CeloValidatorGroupVotesTest do
 
       insert(:contract_event, %{
         event: %EpochRewardsDistributedToVotersEvent{
-          block_number: 190_080,
-          contract_address_hash: contract_address_hash,
-          log_index: log_2.index,
+          __block_number: 190_080,
+          __contract_address_hash: contract_address_hash,
+          __log_index: log_2.index,
           group: group_2_hash,
           value: 650
         }

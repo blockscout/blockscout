@@ -148,8 +148,8 @@ defmodule Indexer.Block.Fetcher do
       %{
         name: event.identifier,
         address_hash: new_contract_address,
-        block_number: event.block_number,
-        log_index: event.log_index
+        block_number: event.__block_number,
+        log_index: event.__log_index
       }
     end)
     |> tap(fn new_contracts ->
