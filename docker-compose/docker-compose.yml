@@ -15,7 +15,7 @@ services:
   blockscout:
     depends_on:
       - db
-    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    image: eu.gcr.io/tooling-349915/blockscout:v0.1.11
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
@@ -32,7 +32,6 @@ services:
     environment:
       SECRET_KEY_BASE: 'test'
       DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
-      SUBNETWORK: "the padok's chain"
     ports:
       - 4000:4000
 

@@ -20,15 +20,15 @@ ENV PATH="$HOME/.cargo/bin:${PATH}"
 ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 # Cache elixir deps
-ADD mix.exs mix.lock ./
-ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
-ADD apps/explorer/mix.exs ./apps/explorer/
-ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
-ADD apps/indexer/mix.exs ./apps/indexer/
+COPY mix.exs mix.lock ./
+COPY apps/block_scout_web/mix.exs ./apps/block_scout_web/
+COPY apps/explorer/mix.exs ./apps/explorer/
+COPY apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
+COPY apps/indexer/mix.exs ./apps/indexer/
 
 RUN HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix do deps.get, local.rebar --force, deps.compile
 
-ADD . .
+COPY . .
 
 ARG COIN
 RUN if [ "$COIN" != "" ]; then \
@@ -61,8 +61,6 @@ RUN cd apps/block_scout_web && \
     cd -
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY docker-compose/envs/common-blockscout.env $HOME.env
-RUN source $HOME.env
 
 EXPOSE 4000
 
