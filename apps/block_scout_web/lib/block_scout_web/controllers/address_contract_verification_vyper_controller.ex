@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressContractVerificationVyperController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Controller 
+  alias BlockScoutWeb.Controller
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Vyper.PublisherWorker}
