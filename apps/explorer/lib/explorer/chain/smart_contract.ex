@@ -423,10 +423,11 @@ defmodule Explorer.Chain.SmartContract do
   defp select_error_field(:name), do: :name
   defp select_error_field(_), do: :contract_source_code
 
-  def merge_twin_contract_with_changeset(%__MODULE__{} = twin_contract, %Changeset{} = _changeset) do
+  def merge_twin_contract_with_changeset(%__MODULE__{} = twin_contract, %Changeset{} = changeset) do
     %__MODULE__{}
     |> changeset(Map.from_struct(twin_contract))
     |> Changeset.put_change(:autodetect_constructor_args, true)
+    |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
   end
 
   def merge_twin_contract_with_changeset(nil, %Changeset{} = changeset) do
@@ -442,9 +443,11 @@ defmodule Explorer.Chain.SmartContract do
 
   def merge_twin_vyper_contract_with_changeset(
         %__MODULE__{is_vyper_contract: true} = twin_contract,
-        %Changeset{} = _changeset
+        %Changeset{} = changeset
       ) do
-    changeset(twin_contract, %{})
+    twin_contract
+    |> changeset(%{})
+    |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
   end
 
   def merge_twin_vyper_contract_with_changeset(%__MODULE__{is_vyper_contract: false}, %Changeset{} = changeset) do
