@@ -1,29 +1,27 @@
 <% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
-<% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "Vyper_contract" %>
-<% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
-<% contract_source_code_value = if metadata_for_verification, do: metadata_for_verification.contract_source_code, else: "" %>
+<% changeset = if assigns[:retrying], do: @changeset, else: SmartContract.merge_twin_vyper_contract_with_changeset(metadata_for_verification, @changeset) %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
   <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
   <div class="new-smart-contract-form">
       <h1 class="smart-contract-title"><%= gettext "New Vyper Smart Contract Verification" %></h1>
 
-      <%= form_for @changeset,
+      <%= form_for changeset,
           address_contract_verification_path(@conn, :create),
           [],
           fn f -> %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code.", contract_name_value: contract_name_value %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code." %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions, tooltip: "" %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_versions: @compiler_versions, tooltip: "" %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :contract_source_code, gettext("Enter the Vyper Contract Code") %>
             <div class="center-column">
-              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block", value: contract_source_code_value %>
+              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
               <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger form-error", "data-test": "contract-source-code-error" %>
             </div>
             <div class="smart-contract-form-group-tooltip"></div>

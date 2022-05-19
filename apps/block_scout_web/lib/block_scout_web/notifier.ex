@@ -67,7 +67,8 @@ defmodule BlockScoutWeb.Notifier do
               compiler_versions: compiler_versions,
               evm_versions: CodeCompiler.allowed_evm_versions(),
               address_hash: address_hash,
-              conn: conn
+              conn: conn,
+              retrying: true
             )
 
           {:error, result}

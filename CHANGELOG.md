@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
