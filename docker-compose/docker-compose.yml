@@ -15,7 +15,7 @@ services:
   blockscout:
     depends_on:
       - db
-    image: eu.gcr.io/tooling-349915/blockscout:v0.1.11
+    image: blockscout/blockscout
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
