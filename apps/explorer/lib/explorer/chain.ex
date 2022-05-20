@@ -19,6 +19,7 @@ defmodule Explorer.Chain do
       subquery: 1,
       union: 2,
       update: 2,
+      union_all: 2,
       where: 2,
       where: 3
     ]
@@ -103,8 +104,8 @@ defmodule Explorer.Chain do
   # seconds
   @check_bytecode_interval 86_400
 
-  @limit_showing_transactions 50_000
-  @limit_showing_address_transaсtions 50_000
+  @limit_showing_transaсtions 10_000
+  @limit_showing_address_transaсtions 10_000
   @default_page_size 50
   # seconds
   @check_bytecode_interval 86_400
@@ -349,7 +350,7 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     transactions_count =
-      if paging_options.page_number == 1,
+      if is_nil(paging_options.key) or paging_options.page_number == 1,
         do: address_to_available_transactions_count(address_hash, options),
         else: nil
 
@@ -369,14 +370,30 @@ defmodule Explorer.Chain do
       options
       |> Keyword.get(:paging_options, @default_paging_options)
 
-    Transaction
-    |> Transaction.not_dropped_or_replaced_transacions()
-    |> Transaction.matching_address_query(direction, address_hash)
-    |> order_by([transaction],
-      desc: transaction.block_number,
-      desc: transaction.index
-    )
-    |> handle_random_access_paging_options(paging_options)
+    confirmed_transactions_query =
+      paging_options
+      |> fetch_confirmed_transactions_rap()
+      |> Transaction.not_dropped_or_replaced_transacions()
+      |> Transaction.matching_address_query(direction, address_hash)
+
+    pending_transactions_query =
+      paging_options
+      |> fetch_pending_transactions_rap()
+      |> Transaction.not_dropped_or_replaced_transacions()
+      |> Transaction.matching_address_query(direction, address_hash)
+
+    final_query =
+      if match?(%PagingOptions{is_pending_tx: true}, paging_options) or
+           paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1 do
+        pending_transactions_query
+        |> subquery()
+        |> union_all(^confirmed_transactions_query)
+      else
+        confirmed_transactions_query
+      end
+
+    final_query
+    |> handle_page(paging_options)
     |> join_associations(necessity_by_association)
   end
 
@@ -3273,10 +3290,11 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    total_transactions_count = if paging_options.page_number == 1, do: transactions_available_count(), else: nil
+    total_transactions_count =
+      if is_nil(paging_options.key) or paging_options.page_number == 1, do: transactions_available_count(), else: nil
 
     fetched_transactions =
-      if paging_options.page_number == 1 do
+      if is_nil(paging_options.key) or paging_options.page_number == 1 do
         paging_options.page_size
         |> Kernel.+(1)
         |> Transactions.take_enough()
@@ -4286,6 +4304,78 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
+  defp fetch_confirmed_transactions_rap(paging_options) do
+    base_query =
+      Transaction
+      |> Transaction.not_pending_transactions()
+      |> order_by([transaction],
+        desc: transaction.block_number,
+        desc: transaction.index
+      )
+
+    final_query =
+      case paging_options do
+        %PagingOptions{is_pending_tx: true} ->
+          base_query
+
+        _ ->
+          base_query
+          |> handle_random_access_paging_options_without_handle_page(paging_options)
+      end
+
+    final_query
+    |> add_limit_with_page_size(paging_options)
+  end
+
+  defp fetch_pending_transactions_rap(paging_options) do
+    base_query =
+      Transaction
+      |> Transaction.pending_transactions()
+      |> order_by([transaction],
+        desc: transaction.inserted_at,
+        desc: transaction.hash
+      )
+
+    final_query =
+      case paging_options do
+        %PagingOptions{is_pending_tx: true} ->
+          base_query
+          |> handle_random_access_paging_options_without_handle_page(paging_options)
+
+        _ ->
+          base_query
+      end
+
+    final_query
+    |> add_limit_with_page_size(paging_options)
+  end
+
+  defp add_limit_with_page_size(query, %PagingOptions{page_number: page_number} = paging_options) do
+    page_size = Map.get(paging_options, :page_size, @default_page_size)
+
+    will_use_both_queries? =
+      match?(%PagingOptions{is_pending_tx: true}, paging_options) or
+        paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1
+
+    cond do
+      will_use_both_queries? and page_in_bounds?(page_number, page_size) && proccess_page_number(page_number) == 1 ->
+        query
+        |> limit(^(page_size + 1))
+
+      page_in_bounds?(page_number, page_size) ->
+        query
+
+      will_use_both_queries? ->
+        query
+        |> limit(^(@default_page_size + 1))
+
+      true ->
+        query
+    end
+  end
+
+  defp add_limit_with_page_size(query, _), do: query
+
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
@@ -4324,11 +4414,24 @@ defmodule Explorer.Chain do
   end
 
   defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
-    do: limit(query, ^@default_page_size)
+    do: handle_random_access_paging_options_without_handle_page(query, empty_options)
 
   defp handle_random_access_paging_options(query, paging_options) do
     query
+    |> handle_random_access_paging_options_without_handle_page(paging_options)
     |> handle_page(paging_options)
+  end
+
+  defp handle_random_access_paging_options_without_handle_page(query, empty_options)
+       when empty_options in [nil, [], %{}],
+       do: limit(query, ^(@default_page_size + 1))
+
+  defp handle_random_access_paging_options_without_handle_page(query, paging_options) do
+    query
+    |> (&if(paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1,
+          do: &1,
+          else: page_transaction(&1, paging_options)
+        )).()
   end
 
   defp handle_page(query, paging_options) do
@@ -4338,16 +4441,16 @@ defmodule Explorer.Chain do
     cond do
       page_in_bounds?(page_number, page_size) && page_number == 1 ->
         query
-        |> limit(^page_size)
+        |> limit(^(page_size + 1))
 
       page_in_bounds?(page_number, page_size) ->
         query
         |> limit(^page_size)
-        |> offset(^((page_number - 1) * page_size))
+        |> offset(^((page_number - 2) * page_size))
 
       true ->
         query
-        |> limit(^@default_page_size)
+        |> limit(^(@default_page_size + 1))
     end
   end
 
@@ -7222,11 +7325,12 @@ defmodule Explorer.Chain do
   def address_to_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+    with true <- Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
       address_hash
       |> Reward.fetch_emission_rewards_tuples(paging_options)
     else
-      []
+      _ ->
+        []
     end
   end
 end
