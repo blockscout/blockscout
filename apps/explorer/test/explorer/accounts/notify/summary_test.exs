@@ -38,6 +38,53 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
              ]
     end
 
+    test "Pending Coin transaction (w/o block)" do
+      tx =
+        %Transaction{
+          from_address: from_address,
+          to_address: to_address,
+          hash: tx_hash
+        } = insert(:transaction)
+
+      assert Summary.process(tx) == []
+    end
+
+    test "Contract creation transaction" do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      block = insert(:block)
+
+      tx =
+        %Transaction{
+          from_address: from_address,
+          block_number: block_number,
+          hash: tx_hash
+        } =
+        :transaction
+        |> insert(from_address: address, to_address: nil)
+        |> with_contract_creation(contract_address)
+        |> with_block(block)
+
+      {_, fee} = Chain.fee(tx, :gwei)
+      amount = Wei.to(tx.value, :ether)
+
+      assert Summary.process(tx) == [
+               %Summary{
+                 amount: amount,
+                 block_number: block.number,
+                 from_address_hash: address.hash,
+                 method: "contract_creation",
+                 name: "POA",
+                 subject: "Contract creation",
+                 to_address_hash: contract_address.hash,
+                 transaction_hash: tx_hash,
+                 tx_fee: fee,
+                 type: "COIN"
+               }
+             ]
+    end
+
     test "ERC-20 Token transfer" do
       tx =
         %Transaction{

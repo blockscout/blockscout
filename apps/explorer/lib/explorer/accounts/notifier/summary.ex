@@ -81,7 +81,7 @@ defmodule Explorer.Accounts.Notifier.Summary do
 
   def fetch_summary(%Chain.Transaction{block_number: nil}), do: :nothing
 
-  def fetch_summary(%Chain.Transaction{} = transaction) do
+  def fetch_summary(%Chain.Transaction{created_contract_address_hash: nil} = transaction) do
     %Summary{
       transaction_hash: transaction.hash,
       method: method(transaction),
@@ -92,6 +92,21 @@ defmodule Explorer.Accounts.Notifier.Summary do
       tx_fee: fee(transaction),
       name: Application.get_env(:explorer, :coin_name),
       subject: "Coin transaction",
+      type: "COIN"
+    }
+  end
+
+  def fetch_summary(%Chain.Transaction{to_address_hash: nil} = transaction) do
+    %Summary{
+      transaction_hash: transaction.hash,
+      method: "contract_creation",
+      from_address_hash: transaction.from_address_hash,
+      to_address_hash: transaction.created_contract_address_hash,
+      block_number: transaction.block_number,
+      amount: amount(transaction),
+      tx_fee: fee(transaction),
+      name: Application.get_env(:explorer, :coin_name),
+      subject: "Contract creation",
       type: "COIN"
     }
   end
