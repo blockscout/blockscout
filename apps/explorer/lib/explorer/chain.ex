@@ -817,7 +817,7 @@ defmodule Explorer.Chain do
       Repo.one(
         from(
           er in EmissionReward,
-          where: fragment("int8range(?, ?) <@ ?", ^block_number, ^block_number, er.block_range),
+          where: fragment("int8range(?, ?) <@ ?", ^block_number, ^(block_number + 1), er.block_range),
           select: er.reward
         )
       ) || %Wei{value: Decimal.new(0)}
