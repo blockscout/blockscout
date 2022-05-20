@@ -3436,7 +3436,7 @@ defmodule Explorer.ChainTest do
         )
 
       expected_txn_fees = %Wei{value: Decimal.new(6)}
-      expected_burned_fees = %Wei{value: Decimal.new(15)}
+      expected_burned_fees = %Wei{value: Decimal.new(30)}
       expected_uncle_reward = %Wei{value: Decimal.new(0)}
 
       assert %{

@@ -824,7 +824,6 @@ defmodule Explorer.Chain do
 
     burned_fee_counter =
       transactions
-      |> Enum.filter(fn tx -> not is_nil(Map.get(tx, :max_priority_fee_per_gas)) end)
       |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
         gas_used
         |> Decimal.new()
