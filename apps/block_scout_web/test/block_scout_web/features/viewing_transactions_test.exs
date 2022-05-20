@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       |> refute_has(TransactionListPage.transaction(pending))
     end
 
-    test "viewing the pending transactions list", %{
+    test "viewing the pending tranasctions list", %{
       pending: pending,
       pending_contract: pending_contract,
       session: session
@@ -154,8 +154,6 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       session: session,
       transaction: transaction
     } do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
-
       session
       |> TransactionLogsPage.visit_page(transaction)
       |> TransactionLogsPage.click_address(lincoln)

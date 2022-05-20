@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.AddressTransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.AccessHelpers
-  alias Explorer.Chain
   alias Explorer.Chain.Address
 
   def format_current_filter(filter) do
