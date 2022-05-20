@@ -1,6 +1,6 @@
-defmodule Explorer.Celo.ContractEvents.Stabletoken.TransferCommentEvent do
+defmodule Explorer.Celo.ContractEvents.Common.TransferCommentEvent do
   @moduledoc """
-  Struct modelling the TransferComment event from the Stabletoken Celo core contract.
+  Struct modelling the TransferComment event from the Stabletoken, Goldtoken, Stabletokenbrl, Stabletokeneur Celo core contracts.
   """
 
   use Explorer.Celo.ContractEvents.Base,

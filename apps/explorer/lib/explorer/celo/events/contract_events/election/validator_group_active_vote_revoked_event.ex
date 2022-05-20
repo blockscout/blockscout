@@ -1,13 +1,6 @@
 defmodule Explorer.Celo.ContractEvents.Election.ValidatorGroupActiveVoteRevokedEvent do
   @moduledoc """
-  Struct modelling the Election.ValidatorGroupActiveVoteRevoked event
-
-  ValidatorGroupActiveVoteRevoked(
-      address indexed account,
-      address indexed group,
-      uint256 value,
-      uint256 units
-    );
+  Struct modelling the ValidatorGroupActiveVoteRevoked event from the Election Celo core contract.
   """
 
   use Explorer.Celo.ContractEvents.Base,
