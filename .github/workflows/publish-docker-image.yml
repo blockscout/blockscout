@@ -41,4 +41,4 @@ jobs:
           images: blockscout/blockscout
       
       - name: Build & Push Docker image
-        run: docker buildx build -t "blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}" -f ./docker/Dockerfile --push --platform=linux/arm64,linux/amd64 .
+        run: docker buildx build -t blockscout/blockscout:latest -t blockscout/blockscout:${{ env.RELEASE_VERSION }} -f ./docker/Dockerfile --push --platform=linux/arm64,linux/amd64 .
