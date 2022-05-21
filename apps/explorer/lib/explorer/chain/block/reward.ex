@@ -208,13 +208,6 @@ defmodule Explorer.Chain.Block.Reward do
     end
   end
 
-  defp join_associations(query) do
-    query
-    |> preload(:address)
-    |> join(:inner, [reward], block in assoc(reward, :block))
-    |> preload(:block)
-  end
-
   defp address_rewards_blocks_ranges_clause(query, min_block_number, max_block_number, paging_options) do
     if is_number(min_block_number) and max_block_number > 0 and min_block_number > 0 do
       cond do

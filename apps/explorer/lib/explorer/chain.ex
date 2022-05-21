@@ -103,7 +103,7 @@ defmodule Explorer.Chain do
   # seconds
   @check_bytecode_interval 86_400
 
-  @limit_showing_transaсtions 10_000
+  @limit_showing_transactions 10_000
   @default_page_size 50
   # seconds
   @check_bytecode_interval 86_400
