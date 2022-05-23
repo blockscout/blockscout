@@ -47,7 +47,6 @@ const appJs =
       'address-internal-transactions': './js/pages/address/internal_transactions.js',
       'address-logs': './js/pages/address/logs.js',
       'address-validations': './js/pages/address/validations.js',
-      'contract-read-write': './js/pages/address/contract_read_write.js',
       'validated-transactions': './js/pages/transactions.js',
       'pending-transactions': './js/pages/pending_transactions.js',
       'transaction': './js/pages/transaction.js',
