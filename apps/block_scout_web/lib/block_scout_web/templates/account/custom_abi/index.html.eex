@@ -2,7 +2,7 @@
 <section class="container">
   <div class="row">
     <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :custom_abis %>
-    <div class="col-md">
+    <div class="col-md-10">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title list-title-description header-account"><%= gettext "Custom ABIs" %> </h1>

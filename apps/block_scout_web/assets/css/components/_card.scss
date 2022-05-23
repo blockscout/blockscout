@@ -341,3 +341,7 @@ $card-tab-icon-color-active: #fff !default;
     display: inline-flex;
   }
 }
+
+.nav-pills .nav-link.active {
+  background-color: $primary;
+}
