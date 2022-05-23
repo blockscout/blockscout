@@ -17,7 +17,7 @@
               <% end %>
               <div class="form-group">
                 <%= label f, :name, gettext("Name"), class: "control-label", style: "font-size: 14px" %>
-                <%= text_input f, :name, class: "form-control", placeholder: gettext("Name this API key") %>
+                <%= text_input f, :name, class: "form-control", placeholder: gettext("Name this API key"), maxlength: 255 %>
                 <%= error_tag f, :name %>
               </div>
               <br>
