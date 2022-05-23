@@ -32,7 +32,7 @@
               additional_classes: ["token-wallet-icon"]
             %>
           <% end %>
-          <p class="mb-0 col-md-6 pl-0 pr-0 el-1"><%= token_name(token) %>
+          <p class="mb-0 col-md-6 pl-0 pr-0 el-1 flex-grow-2"><%= token_name(token) %>
           <%= if bridged_token && bridged_token.custom_metadata do %>
             <%= "(" <> bridged_token.custom_metadata <> ")" %>
           <% end %>
