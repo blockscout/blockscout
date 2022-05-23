@@ -18,6 +18,10 @@
           <a class="nav-link" id="custom-tab" data-toggle="pill" href="#custom" role="tab" aria-controls="pills-custom" aria-selected="false"><%= gettext "Custom" %></a>
         </li>
       </ul>
+    <% else %>
+      <%= if assigns[:custom_abi] do %>
+        <h2 class="card-misc-container"><%= gettext "Custom ABI from account" %></h2>
+      <% end %>
     <% end %>
     <%=
       for status <- ["error", "warning", "success", "question"] do
