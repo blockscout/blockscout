@@ -6,8 +6,18 @@ defmodule Explorer.Factory do
   import Ecto.Query
   import Kernel, except: [+: 2]
 
-  alias Bcrypt
-  alias Explorer.Accounts.{User, UserContact}
+  alias Comeonin.Bcrypt
+
+  alias Explorer.Accounts.{
+    User,
+    UserContact,
+    Identity,
+    TagAddress,
+    Watchlist,
+    WatchlistAddress,
+    WatchlistNotification
+  }
+
   alias Explorer.Admin.Administrator
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
 
@@ -36,6 +46,38 @@ defmodule Explorer.Factory do
 
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
+
+  def account_identity_factory do
+    %Identity{
+      uid: sequence("github|"),
+      email: sequence(:email, &"me-#{&1}@blockscout.com"),
+      name: sequence("John")
+    }
+  end
+
+  def account_watchlist_factory do
+    %Watchlist{
+      name: "default",
+      identity: build(:account_identity)
+    }
+  end
+
+  def account_watchlist_address_factory do
+    %WatchlistAddress{
+      name: "wallet",
+      watchlist: build(:account_watchlist),
+      address: build(:address),
+      watch_coin_input: true,
+      watch_coin_output: true,
+      watch_erc_20_input: true,
+      watch_erc_20_output: true,
+      watch_erc_721_input: true,
+      watch_erc_721_output: true,
+      watch_erc_1155_input: true,
+      watch_erc_1155_output: true,
+      notify_email: true
+    }
+  end
 
   def address_factory do
     %Address{
