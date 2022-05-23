@@ -340,7 +340,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:30
-msgid "Back to Custom ABIs (Cancel)"
+msgid "Back to Custom ABI (Cancel)"
 msgstr ""
 
 #, elixir-format
@@ -888,13 +888,13 @@ msgid "Create"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:13
-msgid "Create an API key to use with your RPC и EthRPC API requests."
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:13
+msgid "Create a Custom ABI to interact with contracts."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:13
-msgid "Create an Custom ABI to interact with contracts."
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:13
+msgid "Create an API key to use with your RPC и EthRPC API requests."
 msgstr ""
 
 #, elixir-format
@@ -946,15 +946,16 @@ msgid "Custom"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:19
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8 lib/block_scout_web/templates/account/custom_abi/index.html.eex:8
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:220
 msgid "Custom ABI"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/common/_nav.html.eex:19
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:8
-msgid "Custom ABIs"
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:25
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:23
+msgid "Custom ABI from account"
 msgstr ""
 
 #, elixir-format
@@ -1575,9 +1576,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:139
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:35
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:49
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:45 lib/block_scout_web/templates/address_read_contract/index.html.eex:34
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:42 lib/block_scout_web/templates/address_read_proxy/index.html.eex:12
-#: lib/block_scout_web/templates/address_write_contract/index.html.eex:32 lib/block_scout_web/templates/address_write_contract/index.html.eex:40
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:45 lib/block_scout_web/templates/address_read_contract/index.html.eex:41
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:49 lib/block_scout_web/templates/address_read_proxy/index.html.eex:12
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:39 lib/block_scout_web/templates/address_write_contract/index.html.eex:47
 #: lib/block_scout_web/templates/address_write_proxy/index.html.eex:12 lib/block_scout_web/templates/tokens/contract/index.html.eex:17
 msgid "Loading..."
 msgstr ""
@@ -3097,8 +3098,8 @@ msgid "Value sent in the native token (and USD) if applicable."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:18
-#: lib/block_scout_web/templates/address_write_contract/index.html.eex:16
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:15
 msgid "Verified"
 msgstr ""
 
@@ -3295,13 +3296,13 @@ msgid "You Staked:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:19
-msgid "You can create 15 Custom ABIs per account."
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:19
+msgid "You can create 3 API keys per account."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:19
-msgid "You can create 3 API keys per account."
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:19
+msgid "You can create up to 15 Custom ABIs per account."
 msgstr ""
 
 #, elixir-format
