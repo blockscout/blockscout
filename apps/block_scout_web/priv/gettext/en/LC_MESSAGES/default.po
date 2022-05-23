@@ -731,14 +731,14 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:13
+#, elixir-autogen, elixir-format
+msgid "Create a Custom ABI to interact with contracts."
+msgstr ""
+
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "Create an API key to use with your RPC и EthRPC API requests."
-msgstr ""
-
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:13
-#, elixir-autogen, elixir-format
-msgid "Create an Custom ABI to interact with contracts."
 msgstr ""
 
 #: lib/block_scout_web/views/internal_transaction_view.ex:26
@@ -768,16 +768,18 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:19
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:8
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:182
 #, elixir-autogen, elixir-format
 msgid "Custom ABI"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/common/_nav.html.eex:19
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:8
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:25
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:23
 #, elixir-autogen, elixir-format
-msgid "Custom ABIs"
+msgid "Custom ABI from account"
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:69
@@ -1380,11 +1382,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:133
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:49
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:45
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:34
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:42
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:41
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:49
 #: lib/block_scout_web/templates/address_read_proxy/index.html.eex:12
-#: lib/block_scout_web/templates/address_write_contract/index.html.eex:32
-#: lib/block_scout_web/templates/address_write_contract/index.html.eex:40
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:39
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:47
 #: lib/block_scout_web/templates/address_write_proxy/index.html.eex:12
 #: lib/block_scout_web/templates/tokens/contract/index.html.eex:17
 #, elixir-autogen, elixir-format
@@ -2609,8 +2611,8 @@ msgstr ""
 msgid "Value sent in the native token (and USD) if applicable."
 msgstr ""
 
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:18
-#: lib/block_scout_web/templates/address_write_contract/index.html.eex:16
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
+#: lib/block_scout_web/templates/address_write_contract/index.html.eex:15
 #, elixir-autogen, elixir-format
 msgid "Verified"
 msgstr ""
@@ -2778,14 +2780,14 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:19
-#, elixir-autogen, elixir-format
-msgid "You can create 15 Custom ABIs per account."
-msgstr ""
-
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:19
 #, elixir-autogen, elixir-format
 msgid "You can create 3 API keys per account."
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:19
+#, elixir-autogen, elixir-format
+msgid "You can create up to 15 Custom ABIs per account."
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:111

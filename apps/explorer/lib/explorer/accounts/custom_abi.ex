@@ -4,6 +4,7 @@ defmodule Explorer.Account.CustomABI do
   """
   use Explorer.Schema
 
+  alias ABI.FunctionSelector
   alias Explorer.Accounts.Identity
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash}
@@ -17,6 +18,8 @@ defmodule Explorer.Account.CustomABI do
   schema "account_custom_abis" do
     field(:name, :string)
     field(:abi, {:array, :map})
+    field(:given_abi, :string, virtual: true)
+    field(:abi_validating_error, :string, virtual: true)
     belongs_to(:identity, Identity)
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 
@@ -27,17 +30,20 @@ defmodule Explorer.Account.CustomABI do
 
   def changeset(%__MODULE__{} = custom_abi \\ %__MODULE__{}, attrs \\ %{}) do
     custom_abi
-    |> cast(check_is_abi_valid?(attrs), @attrs ++ [:id])
-    |> validate_required(@attrs)
+    |> cast(check_is_abi_valid?(attrs), @attrs ++ [:id, :given_abi, :abi_validating_error])
+    |> validate_required(@attrs, message: "Required")
+    |> validate_custom_abi()
     |> check_smart_contract_address()
-    |> unique_constraint([:identity_id, :address_hash])
+    |> unique_constraint([:identity_id, :address_hash],
+      message: "Custom ABI for this address has already been added before"
+    )
     |> custom_abi_count_constraint()
   end
 
   def changeset_without_constraints(%__MODULE__{} = custom_abi \\ %__MODULE__{}, attrs \\ %{}) do
     custom_abi
     |> cast(attrs, @attrs ++ [:id])
-    |> validate_required(@attrs)
+    |> validate_required(@attrs, message: "Required")
   end
 
   defp check_smart_contract_address(%Changeset{changes: %{address_hash: address_hash}} = custom_abi) do
@@ -58,30 +64,44 @@ defmodule Explorer.Account.CustomABI do
 
   defp check_smart_contract_address(custom_abi), do: custom_abi
 
+  defp validate_custom_abi(%Changeset{changes: %{given_abi: given_abi, abi_validating_error: error}} = custom_abi) do
+    custom_abi
+    |> add_error(:abi, error)
+    |> force_change(:abi, given_abi)
+  end
+
+  defp validate_custom_abi(custom_abi), do: custom_abi
+
   defp check_is_abi_valid?(%{abi: abi} = custom_abi) when is_binary(abi) do
     with {:ok, decoded} <- Jason.decode(abi),
          true <- is_list(decoded) do
-      custom_abi |> Map.put(:abi, decoded) |> check_is_abi_valid?()
+      custom_abi |> Map.put(:abi, decoded) |> check_is_abi_valid?(abi)
     else
       _ ->
-        Map.put(custom_abi, :abi, "")
+        custom_abi
+        |> Map.put(:abi, "")
+        |> Map.put(:given_abi, abi)
+        |> Map.put(:abi_validating_error, "Invalid format")
     end
   end
 
-  defp check_is_abi_valid?(%{abi: abi} = custom_abi) when is_list(abi) do
+  defp check_is_abi_valid?(custom_abi, given_abi \\ "")
+
+  defp check_is_abi_valid?(%{abi: abi} = custom_abi, given_abi) when is_list(abi) do
     with true <- length(abi) > 0,
          filtered_abi <- filter_abi(abi),
          true <- Enum.count(filtered_abi) > 0 do
       Map.put(custom_abi, :abi, filtered_abi)
     else
       _ ->
-        Map.put(custom_abi, :abi, "")
+        custom_abi
+        |> Map.put(:abi, "")
+        |> Map.put(:given_abi, given_abi)
+        |> Map.put(:abi_validating_error, "ABI must contain functions")
     end
   end
 
-  defp check_is_abi_valid?(custom_abi) do
-    Map.put(custom_abi, :abi, "")
-  end
+  defp check_is_abi_valid?(custom_abi, _), do: custom_abi
 
   defp filter_abi(abi_list) when is_list(abi_list) do
     Enum.filter(abi_list, &is_abi_function(&1))
@@ -89,6 +109,9 @@ defmodule Explorer.Account.CustomABI do
 
   defp is_abi_function(abi_item) when is_map(abi_item) do
     case ABI.parse_specification([abi_item], include_events?: false) do
+      [%FunctionSelector{type: :constructor}] ->
+        false
+
       [_] ->
         true
 
@@ -102,7 +125,7 @@ defmodule Explorer.Account.CustomABI do
        |> custom_abis_by_identity_id_query()
        |> limit(@max_abis_per_account)
        |> Repo.aggregate(:count, :id) >= @max_abis_per_account do
-      add_error(custom_abi, :name, "Max #{@max_abis_per_account} abis per account")
+      add_error(custom_abi, :name, "Max #{@max_abis_per_account} ABIs per account")
     else
       custom_abi
     end

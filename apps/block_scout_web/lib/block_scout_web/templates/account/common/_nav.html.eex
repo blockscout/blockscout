@@ -16,7 +16,7 @@
       <a class="<%= nav_class(@active_item, :api_keys) %>" href="<%= api_key_path(@conn, :index) %>"><%= gettext "API keys" %></a>
     </li>
     <li class="nav-item">
-      <a class="<%= nav_class(@active_item, :custom_abis) %>" href="<%= custom_abi_path(@conn, :index) %>"><%= gettext "Custom ABIs" %></a>
+      <a class="<%= nav_class(@active_item, :custom_abis) %>" href="<%= custom_abi_path(@conn, :index) %>"><%= gettext "Custom ABI" %></a>
     </li>
   </ul>
 </div>

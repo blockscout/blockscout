@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.SmartContractController do
   alias Explorer.Chain
   alias Explorer.SmartContract.{Reader, Writer}
 
+  import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
+
   @burn_address "0x0000000000000000000000000000000000000000"
 
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do
@@ -14,7 +16,7 @@ defmodule BlockScoutWeb.SmartContractController do
       }
     ]
 
-    is_custom_abi = convert_bool(params["is_custom_abi"])
+    is_custom_abi = parse_boolean(params["is_custom_abi"])
 
     with true <- ajax?(conn),
          {:custom_abi, false} <- {:custom_abi, is_custom_abi},
@@ -103,20 +105,18 @@ defmodule BlockScoutWeb.SmartContractController do
          false <- is_nil(custom_abi),
          abi <- custom_abi.abi,
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
-      debug(abi, "abi")
-
       functions =
         if action == "write" do
-          Writer.filter_write_functions(abi) |> debug("write filter")
+          Writer.filter_write_functions(abi)
         else
-          Reader.read_only_functions_from_abi(abi, address_hash) |> debug("read filter")
+          Reader.read_only_functions_from_abi(abi, address_hash)
         end
 
       read_functions_required_wallet =
         if action == "read" do
-          Reader.read_functions_required_wallet_from_abi(abi) |> debug("read wallet")
+          Reader.read_functions_required_wallet_from_abi(abi)
         else
-          [] |> debug("read filter")
+          []
         end
 
       contract_abi = Poison.encode!(abi)
@@ -145,14 +145,6 @@ defmodule BlockScoutWeb.SmartContractController do
     end
   end
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.debug(key)
-    Logger.debug(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   def show(conn, params) do
     address_options = [
       necessity_by_association: %{
@@ -164,15 +156,8 @@ defmodule BlockScoutWeb.SmartContractController do
       }
     ]
 
-    debug(params["is_custom_abi"], "params")
-    debug(convert_bool(params["is_custom_abi"]), "convert")
-
     custom_abi =
-      if convert_bool(params["is_custom_abi"]), do: AddressView.fetch_custom_abi(conn, params["id"]), else: nil
-
-    debug(custom_abi, "custom_abi")
-    debug(params["id"], "id")
-    debug(AddressView.fetch_custom_abi(conn, params["id"]), "custom_fetch")
+      if parse_boolean(params["is_custom_abi"]), do: AddressView.fetch_custom_abi(conn, params["id"]), else: nil
 
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
@@ -259,10 +244,4 @@ defmodule BlockScoutWeb.SmartContractController do
   defp is_integer?(integer) when is_integer(integer), do: true
 
   defp is_integer?(_), do: false
-
-  defp convert_bool("true"), do: true
-  defp convert_bool("false"), do: false
-  defp convert_bool(true), do: true
-  defp convert_bool(false), do: false
-  defp convert_bool(_), do: false
 end
