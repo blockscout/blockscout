@@ -1,6 +1,5 @@
 import $ from 'jquery'
 import omit from 'lodash.omit'
-import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
@@ -20,8 +19,6 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
-      if (state.beyondPageOne) return state
-
       return Object.assign({}, state, {
         channelDisconnected: true
       })
@@ -50,6 +47,8 @@ const elements = {
     render ($el, state) {
       if (state.newForm) {
         $el.replaceWith(state.newForm)
+        state.newForm = null
+
         $('button[data-button-loading="animation"]').click(_event => {
           $('#loading').removeClass('d-none')
         })
@@ -117,13 +116,10 @@ if ($contractVerificationPage.length) {
 
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
-  const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
 
   store.dispatch({
     type: 'PAGE_LOAD',
-    addressHash,
-    filter,
-    beyondPageOne: !!blockNumber
+    addressHash
   })
   connectElements({ store, elements })
 
