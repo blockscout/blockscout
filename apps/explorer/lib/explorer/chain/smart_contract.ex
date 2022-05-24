@@ -12,6 +12,7 @@ defmodule Explorer.Chain.SmartContract do
 
   use Explorer.Schema
 
+  alias Ecto.Changeset
   alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
   alias Explorer.Chain.SmartContract.ExternalLibrary
   alias Explorer.Repo
@@ -200,6 +201,7 @@ defmodule Explorer.Chain.SmartContract do
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
   * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
   * `implementation_name` - name of the proxy implementation
+  * `autodetect_constructor_args` - field was added for storing user's choice
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -218,7 +220,8 @@ defmodule Explorer.Chain.SmartContract do
           is_changed_bytecode: boolean,
           bytecode_checked_at: DateTime.t(),
           contract_code_md5: String.t(),
-          implementation_name: String.t() | nil
+          implementation_name: String.t() | nil,
+          autodetect_constructor_args: boolean | nil
         }
 
   schema "smart_contracts" do
@@ -239,6 +242,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
     field(:contract_code_md5, :string)
     field(:implementation_name, :string)
+    field(:autodetect_constructor_args, :boolean, virtual: true)
 
     has_many(
       :decompiled_smart_contracts,
@@ -320,14 +324,15 @@ defmodule Explorer.Chain.SmartContract do
         :is_changed_bytecode,
         :bytecode_checked_at,
         :contract_code_md5,
-        :implementation_name
+        :implementation_name,
+        :autodetect_constructor_args
       ])
       |> (&if(json_verification,
             do: &1,
             else: validate_required(&1, [:name, :compiler_version, :optimization, :address_hash, :contract_code_md5])
           )).()
 
-    field_to_put_message = if json_verification, do: :file, else: :contract_source_code
+    field_to_put_message = if json_verification, do: :file, else: select_error_field(error)
 
     if error_message do
       add_error(validated, field_to_put_message, error_message(error, error_message))
@@ -375,7 +380,7 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
-  defp upsert_contract_methods(%Ecto.Changeset{changes: %{abi: abi}} = changeset) do
+  defp upsert_contract_methods(%Changeset{changes: %{abi: abi}} = changeset) do
     ContractMethod.upsert_from_abi(abi, get_field(changeset, :address_hash))
 
     changeset
@@ -396,6 +401,63 @@ defmodule Explorer.Chain.SmartContract do
   defp error_message(:constructor_arguments), do: "Constructor arguments do not match, please try again."
   defp error_message(:name), do: "Wrong contract name, please try again."
   defp error_message(:json), do: "Invalid JSON file."
+
+  defp error_message(:autodetect_constructor_arguments_failed),
+    do: "Autodetection of constructor arguments failed. Please try to input constructor arguments manually."
+
+  defp error_message(:no_creation_data),
+    do: "The contract creation transaction has not been indexed yet. Please wait a few minutes and try again."
+
+  defp error_message(:unknown_error), do: "Unable to verify: unknown error."
+  defp error_message(:deployed_bytecode), do: "Deployed bytecode does not correspond to contract creation code."
   defp error_message(_), do: "There was an error validating your contract, please try again."
   defp error_message(:compilation, error_message), do: "There was an error compiling your contract: #{error_message}"
+
+  defp select_error_field(:no_creation_data), do: :address_hash
+  defp select_error_field(:compiler_version), do: :compiler_version
+
+  defp select_error_field(constructor_arguments)
+       when constructor_arguments in [:constructor_arguments, :autodetect_constructor_arguments_failed],
+       do: :constructor_arguments
+
+  defp select_error_field(:name), do: :name
+  defp select_error_field(_), do: :contract_source_code
+
+  def merge_twin_contract_with_changeset(%__MODULE__{} = twin_contract, %Changeset{} = changeset) do
+    %__MODULE__{}
+    |> changeset(Map.from_struct(twin_contract))
+    |> Changeset.put_change(:autodetect_constructor_args, true)
+    |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
+  end
+
+  def merge_twin_contract_with_changeset(nil, %Changeset{} = changeset) do
+    changeset
+    |> Changeset.put_change(:name, "")
+    |> Changeset.put_change(:optimization_runs, "200")
+    |> Changeset.put_change(:optimization, true)
+    |> Changeset.put_change(:evm_version, "default")
+    |> Changeset.put_change(:compiler_version, "latest")
+    |> Changeset.put_change(:contract_source_code, "")
+    |> Changeset.put_change(:autodetect_constructor_args, true)
+  end
+
+  def merge_twin_vyper_contract_with_changeset(
+        %__MODULE__{is_vyper_contract: true} = twin_contract,
+        %Changeset{} = changeset
+      ) do
+    twin_contract
+    |> changeset(%{})
+    |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
+  end
+
+  def merge_twin_vyper_contract_with_changeset(%__MODULE__{is_vyper_contract: false}, %Changeset{} = changeset) do
+    merge_twin_vyper_contract_with_changeset(nil, changeset)
+  end
+
+  def merge_twin_vyper_contract_with_changeset(nil, %Changeset{} = changeset) do
+    changeset
+    |> Changeset.put_change(:name, "Vyper_contract")
+    |> Changeset.put_change(:compiler_version, "latest")
+    |> Changeset.put_change(:contract_source_code, "")
+  end
 end
