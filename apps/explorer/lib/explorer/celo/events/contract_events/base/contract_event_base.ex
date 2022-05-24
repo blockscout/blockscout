@@ -120,7 +120,7 @@ defmodule Explorer.Celo.ContractEvents.Base do
             indexed_event_properties =
               unquote(Macro.escape(indexed_types_with_topics))
               |> Enum.map(fn {%{name: name, type: type}, topic} ->
-                {name, decode_event(params[topic], type)}
+                {name, decode_event_topic(params[topic], type)}
               end)
               |> Enum.into(%{})
 
