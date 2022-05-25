@@ -7,6 +7,7 @@ import Config
 
 # General application configuration
 config :explorer,
+  #chain_location: System.get_env("QUAI_CHAIN"),
   ecto_repos: [Explorer.Repo],
   coin: System.get_env("COIN") || "POA",
   coingecko_coin_id: System.get_env("COINGECKO_COIN_ID"),

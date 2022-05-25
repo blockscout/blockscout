@@ -1,7 +1,7 @@
 defmodule Explorer.Repo.Migrations.CreateBlocks do
   use Ecto.Migration
 
-  IO.puts("IN BLOCKS.EX")
+  #IO.puts("IN BLOCKS.EX")
 
   def change do
     create table(:blocks, primary_key: false) do

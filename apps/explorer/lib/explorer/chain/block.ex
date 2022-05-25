@@ -1,31 +1,21 @@
-defmodule Quaihelper do
-  defmacro system_env(name) do
-    env_name = Atom.to_string(name) |> String.upcase
-      quote do
-        def unquote(name)() do
-          System.get_env(unquote(env_name)) || nil
-        end
-      end
-  end
-end
 
 defmodule Explorer.Chain.Block do
-
-  IO.puts(System.get_env("QUAI_CHAIN"))
-  IO.puts("HERE")
+  #Macro to perform a check on quai chain location
+  defmacro quai_check(arg) do
+    check = arg == System.get_env("QUAI_CHAIN")
+    check
+  end
 
   @moduledoc """
   A package of data that contains zero or more transactions, the hash of the previous block ("parent"), and optionally
   other data. Because each block (except for the initial "genesis block") points to the previous block, the data
   structure that they form is called a "blockchain".
   """
-  use Quaihelper
   use Explorer.Schema
-
   alias Explorer.Chain.{Address, Gas, Hash, PendingBlockOperation, Transaction, Wei}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
+  @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas location)a
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -83,7 +73,7 @@ defmodule Explorer.Chain.Block do
           refetch_needed: boolean(),
           base_fee_per_gas: Wei.t(),
           is_empty: boolean(),
-          location: String.t()
+          location: String.t(),
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -123,6 +113,9 @@ defmodule Explorer.Chain.Block do
   end
 
   def changeset(%__MODULE__{} = block, attrs) do
+    #Adds quai chain to the data
+    attrs = Map.put(attrs, :location, System.get_env("QUAI_CHAIN"))
+
     block
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
@@ -131,12 +124,15 @@ defmodule Explorer.Chain.Block do
   end
 
   def number_only_changeset(%__MODULE__{} = block, attrs) do
+    #Adds quai chain to the data
+    attrs = Map.put(attrs, :location, System.get_env("QUAI_CHAIN"))
     block
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required([:number])
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
+
 
   def blocks_without_reward_query do
     consensus_blocks_query =
@@ -155,7 +151,7 @@ defmodule Explorer.Chain.Block do
       b in subquery(consensus_blocks_query),
       left_join: r in subquery(validator_rewards),
       on: [block_hash: b.hash],
-      where: is_nil(r.block_hash) and r.location == {:system, "QUAI_CHAIN"}
+      where: is_nil(r.block_hash) and quai_check(r.location)
     )
   end
 

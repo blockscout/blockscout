@@ -254,6 +254,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           timestamp: fragment("EXCLUDED.timestamp"),
           total_difficulty: fragment("EXCLUDED.total_difficulty"),
           # Don't update `hash` as it is used for the conflict target
+          location: fragment("EXCLUDED.location"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
         ]
@@ -264,7 +265,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           fragment("EXCLUDED.miner_hash <> ?", block.miner_hash) or fragment("EXCLUDED.nonce <> ?", block.nonce) or
           fragment("EXCLUDED.number <> ?", block.number) or fragment("EXCLUDED.parent_hash <> ?", block.parent_hash) or
           fragment("EXCLUDED.size <> ?", block.size) or fragment("EXCLUDED.timestamp <> ?", block.timestamp) or
-          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty)
+          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty) or
+          fragment("EXCLUDED.location <> ?", block.location)
     )
   end
 

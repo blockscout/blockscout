@@ -52,7 +52,6 @@ defmodule Explorer.Repo do
   """
   def safe_insert_all(kind, elements, opts) do
     returning = opts[:returning]
-
     elements
     |> Enum.chunk_every(500)
     |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->

@@ -3,6 +3,9 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
 
   def change do
     create table(:transactions, primary_key: false) do
+      #Quai chain to and from tx location
+      add(:location, :string, null: false)
+
       # `null` when a pending transaction
       add(:cumulative_gas_used, :numeric, precision: 100, null: true)
 
