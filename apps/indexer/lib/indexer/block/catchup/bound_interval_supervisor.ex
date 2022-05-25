@@ -339,19 +339,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   end
 
   def handle_info(
-        {:DOWN, ref, :process, pid, reason},
-        %__MODULE__{task: %Task{pid: pid, ref: ref}} = state
-      ) do
-    Logger.error(fn -> "Catchup index stream exited with reason (#{inspect(reason)}). Restarting" end)
-
-    send(self(), :catchup_index)
-
-    {:noreply, %__MODULE__{state | task: nil}}
-  end
-
-  def handle_info(
         {:DOWN, _ref, :process, _pid, reason},
-        %__MODULE__{task: nil} = state
+        %__MODULE__{task: _} = state
       ) do
     Logger.error(fn -> "Catchup index stream exited with reason (#{inspect(reason)}). Restarting" end)
 
