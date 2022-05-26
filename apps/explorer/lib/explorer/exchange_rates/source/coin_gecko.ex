@@ -3,7 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, ExchangeRates}
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -82,7 +82,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
   @impl Source
   def source_url do
-    explicit_coin_id = Application.get_env(:explorer, :coingecko_coin_id)
+    explicit_coin_id = Application.get_env(:explorer, ExchangeRates)[:coingecko_coin_id]
 
     {:ok, id} =
       if explicit_coin_id do

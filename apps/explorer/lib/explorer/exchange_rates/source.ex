@@ -16,14 +16,16 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec fetch_exchange_rates_for_token(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token(symbol) do
-    source_url = Source.CoinGecko.source_url(symbol)
-    fetch_exchange_rates_request(Source.CoinGecko, source_url)
+    source = Application.get_env(:explorer, Source)[:source]
+    source_url = source.source_url(symbol)
+    fetch_exchange_rates_request(source, source_url)
   end
 
   @spec fetch_exchange_rates_for_token_address(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token_address(address_hash) do
-    source_url = Source.CoinGecko.source_url(address_hash)
-    fetch_exchange_rates_request(Source.CoinGecko, source_url)
+    source = Application.get_env(:explorer, Source)[:source]
+    source_url = source.source_url(address_hash)
+    fetch_exchange_rates_request(source, source_url)
   end
 
   defp fetch_exchange_rates_request(_source, source_url) when is_nil(source_url), do: {:error, "Source URL is nil"}
@@ -82,7 +84,8 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+    source = Application.get_env(:explorer, Source)[:source]
+    config(:source) || source
   end
 
   @spec config(atom()) :: term
