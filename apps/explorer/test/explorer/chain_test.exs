@@ -3415,6 +3415,48 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "block_reward_by_parts/1" do
+    setup do
+      {:ok, emission_reward: insert(:emission_reward)}
+    end
+
+    test "without uncles", %{emission_reward: %{reward: reward, block_range: range}} do
+      block = build(:block, number: range.from, base_fee_per_gas: 5, uncles: [])
+
+      tx1 = build(:transaction, gas_price: 1, gas_used: 1, block_number: block.number, block_hash: block.hash)
+      tx2 = build(:transaction, gas_price: 1, gas_used: 2, block_number: block.number, block_hash: block.hash)
+
+      tx3 =
+        build(:transaction,
+          gas_price: 1,
+          gas_used: 3,
+          block_number: block.number,
+          block_hash: block.hash,
+          max_priority_fee_per_gas: 1
+        )
+
+      expected_txn_fees = %Wei{value: Decimal.new(6)}
+      expected_burned_fees = %Wei{value: Decimal.new(30)}
+      expected_uncle_reward = %Wei{value: Decimal.new(0)}
+
+      assert %{
+               static_reward: ^reward,
+               txn_fees: ^expected_txn_fees,
+               burned_fees: ^expected_burned_fees,
+               uncle_reward: ^expected_uncle_reward
+             } = Chain.block_reward_by_parts(block, [tx1, tx2, tx3])
+    end
+
+    test "with uncles", %{emission_reward: %{reward: reward, block_range: range}} do
+      block =
+        build(:block, number: range.from, uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"])
+
+      expected_uncle_reward = Wei.mult(reward, Decimal.from_float(1 / 32))
+
+      assert %{uncle_reward: ^expected_uncle_reward} = Chain.block_reward_by_parts(block, [])
+    end
+  end
+
   describe "gas_payment_by_block_hash/1" do
     setup do
       number = 1
