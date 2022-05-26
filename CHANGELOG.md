@@ -1,10 +1,12 @@
 ## Current
 
 ### Features
+- [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
 - [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
 - [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
 - [#5592](https://github.com/blockscout/blockscout/pull/5592) - Burn fees for legacy transactions
 - [#5568](https://github.com/blockscout/blockscout/pull/5568) - Add regexp for ipfs checking

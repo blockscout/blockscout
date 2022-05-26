@@ -305,9 +305,9 @@ msgid "Back Home"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_balance_card.html.eex:4
-#: lib/block_scout_web/templates/address/overview.html.eex:166 lib/block_scout_web/templates/address_token/overview.html.eex:51
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:42 lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:43
+#: lib/block_scout_web/templates/address/overview.html.eex:166
+#: lib/block_scout_web/templates/address_token/overview.html.eex:51 lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:42
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:43
 msgid "Balance"
 msgstr ""
 
@@ -429,7 +429,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:48
-#: lib/block_scout_web/templates/address/overview.html.eex:290 lib/block_scout_web/templates/address_validation/index.html.eex:11
+#: lib/block_scout_web/templates/address/overview.html.eex:291 lib/block_scout_web/templates/address_validation/index.html.eex:11
 #: lib/block_scout_web/views/address_view.ex:371
 msgid "Blocks Validated"
 msgstr ""
