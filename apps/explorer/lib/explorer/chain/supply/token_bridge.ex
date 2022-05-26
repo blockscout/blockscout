@@ -92,8 +92,10 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   def total_market_cap_from_omni_bridge, do: Bridge.fetch_omni_bridge_market_cap()
 
   def total_chain_supply do
+    source = Application.get_env(:explorer, Source)[:source]
+
     usd_value =
-      case Source.fetch_exchange_rates(Source.CoinGecko) do
+      case Source.fetch_exchange_rates(source) do
         {:ok, [rates]} ->
           rates.usd_value
 
