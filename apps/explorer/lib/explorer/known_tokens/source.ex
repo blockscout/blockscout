@@ -11,7 +11,7 @@ defmodule Explorer.KnownTokens.Source do
   """
   @spec fetch_known_tokens() :: {:ok, [Hash.Address.t()]} | {:error, any}
   def fetch_known_tokens(source \\ known_tokens_source()) do
-    Source.http_request(source.source_url())
+    Source.http_request(source.source_url(), source.headers())
   end
 
   @doc """

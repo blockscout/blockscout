@@ -48,6 +48,35 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   @impl Source
   def format_data(_), do: []
 
+  @impl Source
+  def source_url do
+    coin = Explorer.coin()
+    symbol = if coin, do: String.upcase(Explorer.coin()), else: nil
+
+    if symbol, do: "#{api_quotes_latest_url()}?symbol=#{symbol}&CMC_PRO_API_KEY=#{api_key()}", else: nil
+  end
+
+  @impl Source
+  def source_url(input) do
+    case Chain.Hash.Address.cast(input) do
+      {:ok, _} ->
+        # todo: find symbol by contract address hash
+        nil
+
+      _ ->
+        symbol = if input, do: input |> String.upcase(), else: nil
+
+        if symbol,
+          do: "#{api_quotes_latest_url()}?symbol=#{symbol}&CMC_PRO_API_KEY=#{api_key()}",
+          else: nil
+    end
+  end
+
+  @impl Source
+  def headers do
+    []
+  end
+
   defp api_key do
     Application.get_env(:explorer, ExchangeRates)[:coinmarketcap_api_key]
   end
@@ -127,38 +156,18 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     end
   end
 
-  @impl Source
-  def source_url do
-    coin = Explorer.coin()
-    symbol = if coin, do: String.upcase(Explorer.coin()), else: nil
-
-    if symbol, do: "#{base_url()}/cryptocurrency/quotes/latest?symbol=#{symbol}&CMC_PRO_API_KEY=#{api_key()}", else: nil
-  end
-
-  @impl Source
-  def source_url(input) do
-    case Chain.Hash.Address.cast(input) do
-      {:ok, _} ->
-        # todo: find symbol by contract address hash
-        nil
-
-      _ ->
-        symbol = if input, do: input |> String.upcase(), else: nil
-
-        if symbol,
-          do: "#{base_url()}/cryptocurrency/quotes/latest?symbol=#{symbol}&CMC_PRO_API_KEY=#{api_key()}",
-          else: nil
-    end
-  end
-
   defp base_url do
     config(:base_url) || "https://pro-api.coinmarketcap.com/v2"
   end
 
-  defp get_btc_price(currency \\ "usd") do
-    url = "#{base_url()}/cryptocurrency/quotes/latest?symbol=BTC&CMC_PRO_API_KEY=#{api_key()}"
+  defp api_quotes_latest_url do
+    "#{base_url()}/cryptocurrency/quotes/latest"
+  end
 
-    case Source.http_request(url) do
+  defp get_btc_price(currency \\ "usd") do
+    url = "#{api_quotes_latest_url()}?symbol=BTC&CMC_PRO_API_KEY=#{api_key()}"
+
+    case Source.http_request(url, headers()) do
       {:ok, data} = resp ->
         if is_map(data) do
           current_price = data["rates"][currency]["value"]

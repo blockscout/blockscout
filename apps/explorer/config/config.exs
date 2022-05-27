@@ -145,6 +145,7 @@ config :explorer, Explorer.ExchangeRates,
   enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
   store: :ets,
   coingecko_coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
+  coingecko_api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
   coinmarketcap_api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY")
 
 exchange_rates_source =
@@ -152,7 +153,7 @@ exchange_rates_source =
     System.get_env("EXCHANGE_RATES_SOURCE") == "token_bridge" -> Explorer.ExchangeRates.Source.TokenBridge
     System.get_env("EXCHANGE_RATES_SOURCE") == "coin_gecko" -> Explorer.ExchangeRates.Source.CoinGecko
     System.get_env("EXCHANGE_RATES_SOURCE") == "coin_market_cap" -> Explorer.ExchangeRates.Source.CoinMarketCap
-    true -> Explorer.ExchangeRates.Source.CoinMarketCap
+    true -> Explorer.ExchangeRates.Source.CoinGecko
   end
 
 config :explorer, Explorer.ExchangeRates.Source, source: exchange_rates_source
