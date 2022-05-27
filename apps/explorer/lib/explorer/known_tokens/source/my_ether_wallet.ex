@@ -11,4 +11,9 @@ defmodule Explorer.KnownTokens.Source.MyEtherWallet do
   def source_url do
     "https://raw.githubusercontent.com/kvhnuke/etherwallet/mercury/app/scripts/tokens/ethTokens.json"
   end
+
+  @impl Source
+  def headers do
+    []
+  end
 end
