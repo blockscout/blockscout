@@ -179,11 +179,11 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   defp compose_ipfs_url(image_url, token_contract_address_hash) do
     cond do
-      image_url =~ "ipfs://ipfs" ->
+      image_url =~ ~r/^ipfs:\/\/ipfs/ ->
         "ipfs://ipfs" <> ipfs_uid = image_url
         "https://ipfs.io/ipfs/" <> ipfs_uid
 
-      image_url =~ "ipfs://" ->
+      image_url =~ ~r/^ipfs:\/\// ->
         "ipfs://" <> ipfs_uid = image_url
         "https://ipfs.io/ipfs/" <> ipfs_uid
 

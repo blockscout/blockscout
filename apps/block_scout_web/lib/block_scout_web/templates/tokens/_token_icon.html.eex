@@ -1,2 +1,2 @@
 <% token_icon_url = Explorer.Chain.get_token_icon_url_by(@chain_id, @address) %>
-<img width=15 src="<%= token_icon_url %>" style="margin-top: -2px; min-height: 15px; min-width: 15px; border: none; outline: none;<%= if assigns[:style], do: @style %>" class="<%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>" alt="" onerror="this.style.visibility='hidden'"/>
+<img width=15 height=15 src="<%= token_icon_url %>" style="margin-top: -2px; min-height: 15px; min-width: 15px; border: none; outline: none;<%= if assigns[:style], do: @style %>" class="<%= if assigns[:additional_classes] do @additional_classes |> Enum.join(" ") end %>" alt="" onerror="this.style.visibility='hidden'"/>
