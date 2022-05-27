@@ -3,6 +3,7 @@ defmodule Explorer.ExchangeRates.Source do
   Behaviour for fetching exchange rates from external sources.
   """
   alias Explorer.ExchangeRates.{Source, Token}
+  alias Explorer.ExchangeRates.Source.CoinGecko
   alias HTTPoison.{Error, Response}
 
   @doc """
@@ -16,16 +17,16 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec fetch_exchange_rates_for_token(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token(symbol) do
-    source = Application.get_env(:explorer, Source)[:source]
-    source_url = source.source_url(symbol)
-    fetch_exchange_rates_request(source, source_url, source.headers())
+    source_url = CoinGecko.source_url(symbol)
+    headers = CoinGecko.headers()
+    fetch_exchange_rates_request(CoinGecko, source_url, headers)
   end
 
   @spec fetch_exchange_rates_for_token_address(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token_address(address_hash) do
-    source = Application.get_env(:explorer, Source)[:source]
-    source_url = source.source_url(address_hash)
-    fetch_exchange_rates_request(source, source_url, source.headers())
+    source_url = CoinGecko.source_url(address_hash)
+    headers = CoinGecko.headers()
+    fetch_exchange_rates_request(CoinGecko, source_url, headers)
   end
 
   defp fetch_exchange_rates_request(_source, source_url, _headers) when is_nil(source_url),
@@ -87,8 +88,7 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    source = Application.get_env(:explorer, Source)[:source]
-    config(:source) || source
+    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
   end
 
   @spec config(atom()) :: term

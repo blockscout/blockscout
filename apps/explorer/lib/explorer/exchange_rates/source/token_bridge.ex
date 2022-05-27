@@ -61,7 +61,7 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
 
   @spec secondary_source() :: module()
   defp secondary_source do
-    config(:secondary_source) || Application.get_env(:explorer, Explorer.ExchangeRates.Source)[:source]
+    config(:secondary_source) || Explorer.ExchangeRates.Source.CoinGecko
   end
 
   @spec config(atom()) :: term
