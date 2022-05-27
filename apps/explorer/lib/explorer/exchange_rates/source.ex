@@ -16,16 +16,14 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec fetch_exchange_rates_for_token(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token(symbol) do
-    source = Application.get_env(:explorer, Source)[:source]
-    source_url = source.source_url(symbol)
-    fetch_exchange_rates_request(source, source_url, source.headers())
+    source_url = Source.CoinGecko.source_url(symbol)
+    fetch_exchange_rates_request(Source.CoinGecko, source_url, Source.CoinGecko.headers())
   end
 
   @spec fetch_exchange_rates_for_token_address(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token_address(address_hash) do
-    source = Application.get_env(:explorer, Source)[:source]
-    source_url = source.source_url(address_hash)
-    fetch_exchange_rates_request(source, source_url, source.headers())
+    source_url = Source.CoinGecko.source_url(address_hash)
+    fetch_exchange_rates_request(Source.CoinGecko, source_url, Source.CoinGecko.headers())
   end
 
   defp fetch_exchange_rates_request(_source, source_url, _headers) when is_nil(source_url),
