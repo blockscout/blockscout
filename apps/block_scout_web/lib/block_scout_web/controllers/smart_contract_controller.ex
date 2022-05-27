@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.SmartContractController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{Reader, Writer}
 
   @burn_address "0x0000000000000000000000000000000000000000"
@@ -18,8 +19,8 @@ defmodule BlockScoutWeb.SmartContractController do
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       implementation_address_hash_string =
         if contract_type == "proxy" do
-          address.hash
-          |> Chain.get_implementation_address_hash(address.smart_contract.abi)
+          address.smart_contract
+          |> SmartContract.get_implementation_address_hash()
           |> Tuple.to_list()
           |> List.first() || @burn_address
         else
