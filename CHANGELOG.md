@@ -1,10 +1,22 @@
 ## Current
 
 ### Features
+- [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
+- [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
+- [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
+- [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
+- [#5592](https://github.com/blockscout/blockscout/pull/5592) - Burn fees for legacy transactions
+- [#5568](https://github.com/blockscout/blockscout/pull/5568) - Add regexp for ipfs checking
+- [#5567](https://github.com/blockscout/blockscout/pull/5567) - Sanitize token name and symbol before insert into DB, display in the application
+- [#5564](https://github.com/blockscout/blockscout/pull/5564) - Add fallback clauses to `string_to_..._hash` functions
+- [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
 
 ### Chore
+- [#5543](https://github.com/blockscout/blockscout/pull/5543) - Increase max_restarts to 1_000 (from 3 by default) for explorer, block_scout_web supervisors
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
 
 
 ## 4.1.3-beta
