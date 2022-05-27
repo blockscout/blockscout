@@ -98,7 +98,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     source = Application.get_env(:explorer, Source)[:source]
 
     usd_value =
-      case Source.fetch_exchange_rates(source) do
+      case Source.fetch_exchange_rates(Source.CoinGecko) do
         {:ok, [rates]} ->
           rates.usd_value
 
