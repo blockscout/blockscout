@@ -61,7 +61,7 @@ defmodule Explorer.ExchangeRates.Source do
 
   @callback source_url(String.t()) :: String.t() | :ignore
 
-  @callback headers() :: [any]
+  @callback headers :: [any]
 
   def headers do
     [{"Content-Type", "application/json"}]
