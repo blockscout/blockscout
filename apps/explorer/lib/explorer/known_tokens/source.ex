@@ -19,6 +19,8 @@ defmodule Explorer.KnownTokens.Source do
   """
   @callback source_url() :: String.t()
 
+  @callback headers() :: [any()]
+
   @spec known_tokens_source() :: module()
   defp known_tokens_source do
     config(:source) || Explorer.KnownTokens.Source.MyEtherWallet
