@@ -79,6 +79,12 @@ defmodule BlockScout.Mixfile do
       # Documentation
       {:ex_doc, "~> 0.28.2", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}
+
+      # CloudWalk Sentry
+      {:sentry, "~> 8.0"},
+      {:jason, "~> 1.1"},
+      # if you are using plug_cowboy
+      {:plug_cowboy, "~> 2.3"}
     ]
   end
 end

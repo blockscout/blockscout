@@ -12,3 +12,13 @@ config :logger, :ecto,
 config :logger, :error,
   path: Path.absname("logs/prod/error.log"),
   rotate: %{max_bytes: 52_428_800, keep: 19}
+
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN")
+  environment_name: :prod,
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!(),
+  tags: %{
+    env: "production"
+  },
+  included_environments: [:prod]
