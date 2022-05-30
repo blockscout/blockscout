@@ -50,7 +50,10 @@
         <% end %>
     </td>
     <td class="stakes-td">
-        <%= contract.inserted_at |> Calendar.strftime("%m.%d.%y") %>
+        <%= render BlockScoutWeb.CommonComponentsView,
+            "_locale_datetime.html",
+            datetime: contract.inserted_at
+        %>
     </td>
     <td class="stakes-td">
         <%= detect_license(contract) %>

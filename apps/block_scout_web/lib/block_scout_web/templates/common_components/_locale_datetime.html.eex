@@ -1,0 +1,4 @@
+<% default_format = if assigns[:default_format], do: @default_format, else: "%m/%d/%Y" %>
+<span class="locale-datetime" data-timestamp="<%= DateTime.to_unix(@datetime) %>">
+    <%= @datetime |> Calendar.strftime(default_format) %>
+</span>
