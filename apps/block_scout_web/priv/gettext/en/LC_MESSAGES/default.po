@@ -3378,7 +3378,7 @@ msgid "Date Verified"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:41
+#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:44
 msgid "Partially Verified"
 msgstr ""
 
@@ -3387,8 +3387,24 @@ msgstr ""
 msgid "Txns (past 90 days)"
 msgstr ""
 
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:43
+#, elixir-format
+#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:49
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:74
 msgid "Verified"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:43
+#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:48
+msgid "Learn more"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:48
+msgid "Source code matches deployed contract 100%"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:43
+msgid "Source code matches deployed contracts except the metadata hash"
 msgstr ""

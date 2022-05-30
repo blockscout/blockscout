@@ -38,9 +38,15 @@
     <td class="stakes-td">
         <span class="verification-label <%= if contract.partially_verified do %>partial<% else %>full<% end %>">
         <%= if contract.partially_verified do %>
-        <%= gettext "Partially Verified" %>
+        <span data-toggle="tooltip-with-link"
+            data-placement="top"
+            data-title="<%= gettext "Source code matches deployed contracts except the metadata hash" %>. <a target='_blank' href='https://docs.sourcify.dev/docs/full-vs-partial-match/'><%= gettext "Learn more" %></a>."
+        ><%= gettext "Partially Verified" %></span>
         <% else %>
-        <%= gettext "Verified" %>
+        <span data-toggle="tooltip-with-link"
+            data-placement="top"
+            data-title="<%= gettext "Source code matches deployed contract 100%" %>. <a target='_blank' href='https://docs.sourcify.dev/docs/full-vs-partial-match/'><%= gettext "Learn more" %></a>."
+        ><%= gettext "Verified" %></span>
         <% end %>
     </td>
     <td class="stakes-td">
