@@ -31,7 +31,8 @@ config :logger,
     {LoggerFileBackend, :indexer_token_balances},
     {LoggerFileBackend, :token_instances},
     {LoggerFileBackend, :reading_token_functions},
-    {LoggerFileBackend, :pending_transactions_to_refetch}
+    {LoggerFileBackend, :pending_transactions_to_refetch},
+    {LoggerFileBackend, :empty_blocks_to_refetch}
   ]
 
 config :logger_json, :console,

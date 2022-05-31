@@ -12,6 +12,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.{Block, CeloPendingEpochOperation, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
+  alias Explorer.Chain.Import.Runner.Tokens
+  alias Explorer.Repo, as: ExplorerRepo
 
   @behaviour Runner
 
@@ -320,6 +323,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
+  end
+
+  def invalidate_consensus_blocks(block_numbers) do
+    opts = %{
+      timeout: 60_000,
+      timestamps: %{updated_at: DateTime.utc_now()}
+    }
+
+    lose_consensus(ExplorerRepo, [], block_numbers, [], opts)
   end
 
   defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
