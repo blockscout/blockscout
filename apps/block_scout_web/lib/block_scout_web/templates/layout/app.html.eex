@@ -42,12 +42,12 @@
 
     <script defer data-cfasync="false">
       window.localized = {
-        'Blocks Indexed': '<%= gettext("Blocks Indexed") %>',
-        'Block Processing': '<%= gettext("Block Mined, awaiting import...") %>',
-        'Indexing Tokens': '<%= gettext("Indexing Tokens") %>',
+        'Blocks Indexed': 'Blocks Indexed',
+        'Block Processing': 'Block Mined, awaiting import',
+        'Indexing Tokens': 'Indexing Tokens',
         'Less than': '<%= gettext("Less than") %>',
-        'Market Cap': '<%= gettext("Market Cap") %>',
-        'Price': '<%= gettext("Price") %>',
+        'Market Cap': 'Market Cap',
+        'Price': 'Price',
         'Ether': '<%= gettext("Ether") %>',
         'Tx/day': '<%= gettext("Tx/day") %>'
       }
