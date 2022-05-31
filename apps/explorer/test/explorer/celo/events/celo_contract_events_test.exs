@@ -2,6 +2,7 @@ defmodule Explorer.Celo.Events.CeloContractEventsTest do
   use Explorer.DataCase, async: true
 
   alias Explorer.Celo.ContractEvents.Accounts.AccountWalletAddressSetEvent
+  alias Explorer.Celo.ContractEvents.Common
   alias Explorer.Celo.ContractEvents.EventTransformer
   alias Explorer.Celo.ContractEvents.EventMap
   alias Explorer.Celo.ContractEvents.Reserve.AssetAllocationSetEvent
@@ -188,6 +189,40 @@ defmodule Explorer.Celo.Events.CeloContractEventsTest do
 
       assert fetched_event.symbols == expected_symbols
       assert fetched_event.weights == expected_weights
+    end
+
+    test "converts indexed strings correctly" do
+      topic = "0x49399c1f1c39c8fa6ef22452af2bd0f965b694cb662347489bd8de38891eacd2"
+      type = :string
+
+      result = Common.decode_event_topic(topic, type)
+
+      assert(true, "should not crash when decoding")
+    end
+
+    test "converts unindexed strings correctly" do
+      # data in below log should convert to string "26oct"
+      test_data =
+        %{
+          "address" => "0x765de816845861e75a25fca122bb6898b8b1282a",
+          "topics" => [
+            "0xe5d4e30fb8364e57bc4d662a07d0cf36f4c34552004c4c3624620a2c1d1c03dc"
+          ],
+          "data" =>
+            "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000532366f6374000000000000000000000000000000000000000000000000000000",
+          "blockNumber" => "0x919f4e",
+          "transactionHash" => "0xefada4fc54c4a7ec08ae06b1a17ca2e3ad0bada83d809356c9af83af3c5c9f69",
+          "transactionIndex" => "0x2",
+          "blockHash" => "0x40f172fe4c43d7ac5fc741a60e153f4820ab47bf8b90c349c80dd3fa670c263c",
+          "logIndex" => "0x32",
+          "removed" => false
+        }
+        |> EthereumJSONRPC.Log.to_elixir()
+        |> EthereumJSONRPC.Log.elixir_to_params()
+
+      [output] = Common.decode_event_data(test_data[:data], [:string])
+
+      assert(output == "26oct")
     end
   end
 end

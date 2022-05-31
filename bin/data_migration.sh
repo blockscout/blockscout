@@ -39,7 +39,7 @@ function prepare_secret () {
 }
 
 function start_job () {
-	execute_command 'kubectl create job -n rc1staging --from=cronjob/"$DEPLOY_ENVIRONMENT"-blockscout"$SUFFIX"-data-migration "$DEPLOY_ENVIRONMENT"-blockscout"$SUFFIX"-data-migration-instance'
+	execute_command 'kubectl create job -n "$DEPLOY_ENVIRONMENT" --from=cronjob/"$DEPLOY_ENVIRONMENT"-blockscout"$SUFFIX"-data-migration "$DEPLOY_ENVIRONMENT"-blockscout"$SUFFIX"-data-migration-instance'
 }
 
 

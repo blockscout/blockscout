@@ -1,17 +1,32 @@
 defmodule Explorer.Celo.ContractEvents.Common do
   @moduledoc "Common functionality for import in Celo contract event structs"
 
-  alias ABI.TypeDecoder
+  alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.{Data, Hash, Hash.Full}
 
   @doc "Decode a single point of event data of a given type from a given topic"
   def decode_event_topic(topic, type) do
-    topic
-    |> extract_hash()
-    |> TypeDecoder.decode_raw([type])
-    |> List.first()
-    |> convert_type_to_elixir(type)
+    if FunctionSelector.is_dynamic?(type) do
+      # dynamic types indexed as event topics will be encoded as a 32 bit keccak hash of the input value
+      # as per solidity abi spec
+      # https://docs.soliditylang.org/en/develop/abi-spec.html#indexed-event-encoding
+
+      # quoting from ex_abi documentation:
+
+      # The caller will almost certainly
+      # need to know that they don't have an actual encoded value of that type
+      # but rather they have a 32 bit hash of the value.
+
+      decode_event_topic(topic, {:bytes, 32})
+    else
+      decoded_elixir_type =
+        topic
+        |> extract_hash()
+        |> TypeDecoder.decode_raw([type])
+        |> List.first()
+        |> convert_type_to_elixir(type)
+    end
   end
 
   @doc "Decode event data of given types from log data"
