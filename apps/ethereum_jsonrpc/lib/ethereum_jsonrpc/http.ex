@@ -3,7 +3,7 @@ defmodule EthereumJSONRPC.HTTP do
   JSONRPC over HTTP
   """
 
-  alias EthereumJSONRPC.Transport
+  alias EthereumJSONRPC.{DecodeError, Transport}
 
   require Logger
 
@@ -113,8 +113,13 @@ defmodule EthereumJSONRPC.HTTP do
 
           {:error, {:bad_gateway, request_url}}
 
-        _ ->
-          raise EthereumJSONRPC.DecodeError, named_arguments
+        status_code ->
+          named_arguments
+          |> DecodeError.exception()
+          |> Exception.message()
+          |> Logger.error()
+
+          {:error, {:bad_response, status_code}}
       end
     end
   end

@@ -22,6 +22,7 @@ defmodule Explorer.Chain.Transaction do
     Hash,
     InternalTransaction,
     Log,
+    SmartContract,
     TokenTransfer,
     Transaction,
     Wei
@@ -488,7 +489,7 @@ defmodule Explorer.Chain.Transaction do
       candidates_query
       |> Repo.all()
       |> Enum.flat_map(fn candidate ->
-        case do_decoded_input_data(data, [candidate.abi], nil, hash) do
+        case do_decoded_input_data(data, %SmartContract{abi: [candidate.abi], address_hash: nil}, hash) do
           {:ok, _, _, _} = decoded -> [decoded]
           _ -> []
         end
@@ -503,10 +504,10 @@ defmodule Explorer.Chain.Transaction do
 
   def decoded_input_data(%__MODULE__{
         input: %{bytes: data},
-        to_address: %{smart_contract: %{abi: abi, address_hash: address_hash}},
+        to_address: %{smart_contract: smart_contract},
         hash: hash
       }) do
-    case do_decoded_input_data(data, abi, address_hash, hash) do
+    case do_decoded_input_data(data, smart_contract, hash) do
       # In some cases transactions use methods of some unpredictadle contracts, so we can try to look up for method in a whole DB
       {:error, :could_not_decode} ->
         case decoded_input_data(%__MODULE__{
@@ -529,8 +530,8 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp do_decoded_input_data(data, abi, address_hash, hash) do
-    full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
+  defp do_decoded_input_data(data, smart_contract, hash) do
+    full_abi = Chain.combine_proxy_implementation_abi(smart_contract)
 
     with {:ok, {selector, values}} <- find_and_decode(full_abi, data, hash),
          {:ok, mapping} <- selector_mapping(selector, values, hash),
