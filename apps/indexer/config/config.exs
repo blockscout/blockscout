@@ -34,7 +34,8 @@ config :indexer,
   first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || "",
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
-  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
+  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
+  fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
