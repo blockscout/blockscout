@@ -47,7 +47,7 @@ defmodule Explorer.Chain.Import.Runner.CeloEpochRewards do
       changes_list
       |> Enum.each(fn reward ->
         CeloPendingEpochOperation.falsify_celo_pending_epoch_operation(
-          reward.block_hash,
+          reward.block_number,
           :fetch_epoch_rewards
         )
       end)
@@ -67,8 +67,8 @@ defmodule Explorer.Chain.Import.Runner.CeloEpochRewards do
     # Enforce ShareLocks order (see docs: sharelocks.md)
     uniq_changes_list =
       changes_list
-      |> Enum.sort_by(&{&1.block_hash})
-      |> Enum.dedup_by(&{&1.block_hash})
+      |> Enum.sort_by(&{&1.block_number})
+      |> Enum.dedup_by(&{&1.block_number})
 
     {:ok, _} =
       Import.insert_changes_list(

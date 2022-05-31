@@ -29,6 +29,7 @@ defmodule Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
         event in CeloContractEvent,
         where: event.name == "ValidatorGroupVoteActivated",
         where: event.block_number < ^block_number,
+        group_by: [json_extract_path(event.params, ["account"]), json_extract_path(event.params, ["group"])],
         select: %{
           account_hash: json_extract_path(event.params, ["account"]),
           group_hash: json_extract_path(event.params, ["group"])

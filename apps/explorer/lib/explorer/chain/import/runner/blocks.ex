@@ -371,12 +371,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         |> MapSet.to_list()
         |> Enum.filter(&(rem(&1, 17_280) == 0))
         |> Enum.map(&Enum.find(changes_list, fn block -> block.number == &1 end))
-        |> Enum.map(&%{block_hash: &1.hash, fetch_epoch_rewards: true, fetch_voter_votes: true})
+        |> Enum.map(&%{block_number: &1.number, fetch_epoch_rewards: true, election_rewards: true})
 
       Import.insert_changes_list(
         repo,
         celo_pending_ops,
-        conflict_target: :block_hash,
+        conflict_target: :block_number,
         on_conflict: CeloPendingEpochOperation.default_on_conflict(),
         for: CeloPendingEpochOperation,
         returning: true,

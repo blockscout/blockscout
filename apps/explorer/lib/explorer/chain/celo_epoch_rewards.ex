@@ -7,7 +7,13 @@ defmodule Explorer.Chain.CeloEpochRewards do
 
   use Explorer.Schema
 
+  import Ecto.Query,
+    only: [
+      from: 2
+    ]
+
   alias Explorer.Chain.{Block, Hash, Wei}
+  alias Explorer.Repo
 
   @typedoc """
   * `block_hash` - block where this reward was paid.
@@ -84,5 +90,9 @@ defmodule Explorer.Chain.CeloEpochRewards do
     |> cast(attrs, @attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint(:celo_epoch_rewards_key, name: :celo_epoch_rewards_block_hash_index)
+  end
+
+  def get_celo_epoch_rewards_for_block(block_number) do
+    Repo.one(from(rewards in __MODULE__, where: rewards.block_number == ^block_number))
   end
 end

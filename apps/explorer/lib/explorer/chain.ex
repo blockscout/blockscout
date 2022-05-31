@@ -2838,7 +2838,8 @@ defmodule Explorer.Chain do
     query =
       from(
         b in Block,
-        join: celo_pending_ops in assoc(b, :celo_pending_epoch_operations),
+        join: celo_pending_ops in Chain.CeloPendingEpochOperation,
+        on: b.number == celo_pending_ops.block_number,
         where: celo_pending_ops.fetch_epoch_rewards,
         select: %{block_number: b.number, block_hash: b.hash}
       )
@@ -2846,35 +2847,19 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
-  @spec stream_blocks_with_unfetched_validator_group_data(
+  @spec stream_blocks_with_unfetched_election_rewards(
           initial :: accumulator,
           reducer :: (entry :: term(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_blocks_with_unfetched_validator_group_data(initial, reducer) when is_function(reducer, 2) do
+  def stream_blocks_with_unfetched_election_rewards(initial, reducer) when is_function(reducer, 2) do
     query =
       from(
         b in Block,
-        join: celo_pending_ops in assoc(b, :celo_pending_epoch_operations),
-        where: celo_pending_ops.fetch_validator_group_data,
-        select: %{block_number: b.number, block_hash: b.hash}
-      )
-
-    Repo.stream_reduce(query, initial, reducer)
-  end
-
-  @spec stream_blocks_with_unfetched_voter_votes(
-          initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_blocks_with_unfetched_voter_votes(initial, reducer) when is_function(reducer, 2) do
-    query =
-      from(
-        b in Block,
-        join: celo_pending_ops in assoc(b, :celo_pending_epoch_operations),
-        where: celo_pending_ops.fetch_voter_votes,
-        select: %{block_number: b.number, block_hash: b.hash},
+        join: celo_pending_ops in Chain.CeloPendingEpochOperation,
+        on: b.number == celo_pending_ops.block_number,
+        where: celo_pending_ops.election_rewards,
+        select: %{block_number: b.number, block_timestamp: b.timestamp},
         order_by: [asc: b.number]
       )
 

@@ -239,7 +239,6 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   def active_votes(%{
-        block_hash: block_hash,
         block_number: block_number,
         group_hash: group_hash,
         account_hash: account_hash
@@ -251,14 +250,7 @@ defmodule Explorer.Celo.AccountReader do
 
     case data["getActiveVotesForGroupByAccount"] do
       {:ok, [active]} ->
-        {:ok,
-         %{
-           account_hash: account_hash,
-           active_votes: active,
-           block_hash: block_hash,
-           block_number: block_number,
-           group_hash: group_hash
-         }}
+        {:ok, active}
 
       _ ->
         :error

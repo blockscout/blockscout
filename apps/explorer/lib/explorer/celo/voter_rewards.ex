@@ -10,12 +10,14 @@ defmodule Explorer.Celo.VoterRewards do
   import Ecto.Query,
     only: [
       distinct: 3,
+      from: 2,
       order_by: 3,
       where: 3
     ]
 
   alias Explorer.Celo.ContractEvents
   alias Explorer.Chain.CeloContractEvent
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Repo
 
   alias ContractEvents.{Election, EventMap}
@@ -87,4 +89,29 @@ defmodule Explorer.Celo.VoterRewards do
 
     %{from: from_date, to: to_date, rewards: rewards, total_reward_celo: rewards_sum}
   end
+
+  # The way we calculate voter rewards is by subtracting the previous epoch's last block's votes count from the current
+  # epoch's first block's votes count. If the user activated or revoked votes in the previous epoch's last block, we
+  # need to take that into consideration, namely subtract any activated and add any revoked votes.
+  def subtract_activated_add_revoked(entry) do
+    query =
+      from(event in CeloContractEvent,
+        select:
+          fragment(
+            "SUM(CAST(params->>'value' AS numeric) * CASE name WHEN ? THEN -1 ELSE 1 END)",
+            ^"ValidatorGroupVoteActivated"
+          ),
+        where: event.name in ["ValidatorGroupVoteActivated", "ValidatorGroupActiveVoteRevoked"],
+        where: event.block_number == ^entry.block_number
+      )
+
+    query
+    |> CeloContractEvent.query_by_voter_param(entry.account_hash)
+    |> CeloContractEvent.query_by_group_param(entry.group_hash)
+    |> Repo.one()
+    |> to_integer_if_not_nil()
+  end
+
+  defp to_integer_if_not_nil(nil), do: 0
+  defp to_integer_if_not_nil(activated_or_revoked), do: Decimal.to_integer(activated_or_revoked)
 end

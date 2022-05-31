@@ -1,5 +1,5 @@
-defmodule Indexer.Fetcher.CeloVoterVotes.Supervisor.Case do
-  alias Indexer.Fetcher.CeloVoterVotes
+defmodule Indexer.Fetcher.CeloElectionRewards.Supervisor.Case do
+  alias Indexer.Fetcher.CeloElectionRewards
 
   def start_supervised!(fetcher_arguments \\ []) when is_list(fetcher_arguments) do
     merged_fetcher_arguments =
@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.CeloVoterVotes.Supervisor.Case do
       )
 
     [merged_fetcher_arguments]
-    |> CeloVoterVotes.Supervisor.child_spec()
+    |> CeloElectionRewards.Supervisor.child_spec()
     |> ExUnit.Callbacks.start_supervised!()
   end
 end

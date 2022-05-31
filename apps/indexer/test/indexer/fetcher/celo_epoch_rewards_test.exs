@@ -38,7 +38,7 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       block = insert(:block)
-      insert(:celo_pending_epoch_operations, block_hash: block.hash, fetch_epoch_rewards: true)
+      insert(:celo_pending_epoch_operations, block_number: block.number, fetch_epoch_rewards: true)
 
       assert CeloEpochRewardsFetcher.init(
                [],
@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       block = insert(:block)
-      insert(:celo_pending_epoch_operations, block_hash: block.hash, fetch_epoch_rewards: false)
+      insert(:celo_pending_epoch_operations, block_number: block.number, fetch_epoch_rewards: false)
 
       assert CeloEpochRewardsFetcher.init(
                [],
@@ -132,9 +132,8 @@ defmodule Indexer.Fetcher.CeloEpochRewardsTest do
         )
 
       insert(:celo_pending_epoch_operations,
-        block_hash: block.hash,
-        fetch_epoch_rewards: true,
-        fetch_validator_group_data: false
+        block_number: block.number,
+        fetch_epoch_rewards: true
       )
 
       rewards = [

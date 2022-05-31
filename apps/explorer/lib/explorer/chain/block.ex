@@ -9,7 +9,6 @@ defmodule Explorer.Chain.Block do
 
   alias Explorer.Chain.{
     Address,
-    CeloPendingEpochOperation,
     CeloSigners,
     CeloValidatorHistory,
     Data,
@@ -121,7 +120,6 @@ defmodule Explorer.Chain.Block do
     has_many(:rewards, Reward, foreign_key: :block_hash)
 
     has_one(:pending_operations, PendingBlockOperation, foreign_key: :block_hash)
-    has_one(:celo_pending_epoch_operations, CeloPendingEpochOperation, foreign_key: :block_hash)
     has_one(:celo_delegator, CeloSigners, foreign_key: :signer, references: :miner_hash)
     has_one(:online, CeloValidatorHistory, foreign_key: :block_number, references: :number)
     has_many(:signers, CeloValidatorHistory, foreign_key: :block_number, references: :number)
