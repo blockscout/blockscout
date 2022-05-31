@@ -11,43 +11,41 @@ defmodule Explorer.Celo.ContractEvents.Common do
     |> extract_hash()
     |> TypeDecoder.decode_raw([type])
     |> List.first()
-    |> convert_result(type)
+    |> convert_type_to_elixir(type)
   end
 
   @doc "Decode event data of given types from log data"
-  def decode_data(%Data{bytes: bytes}, types), do: decode_data(bytes, types)
+  def decode_event_data(%Data{bytes: bytes}, types), do: decode_event_data(bytes, types)
 
-  def decode_data("0x" <> data, types) do
+  def decode_event_data("0x" <> data, types) do
     data
     |> Base.decode16!(case: :lower)
-    |> decode_data(types)
+    |> decode_event_data(types)
   end
 
-  def decode_data(data, types) when is_binary(data) do
+  def decode_event_data(data, types) when is_binary(data) do
     data
     |> TypeDecoder.decode_raw(types)
     |> Enum.zip(types)
-    |> Enum.map(fn
-      # list of bytes to 2d list of ints
-      {d, {:array, {:bytes, _}}} -> d |> Enum.map(&:binary.bin_to_list(&1))
-      {d, {:array, :bytes}} -> d |> Enum.map(&:binary.bin_to_list(&1))
-      # bytes to list of ints
-      {d, {:bytes, _}} -> :binary.bin_to_list(d)
-      {d, :bytes} -> :binary.bin_to_list(d)
-      {d, :address} -> convert_result(d, :address)
-      {d, _} -> d
-    end)
+    |> Enum.map(fn {decoded, type} -> convert_type_to_elixir(decoded, type) end)
   end
 
   defp extract_hash(event_data), do: event_data |> String.trim_leading("0x") |> Base.decode16!(case: :lower)
 
-  defp convert_result(result, :address) do
-    {:ok, address} = Address.cast(result)
+  # list of bytes to 2d list of ints
+  defp convert_type_to_elixir(decoded, {:array, {:bytes, _}}), do: decoded |> Enum.map(&:binary.bin_to_list(&1))
+  defp convert_type_to_elixir(decoded, {:array, :bytes}), do: decoded |> Enum.map(&:binary.bin_to_list(&1))
+  # bytes to list of ints
+  defp convert_type_to_elixir(decoded, {:bytes, _size}), do: :binary.bin_to_list(decoded)
+  defp convert_type_to_elixir(decoded, :bytes), do: :binary.bin_to_list(decoded)
+
+  defp convert_type_to_elixir(decoded, :address) do
+    {:ok, address} = Address.cast(decoded)
     address
   end
 
-  defp convert_result(result, {:bytes, _size}), do: :binary.bin_to_list(result)
-  defp convert_result(result, :bytes), do: :binary.bin_to_list(result)
+  # default - assume valid conversion
+  defp convert_type_to_elixir(decoded, _type), do: decoded
 
   def extract_common_event_params(event) do
     # handle optional transaction hash

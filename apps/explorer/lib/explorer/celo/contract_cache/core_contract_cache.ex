@@ -5,6 +5,7 @@ defmodule Explorer.Celo.CoreContracts do
 
   use GenServer
   alias Explorer.Celo.{AbiHandler, AddressCache}
+  alias Explorer.Chain.CeloCoreContract
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
   alias __MODULE__
@@ -63,7 +64,7 @@ defmodule Explorer.Celo.CoreContracts do
   @impl true
   def handle_continue(:fetch_contracts_from_db, %{cache: cache} = state) do
     db_cache =
-      Explorer.Chain.CeloCoreContract
+      CeloCoreContract
       |> order_by(:block_number)
       |> Repo.all()
       |> Enum.reduce(%{}, fn %{name: name, address_hash: address_hash}, map ->
@@ -166,6 +167,32 @@ defmodule Explorer.Celo.CoreContracts do
     {:noreply, new_state}
   end
 
+  @impl true
+  def handle_cast(:insert_entries_to_db, %{cache: cache} = state) do
+    # moving out of task definition to satisfy credo nested function body warning
+    already_in_db_cache = fn address, db_cache ->
+      Enum.any?(db_cache, fn %CeloCoreContract{address_hash: ccc_address} ->
+        ccc_address |> to_string() |> String.downcase() == address |> String.downcase()
+      end)
+    end
+
+    Explorer.TaskSupervisor
+    |> Task.Supervisor.start_child(fn ->
+      db_cache = CeloCoreContract |> Repo.all()
+
+      to_add = cache |> Enum.reject(fn {_name, address} -> already_in_db_cache.(address, db_cache) end)
+
+      to_add
+      |> Enum.each(fn {name, address} ->
+        %CeloCoreContract{}
+        |> CeloCoreContract.changeset(%{name: name, address_hash: address})
+        |> Repo.insert()
+      end)
+    end)
+
+    {:noreply, state}
+  end
+
   ## API Methods
 
   @doc """
@@ -197,6 +224,11 @@ defmodule Explorer.Celo.CoreContracts do
   @impl AddressCache
   def is_core_contract_address?(address) do
     GenServer.call(__MODULE__, {:has_address, address})
+  end
+
+  @doc "Ensure that db contains all known entries for contract cache"
+  def assert_db_entries do
+    GenServer.cast(__MODULE__, :insert_entries_to_db)
   end
 
   defp rebuild_state(%{cache: cache, timer: timer}) do

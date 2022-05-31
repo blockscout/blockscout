@@ -111,7 +111,7 @@ defmodule Explorer.Celo.ContractEvents.Base do
           def from_params(_, params) do
             # creating a map of unindexed (appear in event data) event properties %{name => value}
             unindexed_event_properties =
-              decode_data(params.data, unquote(Macro.escape(unindexed_types)))
+              decode_event_data(params.data, unquote(Macro.escape(unindexed_types)))
               |> Enum.zip(unquote(Macro.escape(unindexed_properties)))
               |> Enum.map(fn {data, %{name: name}} -> {name, data} end)
               |> Enum.into(%{})

@@ -15,6 +15,8 @@ defmodule Explorer.Repo.Migrations.DataMigration do
       use Ecto.Migration
       alias Explorer.Celo.ContractEvents.EventMap
       alias Explorer.Celo.Telemetry
+      alias Explorer.Chain.CeloContractEvent
+      alias Explorer.Chain.Hash.{Address, Full}
       import Ecto.Query
 
       @disable_ddl_transaction true
@@ -133,17 +135,21 @@ defmodule Explorer.Repo.Migrations.DataMigration do
           end)
 
         {inserted_count, results} =
-          Explorer.Repo.insert_all("celo_contract_events", params, returning: [:block_number, :log_index])
+          Explorer.Repo.insert_all("celo_contract_events", params,
+            returning: [:block_number, :log_index],
+            on_conflict: CeloContractEvent.default_upsert(),
+            conflict_target: CeloContractEvent.conflict_target()
+          )
 
         if inserted_count != length(to_change) do
           not_inserted =
             to_change
-            |> Enum.map(&Map.take(&1, [:block_number, :log_index]))
+            |> Enum.map(&Map.take(&1, [:block_number, :index]))
             |> MapSet.new()
             |> MapSet.difference(MapSet.new(results))
             |> MapSet.to_list()
 
-          not_inserted |> Enum.each(&handle_failure/1)
+          not_inserted |> handle_non_insert()
         end
 
         last_key =

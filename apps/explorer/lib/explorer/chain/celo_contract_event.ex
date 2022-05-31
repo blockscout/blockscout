@@ -7,10 +7,9 @@ defmodule Explorer.Chain.CeloContractEvent do
   use Explorer.Schema
   import Ecto.Query
 
-  alias Explorer.Celo.ContractEvents.{Common, EventMap}
-  alias Explorer.Chain.{Hash, Log}
+  alias Explorer.Celo.ContractEvents.Common
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Repo
 
   @type t :: %__MODULE__{
           name: String.t(),
@@ -44,73 +43,30 @@ defmodule Explorer.Chain.CeloContractEvent do
     |> validate_required(@required)
   end
 
-  @doc "returns ids of entries in log table that contain events not yet included in CeloContractEvents table"
-  def fetch_unprocessed_log_ids_query(topics) when is_list(topics) do
-    from(l in "logs",
-      select: {l.block_number, l.index},
-      left_join: cce in __MODULE__,
-      on: {cce.block_number, cce.log_index} == {l.block_number, l.index},
-      where: l.first_topic in ^topics and is_nil(cce.block_number),
-      order_by: [asc: l.block_number, asc: l.index]
+  def default_upsert do
+    from(cce in __MODULE__,
+      update: [
+        set: [
+          name: fragment("EXCLUDED.name"),
+          topic: fragment("EXCLUDED.topic"),
+          params: fragment("EXCLUDED.params"),
+          contract_address_hash: fragment("EXCLUDED.contract_address_hash"),
+          transaction_hash: fragment("EXCLUDED.transaction_hash")
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.topic, EXCLUDED.params, EXCLUDED.contract_address_hash, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          cce.name,
+          cce.topic,
+          cce.params,
+          cce.contract_address_hash,
+          cce.transaction_hash
+        )
     )
   end
 
-  @throttle_ms 100
-  @batch_size 1000
-  @doc "Insert events as yet unprocessed from Log table into CeloContractEvents"
-  def insert_unprocessed_events(events, batch_size \\ @batch_size) do
-    # fetch ids of missing events
-    ids =
-      events
-      |> Enum.map(& &1.topic)
-      |> fetch_unprocessed_log_ids_query()
-      |> Repo.all()
-
-    # batch convert and insert new rows
-    ids
-    |> Enum.chunk_every(batch_size)
-    |> Enum.map(fn batch ->
-      to_insert =
-        batch
-        |> fetch_params()
-        |> Repo.all()
-        |> EventMap.rpc_to_event_params()
-        |> set_timestamps()
-
-      result = Repo.insert_all(__MODULE__, to_insert, returning: [:block_number, :log_index])
-
-      Process.sleep(@throttle_ms)
-      result
-    end)
-  end
-
-  def fetch_params(ids) do
-    # convert list of {block_number, index} tuples to two lists of [block_number] and [index] because ecto can't handle
-    # direct tuple comparisons with a WHERE IN clause
-    {blocks, indices} =
-      ids
-      |> Enum.reduce([[], []], fn {block, index}, [blocks, indices] ->
-        [[block | blocks], [index | indices]]
-      end)
-      |> then(fn [blocks, indices] -> {Enum.reverse(blocks), Enum.reverse(indices)} end)
-
-    from(
-      l in Log,
-      join: v in fragment("SELECT * FROM unnest(?::bytea[], ?::int[]) AS v(block_number,index)", ^blocks, ^indices),
-      on: v.block_number == l.block_number and v.index == l.index
-    )
-  end
-
-  defp set_timestamps(events) do
-    # Repo.insert_all does not handle timestamps, set explicitly here
-    timestamp = Timex.now()
-
-    Enum.map(events, fn e ->
-      e
-      |> Map.put(:inserted_at, timestamp)
-      |> Map.put(:updated_at, timestamp)
-    end)
-  end
+  def conflict_target, do: [:block_number, :log_index]
 
   def query_by_voter_param(query, voter_address_hash) do
     voter_address_for_pg = Common.fa(voter_address_hash)

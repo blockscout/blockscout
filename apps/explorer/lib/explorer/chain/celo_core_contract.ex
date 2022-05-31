@@ -16,7 +16,7 @@ defmodule Explorer.Chain.CeloCoreContract do
         }
 
   @attrs ~w(name log_index block_number address_hash)a
-  @required ~w(name log_index block_number address_hash)a
+  @required ~w(name address_hash)a
 
   @primary_key false
   schema "celo_core_contracts" do

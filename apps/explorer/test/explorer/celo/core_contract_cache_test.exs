@@ -3,7 +3,9 @@ defmodule Explorer.Celo.CoreContractCacheTest do
   use Explorer.DataCase, async: false
 
   import Mox
+  import Ecto.Query
   alias Explorer.Celo.CoreContracts
+  alias Explorer.Chain.CeloCoreContract
   require Logger
 
   describe "is_core_contract_address?" do
@@ -104,6 +106,32 @@ defmodule Explorer.Celo.CoreContractCacheTest do
       # previous address should still be considered a core contract
       assert CoreContracts.is_core_contract_address?(test_address)
       assert CoreContracts.contract_address(test_contract_identifier) == test_address
+    end
+  end
+
+  describe "assert_db_cache/0" do
+    test "it should create db entries where necessary" do
+      start_supervised(
+        {Task.Supervisor, name: Explorer.TaskSupervisor},
+        id: Explorer.TaskSupervisor
+      )
+
+      %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
+
+      cache = %{
+        "InDBAlready" => contract_address_hash |> to_string(),
+        "New1" => "0x000000000000000000000000000000000000ce12",
+        "New2" => "0x000000000000000000000000000000000000ce13"
+      }
+
+      CoreContracts.handle_cast(:insert_entries_to_db, %{cache: cache})
+
+      # wait for async task to insert db entries
+      :timer.sleep(100)
+
+      db_contracts = CeloCoreContract |> Repo.all()
+
+      assert(length(db_contracts) == 4)
     end
   end
 end
