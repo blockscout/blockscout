@@ -20,12 +20,11 @@ defmodule Explorer.Celo.ContractEvents.Common do
 
       decode_event_topic(topic, {:bytes, 32})
     else
-      decoded_elixir_type =
-        topic
-        |> extract_hash()
-        |> TypeDecoder.decode_raw([type])
-        |> List.first()
-        |> convert_type_to_elixir(type)
+      topic
+      |> extract_hash()
+      |> TypeDecoder.decode_raw([type])
+      |> List.first()
+      |> convert_type_to_elixir(type)
     end
   end
 

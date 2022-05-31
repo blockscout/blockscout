@@ -43,6 +43,29 @@ defmodule Explorer.Chain.CeloContractEvent do
     |> validate_required(@required)
   end
 
+  def schemaless_upsert do
+    from(cce in "celo_contract_events",
+      update: [
+        set: [
+          name: fragment("EXCLUDED.name"),
+          topic: fragment("EXCLUDED.topic"),
+          params: fragment("EXCLUDED.params"),
+          contract_address_hash: fragment("EXCLUDED.contract_address_hash"),
+          transaction_hash: fragment("EXCLUDED.transaction_hash")
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.topic, EXCLUDED.params, EXCLUDED.contract_address_hash, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          cce.name,
+          cce.topic,
+          cce.params,
+          cce.contract_address_hash,
+          cce.transaction_hash
+        )
+    )
+  end
+
   def default_upsert do
     from(cce in __MODULE__,
       update: [
