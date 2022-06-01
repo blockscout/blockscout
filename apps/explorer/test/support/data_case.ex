@@ -69,4 +69,23 @@ defmodule Explorer.DataCase do
       end)
     end)
   end
+
+  def clear_db do
+    Explorer.Repo.delete_all(Explorer.Chain.InternalTransaction)
+    Explorer.Repo.delete_all(Explorer.Chain.Address.CurrentTokenBalance)
+    Explorer.Repo.delete_all(Explorer.Chain.Block.Reward)
+    Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+    Explorer.Repo.delete_all(Explorer.Chain.Address.TokenBalance)
+    Explorer.Repo.delete_all(Explorer.Chain.TokenTransfer)
+    Explorer.Repo.delete_all(Explorer.Chain.Log)
+    Explorer.Repo.delete_all(Explorer.Chain.Transaction.Fork)
+    Explorer.Repo.delete_all(Explorer.Chain.Token)
+    Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+    Explorer.Repo.delete_all(Explorer.Chain.Address.CoinBalanceDaily)
+    Explorer.Repo.delete_all(Explorer.Chain.StakingPoolsDelegator)
+    Explorer.Repo.delete_all(Explorer.Chain.StakingPool)
+    Explorer.Repo.delete_all(Explorer.Chain.Block)
+    Explorer.Repo.delete_all(Explorer.Chain.Address.CoinBalance)
+    Explorer.Repo.delete_all(Explorer.Chain.Address)
+  end
 end

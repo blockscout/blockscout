@@ -32,9 +32,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
     on_exit(fn ->
       Application.put_env(:explorer, AverageBlockTime, enabled: false)
-      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
-      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
-      Explorer.Repo.delete_all(Explorer.Chain.Block)
+      clear_db()
     end)
 
     %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}

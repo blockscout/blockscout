@@ -12,6 +12,14 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
 
   setup :set_mox_global
 
+  setup do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      clear_db()
+    end)
+  end
+
   @chain_spec "#{File.cwd!()}/test/support/fixture/chain_spec/foundation.json"
               |> File.read!()
               |> Jason.decode!()

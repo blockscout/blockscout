@@ -18,9 +18,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 
     on_exit(fn ->
-      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
-      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
-      Explorer.Repo.delete_all(Explorer.Chain.Block)
+      clear_db()
     end)
 
     ctx

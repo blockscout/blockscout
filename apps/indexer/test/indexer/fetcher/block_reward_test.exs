@@ -26,9 +26,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
     Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 
     on_exit(fn ->
-      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
-      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
-      Explorer.Repo.delete_all(Explorer.Chain.Block)
+      clear_db()
     end)
 
     # Need to always mock to allow consensus switches to happen on demand and protect from them happening when we don't

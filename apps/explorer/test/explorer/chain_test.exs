@@ -41,18 +41,6 @@ defmodule Explorer.ChainTest do
 
   setup :verify_on_exit!
 
-  setup do
-    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
-
-    on_exit(fn ->
-      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
-      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
-      Explorer.Repo.delete_all(Explorer.Chain.Block)
-    end)
-
-    :ok
-  end
-
   describe "remove_nonconsensus_blocks_from_pending_ops/0" do
     test "removes pending ops for nonconsensus blocks" do
       block = insert(:block)
@@ -1764,6 +1752,8 @@ defmodule Explorer.ChainTest do
     }
 
     test "with valid data" do
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
       total_difficulty = Decimal.new(12_590_447_576_074_723_148_144_860_474_975_121_280_509)
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
@@ -1938,6 +1928,9 @@ defmodule Explorer.ChainTest do
                   }
                 ]
               }} = Chain.import(@import_data)
+
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
+      clear_db()
     end
   end
 

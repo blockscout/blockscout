@@ -40,9 +40,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 
     on_exit(fn ->
-      Explorer.Repo.delete_all(Chain.Block.SecondDegreeRelation)
-      Explorer.Repo.delete_all(Chain.Transaction)
-      Explorer.Repo.delete_all(Chain.Block)
+      clear_db()
     end)
 
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
