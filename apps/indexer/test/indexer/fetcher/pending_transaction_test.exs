@@ -14,6 +14,18 @@ defmodule Indexer.Fetcher.PendingTransactionTest do
 
   setup :verify_on_exit!
 
+  setup ctx do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+      Explorer.Repo.delete_all(Explorer.Chain.Block)
+    end)
+
+    ctx
+  end
+
   @moduletag [capture_log: true, no_geth: true]
 
   describe "start_link/1" do

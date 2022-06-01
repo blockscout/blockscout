@@ -23,6 +23,14 @@ defmodule Indexer.Fetcher.UncleBlockTest do
   setup :verify_on_exit!
 
   setup do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+      Explorer.Repo.delete_all(Explorer.Chain.Block)
+    end)
+
     # Uncle don't occur on POA chains, so there's no way to test this using the public addresses, so mox-only testing
     %{
       json_rpc_named_arguments: [

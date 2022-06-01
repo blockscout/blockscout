@@ -12,6 +12,18 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
+  setup ctx do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+      Explorer.Repo.delete_all(Explorer.Chain.Block)
+    end)
+
+    ctx
+  end
+
   describe "init/3" do
     test "returns unfetched token balances" do
       %Address.TokenBalance{

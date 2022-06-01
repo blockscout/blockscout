@@ -11,6 +11,18 @@ defmodule Explorer.Staking.ContractStateTest do
 
   setup :set_mox_global
 
+  setup do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+      Explorer.Repo.delete_all(Explorer.Chain.Block)
+    end)
+
+    :ok
+  end
+
   test "when disabled, returns default values" do
     assert ContractState.get(:epoch_number, 0) == 0
     assert ContractState.get(:epoch_end_block, 0) == 0

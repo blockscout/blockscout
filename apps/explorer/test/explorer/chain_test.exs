@@ -41,6 +41,18 @@ defmodule Explorer.ChainTest do
 
   setup :verify_on_exit!
 
+  setup do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+      Explorer.Repo.delete_all(Explorer.Chain.Block)
+    end)
+
+    :ok
+  end
+
   describe "remove_nonconsensus_blocks_from_pending_ops/0" do
     test "removes pending ops for nonconsensus blocks" do
       block = insert(:block)

@@ -29,6 +29,18 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   setup :verify_on_exit!
 
+  setup ctx do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+      Explorer.Repo.delete_all(Explorer.Chain.Block)
+    end)
+
+    ctx
+  end
+
   describe "start_link/1" do
     # See https://github.com/poanetwork/blockscout/issues/597
     @tag :no_geth

@@ -26,8 +26,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true)
 
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
     on_exit(fn ->
       Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      Explorer.Repo.delete_all(Explorer.Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Explorer.Chain.Transaction)
+      Explorer.Repo.delete_all(Explorer.Chain.Block)
     end)
 
     :ok
