@@ -8,6 +8,7 @@
 
 ### Fixes
 - [#5629](https://github.com/blockscout/blockscout/pull/5629) - Fix empty coin balance for empty address
+- [#5612](https://github.com/blockscout/blockscout/pull/5612) - Fix token transfers order
 - [#5626](https://github.com/blockscout/blockscout/pull/5626) - Fix vyper compiler versions order
 - [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
 - [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown

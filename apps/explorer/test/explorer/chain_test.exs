@@ -3293,6 +3293,186 @@ defmodule Explorer.ChainTest do
                }
              ] = Chain.transaction_to_token_transfers(transaction.hash)
     end
+
+    test "token transfers ordered by ASC log_index" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer_0 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 0
+        )
+
+      token_transfer_4 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 4
+        )
+
+      token_transfer_2 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 2
+        )
+
+      token_transfer_1 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 1
+        )
+
+      token_transfer_3 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 3
+        )
+
+      token_transfers_sorted =
+        [token_transfer_0, token_transfer_1, token_transfer_2, token_transfer_3, token_transfer_4]
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_unsorted =
+        [token_transfer_1, token_transfer_0, token_transfer_2, token_transfer_3, token_transfer_4]
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_sorted ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_unsorted !=
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+    end
+
+    test "token transfers can be paginated" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer_0 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 0
+        )
+
+      token_transfer_4 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 4
+        )
+
+      token_transfer_2 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 2
+        )
+
+      token_transfer_1 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 1
+        )
+
+      token_transfer_3 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 3
+        )
+
+      token_transfer_6 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 6
+        )
+
+      token_transfers_first_page =
+        [token_transfer_0, token_transfer_1, token_transfer_2] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_second_page =
+        [token_transfer_2, token_transfer_3, token_transfer_4] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_third_page =
+        [token_transfer_4, token_transfer_6] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_first_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_second_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   key: {transaction.block_number, 1},
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_third_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   key: {transaction.block_number, 3},
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+    end
   end
 
   describe "value/2" do
@@ -4965,6 +5145,48 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.hash)
 
       assert result == [transaction.hash]
+    end
+
+    test "correct ordering for token transfers (ASC log_index)" do
+      address = insert(:address)
+      token = insert(:token)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        amount: 2,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 2
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 0
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 1
+      )
+
+      assert [result] = Chain.address_to_transactions_with_token_transfers(address.hash, token.contract_address_hash)
+
+      assert [{transaction.hash, 0}, {transaction.hash, 1}, {transaction.hash, 2}] ==
+               result.token_transfers |> Enum.map(&{&1.transaction_hash, &1.log_index})
     end
   end
 
