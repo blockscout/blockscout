@@ -55,7 +55,7 @@ defmodule Explorer.Repo do
           :timer.tc(fn ->
             transaction(
               fn ->
-                case async_execute(multis) do
+                case async_execute(multis, opts) do
                   {:ok, changes} -> changes
                   {:error, e} -> rollback(e)
                 end
@@ -73,9 +73,9 @@ defmodule Explorer.Repo do
     )
   end
 
-  defp async_execute(multis) do
+  defp async_execute(multis, opts) do
     multis
-    |> Task.async_stream(&transaction/1)
+    |> Task.async_stream(fn multi -> transaction(multi, opts) end)
     |> Enum.reduce({%{}, []}, fn result, {result_changes, errors} ->
       case result do
         {:ok, {:ok, changes}} -> {Map.merge(changes, result_changes, fn _k, v1, v2 -> v1 ++ v2 end), errors}

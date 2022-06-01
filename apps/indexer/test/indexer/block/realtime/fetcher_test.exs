@@ -37,6 +37,14 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      Explorer.Repo.delete_all(Chain.Block.SecondDegreeRelation)
+      Explorer.Repo.delete_all(Chain.Transaction)
+      Explorer.Repo.delete_all(Chain.Block)
+    end)
+
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end
 

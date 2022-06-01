@@ -124,7 +124,7 @@ defmodule Explorer.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test --no-start"]
+      test: ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate", "test --no-start"]
     ] ++ env_aliases(env)
   end
 
