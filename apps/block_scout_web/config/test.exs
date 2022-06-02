@@ -21,3 +21,18 @@ config :logger, :block_scout_web,
 config :wallaby, screenshot_on_failure: true, driver: Wallaby.Chrome, js_errors: false
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
+
+config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
+  domain: "example.com",
+  client_id: "clien_id",
+  client_secret: "secrets"
+
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: "example.com/callback"]
+    }
+  ],
+  logout_url: "example.com/logout",
+  logout_return_to_url: "example.com/return"

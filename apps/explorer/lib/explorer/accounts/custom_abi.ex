@@ -34,6 +34,8 @@ defmodule Explorer.Account.CustomABI do
     |> validate_required(@attrs, message: "Required")
     |> validate_custom_abi()
     |> check_smart_contract_address()
+    |> foreign_key_constraint(:identity_id)
+    |> foreign_key_constraint(:address_hash)
     |> unique_constraint([:identity_id, :address_hash],
       message: "Custom ABI for this address has already been added before"
     )

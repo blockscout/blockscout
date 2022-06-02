@@ -99,8 +99,8 @@ if (container.length) {
   loadFunctions(container, false)
 }
 
-const custom_abi_container = $('[data-smart-contract-functions-custom]')
+const customABIContainer = $('[data-smart-contract-functions-custom]')
 
-if (custom_abi_container.length) {
-  loadFunctions(custom_abi_container, true)
+if (customABIContainer.length) {
+  loadFunctions(customABIContainer, true)
 }
