@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Explorer.Repo do
   use Ecto.Repo,
     otp_app: :explorer,
@@ -44,6 +45,48 @@ defmodule Explorer.Repo do
       end,
       transaction_id: transaction_id
     )
+  end
+
+  def logged_batch_transaction(multis, opts \\ []) do
+    transaction_id = :erlang.unique_integer([:positive])
+
+    Explorer.Logger.metadata(
+      fn ->
+        {microseconds, value} =
+          :timer.tc(fn ->
+            transaction(
+              fn ->
+                case async_execute(multis, opts) do
+                  {:ok, changes} -> changes
+                  {:error, e} -> rollback(e)
+                end
+              end,
+              opts
+            )
+          end)
+
+        milliseconds = div(microseconds, 100) / 10.0
+        Logger.debug(["transaction_time=", :io_lib_format.fwrite_g(milliseconds), ?m, ?s])
+
+        value
+      end,
+      transaction_id: transaction_id
+    )
+  end
+
+  defp async_execute(multis, opts) do
+    multis
+    |> Task.async_stream(fn multi -> transaction(multi, opts) end)
+    |> Enum.reduce({%{}, []}, fn result, {result_changes, errors} ->
+      case result do
+        {:ok, {:ok, changes}} -> {Map.merge(changes, result_changes, fn _k, v1, v2 -> v1 ++ v2 end), errors}
+        error -> {result_changes, [error | errors]}
+      end
+    end)
+    |> case do
+      {changes, []} -> {:ok, changes}
+      {_changes, errors} -> {:error, errors}
+    end
   end
 
   @doc """

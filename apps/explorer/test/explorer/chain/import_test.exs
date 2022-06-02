@@ -24,6 +24,16 @@ defmodule Explorer.Chain.ImportTest do
 
   doctest Import
 
+  setup do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      clear_db()
+    end)
+
+    :ok
+  end
+
   describe "all/1" do
     # set :timeout options to cover lines that use the timeout override when available
     @import_data %{

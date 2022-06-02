@@ -11,6 +11,16 @@ defmodule Explorer.ChainSpec.Geth.ImporterTest do
 
   setup :set_mox_global
 
+  setup do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      clear_db()
+    end)
+
+    :ok
+  end
+
   @genesis "#{File.cwd!()}/test/support/fixture/chain_spec/qdai_genesis.json"
            |> File.read!()
            |> Jason.decode!()

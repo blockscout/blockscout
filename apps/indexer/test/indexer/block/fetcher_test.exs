@@ -30,6 +30,16 @@ defmodule Indexer.Block.FetcherTest do
 
   setup :verify_on_exit!
 
+  setup ctx do
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      clear_db()
+    end)
+
+    ctx
+  end
+
   # First block with all schemas to import
   # 37 is determined using the following query:
   # SELECT MIN(blocks.number) FROM

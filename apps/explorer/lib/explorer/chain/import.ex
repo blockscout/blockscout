@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Import do
     Import.Stage.Addresses,
     Import.Stage.AddressReferencing,
     Import.Stage.BlockReferencing,
+    Import.Stage.BlockTransactionTokenReferencing,
     Import.Stage.BlockFollowing,
     Import.Stage.BlockPending
   ]
@@ -281,8 +282,8 @@ defmodule Explorer.Chain.Import do
     timestamps = timestamps()
     full_options = Map.put(options, :timestamps, timestamps)
 
-    {multis, final_runner_to_changes_list} =
-      Enum.flat_map_reduce(@stages, runner_to_changes_list, fn stage, remaining_runner_to_changes_list ->
+    {multis_batches, final_runner_to_changes_list} =
+      Enum.map_reduce(@stages, runner_to_changes_list, fn stage, remaining_runner_to_changes_list ->
         stage.multis(remaining_runner_to_changes_list, full_options)
       end)
 
@@ -291,7 +292,7 @@ defmodule Explorer.Chain.Import do
             "No stages consumed the following runners: #{final_runner_to_changes_list |> Map.keys() |> inspect()}"
     end
 
-    multis
+    multis_batches
   end
 
   def insert_changes_list(repo, changes_list, options) when is_atom(repo) and is_list(changes_list) do
@@ -323,33 +324,17 @@ defmodule Explorer.Chain.Import do
     |> logged_import(options)
   end
 
-  defp logged_import(multis, options) when is_list(multis) and is_map(options) do
-    # Logger.info("### logged_import ###")
+  defp logged_import(multis_batches, options) when is_list(multis_batches) and is_map(options) do
     import_id = :erlang.unique_integer([:positive])
 
-    Explorer.Logger.metadata(fn -> import_transactions(multis, options) end, import_id: import_id)
+    Explorer.Logger.metadata(fn -> import_batch_transactions(multis_batches, options) end, import_id: import_id)
   end
 
-  defp import_transactions(multis, options) when is_list(multis) and is_map(options) do
-    # Logger.info("### import_transactions with options keys #{inspect(Map.keys(options))} ###")
-    # Logger.info("### multis length #{Enum.count(multis)} ###")
-    # Logger.info("### multis #{inspect(multis)} ###")
-
-    Enum.reduce_while(multis, {:ok, %{}}, fn multi, {:ok, acc_changes} ->
-      Logger.info("### import_transaction ###")
-
-      [multi, acc_changes] =
-        case multi do
-          %Ecto.Multi{} ->
-            [multi, acc_changes]
-
-          _ ->
-            [Enum.at(multi, 0), Map.merge(acc_changes, Enum.at(multi, 1))]
-        end
-
-      case import_transaction(multi, options) do
+  defp import_batch_transactions(multis_batches, options) when is_list(multis_batches) and is_map(options) do
+    Enum.reduce_while(multis_batches, {:ok, %{}}, fn multis, {:ok, acc_changes} ->
+      case import_batch_transaction(multis, options) do
         {:ok, changes} -> {:cont, {:ok, Map.merge(acc_changes, changes)}}
-        {:error, _, _, _} = error -> {:halt, error}
+        {:error, _} = error -> {:halt, error}
       end
     end)
   rescue
@@ -360,8 +345,8 @@ defmodule Explorer.Chain.Import do
       end
   end
 
-  defp import_transaction(multi, options) when is_map(options) do
-    Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
+  defp import_batch_transaction(multis, options) do
+    Repo.logged_batch_transaction(multis, timeout: Map.get(options, :timeout, @transaction_timeout))
   end
 
   @spec timestamps() :: timestamps

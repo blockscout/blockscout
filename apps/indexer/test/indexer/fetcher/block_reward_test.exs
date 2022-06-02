@@ -23,6 +23,12 @@ defmodule Indexer.Fetcher.BlockRewardTest do
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      clear_db()
+    end)
+
     # Need to always mock to allow consensus switches to happen on demand and protect from them happening when we don't
     # want them to.
     %{

@@ -144,6 +144,7 @@ defmodule BlockScoutWeb.Mixfile do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: [
+        "ecto.drop --quiet",
         "ecto.create --quiet",
         "ecto.migrate",
         # to match behavior of `mix test` from project root, which needs to not start applications for `indexer` to

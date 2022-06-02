@@ -28,8 +28,11 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true)
 
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
     on_exit(fn ->
       Application.put_env(:explorer, AverageBlockTime, enabled: false)
+      clear_db()
     end)
 
     %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}

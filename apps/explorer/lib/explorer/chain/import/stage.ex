@@ -68,4 +68,23 @@ defmodule Explorer.Chain.Import.Stage do
       {new_multi, new_remaining_runner_to_changes_list}
     end)
   end
+
+  @spec split_multis([Runner.t()], runner_to_changes_list, %{optional(atom()) => term()}) ::
+          {[Multi.t()], runner_to_changes_list}
+  def split_multis(runners, runner_to_changes_list, options) do
+    Enum.reduce(runners, {[], runner_to_changes_list}, fn runner, {result_multis, remaining_runner_to_changes_list} ->
+      {changes_list, new_remaining_runner_to_changes_list} = Map.pop(remaining_runner_to_changes_list, runner)
+
+      new_multis =
+        case changes_list do
+          nil ->
+            result_multis
+
+          _ ->
+            [runner.run(Multi.new(), changes_list, options) | result_multis]
+        end
+
+      {new_multis, new_remaining_runner_to_changes_list}
+    end)
+  end
 end

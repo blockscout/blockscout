@@ -21,6 +21,12 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
+    Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+    on_exit(fn ->
+      clear_db()
+    end)
+
     :ok
   end
 
