@@ -20,7 +20,11 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def multis(runner_to_changes_list, options) do
-    Stage.chunk_every(runner_to_changes_list, Runner.Transactions, @transactions_chunk_size, options) ++
-      Stage.split_multis([Runner.Tokens], runner_to_changes_list, options)
+    {transactions_multis, runner_to_changes_list} =
+      Stage.chunk_every(runner_to_changes_list, Runner.Transactions, @transactions_chunk_size, options)
+
+    {tokens_multis, runner_to_changes_list} = Stage.split_multis([Runner.Tokens], runner_to_changes_list, options)
+
+    {transactions_multis ++ tokens_multis, runner_to_changes_list}
   end
 end
