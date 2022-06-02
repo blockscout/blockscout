@@ -30,11 +30,6 @@ defmodule Explorer.ExchangeRates.Token do
           volume_24h_usd: Decimal.t()
         }
 
-  @derive {Jason.Encoder,
-           except: [
-             :__meta__
-           ]}
-
   @enforce_keys ~w(available_supply total_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
   defstruct ~w(available_supply total_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
 

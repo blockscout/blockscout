@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:httpoison, "~> 1.6"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator
-      {:jason, "~> 1.2.2"},
+      {:jason, "~> 1.3"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
@@ -114,6 +114,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:prometheus_plugs, "~> 1.1"},
       # OS process metrics for Prometheus
       {:prometheus_process_collector, "~> 1.3"},
+      {:remote_ip, "~> 1.0"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
