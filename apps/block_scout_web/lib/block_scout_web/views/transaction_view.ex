@@ -331,6 +331,10 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def formatted_gas_price(%Transaction{} = transaction) do
+    transaction.gas_price |> Wei.to(:ether)
+  end
+
   def transaction_status(transaction) do
     Chain.transaction_to_status(transaction)
   end
