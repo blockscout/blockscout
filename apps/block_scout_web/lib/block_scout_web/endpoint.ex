@@ -1,4 +1,5 @@
 defmodule BlockScoutWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :block_scout_web
   use Absinthe.Phoenix.Endpoint
 
@@ -52,6 +53,7 @@ defmodule BlockScoutWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Poison
   )
+  plug(Sentry.PlugContext)
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)

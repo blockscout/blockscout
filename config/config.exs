@@ -15,6 +15,8 @@ config :logger,
   backends: [
     # all applications and all levels
     :console,
+    # CloudWalk Sentry
+    Sentry.LoggerBackend,
     # all applications, but only errors
     {LoggerFileBackend, :error},
     # only :ecto, but all levels
