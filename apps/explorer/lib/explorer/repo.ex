@@ -75,7 +75,7 @@ defmodule Explorer.Repo do
 
   defp async_execute(multis, opts) do
     multis
-    |> Task.async_stream(fn multi -> transaction(multi, opts) end)
+    |> Task.async_stream(fn multi -> transaction(multi, opts) end, timeout: opts[:timeout] || 5000)
     |> Enum.reduce({%{}, []}, fn result, {result_changes, errors} ->
       case result do
         {:ok, {:ok, changes}} -> {Map.merge(changes, result_changes, fn _k, v1, v2 -> v1 ++ v2 end), errors}
