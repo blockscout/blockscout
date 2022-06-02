@@ -74,3 +74,23 @@ input.profile-item {
   line-height: 1.2;
   padding-top: 10px;
 }
+
+.navbar-account {
+  @include media-breakpoint-down(sm) {
+    max-width: 100%;
+    flex-grow: 1;
+  }
+}
+
+.nav-item.account {
+  @include media-breakpoint-down(sm) {
+    width: auto;
+    display: inline-grid;
+  }
+}
+
+.nav.account {
+  @include media-breakpoint-down(sm) {
+    display: inline;
+  }
+}
