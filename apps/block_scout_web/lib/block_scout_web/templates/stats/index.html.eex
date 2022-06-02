@@ -25,7 +25,7 @@
       </li>  
       <li class="stats-link" data-tab-id="4">
         <a href="<%= reserve_url %>" target="myiframe">
-          <%=  gettext("Celo Reserve") %>
+          <%=  gettext("Mento Reserve") %>
         </a>
       </li> 
       <li class="stats-link" data-tab-id="5">

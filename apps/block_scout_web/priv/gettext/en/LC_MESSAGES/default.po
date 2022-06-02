@@ -544,11 +544,6 @@ msgid "Candidate’s Staked Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stats/index.html.eex:28
-msgid "Celo Reserve"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
 msgid "Change Network"
 msgstr ""
@@ -3407,4 +3402,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:43
 msgid "Source code matches deployed contracts except the metadata hash"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/stats/index.html.eex:28
+msgid "Mento Reserve"
 msgstr ""
