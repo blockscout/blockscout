@@ -55,7 +55,18 @@
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= System.get_env("CHAIN_ID") %>">
+        <% function_abi = 
+                    case Jason.encode([function]) do 
+                      {:ok, abi_string} ->
+                        abi_string
+                      _ ->
+                        if @contract_type == "proxy" do
+                          @implementation_abi
+                        else
+                          @contract_abi
+                        end 
+                    end %>
+        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= function_abi %>" data-implementation-abi="<%= function_abi %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
@@ -114,31 +125,34 @@
     <% else %>
       <%= cond do %>
         <%= outputs?(function["outputs"]) -> %>
-          <% length = Enum.count(function["outputs"]) %>
-          <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>
-            <%= if address?(output["type"]) do %>
-              <div class="py-2 word-break-all">
-                <%= link(
-                  output["value"],
-                  to: address_path(@conn, :show, output["value"])) %><%= if length > 1 and index < length - 1 do %>,&#160;<% end %>
-              </div>
-            <% else %>
-              <%= if output["type"] == "uint256" do %>
+          <div class="align-self-center">
+            <% length = Enum.count(function["outputs"]) %>
+            <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>
+              <%= if address?(output["type"]) do %>
                 <div class="py-2 word-break-all">
-                  <div data-wei-ether-converter>
-                    <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
-                    <span class="py-2 px-2">
-                      <input class="wei-ether" type="checkbox" autocomplete="off">
-                      <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                      <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
-                    </span>
-                  </div>
-                </div> 
+                  <%= link(
+                    output["value"],
+                    to: address_path(@conn, :show, output["value"])) %><%= if not_last_element?(length, index) do %>,&#160;<% end %>
+                </div>
               <% else %>
-                <%= raw(values_only(output["value"], output["type"], output["components"])) %>
+                <%= if output["type"] == "uint256" do %>
+                  <div class="py-2 word-break-all">
+                    <div data-wei-ether-converter>
+                      <i>(uint256):</i>
+                      <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
+                      <span class="py-2 px-2">
+                        <input class="wei-ether" type="checkbox" autocomplete="off">
+                        <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
+                        <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
+                      </span>
+                    </div>
+                  </div> 
+                <% else %>
+                  <div class="align-self-center function-output word-break-all <%= if not_last_element?(length, index), do: "mb-1" %>"><%= raw(values_with_type(output["value"], output["type"], [output["name"]], 0, output["components"])) %></div>
+                <% end %>
               <% end %>
             <% end %>
-          <% end %>
+          </div>
         <% error?(function["outputs"]) -> %>
           <% {:error, text_error} = function["outputs"] %>
           <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0;"><%= text_error %></div>

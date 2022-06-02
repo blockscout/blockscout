@@ -188,10 +188,14 @@ defmodule EthereumJSONRPC.Contract do
         block_number -> integer_to_quantity(block_number)
       end
 
+    params =
+      %{to: contract_address, data: data}
+      |> (&if(is_nil(from), do: &1, else: Map.put(&1, :from, from))).()
+
     full_params = %{
       id: id,
       method: "eth_call",
-      params: [%{to: contract_address, data: data, from: from}, block]
+      params: [params, block]
     }
 
     request(full_params)
@@ -224,6 +228,9 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp format_error(error) do
-    format_error(Exception.message(error))
+    error
+    |> Map.put(:hide_url, true)
+    |> Exception.message()
+    |> format_error()
   end
 end

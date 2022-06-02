@@ -65,16 +65,14 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
@@ -149,8 +147,7 @@ defmodule BlockScoutWeb.SmartContractView do
         values =
           value
           |> Enum.map(&values_only(&1, String.slice(type, 0..-3), components, nested_index + 1))
-          |> Enum.map(&(String.duplicate(@tab, nested_index) <> &1))
-          |> Enum.join(",</br>")
+          |> Enum.map_join(",</br>", &(String.duplicate(@tab, nested_index) <> &1))
 
         wrap_output(render_nested_array_value(values, nested_index - 1), is_too_long)
 
@@ -170,16 +167,14 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         wrap_output(render_array_value(values), is_too_long)
 
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         wrap_output(render_array_value(values), is_too_long)
 
@@ -326,11 +321,11 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp render_type_value(type, value, type) do
-    "<div style=\"padding-left: 20px\">(#{type}) : #{value}</div>"
+    "<div class=\"pl-3\"><i>(#{type})</i> : #{value}</div>"
   end
 
   defp render_type_value(type, value, name) do
-    "<div style=\"padding-left: 20px\"><span style=\"color: black\">#{name}</span> (#{type}) : #{value}</div>"
+    "<div class=\"pl-3\"><i><span style=\"color: black\">#{name}</span> (#{type})</i> : #{value}</div>"
   end
 
   defp render_array_type_value(type, values, name) do
@@ -355,10 +350,9 @@ defmodule BlockScoutWeb.SmartContractView do
     if type == "tuple" && components do
       types =
         components
-        |> Enum.map(fn component ->
+        |> Enum.map_join(",", fn component ->
           Map.get(component, "type")
         end)
-        |> Enum.join(",")
 
       "tuple[" <> types <> "]"
     else
@@ -384,4 +378,6 @@ defmodule BlockScoutWeb.SmartContractView do
         hex_revert_reason
     end
   end
+
+  def not_last_element?(length, index), do: length > 1 and index < length - 1
 end
