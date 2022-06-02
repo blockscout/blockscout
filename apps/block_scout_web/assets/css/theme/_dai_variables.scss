@@ -1,6 +1,6 @@
 // general
-$primary: #17314f;
-$secondary: #15bba6;
+$primary: #133629;
+$secondary: #3E6957;
 $tertiary: #93d7ff;
 $additional-font: #fff;
 
@@ -23,11 +23,11 @@ $dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
 
-$dashboard-banner-gradient-start: $primary; // gradient begin
+$dashboard-banner-gradient-start: #133629; // gradient begin
 
-$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
+$dashboard-banner-gradient-end: #3E6957; // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #20446e; // stats bg
+$dashboard-banner-network-plain-container-background-color: #3E6957; // stats bg
 
 
 // navigation
@@ -58,6 +58,13 @@ a.tile-title { color: $secondary !important; }
 			color: $secondary;
 		}
 	}
+}
+
+.dashboard-banner-network-stats-item::before {
+  background-color: #F0EBDE !important;
+}
+.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(3)::before {
+  background-color: #15bba6 !important;
 }
 
 // card
