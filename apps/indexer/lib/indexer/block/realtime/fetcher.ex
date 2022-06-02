@@ -299,7 +299,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
-    case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
+    case log_timing(
+           fn -> fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) end,
+           block_number_to_fetch
+         ) do
       {:ok, %{inserted: _, errors: []}} ->
         Logger.debug("Fetched and imported.")
 
@@ -362,6 +365,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
           step: step
         )
     end
+  end
+
+  defp log_timing(function, number) do
+    {time, value} = :timer.tc(function)
+
+    Logger.info("Block #{inspect(number)} indexing duration: #{time / 1_000_000}")
+
+    value
   end
 
   defp retry_fetch_and_import_block(%{retry: retry}) when retry < 1, do: :ignore
