@@ -16,8 +16,11 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Tokens
     ]
 
+  @transactions_chunk_size 50
+
   @impl Stage
   def multis(runner_to_changes_list, options) do
-    Stage.split_multis(runners(), runner_to_changes_list, options)
+    Stage.chunk_every(runner_to_changes_list, Runner.Transactions, @transactions_chunk_size, options) ++
+      Stage.split_multis([Runner.Tokens], runner_to_changes_list, options)
   end
 end
