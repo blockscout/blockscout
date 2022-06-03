@@ -531,13 +531,33 @@ defmodule Explorer.Chain.SmartContract do
 
   def get_implementation_address_hash(%__MODULE__{abi: nil}), do: false
 
-  def get_implementation_address_hash(%__MODULE__{
-        address_hash: address_hash,
-        abi: abi,
-        implementation_address_hash: implementation_address_hash_from_db,
-        implementation_name: implementation_name_from_db,
-        implementation_fetched_at: implementation_fetched_at
-      }) do
+  def get_implementation_address_hash(
+        %__MODULE__{
+          address_hash: address_hash,
+          implementation_fetched_at: implementation_fetched_at
+        } = smart_contract
+      ) do
+    updated_smart_contract =
+      if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) &&
+           check_implementation_refetch_neccessity(implementation_fetched_at) do
+        Chain.address_hash_to_smart_contract(address_hash)
+      else
+        smart_contract
+      end
+
+    get_implementation_address_hash({:updated, updated_smart_contract})
+  end
+
+  def get_implementation_address_hash(
+        {:updated,
+         %__MODULE__{
+           address_hash: address_hash,
+           abi: abi,
+           implementation_address_hash: implementation_address_hash_from_db,
+           implementation_name: implementation_name_from_db,
+           implementation_fetched_at: implementation_fetched_at
+         }}
+      ) do
     if check_implementation_refetch_neccessity(implementation_fetched_at) do
       get_implementation_address_hash_task = Task.async(fn -> get_implementation_address_hash(address_hash, abi) end)
 
@@ -545,20 +565,31 @@ defmodule Explorer.Chain.SmartContract do
 
       case Task.yield(get_implementation_address_hash_task, time_out) ||
              Task.ignore(get_implementation_address_hash_task) do
+        {:ok, {:empty, :empty}} ->
+          {nil, nil}
+
         {:ok, {address_hash, _name} = result} when not is_nil(address_hash) ->
           result
 
         _ ->
-          {implementation_address_hash_from_db, implementation_name_from_db}
+          {db_implementation_data_converter(implementation_address_hash_from_db),
+           db_implementation_data_converter(implementation_name_from_db)}
       end
     else
-      {implementation_address_hash_from_db, implementation_name_from_db}
+      {db_implementation_data_converter(implementation_address_hash_from_db),
+       db_implementation_data_converter(implementation_name_from_db)}
     end
   end
 
-  def check_implementation_refetch_neccessity(nil), do: true
+  def get_implementation_address_hash(_), do: {nil, nil}
 
-  def check_implementation_refetch_neccessity(timestamp) do
+  defp db_implementation_data_converter(nil), do: nil
+  defp db_implementation_data_converter(string) when is_binary(string), do: string
+  defp db_implementation_data_converter(other), do: to_string(other)
+
+  defp check_implementation_refetch_neccessity(nil), do: true
+
+  defp check_implementation_refetch_neccessity(timestamp) do
     if Application.get_env(:explorer, :enable_caching_implementation_data_of_proxy) do
       now = DateTime.utc_now()
 
@@ -594,8 +625,8 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @spec get_implementation_address_hash(Hash.Address.t(), list()) :: {String.t() | nil, String.t() | nil}
-  def get_implementation_address_hash(proxy_address_hash, abi)
-      when not is_nil(proxy_address_hash) and not is_nil(abi) do
+  defp get_implementation_address_hash(proxy_address_hash, abi)
+       when not is_nil(proxy_address_hash) and not is_nil(abi) do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
@@ -623,7 +654,7 @@ defmodule Explorer.Chain.SmartContract do
     save_implementation_data(implementation_address, proxy_address_hash)
   end
 
-  def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
+  defp get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
     {nil, nil}
   end
 
@@ -773,7 +804,7 @@ defmodule Explorer.Chain.SmartContract do
               @burn_address_hash_str
             ] do
     proxy_address_hash
-    |> Chain.address_hash_to_smart_contract()
+    |> Chain.address_hash_to_smart_contract_without_twin()
     |> changeset(%{
       implementation_name: nil,
       implementation_address_hash: nil,
@@ -781,13 +812,14 @@ defmodule Explorer.Chain.SmartContract do
     })
     |> Repo.update()
 
-    {nil, nil}
+    {:empty, :empty}
   end
 
   defp save_implementation_data(implementation_address_hash_string, proxy_address_hash)
        when is_binary(implementation_address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(implementation_address_hash_string),
-         proxy_contract <- Chain.address_hash_to_smart_contract(proxy_address_hash),
+         proxy_contract <- Chain.address_hash_to_smart_contract_without_twin(proxy_address_hash),
+         false <- is_nil(proxy_contract),
          %{implementation: %__MODULE__{name: name}, proxy: proxy_contract} <- %{
            implementation: Chain.address_hash_to_smart_contract(address_hash),
            proxy: proxy_contract

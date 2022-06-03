@@ -4333,11 +4333,26 @@ defmodule Explorer.Chain do
           Chain.get_address_verified_twin_contract(address_hash).verified_contract
 
       if address_verified_twin_contract do
-        Map.put(address_verified_twin_contract, :address_hash, address_hash)
+        address_verified_twin_contract
+        |> Map.put(:address_hash, address_hash)
+        |> Map.put(:implementation_address_hash, current_smart_contract.implementation_address_hash)
+        |> Map.put(:implementation_name, current_smart_contract.implementation_name)
+        |> Map.put(:implementation_fetched_at, current_smart_contract.implementation_fetched_at)
       else
         current_smart_contract
       end
     end
+  end
+
+  @spec address_hash_to_smart_contract_without_twin(Hash.Address.t()) :: SmartContract.t() | nil
+  def address_hash_to_smart_contract_without_twin(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    Repo.one(query)
   end
 
   def smart_contract_fully_verified?(address_hash_str) when is_binary(address_hash_str) do
