@@ -1337,7 +1337,9 @@ defmodule Explorer.ChainTest do
     test "returns the correct address if it exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.hash_to_address(address.hash)
+      assert {:ok, address_from_db} = Chain.hash_to_address(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "has_decompiled_code? is true if there are decompiled contracts" do
@@ -1386,14 +1388,16 @@ defmodule Explorer.ChainTest do
     test "returns an address if it already exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert {:ok, address_from_db} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "returns an address if it doesn't exist" do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: hash}} = Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: ^hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -4158,7 +4162,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
+      assert {:ok, %SmartContract{}} =
                Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
@@ -4174,7 +4178,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} = Chain.update_smart_contract(%{address_hash: address.hash})
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
@@ -4200,8 +4204,7 @@ defmodule Explorer.ChainTest do
                  el.contract_source_code == Map.get(src, :contract_source_code)
              end)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
-               Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
 
       sc_after_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
 
@@ -4758,7 +4761,11 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
-      assert smart_contract = result.contract_address.smart_contract
+      assert address.smart_contract.address_hash == result.contract_address.smart_contract.address_hash
+      assert address.smart_contract.contract_code_md5 == result.contract_address.smart_contract.contract_code_md5
+      assert address.smart_contract.abi == result.contract_address.smart_contract.abi
+      assert address.smart_contract.contract_source_code == result.contract_address.smart_contract.contract_source_code
+      assert address.smart_contract.name == result.contract_address.smart_contract.name
     end
   end
 
@@ -4994,7 +5001,7 @@ defmodule Explorer.ChainTest do
         cataloged: true
       }
 
-      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+      assert {:ok, _updated_token} = Chain.update_token(token, update_params)
     end
   end
 
