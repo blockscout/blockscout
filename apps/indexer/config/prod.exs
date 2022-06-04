@@ -8,23 +8,23 @@ config :logger, :indexer,
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
 config :logger, :indexer_token_balances,
-  level: :debug,
+  level: :error,
   path: Path.absname("logs/prod/indexer/token_balances/error.log"),
   metadata_filter: [fetcher: :token_balances],
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
 config :logger, :failed_contract_creations,
-  level: :debug,
+  level: :error,
   path: Path.absname("logs/prod/indexer/failed_contract_creations.log"),
   metadata_filter: [fetcher: :failed_created_addresses]
 
 config :logger, :addresses_without_code,
-  level: :debug,
+  level: :error,
   path: Path.absname("logs/prod/indexer/addresses_without_code.log"),
   metadata_filter: [fetcher: :addresses_without_code]
 
 config :logger, :pending_transactions_to_refetch,
-  level: :debug,
+  level: :error,
   path: Path.absname("logs/prod/indexer/pending_transactions_to_refetch.log"),
   metadata_filter: [fetcher: :pending_transactions_to_refetch]
 

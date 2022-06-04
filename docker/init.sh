@@ -1,4 +1,5 @@
 #!/bin/sh
+export BLOCKSCOUT_VERSION=$(date '+%Y-%m-%d')
 export COIN=ASTRA
 export ETHEREUM_JSONRPC_VARIANT=geth
 export ETHEREUM_JSONRPC_HTTP_URL=${HTTP_URL:-http://host.docker.internal:8545/}
