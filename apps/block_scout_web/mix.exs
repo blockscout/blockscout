@@ -116,6 +116,10 @@ defmodule BlockScoutWeb.Mixfile do
       {:prometheus_process_collector, "~> 1.3"},
       {:remote_ip, "~> 1.0"},
       {:qrcode, "~> 0.1.0"},
+
+      # CloudWalk Sentry
+      {:sentry, "~> 8.0"},
+
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
       {:spandex, "~> 3.0"},

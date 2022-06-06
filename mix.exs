@@ -78,7 +78,7 @@ defmodule BlockScout.Mixfile do
       {:tesla, "~> 1.3.3"},
       # Documentation
       {:ex_doc, "~> 0.28.2", only: :dev, runtime: false},
-      {:number, "~> 1.0.3"}
+      {:number, "~> 1.0.3"},
 
       # CloudWalk Sentry
       {:sentry, "~> 8.0"},

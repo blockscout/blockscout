@@ -8,3 +8,13 @@ config :logger, :ecto,
   path: Path.absname("logs/dev/ecto.log")
 
 config :logger, :error, path: Path.absname("logs/dev/error.log")
+
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN"),
+  environment_name: :dev,
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!(),
+  tags: %{
+    env: "development"
+  },
+  included_environments: [:dev]
