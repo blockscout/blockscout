@@ -6,7 +6,7 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
 
   alias Explorer.Accounts.Notifier.Summary
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{TokenTransfer, Transaction, Wei}
   alias Explorer.Repo
 
   describe "call" do
@@ -41,9 +41,9 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
     test "Pending Coin transaction (w/o block)" do
       tx =
         %Transaction{
-          from_address: from_address,
-          to_address: to_address,
-          hash: tx_hash
+          from_address: _from_address,
+          to_address: _to_address,
+          hash: _tx_hash
         } = insert(:transaction)
 
       assert Summary.process(tx) == []
@@ -57,8 +57,8 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
 
       tx =
         %Transaction{
-          from_address: from_address,
-          block_number: block_number,
+          from_address: _from_address,
+          block_number: _block_number,
           hash: tx_hash
         } =
         :transaction
@@ -88,15 +88,15 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
     test "ERC-20 Token transfer" do
       tx =
         %Transaction{
-          from_address: from_address,
-          to_address: to_address,
-          block_number: block_number,
-          hash: tx_hash
+          from_address: _from_address,
+          to_address: _to_address,
+          block_number: _block_number,
+          hash: _tx_hash
         } = with_block(insert(:transaction))
 
       transfer =
         %TokenTransfer{
-          amount: amount,
+          amount: _amount,
           block_number: block_number,
           from_address: from_address,
           to_address: to_address,
@@ -137,15 +137,15 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
 
       tx =
         %Transaction{
-          from_address: from_address,
-          to_address: to_address,
-          block_number: block_number,
-          hash: tx_hash
+          from_address: _from_address,
+          to_address: _to_address,
+          block_number: _block_number,
+          hash: _tx_hash
         } = with_block(insert(:transaction))
 
       transfer =
         %TokenTransfer{
-          amount: amount,
+          amount: _amount,
           block_number: block_number,
           from_address: from_address,
           to_address: to_address
@@ -165,8 +165,6 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
       token_decimals = Decimal.to_integer(token.decimals)
 
       decimals = Decimal.new(Integer.pow(10, token_decimals))
-
-      amount = Decimal.div(transfer.amount, decimals)
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -189,15 +187,15 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
 
       tx =
         %Transaction{
-          from_address: from_address,
-          to_address: to_address,
-          block_number: block_number,
-          hash: tx_hash
+          from_address: _from_address,
+          to_address: _to_address,
+          block_number: _block_number,
+          hash: _tx_hash
         } = with_block(insert(:transaction))
 
       transfer =
         %TokenTransfer{
-          amount: amount,
+          amount: _amount,
           block_number: block_number,
           from_address: from_address,
           to_address: to_address
@@ -217,8 +215,6 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
       token_decimals = Decimal.to_integer(token.decimals)
 
       decimals = Decimal.new(Integer.pow(10, token_decimals))
-
-      amount = Decimal.div(transfer.amount, decimals)
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -241,15 +237,15 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
 
       tx =
         %Transaction{
-          from_address: from_address,
-          to_address: to_address,
-          block_number: block_number,
-          hash: tx_hash
+          from_address: _from_address,
+          to_address: _to_address,
+          block_number: _block_number,
+          hash: _tx_hash
         } = with_block(insert(:transaction))
 
       transfer =
         %TokenTransfer{
-          amount: amount,
+          amount: _amount,
           block_number: block_number,
           from_address: from_address,
           to_address: to_address
@@ -270,8 +266,6 @@ defmodule Explorer.Accounts.Notify.SummaryTest do
       token_decimals = Decimal.to_integer(token.decimals)
 
       decimals = Decimal.new(Integer.pow(10, token_decimals))
-
-      amount = Decimal.div(transfer.amount, decimals)
 
       assert Summary.process(transfer) == [
                %Summary{

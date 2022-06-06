@@ -7,7 +7,7 @@ defmodule Explorer.Accounts.Notify.NotifyTest do
   alias Explorer.Accounts.Notifier.Notify
   alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Transaction, Wei}
   alias Explorer.Repo
 
   setup do
@@ -59,14 +59,14 @@ defmodule Explorer.Accounts.Notify.NotifyTest do
           address: address
         } = insert(:account_watchlist_address)
 
-      watchlist_address = Repo.preload(wa, :address, watchlist: :identity)
+      _watchlist_address = Repo.preload(wa, :address, watchlist: :identity)
 
       tx =
         %Transaction{
-          from_address: from_address,
-          to_address: to_address,
-          block_number: block_number,
-          hash: tx_hash
+          from_address: _from_address,
+          to_address: _to_address,
+          block_number: _block_number,
+          hash: _tx_hash
         } = with_block(insert(:transaction, to_address: address))
 
       {_, fee} = Chain.fee(tx, :gwei)

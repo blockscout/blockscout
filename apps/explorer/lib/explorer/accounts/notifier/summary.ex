@@ -90,7 +90,7 @@ defmodule Explorer.Accounts.Notifier.Summary do
       block_number: transaction.block_number,
       amount: amount(transaction),
       tx_fee: fee(transaction),
-      name: Application.get_env(:explorer, :coin_name),
+      name: Application.get_env(:explorer, :coin),
       subject: "Coin transaction",
       type: "COIN"
     }
@@ -105,7 +105,7 @@ defmodule Explorer.Accounts.Notifier.Summary do
       block_number: transaction.block_number,
       amount: amount(transaction),
       tx_fee: fee(transaction),
-      name: Application.get_env(:explorer, :coin_name),
+      name: Application.get_env(:explorer, :coin),
       subject: "Contract creation",
       type: "COIN"
     }
