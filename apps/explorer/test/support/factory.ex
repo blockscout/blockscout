@@ -12,10 +12,8 @@ defmodule Explorer.Factory do
     User,
     UserContact,
     Identity,
-    TagAddress,
     Watchlist,
-    WatchlistAddress,
-    WatchlistNotification
+    WatchlistAddress
   }
 
   alias Explorer.Admin.Administrator
