@@ -16,6 +16,14 @@ const grid = {
   drawOnChartArea: false
 }
 
+function getTxChartColor() {
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    return sassVariables.dashboardLineColorTransactionsDarkTheme
+  } else {
+    return sassVariables.dashboardLineColorTransactions
+  }
+}
+
 function xAxe (fontColor) {
   return {
     grid: grid,
@@ -217,8 +225,8 @@ class MarketHistoryChart {
       cubicInterpolationMode: 'monotone',
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorTransactions,
-      borderColor: sassVariables.dashboardLineColorTransactions
+      backgroundColor: getTxChartColor(),
+      borderColor: getTxChartColor()
       // lineTension: 0
     }
 

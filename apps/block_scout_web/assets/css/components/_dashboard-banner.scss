@@ -7,6 +7,7 @@ $dashboard-banner-network-plain-container-background-color: lighten($dashboard-b
 $dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-line-color-transactions: $warning !default;
+$dashboard-line-color-transactions-dark-theme: $warning !default;
 $dashboard-stats-item-label-color: #fff !default;
 $dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
 $dashboard-banner-chart-legend-label-color: #fff !default;
