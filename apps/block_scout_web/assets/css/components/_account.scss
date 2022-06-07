@@ -94,3 +94,48 @@ input.profile-item {
     display: inline;
   }
 }
+
+li.public-tags-address {
+  list-style: none;
+  display: flex;
+}
+
+input.public-tags-address {
+  flex-basis: 380px;
+}
+
+.add-form-field {
+  background: none;
+  border: none;
+}
+
+.remove-form-field {
+  background: none;
+  border: none;
+
+  svg {
+    margin-top: 3px;
+  }
+}
+
+.multiple-input-fields-container {
+  padding-inline-start: 0;
+  display: inline-block;
+  margin-bottom: 0;
+}
+
+.line-input {
+  @include media-breakpoint-up(md) {
+    display: flex;
+    justify-content: space-between;
+
+    .form-group {
+      flex-grow: 1;
+      margin-right: 4rem;
+    }
+  }
+}
+
+.mr-4-rem {
+  margin-right: 4rem;
+}

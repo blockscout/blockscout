@@ -73,7 +73,8 @@ const appJs =
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
       'dropzone': './js/lib/dropzone.js',
-      'delete-item-handler': './js/pages/account/delete_item_handler.js'
+      'delete-item-handler': './js/pages/account/delete_item_handler.js',
+      'public-tags-request-form': './js/lib/public_tags_request_form.js'
     },
     output: {
       filename: '[name].js',
