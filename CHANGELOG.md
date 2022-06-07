@@ -7,6 +7,7 @@
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5647](https://github.com/blockscout/blockscout/pull/5647) - Add handling for invalid Sourcify response
 - [#5561](https://github.com/blockscout/blockscout/pull/5561) - Improve working with contracts implementations
 - [#5612](https://github.com/blockscout/blockscout/pull/5612) - Fix token transfers order
 - [#5635](https://github.com/blockscout/blockscout/pull/5635) - Set CoinGecko source in exchange_rates_source function fix in case of token_bridge

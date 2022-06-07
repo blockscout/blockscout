@@ -156,16 +156,18 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           prepare_verification_error(error, address_hash_string, conn),
           :on_demand
         )
-    end
-  end
 
-  def get_metadata_and_publish(address_hash_string, nil) do
-    case Sourcify.get_metadata(address_hash_string) do
-      {:ok, verification_metadata} ->
-        process_metadata_and_publish(address_hash_string, verification_metadata, false)
+      {:error, error} ->
+        EventsPublisher.broadcast(
+          prepare_verification_error(error, address_hash_string, conn),
+          :on_demand
+        )
 
-      {:error, %{"error" => error}} ->
-        {:error, error: error}
+      _ ->
+        EventsPublisher.broadcast(
+          prepare_verification_error("Unexpected error", address_hash_string, conn),
+          :on_demand
+        )
     end
   end
 
@@ -175,28 +177,43 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         process_metadata_and_publish(address_hash_string, verification_metadata, false, conn)
 
       {:error, %{"error" => error}} ->
-        EventsPublisher.broadcast(
-          prepare_verification_error(error, address_hash_string, conn),
-          :on_demand
-        )
+        return_sourcify_error(conn, error, address_hash_string)
     end
   end
 
   defp process_metadata_and_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
-    %{
-      "params_to_publish" => params_to_publish,
-      "abi" => abi,
-      "secondary_sources" => secondary_sources,
-      "compilation_target_file_path" => compilation_target_file_path
-    } = Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata)
+    case Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata) do
+      %{
+        "params_to_publish" => params_to_publish,
+        "abi" => abi,
+        "secondary_sources" => secondary_sources,
+        "compilation_target_file_path" => compilation_target_file_path
+      } ->
+        ContractController.publish(conn, %{
+          "addressHash" => address_hash_string,
+          "params" => Map.put(params_to_publish, "partially_verified", is_partial),
+          "abi" => abi,
+          "secondarySources" => secondary_sources,
+          "compilationTargetFilePath" => compilation_target_file_path
+        })
 
-    ContractController.publish(conn, %{
-      "addressHash" => address_hash_string,
-      "params" => Map.put(params_to_publish, "partially_verified", is_partial),
-      "abi" => abi,
-      "secondarySources" => secondary_sources,
-      "compilationTargetFilePath" => compilation_target_file_path
-    })
+      {:error, :metadata} ->
+        return_sourcify_error(conn, "Sourcify did not return metadata", address_hash_string)
+
+      _ ->
+        return_sourcify_error(conn, "Unsuccessful sourcify verification", address_hash_string)
+    end
+  end
+
+  defp return_sourcify_error(nil, error, _address_hash_string) do
+    {:error, error: error}
+  end
+
+  defp return_sourcify_error(conn, error, address_hash_string) do
+    EventsPublisher.broadcast(
+      prepare_verification_error(error, address_hash_string, conn),
+      :on_demand
+    )
   end
 
   def prepare_files_array(files) do
