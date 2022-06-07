@@ -198,10 +198,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         })
 
       {:error, :metadata} ->
-        return_sourcify_error(conn, "Sourcify did not return metadata", address_hash_string)
+        return_sourcify_error(conn, Sourcify.no_metadata_message(), address_hash_string)
 
       _ ->
-        return_sourcify_error(conn, "Unsuccessful sourcify verification", address_hash_string)
+        return_sourcify_error(conn, Sourcify.failed_verification_message(), address_hash_string)
     end
   end
 

@@ -7,6 +7,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
+  @no_metadata_message "Sourcify did not return metadata"
+  @failed_verification_message "Unsuccessful Sourcify verification"
+
   def check_by_address(address_hash_string) do
     chain_id = config(:chain_id)
     params = [addresses: address_hash_string, chainIds: chain_id]
@@ -307,4 +310,8 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     chain_id = config(:chain_id)
     "#{base_server_url()}" <> "/files/any/" <> chain_id
   end
+
+  def no_metadata_message, do: @no_metadata_message
+
+  def failed_verification_message, do: @failed_verification_message
 end
