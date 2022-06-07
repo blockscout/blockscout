@@ -5,7 +5,6 @@ defmodule Indexer.Block.FetcherTest do
 
   import Mox
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
-  import EthereumJSONRPC.Case
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Log, Transaction, Wei}

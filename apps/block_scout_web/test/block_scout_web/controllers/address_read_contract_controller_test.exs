@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
   use BlockScoutWeb.ConnCase, async: true
   use ExUnit.Case, async: false
 
-  alias BlockScoutWeb.AddressControllerTest
   alias Explorer.ExchangeRates.Token
   alias Explorer.Chain.Address
 
