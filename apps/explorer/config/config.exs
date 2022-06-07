@@ -112,6 +112,10 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   tracer: Explorer.Tracer,
   otp_app: :explorer
 
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  table_url: System.get_env("PUBLIC_TAGS_AIRTABLE_URL"),
+  api_key: System.get_env("PUBLIC_TAGS_AIRTABLE_API_KEY")
+
 config :explorer, Explorer.Mailer,
   adapter: Bamboo.SendGridAdapter,
   api_key: System.get_env("SENDGRID_API_KEY")

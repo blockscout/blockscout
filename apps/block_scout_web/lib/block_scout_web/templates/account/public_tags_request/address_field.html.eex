@@ -1,0 +1,8 @@
+<div class="form-group mb-0">
+  <%= label @f, :addresses_array, gettext("Address"), class: "control-label", style: "font-size: 14px" %>
+  <div>
+    <%= array_input @f, :addresses_array, maxlength: 42, placeholder: gettext "Smart contract / Address (0x...)" %>
+    <%= array_add_button @f, :addresses_array, maxlength: 42, placeholder: gettext "Smart contract / Address (0x...)" %>
+  </div>
+  <%= error_tag @f, :addresses_array, class: "text-danger form-error" %>
+</div>

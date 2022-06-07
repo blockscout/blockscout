@@ -7,3 +7,12 @@ $('[delete-item]').on('click', (event) => {
     $(event.currentTarget.parentElement).find('form').trigger('submit')
   }
 })
+
+$('[delete-request]').on('click', (event) => {
+  event.preventDefault()
+  const result = prompt('Why do you want to remove tags?')
+  if (result) {
+    $(event.currentTarget.parentElement).find('[name="remove_reason"]').val(result)
+    $(event.currentTarget.parentElement).find('form').trigger('submit')
+  }
+})

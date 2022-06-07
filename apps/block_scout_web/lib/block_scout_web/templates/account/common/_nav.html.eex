@@ -1,22 +1,25 @@
 <div class="col-2 mb-3 navbar-account">
   <ul class="nav account flex-column nav-pills">
     <li class="nav-item account">
-      <a class="<%= nav_class(@active_item, :profile) %>" aria-current="page" href="<%= auth_path(@conn, :profile) %>">Profile</a>
+      <a class="<%= nav_class(@active_item, :profile) %>" aria-current="page" href="<%= auth_path(@conn, :profile) %>"><%= gettext "Profile" %></a>
     </li>
     <li class="nav-item account">
-      <a class="<%= nav_class(@active_item, :watchlist) %>" href="<%= watchlist_path(@conn, :show) %>">Watchlist</a>
+      <a class="<%= nav_class(@active_item, :watchlist) %>" href="<%= watchlist_path(@conn, :show) %>"><%= gettext "Watchlist" %></a>
     </li>
     <li class="nav-item account">
-      <a class="<%= nav_class(@active_item, :address_tags) %>" href="<%= tag_address_path(@conn, :index) %>">Address Tags</a>
+      <a class="<%= nav_class(@active_item, :address_tags) %>" href="<%= tag_address_path(@conn, :index) %>"><%= gettext "Address Tags" %></a>
     </li>
     <li class="nav-item account">
-      <a class="<%= nav_class(@active_item, :transaction_tags) %>" href="<%= tag_transaction_path(@conn, :index) %>">Transaction Tags</a>
+      <a class="<%= nav_class(@active_item, :transaction_tags) %>" href="<%= tag_transaction_path(@conn, :index) %>"><%= gettext "Transaction Tags" %></a>
     </li>
     <li class="nav-item account">
       <a class="<%= nav_class(@active_item, :api_keys) %>" href="<%= api_key_path(@conn, :index) %>"><%= gettext "API keys" %></a>
     </li>
     <li class="nav-item account">
       <a class="<%= nav_class(@active_item, :custom_abis) %>" href="<%= custom_abi_path(@conn, :index) %>"><%= gettext "Custom ABI" %></a>
+    </li>
+    <li class="nav-item account">
+      <a class="<%= nav_class(@active_item, :public_tags) %>" href="<%= public_tags_request_path(@conn, :index) %>"><%= gettext "Public tags" %></a>
     </li>
   </ul>
 </div>
