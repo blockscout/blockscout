@@ -92,7 +92,9 @@ defmodule Explorer.Repo do
             end),
             errors
           }
-        error -> {result_changes, [error | errors]}
+
+        error ->
+          {result_changes, [error | errors]}
       end
     end)
     |> case do
