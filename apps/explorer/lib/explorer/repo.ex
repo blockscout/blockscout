@@ -79,7 +79,19 @@ defmodule Explorer.Repo do
     |> Task.async_stream(fn multi -> transaction(multi, opts) end, timeout: opts[:timeout] || 5000)
     |> Enum.reduce({%{}, []}, fn result, {result_changes, errors} ->
       case result do
-        {:ok, {:ok, changes}} -> {Map.merge(changes, result_changes, fn _k, v1, v2 -> v1 ++ v2 end), errors}
+        {:ok, {:ok, changes}} ->
+          {
+            Map.merge(changes, result_changes, fn _k, v1, v2 ->
+              case {v1, v2} do
+                {{count1, val1}, {count2, val2}} -> {count1 + count2, val1 && val2 && val1 ++ val2}
+                {{count1, val1}, []} -> {count1, val1}
+                {[], {count2, val2}} -> {count2, val2}
+                {val1, val2} when is_number(val1) and is_number(val2) -> val1 + val2
+                {val1, val2} -> val1 && val2 && val1 ++ val2
+              end
+            end),
+            errors
+          }
         error -> {result_changes, [error | errors]}
       end
     end)
