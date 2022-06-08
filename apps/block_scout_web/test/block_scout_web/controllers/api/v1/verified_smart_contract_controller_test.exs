@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Factory
+  # alias Explorer.Factory
 
   # alias Explorer.Chain.DecompiledSmartContract
 
@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   #   assert Jason.decode!(response.resp_body) == %{"status" => "success"}
   # end
 
-  defp api_v1_verified_smart_contract_path(conn, action) do
-    "/api" <> ApiRoutes.api_v1_verified_smart_contract_path(conn, action)
-  end
+  # defp api_v1_verified_smart_contract_path(conn, action) do
+  #   "/api" <> ApiRoutes.api_v1_verified_smart_contract_path(conn, action)
+  # end
 end
