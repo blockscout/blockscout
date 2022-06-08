@@ -10,9 +10,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.{
     Block,
     CalcLpTokensTotalLiqudity,
-    EmptyBlocksSanitizer,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer,
     SetAmbBridgedMetadataForTokens,
     SetOmniBridgedMetadataForTokens
   }
@@ -24,8 +22,6 @@ defmodule Indexer.Supervisor do
     CoinBalance,
     CoinBalanceOnDemand,
     ContractCode,
-    InternalTransaction,
-    PendingTransaction,
     ReplacedTransaction,
     Token,
     TokenBalance,
@@ -63,6 +59,7 @@ defmodule Indexer.Supervisor do
     Supervisor.start_link(__MODULE__, arguments, Keyword.put_new(gen_server_options, :name, __MODULE__))
   end
 
+  #TODO: Add internal transactions and pending transactions supervisors
   @impl Supervisor
   def init(%{memory_monitor: memory_monitor}) do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
@@ -99,7 +96,6 @@ defmodule Indexer.Supervisor do
 
     basic_fetchers = [
       # Root fetchers
-      {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
       {Realtime.Supervisor,
        [
          %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
@@ -114,8 +110,6 @@ defmodule Indexer.Supervisor do
       # Async catchup fetchers
       {UncleBlock.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor]]},
       {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {InternalTransaction.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {CoinBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {TokenInstance.Supervisor,
@@ -127,9 +121,7 @@ defmodule Indexer.Supervisor do
 
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {EmptyBlocksSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
       {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers
       {UncatalogedTokenTransfers.Supervisor, [[]]},
@@ -149,7 +141,6 @@ defmodule Indexer.Supervisor do
       end
 
     amb_bridge_mediators = Application.get_env(:block_scout_web, :amb_bridge_mediators)
-
     all_fetchers =
       if amb_bridge_mediators && amb_bridge_mediators !== "" do
         [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
