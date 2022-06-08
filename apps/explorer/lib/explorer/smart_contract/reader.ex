@@ -509,7 +509,7 @@ defmodule Explorer.SmartContract.Reader do
     )
   end
 
-  defp proccess_abi(nil, _method_id), do: nil
+  defp proccess_abi([], _method_id), do: nil
 
   defp proccess_abi(abi, method_id) do
     function_object = find_function_by_method(abi, method_id)
