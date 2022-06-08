@@ -5,11 +5,10 @@ defmodule Explorer.Account.CustomABI do
   use Explorer.Schema
 
   alias ABI.FunctionSelector
-  alias Explorer.Accounts.Identity
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash}
   alias Ecto.Changeset
-  alias Explorer.Repo
+  alias Explorer.Accounts.Identity
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Address, Hash}
 
   import Ecto.Changeset
 
@@ -44,7 +43,7 @@ defmodule Explorer.Account.CustomABI do
 
   def changeset_without_constraints(%__MODULE__{} = custom_abi \\ %__MODULE__{}, attrs \\ %{}) do
     custom_abi
-    |> cast(attrs, @attrs ++ [:id])
+    |> cast(attrs, [:id | @attrs])
     |> validate_required(@attrs, message: "Required")
   end
 
