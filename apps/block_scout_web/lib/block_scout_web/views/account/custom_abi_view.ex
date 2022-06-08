@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Account.CustomABIView do
          false <- is_nil(abi),
          {:binary, false} <- {:binary, is_binary(abi)},
          {:ok, encoded_abi} <- Poison.encode(abi) do
-      encoded_abi || ""
+      encoded_abi
     else
       {:binary, true} ->
         {_type, abi} = Changeset.fetch_field(custom_abi, :abi)
