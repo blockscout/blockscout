@@ -79,6 +79,15 @@ a.tile-title { color: $secondary !important; }
   background-color: #F0EBDE !important;
 }
 
+.dashboard-banner-chart-legend {
+  .dashboard-banner-chart-legend-item.market-cap-per-day
+   {
+    &::before {
+      background-color: #15bba6 !important;
+    }
+  }
+}
+
 // card
 $card-background-1: $secondary;
 $card-tab-active: $secondary;
