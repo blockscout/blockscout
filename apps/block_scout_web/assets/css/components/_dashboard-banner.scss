@@ -53,6 +53,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   flex-grow: 1;
   padding: 15px 0 0 0;
 
+  @include media-breakpoint-up(md) {
+    min-width: 600px;
+  }
+
   @include media-breakpoint-down(md) {
     display: flex;
     flex-direction: column;
@@ -63,7 +67,6 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 .dashboard-banner-chart {
   flex-grow: 1;
   margin: 15px 0 20px 0;
-  max-width: 350px;
   position: relative;
   min-height: 100px;
   height: calc(100% - 86px);
@@ -80,13 +83,21 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     max-width: 100%;
     width: 100%;
   }
+
+  @include media-breakpoint-down(sm) {
+    height: 150px !important;
+  }
 }
 
 .dashboard-banner-chart-legend {
   display: grid;
-  grid-template-columns: repeat(var(--numChartData), 0.9fr);
+  grid-template-columns: 0.6fr 0.9fr 0.9fr 0.9fr;
   padding-bottom: 12px;
   padding-left:20px;
+
+  @include media-breakpoint-down(sm) {
+    grid-template-columns: 1fr 1fr;
+  }
 
   .dashboard-banner-chart-legend-item {
     padding-bottom: 3px;
@@ -98,6 +109,10 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     @include media-breakpoint-down(md) {
       display: flex;
       flex-direction: row;
+    }
+
+    @include media-breakpoint-down(sm) {
+      margin-top: 10px;
     }
 
     @media (max-width: 599px) {
