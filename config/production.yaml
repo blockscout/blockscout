@@ -50,7 +50,7 @@ kubernetes:
     - name: SUBNETWORK
       value: "Mainnet"
     - name: SUPPORTED_CHAINS
-      value: '[ { "title": "CloudWalk Testnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": true } ]'
+      value: '[ { "title": "CloudWalk Mainnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": false }, { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
     - name: LOGO
       value: /images/cloudwalk_full.png
     - name: LOGO_FOOTER
@@ -59,6 +59,12 @@ kubernetes:
       value: 4.1.1-beta
     - name: RELEASE_LINK
       value: https://github.com/cloudwalk/blockscout/releases/tag/v4.1.1-beta
+    - name: INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER
+      value: true
+    - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+      value: true
+    - name: TRACE_LAST_BLOCK
+    - value: 0
     resources:
       limits:
         cpu: 1000m

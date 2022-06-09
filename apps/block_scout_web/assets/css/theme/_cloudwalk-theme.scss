@@ -1129,6 +1129,11 @@
 	}
 }
 
+.dark-theme-applied .dropdown-item.header:hover,
+.dark-theme-applied .dropdown-item.header:active {
+	background-color: $dark-primary !important;
+}
+
 .dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
     background-image: none;
     width: 100%;
