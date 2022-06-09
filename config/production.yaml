@@ -64,7 +64,7 @@ kubernetes:
     - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
       value: true
     - name: TRACE_LAST_BLOCK
-    - value: 0
+      value: 0
     resources:
       limits:
         cpu: 1000m
