@@ -310,6 +310,9 @@ $dark-stakes-banned-background: #3e314c;
 	.dropdown-item.active {
 		background-color: $dark-primary;
 	}
+	.dropdown-item.active.header,	.dropdown-item.header:hover,	.dropdown-item.header:focus {
+		background-color: $dark-light !important;
+	}
 	.btn-dropdown-line {
 		background-color: $dark-light;
 		border-color: $dark-light;
