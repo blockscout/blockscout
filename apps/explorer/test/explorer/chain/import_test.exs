@@ -647,7 +647,8 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      assert [block_hash] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+      {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
+      assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
 
       assert {:ok, _} = Import.all(internal_txs_options)
 
@@ -736,7 +737,8 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      assert [block_hash] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+      {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
+      assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
 
       assert {:ok, _} = Import.all(internal_txs_options)
 

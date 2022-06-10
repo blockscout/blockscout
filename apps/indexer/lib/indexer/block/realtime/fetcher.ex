@@ -174,10 +174,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp schedule_polling do
     polling_period = 2_000
-      # case AverageBlockTime.average_block_time() do
-      #   {:error, :disabled} -> 2_000
-      #   block_time -> round(Duration.to_milliseconds(block_time) / 2)
-      # end
+    # case AverageBlockTime.average_block_time() do
+    #   {:error, :disabled} -> 2_000
+    #   block_time -> round(Duration.to_milliseconds(block_time) / 2)
+    # end
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
 

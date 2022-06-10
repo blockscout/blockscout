@@ -111,7 +111,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         value: 1000
       )
 
-      %Token{name: name, type: type, inserted_at: inserted_at} = token
+      %Token{name: name, type: type, inserted_at: _inserted_at} = token
 
       conn =
         get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
