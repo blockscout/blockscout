@@ -126,6 +126,14 @@ $c-dark-text-color: #8a8dba;
 
 	a.tile-title { color: $c-primary !important; }
 
+	a[data-selector="transaction-count"] {
+		color: $c-primary !important;
+	}
+
+	a[data-selector="transfer-count"] {
+		color: $c-primary !important;
+	}
+
 	.tile {
 		border-top-color: $border;
 		border-bottom-color: $border;
@@ -216,6 +224,16 @@ $c-dark-text-color: #8a8dba;
 		border-color: $c-primary;
 		&:hover {
 			background-color: rgba(125, 34, 68, 0.4);
+		}
+	}
+
+	.btn-wallet-icon {
+		background-color: transparent !important;
+		border-color: $c-primary !important;
+		color: $c-primary !important;
+	
+		&:hover {
+		  background-color: rgba(125, 34, 68, 0.4) !important;
 		}
 	}
 	
@@ -663,6 +681,18 @@ $c-dark-text-color: #8a8dba;
 		&.tile-type-coin-balance {
 			border-left-color: $c-dark-color;
 		}
+	}
+
+	a[data-selector="transaction-count"] {
+		border-color: $c-primary !important;
+	}
+
+	a[data-selector="transfer-count"] {
+		border-color: $c-primary !important;
+	}
+
+	.card-body a:not(.dropdown-item):not(.button):not(.alert-link):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
+		color: $c-primary !important;
 	}
 
 	.alert-info {

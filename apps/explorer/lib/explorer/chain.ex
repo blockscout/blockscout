@@ -3123,8 +3123,8 @@ defmodule Explorer.Chain do
       safelow_gas_price_gwei = Wei.to(%Explorer.Chain.Wei{value: Decimal.from_float(safelow_gas_price_wei)}, :gwei)
 
       safelow_gas_price_gwei
-      |> Decimal.round(2)
       |> Decimal.to_float()
+      |> Float.ceil(2)
     else
       nil
     end

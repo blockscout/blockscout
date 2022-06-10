@@ -16,11 +16,27 @@ const grid = {
   drawOnChartArea: false
 }
 
-function getTxChartColor() {
+function getTxChartColor () {
   if (localStorage.getItem('current-color-mode') === 'dark') {
     return sassVariables.dashboardLineColorTransactionsDarkTheme
   } else {
     return sassVariables.dashboardLineColorTransactions
+  }
+}
+
+function getPriceChartColor () {
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    return sassVariables.dashboardLineColorPriceDarkTheme
+  } else {
+    return sassVariables.dashboardLineColorPrice
+  }
+}
+
+function getMarketCapChartColor () {
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    return sassVariables.dashboardLineColorMarketDarkTheme
+  } else {
+    return sassVariables.dashboardLineColorMarket
   }
 }
 
@@ -159,8 +175,8 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 }
 
 // colors for light and dark theme
-const priceLineColor = sassVariables.dashboardLineColorPrice
-const mcapLineColor = sassVariables.dashboardLineColorMarket
+const priceLineColor = getPriceChartColor()
+const mcapLineColor = getMarketCapChartColor()
 
 class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
@@ -214,8 +230,6 @@ class MarketHistoryChart {
       axes.numTransactions.display = false
     } else if (!marketCapActivated) {
       axes.numTransactions.position = 'left'
-      this.numTransactions.backgroundColor = sassVariables.dashboardLineColorPrice
-      this.numTransactions.borderColor = sassVariables.dashboardLineColorPrice
     }
 
     this.availableSupply = availableSupply

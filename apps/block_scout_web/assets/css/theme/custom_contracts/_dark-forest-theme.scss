@@ -175,12 +175,22 @@ $dark-primary-alternate: $dark-primary;
 	a.tile-title { color: $dark-primary-alternate !important; }
 	.card-body {  
 		a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]):not(#dropdown-tokens) {
-			color: $dark-primary-alternate ;
+			color: $dark-primary-alternate !important;
 
 			&:hover {
-				color: $dark-primary-alternate;
+				color: $dark-primary-alternate !important;
 			}
 		}
+	}
+
+	a[data-selector="transaction-count"] {
+		border-color: $dark-primary-alternate !important;
+		border-radius: 0px;
+	}
+
+	a[data-selector="transfer-count"] {
+		border-color: $dark-primary-alternate !important;
+		border-radius: 0px;
 	}
 
 	.tile {
@@ -225,7 +235,7 @@ $dark-primary-alternate: $dark-primary;
 		color: $labels-dark;
 	}
 	.tile .tile-body a,
-	.tile span[data-address-hash] { color: $dark-primary; }
+	.tile span[data-address-hash] { color: $dark-primary !important; }
 	.fade-up-blocks-chain .tile-type-block-animation .tile-type-line-up {
 		background-color: $dark-primary;
 	}
@@ -282,6 +292,16 @@ $dark-primary-alternate: $dark-primary;
 		border-color: $dark-primary;
 		&:hover {
 			background-color: rgba(117, 249, 77, 0.4);
+		}
+	}
+
+	.btn-wallet-icon {
+		background-color: transparent !important;
+		border-color: $dark-primary !important;
+		color: $dark-primary !important;
+	
+		&:hover {
+		  background-color: rgba(117, 249, 77, 0.4) !important;
 		}
 	}
 
