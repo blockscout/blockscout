@@ -182,12 +182,12 @@ if ($contractVerificationPage.length) {
 
       var dropzone = new Dropzone(tag, {
         autoProcessQueue: false,
-        acceptedFiles: acceptedFiles,
+        acceptedFiles,
         parallelUploads: 100,
         uploadMultiple: true,
         addRemoveLinks: true,
         maxFilesize: 10,
-        maxFiles: maxFiles,
+        maxFiles,
         previewsContainer: '#dropzone-previews',
         params: { address_hash: $('#smart_contract_address_hash').val(), verification_type: jsonVerificationType },
         init: func
