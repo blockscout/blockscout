@@ -65,7 +65,6 @@ const appJs =
       'main-page': './css/main-page.scss',
       'staking': './css/stakes.scss',
       'tokens': './js/pages/token/search.js',
-      'faucet': './js/pages/faucet.js',
       'text-ad': './js/lib/text_ad.js',
       'banner': './js/lib/banner.js',
       'autocomplete': './js/lib/autocomplete.js',
@@ -160,9 +159,6 @@ const appJs =
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
         'process.env.COIN': JSON.stringify(process.env.COIN),
-        'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE),
-        'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN),
-        'process.env.FAUCET_JSONRPC_HTTP_URL': JSON.stringify(process.env.FAUCET_JSONRPC_HTTP_URL),
         'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH),
         'process.env.CHAIN_ID': JSON.stringify(process.env.CHAIN_ID),
         'process.env.JSON_RPC': JSON.stringify(process.env.JSON_RPC),
