@@ -119,7 +119,6 @@ const config = {
       legend,
       title: {
         display: true,
-        text: 'Daily transactions (30 days)',
         color: sassVariables.dashboardBannerChartAxisFontColor
       },
       tooltip: {
@@ -259,7 +258,18 @@ class MarketHistoryChart {
     }
 
     this.availableSupply = availableSupply
-    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
+
+    const txChartTitle = 'Daily transactions (30 days)'
+    const marketChartTitle = 'Daily price and market cap'
+    let chartTitle = ''
+    if (Object.keys(dataConfig).join() === 'transactions') {
+      chartTitle = txChartTitle
+    } else if (Object.keys(dataConfig).join() === 'market') {
+      chartTitle = marketChartTitle
+    }
+    config.options.plugins.title.text = chartTitle
+
+    config.data.datasets = [this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoadedXDAI'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
