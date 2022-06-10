@@ -21,6 +21,7 @@
 - [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
 
 ### Chore
+- [#5659](https://github.com/blockscout/blockscout/pull/5659) - Use chartjs-adapter-luxon instead chartjs-adapter-moment for charts
 - [#5651](https://github.com/blockscout/blockscout/pull/5651), [#5657](https://github.com/blockscout/blockscout/pull/5657) - Gnosis chain rebranded theme and generalization of chart legend colors definition
 - [#5640](https://github.com/blockscout/blockscout/pull/5640) - Clean up and fix tests, reduce amount of warnings
 - [#5625](https://github.com/blockscout/blockscout/pull/5625) - Get rid of some redirects to checksummed address url

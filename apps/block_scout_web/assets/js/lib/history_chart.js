@@ -42,7 +42,7 @@ function getMarketCapChartColor () {
 
 function xAxe (fontColor) {
   return {
-    grid: grid,
+    grid,
     type: 'time',
     time: {
       unit: 'day',
@@ -76,7 +76,7 @@ const config = {
   },
   options: {
     layout: {
-      padding: padding
+      padding
     },
     interaction: {
       intersect: false,
@@ -84,9 +84,29 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      numTransactions: {
+      price: {
         position: 'left',
-        grid: grid,
+        grid,
+        ticks: {
+          beginAtZero: true,
+          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
+          maxTicksLimit: 4,
+          color: sassVariables.dashboardBannerChartAxisFontColor
+        }
+      },
+      marketCap: {
+        position: 'right',
+        grid,
+        ticks: {
+          callback: (_value, _index, _values) => '',
+          maxTicksLimit: 6,
+          drawOnChartArea: false,
+          color: sassVariables.dashboardBannerChartAxisFontColor
+        }
+      },
+      numTransactions: {
+        position: 'right',
+        grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
@@ -96,7 +116,7 @@ const config = {
       }
     },
     plugins: {
-      legend: legend,
+      legend,
       title: {
         display: true,
         text: 'Daily transactions (30 days)',
@@ -182,6 +202,7 @@ class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
     const axes = config.options.scales
 
+    let priceActivated = true
     let marketCapActivated = true
 
     this.price = {
@@ -194,6 +215,11 @@ class MarketHistoryChart {
       backgroundColor: priceLineColor,
       borderColor: priceLineColor
       // lineTension: 0
+    }
+    if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
+      this.price.hidden = true
+      axes.price.display = false
+      priceActivated = false
     }
 
     this.marketCap = {
@@ -228,12 +254,12 @@ class MarketHistoryChart {
     if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {
       this.numTransactions.hidden = true
       axes.numTransactions.display = false
-    } else if (!marketCapActivated) {
+    } else if (!priceActivated && !marketCapActivated) {
       axes.numTransactions.position = 'left'
     }
 
     this.availableSupply = availableSupply
-    config.data.datasets = [this.numTransactions]
+    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoadedXDAI'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
@@ -269,21 +295,7 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartError = $('[data-chart-error-message]')
-  const txsHistoryChartDataCache = JSON.parse(localStorage.getItem('txHistoryDataXDAI')) || []
-
-  const numTransactions = {
-    label: 'Tx/day',
-    yAxisID: 'numTransactions',
-    data: getTxHistoryData(txsHistoryChartDataCache),
-    cubicInterpolationMode: 'monotone',
-    fill: false,
-    pointRadius: 0,
-    backgroundColor: getTxChartColor(),
-    borderColor: getTxChartColor()
-  }
-
-  const chart = new MarketHistoryChart(el, 0, [numTransactions], dataConfig)
-
+  const chart = new MarketHistoryChart(el, 0, [], dataConfig)
   Object.keys(dataPaths).forEach(function (historySource) {
     $.getJSON(dataPaths[historySource], { type: 'JSON' })
       .done(data => {

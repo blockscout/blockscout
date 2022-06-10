@@ -7,7 +7,7 @@ export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functio
   const data = {
     function_name: functionName,
     method_id: $methodId.val(),
-    type: type
+    type
   }
 
   data.args_count = args.length
