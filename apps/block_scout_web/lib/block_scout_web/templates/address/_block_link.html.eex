@@ -1,0 +1,1 @@
+<%= link(@block_number, to: block_path(@conn, :show, @block_number), class: "tile-title-lg") %>

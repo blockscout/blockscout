@@ -2,7 +2,7 @@
     <div class="smart-contract-form-group-inner-wrapper">
         <%= label @f, :name, gettext("Contract Name") %>
         <div class="center-column">
-            <%= text_input @f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name", value: @contract_name_value %>
+            <%= text_input @f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
             <%= error_tag @f, :name, id: "contract-name-help-block", class: "text-danger form-error" %>
         </div>
         <div class="smart-contract-form-group-tooltip"><%= raw @tooltip %></div>

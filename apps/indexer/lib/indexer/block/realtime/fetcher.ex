@@ -25,19 +25,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
+  alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.CoinBalance
   alias Indexer.Transform.Addresses
   alias Timex.Duration
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(5)
+  @minimum_safe_polling_period :timer.seconds(1)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -155,6 +156,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
         Logger.debug(fn -> ["Could not connect to websocket: #{inspect(reason)}. Continuing with polling."] end)
         state
     end
+  catch
+    :exit, _reason ->
+      if Map.get(state, :timer) && state.timer do
+        Process.cancel_timer(state.timer)
+      end
+
+      timer = schedule_polling()
+      %{state | timer: timer}
   end
 
   defp subscribe_to_new_heads(state, _), do: state
@@ -399,20 +408,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
         importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-        block_numbers =
-          params_list
-          |> Enum.map(&Map.get(&1, :block_number))
-          |> Enum.sort()
-          |> Enum.dedup()
-
-        block_timestamp_map =
-          Enum.reduce(block_numbers, %{}, fn block_number, map ->
-            {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-              EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
-
-            day = DateTime.to_date(timestamp)
-            Map.put(map, "#{block_number}", day)
-          end)
+        block_timestamp_map = CoinBalance.block_timestamp_map(params_list, json_rpc_named_arguments)
 
         importable_balances_daily_params =
           Enum.map(params_list, fn param ->

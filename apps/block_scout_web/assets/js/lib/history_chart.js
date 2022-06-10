@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import { Chart, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
-import 'chartjs-adapter-moment'
+import 'chartjs-adapter-luxon'
 import humps from 'humps'
 import numeral from 'numeral'
 import { DateTime } from 'luxon'
@@ -16,9 +16,33 @@ const grid = {
   drawOnChartArea: false
 }
 
+function getTxChartColor () {
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    return sassVariables.dashboardLineColorTransactionsDarkTheme
+  } else {
+    return sassVariables.dashboardLineColorTransactions
+  }
+}
+
+function getPriceChartColor () {
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    return sassVariables.dashboardLineColorPriceDarkTheme
+  } else {
+    return sassVariables.dashboardLineColorPrice
+  }
+}
+
+function getMarketCapChartColor () {
+  if (localStorage.getItem('current-color-mode') === 'dark') {
+    return sassVariables.dashboardLineColorMarketDarkTheme
+  } else {
+    return sassVariables.dashboardLineColorMarket
+  }
+}
+
 function xAxe (fontColor) {
   return {
-    grid: grid,
+    grid,
     type: 'time',
     time: {
       unit: 'day',
@@ -52,7 +76,7 @@ const config = {
   },
   options: {
     layout: {
-      padding: padding
+      padding
     },
     interaction: {
       intersect: false,
@@ -60,9 +84,29 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      numTransactions: {
+      price: {
         position: 'left',
-        grid: grid,
+        grid,
+        ticks: {
+          beginAtZero: true,
+          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
+          maxTicksLimit: 4,
+          color: sassVariables.dashboardBannerChartAxisFontColor
+        }
+      },
+      marketCap: {
+        position: 'right',
+        grid,
+        ticks: {
+          callback: (_value, _index, _values) => '',
+          maxTicksLimit: 6,
+          drawOnChartArea: false,
+          color: sassVariables.dashboardBannerChartAxisFontColor
+        }
+      },
+      numTransactions: {
+        position: 'right',
+        grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
@@ -72,10 +116,9 @@ const config = {
       }
     },
     plugins: {
-      legend: legend,
+      legend,
       title: {
         display: true,
-        text: 'Daily transactions (30 days)',
         color: sassVariables.dashboardBannerChartAxisFontColor
       },
       tooltip: {
@@ -151,8 +194,8 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 }
 
 // colors for light and dark theme
-const priceLineColor = sassVariables.dashboardLineColorPrice
-const mcapLineColor = sassVariables.dashboardLineColorMarket
+const priceLineColor = getPriceChartColor()
+const mcapLineColor = getMarketCapChartColor()
 
 class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
@@ -196,8 +239,8 @@ class MarketHistoryChart {
       cubicInterpolationMode: 'monotone',
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorTransactions,
-      borderColor: sassVariables.dashboardLineColorTransactions
+      backgroundColor: getTxChartColor(),
+      borderColor: getTxChartColor()
       // lineTension: 0
     }
 
@@ -206,12 +249,21 @@ class MarketHistoryChart {
       axes.numTransactions.display = false
     } else if (!marketCapActivated) {
       axes.numTransactions.position = 'left'
-      this.numTransactions.backgroundColor = sassVariables.dashboardLineColorPrice
-      this.numTransactions.borderColor = sassVariables.dashboardLineColorPrice
     }
 
     this.availableSupply = availableSupply
-    config.data.datasets = [this.numTransactions]
+
+    const txChartTitle = 'Daily transactions'
+    const marketChartTitle = 'Daily price and market cap'
+    let chartTitle = ''
+    if (Object.keys(dataConfig).join() === 'transactions') {
+      chartTitle = txChartTitle
+    } else if (Object.keys(dataConfig).join() === 'market') {
+      chartTitle = marketChartTitle
+    }
+    config.options.plugins.title.text = chartTitle
+
+    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoadedPOACore'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'

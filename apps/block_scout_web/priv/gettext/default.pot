@@ -141,9 +141,9 @@ msgid "Back Home"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_balance_card.html.eex:4
-#: lib/block_scout_web/templates/address/overview.html.eex:167 lib/block_scout_web/templates/address_token/overview.html.eex:51
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:42 lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:43
+#: lib/block_scout_web/templates/address/overview.html.eex:166
+#: lib/block_scout_web/templates/address_token/overview.html.eex:51 lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:42
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:43
 msgid "Balance"
 msgstr ""
 
@@ -229,10 +229,10 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:105
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:150
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:145
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:41
-#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:56
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:53 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
+#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:55
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:51 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:54
 msgid "Cancel"
 msgstr ""
@@ -260,10 +260,10 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:2
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:11
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:6
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:2
-#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:7
-#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:6 lib/block_scout_web/templates/tokens/holder/index.html.eex:15
+#: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:6
+#: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:4 lib/block_scout_web/templates/tokens/holder/index.html.eex:15
 msgid "Connection Lost"
 msgstr ""
 
@@ -321,13 +321,13 @@ msgid "Contract Creation"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:142
-#: lib/block_scout_web/templates/address_contract/index.html.eex:157
+#: lib/block_scout_web/templates/address_contract/index.html.eex:138
+#: lib/block_scout_web/templates/address_contract/index.html.eex:153
 msgid "Contract Creation Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:91
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:86
 msgid "Contract Libraries"
 msgstr ""
 
@@ -348,7 +348,7 @@ msgid "Contract source code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:148
+#: lib/block_scout_web/templates/address_contract/index.html.eex:144
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
 
@@ -358,7 +358,7 @@ msgid "Contribute"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:128
+#: lib/block_scout_web/templates/address_contract/index.html.eex:124
 msgid "Copy ABI"
 msgstr ""
 
@@ -371,8 +371,8 @@ msgid "Copy Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:144
-#: lib/block_scout_web/templates/address_contract/index.html.eex:160
+#: lib/block_scout_web/templates/address_contract/index.html.eex:140
+#: lib/block_scout_web/templates/address_contract/index.html.eex:156
 msgid "Copy Contract Creation Code"
 msgstr ""
 
@@ -1591,7 +1591,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
-#: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10 lib/block_scout_web/views/tokens/instance/overview_view.ex:187
+#: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10 lib/block_scout_web/views/tokens/instance/overview_view.ex:196
 msgid "Metadata"
 msgstr ""
 
