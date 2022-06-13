@@ -135,6 +135,9 @@ defmodule Indexer.Block.Fetcher do
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
+         Logger.info(
+           "Block #{Enum.at(blocks_params, 0)[:number]} timestamp find_by_this: #{Timex.to_unix(Enum.at(blocks_params, 0)[:timestamp])}"
+         ),
          Logger.info("### BEFORE blocks CHANGESET ###"),
          blocks = TransformBlocks.transform_blocks(blocks_params),
          Logger.info("### BEFORE receipts params ###"),

@@ -90,6 +90,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
 
+    Logger.info("Block from socket at #{:os.system_time(:second)} find_by_this: #{inspect(number)}")
+
     if number > 0 do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
     end
@@ -124,6 +126,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {new_previous_number, new_max_number} =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} when is_nil(max_number_seen) or number > max_number_seen ->
+          Logger.info("Block manual at #{:os.system_time(:second)} find_by_this: #{inspect(number)}")
           start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
           {number, number}
@@ -290,6 +293,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher: :block_realtime,
       block_number: block_number_to_fetch
     )
+
+    Logger.info("Finish block import at #{:os.system_time(:second)} find_by_this: #{inspect(block_number_to_fetch)}")
   end
 
   @decorate span(tracer: Tracer)
