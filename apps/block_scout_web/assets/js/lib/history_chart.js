@@ -84,28 +84,8 @@ const config = {
     },
     scales: {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
-      price: {
-        position: 'left',
-        grid,
-        ticks: {
-          beginAtZero: true,
-          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
-          maxTicksLimit: 4,
-          color: sassVariables.dashboardBannerChartAxisFontColor
-        }
-      },
-      marketCap: {
-        position: 'right',
-        grid,
-        ticks: {
-          callback: (_value, _index, _values) => '',
-          maxTicksLimit: 6,
-          drawOnChartArea: false,
-          color: sassVariables.dashboardBannerChartAxisFontColor
-        }
-      },
       numTransactions: {
-        position: 'right',
+        position: 'left',
         grid,
         ticks: {
           beginAtZero: true,
