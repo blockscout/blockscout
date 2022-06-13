@@ -235,6 +235,8 @@ class MarketHistoryChart {
     if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
       this.marketCap.hidden = true
       axes.marketCap.display = false
+      this.price.hidden = true
+      axes.price.display = false
       marketCapActivated = false
     }
 
