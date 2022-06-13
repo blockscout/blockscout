@@ -34,33 +34,32 @@ config :indexer,
   first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || "",
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
-  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
+  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
+  fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
     System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
       System.get_env("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER", "false") == "true"
 
+token_balance_on_demand_fetcher_threshold_minutes = System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")
+
 token_balance_on_demand_fetcher_threshold =
-  if System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES") do
-    case Integer.parse(System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")) do
-      {integer, ""} -> integer
-      _ -> 60
-    end
-  else
-    60
+  case token_balance_on_demand_fetcher_threshold_minutes &&
+         Integer.parse(token_balance_on_demand_fetcher_threshold_minutes) do
+    {integer, ""} -> integer
+    _ -> 60
   end
 
 config :indexer, Indexer.Fetcher.TokenBalanceOnDemand, threshold: token_balance_on_demand_fetcher_threshold
 
+coin_balance_on_demand_fetcher_threshold_minutes = System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")
+
 coin_balance_on_demand_fetcher_threshold =
-  if System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES") do
-    case Integer.parse(System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")) do
-      {integer, ""} -> integer
-      _ -> 60
-    end
-  else
-    60
+  case coin_balance_on_demand_fetcher_threshold_minutes &&
+         Integer.parse(coin_balance_on_demand_fetcher_threshold_minutes) do
+    {integer, ""} -> integer
+    _ -> 60
   end
 
 config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on_demand_fetcher_threshold
@@ -81,6 +80,9 @@ config :indexer, Indexer.Fetcher.CoinBalance.Supervisor,
 
 config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER", "false") == "true"
+
+config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER", "false") == "true"
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
