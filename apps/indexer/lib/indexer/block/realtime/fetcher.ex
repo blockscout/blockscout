@@ -132,6 +132,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           {number, number}
 
         _ ->
+          Logger.info("No latest block at #{:os.system_time(:second)} find_by_this:")
           {previous_number, max_number_seen}
       end
 
