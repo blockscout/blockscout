@@ -5,7 +5,6 @@ defmodule Indexer.Block.FetcherTest do
 
   import Mox
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
-  import EthereumJSONRPC.Case
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
@@ -755,7 +754,7 @@ defmodule Indexer.Block.FetcherTest do
 
              %{id: id, method: "trace_block"} ->
                block_quantity = integer_to_quantity(block_number)
-               res = eth_block_number_fake_response(block_quantity)
+               _res = eth_block_number_fake_response(block_quantity)
 
                %{
                  id: id,
@@ -802,7 +801,7 @@ defmodule Indexer.Block.FetcherTest do
         end)
       end
 
-      assert {:ok, %{errors: [], inserted: _}} =
+      assert {:ok, %{errors: [], inserted: %{block_rewards: _block_rewards}}} =
                Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
       Process.sleep(1000)

@@ -108,7 +108,7 @@ const config = (id) => {
       src: (query) => dataSrc(query, id),
       cache: false
     },
-    placeHolder: placeHolder,
+    placeHolder,
     searchEngine: (query, record) => searchEngine(query, record),
     threshold: 2,
     resultsList: {

@@ -3009,7 +3009,10 @@ defmodule Explorer.Chain do
 
     if safelow_gas_price_wei do
       safelow_gas_price_gwei = Wei.to(%Explorer.Chain.Wei{value: Decimal.from_float(safelow_gas_price_wei)}, :gwei)
-      Decimal.to_float(safelow_gas_price_gwei)
+
+      safelow_gas_price_gwei
+      |> Decimal.to_float()
+      |> Float.ceil(2)
     else
       nil
     end
@@ -3692,7 +3695,7 @@ defmodule Explorer.Chain do
         ]
   def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = options |> Keyword.get(:paging_options, @default_paging_options) |> Map.put(:asc_order, true)
 
     TokenTransfer
     |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
@@ -3703,7 +3706,7 @@ defmodule Explorer.Chain do
     )
     |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
-    |> order_by([token_transfer], asc: token_transfer.inserted_at)
+    |> order_by([token_transfer], asc: token_transfer.log_index)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
