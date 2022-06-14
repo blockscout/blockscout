@@ -11,6 +11,7 @@ export ETHEREUM_JSONRPC_VARIANT=geth
 export ETHEREUM_JSONRPC_HTTP_URL=${ENDPOINT}
 export ETHEREUM_JSONRPC_WS_URL=${WS_ENDPOINT}
 export NETWORK=SKALE
+export CHAIN_SPEC_PATH=/opt/app/config.json
 
 export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 make start -C $DIR
