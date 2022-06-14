@@ -80,7 +80,8 @@ const appJs =
       'datepicker': './js/lib/datepicker.js',
       'modal': './js/pages/modal.js',
       'dropzone': './js/lib/dropzone.js',
-      'api-keys': './js/pages/api_keys.js'
+      'api-keys': './js/pages/api_keys.js',
+      'delete-item-handler': './js/pages/account/delete_item_handler.js'
     },
     output: {
       filename: '[name].js',

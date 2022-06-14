@@ -40,6 +40,7 @@ defmodule Explorer.Account.Api.Key do
     |> put_change(:value, generate_api_key())
     |> validate_required(@attrs)
     |> unique_constraint(:value)
+    |> foreign_key_constraint(:identity_id)
     |> api_key_count_constraint()
     |> Repo.insert()
   end

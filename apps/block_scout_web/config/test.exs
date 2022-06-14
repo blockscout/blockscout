@@ -25,3 +25,18 @@ config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 config :explorer, Explorer.KnownTokens, enabled: false, store: :none
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
+
+config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
+  domain: "example.com",
+  client_id: "clien_id",
+  client_secret: "secrets"
+
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: "example.com/callback"]
+    }
+  ],
+  logout_url: "example.com/logout",
+  logout_return_to_url: "example.com/return"

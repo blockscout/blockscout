@@ -124,6 +124,11 @@ msgid "A string with the name of the module to be invoked."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:24
+msgid "ABI"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_constructor_args.html.eex:3
 msgid "ABI-encoded Constructor Arguments (if required by the contract)"
 msgstr ""
@@ -181,6 +186,16 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:160
 msgid "Add Your App"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:45
+msgid "Add API key"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:45
+msgid "Add Custom ABI"
 msgstr ""
 
 #, elixir-format
@@ -849,6 +864,16 @@ msgid "Create"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:13
+msgid "Create a Custom ABI to interact with contracts."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:13
+msgid "Create an API key to use with your RPC и EthRPC API requests."
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:26
 msgid "Create2"
 msgstr ""
@@ -1048,8 +1073,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_token/overview.html.eex:1
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:104 lib/block_scout_web/templates/smart_contract/_functions.html.eex:104
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:146
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:95 lib/block_scout_web/templates/smart_contract/_functions.html.eex:95
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:137
 msgid "ETH"
 msgstr "xDAI"
 
@@ -1108,6 +1133,11 @@ msgstr ""
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:11
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:10
 msgid "Error"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:11
+msgid "Error in internal transactions"
 msgstr ""
 
 #, elixir-format
@@ -1743,6 +1773,16 @@ msgid "Name"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:20
+msgid "Name this API key"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:14
+msgid "Name this Custom ABI"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_token/overview.html.eex:44
 msgid "Net Worth"
 msgstr ""
@@ -1999,7 +2039,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:109
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:100
 msgid "Query"
 msgstr ""
 
@@ -2111,6 +2151,12 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/admin/dashboard/index.html.eex:21
 msgid "Run"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:26
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:31
+msgid "Save"
 msgstr ""
 
 #, elixir-format
@@ -2451,7 +2497,7 @@ msgid "The block height of a particular block is defined as the number of blocks
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:41
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:38
 msgid "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable."
 msgstr ""
 
@@ -2501,7 +2547,7 @@ msgid "The percentage of stake in a single pool relative to the total amount sta
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:40
 msgid "The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception."
 msgstr ""
 
@@ -3043,6 +3089,12 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
+msgid "Update"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
 msgid "Use the search box to find a hosted network, or select from the list of available networks below."
 msgstr ""
@@ -3206,7 +3258,7 @@ msgid "Vyper contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:145
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:136
 msgid "WEI"
 msgstr ""
 
@@ -3261,7 +3313,7 @@ msgid "Working Stake Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:109
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:100
 msgid "Write"
 msgstr ""
 
@@ -3293,6 +3345,16 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:15
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:12
 msgid "You Staked:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:19
+msgid "You can create 3 API keys per account."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:19
+msgid "You can create up to 15 Custom ABIs per account."
 msgstr ""
 
 #, elixir-format
@@ -3396,7 +3458,7 @@ msgid "elements are displayed"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:41
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:38
 msgid "fallback"
 msgstr ""
 
@@ -3442,7 +3504,7 @@ msgid "pool owner"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:40
 msgid "receive"
 msgstr ""
 
@@ -3507,11 +3569,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/common_components/_btn_swap_token_cowswap.html.eex:6
 msgid "Swap Token to WXDai through CowSwap"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:12
-msgid "Error in internal transactions"
 msgstr ""
 
 #, elixir-format

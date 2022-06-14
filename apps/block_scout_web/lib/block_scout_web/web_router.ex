@@ -55,6 +55,11 @@ defmodule BlockScoutWeb.WebRouter do
       only: [:new, :create, :edit, :update, :delete, :index],
       as: :api_key
     )
+
+    resources("/custom_abi", Account.CustomABIController,
+      only: [:new, :create, :edit, :update, :delete, :index],
+      as: :custom_abi
+    )
   end
 
   # Disallows Iframes (write routes)

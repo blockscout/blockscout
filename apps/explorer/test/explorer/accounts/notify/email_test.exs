@@ -1,9 +1,7 @@
 defmodule Explorer.Accounts.Notify.EmailTest do
   use ExUnit.Case
 
-  alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Explorer.Chain.Hash
   alias Explorer.Chain.Transaction
 
   alias Explorer.Accounts.{
@@ -48,7 +46,6 @@ defmodule Explorer.Accounts.Notify.EmailTest do
       transaction_hash = %Transaction{hash: tx_hash}
 
       {:ok, from_hash} = string_to_address_hash("0x092D537737E767Dae48c28aE509f34094496f030")
-      from_address_hash = %Address{hash: from_hash}
 
       {:ok, to_hash} = string_to_address_hash("0xE1F4dd38f00B0D8D4d2b4B5010bE53F2A0b934E5")
       to_address = %Address{hash: to_hash}
