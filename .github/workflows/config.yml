@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - account
-      - np-custom-abi
 
 env:
   MIX_ENV: test
