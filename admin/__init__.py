@@ -5,6 +5,7 @@ PROJECT_PATH = os.path.join(DIR_PATH, os.pardir)
 EXPLORER_SCRIPT_PATH = os.path.join(PROJECT_PATH, 'docker', 'run_schain_explorer.sh')
 SERVER_DATA_DIR = os.path.join(DIR_PATH, 'data')
 ABI_FILEPATH = os.path.join(SERVER_DATA_DIR, 'abi.json')
+MAINNET_IMA_ABI_FILEPATH = os.path.join(SERVER_DATA_DIR, 'ima.json')
 EXPLORERS_META_DATA_PATH = os.path.join(SERVER_DATA_DIR, 'meta.json')
 SCHAIN_CONFIG_DIR_PATH = os.path.join(SERVER_DATA_DIR, 'configs')
 
