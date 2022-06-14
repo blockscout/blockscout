@@ -493,10 +493,6 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/token-counters", Tokens.TokenController, :token_counters)
 
-    get("/faucet", FaucetController, :index)
-
-    post("/faucet", FaucetController, :request)
-
     get("/*path", PageNotFoundController, :index)
   end
 end

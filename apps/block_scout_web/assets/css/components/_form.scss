@@ -113,12 +113,6 @@ $form-control-border-color-active: $primary !default;
   }
 }
 
-.faucet-receiver-input {
-  @include media-breakpoint-up(md) {
-    width: 400px;
-  }
-}
-
 .tokens-list-search-input-outer-container {
   display: flex;
   @include media-breakpoint-down(md) {
@@ -155,14 +149,4 @@ $form-control-border-color-active: $primary !default;
   }
   padding: 10px 10px 10px 35px;
   outline: none;
-}
-
-.faucet-input {
-  @include media-breakpoint-up(md) {
-    width: 400px;
-  }
-
-  &.invalid {
-    border: 1px solid #dc3545;
-  }
 }
