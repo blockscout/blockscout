@@ -27,8 +27,8 @@ lib/block_scout_web/templates/address_contract/index.html.eex:158
 lib/block_scout_web/templates/address_contract/index.html.eex:195
 lib/explorer/staking/stake_snapshotting.ex:15: Function do_snapshotting/7 has no local return
 lib/explorer/staking/stake_snapshotting.ex:147
-lib/explorer/third_party_integrations/sourcify.ex:70
 lib/explorer/third_party_integrations/sourcify.ex:73
+lib/explorer/third_party_integrations/sourcify.ex:76
 lib/block_scout_web/views/transaction_view.ex:137
 lib/block_scout_web/views/transaction_view.ex:152
 lib/block_scout_web/views/transaction_view.ex:197
