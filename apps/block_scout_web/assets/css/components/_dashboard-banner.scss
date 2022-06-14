@@ -54,7 +54,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   padding: 15px 0 0 0;
 
   @include media-breakpoint-up(md) {
-    min-width: 530px;
+    min-width: 500px;
   }
 
   @include media-breakpoint-down(md) {
