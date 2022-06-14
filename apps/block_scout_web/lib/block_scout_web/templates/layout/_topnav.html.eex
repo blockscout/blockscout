@@ -224,4 +224,4 @@
     modeChanger.className += " " + "dark-mode-changer--dark";
   }
 </script>
-<script defer src="<%= static_path(@conn, "/js/autocomplete.min.js") %>"></script>
+<script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
