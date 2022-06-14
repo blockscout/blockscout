@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5667](https://github.com/blockscout/blockscout/pull/5667) - Address page: scroll to selected tab's data
 
 ### Fixes
 
