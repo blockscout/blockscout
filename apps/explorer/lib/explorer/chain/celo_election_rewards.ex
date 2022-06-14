@@ -5,7 +5,14 @@ defmodule Explorer.Chain.CeloElectionRewards do
 
   use Explorer.Schema
 
+  import Ecto.Query,
+    only: [
+      from: 2,
+      where: 3
+    ]
+
   alias Explorer.Chain.{Hash, Wei}
+  alias Explorer.Repo
 
   @required_attrs ~w(account_hash amount associated_account_hash block_number block_timestamp reward_type)a
 
@@ -59,5 +66,64 @@ defmodule Explorer.Chain.CeloElectionRewards do
       [:account_hash, :reward_type, :block_number, :associated_account_hash],
       name: :celo_election_rewards_account_hash_block_number_reward_type
     )
+  end
+
+  def base_query(account_hash_list, reward_type_list) do
+    from(rewards in __MODULE__,
+      select: %{
+        account_hash: rewards.account_hash,
+        amount: rewards.amount,
+        associated_account_hash: rewards.associated_account_hash,
+        block_number: rewards.block_number,
+        date: rewards.block_timestamp,
+        epoch_number: fragment("? / 17280", rewards.block_number),
+        reward_type: rewards.reward_type
+      },
+      where: rewards.account_hash in ^account_hash_list,
+      where: rewards.reward_type in ^reward_type_list
+    )
+  end
+
+  def get_rewards(account_hash_list, reward_type_list, from, to) when from == nil and to == nil,
+    do: get_rewards(account_hash_list, reward_type_list, ~U[2020-04-22 16:00:00.000000Z], DateTime.utc_now())
+
+  def get_rewards(account_hash_list, reward_type_list, from, to) when from == nil,
+    do: get_rewards(account_hash_list, reward_type_list, ~U[2020-04-22 16:00:00.000000Z], to)
+
+  def get_rewards(account_hash_list, reward_type_list, from, to) when to == nil,
+    do: get_rewards(account_hash_list, reward_type_list, from, DateTime.utc_now())
+
+  def get_rewards(
+        account_hash_list,
+        reward_type_list,
+        from,
+        to
+      ) do
+    query = base_query(account_hash_list, reward_type_list)
+
+    query_for_time_frame = query |> where([rewards], fragment("? BETWEEN ? AND ?", rewards.block_timestamp, ^from, ^to))
+
+    rewards = query_for_time_frame |> Repo.all()
+
+    {:ok, zero_wei} = Wei.cast(0)
+
+    %{
+      rewards: rewards,
+      total_reward_celo: Enum.reduce(rewards, zero_wei, fn curr, acc -> Wei.sum(curr.amount, acc) end),
+      from: from,
+      to: to
+    }
+  end
+
+  def get_voter_rewards_for_group(voter_hash_list, group_hash_list) do
+    base_query = base_query(voter_hash_list, ["voter"])
+
+    rewards =
+      base_query
+      |> where([rewards], rewards.associated_account_hash in ^group_hash_list)
+      |> Repo.all()
+
+    {:ok, zero_wei} = Wei.cast(0)
+    %{rewards: rewards, total: Enum.reduce(rewards, zero_wei, fn curr, acc -> Wei.sum(curr.amount, acc) end)}
   end
 end

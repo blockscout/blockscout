@@ -691,6 +691,7 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => %{
       "rewards" => [
         %{
+          "account" => "0x0000000000000000000000000000000000000001",
           "amount" => "75",
           "date" => "2022-01-03T17:42:43.162804Z",
           "blockNumber" => "10730880",
@@ -699,6 +700,7 @@ defmodule BlockScoutWeb.Etherscan do
           "group" => "0x3fb1cd2cd96c6d5c0b5eb3322d807b34482481d4"
         },
         %{
+          "account" => "0x0000000000000000000000000000000000000001",
           "amount" => "31",
           "date" => "2022-01-04T17:42:43.162804Z",
           "blockNumber" => "10748160",
@@ -707,6 +709,7 @@ defmodule BlockScoutWeb.Etherscan do
           "group" => "0x3fb1cd2cd96c6d5c0b5eb3322d807b34482481d4"
         },
         %{
+          "account" => "0x0000000000000000000000000000000000000001",
           "amount" => "77",
           "date" => "2022-01-05T17:42:43.162804Z",
           "blockNumber" => "10765440",
@@ -715,6 +718,7 @@ defmodule BlockScoutWeb.Etherscan do
           "group" => "0x3fb1cd2cd96c6d5c0b5eb3322d807b34482481d4"
         },
         %{
+          "account" => "0x0000000000000000000000000000000000000001",
           "amount" => "39",
           "date" => "2022-01-04T17:42:43.162804Z",
           "blockNumber" => "10748160",
@@ -723,6 +727,7 @@ defmodule BlockScoutWeb.Etherscan do
           "group" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
         },
         %{
+          "account" => "0x0000000000000000000000000000000000000001",
           "amount" => "78",
           "date" => "2022-01-05T17:42:43.162804Z",
           "blockNumber" => "10765440",
@@ -733,8 +738,7 @@ defmodule BlockScoutWeb.Etherscan do
       ],
       "totalRewardCelo" => "300",
       "from" => "2022-01-03 00:00:00.000000Z",
-      "to" => "2022-01-06 00:00:00.000000Z",
-      "account" => "0x0000000000000000000000000000000000000001"
+      "to" => "2022-01-06 00:00:00.000000Z"
     }
   }
 
@@ -744,6 +748,7 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => %{
       "rewards" => [
         %{
+          "account" => "0x0000000000000000000000000000000000000001",
           "amount" => "100000",
           "date" => "2022-01-03T17:42:43.162804Z",
           "blockNumber" => "10730880",
@@ -752,6 +757,7 @@ defmodule BlockScoutWeb.Etherscan do
           "group" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
         },
         %{
+          "account" => "0x0000000000000000000000000000000000000001",
           "amount" => "200000",
           "date" => "2022-01-04T17:42:43.162804Z",
           "blockNumber" => "10748160",
@@ -762,8 +768,7 @@ defmodule BlockScoutWeb.Etherscan do
       ],
       "totalRewardCelo" => "300000",
       "from" => "2022-01-03 00:00:00.000000Z",
-      "to" => "2022-01-06 00:00:00.000000Z",
-      "account" => "0x0000000000000000000000000000000000000001"
+      "to" => "2022-01-06 00:00:00.000000Z"
     }
   }
 
@@ -778,6 +783,7 @@ defmodule BlockScoutWeb.Etherscan do
           "blockNumber" => "10730880",
           "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
           "epochNumber" => "621",
+          "group" => "0x0000000000000000000000000000000000000001",
           "validator" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
         },
         %{
@@ -786,13 +792,13 @@ defmodule BlockScoutWeb.Etherscan do
           "blockNumber" => "10748160",
           "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000005",
           "epochNumber" => "622",
+          "group" => "0x0000000000000000000000000000000000000001",
           "validator" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae"
         }
       ],
       "totalRewardCelo" => "300",
       "from" => "2022-01-03 00:00:00.000000Z",
-      "to" => "2022-01-06 00:00:00.000000Z",
-      "group" => "0x0000000000000000000000000000000000000001"
+      "to" => "2022-01-06 00:00:00.000000Z"
     }
   }
 
@@ -1492,6 +1498,7 @@ defmodule BlockScoutWeb.Etherscan do
     array_type: %{
       name: "Reward",
       fields: %{
+        account: @address_hash_type,
         amount: @wei_type,
         blockHash: @block_hash_type,
         blockNumber: @block_number_type,
@@ -1512,6 +1519,7 @@ defmodule BlockScoutWeb.Etherscan do
         blockNumber: @block_number_type,
         date: %{type: "timestamp"},
         epochNumber: "integer",
+        group: @address_hash_type,
         validator: @address_hash_type
       }
     }
@@ -1523,7 +1531,6 @@ defmodule BlockScoutWeb.Etherscan do
       totalRewardsCelo: @wei_type,
       from: %{type: "timestamp"},
       to: %{type: "timestamp"},
-      account: @address_hash_type,
       rewards: @generic_epoch_rewards
     }
   }
@@ -1534,7 +1541,6 @@ defmodule BlockScoutWeb.Etherscan do
       totalRewardsCelo: @wei_type,
       from: %{type: "timestamp"},
       to: %{type: "timestamp"},
-      group: @address_hash_type,
       rewards: @group_epoch_rewards
     }
   }
@@ -3312,7 +3318,7 @@ defmodule BlockScoutWeb.Etherscan do
         placeholder: "voterAddress",
         type: "string",
         description:
-          "Voter address hash or list of coma separated voter address hashes for which you wish to get the rewards. Example: ?module=reward&action=getvotersrewards&voterAddresses=0x0000000000000000000000000000000000000001, 0x0000000000000000000000000000000000000002"
+          "List of coma separated voter address hashes for which you wish to get the rewards. Example: ?module=reward&action=getvotersrewards&voterAddresses=0x0000000000000000000000000000000000000001, 0x0000000000000000000000000000000000000002"
       }
     ],
     optional_params: [

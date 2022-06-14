@@ -1,7 +1,9 @@
 defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.{SetupValidatorAndGroupRewardsTest, SetupVoterRewardsTest}
+  import Explorer.Factory
+
+  alias Explorer.Chain.{Address, Block}
 
   describe "getvoterrewardsforgroup" do
     test "with missing voter address", %{conn: conn} do
@@ -98,47 +100,50 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
     end
 
     test "with valid voter and group address", %{conn: conn} do
-      {
-        voter_hash,
-        group_hash,
-        block_2_hash,
-        block_3_hash,
-        block_5_hash,
-        block_7_hash
-      } = SetupVoterRewardsTest.setup_for_group()
+      %Address{hash: voter_hash} = insert(:address)
+      %Address{hash: group_hash} = insert(:address)
+      insert(:celo_account, address: group_hash)
+
+      %Block{number: block_1_number, timestamp: block_1_timestamp} =
+        insert(:block, number: 17_280, timestamp: ~U[2022-01-01T17:42:43.162804Z])
+
+      %Block{number: block_2_number, timestamp: block_2_timestamp} =
+        insert(:block, number: 17_280 * 2, timestamp: ~U[2022-01-02T17:42:43.162804Z])
+
+      insert(
+        :celo_election_rewards,
+        account_hash: voter_hash,
+        amount: 80,
+        associated_account_hash: group_hash,
+        block_number: block_1_number,
+        block_timestamp: block_1_timestamp
+      )
+
+      insert(
+        :celo_election_rewards,
+        account_hash: voter_hash,
+        amount: 20,
+        associated_account_hash: group_hash,
+        block_number: block_2_number,
+        block_timestamp: block_2_timestamp
+      )
 
       expected_result = %{
         "rewards" => [
           %{
             "amount" => "80",
-            "blockHash" => to_string(block_2_hash),
-            "blockNumber" => "10696320",
+            "blockNumber" => "17280",
             "date" => "2022-01-01T17:42:43.162804Z",
-            "epochNumber" => "619"
+            "epochNumber" => "1"
           },
           %{
             "amount" => "20",
-            "blockHash" => to_string(block_3_hash),
-            "blockNumber" => "10713600",
+            "blockNumber" => "34560",
             "date" => "2022-01-02T17:42:43.162804Z",
-            "epochNumber" => "620"
-          },
-          %{
-            "amount" => "75",
-            "blockHash" => to_string(block_5_hash),
-            "blockNumber" => "10730880",
-            "date" => "2022-01-03T17:42:43.162804Z",
-            "epochNumber" => "621"
-          },
-          %{
-            "amount" => "0",
-            "blockHash" => to_string(block_7_hash),
-            "blockNumber" => "10748160",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "epochNumber" => "622"
+            "epochNumber" => "2"
           }
         ],
-        "total" => "175"
+        "total" => "100"
       }
 
       response =
@@ -184,7 +189,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         })
         |> json_response(200)
 
-      assert response["message"] =~ "Invalid voter address hash"
+      assert response["message"] =~ "One or more voter addresses are invalid"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
@@ -215,8 +220,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         "rewards" => [],
         "totalRewardCelo" => "0",
         "from" => "2022-01-03 00:00:00.000000Z",
-        "to" => "2022-01-06 00:00:00.000000Z",
-        "account" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+        "to" => "2022-01-06 00:00:00.000000Z"
       }
 
       response =
@@ -237,137 +241,47 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
-    test "with valid voter and group address", %{conn: conn} do
-      {voter_address_1_hash, group_address_1_hash, group_address_2_hash} = SetupVoterRewardsTest.setup_for_all_groups()
+    test "with valid voter hash", %{conn: conn} do
+      %Address{hash: voter_hash} = insert(:address)
+      %Address{hash: group_hash} = insert(:address)
+      insert(:celo_account, address: group_hash)
+
+      %Block{number: block_1_number, timestamp: block_1_timestamp} =
+        insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
+
+      %Block{number: block_2_number, timestamp: block_2_timestamp} =
+        insert(:block, number: 17_280 * 2, timestamp: ~U[2022-01-06T17:42:43.162804Z])
+
+      insert(
+        :celo_election_rewards,
+        account_hash: voter_hash,
+        amount: 80,
+        associated_account_hash: group_hash,
+        block_number: block_1_number,
+        block_timestamp: block_1_timestamp
+      )
+
+      insert(
+        :celo_election_rewards,
+        account_hash: voter_hash,
+        amount: 20,
+        associated_account_hash: group_hash,
+        block_number: block_2_number,
+        block_timestamp: block_2_timestamp
+      )
 
       expected_result = %{
         "rewards" => [
           %{
-            "amount" => "75",
-            "date" => "2022-01-03T17:42:43.162804Z",
-            "blockNumber" => "10730880",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000003",
-            "epochNumber" => "621",
-            "group" => to_string(group_address_1_hash)
-          },
-          %{
-            "amount" => "31",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
-            "epochNumber" => "622",
-            "group" => to_string(group_address_1_hash)
-          },
-          %{
-            "amount" => "77",
+            "account" => to_string(voter_hash),
+            "amount" => "80",
             "date" => "2022-01-05T17:42:43.162804Z",
-            "blockNumber" => "10765440",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000005",
-            "epochNumber" => "623",
-            "group" => to_string(group_address_1_hash)
-          },
-          %{
-            "amount" => "39",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
-            "epochNumber" => "622",
-            "group" => to_string(group_address_2_hash)
-          },
-          %{
-            "amount" => "78",
-            "date" => "2022-01-05T17:42:43.162804Z",
-            "blockNumber" => "10765440",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000005",
-            "epochNumber" => "623",
-            "group" => to_string(group_address_2_hash)
+            "blockNumber" => "17280",
+            "epochNumber" => "1",
+            "group" => to_string(group_hash)
           }
         ],
-        "totalRewardCelo" => "300",
-        "from" => "2022-01-03 00:00:00.000000Z",
-        "to" => "2022-01-06 00:00:00.000000Z",
-        "account" => to_string(voter_address_1_hash)
-      }
-
-      response =
-        conn
-        |> get("/api", %{
-          "module" => "reward",
-          "action" => "getvoterrewards",
-          "voterAddress" => to_string(voter_address_1_hash),
-          "from" => "2022-01-03T00:00:00.000000Z",
-          "to" => "2022-01-06T00:00:00.000000Z"
-        })
-        |> json_response(200)
-
-      assert response["result"] == expected_result
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
-      schema = generic_rewards_schema()
-      assert :ok = ExJsonSchema.Validator.validate(schema, response)
-    end
-
-    test "with valid voter address list", %{conn: conn} do
-      {voter_1_hash, voter_2_hash, group_1_hash, group_2_hash} = SetupVoterRewardsTest.setup_for_multiple_accounts()
-
-      expected_result = %{
-        "rewards" => [
-          %{
-            "account" => to_string(voter_1_hash),
-            "amount" => "75",
-            "date" => "2022-01-03T17:42:43.162804Z",
-            "blockNumber" => "10730880",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000003",
-            "epochNumber" => "621",
-            "group" => to_string(group_1_hash)
-          },
-          %{
-            "account" => to_string(voter_1_hash),
-            "amount" => "31",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
-            "epochNumber" => "622",
-            "group" => to_string(group_1_hash)
-          },
-          %{
-            "account" => to_string(voter_1_hash),
-            "amount" => "39",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
-            "epochNumber" => "622",
-            "group" => to_string(group_2_hash)
-          },
-          %{
-            "account" => to_string(voter_2_hash),
-            "amount" => "78",
-            "date" => "2022-01-05T17:42:43.162804Z",
-            "blockNumber" => "10765440",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000005",
-            "epochNumber" => "623",
-            "group" => to_string(group_1_hash)
-          },
-          %{
-            "account" => to_string(voter_1_hash),
-            "amount" => "77",
-            "date" => "2022-01-05T17:42:43.162804Z",
-            "blockNumber" => "10765440",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000005",
-            "epochNumber" => "623",
-            "group" => to_string(group_1_hash)
-          },
-          %{
-            "account" => to_string(voter_1_hash),
-            "amount" => "78",
-            "date" => "2022-01-05T17:42:43.162804Z",
-            "blockNumber" => "10765440",
-            "blockHash" => "0x0000000000000000000000000000000000000000000000000000000000000005",
-            "epochNumber" => "623",
-            "group" => to_string(group_2_hash)
-          }
-        ],
-        "totalRewardCelo" => "378",
+        "totalRewardCelo" => "80",
         "from" => "2022-01-03 00:00:00.000000Z",
         "to" => "2022-01-06 00:00:00.000000Z"
       }
@@ -377,7 +291,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         |> get("/api", %{
           "module" => "reward",
           "action" => "getvoterrewards",
-          "voterAddress" => to_string(voter_1_hash) <> ", " <> to_string(voter_2_hash),
+          "voterAddress" => to_string(voter_hash),
           "from" => "2022-01-03T00:00:00.000000Z",
           "to" => "2022-01-06T00:00:00.000000Z"
         })
@@ -416,7 +330,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         })
         |> json_response(200)
 
-      assert response["message"] =~ "Invalid validator address hash"
+      assert response["message"] =~ "One or more validator addresses are invalid"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
@@ -447,8 +361,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         "rewards" => [],
         "totalRewardCelo" => "0",
         "from" => "2022-01-03 00:00:00.000000Z",
-        "to" => "2022-01-06 00:00:00.000000Z",
-        "account" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+        "to" => "2022-01-06 00:00:00.000000Z"
       }
 
       response =
@@ -470,87 +383,46 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
     end
 
     test "with valid validator address", %{conn: conn} do
-      {validator_address_1_hash, group_address_1_hash, block_2_hash, block_3_hash} =
-        SetupValidatorAndGroupRewardsTest.setup()
+      %Address{hash: validator_1_hash} = insert(:address)
+      %Address{hash: validator_2_hash} = insert(:address)
+      %Address{hash: group_hash} = insert(:address)
+      insert(:celo_account, address: group_hash)
+
+      %Block{number: block_number, timestamp: block_timestamp} =
+        insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
+
+      insert(
+        :celo_election_rewards,
+        account_hash: validator_1_hash,
+        amount: 150_000,
+        associated_account_hash: group_hash,
+        block_number: block_number,
+        block_timestamp: block_timestamp,
+        reward_type: "validator"
+      )
+
+      insert(
+        :celo_election_rewards,
+        account_hash: validator_2_hash,
+        amount: 100_000,
+        associated_account_hash: group_hash,
+        block_number: block_number,
+        block_timestamp: block_timestamp,
+        reward_type: "validator"
+      )
 
       expected_result = %{
         "rewards" => [
           %{
-            "amount" => "100000",
-            "date" => "2022-01-03T17:42:43.162804Z",
-            "blockNumber" => "10730880",
-            "blockHash" => to_string(block_2_hash),
-            "epochNumber" => "621",
-            "group" => to_string(group_address_1_hash)
-          },
-          %{
-            "amount" => "200000",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => to_string(block_3_hash),
-            "epochNumber" => "622",
-            "group" => to_string(group_address_1_hash)
-          }
-        ],
-        "totalRewardCelo" => "300000",
-        "from" => "2022-01-03 00:00:00.000000Z",
-        "to" => "2022-01-06 00:00:00.000000Z",
-        "account" => to_string(validator_address_1_hash)
-      }
-
-      response =
-        conn
-        |> get("/api", %{
-          "module" => "reward",
-          "action" => "getvalidatorrewards",
-          "validatorAddress" => to_string(validator_address_1_hash),
-          "from" => "2022-01-03T00:00:00.000000Z",
-          "to" => "2022-01-06T00:00:00.000000Z"
-        })
-        |> json_response(200)
-
-      assert response["result"] == expected_result
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
-      schema = generic_rewards_schema()
-      assert :ok = ExJsonSchema.Validator.validate(schema, response)
-    end
-
-    test "with valid validator address list", %{conn: conn} do
-      {validator_address_1_hash, validator_address_2_hash, group_address_1_hash, group_address_2_hash, block_1_hash,
-       block_2_hash} = SetupValidatorAndGroupRewardsTest.setup_for_multiple_accounts()
-
-      expected_result = %{
-        "rewards" => [
-          %{
-            "account" => to_string(validator_address_1_hash),
-            "amount" => "100000",
-            "date" => "2022-01-03T17:42:43.162804Z",
-            "blockNumber" => "10730880",
-            "blockHash" => to_string(block_1_hash),
-            "epochNumber" => "621",
-            "group" => to_string(group_address_1_hash)
-          },
-          %{
-            "account" => to_string(validator_address_2_hash),
+            "account" => to_string(validator_1_hash),
             "amount" => "150000",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => to_string(block_2_hash),
-            "epochNumber" => "622",
-            "group" => to_string(group_address_2_hash)
-          },
-          %{
-            "account" => to_string(validator_address_1_hash),
-            "amount" => "200000",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => to_string(block_2_hash),
-            "epochNumber" => "622",
-            "group" => to_string(group_address_1_hash)
+            "date" => "2022-01-05T17:42:43.162804Z",
+            "blockNumber" => "17280",
+            "epochNumber" => "1",
+            "group" => to_string(group_hash)
           }
         ],
-        "totalRewardCelo" => "450000",
+        "totalRewardCelo" => "150000",
         "from" => "2022-01-03 00:00:00.000000Z",
         "to" => "2022-01-06 00:00:00.000000Z"
       }
@@ -560,7 +432,78 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         |> get("/api", %{
           "module" => "reward",
           "action" => "getvalidatorrewards",
-          "validatorAddress" => to_string(validator_address_1_hash) <> ", " <> to_string(validator_address_2_hash),
+          "validatorAddress" => to_string(validator_1_hash),
+          "from" => "2022-01-03T00:00:00.000000Z",
+          "to" => "2022-01-06T00:00:00.000000Z"
+        })
+        |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      schema = generic_rewards_for_multiple_accounts_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
+    end
+
+    test "with valid validator address list", %{conn: conn} do
+      %Address{hash: validator_1_hash} = insert(:address)
+      %Address{hash: validator_2_hash} = insert(:address)
+      %Address{hash: group_hash} = insert(:address)
+      insert(:celo_account, address: group_hash)
+
+      %Block{number: block_number, timestamp: block_timestamp} =
+        insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
+
+      insert(
+        :celo_election_rewards,
+        account_hash: validator_1_hash,
+        amount: 150_000,
+        associated_account_hash: group_hash,
+        block_number: block_number,
+        block_timestamp: block_timestamp,
+        reward_type: "validator"
+      )
+
+      insert(
+        :celo_election_rewards,
+        account_hash: validator_2_hash,
+        amount: 100_000,
+        associated_account_hash: group_hash,
+        block_number: block_number,
+        block_timestamp: block_timestamp,
+        reward_type: "validator"
+      )
+
+      expected_result = %{
+        "rewards" => [
+          %{
+            "account" => to_string(validator_1_hash),
+            "amount" => "150000",
+            "date" => "2022-01-05T17:42:43.162804Z",
+            "blockNumber" => "17280",
+            "epochNumber" => "1",
+            "group" => to_string(group_hash)
+          },
+          %{
+            "account" => to_string(validator_2_hash),
+            "amount" => "100000",
+            "date" => "2022-01-05T17:42:43.162804Z",
+            "blockNumber" => "17280",
+            "epochNumber" => "1",
+            "group" => to_string(group_hash)
+          }
+        ],
+        "totalRewardCelo" => "250000",
+        "from" => "2022-01-03 00:00:00.000000Z",
+        "to" => "2022-01-06 00:00:00.000000Z"
+      }
+
+      response =
+        conn
+        |> get("/api", %{
+          "module" => "reward",
+          "action" => "getvalidatorrewards",
+          "validatorAddress" => to_string(validator_1_hash) <> ", " <> to_string(validator_2_hash),
           "from" => "2022-01-03T00:00:00.000000Z",
           "to" => "2022-01-06T00:00:00.000000Z"
         })
@@ -599,7 +542,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         })
         |> json_response(200)
 
-      assert response["message"] =~ "Invalid group address hash"
+      assert response["message"] =~ "One or more group addresses are invalid"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
@@ -630,8 +573,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         "rewards" => [],
         "totalRewardCelo" => "0",
         "from" => "2022-01-03 00:00:00.000000Z",
-        "to" => "2022-01-06 00:00:00.000000Z",
-        "group" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+        "to" => "2022-01-06 00:00:00.000000Z"
       }
 
       response =
@@ -653,87 +595,55 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
     end
 
     test "with valid group address", %{conn: conn} do
-      {validator_address_1_hash, group_address_1_hash, block_2_hash, block_3_hash} =
-        SetupValidatorAndGroupRewardsTest.setup()
+      %Address{hash: validator_1_hash} = insert(:address)
+      %Address{hash: validator_2_hash} = insert(:address)
+      %Address{hash: group_hash} = insert(:address)
+      insert(:celo_account, address: validator_1_hash)
+      insert(:celo_account, address: validator_2_hash)
+
+      %Block{number: block_number, timestamp: block_timestamp} =
+        insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
+
+      insert(
+        :celo_election_rewards,
+        account_hash: group_hash,
+        amount: 300_000,
+        associated_account_hash: validator_1_hash,
+        block_number: block_number,
+        block_timestamp: block_timestamp,
+        reward_type: "group"
+      )
+
+      insert(
+        :celo_election_rewards,
+        account_hash: group_hash,
+        amount: 400_000,
+        associated_account_hash: validator_2_hash,
+        block_number: block_number,
+        block_timestamp: block_timestamp,
+        reward_type: "group"
+      )
 
       expected_result = %{
         "rewards" => [
           %{
             "amount" => "300000",
-            "date" => "2022-01-03T17:42:43.162804Z",
-            "blockNumber" => "10730880",
-            "blockHash" => to_string(block_2_hash),
-            "epochNumber" => "621",
-            "validator" => to_string(validator_address_1_hash)
+            "date" => "2022-01-05T17:42:43.162804Z",
+            "blockNumber" => "17280",
+            "epochNumber" => "1",
+            "group" => to_string(group_hash),
+            "validator" => to_string(validator_1_hash)
           },
           %{
             "amount" => "400000",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => to_string(block_3_hash),
-            "epochNumber" => "622",
-            "validator" => to_string(validator_address_1_hash)
+            "date" => "2022-01-05T17:42:43.162804Z",
+            "blockNumber" => "17280",
+            "epochNumber" => "1",
+            "group" => to_string(group_hash),
+            "validator" => to_string(validator_2_hash)
           }
         ],
         "totalRewardCelo" => "700000",
-        "from" => "2022-01-03 00:00:00.000000Z",
-        "to" => "2022-01-06 00:00:00.000000Z",
-        "group" => to_string(group_address_1_hash)
-      }
-
-      response =
-        conn
-        |> get("/api", %{
-          "module" => "reward",
-          "action" => "getvalidatorgrouprewards",
-          "groupAddress" => to_string(group_address_1_hash),
-          "from" => "2022-01-03T00:00:00.000000Z",
-          "to" => "2022-01-06T00:00:00.000000Z"
-        })
-        |> json_response(200)
-
-      assert response["result"] == expected_result
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
-      schema = group_rewards_schema()
-      assert :ok = ExJsonSchema.Validator.validate(schema, response)
-    end
-
-    test "with valid group address list", %{conn: conn} do
-      {validator_address_1_hash, validator_address_2_hash, group_address_1_hash, group_address_2_hash, block_1_hash,
-       block_2_hash} = SetupValidatorAndGroupRewardsTest.setup_for_multiple_accounts()
-
-      expected_result = %{
-        "rewards" => [
-          %{
-            "amount" => "300000",
-            "date" => "2022-01-03T17:42:43.162804Z",
-            "blockNumber" => "10730880",
-            "blockHash" => to_string(block_1_hash),
-            "epochNumber" => "621",
-            "group" => to_string(group_address_1_hash),
-            "validator" => to_string(validator_address_1_hash)
-          },
-          %{
-            "amount" => "500000",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => to_string(block_2_hash),
-            "epochNumber" => "622",
-            "group" => to_string(group_address_2_hash),
-            "validator" => to_string(validator_address_2_hash)
-          },
-          %{
-            "amount" => "400000",
-            "date" => "2022-01-04T17:42:43.162804Z",
-            "blockNumber" => "10748160",
-            "blockHash" => to_string(block_2_hash),
-            "epochNumber" => "622",
-            "group" => to_string(group_address_1_hash),
-            "validator" => to_string(validator_address_1_hash)
-          }
-        ],
-        "totalRewardCelo" => "1200000",
         "from" => "2022-01-03 00:00:00.000000Z",
         "to" => "2022-01-06 00:00:00.000000Z"
       }
@@ -743,7 +653,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         |> get("/api", %{
           "module" => "reward",
           "action" => "getvalidatorgrouprewards",
-          "groupAddress" => to_string(group_address_1_hash) <> ", " <> to_string(group_address_2_hash),
+          "groupAddress" => to_string(group_hash),
           "from" => "2022-01-03T00:00:00.000000Z",
           "to" => "2022-01-06T00:00:00.000000Z"
         })
@@ -752,7 +662,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
-      schema = group_rewards_multiple_accounts_schema()
+      schema = group_rewards_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
   end
