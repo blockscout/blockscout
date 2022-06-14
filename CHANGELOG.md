@@ -1,6 +1,18 @@
 ## Current
 
 ### Features
+- [#5667](https://github.com/blockscout/blockscout/pull/5667) - Address page: scroll to selected tab's data
+
+### Fixes
+
+### Chore
+- [#5674](https://github.com/blockscout/blockscout/pull/5674) - Disable token holder refreshing
+- [#5661](https://github.com/blockscout/blockscout/pull/5661) - Fixes yaml syntax for boolean env variables in docker compose
+
+
+## 4.1.4-beta
+
+### Features
 - [#5656](https://github.com/blockscout/blockscout/pull/5656) - Gas price oracle
 - [#5613](https://github.com/blockscout/blockscout/pull/5613) - Exchange rates CoinMarketCap source module
 - [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
