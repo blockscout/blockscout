@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
         @default_page_size
       )
 
-    contracts = get_verified_contracts(paging_options, filter)
+    contracts = get_verified_contracts(paging_options, filter, contract_count)
 
     render(conn, VerifiedContractsView, "index.html",
       conn: conn,
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
     )
   end
 
-  defp get_verified_contracts(paging_options, filter) do
+  defp get_verified_contracts(paging_options, filter, contract_count) when contract_count > 0 do
     SmartContract
     |> preload(:address)
     |> join(:left, [c], tc in SmartContractTransactionCount,
@@ -44,6 +44,8 @@ defmodule BlockScoutWeb.VerifiedContractsController do
     |> handle_paging_options(paging_options)
     |> Explorer.Repo.all()
   end
+
+  defp get_verified_contracts(_, _, _), do: []
 
   defp get_verified_contract_count(filter) do
     SmartContract

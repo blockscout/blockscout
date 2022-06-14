@@ -102,7 +102,6 @@ const appJs =
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
       'stats': './js/pages/stats.js',
-      'verified-contracts': './js/pages/verified_contracts.js',
     },
     output: {
       filename: '[name].js',

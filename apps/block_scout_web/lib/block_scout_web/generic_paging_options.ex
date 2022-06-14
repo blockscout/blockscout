@@ -36,6 +36,8 @@ defmodule BlockScoutWeb.GenericPagingOptions do
 
   defp extract_page_size(_, default_page_size), do: default_page_size
 
+  defp extract_page_number(%{"page_number" => _}, 0), do: 1
+
   defp extract_page_number(%{"page_number" => page_number}, total_page_count) when is_bitstring(page_number) do
     case Integer.parse(page_number) do
       {page_number, _} -> if page_number > total_page_count, do: min(total_page_count, page_number), else: page_number

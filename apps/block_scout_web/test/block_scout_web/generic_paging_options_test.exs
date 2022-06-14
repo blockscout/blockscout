@@ -124,5 +124,23 @@ defmodule BlockScoutWeb.GenericPagingOptionsTest do
                  10
                )
     end
+
+    test "provides default values for verified contracts page when there are no contracts" do
+      assert %{
+               order_dir: "desc",
+               order_field: "txns",
+               page_number: 1,
+               page_size: 10
+             } ==
+               GenericPagingOptions.extract_paging_options_from_params(
+                 %{
+                   "page_number" => "1"
+                 },
+                 0,
+                 ["txns", "name", "date"],
+                 "desc",
+                 10
+               )
+    end
   end
 end

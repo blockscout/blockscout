@@ -7,7 +7,7 @@
 	pagination_last_page_path = last_page_path(@conn, @params, @contract_count, path_fun)
 %>
 <section
-		class="container"
+		class="container tooltip-with-link-container"
 		data-page="verified_contracts"
 		data-chain-id="<%= System.get_env("CHAIN_ID") %>"
 		data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
@@ -18,6 +18,7 @@
 			<h1 class="card-title list-title-description"><%= gettext "Verified Contracts" %></h1>
 
 			<div class="list-top-pagination-container-wrapper verified_contracts-list-search-input-outer-container d-flex" style="float: right;">
+				<%= if @contract_count > 0 do %>
 				<%= render BlockScoutWeb.CommonComponentsView,
 					"_pagination_container.html",
 					position: "top",
@@ -30,7 +31,8 @@
 					first_page_path: pagination_first_page_path,
 					last_page_path: pagination_last_page_path
 				%>
-			</div>
+				<% end %>
+		</div>
 
 			<div class="addresses-table-container">
 				<div class="stakes-table-container">
@@ -91,15 +93,21 @@
 						</tr>
 						</thead>
 						<tbody data-items data-selector="top-verified_contracts-list">
-						<%= for contract <- @contracts do %>
-						<%= render BlockScoutWeb.VerifiedContractsView, "_tile.html", contract: contract %>
+							<%= if @contract_count == 0 do %>
+							<tr>
+								<td class="stakes-td" colspan="8"><%= gettext("No verified contracts found") %></th>
+							</tr>
+							<% else %>
+								<%= for contract <- @contracts do %>
+								<%= render BlockScoutWeb.VerifiedContractsView, "_tile.html", contract: contract %>
 
-						<% end %>
+								<% end %>
+							<% end %>
 						</tbody>
 					</table>
 				</div>
 			</div>
-
+			<%= if @contract_count > 0 do %>
 			<%= render BlockScoutWeb.CommonComponentsView,
 				"_pagination_container.html",
 				position: "bottom",
@@ -112,7 +120,7 @@
 				first_page_path: pagination_first_page_path,
 				last_page_path: pagination_last_page_path
 			%>
+			<% end %>
 		</div>
 	</div>
 </section>
-<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verified-contracts.js") %>"></script>

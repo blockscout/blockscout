@@ -198,7 +198,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20 lib/block_scout_web/templates/verified_contracts/index.html.eex:41
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20 lib/block_scout_web/templates/verified_contracts/index.html.eex:43
 #: lib/block_scout_web/views/address_view.ex:161
 msgid "Address"
 msgstr ""
@@ -323,7 +323,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:4
 #: lib/block_scout_web/templates/address/overview.html.eex:167 lib/block_scout_web/templates/address_token/overview.html.eex:51
 #: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:42 lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:43
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:59
+#: lib/block_scout_web/templates/verified_contracts/index.html.eex:61
 msgid "Balance"
 msgstr ""
 
@@ -622,7 +622,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_compiler_field.html.eex:3
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:71 lib/block_scout_web/templates/verified_contracts/index.html.eex:56
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:71 lib/block_scout_web/templates/verified_contracts/index.html.eex:58
 msgid "Compiler"
 msgstr ""
 
@@ -734,7 +734,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:93
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_name_field.html.eex:3
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:38 lib/block_scout_web/templates/verified_contracts/index.html.eex:49
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:38 lib/block_scout_web/templates/verified_contracts/index.html.eex:51
 msgid "Contract Name"
 msgstr ""
 
@@ -3367,7 +3367,7 @@ msgid "Celo Gold"
 msgstr "CELO"
 
 #, elixir-format
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:82
+#: lib/block_scout_web/templates/verified_contracts/index.html.eex:84
 msgid "Date Verified"
 msgstr ""
 
@@ -3377,13 +3377,13 @@ msgid "Partially Verified"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:67
+#: lib/block_scout_web/templates/verified_contracts/index.html.eex:69
 msgid "Txns (past 90 days)"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/verified_contracts/_tile.html.eex:49
-#: lib/block_scout_web/templates/verified_contracts/index.html.eex:74
+#: lib/block_scout_web/templates/verified_contracts/index.html.eex:76
 msgid "Verified"
 msgstr ""
 
@@ -3406,4 +3406,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stats/index.html.eex:28
 msgid "Mento Reserve"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/verified_contracts/index.html.eex:98
+msgid "No verified contracts found"
 msgstr ""
