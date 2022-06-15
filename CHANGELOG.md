@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#5674](https://github.com/blockscout/blockscout/pull/5674) - Disable token holder refreshing
 - [#5661](https://github.com/blockscout/blockscout/pull/5661) - Fixes yaml syntax for boolean env variables in docker compose
 
 
