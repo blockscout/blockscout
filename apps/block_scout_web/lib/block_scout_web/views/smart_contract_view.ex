@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.SmartContractView do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
+  alias Explorer.SmartContract.Helper
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
@@ -102,13 +103,13 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, "string", names, index, _components),
-    do: render_type_value("string", value, fetch_name(names, index))
+    do: render_type_value("string", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, :string, names, index, _components),
-    do: render_type_value("string", value, fetch_name(names, index))
+    do: render_type_value("string", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, :bytes, names, index, _components),
-    do: render_type_value("bytes", value, fetch_name(names, index))
+    do: render_type_value("bytes", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, "bool", names, index, _components),
     do: render_type_value("bool", to_string(value), fetch_name(names, index))
