@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
       |> cache_key()
       |> fetch_from_cache()
 
-    if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
+    if is_nil(cached_value) || cached_value == :not_found_coingecko || Decimal.cmp(cached_value, 0) == :eq do
       fetch_from_db(token_hash)
     else
       cached_value
@@ -82,7 +82,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
       |> cache_key()
       |> fetch_from_cache()
 
-    if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
+    if is_nil(cached_value) || cached_value == :not_found_coingecko || Decimal.cmp(cached_value, 0) == :eq do
       fetch_from_db(token_hash)
     else
       cached_value
@@ -134,6 +134,9 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
       {:ok, [rates]} ->
         rates.usd_value
 
+      {:error, "Could not find coin with the given id"} ->
+        :not_found_coingecko
+
       _ ->
         nil
     end
@@ -143,6 +146,9 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     case Source.fetch_exchange_rates_for_token_address(address_hash_str) do
       {:ok, [rates]} ->
         rates.usd_value
+
+      {:error, "Could not find coin with the given id"} ->
+        :not_found_coingecko
 
       _ ->
         nil
@@ -174,7 +180,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   def put_into_db(token_hash, exchange_rate) do
     token = get_token(token_hash)
 
-    if token && !is_nil(exchange_rate) do
+    if token && !is_nil(exchange_rate) && exchange_rate != :not_found_coingecko do
       token
       |> Changeset.change(%{exchange_rate: exchange_rate})
       |> Repo.update()
