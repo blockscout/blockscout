@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5671](https://github.com/blockscout/blockscout/pull/5671) - Fix double requests for token exchange rates; Disable fetching `btc_value` by default (add `EXCHANGE_RATES_FETCH_BTC_VALUE` env variable)
 
 ### Chore
 - [#5674](https://github.com/blockscout/blockscout/pull/5674) - Disable token holder refreshing

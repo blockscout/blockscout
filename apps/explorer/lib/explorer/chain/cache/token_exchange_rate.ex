@@ -114,7 +114,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   defp update_cache_by_symbol(token_hash, symbol) do
     put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", Helper.current_time())
 
-    exchange_rate = fetch_token_exchange_rate(symbol)
+    exchange_rate = fetch_token_exchange_rate(symbol, true)
 
     put_into_db(token_hash, exchange_rate)
     put_into_cache(cache_key(symbol), exchange_rate)
@@ -123,32 +123,32 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   defp update_cache_by_address_hash_str(token_hash, address_hash_str) do
     put_into_cache("#{cache_key(address_hash_str)}_#{@last_update_key}", Helper.current_time())
 
-    exchange_rate = fetch_token_exchange_rate_by_address(address_hash_str)
+    exchange_rate = fetch_token_exchange_rate_by_address(address_hash_str, true)
 
     put_into_db(token_hash, exchange_rate)
     put_into_cache(cache_key(address_hash_str), exchange_rate)
   end
 
-  def fetch_token_exchange_rate(symbol) do
+  def fetch_token_exchange_rate(symbol, internal \\ false) do
     case Source.fetch_exchange_rates_for_token(symbol) do
       {:ok, [rates]} ->
         rates.usd_value
 
       {:error, "Could not find coin with the given id"} ->
-        :not_found_coingecko
+        if internal, do: :not_found_coingecko, else: nil
 
       _ ->
         nil
     end
   end
 
-  def fetch_token_exchange_rate_by_address(address_hash_str) do
+  def fetch_token_exchange_rate_by_address(address_hash_str, internal \\ false) do
     case Source.fetch_exchange_rates_for_token_address(address_hash_str) do
       {:ok, [rates]} ->
         rates.usd_value
 
       {:error, "Could not find coin with the given id"} ->
-        :not_found_coingecko
+        if internal, do: :not_found_coingecko, else: nil
 
       _ ->
         nil
