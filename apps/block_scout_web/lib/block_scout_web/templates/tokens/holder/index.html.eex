@@ -11,7 +11,7 @@
     <div class="card">
       <%= render OverviewView, "_tabs.html", assigns %>
       <!-- Token Holders -->
-      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <div class="card-body" data-async-listing="<%= @current_path %>">
         <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
