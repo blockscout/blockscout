@@ -10,9 +10,10 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 EXPOSE 4000
 
+ARG SECRET_KEY_BASE
 ENV PORT=4000 \
     MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+    SECRET_KEY_BASE="${SECRET_KEY_BASE}"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
