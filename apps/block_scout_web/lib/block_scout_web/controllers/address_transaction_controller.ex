@@ -14,7 +14,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
     AddressInternalTransactionCsvExporter,
     AddressLogCsvExporter,
     AddressTokenTransferCsvExporter,
-    AddressTransactionCsvExporter
+    AddressTransactionCsvExporter,
+    Wei
   }
 
   alias Explorer.ExchangeRates.Token
@@ -130,7 +131,13 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       {:error, :not_found} ->
         {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
-        address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
+
+        address = %Chain.Address{
+          hash: address_hash,
+          smart_contract: nil,
+          token: nil,
+          fetched_coin_balance: %Wei{value: Decimal.new(0)}
+        }
 
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->

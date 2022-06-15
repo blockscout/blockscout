@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
   import BlockScoutWeb.WebRouter.Helpers,
-    only: [transaction_path: 3, transaction_internal_transaction_path: 3, transaction_token_transfer_path: 3]
+    only: [transaction_path: 3]
 
   alias Explorer.Chain.Transaction
 

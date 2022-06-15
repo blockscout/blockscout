@@ -6,7 +6,7 @@ if (!websocketRootUrl || websocketRootUrl === '/') {
   websocketRootUrl = ''
 }
 
-const socket = new Socket(websocketRootUrl + '/socket', { params: { locale: locale } })
+const socket = new Socket(websocketRootUrl + '/socket', { params: { locale } })
 socket.connect()
 
 export default socket

@@ -178,7 +178,7 @@ txs_stats_days_to_compile_at_init =
   |> elem(0)
 
 config :explorer, Explorer.Chain.Transaction.History.Historian,
-  enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
+  enabled: System.get_env("ENABLE_TXS_STATS", "true") != "false",
   init_lag: txs_stats_init_lag,
   days_to_compile_at_init: txs_stats_days_to_compile_at_init
 
