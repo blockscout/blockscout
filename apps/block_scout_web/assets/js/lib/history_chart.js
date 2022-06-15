@@ -1,9 +1,9 @@
 import $ from 'jquery'
 import { Chart, LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip } from 'chart.js'
-import 'chartjs-adapter-moment'
+import 'chartjs-adapter-luxon'
 import humps from 'humps'
 import numeral from 'numeral'
-import moment from 'moment'
+import { DateTime } from 'luxon'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/export-vars-to-js.module.scss'
 
@@ -42,11 +42,11 @@ function getMarketCapChartColor () {
 
 function xAxe (fontColor) {
   return {
-    grid: grid,
+    grid,
     type: 'time',
     time: {
       unit: 'day',
-      tooltipFormat: 'YYYY-MM-DD',
+      tooltipFormat: 'DD',
       stepSize: 14
     },
     ticks: {
@@ -76,7 +76,7 @@ const config = {
   },
   options: {
     layout: {
-      padding: padding
+      padding
     },
     interaction: {
       intersect: false,
@@ -86,7 +86,7 @@ const config = {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
       price: {
         position: 'left',
-        grid: grid,
+        grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
@@ -96,7 +96,7 @@ const config = {
       },
       marketCap: {
         position: 'right',
-        grid: grid,
+        grid,
         ticks: {
           callback: (_value, _index, _values) => '',
           maxTicksLimit: 6,
@@ -106,7 +106,7 @@ const config = {
       },
       numTransactions: {
         position: 'right',
-        grid: grid,
+        grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
@@ -116,7 +116,11 @@ const config = {
       }
     },
     plugins: {
-      legend: legend,
+      legend,
+      title: {
+        display: true,
+        color: sassVariables.dashboardBannerChartAxisFontColor
+      },
       tooltip: {
         mode: 'index',
         intersect: false,
@@ -166,9 +170,9 @@ function getTxHistoryData (transactionHistory) {
 
   // it should be empty value for tx history the current day
   const prevDayStr = data[0].x
-  const prevDay = moment(prevDayStr)
-  let curDay = prevDay.add(1, 'days')
-  curDay = curDay.format('YYYY-MM-DD')
+  const prevDay = DateTime.fromISO(prevDayStr)
+  let curDay = prevDay.plus({ days: 1 })
+  curDay = curDay.toISODate()
   data.unshift({ x: curDay, y: null })
 
   setDataToLocalStorage('txHistoryData', data)
@@ -231,6 +235,8 @@ class MarketHistoryChart {
     if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
       this.marketCap.hidden = true
       axes.marketCap.display = false
+      this.price.hidden = true
+      axes.price.display = false
       marketCapActivated = false
     }
 
@@ -254,6 +260,17 @@ class MarketHistoryChart {
     }
 
     this.availableSupply = availableSupply
+
+    const txChartTitle = 'Daily transactions'
+    const marketChartTitle = 'Daily price and market cap'
+    let chartTitle = ''
+    if (Object.keys(dataConfig).join() === 'transactions') {
+      chartTitle = txChartTitle
+    } else if (Object.keys(dataConfig).join() === 'market') {
+      chartTitle = marketChartTitle
+    }
+    config.options.plugins.title.text = chartTitle
+
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
     const isChartLoadedKey = 'isChartLoaded'

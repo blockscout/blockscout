@@ -101,7 +101,7 @@ export const formatTitleAndError = (error) => {
   } catch (exception) {
     message = ''
   }
-  return { title: title, message: message, txHash: txHash }
+  return { title, message, txHash }
 }
 
 export const getCurrentAccountPromise = (provider) => {

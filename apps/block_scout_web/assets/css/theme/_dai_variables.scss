@@ -14,7 +14,7 @@ $footer-item-disc-color: $secondary;
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-line-color-market: $secondary;
+$dashboard-line-color-market: #15bba6;
 
 $dashboard-banner-chart-legend-label-color: $footer-text-color;
 $dashboard-stats-item-label-color: $footer-text-color;
@@ -77,6 +77,15 @@ a.tile-title { color: $secondary !important; }
 
 .dashboard-banner-network-stats-item::before {
   background-color: #F0EBDE !important;
+}
+
+.dashboard-banner-chart-legend {
+  .dashboard-banner-chart-legend-item.market-cap-per-day
+   {
+    &::before {
+      background-color: $dashboard-line-color-market !important;
+    }
+  }
 }
 
 // card
