@@ -1,6 +1,11 @@
+import json
 import os
-from admin import SCHAIN_CONFIG_DIR_PATH, MAINNET_IMA_ABI_FILEPATH
-from admin.endpoints import read_json
+
+from web3 import Web3, HTTPProvider
+
+from admin import SCHAIN_CONFIG_DIR_PATH, MAINNET_IMA_ABI_FILEPATH, PROXY_ADMIN_PREDEPLOYED_ADDRESS, empty_address, \
+    ETHERBASE_ALLOC, SCHAIN_OWNER_ALLOC, NODE_OWNER_ALLOC, ZERO_ADDRESS, ENDPOINT, ABI_FILEPATH
+from admin.endpoints import read_json, schain_name_to_id
 
 from etherbase_predeployed import (
     UpgradeableEtherbaseUpgradeableGenerator, ETHERBASE_ADDRESS, ETHERBASE_IMPLEMENTATION_ADDRESS
@@ -20,14 +25,19 @@ from multisigwallet_predeployed import MultiSigWalletGenerator, MULTISIGWALLET_A
 from predeployed_generator.openzeppelin.proxy_admin_generator import ProxyAdminGenerator
 from ima_predeployed.generator import generate_contracts
 
-PROXY_ADMIN_PREDEPLOYED_ADDRESS = '0xD1000000000000000000000000000000000000D1'
-empty_address = '0x0000000000000000000000000000000000000001'
-
 
 def generate_config(schain_name):
     config_path = os.path.join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json')
     if not os.path.exists(config_path):
-        pass
+        config = {
+            'alloc': {
+                **get_predeployed_data(),
+                **get_ima_contracts(),
+                **generate_owner_accounts(schain_name)
+            }
+        }
+        with open(config_path, 'w') as f:
+            f.write(json.dumps(config, indent=4))
 
 
 def get_predeployed_data():
@@ -44,7 +54,7 @@ def get_predeployed_data():
         schain_owner=empty_address,
         ether_managers=[empty_address],
         proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-        balance=0
+        balance=ETHERBASE_ALLOC
     )
 
     marionette_generator = UpgradeableMarionetteGenerator()
@@ -98,3 +108,50 @@ def get_ima_contracts():
         schain_name='schain',
         contracts_on_mainnet=mainnet_ima_abi
     )
+
+
+def generate_owner_accounts(schain_name):
+    schain_info = get_schain_info(schain_name)
+    accounts = {}
+    if schain_info['generation'] == 0:
+        add_to_accounts(accounts, schain_info['owner'], SCHAIN_OWNER_ALLOC)
+    if schain_info['generation'] == 1:
+        add_to_accounts(accounts, get_schain_originator(schain_info), SCHAIN_OWNER_ALLOC)
+    for wallet in schain_info['nodes']:
+        add_to_accounts(accounts, wallet, NODE_OWNER_ALLOC)
+    return accounts
+
+
+def add_to_accounts(accounts, address, balance):
+    fixed_address = Web3.toChecksumAddress(address)
+    accounts[fixed_address] = {
+        'balance': str(balance)
+    }
+
+
+def get_schain_originator(schain: dict):
+    if schain['originator'] == ZERO_ADDRESS:
+        return schain['mainnetOwner']
+    return schain['originator']
+
+
+def get_schain_info(schain_name):
+    provider = HTTPProvider(ENDPOINT)
+    web3 = Web3(provider)
+    sm_abi = read_json(ABI_FILEPATH)
+    schains_internal_contract = web3.eth.contract(address=sm_abi['schains_internal_address'],
+                                                  abi=sm_abi['schains_internal_abi'])
+    nodes_contract = web3.eth.contract(address=sm_abi['nodes_address'], abi=sm_abi['nodes_abi'])
+
+    schain_id = bytes.fromhex(schain_name_to_id(schain_name)[2:])
+    schain_info = schains_internal_contract.functions.schains(schain_id).call()
+    node_ids = schains_internal_contract.functions.getNodesInGroup(schain_id).call()
+    wallets = []
+    for node_id in node_ids:
+        wallets.append(nodes_contract.functions.getNodeAddress(node_id).call())
+    return {
+        'mainnetOwner': schain_info[1],
+        'originator': schain_info[10],
+        'generation': schain_info[9],
+        'nodes': wallets
+    }
