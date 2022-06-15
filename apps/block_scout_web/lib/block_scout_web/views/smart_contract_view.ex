@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.SmartContractView do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
-  alias Explorer.SmartContract.Helper
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
@@ -55,7 +54,6 @@ defmodule BlockScoutWeb.SmartContractView do
 
         values =
           value
-          |> Helper.sanitize_input()
           |> tuple_array_to_array(tuple_types, fetch_name(names, index + 1))
           |> Enum.join("),\n(")
 
@@ -64,7 +62,6 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Helper.sanitize_input()
           |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
@@ -72,7 +69,6 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Helper.sanitize_input()
           |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
@@ -80,7 +76,6 @@ defmodule BlockScoutWeb.SmartContractView do
       true ->
         values =
           value
-          |> Helper.sanitize_input()
           |> Enum.join("),\n(")
 
         render_array_type_value(type, "(\n" <> values <> ")", fetch_name(names, index))
@@ -242,11 +237,11 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp render_type_value(type, value, type) do
-    "<div class=\"pl-3\"><i>(#{type})</i> : #{value |> Helper.sanitize_input()}</div>"
+    "<div class=\"pl-3\"><i>(#{type})</i> : #{value}</div>"
   end
 
   defp render_type_value(type, value, name) do
-    "<div class=\"pl-3\"><i><span style=\"color: black\">#{name}</span> (#{type})</i> : #{value |> Helper.sanitize_input()}</div>"
+    "<div class=\"pl-3\"><i><span style=\"color: black\">#{name}</span> (#{type})</i> : #{value}</div>"
   end
 
   defp render_array_type_value(type, values, name) do
