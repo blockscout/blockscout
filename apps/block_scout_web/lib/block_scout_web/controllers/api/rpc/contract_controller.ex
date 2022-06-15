@@ -230,26 +230,48 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp get_metadata_and_publish(address_hash_string, conn) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
-        %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
-          Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata)
+        case Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata) do
+          %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} ->
+            publish_and_handle_response_without_broadcast(
+              address_hash_string,
+              params_to_publish,
+              abi,
+              secondary_sources,
+              conn
+            )
 
-        case publish_without_broadcast(%{
-               "addressHash" => address_hash_string,
-               "params" => params_to_publish,
-               "abi" => abi,
-               "secondarySources" => secondary_sources
-             }) do
-          {:ok, _contract} ->
-            {:format, {:ok, address_hash}} = to_address_hash(address_hash_string)
-            address = Contracts.address_hash_to_address_with_source_code(address_hash)
-            render(conn, :verify, %{contract: address})
+          {:error, :metadata} ->
+            render(conn, :error, error: Sourcify.no_metadata_message())
 
-          {:error, changeset} ->
-            render(conn, :error, error: changeset)
+          _ ->
+            render(conn, :error, error: Sourcify.failed_verification_message())
         end
 
       {:error, %{"error" => error}} ->
         render(conn, :error, error: error)
+    end
+  end
+
+  defp publish_and_handle_response_without_broadcast(
+         address_hash_string,
+         params_to_publish,
+         abi,
+         secondary_sources,
+         conn
+       ) do
+    case publish_without_broadcast(%{
+           "addressHash" => address_hash_string,
+           "params" => params_to_publish,
+           "abi" => abi,
+           "secondarySources" => secondary_sources
+         }) do
+      {:ok, _contract} ->
+        {:format, {:ok, address_hash}} = to_address_hash(address_hash_string)
+        address = Contracts.address_hash_to_address_with_source_code(address_hash)
+        render(conn, :verify, %{contract: address})
+
+      {:error, changeset} ->
+        render(conn, :error, error: changeset)
     end
   end
 
