@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5676](https://github.com/blockscout/blockscout/pull/5676) - Fix wrong miner address shown for post EIP-1559 block for clique network
 
 ### Chore
 - [#5674](https://github.com/blockscout/blockscout/pull/5674) - Disable token holder refreshing
