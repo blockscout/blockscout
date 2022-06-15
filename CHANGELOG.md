@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 4.1.4-beta
+
+### Features
 - [#5656](https://github.com/blockscout/blockscout/pull/5656) - Gas price oracle
 - [#5613](https://github.com/blockscout/blockscout/pull/5613) - Exchange rates CoinMarketCap source module
 - [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
@@ -8,6 +17,7 @@
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5647](https://github.com/blockscout/blockscout/pull/5647) - Add handling for invalid Sourcify response
 - [#5635](https://github.com/blockscout/blockscout/pull/5635) - Set CoinGecko source in exchange_rates_source function fix in case of token_bridge
 - [#5629](https://github.com/blockscout/blockscout/pull/5629) - Fix empty coin balance for empty address
 - [#5612](https://github.com/blockscout/blockscout/pull/5612) - Fix token transfers order
