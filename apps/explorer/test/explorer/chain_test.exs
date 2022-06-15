@@ -137,6 +137,221 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "get_average_gas_price/4" do
+    test "returns nil percentile values if no blocks in the DB" do
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns nil percentile values if blocks are empty in the DB" do
+      insert(:block)
+      insert(:block)
+      insert(:block)
+
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns nil percentile values for blocks with failed txs in the DB" do
+      block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+
+      :transaction
+      |> insert(
+        error: "Reverted",
+        status: :error,
+        block_hash: block.hash,
+        block_number: block.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 100,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns nil percentile values for transactions with 0 gas price aka 'whitelisted transactions' in the DB" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(2, 35, 60, 90)
+    end
+
+    test "returns the same percentile values if gas price is the same over transactions" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => 1.0,
+                "average" => 1.0,
+                "fast" => 1.0
+              }} = Chain.get_average_gas_price(2, 35, 60, 90)
+    end
+
+    test "returns correct min gas price from the block" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 1,
+        gas_price: 3_000_000_000,
+        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => 1.0,
+                "average" => 1.0,
+                "fast" => 1.0
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns correct average percentile" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+      block3 = insert(:block, number: 102, hash: "0x659b2a1cc4dd1a5729900cf0c81c471d1c7891b2517bf9466f7fba56ead2fca0")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 2_000_000_000,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 4_000_000_000,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block3.hash,
+        block_number: block3.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 4_000_000_000,
+        hash: "0x7d4bc5569053fc29f471901e967c9e60205ac7a122b0e9a789683652c34cc11a"
+      )
+
+      assert {:ok,
+              %{
+                "average" => 4.0
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+  end
+
   describe "ERC721_token_instance_from_token_id_and_token_address/2" do
     test "return ERC721 token instance" do
       contract_address = insert(:address)
@@ -950,6 +1165,112 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "block_to_gas_used_by_1559_txs/1" do
+    test "sum of gas_usd from all transactions including glegacy" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 0,
+        max_priority_fee_per_gas: 3
+      )
+
+      insert(:transaction,
+        gas_used: 6,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 2
+      )
+
+      assert Decimal.new(10) == Chain.block_to_gas_used_by_1559_txs(block.hash)
+    end
+  end
+
+  describe "block_to_priority_fee_of_1559_txs/1" do
+    test "with transactions: tx.max_fee_per_gas = 0" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 0,
+        max_priority_fee_per_gas: 3
+      )
+
+      assert Decimal.new(0) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas >= tx.max_priority_fee_per_gas" do
+      block = insert(:block, base_fee_per_gas: 1)
+
+      insert(:transaction,
+        gas_used: 3,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 5,
+        max_priority_fee_per_gas: 1
+      )
+
+      assert Decimal.new(3) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas < tx.max_priority_fee_per_gas" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 5,
+        max_priority_fee_per_gas: 3
+      )
+
+      assert Decimal.new(4) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with legacy transactions" do
+      block = insert(:block, base_fee_per_gas: 1)
+
+      insert(:transaction,
+        gas_price: 5,
+        gas_used: 6,
+        cumulative_gas_used: 6,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1
+      )
+
+      assert Decimal.new(24) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "0 in blockchain with no EIP-1559 implemented" do
+      block = insert(:block, base_fee_per_gas: nil)
+
+      insert(:transaction,
+        gas_price: 1,
+        gas_used: 4,
+        cumulative_gas_used: 4,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1
+      )
+
+      assert 0 == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+  end
+
   describe "block_to_transaction_count/1" do
     test "without transactions" do
       block = insert(:block)
@@ -1231,7 +1552,9 @@ defmodule Explorer.ChainTest do
     test "returns the correct address if it exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.hash_to_address(address.hash)
+      assert {:ok, address_from_db} = Chain.hash_to_address(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "has_decompiled_code? is true if there are decompiled contracts" do
@@ -1280,14 +1603,16 @@ defmodule Explorer.ChainTest do
     test "returns an address if it already exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert {:ok, address_from_db} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "returns an address if it doesn't exist" do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: hash}} = Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: ^hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -3187,6 +3512,186 @@ defmodule Explorer.ChainTest do
                }
              ] = Chain.transaction_to_token_transfers(transaction.hash)
     end
+
+    test "token transfers ordered by ASC log_index" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer_0 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 0
+        )
+
+      token_transfer_4 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 4
+        )
+
+      token_transfer_2 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 2
+        )
+
+      token_transfer_1 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 1
+        )
+
+      token_transfer_3 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 3
+        )
+
+      token_transfers_sorted =
+        [token_transfer_0, token_transfer_1, token_transfer_2, token_transfer_3, token_transfer_4]
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_unsorted =
+        [token_transfer_1, token_transfer_0, token_transfer_2, token_transfer_3, token_transfer_4]
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_sorted ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_unsorted !=
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+    end
+
+    test "token transfers can be paginated" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer_0 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 0
+        )
+
+      token_transfer_4 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 4
+        )
+
+      token_transfer_2 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 2
+        )
+
+      token_transfer_1 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 1
+        )
+
+      token_transfer_3 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 3
+        )
+
+      token_transfer_6 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 6
+        )
+
+      token_transfers_first_page =
+        [token_transfer_0, token_transfer_1, token_transfer_2] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_second_page =
+        [token_transfer_2, token_transfer_3, token_transfer_4] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_third_page =
+        [token_transfer_4, token_transfer_6] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_first_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_second_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   key: {transaction.block_number, 1},
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_third_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   key: {transaction.block_number, 3},
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+    end
   end
 
   describe "value/2" do
@@ -3306,6 +3811,48 @@ defmodule Explorer.ChainTest do
 
     test "with block without transactions", %{block: block, emission_reward: emission_reward} do
       assert emission_reward.reward == Chain.block_reward(block.number)
+    end
+  end
+
+  describe "block_reward_by_parts/1" do
+    setup do
+      {:ok, emission_reward: insert(:emission_reward)}
+    end
+
+    test "without uncles", %{emission_reward: %{reward: reward, block_range: range}} do
+      block = build(:block, number: range.from, base_fee_per_gas: 5, uncles: [])
+
+      tx1 = build(:transaction, gas_price: 1, gas_used: 1, block_number: block.number, block_hash: block.hash)
+      tx2 = build(:transaction, gas_price: 1, gas_used: 2, block_number: block.number, block_hash: block.hash)
+
+      tx3 =
+        build(:transaction,
+          gas_price: 1,
+          gas_used: 3,
+          block_number: block.number,
+          block_hash: block.hash,
+          max_priority_fee_per_gas: 1
+        )
+
+      expected_txn_fees = %Wei{value: Decimal.new(6)}
+      expected_burned_fees = %Wei{value: Decimal.new(30)}
+      expected_uncle_reward = %Wei{value: Decimal.new(0)}
+
+      assert %{
+               static_reward: ^reward,
+               txn_fees: ^expected_txn_fees,
+               burned_fees: ^expected_burned_fees,
+               uncle_reward: ^expected_uncle_reward
+             } = Chain.block_reward_by_parts(block, [tx1, tx2, tx3])
+    end
+
+    test "with uncles", %{emission_reward: %{reward: reward, block_range: range}} do
+      block =
+        build(:block, number: range.from, uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"])
+
+      expected_uncle_reward = Wei.mult(reward, Decimal.from_float(1 / 32))
+
+      assert %{uncle_reward: ^expected_uncle_reward} = Chain.block_reward_by_parts(block, [])
     end
   end
 
@@ -3830,7 +4377,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
+      assert {:ok, %SmartContract{}} =
                Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
@@ -3846,7 +4393,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} = Chain.update_smart_contract(%{address_hash: address.hash})
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
@@ -3872,8 +4419,7 @@ defmodule Explorer.ChainTest do
                  el.contract_source_code == Map.get(src, :contract_source_code)
              end)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
-               Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
 
       sc_after_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
 
@@ -4430,7 +4976,11 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
-      assert smart_contract = result.contract_address.smart_contract
+      assert address.smart_contract.address_hash == result.contract_address.smart_contract.address_hash
+      assert address.smart_contract.contract_code_md5 == result.contract_address.smart_contract.contract_code_md5
+      assert address.smart_contract.abi == result.contract_address.smart_contract.abi
+      assert address.smart_contract.contract_source_code == result.contract_address.smart_contract.contract_source_code
+      assert address.smart_contract.name == result.contract_address.smart_contract.name
     end
   end
 
@@ -4666,7 +5216,7 @@ defmodule Explorer.ChainTest do
         cataloged: true
       }
 
-      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+      assert {:ok, _updated_token} = Chain.update_token(token, update_params)
     end
   end
 
@@ -4817,6 +5367,48 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.hash)
 
       assert result == [transaction.hash]
+    end
+
+    test "correct ordering for token transfers (ASC log_index)" do
+      address = insert(:address)
+      token = insert(:token)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        amount: 2,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 2
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 0
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 1
+      )
+
+      assert [result] = Chain.address_to_transactions_with_token_transfers(address.hash, token.contract_address_hash)
+
+      assert [{transaction.hash, 0}, {transaction.hash, 1}, {transaction.hash, 2}] ==
+               result.token_transfers |> Enum.map(&{&1.transaction_hash, &1.log_index})
     end
   end
 

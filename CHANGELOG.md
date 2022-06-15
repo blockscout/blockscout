@@ -7,6 +7,40 @@
 ### Chore
 
 
+## 4.1.4-beta
+
+### Features
+- [#5656](https://github.com/blockscout/blockscout/pull/5656) - Gas price oracle
+- [#5613](https://github.com/blockscout/blockscout/pull/5613) - Exchange rates CoinMarketCap source module
+- [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
+- [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
+- [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
+
+### Fixes
+- [#5647](https://github.com/blockscout/blockscout/pull/5647) - Add handling for invalid Sourcify response
+- [#5635](https://github.com/blockscout/blockscout/pull/5635) - Set CoinGecko source in exchange_rates_source function fix in case of token_bridge
+- [#5629](https://github.com/blockscout/blockscout/pull/5629) - Fix empty coin balance for empty address
+- [#5612](https://github.com/blockscout/blockscout/pull/5612) - Fix token transfers order
+- [#5626](https://github.com/blockscout/blockscout/pull/5626) - Fix vyper compiler versions order
+- [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
+- [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
+- [#5592](https://github.com/blockscout/blockscout/pull/5592) - Burn fees for legacy transactions
+- [#5568](https://github.com/blockscout/blockscout/pull/5568) - Add regexp for ipfs checking
+- [#5567](https://github.com/blockscout/blockscout/pull/5567) - Sanitize token name and symbol before insert into DB, display in the application
+- [#5564](https://github.com/blockscout/blockscout/pull/5564) - Add fallback clauses to `string_to_..._hash` functions
+- [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
+
+### Chore
+- [#5660](https://github.com/blockscout/blockscout/pull/5660) - Display txs count chart by default, disable price chart by default, add chart titles
+- [#5659](https://github.com/blockscout/blockscout/pull/5659) - Use chartjs-adapter-luxon instead chartjs-adapter-moment for charts
+- [#5651](https://github.com/blockscout/blockscout/pull/5651), [#5657](https://github.com/blockscout/blockscout/pull/5657) - Gnosis chain rebranded theme and generalization of chart legend colors definition
+- [#5640](https://github.com/blockscout/blockscout/pull/5640) - Clean up and fix tests, reduce amount of warnings
+- [#5625](https://github.com/blockscout/blockscout/pull/5625) - Get rid of some redirects to checksummed address url
+- [#5623](https://github.com/blockscout/blockscout/pull/5623) - Allow hyphen in DB password
+- [#5543](https://github.com/blockscout/blockscout/pull/5543) - Increase max_restarts to 1_000 (from 3 by default) for explorer, block_scout_web supervisors
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
+
+
 ## 4.1.3-beta
 
 ### Features

@@ -2,7 +2,7 @@
     <div class="smart-contract-form-group-inner-wrapper">
         <%= label @f, :compiler_version, gettext("Compiler") %>
         <div class="center-column">
-            <%= select @f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: @compiler_version, "aria-describedby": "compiler-help-block", id: "smart_contract_compiler_version" %>
+            <%= select @f, :compiler_version, @compiler_versions, class: "form-control border-rounded", "aria-describedby": "compiler-help-block", id: "smart_contract_compiler_version" %>
             <%= error_tag @f, :compiler_version, id: "compiler-help-block", class: "text-danger form-error" %>
         </div>
         <div class="smart-contract-form-group-tooltip"><%= raw @tooltip %></div>
