@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#5661](https://github.com/blockscout/blockscout/pull/5661) - Fixes yaml syntax for boolean env variables in docker compose
 
 
 ## 4.1.4-beta
