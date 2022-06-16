@@ -8,6 +8,7 @@
 - [#5676](https://github.com/blockscout/blockscout/pull/5676) - Fix wrong miner address shown for post EIP-1559 block for clique network
 
 ### Chore
+- [#5679](https://github.com/blockscout/blockscout/pull/5679) - Optimize query in fetch_min_missing_block_cache function
 - [#5674](https://github.com/blockscout/blockscout/pull/5674) - Disable token holder refreshing
 - [#5661](https://github.com/blockscout/blockscout/pull/5661) - Fixes yaml syntax for boolean env variables in docker compose
 
