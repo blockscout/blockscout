@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Repo
 
   @stages [
-    Import.Stage.Addresses,
+    Import.Stage.AddressesBlocks,
     Import.Stage.AddressReferencing,
     Import.Stage.BlockReferencing,
     Import.Stage.BlockTransactionTokenReferencing,
