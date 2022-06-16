@@ -5,7 +5,8 @@ import os
 from web3 import Web3, HTTPProvider
 
 from admin import SCHAIN_CONFIG_DIR_PATH, MAINNET_IMA_ABI_FILEPATH, PROXY_ADMIN_PREDEPLOYED_ADDRESS, empty_address, \
-    ETHERBASE_ALLOC, SCHAIN_OWNER_ALLOC, NODE_OWNER_ALLOC, ZERO_ADDRESS, ENDPOINT, ABI_FILEPATH
+    ETHERBASE_ALLOC, SCHAIN_OWNER_ALLOC, NODE_OWNER_ALLOC, ZERO_ADDRESS, ENDPOINT, ABI_FILEPATH, \
+    HOST_SCHAIN_CONFIG_DIR_PATH
 from admin.endpoints import read_json, schain_name_to_id
 
 from etherbase_predeployed import (
@@ -42,7 +43,8 @@ def generate_config(schain_name):
         }
         with open(config_path, 'w') as f:
             f.write(json.dumps(config, indent=4))
-    return config_path
+    host_config_path = os.path.join(HOST_SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json')
+    return host_config_path
 
 
 def get_predeployed_data():

@@ -9,6 +9,9 @@ MAINNET_IMA_ABI_FILEPATH = os.path.join(SERVER_DATA_DIR, 'ima.json')
 EXPLORERS_META_DATA_PATH = os.path.join(SERVER_DATA_DIR, 'meta.json')
 SCHAIN_CONFIG_DIR_PATH = os.path.join(SERVER_DATA_DIR, 'configs')
 
+HOST_DIR_PATH = os.environ['HOST_DIR_PATH']
+HOST_SCHAIN_CONFIG_DIR_PATH = os.path.join(HOST_DIR_PATH, 'data', 'configs')
+
 NGINX_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.conf')
 NGINX_TEMP_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.temp.conf')
 
