@@ -12,7 +12,6 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
   def runners,
     do: [
       # Runner.Address.CoinBalances,
-      Runner.Blocks,
       Runner.StakingPools,
       Runner.StakingPoolsDelegators
       # Runner.Address.CoinBalancesDaily
