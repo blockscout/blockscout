@@ -367,12 +367,14 @@ function firstPageLoad (store) {
 
 const $element = $('[data-async-load]')
 if ($element.length) {
-  if (Object.prototype.hasOwnProperty.call($element.data(), 'noFirstLoading')) {
-    enableFirstLoading = false
-  }
-  if (enableFirstLoading) {
-    const store = createStore(asyncReducer)
-    connectElements({ store, elements })
-    firstPageLoad(store)
+  if (!Object.prototype.hasOwnProperty.call($element.data(), 'noSelfCalls')) {
+    if (Object.prototype.hasOwnProperty.call($element.data(), 'noFirstLoading')) {
+      enableFirstLoading = false
+    }
+    if (enableFirstLoading) {
+      const store = createStore(asyncReducer)
+      connectElements({ store, elements })
+      firstPageLoad(store)
+    }
   }
 }
