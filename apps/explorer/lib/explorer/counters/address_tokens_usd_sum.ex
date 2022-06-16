@@ -5,16 +5,10 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   use GenServer
 
   alias Explorer.Chain
+  alias Explorer.Counters.Helper
 
   @cache_name :address_tokens_usd_value
   @last_update_key "last_update"
-
-  @ets_opts [
-    :set,
-    :named_table,
-    :public,
-    read_concurrency: true
-  ]
 
   config = Application.get_env(:explorer, Explorer.Counters.AddressTokenUsdSum)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
@@ -64,49 +58,32 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
 
     cond do
       is_nil(updated_at) -> true
-      current_time() - updated_at > cache_period -> true
+      Helper.current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
 
   defp update_cache(address_hash_string, token_balances) do
-    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
+    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
     new_data = Chain.address_tokens_usd_sum(token_balances)
     put_into_cache("hash_#{address_hash_string}", new_data)
   end
 
   defp fetch_from_cache(key) do
-    case :ets.lookup(@cache_name, key) do
-      [{_, value}] ->
-        value
-
-      [] ->
-        0
-    end
+    Helper.fetch_from_cache(key, @cache_name)
   end
 
   defp put_into_cache(key, value) do
     :ets.insert(@cache_name, {key, value})
   end
 
-  defp current_time do
-    utc_now = DateTime.utc_now()
-
-    DateTime.to_unix(utc_now, :millisecond)
+  defp create_cache_table do
+    Helper.create_cache_table(@cache_name)
   end
 
-  def create_cache_table do
-    if :ets.whereis(@cache_name) == :undefined do
-      :ets.new(@cache_name, @ets_opts)
-    end
-  end
-
-  def enable_consolidation?, do: @enable_consolidation
+  defp enable_consolidation?, do: @enable_consolidation
 
   defp address_tokens_usd_sum_cache_period do
-    case Integer.parse(System.get_env("ADDRESS_TOKENS_USD_SUM_CACHE_PERIOD", "")) do
-      {secs, ""} -> :timer.seconds(secs)
-      _ -> :timer.hours(1)
-    end
+    Helper.cache_period("CACHE_ADDRESS_TOKENS_USD_SUM_PERIOD", 1)
   end
 end
