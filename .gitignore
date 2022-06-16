@@ -49,3 +49,4 @@ erlang-solutions_2.0_all.deb
 __pycache__
 admin/data/*
 !admin/data/certs
+!admin/data/configs/.keep

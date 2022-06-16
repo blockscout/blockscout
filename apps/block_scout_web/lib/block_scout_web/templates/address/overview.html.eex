@@ -134,7 +134,7 @@
                     "data-test": "transaction_hash_link"
                   ) %>
                 <% else %>
-                  <p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>
+                  <div class="bs-label success large">Predeployed contract</div>
                 <% end %>
               </dd>
             </dl>
@@ -168,20 +168,6 @@
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
               <%= balance(@address) %>
-              <%= if !match?({:pending, _}, @coin_balance_status) && !empty_exchange_rate?(@exchange_rate) do %>
-                <% usd_value = to_string(@exchange_rate.usd_value) %>
-                <span class="address-current-balance">
-                  (<span
-                    data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
-                    data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
-                    data-placement="top"
-                    data-toggle="tooltip"
-                    data-html="true"
-                    title='<%= "@ " <> usd_value <> "/" <> gettext("Ether") %>'  
-                  >
-                  </span>)
-                </span>
-              <% end %>
             </dd>
           </dl>
           <!-- Tokens -->
