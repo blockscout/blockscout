@@ -129,26 +129,26 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     put_into_cache(cache_key(address_hash_str), exchange_rate)
   end
 
-  def fetch_token_exchange_rate(symbol, internal \\ false) do
+  def fetch_token_exchange_rate(symbol, internal_call? \\ false) do
     case Source.fetch_exchange_rates_for_token(symbol) do
       {:ok, [rates]} ->
         rates.usd_value
 
       {:error, "Could not find coin with the given id"} ->
-        if internal, do: :not_found_coingecko, else: nil
+        if internal_call?, do: :not_found_coingecko, else: nil
 
       _ ->
         nil
     end
   end
 
-  def fetch_token_exchange_rate_by_address(address_hash_str, internal \\ false) do
+  def fetch_token_exchange_rate_by_address(address_hash_str, internal_call? \\ false) do
     case Source.fetch_exchange_rates_for_token_address(address_hash_str) do
       {:ok, [rates]} ->
         rates.usd_value
 
       {:error, "Could not find coin with the given id"} ->
-        if internal, do: :not_found_coingecko, else: nil
+        if internal_call?, do: :not_found_coingecko, else: nil
 
       _ ->
         nil
