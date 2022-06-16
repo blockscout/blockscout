@@ -11,7 +11,7 @@
     <div class="card">
       <%= render OverviewView, "_tabs.html", assigns %>
       <!-- Token Holders -->
-      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <div class="card-body" data-async-listing="<%= @current_path %>">
         <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
         <h2 class="card-title list-title-description"><%= gettext "Token Holders" %></h2>
 

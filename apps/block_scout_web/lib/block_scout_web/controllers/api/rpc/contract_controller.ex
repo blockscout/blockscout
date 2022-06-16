@@ -241,10 +241,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
             )
 
           {:error, :metadata} ->
-            render(conn, :error, error: "Sourcify did not return metadata")
+            render(conn, :error, error: Sourcify.no_metadata_message())
 
           _ ->
-            render(conn, :error, error: "Unsuccessful sourcify verification")
+            render(conn, :error, error: Sourcify.failed_verification_message())
         end
 
       {:error, %{"error" => error}} ->
