@@ -27,7 +27,7 @@ config :explorer, Explorer.Repo.Replica1,
   fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(20),
   implementation_data_fetching_time_out: :timer.seconds(20)
 
-config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc_value: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 

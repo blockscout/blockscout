@@ -27,7 +27,8 @@ defmodule Explorer.ExchangeRates.Source.TokenBridgeTest do
   describe "format_data/1" do
     setup do
       bypass = Bypass.open()
-      Application.put_env(:explorer, ExchangeRates, source: "coin_gecko")
+      envs = Application.get_env(:explorer, ExchangeRates)
+      Application.put_env(:explorer, ExchangeRates, Keyword.put(envs, :source, "coin_gecko"))
       Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
 
       {:ok, bypass: bypass}
