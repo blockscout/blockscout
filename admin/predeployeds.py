@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from web3 import Web3, HTTPProvider
@@ -25,10 +26,13 @@ from multisigwallet_predeployed import MultiSigWalletGenerator, MULTISIGWALLET_A
 from predeployed_generator.openzeppelin.proxy_admin_generator import ProxyAdminGenerator
 from ima_predeployed.generator import generate_contracts
 
+logger = logging.getLogger(__name__)
+
 
 def generate_config(schain_name):
     config_path = os.path.join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json')
     if not os.path.exists(config_path):
+        logger.info(f'Generating config for {schain_name}')
         config = {
             'alloc': {
                 **get_predeployed_data(),
@@ -38,6 +42,7 @@ def generate_config(schain_name):
         }
         with open(config_path, 'w') as f:
             f.write(json.dumps(config, indent=4))
+    return config_path
 
 
 def get_predeployed_data():

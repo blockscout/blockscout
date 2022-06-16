@@ -9,6 +9,7 @@ from admin.containers import (get_free_port, get_db_port, restart_nginx,
 from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json, is_dkg_passed
 from admin.logger import init_logger
 from admin.nginx import regenerate_nginx_config
+from admin.predeployeds import generate_config
 
 init_logger()
 logger = logging.getLogger(__name__)
@@ -17,12 +18,14 @@ logger = logging.getLogger(__name__)
 def run_explorer(schain_name, endpoint, ws_endpoint):
     explorer_port = get_free_port()
     db_port = get_db_port(schain_name)
+    config_path = generate_config(schain_name)
     env = {
         'SCHAIN_NAME': schain_name,
         'PORT': str(explorer_port),
         'DB_PORT': str(db_port),
         'ENDPOINT': endpoint,
-        'WS_ENDPOINT': ws_endpoint
+        'WS_ENDPOINT': ws_endpoint,
+        'CONFIG_PATH': config_path
     }
     logger.info(f'Running explorer with {env}')
     logger.info('=' * 100)
