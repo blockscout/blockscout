@@ -137,6 +137,221 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "get_average_gas_price/4" do
+    test "returns nil percentile values if no blocks in the DB" do
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns nil percentile values if blocks are empty in the DB" do
+      insert(:block)
+      insert(:block)
+      insert(:block)
+
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns nil percentile values for blocks with failed txs in the DB" do
+      block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+
+      :transaction
+      |> insert(
+        error: "Reverted",
+        status: :error,
+        block_hash: block.hash,
+        block_number: block.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 100,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns nil percentile values for transactions with 0 gas price aka 'whitelisted transactions' in the DB" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => nil,
+                "average" => nil,
+                "fast" => nil
+              }} = Chain.get_average_gas_price(2, 35, 60, 90)
+    end
+
+    test "returns the same percentile values if gas price is the same over transactions" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => 1.0,
+                "average" => 1.0,
+                "fast" => 1.0
+              }} = Chain.get_average_gas_price(2, 35, 60, 90)
+    end
+
+    test "returns correct min gas price from the block" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 1,
+        gas_price: 3_000_000_000,
+        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016"
+      )
+
+      assert {:ok,
+              %{
+                "slow" => 1.0,
+                "average" => 1.0,
+                "fast" => 1.0
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "returns correct average percentile" do
+      block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+      block3 = insert(:block, number: 102, hash: "0x659b2a1cc4dd1a5729900cf0c81c471d1c7891b2517bf9466f7fba56ead2fca0")
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 2_000_000_000,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 4_000_000_000,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block3.hash,
+        block_number: block3.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 4_000_000_000,
+        hash: "0x7d4bc5569053fc29f471901e967c9e60205ac7a122b0e9a789683652c34cc11a"
+      )
+
+      assert {:ok,
+              %{
+                "average" => 4.0
+              }} = Chain.get_average_gas_price(3, 35, 60, 90)
+    end
+  end
+
   describe "ERC721_token_instance_from_token_id_and_token_address/2" do
     test "return ERC721 token instance" do
       contract_address = insert(:address)
@@ -1337,7 +1552,9 @@ defmodule Explorer.ChainTest do
     test "returns the correct address if it exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.hash_to_address(address.hash)
+      assert {:ok, address_from_db} = Chain.hash_to_address(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "has_decompiled_code? is true if there are decompiled contracts" do
@@ -1386,14 +1603,16 @@ defmodule Explorer.ChainTest do
     test "returns an address if it already exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert {:ok, address_from_db} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "returns an address if it doesn't exist" do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: hash}} = Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: ^hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -4158,7 +4377,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
+      assert {:ok, %SmartContract{}} =
                Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
@@ -4174,7 +4393,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} = Chain.update_smart_contract(%{address_hash: address.hash})
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
@@ -4200,8 +4419,7 @@ defmodule Explorer.ChainTest do
                  el.contract_source_code == Map.get(src, :contract_source_code)
              end)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
-               Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
 
       sc_after_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
 
@@ -4758,7 +4976,11 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
-      assert smart_contract = result.contract_address.smart_contract
+      assert address.smart_contract.address_hash == result.contract_address.smart_contract.address_hash
+      assert address.smart_contract.contract_code_md5 == result.contract_address.smart_contract.contract_code_md5
+      assert address.smart_contract.abi == result.contract_address.smart_contract.abi
+      assert address.smart_contract.contract_source_code == result.contract_address.smart_contract.contract_source_code
+      assert address.smart_contract.name == result.contract_address.smart_contract.name
     end
   end
 
@@ -4994,7 +5216,7 @@ defmodule Explorer.ChainTest do
         cataloged: true
       }
 
-      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+      assert {:ok, _updated_token} = Chain.update_token(token, update_params)
     end
   end
 

@@ -117,7 +117,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
         }
       end)
 
-      res = eth_block_number_fake_response(block_quantity)
+      _res = eth_block_number_fake_response(block_quantity)
 
       assert count(Chain.Block.Reward) == 0
 
@@ -192,7 +192,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
         }
       end)
 
-      res = eth_block_number_fake_response(block_quantity)
+      _res = eth_block_number_fake_response(block_quantity)
 
       parent = self()
 
@@ -324,7 +324,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
         }
       end)
 
-      res = eth_block_number_fake_response(block_quantity)
+      _res = eth_block_number_fake_response(block_quantity)
 
       assert count(Chain.Block.Reward) == 0
       assert count(Chain.Address.CoinBalance) == 0
@@ -414,7 +414,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
         }
       end)
 
-      res = eth_block_number_fake_response(block_quantity)
+      _res = eth_block_number_fake_response(block_quantity)
 
       assert count(Chain.Block.Reward) == 0
       assert count(Chain.Address.CoinBalance) == 0
@@ -494,7 +494,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
         }
       end)
 
-      res = eth_block_number_fake_response(block_quantity)
+      _res = eth_block_number_fake_response(block_quantity)
 
       assert count(Chain.Block.Reward) == 1
       assert count(Chain.Address.CoinBalance) == 1
@@ -635,7 +635,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
         }
       end)
 
-      res = eth_block_number_fake_response(block_quantity)
+      _res = eth_block_number_fake_response(block_quantity)
 
       assert count(Chain.Block.Reward) == 0
       assert count(Chain.Address.CoinBalance) == 0

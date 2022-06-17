@@ -231,6 +231,25 @@ function loadCounters (store) {
 
 const $addressDetailsPage = $('[data-page="address-details"]')
 if ($addressDetailsPage.length) {
+  const pathParts = window.location.pathname.split('/')
+  const shouldScroll = pathParts.includes('transactions') ||
+  pathParts.includes('token-transfers') ||
+  pathParts.includes('tokens') ||
+  pathParts.includes('internal-transactions') ||
+  pathParts.includes('coin-balances') ||
+  pathParts.includes('logs') ||
+  pathParts.includes('validations') ||
+  pathParts.includes('contracts') ||
+  pathParts.includes('decompiled-contracts') ||
+  pathParts.includes('read-contract') ||
+  pathParts.includes('read-proxy') ||
+  pathParts.includes('write-contract') ||
+  pathParts.includes('write-proxy')
+
+  if (shouldScroll) {
+    location.href = '#address-tabs'
+  }
+
   window.onbeforeunload = () => {
     window.loading = true
   }

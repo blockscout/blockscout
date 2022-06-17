@@ -146,7 +146,8 @@ config :explorer, Explorer.ExchangeRates,
   store: :ets,
   coingecko_coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   coingecko_api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
-  coinmarketcap_api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY")
+  coinmarketcap_api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
+  fetch_btc_value: System.get_env("EXCHANGE_RATES_FETCH_BTC_VALUE") == "true"
 
 exchange_rates_source =
   cond do
@@ -178,7 +179,7 @@ txs_stats_days_to_compile_at_init =
   |> elem(0)
 
 config :explorer, Explorer.Chain.Transaction.History.Historian,
-  enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
+  enabled: System.get_env("ENABLE_TXS_STATS", "true") != "false",
   init_lag: txs_stats_init_lag,
   days_to_compile_at_init: txs_stats_days_to_compile_at_init
 
