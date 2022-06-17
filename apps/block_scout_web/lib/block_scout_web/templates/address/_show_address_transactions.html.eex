@@ -1,0 +1,1 @@
+<%= render BlockScoutWeb.AddressTransactionView, "index.html", assigns %> 

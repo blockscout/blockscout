@@ -14,7 +14,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 4.1.4
+      RELEASE_VERSION: 4.1.5
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
