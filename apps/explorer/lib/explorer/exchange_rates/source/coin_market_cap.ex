@@ -19,7 +19,10 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     current_price = get_current_price(token_properties)
 
     id = token_properties && token_properties["id"]
-    btc_value = get_btc_value(id, token_properties)
+
+    btc_value =
+      if Application.get_env(:explorer, Explorer.ExchangeRates)[:fetch_btc_value],
+        do: get_btc_value(id, token_properties)
 
     circulating_supply_data = get_circulating_supply(token_properties)
 
