@@ -18,7 +18,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     current_price = get_current_price(market_data)
 
     id = json_data["id"]
-    btc_value = get_btc_value(id, market_data)
+
+    btc_value =
+      if Application.get_env(:explorer, Explorer.ExchangeRates)[:fetch_btc_value], do: get_btc_value(id, market_data)
 
     circulating_supply_data = market_data && market_data["circulating_supply"]
     total_supply_data = market_data && market_data["total_supply"]
