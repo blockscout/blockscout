@@ -364,7 +364,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp log_import_timings(%{blocks: [%{number: number, timestamp: timestamp}]}, fetch_duration, time_before) do
     node_delay = Timex.diff(time_before, timestamp, :seconds)
 
-    Logger.info("Block #{number} fetching duration: #{fetch_duration / 1_000_000}s. Node delay: #{node_delay}s.")
+    Logger.debug("Block #{number} fetching duration: #{fetch_duration / 1_000_000}s. Node delay: #{node_delay}s.",
+      fetcher: :block_import_timings
+    )
   end
 
   defp log_import_timings(_inserted, _duration, _time_before), do: nil
