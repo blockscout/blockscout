@@ -13,9 +13,53 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  alias BlockScoutWeb.Plug.CheckAuth
 
   pipeline :api do
     plug(:accepts, ["json"])
+  end
+
+  pipeline :account_api do
+    plug(Guardian.Plug.VerifyHeader, module: BlockScoutWeb.Guardian, error_handler: BlockScoutWeb.GuardianErrorHandler)
+    plug(CheckAuth)
+  end
+
+  scope "/account/v1" do
+    alias BlockScoutWeb.Account.Api.V1
+
+    pipe_through(:api)
+    pipe_through(:account_api)
+
+    scope "/user" do
+      get("/info", V1.UserController, :info)
+
+      get("/watchlist", V1.UserController, :watchlist)
+      delete("/watchlist/:id", V1.UserController, :delete_watchlist)
+      post("/watchlist", V1.UserController, :create_watchlist)
+      put("/watchlist/:id", V1.UserController, :update_watchlist)
+
+      get("/api_keys", V1.UserController, :api_keys)
+      delete("/api_keys/:api_key", V1.UserController, :delete_api_key)
+      post("/api_keys", V1.UserController, :create_api_key)
+      put("/api_keys/:api_key", V1.UserController, :update_api_key)
+
+      get("/custom_abis", V1.UserController, :custom_abis)
+      delete("/custom_abis/:id", V1.UserController, :delete_custom_abi)
+      post("/custom_abis", V1.UserController, :create_custom_abi)
+      put("/custom_abis/:id", V1.UserController, :update_custom_abi)
+
+      scope "/tags" do
+        get("/address/", V1.UserController, :tags_address)
+        get("/address/:tag_id", V1.UserController, :tags_address)
+        delete("/address/:tag_id", V1.UserController, :delete_tag_address)
+        post("/address/", V1.UserController, :create_tag_address)
+
+        get("/transaction/", V1.UserController, :tags_transaction)
+        get("/transaction/:tag_id", V1.UserController, :tags_transaction)
+        delete("/transaction/:tag_id", V1.UserController, :delete_tag_transaction)
+        post("/transaction/", V1.UserController, :create_tag_transaction)
+      end
+    end
   end
 
   scope "/v1", as: :api_v1 do

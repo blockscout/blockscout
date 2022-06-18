@@ -14,14 +14,14 @@ defmodule AddTagTransaction do
         try_create_tag_tx(identity_id, tx_hash, params)
 
       :error ->
-        {:error, "Wrong address, "}
+        {:error, "Invalid transaction hash"}
     end
   end
 
   defp try_create_tag_tx(identity_id, tx_hash, params) do
     case find_tag_tx(identity_id, tx_hash) do
       %TagTransaction{} ->
-        {:error, "Transaction tag already exists!"}
+        {:error, "Transaction tag already exists"}
 
       nil ->
         with {:ok, %Transaction{} = address} <- find_or_create_tx(tx_hash) do

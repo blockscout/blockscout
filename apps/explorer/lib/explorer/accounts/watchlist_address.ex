@@ -3,11 +3,12 @@ defmodule Explorer.Accounts.WatchlistAddress do
     WatchlistAddress entity
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
   import Ecto.Changeset
 
   alias Explorer.Accounts.{Watchlist, WatchlistAddress, WatchlistAddressForm}
   alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Repo
 
   schema "account_watchlist_addresses" do
     field(:name, :string)
@@ -65,4 +66,21 @@ defmodule Explorer.Accounts.WatchlistAddress do
       notify_email: wa.notify_email
     }
   end
+
+  def watchlist_address_by_id_and_identity_id_query(watchlist_address_id, watchlist_id)
+      when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
+    __MODULE__
+    |> where([wl_address], wl_address.watchlist_id == ^watchlist_id and wl_address.id == ^watchlist_address_id)
+  end
+
+  def watchlist_address_by_id_and_identity_id_query(_, _), do: nil
+
+  def delete_watchlist_address(watchlist_address_id, watchlist_id)
+      when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
+    watchlist_address_id
+    |> watchlist_address_by_id_and_identity_id_query(watchlist_id)
+    |> Repo.delete_all()
+  end
+
+  def delete_watchlist_address(_, _), do: nil
 end

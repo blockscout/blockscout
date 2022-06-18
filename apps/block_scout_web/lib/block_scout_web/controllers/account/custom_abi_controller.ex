@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.Account.CustomABIController do
            abi: abi,
            identity_id: current_user.id
          }) do
-      %Changeset{} = custom_abi ->
+      {:error, %Changeset{} = custom_abi} ->
         render(conn, "form.html", method: :update, custom_abi: custom_abi)
 
       _ ->

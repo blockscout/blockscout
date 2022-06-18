@@ -13,14 +13,14 @@ defmodule AddTagAddress do
         try_create_tag_address(identity_id, address_hash, params)
 
       :error ->
-        {:error, "Wrong address, "}
+        {:error, "Invalid address hash"}
     end
   end
 
   defp try_create_tag_address(identity_id, address_hash, params) do
     case find_tag_address(identity_id, address_hash) do
       %TagAddress{} ->
-        {:error, "Address tag already exists!"}
+        {:error, "Address tag already exists"}
 
       nil ->
         with {:ok, %Address{} = address} <- find_or_create_address(address_hash) do

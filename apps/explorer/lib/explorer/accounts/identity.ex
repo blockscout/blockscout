@@ -12,6 +12,8 @@ defmodule Explorer.Accounts.Identity do
     field(:uid, :string)
     field(:email, :string)
     field(:name, :string)
+    field(:nickname, :string)
+    field(:avatar, :string)
     has_many(:tag_addresses, TagAddress)
     has_many(:watchlists, Watchlist)
     belongs_to(:plan, Plan)
@@ -22,7 +24,7 @@ defmodule Explorer.Accounts.Identity do
   @doc false
   def changeset(identity, attrs) do
     identity
-    |> cast(attrs, [:uid, :email, :name])
+    |> cast(attrs, [:uid, :email, :name, :nickname, :avatar])
     |> validate_required([:uid, :email, :name])
   end
 end

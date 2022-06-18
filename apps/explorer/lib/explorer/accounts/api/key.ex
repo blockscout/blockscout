@@ -32,16 +32,16 @@ defmodule Explorer.Account.Api.Key do
     api_key
     |> cast(attrs, @attrs)
     |> validate_required(@attrs)
+    |> validate_length(:name, min: 1, max: 255)
+    |> unique_constraint(:value)
+    |> foreign_key_constraint(:identity_id)
+    |> api_key_count_constraint()
   end
 
   def create_api_key_changeset_and_insert(%__MODULE__{} = api_key \\ %__MODULE__{}, attrs \\ %{}) do
     api_key
-    |> cast(attrs, @attrs)
+    |> changeset(attrs)
     |> put_change(:value, generate_api_key())
-    |> validate_required(@attrs)
-    |> unique_constraint(:value)
-    |> foreign_key_constraint(:identity_id)
-    |> api_key_count_constraint()
     |> Repo.insert()
   end
 
@@ -56,6 +56,8 @@ defmodule Explorer.Account.Api.Key do
       api_key
     end
   end
+
+  def api_key_count_constraint(changeset), do: changeset
 
   def generate_api_key do
     UUID.generate()
@@ -84,21 +86,15 @@ defmodule Explorer.Account.Api.Key do
 
   def api_key_by_value_and_identity_id(_, _), do: nil
 
-  def update_api_key_name(new_name, identity_id, api_key_value)
-      when not is_nil(api_key_value) and not is_nil(identity_id) and not is_nil(new_name) and new_name != "" do
-    api_key = api_key_by_value_and_identity_id(api_key_value, identity_id)
-
-    if !is_nil(api_key) && api_key.name != new_name do
-      api_key_value
-      |> api_key_by_value_and_identity_id_query(identity_id)
-      |> update([key], set: [name: ^new_name, updated_at: fragment("NOW()")])
-      |> Repo.update_all([])
+  def update_api_key(%{value: api_key_value, identity_id: identity_id, name: name} = attrs) do
+    with api_key <- api_key_by_value_and_identity_id(api_key_value, identity_id),
+         false <- is_nil(api_key) do
+      api_key |> changeset(attrs) |> Repo.update()
     else
-      nil
+      true ->
+        {:error, %{reason: :item_not_found}}
     end
   end
-
-  def update_api_key_name(_, _, _), do: nil
 
   def delete_api_key(identity_id, api_key_value) when not is_nil(api_key_value) and not is_nil(identity_id) do
     api_key_value

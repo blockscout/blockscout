@@ -12,7 +12,6 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
     case current_user(conn) do
       nil ->
         conn
-        # |> put_flash(:info, "Sign in to see tx tags")
         |> redirect(to: root())
 
       %{} = user ->
@@ -36,12 +35,10 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
     case AddTagTransaction.call(current_user.id, params) do
       {:ok, _tag_tx} ->
         conn
-        # |> put_flash(:info, "Tag Transaction created!")
         |> redirect(to: tag_transaction_path(conn, :index))
 
       {:error, message = message} ->
         conn
-        # |> put_flash(:error, message)
         |> render("new.html", new_tag: changeset_with_error(params, message))
     end
   end
@@ -54,7 +51,6 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
     |> Repo.delete()
 
     conn
-    # |> put_flash(:info, "Tag transaction removed successfully.")
     |> redirect(to: tag_transaction_path(conn, :index))
   end
 

@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.Account.ApiKeyController do
   def update(conn, %{"id" => api_key, "key" => %{"value" => api_key, "name" => name}}) do
     current_user = authenticate!(conn)
 
-    ApiKey.update_api_key_name(name, current_user.id, api_key)
+    ApiKey.update_api_key(%{value: api_key, identity_id: current_user.id, name: name})
 
     redirect(conn, to: api_key_path(conn, :index))
   end
