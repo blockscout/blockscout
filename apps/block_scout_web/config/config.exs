@@ -87,6 +87,10 @@ config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth,
   providers: [
+    auth0_api: {
+      Ueberauth.Strategy.Auth0,
+      [callback_url: System.get_env("AUTH0_CALLBACK_API_URL"), callback_path: System.get_env("AUTH0_CALLBACK_API_PATH")]
+    },
     auth0: {
       Ueberauth.Strategy.Auth0,
       [callback_url: System.get_env("AUTH0_CALLBACK_URL")]
@@ -97,6 +101,10 @@ config :ueberauth, Ueberauth,
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+
+config :block_scout_web, BlockScoutWeb.Guardian,
+  issuer: "block_scout_web",
+  secret_key: System.get_env("SECRET_KEY_GUARDIAN")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

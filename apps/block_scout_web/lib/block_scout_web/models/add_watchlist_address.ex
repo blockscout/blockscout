@@ -27,7 +27,7 @@ defmodule AddWatchlistAddress do
   defp try_create_watchlist_address(watchlist_id, address_hash, params) do
     case find_watchlist_address(watchlist_id, address_hash) do
       %WatchlistAddress{} ->
-        {:error, "Address already added it this watchlist"}
+        {:error, "Address already added to the watchlist"}
 
       nil ->
         with {:ok, %Address{} = address} <- find_or_create_address(address_hash) do
@@ -69,6 +69,7 @@ defmodule AddWatchlistAddress do
 
   defp to_bool("true"), do: true
   defp to_bool("false"), do: false
+  defp to_bool(bool), do: bool
 
   defp find_watchlist_address(watchlist_id, address_hash) do
     Repo.get_by(WatchlistAddress,

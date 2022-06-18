@@ -12,7 +12,6 @@ defmodule BlockScoutWeb.Account.TagAddressController do
     case current_user(conn) do
       nil ->
         conn
-        # |> put_flash(:info, "Sign in to see address tags")
         |> redirect(to: root())
 
       %{} = user ->
@@ -36,12 +35,10 @@ defmodule BlockScoutWeb.Account.TagAddressController do
     case AddTagAddress.call(current_user.id, params) do
       {:ok, _tag_address} ->
         conn
-        # |> put_flash(:info, "Tag Address created!")
         |> redirect(to: tag_address_path(conn, :index))
 
       {:error, message = message} ->
         conn
-        # |> put_flash(:error, message)
         |> render("new.html", new_tag: changeset_with_error(params, message))
     end
   end
@@ -54,7 +51,6 @@ defmodule BlockScoutWeb.Account.TagAddressController do
     |> Repo.delete()
 
     conn
-    # |> put_flash(:info, "Tag Address removed successfully.")
     |> redirect(to: tag_address_path(conn, :index))
   end
 
@@ -66,7 +62,6 @@ defmodule BlockScoutWeb.Account.TagAddressController do
 
     query
     |> Repo.all()
-    |> Repo.preload(:address)
   end
 
   defp new_tag, do: TagAddress.changeset(%TagAddress{}, %{})

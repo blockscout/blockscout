@@ -19,12 +19,10 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     case AddWatchlistAddress.call(current_user.watchlist_id, wa_params) do
       {:ok, _watchlist_address} ->
         conn
-        # |> put_flash(:info, "Address created!")
         |> redirect(to: watchlist_path(conn, :show))
 
       {:error, message = message} ->
         conn
-        # |> put_flash(:error, message)
         |> render("new.html", watchlist_address: changeset_with_error(wa_params, message))
     end
   end
@@ -62,12 +60,10 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     case UpdateWatchlistAddress.call(wla, wa_params) do
       {:ok, _watchlist_address} ->
         conn
-        # |> put_flash(:info, "Address updated")
         |> redirect(to: watchlist_path(conn, :show))
 
       {:error, message = message} ->
         conn
-        # |> put_flash(:error, message)
         |> render("edit.html", watchlist_address: changeset_with_error(wa_params, message))
     end
   end
@@ -79,7 +75,6 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     Repo.delete(wla)
 
     conn
-    # |> put_flash(:info, "Watchlist Address removed successfully.")
     |> redirect(to: watchlist_path(conn, :show))
   end
 
@@ -87,7 +82,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     WatchlistAddressForm.changeset(%WatchlistAddressForm{}, params)
   end
 
-  defp changeset_with_error(params, message) do
+  def changeset_with_error(params, message) do
     %{changeset(params) | action: :insert}
     |> Changeset.add_error(:address_hash, message)
   end

@@ -198,15 +198,11 @@ defmodule Explorer.Account.CustomABI do
 
   def update_custom_abi(%{id: id, identity_id: identity_id} = attrs) do
     with custom_abi <- get_custom_abi_by_id_and_identity_id(id, identity_id),
-         false <- is_nil(custom_abi),
-         {:ok, _} <- custom_abi |> changeset(attrs) |> Repo.update() do
-      true
+         false <- is_nil(custom_abi) do
+      custom_abi |> changeset(attrs) |> Repo.update()
     else
-      {:error, changeset} ->
-        changeset
-
-      _ ->
-        false
+      true ->
+        {:error, %{reason: :item_not_found}}
     end
   end
 end

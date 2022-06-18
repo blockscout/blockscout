@@ -7,6 +7,7 @@ defmodule Explorer.Accounts.Watchlist do
   import Ecto.Changeset
   alias Explorer.Accounts.{Identity, WatchlistAddress}
 
+  @derive {Jason.Encoder, only: [:name, :watchlist_addresses]}
   schema "account_watchlists" do
     field(:name, :string)
     belongs_to(:identity, Identity)

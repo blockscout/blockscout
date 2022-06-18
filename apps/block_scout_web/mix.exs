@@ -130,7 +130,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
       {:ex_json_schema, "~> 0.9.1"},
       {:ueberauth, "~> 0.7"},
-      {:ueberauth_auth0, "~> 2.0"}
+      {:ueberauth_auth0, "~> 2.0"},
+      {:guardian, "~> 2.2"}
     ]
   end
 
