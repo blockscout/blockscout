@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5690](https://github.com/blockscout/blockscout/pull/5690) - Allow special characters for password in DB URL parser
 
 ### Chore
 - [#5684](https://github.com/blockscout/blockscout/pull/5684) - Block import timings logs
