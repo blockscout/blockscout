@@ -168,28 +168,28 @@ defmodule BlockScoutWeb.WebRouter do
       resources(
         "/read-contract",
         AddressReadContractController,
-        only: [:index, :show],
+        only: [:index],
         as: :read_contract
       )
 
       resources(
         "/read-proxy",
         AddressReadProxyController,
-        only: [:index, :show],
+        only: [:index],
         as: :read_proxy
       )
 
       resources(
         "/write-contract",
         AddressWriteContractController,
-        only: [:index, :show],
+        only: [:index],
         as: :write_contract
       )
 
       resources(
         "/write-proxy",
         AddressWriteProxyController,
-        only: [:index, :show],
+        only: [:index],
         as: :write_proxy
       )
 
