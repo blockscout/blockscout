@@ -1,6 +1,16 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+- [#5684](https://github.com/blockscout/blockscout/pull/5684) - Block import timings logs
+
+
+## 4.1.5-beta
+
+### Features
 - [#5667](https://github.com/blockscout/blockscout/pull/5667) - Address page: scroll to selected tab's data
 
 ### Fixes
