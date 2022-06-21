@@ -1687,7 +1687,7 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert Decimal.cmp(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
+      assert Decimal.compare(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
     end
 
     test "returns 0 if no blocks" do
@@ -1700,7 +1700,7 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      assert Decimal.cmp(Chain.indexed_ratio(), 1) == :eq
+      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
     end
   end
 
