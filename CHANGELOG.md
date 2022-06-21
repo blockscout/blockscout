@@ -11,6 +11,7 @@
 - [#5696](https://github.com/blockscout/blockscout/pull/5696) - Update .tool-versions
 - [#5695](https://github.com/blockscout/blockscout/pull/5695) - Decimal hex package update 1.9 -> 2.0
 - [#5684](https://github.com/blockscout/blockscout/pull/5684) - Block import timings logs
+- [#5698](https://github.com/blockscout/blockscout/pull/5698) - Remove token balances deleting
 
 
 ## 4.1.5-beta
