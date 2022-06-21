@@ -8,7 +8,7 @@
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
 <% burned_fee = 
   if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
-    if Decimal.cmp(max_fee_per_gas.value, 0) == :eq do
+    if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
       %Wei{value: Decimal.new(0)}
     else
       Wei.mult(base_fee_per_gas, @transaction.gas_used)
@@ -121,7 +121,7 @@
             </dd>
           </dl>
           <!-- Revert reason -->
-          <%= if status == {:error, "Reverted"} do %>
+          <%= if status == {:error, "Reverted"} || status == {:error, "execution reverted"} do %>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",

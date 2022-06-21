@@ -64,7 +64,10 @@ defmodule Explorer.Etherscan.Contracts do
         |> Map.put(:is_proxy, true)
         |> Map.put(
           :implementation_address_hash_string,
-          Chain.get_implementation_address_hash(address.hash, smart_contract.abi)
+          address.hash
+          |> Chain.get_implementation_address_hash(smart_contract.abi)
+          |> Tuple.to_list()
+          |> List.first()
         )
       else
         smart_contract
