@@ -9,3 +9,4 @@ filestorage-predeployed==1.0.1b1
 config-controller-predeployed==1.0.0.dev6
 multisigwallet-predeployed==0.0.1a5
 predeployed-generator==1.0.0
+context-predeployed==1.0.0.dev0

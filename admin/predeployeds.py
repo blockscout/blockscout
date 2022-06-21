@@ -4,9 +4,11 @@ import os
 
 from web3 import Web3, HTTPProvider
 
-from admin import SCHAIN_CONFIG_DIR_PATH, MAINNET_IMA_ABI_FILEPATH, PROXY_ADMIN_PREDEPLOYED_ADDRESS, empty_address, \
-    ETHERBASE_ALLOC, SCHAIN_OWNER_ALLOC, NODE_OWNER_ALLOC, ZERO_ADDRESS, ENDPOINT, ABI_FILEPATH, \
+from admin import (
+    SCHAIN_CONFIG_DIR_PATH, MAINNET_IMA_ABI_FILEPATH, PROXY_ADMIN_PREDEPLOYED_ADDRESS, BASE_ADDRESS,
+    ETHERBASE_ALLOC, SCHAIN_OWNER_ALLOC, NODE_OWNER_ALLOC, ZERO_ADDRESS, ENDPOINT, ABI_FILEPATH,
     HOST_SCHAIN_CONFIG_DIR_PATH
+)
 from admin.endpoints import read_json, schain_name_to_id
 
 from etherbase_predeployed import (
@@ -24,6 +26,7 @@ from config_controller_predeployed import (
     CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS
 )
 from multisigwallet_predeployed import MultiSigWalletGenerator, MULTISIGWALLET_ADDRESS
+from context_predeployed import ContextGenerator, CONTEXT_ADDRESS
 from predeployed_generator.openzeppelin.proxy_admin_generator import ProxyAdminGenerator
 from ima_predeployed.generator import generate_contracts
 
@@ -51,15 +54,15 @@ def get_predeployed_data():
     proxy_admin_generator = ProxyAdminGenerator()
     proxy_admin_predeployed = proxy_admin_generator.generate_allocation(
         contract_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-        owner_address=empty_address
+        owner_address=BASE_ADDRESS
     )
 
     etherbase_generator = UpgradeableEtherbaseUpgradeableGenerator()
     etherbase_predeployed = etherbase_generator.generate_allocation(
         contract_address=ETHERBASE_ADDRESS,
         implementation_address=ETHERBASE_IMPLEMENTATION_ADDRESS,
-        schain_owner=empty_address,
-        ether_managers=[empty_address],
+        schain_owner=BASE_ADDRESS,
+        ether_managers=[BASE_ADDRESS],
         proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
         balance=ETHERBASE_ALLOC
     )
@@ -69,17 +72,17 @@ def get_predeployed_data():
         contract_address=MARIONETTE_ADDRESS,
         implementation_address=MARIONETTE_IMPLEMENTATION_ADDRESS,
         proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-        schain_owner=empty_address,
-        marionette=empty_address,
+        schain_owner=BASE_ADDRESS,
+        marionette=BASE_ADDRESS,
         owner=MULTISIGWALLET_ADDRESS,
-        ima=empty_address,
+        ima=BASE_ADDRESS,
     )
 
     filestorage_generator = UpgradeableFileStorageGenerator()
     filestorage_predeployed = filestorage_generator.generate_allocation(
         contract_address=FILESTORAGE_ADDRESS,
         implementation_address=FILESTORAGE_IMPLEMENTATION_ADDRESS,
-        schain_owner=empty_address,
+        schain_owner=BASE_ADDRESS,
         proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
         allocated_storage=0
     )
@@ -88,14 +91,21 @@ def get_predeployed_data():
     config_controller_predeployed = config_generator.generate_allocation(
         contract_address=CONFIG_CONTROLLER_ADDRESS,
         implementation_address=CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS,
-        schain_owner=empty_address,
+        schain_owner=BASE_ADDRESS,
         proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS
     )
 
     multisigwallet_generator = MultiSigWalletGenerator()
     multisigwallet_predeployed = multisigwallet_generator.generate_allocation(
         contract_address=MULTISIGWALLET_ADDRESS,
-        originator_addresses=[empty_address]
+        originator_addresses=[BASE_ADDRESS]
+    )
+
+    context_generator = ContextGenerator()
+    context_predeployed = context_generator.generate_allocation(
+        contract_address=CONTEXT_ADDRESS,
+        schain_owner=BASE_ADDRESS,
+        schain_name=''
     )
 
     return {
@@ -104,14 +114,15 @@ def get_predeployed_data():
         **marionette_predeployed,
         **filestorage_predeployed,
         **config_controller_predeployed,
-        **multisigwallet_predeployed
+        **multisigwallet_predeployed,
+        **context_predeployed
     }
 
 
 def get_ima_contracts():
     mainnet_ima_abi = read_json(MAINNET_IMA_ABI_FILEPATH)
     return generate_contracts(
-        owner_address=empty_address,
+        owner_address=BASE_ADDRESS,
         schain_name='schain',
         contracts_on_mainnet=mainnet_ima_abi
     )
