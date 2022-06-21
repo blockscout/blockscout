@@ -14,6 +14,7 @@
 
 ### Chore
 - [#5053](https://github.com/blockscout/blockscout/pull/5053) - Update ex_keccak lib
+- [#5679](https://github.com/blockscout/blockscout/pull/5679) - Optimize query in fetch_min_missing_block_cache function
 
 
 ## 4.1.0-beta
@@ -1466,3 +1467,4 @@ Reverting of synchronous block counter, implemented in #1848
  - [https://github.com/blockscout/blockscout/pull/1532](https://github.com/blockscout/blockscout/pull/1532) - Upgrade elixir to 1.8.1
  - [https://github.com/blockscout/blockscout/pull/1553](https://github.com/blockscout/blockscout/pull/1553) - Dockerfile: remove 1.7.1 version pin FROM bitwalker/alpine-elixir-phoenix
  - [https://github.com/blockscout/blockscout/pull/1465](https://github.com/blockscout/blockscout/pull/1465) - Resolve lodash security alert
+ 
