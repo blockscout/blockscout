@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
               %{
                 address_token_balances: [
                   %TokenBalance{
-                    address_hash: address_hash,
+                    address_hash: ^address_hash,
                     block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
                     value: ^value,

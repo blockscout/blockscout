@@ -35,7 +35,7 @@ export default function (container, newElements, { key, horizontal } = {}) {
   const overlap = intersectionBy(newList, currentList, 'id').map(({ id, el }) => ({ id, el: updateAllAges($(el))[0] }))
   // remove old items
   const removals = differenceBy(currentList, newList, 'id')
-  let canAnimate = !horizontal && newList.length > 0
+  let canAnimate = false && !horizontal && newList.length > 0 // disabled animation in order to speed up UI
   removals.forEach(({ el }) => {
     if (!canAnimate) return el.remove()
     const $el = $(el)
@@ -59,7 +59,7 @@ export default function (container, newElements, { key, horizontal } = {}) {
 
   // add new items
   const finalList = newList.map(({ id, el }) => get(find(currentList, { id }), 'el', el)).reverse()
-  canAnimate = !horizontal
+  canAnimate = false && !horizontal // disabled animation in order to speed up UI
   finalList.forEach((el, i) => {
     if (el.parentElement) return
     if (!canAnimate) return container.insertBefore(el, get(finalList, `[${i - 1}]`))

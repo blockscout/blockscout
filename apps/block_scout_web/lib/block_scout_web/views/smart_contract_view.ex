@@ -6,8 +6,6 @@ defmodule BlockScoutWeb.SmartContractView do
   alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.SmartContract.Helper
 
-  @tab "&nbsp;&nbsp;&nbsp;&nbsp;"
-
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
   def queryable?(inputs) when is_nil(inputs), do: false
@@ -105,13 +103,13 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, "string", names, index, _components),
-    do: render_type_value("string", value, fetch_name(names, index))
+    do: render_type_value("string", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, :string, names, index, _components),
-    do: render_type_value("string", value, fetch_name(names, index))
+    do: render_type_value("string", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, :bytes, names, index, _components),
-    do: render_type_value("bytes", value, fetch_name(names, index))
+    do: render_type_value("bytes", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, "bool", names, index, _components),
     do: render_type_value("bool", to_string(value), fetch_name(names, index))
@@ -136,87 +134,6 @@ defmodule BlockScoutWeb.SmartContractView do
     name
   end
 
-  def values_only(value, type, components, nested_index \\ 1)
-
-  def values_only(value, type, components, nested_index) when is_list(value) do
-    max_size = Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
-    is_too_long = length(value) > max_size
-
-    cond do
-      String.ends_with?(type, "[][]") ->
-        values =
-          value
-          |> Enum.map(&values_only(&1, String.slice(type, 0..-3), components, nested_index + 1))
-          |> Enum.map_join(",</br>", &(String.duplicate(@tab, nested_index) <> &1))
-
-        wrap_output(render_nested_array_value(values, nested_index - 1), is_too_long)
-
-      String.starts_with?(type, "tuple") ->
-        tuple_types =
-          type
-          |> String.slice(0..-3)
-          |> supplement_type_with_components(components)
-
-        values =
-          value
-          |> tuple_array_to_array(tuple_types)
-          |> Enum.join(", ")
-
-        wrap_output(render_array_value(values), is_too_long)
-
-      String.starts_with?(type, "address") ->
-        values =
-          value
-          |> Enum.map_join(", ", &binary_to_utf_string(&1))
-
-        wrap_output(render_array_value(values), is_too_long)
-
-      String.starts_with?(type, "bytes") ->
-        values =
-          value
-          |> Enum.map_join(", ", &binary_to_utf_string(&1))
-
-        wrap_output(render_array_value(values), is_too_long)
-
-      true ->
-        values =
-          value
-          |> Enum.join(", ")
-
-        wrap_output(render_array_value(values), is_too_long)
-    end
-  end
-
-  def values_only(value, type, _components, _nested_index) when is_tuple(value) do
-    values =
-      value
-      |> tuple_to_array(type)
-      |> Enum.join(", ")
-
-    max_size = Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
-
-    wrap_output(values, tuple_size(value) > max_size)
-  end
-
-  def values_only(value, type, _components, _nested_index) when type in [:address, "address", "address payable"] do
-    {:ok, address} = HashAddress.cast(value)
-    wrap_output(to_string(address))
-  end
-
-  def values_only(value, "string", _components, _nested_index), do: wrap_output(value)
-
-  def values_only(value, :string, _components, _nested_index), do: wrap_output(value)
-
-  def values_only(value, :bytes, _components, _nested_index), do: wrap_output(value)
-
-  def values_only(value, "bool", _components, _nested_index), do: wrap_output(to_string(value))
-
-  def values_only(value, :bool, _components, _nested_index), do: wrap_output(to_string(value))
-
-  def values_only(value, _type, _components, _nested_index) do
-    wrap_output(binary_to_utf_string(value))
-  end
-
   def wrap_output(value, is_too_long \\ false) do
     if is_too_long do
       "<details class=\"py-2 word-break-all\"><summary>Click to view</summary>#{value}</details>"
@@ -225,14 +142,14 @@ defmodule BlockScoutWeb.SmartContractView do
     end
   end
 
-  defp tuple_array_to_array(value, type, names \\ []) do
+  defp tuple_array_to_array(value, type, names) do
     value
     |> Enum.map(fn item ->
       tuple_to_array(item, type, names)
     end)
   end
 
-  defp tuple_to_array(value, type, names \\ []) do
+  defp tuple_to_array(value, type, names) do
     types_string =
       type
       |> String.slice(6..-2)
@@ -332,18 +249,6 @@ defmodule BlockScoutWeb.SmartContractView do
     value_to_display = "[" <> values <> "]"
 
     render_type_value(type, value_to_display, name)
-  end
-
-  defp render_nested_array_value(values, nested_index) do
-    value_to_display = "[</br>" <> values <> "</br>" <> String.duplicate(@tab, nested_index) <> "]"
-
-    value_to_display
-  end
-
-  defp render_array_value(values) do
-    value_to_display = "[" <> values <> "]"
-
-    value_to_display
   end
 
   defp supplement_type_with_components(type, components) do

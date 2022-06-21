@@ -7,6 +7,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
+  @no_metadata_message "Sourcify did not return metadata"
+  @failed_verification_message "Unsuccessful Sourcify verification"
+
   def check_by_address(address_hash_string) do
     chain_id = config(:chain_id)
     params = [addresses: address_hash_string, chainIds: chain_id]
@@ -177,43 +180,49 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   def parse_params_from_sourcify(address_hash_string, verification_metadata) do
-    [verification_metadata_json] =
+    filtered_files =
       verification_metadata
       |> Enum.filter(&(Map.get(&1, "name") == "metadata.json"))
 
-    full_params_initial = parse_json_from_sourcify_for_insertion(verification_metadata_json)
+    if Enum.empty?(filtered_files) do
+      {:error, :metadata}
+    else
+      verification_metadata_json = Enum.fetch!(filtered_files, 0)
 
-    verification_metadata_sol =
-      verification_metadata
-      |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".sol" end)
+      full_params_initial = parse_json_from_sourcify_for_insertion(verification_metadata_json)
 
-    verification_metadata_sol
-    |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
-                                           full_params_acc ->
-      compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
+      verification_metadata_sol =
+        verification_metadata
+        |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".sol" end)
 
-      if String.downcase(name) == String.downcase(compilation_target_file_name) do
-        %{
-          "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-          "abi" => Map.get(full_params_acc, "abi"),
-          "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-          "compilation_target_file_name" => compilation_target_file_name
-        }
-      else
-        secondary_sources = [
-          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
-        ]
+      verification_metadata_sol
+      |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
+                                             full_params_acc ->
+        compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
 
-        %{
-          "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-          "abi" => Map.get(full_params_acc, "abi"),
-          "secondary_sources" => secondary_sources,
-          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-          "compilation_target_file_name" => compilation_target_file_name
-        }
-      end
-    end)
+        if String.downcase(name) == String.downcase(compilation_target_file_name) do
+          %{
+            "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
+            "abi" => Map.get(full_params_acc, "abi"),
+            "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
+            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+            "compilation_target_file_name" => compilation_target_file_name
+          }
+        else
+          secondary_sources = [
+            prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
+          ]
+
+          %{
+            "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
+            "abi" => Map.get(full_params_acc, "abi"),
+            "secondary_sources" => secondary_sources,
+            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+            "compilation_target_file_name" => compilation_target_file_name
+          }
+        end
+      end)
+    end
   end
 
   defp parse_json_from_sourcify_for_insertion(verification_metadata_json) do
@@ -301,4 +310,8 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     chain_id = config(:chain_id)
     "#{base_server_url()}" <> "/files/any/" <> chain_id
   end
+
+  def no_metadata_message, do: @no_metadata_message
+
+  def failed_verification_message, do: @failed_verification_message
 end

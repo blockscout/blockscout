@@ -1,12 +1,90 @@
 ## Current
 
 ### Features
-- [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
-- [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
-- [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5690](https://github.com/blockscout/blockscout/pull/5690) - Allow special characters for password in DB URL parser
+
+### Chore
+- [#5695](https://github.com/blockscout/blockscout/pull/5695) - Decimal hex package update 1.9 -> 2.0
+- [#5684](https://github.com/blockscout/blockscout/pull/5684) - Block import timings logs
+
+
+## 4.1.5-beta
+
+### Features
+- [#5667](https://github.com/blockscout/blockscout/pull/5667) - Address page: scroll to selected tab's data
+
+### Fixes
+- [#5680](https://github.com/blockscout/blockscout/pull/5680) - Fix broken token icons; Disable animation in lists; Fix doubled requests for some pages
+- [#5671](https://github.com/blockscout/blockscout/pull/5671) - Fix double requests for token exchange rates; Disable fetching `btc_value` by default (add `EXCHANGE_RATES_FETCH_BTC_VALUE` env variable); Add `CACHE_EXCHANGE_RATES_PERIOD` env variable
+- [#5676](https://github.com/blockscout/blockscout/pull/5676) - Fix wrong miner address shown for post EIP-1559 block for clique network
+
+### Chore
+- [#5679](https://github.com/blockscout/blockscout/pull/5679) - Optimize query in fetch_min_missing_block_cache function
+- [#5674](https://github.com/blockscout/blockscout/pull/5674) - Disable token holder refreshing
+- [#5661](https://github.com/blockscout/blockscout/pull/5661) - Fixes yaml syntax for boolean env variables in docker compose
+
+
+## 4.1.4-beta
+
+### Features
+- [#5656](https://github.com/blockscout/blockscout/pull/5656) - Gas price oracle
+- [#5613](https://github.com/blockscout/blockscout/pull/5613) - Exchange rates CoinMarketCap source module
+- [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
+- [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
+- [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
+
+### Fixes
+- [#5647](https://github.com/blockscout/blockscout/pull/5647) - Add handling for invalid Sourcify response
+- [#5635](https://github.com/blockscout/blockscout/pull/5635) - Set CoinGecko source in exchange_rates_source function fix in case of token_bridge
+- [#5629](https://github.com/blockscout/blockscout/pull/5629) - Fix empty coin balance for empty address
+- [#5612](https://github.com/blockscout/blockscout/pull/5612) - Fix token transfers order
+- [#5626](https://github.com/blockscout/blockscout/pull/5626) - Fix vyper compiler versions order
+- [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
+- [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
+- [#5592](https://github.com/blockscout/blockscout/pull/5592) - Burn fees for legacy transactions
+- [#5568](https://github.com/blockscout/blockscout/pull/5568) - Add regexp for ipfs checking
+- [#5567](https://github.com/blockscout/blockscout/pull/5567) - Sanitize token name and symbol before insert into DB, display in the application
+- [#5564](https://github.com/blockscout/blockscout/pull/5564) - Add fallback clauses to `string_to_..._hash` functions
+- [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
+
+### Chore
+- [#5660](https://github.com/blockscout/blockscout/pull/5660) - Display txs count chart by default, disable price chart by default, add chart titles
+- [#5659](https://github.com/blockscout/blockscout/pull/5659) - Use chartjs-adapter-luxon instead chartjs-adapter-moment for charts
+- [#5651](https://github.com/blockscout/blockscout/pull/5651), [#5657](https://github.com/blockscout/blockscout/pull/5657) - Gnosis chain rebranded theme and generalization of chart legend colors definition
+- [#5640](https://github.com/blockscout/blockscout/pull/5640) - Clean up and fix tests, reduce amount of warnings
+- [#5625](https://github.com/blockscout/blockscout/pull/5625) - Get rid of some redirects to checksummed address url
+- [#5623](https://github.com/blockscout/blockscout/pull/5623) - Allow hyphen in DB password
+- [#5543](https://github.com/blockscout/blockscout/pull/5543) - Increase max_restarts to 1_000 (from 3 by default) for explorer, block_scout_web supervisors
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
+
+
+## 4.1.3-beta
+
+### Features
+- [#5515](https://github.com/blockscout/blockscout/pull/5515) - Integrate ace editor to display contract sources
+- [#5505](https://github.com/blockscout/blockscout/pull/5505) - Manage debug_traceTransaction JSON RPC method timeout
+- [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
+- [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
+- [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
+- [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
+
+### Fixes
+- [#5528](https://github.com/blockscout/blockscout/pull/5528) - Token balances fetcher retry
+- [#5524](https://github.com/blockscout/blockscout/pull/5524) - ContractState module resistance to unresponsive archive node
+- [#5513](https://github.com/blockscout/blockscout/pull/5513) - Do not fill pending blocks ops with block numbers below TRACE_FIRST_BLOCK
+- [#5508](https://github.com/blockscout/blockscout/pull/5508) - Hide indexing banner if we fetched internal transactions from TRACE_FIRST_BLOCK
+- [#5504](https://github.com/blockscout/blockscout/pull/5504) - Extend TRACE_FIRST_BLOCK env var to geth variant
+- [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
+- [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
+- [#5482](https://github.com/blockscout/blockscout/pull/5482) - Fix for querying of the contract read functions
+- [#5455](https://github.com/blockscout/blockscout/pull/5455) - Fix unverified_smart_contract function: add md5 of bytecode to the changeset
+- [#5454](https://github.com/blockscout/blockscout/pull/5454) - Docker: Fix the qemu-x86_64 signal 11 error on Apple Silicon
+- [#5443](https://github.com/blockscout/blockscout/pull/5443) - Geth: display tx revert reason
+- [#5420](https://github.com/blockscout/blockscout/pull/5420) - Deduplicate addresses and coin balances before inserting to the DB
 - [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
+- [#5413](https://github.com/blockscout/blockscout/pull/5413) - Fix params encoding for read contracts methods
 - [#5411](https://github.com/blockscout/blockscout/pull/5411) - Fix character_not_in_repertoire error for tx revert reason
 - [#5410](https://github.com/blockscout/blockscout/pull/5410) - Handle exited realtime fetcher
 - [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
@@ -27,6 +105,12 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5506](https://github.com/blockscout/blockscout/pull/5506) - Refactor config files
+- [#5480](https://github.com/blockscout/blockscout/pull/5480) - Remove duplicate of balances_params_to_address_params function
+- [#5473](https://github.com/blockscout/blockscout/pull/5473) - Refactor daily coin balances fetcher
+- [#5458](https://github.com/blockscout/blockscout/pull/5458) - Decrease min safe polling period for realtime fetcher
+- [#5456](https://github.com/blockscout/blockscout/pull/5456) - Ignore arbitrary block details fields for custom Ethereum clients
+- [#5450](https://github.com/blockscout/blockscout/pull/5450) - Logging error in publishing of smart-contract
 - [#5433](https://github.com/blockscout/blockscout/pull/5433) - Caching modules refactoring
 - [#5419](https://github.com/blockscout/blockscout/pull/5419) - Add check if address exists for some api methods
 - [#5408](https://github.com/blockscout/blockscout/pull/5408) - Update websocket_client hex package
