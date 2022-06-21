@@ -2585,7 +2585,7 @@ defmodule Explorer.Chain do
         !incoming_transaction_gas_usage ->
           address_to_outcoming_transaction_gas_usage(address.hash)
 
-        Decimal.cmp(incoming_transaction_gas_usage, 0) == :eq ->
+        Decimal.compare(incoming_transaction_gas_usage, 0) == :eq ->
           address_to_outcoming_transaction_gas_usage(address.hash)
 
         true ->
@@ -6047,7 +6047,7 @@ defmodule Explorer.Chain do
     result = contract_address_hash |> CurrentTokenBalance.token_balances_by_id_limit_2(token_id) |> Repo.all()
 
     if length(result) == 1 do
-      Decimal.cmp(Enum.at(result, 0), 1) == :eq
+      Decimal.compare(Enum.at(result, 0), 1) == :eq
     else
       false
     end

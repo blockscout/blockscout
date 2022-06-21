@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
 
   defp sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
        when not is_nil(usd_value1) and not is_nil(usd_value2) do
-    case Decimal.cmp(Chain.balance_in_usd(token_balance1), Chain.balance_in_usd(token_balance2)) do
+    case Decimal.compare(Chain.balance_in_usd(token_balance1), Chain.balance_in_usd(token_balance2)) do
       :gt ->
         true
 

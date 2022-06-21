@@ -9,6 +9,10 @@ on:
   release:
     types: [published]
 
+env:
+  OTP_VERSION: '24.3.4.1'
+  ELIXIR_VERSION: '1.13.4'
+
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
