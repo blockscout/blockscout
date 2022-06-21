@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5697](https://github.com/blockscout/blockscout/pull/5697) - Gas price oracle: ignore gas price rounding for values less than 0.01
 - [#5690](https://github.com/blockscout/blockscout/pull/5690) - Allow special characters for password in DB URL parser
 
 ### Chore
