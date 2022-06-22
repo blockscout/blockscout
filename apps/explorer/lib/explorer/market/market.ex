@@ -4,8 +4,7 @@ defmodule Explorer.Market do
   """
 
   alias Explorer.Chain.Address.CurrentTokenBalance
-  alias Explorer.Chain.{BridgedToken, Hash}
-  alias Explorer.Chain.Supply.TokenBridge
+  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market.{MarketHistory, MarketHistoryCache}
   alias Explorer.{ExchangeRates, KnownTokens, Repo}
@@ -58,18 +57,10 @@ defmodule Explorer.Market do
     matches_known_address = known_address && known_address == token.contract_address_hash
 
     usd_value =
-      cond do
-        matches_known_address ->
-          fetch_token_usd_value(matches_known_address, symbol)
-
-        bridged_token = mainnet_bridged_token?(token) ->
-          TokenBridge.get_current_price_for_bridged_token(
-            token.contract_address_hash,
-            bridged_token.foreign_token_contract_address_hash
-          )
-
-        true ->
-          nil
+      if matches_known_address do
+        fetch_token_usd_value(matches_known_address, symbol)
+      else
+        nil
       end
 
     Map.put(token, :usd_value, usd_value)
@@ -84,33 +75,13 @@ defmodule Explorer.Market do
   def add_price(tokens) when is_list(tokens) do
     Enum.map(tokens, fn item ->
       case item do
-        {token_balance, bridged_token, token} ->
-          {add_price(token_balance), bridged_token, token}
+        {token_balance, token} ->
+          {add_price(token_balance), token}
 
         token_balance ->
           add_price(token_balance)
       end
     end)
-  end
-
-  defp mainnet_bridged_token?(token) do
-    bridged_prop = Map.get(token, :bridged) || nil
-
-    if bridged_prop do
-      bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: token.contract_address_hash)
-
-      if bridged_token do
-        if bridged_token.foreign_chain_id do
-          if Decimal.compare(bridged_token.foreign_chain_id, Decimal.new(1)) == :eq, do: bridged_token, else: false
-        else
-          false
-        end
-      else
-        false
-      end
-    else
-      false
-    end
   end
 
   defp fetch_token_usd_value(true, symbol) do

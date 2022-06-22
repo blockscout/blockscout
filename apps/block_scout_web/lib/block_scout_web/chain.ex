@@ -341,7 +341,7 @@ defmodule BlockScoutWeb.Chain do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
-  defp paging_params({%CurrentTokenBalance{value: value}, _, %Token{name: name, type: type}}) do
+  defp paging_params({%CurrentTokenBalance{value: value}, %Token{name: name, type: type}}) do
     %{"token_name" => name, "token_type" => type, "value" => Decimal.to_integer(value)}
   end
 

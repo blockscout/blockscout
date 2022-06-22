@@ -8,6 +8,7 @@
 - [#5690](https://github.com/blockscout/blockscout/pull/5690) - Allow special characters for password in DB URL parser
 
 ### Chore
+- [#5703](https://github.com/blockscout/blockscout/pull/5703) - Remove bridged tokens functionality from Blockscout core
 - [#5700](https://github.com/blockscout/blockscout/pull/5700) - Remove Staking dapp logic from Blockscout core
 - [#5696](https://github.com/blockscout/blockscout/pull/5696) - Update .tool-versions
 - [#5695](https://github.com/blockscout/blockscout/pull/5695) - Decimal hex package update 1.9 -> 2.0
