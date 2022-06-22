@@ -81,12 +81,12 @@ defmodule Explorer.Chain do
     BlockCount,
     BlockNumber,
     Blocks,
-    GasUsage,
     TokenExchangeRate,
-    TransactionCount,
     Transactions,
     Uncles
   }
+
+  alias Explorer.Chain.Celo.TransactionStats, as: CeloTxStats
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
@@ -3658,38 +3658,36 @@ defmodule Explorer.Chain do
   Estimated count of `t:Explorer.Chain.Transaction.t/0`.
 
   Estimated count of both collated and pending transactions using the transactions table statistics.
+
+  Celo changes: Implemented via db trigger mechanism on `transactions` table directly and returns accurate tx count
+    with fallback to gc estimate.
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    cached_value = TransactionCount.get_count()
+    count = CeloTxStats.transaction_count()
 
-    if is_nil(cached_value) do
-      count = Chain.get_last_fetched_counter("total_transaction_count")
+    case count do
+      nil ->
+        Logger.warn("Couldn't retrieve tx count from celo_transaction_stats - falling back to PG gc estimation")
 
-      case count do
-        nil ->
-          %Postgrex.Result{rows: [[rows]]} =
-            SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+        %Postgrex.Result{rows: [[rows]]} =
+          SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
-          rows
+        rows
 
-        _ ->
-          count
-          |> Decimal.to_integer()
-      end
-    else
-      cached_value
+      n ->
+        n
     end
   end
 
   @spec total_gas_usage() :: non_neg_integer()
   def total_gas_usage do
-    cached_value = GasUsage.get_sum()
+    total_gas = CeloTxStats.total_gas()
 
-    if is_nil(cached_value) do
+    if is_nil(total_gas) do
       0
     else
-      cached_value
+      total_gas
     end
   end
 
