@@ -23,12 +23,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   logo_footer: System.get_env("LOGO_FOOTER"),
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false,
-  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
-  staking_enabled_in_menu: System.get_env("ENABLE_POS_STAKING_IN_MENU", "false") == "true",
-  show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
-  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
-  # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
-  staking_pool_list_refresh_interval: 5
+  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true"
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",

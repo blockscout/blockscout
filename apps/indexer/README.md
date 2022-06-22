@@ -57,7 +57,6 @@ The following async fetchers are launched for importing missing data:
 - `token_balance`
 - `token`
 - `contract_code`
-- `staking_pools`
 
 ### Async fetchers
 
@@ -79,7 +78,6 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 - `token_balance`: for `address_token_balances` with null `value_fetched_at`. Also upserts `address_current_token_balances`
 - `token`: for `tokens` with `cataloged == false`
 - `contract_code`: for `transactions` with non-null `created_contract_address_hash` and null `created_contract_code_indexed_at`
-- `staking_pools`: for fetching staking pools
 
 Additionally:
 - `token_updater` is run every 2 days to update token metadata
