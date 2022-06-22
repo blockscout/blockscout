@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
       |> cache_key()
       |> fetch_from_cache()
 
-    if is_nil(cached_value) || cached_value == :not_found_coingecko || Decimal.cmp(cached_value, 0) == :eq do
+    if is_nil(cached_value) || cached_value == :not_found_coingecko || Decimal.compare(cached_value, 0) == :eq do
       fetch_from_db(token_hash)
     else
       cached_value
@@ -82,7 +82,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
       |> cache_key()
       |> fetch_from_cache()
 
-    if is_nil(cached_value) || cached_value == :not_found_coingecko || Decimal.cmp(cached_value, 0) == :eq do
+    if is_nil(cached_value) || cached_value == :not_found_coingecko || Decimal.compare(cached_value, 0) == :eq do
       fetch_from_db(token_hash)
     else
       cached_value
