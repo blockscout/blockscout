@@ -462,4 +462,8 @@ defmodule BlockScoutWeb.AddressView do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
   end
+
+  def ens_avatar_url(address) do
+    "#{Application.get_env(:block_scout_web, :ens_metadata_server)}/avatar/#{primary_name(address)}"
+  end
 end

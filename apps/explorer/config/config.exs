@@ -275,6 +275,11 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
+config :explorer, Explorer.ENS.NameRetriever,
+  enabled: System.get_env("ENABLE_ENS") == "true" && (System.get_env("ENS_REGISTRY_ADDRESS") != nil || System.get_env("ENS_RESOLVER_ADDRESS") != nil),
+  registry_address: System.get_env("ENS_REGISTRY_ADDRESS"),
+  resolver_address: System.get_env("ENS_RESOLVER_ADDRESS")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

@@ -13,7 +13,8 @@ defmodule Indexer.Supervisor do
     PendingOpsCleaner,
     PendingTransactionsSanitizer,
     SetAmbBridgedMetadataForTokens,
-    SetOmniBridgedMetadataForTokens
+    SetOmniBridgedMetadataForTokens,
+    ENSNameSanitizer
   }
 
   alias Indexer.Block.{Catchup, Realtime}
@@ -32,7 +33,8 @@ defmodule Indexer.Supervisor do
     TokenInstance,
     TokenTotalSupplyOnDemand,
     TokenUpdater,
-    UncleBlock
+    UncleBlock,
+    ENSName
   }
 
   alias Indexer.Temporary.{
@@ -124,12 +126,14 @@ defmodule Indexer.Supervisor do
       {TokenBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {TokenUpdater.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+      {ENSName.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
 
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
       {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
       {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+      {ENSNameSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers
       {UncatalogedTokenTransfers.Supervisor, [[]]},
