@@ -1574,6 +1574,56 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp search_name_query(string) do
+    from(address in Address,
+      left_join: address_name in Address.Name,
+      on: address.hash == address_name.address_hash,
+      where: ilike(address_name.name, ^"%#{string}%"),
+      select: %{
+        address_hash: address.hash,
+        tx_hash: fragment("CAST(NULL AS bytea)"),
+        block_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+        foreign_chain_id: ^nil,
+        type: "address",
+        name: address_name.name,
+        symbol: ^nil,
+        holder_count: ^nil,
+        inserted_at: address.inserted_at,
+        block_number: 0
+      }
+    )
+  end
+
+  defp search_ens_name_query(string) do
+    case Explorer.ENS.NameRetriever.fetch_address_of(string) do
+      {:ok, address} ->
+        case Chain.string_to_address_hash(address) do
+          {:ok, address_hash} ->
+            from(address in Address,
+              where: address.hash == ^address_hash,
+              select: %{
+                address_hash: address.hash,
+                tx_hash: fragment("CAST(NULL AS bytea)"),
+                block_hash: fragment("CAST(NULL AS bytea)"),
+                foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+                foreign_chain_id: ^nil,
+                type: "address",
+                name: ^string,
+                symbol: ^nil,
+                holder_count: ^nil,
+                inserted_at: address.inserted_at,
+                block_number: 0
+              }
+            )
+
+          _ ->
+            nil
+        end
+      _ -> nil
+    end
+  end
+
   defp search_tx_query(term) do
     case Chain.string_to_transaction_hash(term) do
       {:ok, tx_hash} ->
@@ -1648,16 +1698,21 @@ defmodule Explorer.Chain do
         contracts_query = search_contract_query(term)
         tx_query = search_tx_query(string)
         address_query = search_address_query(string)
+        name_query = search_name_query(string)
+        ens_name_query = search_ens_name_query(string)
         block_query = search_block_query(string)
 
         basic_query =
           from(
             tokens in subquery(tokens_query),
             union: ^contracts_query
-          )
+          ) |> union(^name_query)
 
         query =
           cond do
+            ens_name_query ->
+              ens_name_query
+
             address_query ->
               basic_query
               |> union(^address_query)
@@ -4921,6 +4976,42 @@ defmodule Explorer.Chain do
   def supply_for_days, do: supply_module().supply_for_days(MarketHistoryCache.recent_days_count())
 
   @doc """
+  Streams a lists of all addresses for name lookup - including block miners and transaction users
+  """
+  @spec stream_address_hashes(
+          initial :: accumulator,
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        block in Block,
+        distinct: block.miner_hash,
+        select: block.miner_hash,
+        union: ^from(
+          address in Address,
+          select: address.hash
+        )
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @doc """
+  Gets a lists of all ens names for ens name sanitizer task
+  """
+  def ens_name_list do
+    query = from(name in Address.Name,
+      where: fragment("?->>'type' = 'ens'", name.metadata),
+      select: name)
+
+    query
+    |> Repo.all(timeout: :infinity)
+  end
+
+
+  @doc """
   Streams a lists token contract addresses that haven't been cataloged.
   """
   @spec stream_uncataloged_token_contract_address_hashes(
@@ -5212,6 +5303,15 @@ defmodule Explorer.Chain do
       on_conflict: :replace_all,
       conflict_target: [:token_id, :token_contract_address_hash]
     )
+  end
+
+  @spec upsert_address_name(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+    def upsert_address_name(params \\ %{}) do
+    address_name_changeset = Address.Name.changeset(%Address.Name{}, params)
+
+    address_name_opts = [on_conflict: :nothing]
+
+    Repo.insert(address_name_changeset,address_name_opts)
   end
 
   @doc """

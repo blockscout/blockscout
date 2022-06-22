@@ -494,4 +494,8 @@ defmodule BlockScoutWeb.AddressView do
     do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
 
   def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
+
+  def ens_avatar_url(address) do
+    "#{Application.get_env(:block_scout_web, :ens_metadata_server)}/avatar/#{primary_name(address)}"
+  end
 end

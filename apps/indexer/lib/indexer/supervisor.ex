@@ -8,7 +8,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.{
     Block,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer
+    PendingTransactionsSanitizer,
+    ENSNameSanitizer
   }
 
   alias Indexer.Block.{Catchup, Realtime}
@@ -27,7 +28,8 @@ defmodule Indexer.Supervisor do
     TokenInstance,
     TokenUpdater,
     TransactionAction,
-    UncleBlock
+    UncleBlock,
+    ENSName
   }
 
   alias Indexer.Temporary.{
@@ -118,10 +120,12 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        {ENSName.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
 
         # Out-of-band fetchers
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        {ENSNameSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},

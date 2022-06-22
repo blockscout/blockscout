@@ -4,6 +4,7 @@
   <% dark_forest_addresses_list_0_5 = CustomContractsHelper.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
   <% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
+  <% address_name = primary_name(@address) %>
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
     <!-- Address details -->
@@ -40,12 +41,23 @@
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_qr_code.html" %>
             </span>
           </h1>
-          <h3 class="address-detail-hash-title mb-4 <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
+          <div style="display: flex; align-items: center; gap: 15px">
+            <%= if address_name do %>
+              <div>
+                <img onerror="this.onerror=null; this.remove();" style="width: 64px" src="<%= ens_avatar_url(@address) %>">
+              </div>
+            <% end %>
+            <div>
+              <%= if address_name do %>
+                <h3 style="width: 100%" class="address-detail-name-title <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_name"><%= primary_name(@address) %></h3>
+              <% end %>
+              <h3 style="width: 100%" class="address-detail-hash-title <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
+            </div>
+          </div>
           <!-- Verify in other explorers -->
           <!--
           <%# <%= render "_verify_other_explorers.html", hash: @address.hash, type: "address" %> %>
           -->
-          <% address_name = primary_name(@address) %>
           <%= cond do %>
             <% @address.token -> %>
               <dl class="row">
@@ -73,17 +85,6 @@
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                     text: gettext("The name found in the source code of the Contract.") %>
                     <%= gettext("Contract Name") %>
-                  </dt>
-                  <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_contract">
-                    <%= short_contract_name(address_name, 30) %>
-                  </dd>
-                </dl>
-              <% else %>
-                <dl class="row">
-                  <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
-                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                    text: gettext("The name of the validator.") %>
-                    <%= gettext("Validator Name") %>
                   </dt>
                   <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_contract">
                     <%= short_contract_name(address_name, 30) %>
@@ -149,7 +150,7 @@
               text: gettext("Address balance in") <> " " <> Explorer.coin_name() <> " " <> gettext("doesn't include ERC20, ERC721, ERC1155 tokens).") %>
               <%= gettext("Balance") %>
             </dt>
-            <dd data-selector="current-coin-balance" class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
+            <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
               <%= balance(@address) %>
               <%= if !match?({:pending, _}, @coin_balance_status) && !empty_exchange_rate?(@exchange_rate) do %>
                 <% usd_value = to_string(@exchange_rate.usd_value) %>
@@ -257,7 +258,7 @@
                 text: gettext("Block number in which the address was updated.") %>
                 <%= gettext("Last Balance Update") %>
               </dt>
-              <dd data-selector="last-balance-update" class="col-sm-8 col-md-8 col-lg-9" data-test="address_last_balance_update">
+              <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_last_balance_update">
                 <%= link(
                     @address.fetched_coin_balance_block_number,
                     to: block_path(@conn, :show, @address.fetched_coin_balance_block_number),

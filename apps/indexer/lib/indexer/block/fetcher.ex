@@ -26,7 +26,8 @@ defmodule Indexer.Block.Fetcher do
     Token,
     TokenBalance,
     TokenInstance,
-    UncleBlock
+    UncleBlock,
+    ENSName
   }
 
   alias Indexer.{Prometheus, Tracer}
@@ -339,6 +340,14 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_replaced_transactions(_), do: :ok
+
+  def async_import_ens_names(%{addresses: addresses}) do
+    addresses
+    |> Enum.map(& &1.hash)
+    |> ENSName.async_fetch()
+  end
+
+  def async_import_ens_names(_), do: :ok
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)

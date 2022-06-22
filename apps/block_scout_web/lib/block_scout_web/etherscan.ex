@@ -588,6 +588,30 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @ens_getaddress_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "0x0000000000000000000000000000000000001337"
+  }
+
+  @ens_getaddress_example_value_error %{
+    "status" => "0",
+    "message" => "Failed to look up ENS address for name",
+    "result" => nil
+  }
+
+  @ens_getname_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "example.test"
+  }
+
+  @ens_getname_example_value_error %{
+    "status" => "0",
+    "message" => "Failed to look up ENS address for name",
+    "result" => nil
+  }
+
   @status_type %{
     type: "status",
     enum: ~s(["0", "1"]),
@@ -2925,6 +2949,82 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @ens_getaddress_action %{
+    name: "ensaddress",
+    description: "Get address of an ENS name.",
+    required_params: [
+      %{
+        key: "name",
+        placeholder: "ensName",
+        type: "string",
+        description: "ENS name."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@ens_getaddress_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              definition: "Resolved address of an ENS name",
+              type: "string",
+              example: ~s("0x0000000000000000000000000000000000001337")
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@ens_getaddress_example_value_error)
+      }
+    ]
+  }
+
+  @ens_getname_action %{
+    name: "ensname",
+    description: "Get primary ENS name of an address, if set.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "address",
+        type: "string",
+        description: "The address of the account"
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@ens_getname_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              definition: "Primary ENS name of an address",
+              type: "string",
+              example: ~s("example.test")
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@ens_getname_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -2995,6 +3095,14 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @ens_module %{
+    name: "ens",
+    actions: [
+      @ens_getaddress_action,
+      @ens_getname_action
+    ]
+  }
+
   @documentation [
     @account_module,
     @logs_module,
@@ -3002,7 +3110,8 @@ defmodule BlockScoutWeb.Etherscan do
     @stats_module,
     @block_module,
     @contract_module,
-    @transaction_module
+    @transaction_module,
+    @ens_module
   ]
 
   def get_documentation do
