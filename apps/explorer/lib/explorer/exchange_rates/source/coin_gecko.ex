@@ -109,7 +109,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   def coin_id(symbol) do
-    id_mapping = bridged_token_symbol_to_id_mapping_to_get_price(symbol)
+    id_mapping = token_symbol_to_id_mapping_to_get_price(symbol)
 
     if id_mapping do
       {:ok, id_mapping}
@@ -216,7 +216,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
-  defp bridged_token_symbol_to_id_mapping_to_get_price(symbol) do
+  defp token_symbol_to_id_mapping_to_get_price(symbol) do
     case symbol do
       "UNI" -> "uniswap"
       "SURF" -> "surf-finance"
