@@ -125,22 +125,6 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
 config :explorer, Explorer.Chain.Cache.GasUsage,
   enabled: System.get_env("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER") == "true"
 
-cache_bridge_market_cap_update_interval = System.get_env("CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL")
-
-bridge_market_cap_update_interval =
-  if cache_bridge_market_cap_update_interval do
-    case Integer.parse(cache_bridge_market_cap_update_interval) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
-  end
-
-config :explorer, Explorer.Counters.Bridge,
-  enabled: if(System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false),
-  enable_consolidation: System.get_env("DISABLE_BRIDGE_MARKET_CAP_UPDATER") !== "true",
-  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60,
-  disable_lp_tokens_in_market_cap: System.get_env("DISABLE_LP_TOKENS_IN_MARKET_CAP") == "true"
-
 config :explorer, Explorer.ExchangeRates,
   enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
   store: :ets,
@@ -151,7 +135,6 @@ config :explorer, Explorer.ExchangeRates,
 
 exchange_rates_source =
   cond do
-    System.get_env("EXCHANGE_RATES_SOURCE") == "token_bridge" -> Explorer.ExchangeRates.Source.TokenBridge
     System.get_env("EXCHANGE_RATES_SOURCE") == "coin_gecko" -> Explorer.ExchangeRates.Source.CoinGecko
     System.get_env("EXCHANGE_RATES_SOURCE") == "coin_market_cap" -> Explorer.ExchangeRates.Source.CoinMarketCap
     true -> Explorer.ExchangeRates.Source.CoinGecko
@@ -214,9 +197,6 @@ config :explorer, Explorer.Chain.Block.Reward,
   keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
 case System.get_env("SUPPLY_MODULE") do
-  "TokenBridge" ->
-    config :explorer, supply: Explorer.Chain.Supply.TokenBridge
-
   "rsk" ->
     config :explorer, supply: Explorer.Chain.Supply.RSK
 
