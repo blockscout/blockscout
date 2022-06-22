@@ -213,18 +213,6 @@ config :explorer, Explorer.Chain.Block.Reward,
   validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
   keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
-pos_staking_contract = System.get_env("POS_STAKING_CONTRACT")
-
-if pos_staking_contract do
-  config :explorer, Explorer.Staking.ContractState,
-    enabled: true,
-    staking_contract_address: pos_staking_contract,
-    eth_subscribe_max_delay: System.get_env("POS_ETH_SUBSCRIBE_MAX_DELAY", "60"),
-    eth_blocknumber_pull_interval: System.get_env("POS_ETH_BLOCKNUMBER_PULL_INTERVAL", "500")
-else
-  config :explorer, Explorer.Staking.ContractState, enabled: false
-end
-
 case System.get_env("SUPPLY_MODULE") do
   "TokenBridge" ->
     config :explorer, supply: Explorer.Chain.Supply.TokenBridge

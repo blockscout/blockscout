@@ -7,7 +7,6 @@ defmodule Explorer.Chain do
     only: [
       from: 2,
       join: 4,
-      join: 5,
       limit: 2,
       lock: 2,
       offset: 2,
@@ -55,8 +54,6 @@ defmodule Explorer.Chain do
     PendingBlockOperation,
     SmartContract,
     SmartContractAdditionalSource,
-    StakingPool,
-    StakingPoolsDelegator,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -81,7 +78,6 @@ defmodule Explorer.Chain do
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.{Helper, Reader}
-  alias Explorer.Staking.ContractState
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -5408,11 +5404,18 @@ defmodule Explorer.Chain do
   defp convert_binary_to_string(binary, type) do
     case type do
       {:bytes, _} ->
-        ContractState.binary_to_string(binary)
+        binary_to_string(binary)
 
       _ ->
         binary
     end
+  end
+
+  defp binary_to_string(binary) do
+    binary
+    |> :binary.bin_to_list()
+    |> Enum.filter(fn x -> x != 0 end)
+    |> List.to_string()
   end
 
   defp compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)
@@ -6151,200 +6154,6 @@ defmodule Explorer.Chain do
 
     value
   end
-
-  @doc "Get staking pools from the DB"
-  @spec staking_pools(
-          filter :: :validator | :active | :inactive,
-          paging_options :: PagingOptions.t() | :all,
-          address_hash :: Hash.t() | nil,
-          filter_banned :: boolean() | nil,
-          filter_my :: boolean() | nil
-        ) :: [map()]
-  def staking_pools(
-        filter,
-        paging_options \\ @default_paging_options,
-        address_hash \\ nil,
-        filter_banned \\ false,
-        filter_my \\ false
-      ) do
-    base_query =
-      StakingPool
-      |> where(is_deleted: false)
-      |> staking_pool_filter(filter)
-      |> staking_pools_paging_query(paging_options)
-
-    delegator_query =
-      if address_hash do
-        base_query
-        |> join(:left, [p], pd in StakingPoolsDelegator,
-          on:
-            p.staking_address_hash == pd.staking_address_hash and pd.address_hash == ^address_hash and
-              not pd.is_deleted
-        )
-        |> select([p, pd], %{pool: p, delegator: pd})
-      else
-        base_query
-        |> select([p], %{pool: p, delegator: nil})
-      end
-
-    banned_query =
-      if filter_banned do
-        where(delegator_query, is_banned: true)
-      else
-        delegator_query
-      end
-
-    filtered_query =
-      if address_hash && filter_my do
-        where(banned_query, [..., pd], not is_nil(pd))
-      else
-        banned_query
-      end
-
-    Repo.all(filtered_query)
-  end
-
-  defp staking_pools_paging_query(base_query, :all) do
-    base_query
-    |> order_by(asc: :staking_address_hash)
-  end
-
-  defp staking_pools_paging_query(base_query, paging_options) do
-    paging_query =
-      base_query
-      |> limit(^paging_options.page_size)
-      |> order_by(desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash)
-
-    case paging_options.key do
-      {value, address_hash} ->
-        where(
-          paging_query,
-          [p],
-          p.stakes_ratio < ^value or
-            (p.stakes_ratio == ^value and p.staking_address_hash > ^address_hash)
-        )
-
-      _ ->
-        paging_query
-    end
-  end
-
-  @doc "Get count of staking pools from the DB"
-  @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
-  def staking_pools_count(filter) do
-    StakingPool
-    |> where(is_deleted: false)
-    |> staking_pool_filter(filter)
-    |> Repo.aggregate(:count, :staking_address_hash)
-  end
-
-  @doc "Get sum of delegators count from the DB"
-  @spec delegators_count_sum(filter :: :validator | :active | :inactive) :: integer
-  def delegators_count_sum(filter) do
-    StakingPool
-    |> where(is_deleted: false)
-    |> staking_pool_filter(filter)
-    |> Repo.aggregate(:sum, :delegators_count)
-  end
-
-  @doc "Get sum of total staked amount from the DB"
-  @spec total_staked_amount_sum(filter :: :validator | :active | :inactive) :: integer
-  def total_staked_amount_sum(filter) do
-    StakingPool
-    |> where(is_deleted: false)
-    |> staking_pool_filter(filter)
-    |> Repo.aggregate(:sum, :total_staked_amount)
-  end
-
-  defp staking_pool_filter(query, :validator) do
-    where(query, is_validator: true)
-  end
-
-  defp staking_pool_filter(query, :active) do
-    where(query, is_active: true)
-  end
-
-  defp staking_pool_filter(query, :inactive) do
-    where(query, is_active: false)
-  end
-
-  def staking_pool(staking_address_hash) do
-    Repo.get_by(StakingPool, staking_address_hash: staking_address_hash)
-  end
-
-  def staking_pool_names(staking_addresses) do
-    StakingPool
-    |> where([p], p.staking_address_hash in ^staking_addresses and p.is_deleted == false)
-    |> select([:staking_address_hash, :name])
-    |> Repo.all()
-  end
-
-  def staking_pool_delegators(staking_address_hash, show_snapshotted_data) do
-    query =
-      from(
-        d in StakingPoolsDelegator,
-        where:
-          d.staking_address_hash == ^staking_address_hash and
-            (d.is_active == true or (^show_snapshotted_data and d.snapshotted_stake_amount > 0 and d.is_active != true)),
-        order_by: [desc: d.stake_amount]
-      )
-
-    query
-    |> Repo.all()
-  end
-
-  def staking_pool_snapshotted_delegator_data_for_apy do
-    query =
-      from(
-        d in StakingPoolsDelegator,
-        select: %{
-          :staking_address_hash => fragment("DISTINCT ON (?) ?", d.staking_address_hash, d.staking_address_hash),
-          :snapshotted_reward_ratio => d.snapshotted_reward_ratio,
-          :snapshotted_stake_amount => d.snapshotted_stake_amount
-        },
-        where: d.staking_address_hash != d.address_hash and d.snapshotted_stake_amount > 0
-      )
-
-    query
-    |> Repo.all()
-  end
-
-  def staking_pool_snapshotted_inactive_delegators_count(staking_address_hash) do
-    query =
-      from(
-        d in StakingPoolsDelegator,
-        where:
-          d.staking_address_hash == ^staking_address_hash and
-            d.snapshotted_stake_amount > 0 and
-            d.is_active != true,
-        select: fragment("count(*)")
-      )
-
-    query
-    |> Repo.one()
-  end
-
-  def staking_pool_delegator(staking_address_hash, address_hash) do
-    Repo.get_by(StakingPoolsDelegator,
-      staking_address_hash: staking_address_hash,
-      address_hash: address_hash,
-      is_deleted: false
-    )
-  end
-
-  def get_total_staked_and_ordered(""), do: nil
-
-  def get_total_staked_and_ordered(address_hash) when is_binary(address_hash) do
-    StakingPoolsDelegator
-    |> where([delegator], delegator.address_hash == ^address_hash and not delegator.is_deleted)
-    |> select([delegator], %{
-      stake_amount: coalesce(sum(delegator.stake_amount), 0),
-      ordered_withdraw: coalesce(sum(delegator.ordered_withdraw), 0)
-    })
-    |> Repo.one()
-  end
-
-  def get_total_staked_and_ordered(_), do: nil
 
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
