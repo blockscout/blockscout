@@ -50,6 +50,37 @@ defmodule EthereumJSONRPC.Receipt do
   @spec elixir_to_logs(elixir) :: Logs.elixir()
   def elixir_to_logs(%{"logs" => logs}), do: logs
 
+  @spec elixir_to_params(elixir) :: %{
+          cumulative_gas_used: non_neg_integer,
+          gas_used: non_neg_integer,
+          created_contract_address_hash: String.t() | nil,
+          status: status(),
+          transaction_hash: String.t(),
+          transaction_index: non_neg_integer(),
+          revert_reason: String.t() | nil
+        }
+  def elixir_to_params(
+        %{
+          "cumulativeGasUsed" => cumulative_gas_used,
+          "gasUsed" => gas_used,
+          "contractAddress" => created_contract_address_hash,
+          "transactionHash" => transaction_hash,
+          "transactionIndex" => transaction_index,
+          "revertReason" => revert_reason
+        } = elixir
+      ) do
+    status = elixir_to_status(elixir)
+    %{
+      cumulative_gas_used: cumulative_gas_used,
+      gas_used: gas_used,
+      created_contract_address_hash: created_contract_address_hash,
+      status: status,
+      transaction_hash: transaction_hash,
+      transaction_index: transaction_index,
+      revert_reason: revert_reason
+    }
+  end
+
   @doc """
   Converts `t:elixir/0` format to params used in `Explorer.Chain`.
 
