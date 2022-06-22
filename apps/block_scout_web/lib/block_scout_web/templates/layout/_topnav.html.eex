@@ -1,4 +1,3 @@
-<% staking_enabled_in_menu = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled_in_menu] %>
 <% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <div class="container-fluid navbar-container">
@@ -142,7 +141,7 @@
             </div>
           </li>
         <% end %>
-        <%= if apps_menu == true || staking_enabled_in_menu do %>
+        <%= if apps_menu == true do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
@@ -155,12 +154,6 @@
               <% end %>
             </a>
             <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
-              <%= if staking_enabled_in_menu do %>
-                <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                  <%= gettext("Staking") %>
-                  <span class="bs-label secondary right from-dropdown">New</span>
-                </a>
-              <% end %>
               <%= if apps_menu == true do %>
                 <%= for %{url: url, title: title} <- external_apps_list() do %> 
                     <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
