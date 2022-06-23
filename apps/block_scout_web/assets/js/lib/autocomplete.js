@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete'
-import { astraToEth } from '@astraprotocol/address-converter'
+import { astraToEth } from '@astradefi/address-converter'
 import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
 import { appendTokenIcon } from './token_icon'
