@@ -1,4 +1,3 @@
-<%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <% stats_enabled = Application.get_env(:block_scout_web, :stats_enabled) %>
 <% stats_report_url = Application.get_env(:block_scout_web, :stats_report_url) %>
 <%
@@ -48,7 +47,6 @@
       <% end %>
     </div>
   </div>
-  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 </section>
 <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/stats.js") %>"></script>
 </section>

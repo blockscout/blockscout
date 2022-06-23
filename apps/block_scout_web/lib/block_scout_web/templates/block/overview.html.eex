@@ -1,11 +1,10 @@
 <% burned_fee = if !is_nil(@block.base_fee_per_gas), do: Wei.mult(@block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(@block.hash)), else: nil %>
 <% priority_fee = if !is_nil(@block.base_fee_per_gas), do: BlockPriorityFeeCounter.fetch(@block.hash), else: nil %>
 <section>
-  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="row">
-    <div class="col-md-12 js-ad-dependant-mb-2">
+    <div class="col-md-12 mb-2">
       <!-- Block Details -->
-      <div class="card js-ad-dependant-mb-2">
+      <div class="card mb-2">
         <div class="card-body fs-14" style="line-height: 32px;">
           <dl class="pagination-container">
             <h1 class="card-title" data-test="detail_type">
@@ -298,5 +297,3 @@
       </div>
     </div>
 </section>
-
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

@@ -32,5 +32,4 @@ import './lib/stop_propagation'
 import './lib/tooltip'
 import './lib/modals'
 import './lib/card_tabs'
-import './lib/ad'
 import './lib/analytics' // celo

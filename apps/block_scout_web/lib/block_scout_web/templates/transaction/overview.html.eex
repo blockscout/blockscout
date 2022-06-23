@@ -26,12 +26,11 @@
 <% fee_token = get_fee_token_name(@transaction) %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
-<%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
       <!-- Transaction Details -->
-      <div class="card js-ad-dependant-mb-3">
+      <div class="card mb-3">
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
@@ -488,8 +487,6 @@
       </div>
     </div>
   </div>
-
-  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">

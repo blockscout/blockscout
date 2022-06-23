@@ -1,14 +1,13 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
-  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
   <% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
-  <div class="row js-ad-dependant-mb-2 js-ad-dependant-mb-5-reverse">
+  <div class="row mb-2 mb-5">
     <!-- Address details -->
-    <div class="col-md-12 js-ad-dependant-mb-2">
-      <div class="card js-ad-dependant-mb-2">
+    <div class="col-md-12 mb-2">
+      <div class="card mb-2">
         <div class="card-body fs-14" style="line-height: 31px;">
           <%= cond do %>
             <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
@@ -283,5 +282,3 @@
 <%= if validator_metadata do %>
   <%= render BlockScoutWeb.AddressView, "_validator_metadata_modal.html", address_name: address_name, validator_metadata: validator_metadata %>
 <% end %>
-
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 
