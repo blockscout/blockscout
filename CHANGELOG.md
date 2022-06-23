@@ -1,12 +1,15 @@
 ## Current
 
 ### Features
+- [#5699](https://github.com/blockscout/blockscout/pull/5699) - Switch to basic (non-pro) API endpoint for Coingecko requests, if API key is not provided
 
 ### Fixes
 - [#5697](https://github.com/blockscout/blockscout/pull/5697) - Gas price oracle: ignore gas price rounding for values less than 0.01
 - [#5690](https://github.com/blockscout/blockscout/pull/5690) - Allow special characters for password in DB URL parser
 
 ### Chore
+- [#5703](https://github.com/blockscout/blockscout/pull/5703) - Remove bridged tokens functionality from Blockscout core
+- [#5700](https://github.com/blockscout/blockscout/pull/5700) - Remove Staking dapp logic from Blockscout core
 - [#5696](https://github.com/blockscout/blockscout/pull/5696) - Update .tool-versions
 - [#5695](https://github.com/blockscout/blockscout/pull/5695) - Decimal hex package update 1.9 -> 2.0
 - [#5684](https://github.com/blockscout/blockscout/pull/5684) - Block import timings logs
