@@ -3682,7 +3682,8 @@ defmodule Explorer.Chain do
   def transaction_to_status(%Transaction{block_hash: nil, status: nil}), do: :pending
   def transaction_to_status(%Transaction{status: nil}), do: :awaiting_internal_transactions
   def transaction_to_status(%Transaction{status: :ok}), do: :success
-
+  def transaction_to_status(%Transaction{status: :error, revert_reason: revert_reason}),
+    do: {:error, revert_reason}
   def transaction_to_status(%Transaction{status: :error, error: nil}),
     do: {:error, :awaiting_internal_transactions}
 
