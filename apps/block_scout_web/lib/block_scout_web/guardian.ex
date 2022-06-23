@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Guardian do
   use Guardian, otp_app: :block_scout_web
 
+  alias BlockScoutWeb.Models.UserFromAuth
+
   def subject_for_token(%{uid: uid}, _claims) do
     sub = to_string(uid)
     {:ok, sub}

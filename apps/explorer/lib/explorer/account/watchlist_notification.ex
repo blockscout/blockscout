@@ -1,13 +1,14 @@
-defmodule Explorer.Accounts.WatchlistNotification do
+defmodule Explorer.Account.WatchlistNotification do
   @moduledoc """
     Strored notification about event 
     related to WatchlistAddress
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
+
   import Ecto.Changeset
 
-  alias Explorer.Accounts.WatchlistAddress
+  alias Explorer.Account.WatchlistAddress
 
   alias Explorer.Chain.{
     Address,

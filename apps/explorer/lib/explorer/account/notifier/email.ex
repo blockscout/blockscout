@@ -1,4 +1,4 @@
-defmodule Explorer.Accounts.Notifier.Email do
+defmodule Explorer.Account.Notifier.Email do
   @moduledoc """
     Composing an email to sendgrid
   """
@@ -6,7 +6,7 @@ defmodule Explorer.Accounts.Notifier.Email do
   require Logger
 
   alias BlockScoutWeb.WebRouter.Helpers
-  alias Explorer.Accounts.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
+  alias Explorer.Account.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
   alias Explorer.Repo
 
   import Bamboo.{Email, SendGridHelper}
@@ -146,10 +146,10 @@ defmodule Explorer.Accounts.Notifier.Email do
   end
 
   defp sender do
-    Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:sender]
+    Application.get_env(:explorer, Explorer.Account)[:sendgrid][:sender]
   end
 
   defp template do
-    Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:template]
+    Application.get_env(:explorer, Explorer.Account)[:sendgrid][:template]
   end
 end

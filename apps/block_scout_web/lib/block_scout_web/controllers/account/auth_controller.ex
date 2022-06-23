@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Account.AuthController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Guardian
+  alias BlockScoutWeb.Models.UserFromAuth
 
   plug(Ueberauth)
 

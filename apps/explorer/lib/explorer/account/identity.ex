@@ -1,12 +1,14 @@
-defmodule Explorer.Accounts.Identity do
+defmodule Explorer.Account.Identity do
   @moduledoc """
     Identity of user fetched via Oauth
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
+
   import Ecto.Changeset
+
   alias Explorer.Account.Api.Plan
-  alias Explorer.Accounts.{TagAddress, Watchlist}
+  alias Explorer.Account.{TagAddress, Watchlist}
 
   schema "account_identities" do
     field(:uid, :string)

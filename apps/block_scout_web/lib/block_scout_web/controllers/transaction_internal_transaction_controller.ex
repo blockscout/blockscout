@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-  import GetAddressTags, only: [get_address_tags: 2]
-  import GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
+  import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}

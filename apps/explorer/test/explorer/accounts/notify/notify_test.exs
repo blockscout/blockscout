@@ -1,17 +1,17 @@
-defmodule Explorer.Accounts.Notify.NotifyTest do
+defmodule Explorer.Account.Notify.NotifyTest do
   # use ExUnit.Case
   use Explorer.DataCase
 
   import Explorer.Factory
 
-  alias Explorer.Accounts.Notifier.Notify
-  alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
+  alias Explorer.Account.Notifier.Notify
+  alias Explorer.Account.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Chain
   alias Explorer.Chain.{Transaction, Wei}
   alias Explorer.Repo
 
   setup do
-    Application.put_env(:explorer, Explorer.Accounts,
+    Application.put_env(:explorer, Explorer.Account,
       sendgrid: [
         sender: "noreply@blockscout.com",
         template: "d-666"

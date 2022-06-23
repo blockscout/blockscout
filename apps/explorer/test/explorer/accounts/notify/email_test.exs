@@ -1,10 +1,10 @@
-defmodule Explorer.Accounts.Notify.EmailTest do
+defmodule Explorer.Account.Notify.EmailTest do
   use ExUnit.Case
 
   alias Explorer.Chain.Address
   alias Explorer.Chain.Transaction
 
-  alias Explorer.Accounts.{
+  alias Explorer.Account.{
     Identity,
     Watchlist,
     WatchlistAddress,
@@ -17,7 +17,7 @@ defmodule Explorer.Accounts.Notify.EmailTest do
       string_to_transaction_hash: 1
     ]
 
-  import Explorer.Accounts.Notifier.Email,
+  import Explorer.Account.Notifier.Email,
     only: [compose: 2]
 
   setup do
@@ -26,7 +26,7 @@ defmodule Explorer.Accounts.Notify.EmailTest do
 
     Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, url: [host: "localhost", path: "/"])
 
-    Application.put_env(:explorer, Explorer.Accounts,
+    Application.put_env(:explorer, Explorer.Account,
       sendgrid: [
         sender: "noreply@blockscout.com",
         template: "d-666"

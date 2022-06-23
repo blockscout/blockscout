@@ -173,6 +173,23 @@ msgstr ""
 msgid "Add Custom ABI"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Add address tag"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Add address to the Watchlist"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Add transaction tag"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:11
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:12
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/views/address_view.ex:107
@@ -282,9 +299,24 @@ msgstr ""
 msgid "Back to API keys (Cancel)"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:24
+#, elixir-autogen, elixir-format
+msgid "Back to Address Tags (Cancel)"
+msgstr ""
+
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:30
 #, elixir-autogen, elixir-format
 msgid "Back to Custom ABI (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:24
+#, elixir-autogen, elixir-format
+msgid "Back to Transaction Tags (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:81
+#, elixir-autogen, elixir-format
+msgid "Back to Watchlist (Cancel)"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:148
@@ -967,9 +999,19 @@ msgstr ""
 msgid "ERC-20 "
 msgstr ""
 
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:40
+#, elixir-autogen, elixir-format
+msgid "ERC-20 tokens (beta)"
+msgstr ""
+
 #: lib/block_scout_web/views/transaction_view.ex:214
 #, elixir-autogen, elixir-format
 msgid "ERC-721 "
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:53
+#, elixir-autogen, elixir-format
+msgid "ERC-721, ERC-1155 tokens (NFT) (beta)"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_token/overview.html.eex:1
@@ -1000,6 +1042,16 @@ msgstr ""
 #: lib/block_scout_web/templates/account/custom_abi/row.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "Edit"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Edit Watchlist address"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:71
+#, elixir-autogen, elixir-format
+msgid "Email notifications"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:5
@@ -1063,8 +1115,7 @@ msgstr ""
 msgid "Eth RPC"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/watchlist_address/edit.html.eex:27
-#: lib/block_scout_web/templates/account/watchlist_address/new.html.eex:25
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:27
 #: lib/block_scout_web/templates/account/watchlist_address/row.html.eex:21
 #: lib/block_scout_web/templates/address/_current_coin_balance.html.eex:11
 #: lib/block_scout_web/templates/address/index.html.eex:5
@@ -1299,6 +1350,13 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:130
 #, elixir-autogen, elixir-format
 msgid "Implementation address of the proxy contract."
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:30
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:43
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:56
+#, elixir-autogen, elixir-format
+msgid "Incoming"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/overview.html.eex:446
@@ -1571,6 +1629,9 @@ msgstr ""
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:29
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:13
 #: lib/block_scout_web/templates/account/custom_abi/index.html.eex:29
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:18
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:18
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:19
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
@@ -1587,6 +1648,17 @@ msgstr ""
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:14
 #, elixir-autogen, elixir-format
 msgid "Name this Custom ABI"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:19
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:20
+#, elixir-autogen, elixir-format
+msgid "Name this address"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:19
+#, elixir-autogen, elixir-format
+msgid "Name this transaction"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_token/overview.html.eex:44
@@ -1694,6 +1766,13 @@ msgstr ""
 msgid "Other Explorers"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:35
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:48
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:61
+#, elixir-autogen, elixir-format
+msgid "Outgoing"
+msgstr ""
+
 #: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:24
 #, elixir-autogen, elixir-format
 msgid "Owner Address"
@@ -1737,6 +1816,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_custom_view_df_title.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "Play"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:68
+#, elixir-autogen, elixir-format
+msgid "Please select notification methods:"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/overview.html.eex:446
@@ -1934,6 +2018,9 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:26
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:31
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:25
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:25
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:83
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -2518,6 +2605,7 @@ msgstr ""
 msgid "Total transactions"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:11
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:19
 #: lib/block_scout_web/views/transaction_view.ex:461
 #, elixir-autogen, elixir-format

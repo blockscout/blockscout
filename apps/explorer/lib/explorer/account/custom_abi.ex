@@ -6,7 +6,7 @@ defmodule Explorer.Account.CustomABI do
 
   alias ABI.FunctionSelector
   alias Ecto.Changeset
-  alias Explorer.Accounts.Identity
+  alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
 
@@ -33,8 +33,8 @@ defmodule Explorer.Account.CustomABI do
     |> validate_required(@attrs, message: "Required")
     |> validate_custom_abi()
     |> check_smart_contract_address()
-    |> foreign_key_constraint(:identity_id)
-    |> foreign_key_constraint(:address_hash)
+    |> foreign_key_constraint(:identity_id, message: "User not found")
+    |> foreign_key_constraint(:address_hash, message: "Address not found")
     |> unique_constraint([:identity_id, :address_hash],
       message: "Custom ABI for this address has already been added before"
     )
@@ -76,7 +76,9 @@ defmodule Explorer.Account.CustomABI do
   defp check_is_abi_valid?(%{abi: abi} = custom_abi) when is_binary(abi) do
     with {:ok, decoded} <- Jason.decode(abi),
          true <- is_list(decoded) do
-      custom_abi |> Map.put(:abi, decoded) |> check_is_abi_valid?(abi)
+      custom_abi
+      |> Map.put(:abi, decoded)
+      |> check_is_abi_valid?(abi)
     else
       _ ->
         custom_abi
@@ -134,8 +136,8 @@ defmodule Explorer.Account.CustomABI do
 
   def custom_abi_count_constraint(%Changeset{} = custom_abi), do: custom_abi
 
-  def create_new_custom_abi(custom_abi, attrs) do
-    custom_abi
+  def create(attrs) do
+    %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
   end
@@ -155,7 +157,7 @@ defmodule Explorer.Account.CustomABI do
 
   def custom_abi_by_id_and_identity_id_query(_, _), do: nil
 
-  def custom_abi_by_identity_id_and_address_hash_query(identity_id, address_hash)
+  def custom_abi_by_identity_id_and_address_hash_query(address_hash, identity_id)
       when not is_nil(identity_id) and not is_nil(address_hash) do
     __MODULE__
     |> where([custom_abi], custom_abi.identity_id == ^identity_id and custom_abi.address_hash == ^address_hash)
@@ -163,10 +165,10 @@ defmodule Explorer.Account.CustomABI do
 
   def custom_abi_by_identity_id_and_address_hash_query(_, _), do: nil
 
-  def get_custom_abi_by_identity_id_and_address_hash(identity_id, address_hash)
+  def get_custom_abi_by_identity_id_and_address_hash(address_hash, identity_id)
       when not is_nil(identity_id) and not is_nil(address_hash) do
-    identity_id
-    |> custom_abi_by_identity_id_and_address_hash_query(address_hash)
+    address_hash
+    |> custom_abi_by_identity_id_and_address_hash_query(identity_id)
     |> Repo.one()
   end
 
@@ -188,18 +190,20 @@ defmodule Explorer.Account.CustomABI do
 
   def get_custom_abis_by_identity_id(_), do: nil
 
-  def delete_custom_abi(identity_id, id) when not is_nil(id) and not is_nil(identity_id) do
+  def delete(id, identity_id) when not is_nil(id) and not is_nil(identity_id) do
     id
     |> custom_abi_by_id_and_identity_id_query(identity_id)
     |> Repo.delete_all()
   end
 
-  def delete_custom_abi(_, _), do: nil
+  def delete(_, _), do: nil
 
-  def update_custom_abi(%{id: id, identity_id: identity_id} = attrs) do
+  def update(%{id: id, identity_id: identity_id} = attrs) do
     with custom_abi <- get_custom_abi_by_id_and_identity_id(id, identity_id),
          false <- is_nil(custom_abi) do
-      custom_abi |> changeset(attrs) |> Repo.update()
+      custom_abi
+      |> changeset(attrs)
+      |> Repo.update()
     else
       true ->
         {:error, %{reason: :item_not_found}}

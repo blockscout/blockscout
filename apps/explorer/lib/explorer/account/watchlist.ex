@@ -1,11 +1,13 @@
-defmodule Explorer.Accounts.Watchlist do
+defmodule Explorer.Account.Watchlist do
   @moduledoc """
     Watchlist is root entity for WatchlistAddresses
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
+
   import Ecto.Changeset
-  alias Explorer.Accounts.{Identity, WatchlistAddress}
+
+  alias Explorer.Account.{Identity, WatchlistAddress}
 
   @derive {Jason.Encoder, only: [:name, :watchlist_addresses]}
   schema "account_watchlists" do

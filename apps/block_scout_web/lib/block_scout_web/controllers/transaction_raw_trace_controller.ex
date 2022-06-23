@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import GetAddressTags, only: [get_address_tags: 2]
-  import GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
+  import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, TransactionController}
   alias EthereumJSONRPC

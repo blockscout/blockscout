@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.TransactionController do
       split_list_by_page: 1
     ]
 
-  import GetAddressTags, only: [get_address_tags: 2]
-  import GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
+  import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
 
   alias BlockScoutWeb.{
     AccessHelpers,

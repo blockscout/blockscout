@@ -1,9 +1,9 @@
-defmodule Explorer.Accounts.Notify do
+defmodule Explorer.Account.Notify do
   @moduledoc """
     Interface for notifier, for import and call from other modules
   """
 
-  alias Explorer.Accounts.Notifier.Notify
+  alias Explorer.Account.Notifier.Notify
 
   require Logger
 
@@ -34,8 +34,8 @@ defmodule Explorer.Accounts.Notify do
   end
 
   defp check_sendgrid do
-    (Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:sender] &&
-       Application.get_env(:explorer, Explorer.Accounts)[:sendgrid][:template]) ||
+    (Application.get_env(:explorer, Explorer.Account)[:sendgrid][:sender] &&
+       Application.get_env(:explorer, Explorer.Account)[:sendgrid][:template]) ||
       raise "SendGrid not configured"
   end
 end

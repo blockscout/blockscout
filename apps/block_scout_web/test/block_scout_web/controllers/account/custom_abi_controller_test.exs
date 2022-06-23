@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias BlockScoutWeb.Models.UserFromAuth
   alias Ueberauth.Strategy.Auth0
-  alias Explorer.Accounts
   alias Ueberauth.Auth.Info
   alias Ueberauth.Auth
 

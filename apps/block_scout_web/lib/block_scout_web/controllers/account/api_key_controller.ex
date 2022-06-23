@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Account.ApiKeyController do
   def create(conn, %{"key" => api_key}) do
     current_user = authenticate!(conn)
 
-    case ApiKey.create_api_key_changeset_and_insert(%ApiKey{}, %{name: api_key["name"], identity_id: current_user.id}) do
+    case ApiKey.create(%{name: api_key["name"], identity_id: current_user.id}) do
       {:ok, _} ->
         redirect(conn, to: api_key_path(conn, :index))
 
@@ -36,12 +36,9 @@ defmodule BlockScoutWeb.Account.ApiKeyController do
   def edit(conn, %{"id" => api_key}) do
     current_user = authenticate!(conn)
 
-    case ApiKey.api_key_by_value_and_identity_id(api_key, current_user.id) do
+    case ApiKey.get_api_key_by_value_and_identity_id(api_key, current_user.id) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> put_view(BlockScoutWeb.PageNotFoundView)
-        |> render("index.html", token: nil)
+        not_found(conn)
 
       %ApiKey{} = api_key ->
         render(conn, "form.html", method: :update, api_key: ApiKey.changeset(api_key))
@@ -51,7 +48,7 @@ defmodule BlockScoutWeb.Account.ApiKeyController do
   def update(conn, %{"id" => api_key, "key" => %{"value" => api_key, "name" => name}}) do
     current_user = authenticate!(conn)
 
-    ApiKey.update_api_key(%{value: api_key, identity_id: current_user.id, name: name})
+    ApiKey.update(%{value: api_key, identity_id: current_user.id, name: name})
 
     redirect(conn, to: api_key_path(conn, :index))
   end
@@ -59,7 +56,7 @@ defmodule BlockScoutWeb.Account.ApiKeyController do
   def delete(conn, %{"id" => api_key}) do
     current_user = authenticate!(conn)
 
-    ApiKey.delete_api_key(current_user.id, api_key)
+    ApiKey.delete(api_key, current_user.id)
 
     redirect(conn, to: api_key_path(conn, :index))
   end
