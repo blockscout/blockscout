@@ -1,0 +1,92 @@
+version: '2'
+config:
+  slack_notify: true
+  slack_channel: astra_ci
+environment:
+  BUILD_IMAGE: 'maven:3.6-jdk-11'
+jobs:
+  build:
+    steps:
+      - restore_cache:
+          key: blockscout
+      - run:
+          name: 'Run command'
+          command: 'cd docker && sh init.sh'
+      - save_cache:
+          key: blockscout
+          paths:
+            - .cache
+  build_docker:
+    steps:
+      - build_image:
+          dockerfile: docker/Dockerfile
+      - build_image:
+          dockerfile: docker/Dockerfile
+  publish_docker:
+    steps:
+      - push_image
+  deploy_dev:
+    steps:
+      - deploy_dev:
+          cluster: dev
+          namespace: astra
+          workload: blockscout
+          argocd_pipeline: generic-v2
+          deployment_config: dev
+  deploy_prod:
+    steps:
+      - deploy_production:
+          workload: blockscout
+          argocd_pipeline: generic-v2
+          deployment_config: prod
+workflows:
+  jenkins_pipeline:
+    jobs:
+      - build
+      - build_docker:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - astra
+                - master
+      - publish_docker:
+          requires:
+            - build_docker
+          filters:
+            branches:
+              only:
+                - astra
+                - master
+      - deploy_dev:
+          requires:
+            - publish_docker
+          filters:
+            branches:
+              only:
+                - astra
+      - deploy_prod:
+          requires:
+            - publish_docker
+          filters:
+            branches:
+              only:
+                - master
+deployment_config:
+  dev:
+    ingress:
+      hosts:
+        - host: blockscout.dev.tiki.services
+          paths:
+            - path: /
+              port: '80'
+    replicaCount: 1
+  prod:
+    ingress:
+      hosts:
+        - host: blockscout.tiki.services
+          paths:
+            - path: /
+              port: '80'
+    replicaCount: 1
