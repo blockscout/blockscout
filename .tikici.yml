@@ -5,23 +5,23 @@ config:
 environment:
   BUILD_IMAGE: 'maven:3.6-jdk-11'
 jobs:
-  build:
-    steps:
-      - restore_cache:
-          key: blockscout
-      - run:
-          name: 'Run command'
-          command: 'cd docker && sh init.sh'
-      - save_cache:
-          key: blockscout
-          paths:
-            - .cache
+  # build:
+  #   steps:
+  #     - restore_cache:
+  #         key: blockscout
+  #     - run:
+  #         name: 'Run command'
+  #         command: 'cd docker && sh init.sh'
+  #     - save_cache:
+  #         key: blockscout
+  #         paths:
+  #           - .cache
   build_docker:
     steps:
       - build_image:
-          dockerfile: docker/Dockerfile
+          dockerfile: docker
       - build_image:
-          dockerfile: docker/Dockerfile
+          dockerfile: docker
   publish_docker:
     steps:
       - push_image
