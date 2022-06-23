@@ -1,4 +1,4 @@
-defmodule Explorer.Accounts.Notifier.ForbiddenAddress do
+defmodule Explorer.Account.Notifier.ForbiddenAddress do
   @moduledoc """
     Check if address is forbidden to notify
   """
@@ -27,10 +27,10 @@ defmodule Explorer.Accounts.Notifier.ForbiddenAddress do
   def check(%Explorer.Chain.Hash{} = address_hash) do
     cond do
       address_hash in blacklist() ->
-        {:error, "This address is blacklisted."}
+        {:error, "This address is blacklisted"}
 
       is_contract(address_hash) ->
-        {:error, "This address isn't personal."}
+        {:error, "This address isn't personal"}
 
       address_hash ->
         {:ok, address_hash}
@@ -54,7 +54,7 @@ defmodule Explorer.Accounts.Notifier.ForbiddenAddress do
         address_hash
 
       :error ->
-        {:error, "Address "}
+        {:error, "Address is invalid"}
     end
   end
 

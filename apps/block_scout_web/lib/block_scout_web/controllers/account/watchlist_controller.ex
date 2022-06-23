@@ -1,34 +1,24 @@
 defmodule BlockScoutWeb.Account.WatchlistController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
 
-  alias Explorer.Accounts.Watchlist
+  alias Explorer.Account.Watchlist
   alias Explorer.Repo
 
   def show(conn, _params) do
-    case current_user(conn) do
-      nil ->
-        conn
-        |> put_flash(:info, "Sign in to see watchlist!")
-        |> redirect(to: root())
+    current_user = authenticate!(conn)
 
-      %{} = user ->
-        render(
-          conn,
-          "show.html",
-          watchlist: watchlist_with_addresses(user)
-        )
-    end
+    render(
+      conn,
+      "show.html",
+      watchlist: watchlist_with_addresses(current_user)
+    )
   end
 
   defp watchlist_with_addresses(user) do
     Watchlist
     |> Repo.get(user.watchlist_id)
     |> Repo.preload(watchlist_addresses: :address)
-  end
-
-  defp root do
-    System.get_env("NETWORK_PATH") || "/"
   end
 end

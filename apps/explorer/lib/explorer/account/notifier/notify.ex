@@ -1,10 +1,10 @@
-defmodule Explorer.Accounts.Notifier.Notify do
+defmodule Explorer.Account.Notifier.Notify do
   @moduledoc """
     Composing notification, store and send it to email
   """
 
-  alias Explorer.Accounts.Notifier.{Email, ForbiddenAddress, Summary}
-  alias Explorer.Accounts.{WatchlistAddress, WatchlistNotification}
+  alias Explorer.Account.Notifier.{Email, ForbiddenAddress, Summary}
+  alias Explorer.Account.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Chain.{TokenTransfer, Transaction}
   alias Explorer.{Mailer, Repo}
 
@@ -109,7 +109,7 @@ defmodule Explorer.Accounts.Notifier.Notify do
   @doc """
   direction  = :incoming || :outgoing
   """
-  def build_watchlist_notification(%Explorer.Accounts.WatchlistAddress{} = address, summary, direction) do
+  def build_watchlist_notification(%Explorer.Account.WatchlistAddress{} = address, summary, direction) do
     if is_watched(address, summary, direction) do
       %WatchlistNotification{
         watchlist_address_id: address.id,

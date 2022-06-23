@@ -1,80 +1,49 @@
 defmodule BlockScoutWeb.Account.TagTransactionController do
   use BlockScoutWeb, :controller
 
-  alias Ecto.Changeset
-  alias Explorer.Accounts.TagTransaction
-  alias Explorer.Repo
+  alias Explorer.Account.TagTransaction
 
-  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1, current_user: 1]
-  import Ecto.Query, only: [from: 2]
+  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
 
   def index(conn, _params) do
-    case current_user(conn) do
-      nil ->
-        conn
-        |> redirect(to: root())
+    current_user = authenticate!(conn)
 
-      %{} = user ->
-        render(
-          conn,
-          "index.html",
-          tx_tags: tx_tags(user)
-        )
-    end
+    render(conn, "index.html", tx_tags: TagTransaction.get_tags_transaction_by_identity_id(current_user.id))
   end
 
   def new(conn, _params) do
     authenticate!(conn)
 
-    render(conn, "new.html", new_tag: new_tag())
+    render(conn, "form.html", tag_transaction: new_tag())
   end
 
-  def create(conn, %{"tag_transaction" => params}) do
+  def create(conn, %{"tag_transaction" => tag_address}) do
     current_user = authenticate!(conn)
 
-    case AddTagTransaction.call(current_user.id, params) do
-      {:ok, _tag_tx} ->
-        conn
-        |> redirect(to: tag_transaction_path(conn, :index))
+    case TagTransaction.create(%{
+           name: tag_address["name"],
+           tx_hash: tag_address["tx_hash"],
+           identity_id: current_user.id
+         }) do
+      {:ok, _} ->
+        redirect(conn, to: tag_transaction_path(conn, :index))
 
-      {:error, message = message} ->
-        conn
-        |> render("new.html", new_tag: changeset_with_error(params, message))
+      {:error, invalid_tag_transaction} ->
+        render(conn, "form.html", tag_transaction: invalid_tag_transaction)
     end
+  end
+
+  def create(conn, _) do
+    redirect(conn, to: tag_transaction_path(conn, :index))
   end
 
   def delete(conn, %{"id" => id}) do
     current_user = authenticate!(conn)
 
-    TagTransaction
-    |> Repo.get_by(id: id, identity_id: current_user.id)
-    |> Repo.delete()
+    TagTransaction.delete(id, current_user.id)
 
-    conn
-    |> redirect(to: tag_transaction_path(conn, :index))
-  end
-
-  def tx_tags(user) do
-    query =
-      from(tt in TagTransaction,
-        where: tt.identity_id == ^user.id
-      )
-
-    Repo.all(query)
+    redirect(conn, to: tag_transaction_path(conn, :index))
   end
 
   defp new_tag, do: TagTransaction.changeset(%TagTransaction{}, %{})
-
-  defp changeset_with_error(params, message) do
-    %{changeset(params) | action: :insert}
-    |> Changeset.add_error(:tx_hash, message)
-  end
-
-  defp changeset(params) do
-    TagTransaction.changeset(%TagTransaction{}, params)
-  end
-
-  defp root do
-    System.get_env("NETWORK_PATH") || "/"
-  end
 end

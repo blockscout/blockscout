@@ -1,13 +1,11 @@
-defmodule GetTransactionTags do
+defmodule BlockScoutWeb.Models.GetTransactionTags do
   @moduledoc """
   Get various types of tags associated with the transaction
   """
 
-  # import Ecto.Query, only: [from: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
-  import GetAddressTags, only: [get_address_tags: 2]
-
-  alias Explorer.Accounts.TagTransaction
+  alias Explorer.Account.TagTransaction
   alias Explorer.Chain.Transaction
   alias Explorer.Repo
 

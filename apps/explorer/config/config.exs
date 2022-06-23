@@ -120,7 +120,7 @@ config :explorer, Explorer.Mailer,
   adapter: Bamboo.SendGridAdapter,
   api_key: System.get_env("SENDGRID_API_KEY")
 
-config :explorer, Explorer.Accounts,
+config :explorer, Explorer.Account,
   sendgrid: [
     sender: System.get_env("SENDGRID_SENDER"),
     template: System.get_env("SENDGRID_TEMPLATE")

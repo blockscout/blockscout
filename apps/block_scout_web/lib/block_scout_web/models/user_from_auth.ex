@@ -1,11 +1,11 @@
-defmodule UserFromAuth do
+defmodule BlockScoutWeb.Models.UserFromAuth do
   @moduledoc """
   Retrieve the user information from an auth request
   """
   require Logger
   require Poison
 
-  alias Explorer.Accounts.Identity
+  alias Explorer.Account.Identity
   alias Explorer.Repo
   alias Ueberauth.Auth
 

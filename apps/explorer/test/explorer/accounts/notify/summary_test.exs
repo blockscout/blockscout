@@ -1,10 +1,9 @@
-defmodule Explorer.Accounts.Notify.SummaryTest do
-  # use ExUnit.Case
+defmodule Explorer.Account.Notify.SummaryTest do
   use Explorer.DataCase
 
   import Explorer.Factory
 
-  alias Explorer.Accounts.Notifier.Summary
+  alias Explorer.Account.Notifier.Summary
   alias Explorer.Chain
   alias Explorer.Chain.{TokenTransfer, Transaction, Wei}
   alias Explorer.Repo

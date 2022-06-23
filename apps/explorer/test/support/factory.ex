@@ -8,12 +8,15 @@ defmodule Explorer.Factory do
 
   alias Comeonin.Bcrypt
 
-  alias Explorer.Accounts.{
-    User,
-    UserContact,
+  alias Explorer.Account.{
     Identity,
     Watchlist,
     WatchlistAddress
+  }
+
+  alias Explorer.Accounts.{
+    User,
+    UserContact
   }
 
   alias Explorer.Admin.Administrator

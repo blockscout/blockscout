@@ -1,8 +1,9 @@
 defmodule UserFromAuthTest do
   use Explorer.DataCase
 
-  alias Explorer.Accounts.Identity
-  alias Explorer.Accounts.Watchlist
+  alias BlockScoutWeb.Models.UserFromAuth
+  alias Explorer.Account.Identity
+  alias Explorer.Account.Watchlist
   alias Explorer.Repo
   alias Ueberauth.Auth
   alias Ueberauth.Auth.Info

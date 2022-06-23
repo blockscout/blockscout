@@ -1,11 +1,11 @@
-defmodule GetAddressTags do
+defmodule BlockScoutWeb.Models.GetAddressTags do
   @moduledoc """
   Get various types of tags associated with the address
   """
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Accounts.{TagAddress, WatchlistAddress}
+  alias Explorer.Account.{TagAddress, WatchlistAddress}
   alias Explorer.Chain.Hash
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
