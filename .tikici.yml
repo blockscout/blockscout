@@ -42,7 +42,7 @@ jobs:
 workflows:
   jenkins_pipeline:
     jobs:
-      - build
+      # - build
       - build_docker:
           requires:
             - build
