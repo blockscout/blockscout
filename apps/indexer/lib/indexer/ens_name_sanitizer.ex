@@ -48,7 +48,7 @@ defmodule Indexer.ENSNameSanitizer do
 
   def handle_info(
         :sanitize_ens_names,
-        %{interval: interval, json_rpc_named_arguments: json_rpc_named_arguments} = state
+        %{interval: interval} = state
       ) do
     Logger.info("Start sanitizing of ens names",
       fetcher: :address_names
