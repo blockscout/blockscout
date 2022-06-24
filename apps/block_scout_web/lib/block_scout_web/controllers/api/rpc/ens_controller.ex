@@ -48,5 +48,4 @@ defmodule BlockScoutWeb.API.RPC.ENSController do
   defp to_address_hash(address_hash_string) do
     {:format, Chain.string_to_address_hash(address_hash_string)}
   end
-
 end

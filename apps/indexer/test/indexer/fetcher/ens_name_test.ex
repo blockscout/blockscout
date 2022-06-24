@@ -27,7 +27,12 @@ defmodule Indexer.Fetcher.TokenTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         configuration = Application.get_env(:explorer, Explorer.ENS.NameRetriever)
-        Application.put_env(:explorer, Explorer.ENS.NameRetriever, [enabled: true, registry_address: "0xcfb86556760d03942ebf1ba88a9870e67d77b627", resolver_address: "0x1ba19b976fefc1c9c684f2b821e494a380f45a0f"])
+
+        Application.put_env(:explorer, Explorer.ENS.NameRetriever,
+          enabled: true,
+          registry_address: "0xcfb86556760d03942ebf1ba88a9870e67d77b627",
+          resolver_address: "0x1ba19b976fefc1c9c684f2b821e494a380f45a0f"
+        )
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn [
@@ -47,15 +52,14 @@ defmodule Indexer.Fetcher.TokenTest do
                                 ],
                                 _options ->
           {:ok,
-            [
-              %{
-                id: 0,
-                jsonrpc: "2.0",
-                result:
-                  "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000076c6e732e62636800000000000000000000000000000000000000000000000000"
-              }
-            ]
-          }
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result:
+                 "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000076c6e732e62636800000000000000000000000000000000000000000000000000"
+             }
+           ]}
         end)
 
         assert ENSNameFetcher.run([hash], json_rpc_named_arguments) == :ok

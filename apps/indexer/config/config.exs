@@ -81,7 +81,9 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER", "false") == "true"
 
 config :indexer, Indexer.Fetcher.ENSName.Supervisor,
-  disabled?: !(System.get_env("ENABLE_ENS") == "true" && (System.get_env("ENS_REGISTRY_ADDRESS") != nil || System.get_env("ENS_RESOLVER_ADDRESS") != nil))
+  disabled?:
+    !(System.get_env("ENABLE_ENS") == "true" &&
+        (System.get_env("ENS_REGISTRY_ADDRESS") != nil || System.get_env("ENS_RESOLVER_ADDRESS") != nil))
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 

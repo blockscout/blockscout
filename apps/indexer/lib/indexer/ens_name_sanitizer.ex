@@ -64,32 +64,37 @@ defmodule Indexer.ENSNameSanitizer do
   defp sanitize_ens_names do
     name_list_from_db = Chain.ens_name_list()
 
-    deleted_counts = name_list_from_db
-    |> Enum.map(fn name ->
-      address_hash = case NameRetriever.fetch_address_of(name.name) do
-        {:ok, address} ->
-          {:ok, hash} = Chain.string_to_address_hash(address)
-          hash
-        {:error, _message} ->
-          {:ok, hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
-          hash
-      end
+    deleted_counts =
+      name_list_from_db
+      |> Enum.map(fn name ->
+        address_hash =
+          case NameRetriever.fetch_address_of(name.name) do
+            {:ok, address} ->
+              {:ok, hash} = Chain.string_to_address_hash(address)
+              hash
 
-      if address_hash != name.address_hash do
-        delete_query =
-        from(
-          address_name in Address.Name,
-          where: address_name.address_hash == ^name.address_hash,
-          where: address_name.name == ^name.name
-        )
-        {count, _deleted} = Repo.delete_all(delete_query, [])
-        count
-      else
-        0
-      end
-    end)
+            {:error, _message} ->
+              {:ok, hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+              hash
+          end
 
-    Logger.info("ENS names are sanitized. Total: #{Enum.count(name_list_from_db)}, dropped: #{Enum.sum(deleted_counts)}",
+        if address_hash != name.address_hash do
+          delete_query =
+            from(
+              address_name in Address.Name,
+              where: address_name.address_hash == ^name.address_hash,
+              where: address_name.name == ^name.name
+            )
+
+          {count, _deleted} = Repo.delete_all(delete_query, [])
+          count
+        else
+          0
+        end
+      end)
+
+    Logger.info(
+      "ENS names are sanitized. Total: #{Enum.count(name_list_from_db)}, dropped: #{Enum.sum(deleted_counts)}",
       fetcher: :address_names
     )
   end
