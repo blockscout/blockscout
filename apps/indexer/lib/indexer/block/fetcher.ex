@@ -21,13 +21,13 @@ defmodule Indexer.Block.Fetcher do
     BlockReward,
     CoinBalance,
     ContractCode,
+    ENSName,
     InternalTransaction,
     ReplacedTransaction,
     Token,
     TokenBalance,
     TokenInstance,
-    UncleBlock,
-    ENSName
+    UncleBlock
   }
 
   alias Indexer.{Prometheus, Tracer}

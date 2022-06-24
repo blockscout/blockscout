@@ -61,7 +61,7 @@ defmodule Indexer.ENSNameSanitizer do
     {:noreply, state}
   end
 
-  defp sanitize_ens_names() do
+  defp sanitize_ens_names do
     name_list_from_db = Chain.ens_name_list()
 
     deleted_counts = name_list_from_db

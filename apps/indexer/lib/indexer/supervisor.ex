@@ -7,9 +7,9 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.{
     Block,
+    ENSNameSanitizer,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer,
-    ENSNameSanitizer
+    PendingTransactionsSanitizer
   }
 
   alias Indexer.Block.{Catchup, Realtime}
@@ -19,6 +19,7 @@ defmodule Indexer.Supervisor do
     CoinBalance,
     ContractCode,
     EmptyBlocksSanitizer,
+    ENSName,
     InternalTransaction,
     PendingBlockOperationsSanitizer,
     PendingTransaction,
@@ -28,8 +29,7 @@ defmodule Indexer.Supervisor do
     TokenInstance,
     TokenUpdater,
     TransactionAction,
-    UncleBlock,
-    ENSName
+    UncleBlock
   }
 
   alias Indexer.Temporary.{
