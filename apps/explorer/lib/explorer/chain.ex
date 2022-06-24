@@ -59,6 +59,7 @@ defmodule Explorer.Chain do
     Transaction,
     Wei
   }
+  alias Explorer.ENS.NameRetriever
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
@@ -1451,7 +1452,7 @@ defmodule Explorer.Chain do
   end
 
   defp search_ens_name_query(string) do
-    case Explorer.ENS.NameRetriever.fetch_address_of(string) do
+    case NameRetriever.fetch_address_of(string) do
       {:ok, address} ->
         case Chain.string_to_address_hash(address) do
           {:ok, address_hash} ->
@@ -1558,8 +1559,9 @@ defmodule Explorer.Chain do
         basic_query =
           from(
             tokens in subquery(tokens_query),
-            union: ^contracts_query
-          ) |> union(^name_query)
+            union: ^contracts_query,
+            union: ^name_query
+          )
 
         query =
           cond do

@@ -5,11 +5,11 @@ defmodule BlockScoutWeb.API.RPC.ENSController do
 
   alias Explorer.Chain
 
-  alias Explorer.ENS
+  alias Explorer.ENS.NameRetriever
 
   def ensaddress(conn, params) do
     with {:name_param, {:ok, name_param}} <- fetch_name(params),
-         {:address, {:ok, address}} <- {:address, ENS.NameRetriever.fetch_address_of(name_param)} do
+         {:address, {:ok, address}} <- {:address, NameRetriever.fetch_address_of(name_param)} do
       render(conn, "ensaddress.json", %{address: address})
     else
       {:name_param, :error} ->
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.API.RPC.ENSController do
   def ensname(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_param),
-         {:name, {:ok, name}} <- {:name, ENS.NameRetriever.fetch_name_of(address_param)} do
+         {:name, {:ok, name}} <- {:name, NameRetriever.fetch_name_of(address_param)} do
       render(conn, "ensname.json", %{name: name})
     else
       {:address_param, :error} ->
