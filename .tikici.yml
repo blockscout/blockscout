@@ -44,8 +44,8 @@ workflows:
     jobs:
       # - build
       - build_docker:
-          requires:
-            - build
+          # requires:
+          #   - build
           filters:
             branches:
               only:
