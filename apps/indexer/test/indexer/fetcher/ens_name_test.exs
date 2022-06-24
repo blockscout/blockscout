@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.TokenTest do
+defmodule Indexer.Fetcher.ENSNameTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase
 
