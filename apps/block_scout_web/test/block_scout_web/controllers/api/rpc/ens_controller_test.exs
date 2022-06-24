@@ -44,8 +44,8 @@ defmodule BlockScoutWeb.API.RPC.ENSControllerTest do
 
     test "with an invalid address", %{conn: conn} do
       params = %{
-        "module" => "stats",
-        "action" => "tokensupply",
+        "module" => "ens",
+        "action" => "ensname",
         "address" => "badhash"
       }
 
