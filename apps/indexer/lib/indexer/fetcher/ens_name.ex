@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.ENSName do
     flush_interval: 300,
     max_batch_size: 1,
     max_concurrency: 100,
-    task_supervisor: Indexer.Fetcher.ENSName.TaskSupervisor,
+    task_supervisor: Indexer.Fetcher.ENSName.TaskSupervisor
   ]
 
   @doc false
@@ -42,6 +42,7 @@ defmodule Indexer.Fetcher.ENSName do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     Logger.info("Start refreshing ENS names for addresses in DB.")
+
     {:ok, acc} =
       Chain.stream_address_hashes(initial_acc, fn data, acc ->
         reducer.(data, acc)

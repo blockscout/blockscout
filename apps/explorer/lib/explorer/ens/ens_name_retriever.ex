@@ -9,18 +9,28 @@ defmodule Explorer.ENS.NameRetriever do
 
   @regex ~r/^((.*)\.)?([^.]+)$/
   def namehash(name) do
-    namehash(String.downcase(name), <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>)
+    namehash(
+      String.downcase(name),
+      <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+    )
   end
+
   defp namehash(name, hash) do
     case byte_size(name) do
-      0 -> hash
+      0 ->
+        hash
+
       _ ->
         partition = Regex.run(@regex, name)
+
         case partition do
-          nil -> {:error, "Invalid ENS name"}
+          nil ->
+            {:error, "Invalid ENS name"}
+
           matches ->
-            [rest, label] = [Enum.at(matches, 2), Enum.at(matches,3)]
+            [rest, label] = [Enum.at(matches, 2), Enum.at(matches, 3)]
             new_hash = ExKeccak.hash_256(hash <> ExKeccak.hash_256(label))
+
             case byte_size(rest) do
               0 -> new_hash
               _ -> namehash(rest, new_hash)
@@ -48,7 +58,7 @@ defmodule Explorer.ENS.NameRetriever do
       ],
       "stateMutability" => "view",
       "type" => "function"
-    },
+    }
   ]
   # 0178b8bf = keccak256(resolver(bytes32))
   @resolver_function "0178b8bf"
@@ -74,23 +84,23 @@ defmodule Explorer.ENS.NameRetriever do
       "type" => "function"
     },
     %{
-        "constant" => true,
-        "inputs" => [
-            %{
-                "name" => "node",
-                "type" => "bytes32"
-            }
-        ],
-        "name" => "addr",
-        "outputs" => [
-            %{
-                "name" => "ret",
-                "type" => "address"
-            }
-        ],
-        "payable" => false,
-        "type" => "function"
-    },
+      "constant" => true,
+      "inputs" => [
+        %{
+          "name" => "node",
+          "type" => "bytes32"
+        }
+      ],
+      "name" => "addr",
+      "outputs" => [
+        %{
+          "name" => "ret",
+          "type" => "address"
+        }
+      ],
+      "payable" => false,
+      "type" => "function"
+    }
   ]
   # 691f3431 = keccak256(name(bytes32))
   @name_function "691f3431"
@@ -99,21 +109,30 @@ defmodule Explorer.ENS.NameRetriever do
 
   def fetch_address_of(name) do
     case enabled?() do
-      false -> {:error, "ENS support was not enabled"}
+      false ->
+        {:error, "ENS support was not enabled"}
+
       true ->
         case namehash(name) do
-          {:error, message} -> {:error, message}
+          {:error, message} ->
+            {:error, message}
+
           namehash ->
-            resolver_result = case resolver_address() do
-              nil ->
-                registry_address()
-                |> query_contract(%{@resolver_function => [namehash]}, @registry_abi)
-                |> handle_resolver_result(name)
-              address -> {:ok, address}
-            end
+            resolver_result =
+              case resolver_address() do
+                nil ->
+                  registry_address()
+                  |> query_contract(%{@resolver_function => [namehash]}, @registry_abi)
+                  |> handle_resolver_result(name)
+
+                address ->
+                  {:ok, address}
+              end
 
             case resolver_result do
-              {:error, error} -> {:error, error}
+              {:error, error} ->
+                {:error, error}
+
               {:ok, resolver_address} ->
                 resolver_functions = %{@addr_function => [namehash]}
 
@@ -127,21 +146,28 @@ defmodule Explorer.ENS.NameRetriever do
 
   def fetch_name_of(address) do
     case enabled?() do
-      false -> {:error, "ENS support was not enabled"}
+      false ->
+        {:error, "ENS support was not enabled"}
+
       true ->
         reverse_address = String.downcase(String.slice(address, 2..-1)) <> ".addr.reverse"
         reverse_address_hash = namehash(reverse_address)
 
-        resolver_result = case resolver_address() do
-          nil ->
-            registry_address()
-            |> query_contract(%{@resolver_function => [reverse_address_hash]}, @registry_abi)
-            |> handle_resolver_result(reverse_address)
-          address -> {:ok, address}
-        end
+        resolver_result =
+          case resolver_address() do
+            nil ->
+              registry_address()
+              |> query_contract(%{@resolver_function => [reverse_address_hash]}, @registry_abi)
+              |> handle_resolver_result(reverse_address)
+
+            address ->
+              {:ok, address}
+          end
 
         case resolver_result do
-          {:error, error} -> {:error, error}
+          {:error, error} ->
+            {:error, error}
+
           {:ok, resolver_address} ->
             resolver_functions = %{@name_function => [reverse_address_hash]}
 
@@ -176,10 +202,14 @@ defmodule Explorer.ENS.NameRetriever do
 
   def handle_name_result(%{@name_function => {:ok, [name]}}) do
     case byte_size(name) do
-      0 -> {:error, "ENS name not found"}
+      0 ->
+        {:error, "ENS name not found"}
+
       _ ->
         case name do
-          "0x0000000000000000000000000000000000000000" -> {:error, "Primary ENS name was unset"}
+          "0x0000000000000000000000000000000000000000" ->
+            {:error, "Primary ENS name was unset"}
+
           _ ->
             {:ok, handle_large_string(name)}
         end
@@ -201,7 +231,7 @@ defmodule Explorer.ENS.NameRetriever do
 
   def shorten_to_valid_utf(string) do
     case String.valid?(string) do
-      true  -> string
+      true -> string
       false -> shorten_to_valid_utf(binary_part(string, 0, byte_size(string) - 1))
     end
   end

@@ -29,7 +29,12 @@ defmodule Indexer.ENSNameSanitizerTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         configuration = Application.get_env(:explorer, Explorer.ENS.NameRetriever)
-        Application.put_env(:explorer, Explorer.ENS.NameRetriever, [enabled: true, registry_address: "0xcfb86556760d03942ebf1ba88a9870e67d77b627", resolver_address: "0x1ba19b976fefc1c9c684f2b821e494a380f45a0f"])
+
+        Application.put_env(:explorer, Explorer.ENS.NameRetriever,
+          enabled: true,
+          registry_address: "0xcfb86556760d03942ebf1ba88a9870e67d77b627",
+          resolver_address: "0x1ba19b976fefc1c9c684f2b821e494a380f45a0f"
+        )
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn [
@@ -49,15 +54,13 @@ defmodule Indexer.ENSNameSanitizerTest do
                                 ],
                                 _options ->
           {:ok,
-            [
-              %{
-                id: 0,
-                jsonrpc: "2.0",
-                result:
-                  "0x0000000000000000000000000000000000000000000000000000000000000001"
-              }
-            ]
-          }
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: "0x0000000000000000000000000000000000000000000000000000000000000001"
+             }
+           ]}
         end)
         |> expect(:json_rpc, fn [
                                   %{
@@ -76,15 +79,13 @@ defmodule Indexer.ENSNameSanitizerTest do
                                 ],
                                 _options ->
           {:ok,
-            [
-              %{
-                id: 0,
-                jsonrpc: "2.0",
-                result:
-                  "0x000000000000000000000000b69d54a4e31f24afdd9eb1b53f8319ac83c646c9"
-              }
-            ]
-          }
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: "0x000000000000000000000000b69d54a4e31f24afdd9eb1b53f8319ac83c646c9"
+             }
+           ]}
         end)
         |> expect(:json_rpc, fn [
                                   %{
@@ -103,18 +104,22 @@ defmodule Indexer.ENSNameSanitizerTest do
                                 ],
                                 _options ->
           {:ok,
-            [
-              %{
-                id: 0,
-                jsonrpc: "2.0",
-                result:
-                  "0x0000000000000000000000000000000000000000000000000000000000000000"
-              }
-            ]
-          }
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+             }
+           ]}
         end)
 
-        start_supervised!({ENSNameSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments, interval: :timer.seconds(1)], [name: :ENSNameSanitizerTest]]})
+        start_supervised!(
+          {ENSNameSanitizer,
+           [
+             [json_rpc_named_arguments: json_rpc_named_arguments, interval: :timer.seconds(1)],
+             [name: :ENSNameSanitizerTest]
+           ]}
+        )
 
         Process.sleep(2_000)
 
@@ -125,7 +130,6 @@ defmodule Indexer.ENSNameSanitizerTest do
 
         Application.put_env(:explorer, Explorer.ENS.NameRetriever, configuration)
       end
-
     end
 
     # test "re-schedules deletion" do
