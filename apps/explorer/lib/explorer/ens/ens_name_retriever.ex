@@ -224,7 +224,6 @@ defmodule Explorer.ENS.NameRetriever do
     Reader.query_contract(contract_address, abi, contract_functions, true)
   end
 
-  defp handle_large_string(nil), do: nil
   defp handle_large_string(string), do: handle_large_string(string, byte_size(string))
   defp handle_large_string(string, size) when size > 255, do: shorten_to_valid_utf(binary_part(string, 0, 255))
   defp handle_large_string(string, _size), do: string
