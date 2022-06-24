@@ -19,9 +19,9 @@ jobs:
   build_docker:
     steps:
       - build_image:
-          dockerfile: docker
-      - build_image:
-          dockerfile: docker
+          dockerfile: docker/Dockerfile
+      # - build_image:
+      #     dockerfile: docker
   publish_docker:
     steps:
       - push_image
