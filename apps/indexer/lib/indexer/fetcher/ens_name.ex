@@ -83,14 +83,27 @@ defmodule Indexer.Fetcher.ENSName do
   Fetches ENS name data asynchronously.
   """
   def async_fetch(addresses) when is_list(addresses) do
-    data =
-      addresses
-      |> Enum.uniq()
+    if enabled() do
+      data =
+        addresses
+        |> Enum.uniq()
 
-    BufferedTask.buffer(__MODULE__, data)
+      BufferedTask.buffer(__MODULE__, data)
+    else
+      :ok
+    end
   end
 
   def async_fetch(data) do
-    BufferedTask.buffer(__MODULE__, data)
+    if enabled() do
+      BufferedTask.buffer(__MODULE__, data)
+    else
+      :ok
+    end
+  end
+
+  defp enabled do
+    Application.get_env(:indexer, Indexer.Fetcher.ENSName.Supervisor)
+    |> Keyword.get(:disabled?) == false
   end
 end

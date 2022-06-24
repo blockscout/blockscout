@@ -41,7 +41,9 @@ defmodule Indexer.ENSNameSanitizer do
       interval: opts[:interval] || @interval
     }
 
-    Process.send_after(self(), :sanitize_ens_names, state.interval)
+    if enabled() do
+      Process.send_after(self(), :sanitize_ens_names, state.interval)
+    end
 
     {:ok, state}
   end
@@ -97,5 +99,10 @@ defmodule Indexer.ENSNameSanitizer do
       "ENS names are sanitized. Total: #{Enum.count(name_list_from_db)}, dropped: #{Enum.sum(deleted_counts)}",
       fetcher: :address_names
     )
+  end
+
+  defp enabled do
+    Application.get_env(:indexer, Indexer.Fetcher.ENSName.Supervisor)
+    |> Keyword.get(:disabled?) == false
   end
 end
