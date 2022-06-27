@@ -5,9 +5,10 @@ from time import sleep
 
 from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
 from admin.containers import (get_free_port, get_db_port, restart_nginx,
-                              is_explorer_running, remove_explorer, check_db_exists)
+                              is_explorer_running, remove_explorer)
 from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json, is_dkg_passed
 from admin.logger import init_logger
+from admin.migrations.revert_reasons import upgrade
 from admin.nginx import regenerate_nginx_config
 from admin.predeployeds import generate_config
 
@@ -64,15 +65,10 @@ def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint, is_updat
 
 
 def is_schain_updated(schain_name):
-    if not check_db_exists(schain_name):
-        return True
-    if not os.path.isfile(EXPLORERS_META_DATA_PATH):
-        return True
     explorers = read_json(EXPLORERS_META_DATA_PATH)
     schain_meta = explorers.get(schain_name)
     if not schain_meta or schain_meta.get('updated'):
         return True
-    return False
 
 
 def run_iteration():
@@ -86,6 +82,8 @@ def run_iteration():
         if not is_explorer_running(schain_name):
             logger.warning(f'Blockscout is not working for {schain_name}. Recreating...')
             remove_explorer(schain_name)
+            if not is_schain_updated(schain_name):
+                upgrade(schain_name)
             run_explorer_for_schain(schain_name)
 
 
