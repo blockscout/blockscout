@@ -9,14 +9,15 @@ MAINNET_IMA_ABI_FILEPATH = os.path.join(SERVER_DATA_DIR, 'ima.json')
 EXPLORERS_META_DATA_PATH = os.path.join(SERVER_DATA_DIR, 'meta.json')
 SCHAIN_CONFIG_DIR_PATH = os.path.join(SERVER_DATA_DIR, 'configs')
 
-HOST_DIR_PATH = os.environ['HOST_DIR_PATH']
-HOST_SCHAIN_CONFIG_DIR_PATH = os.path.join(HOST_DIR_PATH, 'data', 'configs')
+HOST_DIR_PATH = os.environ.get('HOST_DIR_PATH')
+HOST_SCHAIN_CONFIG_DIR_PATH = os.path.join(HOST_DIR_PATH, 'data', 'configs') if HOST_DIR_PATH else None
 
 NGINX_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.conf')
 NGINX_TEMP_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.temp.conf')
 
-ENDPOINT = os.environ['ETH_ENDPOINT']
+ENDPOINT = os.environ.get('ETH_ENDPOINT')
 PROXY_DOMAIN_NAME = os.environ.get('PROXY_DOMAIN')
+EXPLORER_VERSION = os.environ.get('VERSION', 'latest')
 
 SSL_DIR_PATH = os.path.join(SERVER_DATA_DIR, 'certs')
 SSL_CRT_PATH = os.path.join(SSL_DIR_PATH, 'server.crt')

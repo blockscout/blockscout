@@ -75,3 +75,11 @@ def get_free_port():
         s.bind(('', 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+def check_db_exists(schain_name):
+    try:
+        dutils.containers.get(f'postgres_{schain_name}')
+        return True
+    except docker.errors.NotFound:
+        return False
