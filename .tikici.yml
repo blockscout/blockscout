@@ -64,7 +64,7 @@ deployment_config:
         - host: blockscout.dev.tiki.services
           paths:
             - path: /
-              port: '4000'
+              port: '80'
     replicaCount: 1
   prod:
     ingress:
@@ -72,5 +72,5 @@ deployment_config:
         - host: blockscout.tiki.services
           paths:
             - path: /
-              port: '4000'
+              port: '80'
     replicaCount: 1
