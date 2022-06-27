@@ -109,6 +109,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
     %{"id" => address_tag.id, "address_hash" => address_tag.address_hash, "tag_name" => address_tag.name}
   end
 
+  def prepare_transaction_tag(nil), do: nil
+
   def prepare_transaction_tag(transaction_tag) do
     %{"id" => transaction_tag.id, "transaction_hash" => transaction_tag.tx_hash, "tag_name" => transaction_tag.name}
   end

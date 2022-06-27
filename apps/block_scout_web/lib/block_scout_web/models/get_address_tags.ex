@@ -23,6 +23,12 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
 
   def get_address_tags(_, _), do: %{personal_tags: [], watchlist_names: []}
 
+  def get_public_tags(%Hash{} = address_hash) do
+    %{
+      common_tags: get_tags_on_address(address_hash)
+    }
+  end
+
   def get_tags_on_address(%Hash{} = address_hash) do
     query =
       from(
