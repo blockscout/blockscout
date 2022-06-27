@@ -5,7 +5,7 @@ from time import sleep
 
 from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
 from admin.containers import (get_free_port, get_db_port, restart_nginx,
-                              is_explorer_running, remove_explorer)
+                              is_explorer_running, remove_explorer, check_db_exists)
 from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json, is_dkg_passed
 from admin.logger import init_logger
 from admin.nginx import regenerate_nginx_config
@@ -19,6 +19,7 @@ def run_explorer(schain_name, endpoint, ws_endpoint):
     explorer_port = get_free_port()
     db_port = get_db_port(schain_name)
     config_host_path = generate_config(schain_name)
+    is_updated = is_schain_updated(schain_name)
     env = {
         'SCHAIN_NAME': schain_name,
         'PORT': str(explorer_port),
@@ -31,7 +32,7 @@ def run_explorer(schain_name, endpoint, ws_endpoint):
     logger.info('=' * 100)
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
     logger.info('=' * 100)
-    update_meta_data(schain_name, explorer_port, db_port, endpoint, ws_endpoint)
+    update_meta_data(schain_name, explorer_port, db_port, endpoint, ws_endpoint, is_updated)
     regenerate_nginx_config()
     restart_nginx()
     logger.info(f'sChain explorer is running on {schain_name}. subdomain')
@@ -43,7 +44,7 @@ def run_explorer_for_schain(schain_name):
     run_explorer(schain_name, endpoint, ws_endpoint)
 
 
-def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint):
+def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint, is_updated):
     logger.info(f'Updating meta data for {schain_name}')
     if not os.path.isfile(EXPLORERS_META_DATA_PATH):
         explorers = {}
@@ -54,11 +55,24 @@ def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint):
             'port': port,
             'db_port': db_port,
             'endpoint': endpoint,
-            'ws_endpoint': ws_endpoint
+            'ws_endpoint': ws_endpoint,
+            'updated': is_updated
         }
     }
     explorers.update(new_schain)
     write_json(EXPLORERS_META_DATA_PATH, explorers)
+
+
+def is_schain_updated(schain_name):
+    if not check_db_exists(schain_name):
+        return True
+    if not os.path.isfile(EXPLORERS_META_DATA_PATH):
+        return True
+    explorers = read_json(EXPLORERS_META_DATA_PATH)
+    schain_meta = explorers.get(schain_name)
+    if not schain_meta or schain_meta.get('updated'):
+        return True
+    return False
 
 
 def run_iteration():
