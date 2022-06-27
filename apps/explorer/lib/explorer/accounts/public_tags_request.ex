@@ -42,7 +42,11 @@ defmodule Explorer.Account.PublicTagsRequest do
     association_fields = request.__struct__.__schema__(:associations)
     waste_fields = association_fields ++ @local_fields
 
-    request |> Map.from_struct() |> Map.drop(waste_fields)
+    network =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] <>
+        Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
+
+    request |> Map.from_struct() |> Map.drop(waste_fields) |> Map.put(:network, network)
   end
 
   @attrs ~w(company website description remove_reason request_id addresses_array)a
@@ -88,9 +92,15 @@ defmodule Explorer.Account.PublicTagsRequest do
            {:filter_empty, Enum.filter(addresses, fn addr -> addr != "" end)},
          {:validate, false} <-
            {:validate, Enum.any?(addresses, fn addr -> !match?({:ok, _}, Hash.Address.cast(addr)) end)},
+         {:uniqueness, true} <-
+           {:uniqueness,
+            Enum.count(Enum.uniq(filtered_addresses, &String.downcase(&1))) == Enum.count(filtered_addresses)},
          trimmed_address_list <- Enum.take(filtered_addresses, @max_addresses_per_request) do
       put_change(changeset, :addresses, Enum.join(trimmed_address_list, ";"))
     else
+      {:uniqueness, false} ->
+        add_error(changeset, :addresses_array, "All addresses should be unique")
+
       {:filter_empty, _} ->
         add_error(changeset, :addresses_array, "All addresses are empty strings")
 
@@ -105,12 +115,18 @@ defmodule Explorer.Account.PublicTagsRequest do
   defp validate_tags(%Changeset{} = changeset) do
     with {:fetch, {_src, tags}} <- {:fetch, fetch_field(changeset, :tags)},
          false <- is_nil(tags),
-         tags_list <- String.split(tags, ";"),
+         trimmed_tags <- String.trim(tags),
+         tags_list <- String.split(trimmed_tags, ";"),
          {:filter_empty, [_ | _] = filtered_tags} <- {:filter_empty, Enum.filter(tags_list, fn tag -> tag != "" end)},
          {:validate, false} <- {:validate, Enum.any?(tags_list, fn tag -> String.length(tag) > @max_tag_length end)},
+         {:uniqueness, true} <-
+           {:uniqueness, Enum.count(Enum.uniq(filtered_tags, &String.downcase(&1))) == Enum.count(filtered_tags)},
          trimmed_tags_list <- Enum.take(filtered_tags, @max_tags_per_request) do
       force_change(changeset, :tags, Enum.join(trimmed_tags_list, ";"))
     else
+      {:uniqueness, false} ->
+        add_error(changeset, :tags, "All tags should be unique")
+
       {:filter_empty, _} ->
         add_error(changeset, :tags, "All tags are empty strings")
 

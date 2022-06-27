@@ -1,5 +1,13 @@
 import $ from 'jquery'
 
+let $removeButton = $('.remove-form-field')[0]
+const $container = $('#' + $removeButton.dataset.container)
+const index = parseInt($container[0].dataset.index)
+
+if (index <= 1) {
+  $('.remove-form-field').hide()
+}
+
 $('.add-form-field').on('click', (event) => {
   event.preventDefault()
   console.log(event)
