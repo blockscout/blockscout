@@ -53,7 +53,9 @@ def set_schain_upgraded(schain_name):
         meta = json.loads(f.read())
         schain_meta = meta[schain_name]
         schain_meta['updated'] = True
-        meta.update(schain_meta)
+        meta.update({
+            schain_name: schain_meta
+        })
         write_json(EXPLORERS_META_DATA_PATH, meta)
 
 
