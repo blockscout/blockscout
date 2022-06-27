@@ -17,6 +17,7 @@ NGINX_TEMP_CONFIG_PATH = os.path.join(SERVER_DATA_DIR, 'nginx.temp.conf')
 
 ENDPOINT = os.environ.get('ETH_ENDPOINT')
 PROXY_DOMAIN_NAME = os.environ.get('PROXY_DOMAIN')
+EXPLORER_VERSION = os.environ.get('VERSION', 'latest')
 
 SSL_DIR_PATH = os.path.join(SERVER_DATA_DIR, 'certs')
 SSL_CRT_PATH = os.path.join(SSL_DIR_PATH, 'server.crt')

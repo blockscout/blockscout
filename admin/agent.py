@@ -3,7 +3,7 @@ import os
 import subprocess
 from time import sleep
 
-from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH
+from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH, EXPLORER_VERSION
 from admin.containers import (get_free_port, get_db_port, restart_nginx,
                               is_explorer_running, remove_explorer)
 from admin.endpoints import read_json, get_all_names, get_schain_endpoint, write_json, is_dkg_passed
@@ -26,13 +26,14 @@ def run_explorer(schain_name, endpoint, ws_endpoint):
         'DB_PORT': str(db_port),
         'ENDPOINT': endpoint,
         'WS_ENDPOINT': ws_endpoint,
-        'CONFIG_PATH': config_host_path
+        'CONFIG_PATH': config_host_path,
+        'BLOCKSCOUT_VERSION': EXPLORER_VERSION
     }
     logger.info(f'Running explorer with {env}')
     logger.info('=' * 100)
     subprocess.run(['bash', EXPLORER_SCRIPT_PATH], env={**env, **os.environ})
     logger.info('=' * 100)
-    update_meta_data(schain_name, explorer_port, db_port, endpoint, ws_endpoint)
+    update_meta_data(schain_name, explorer_port, db_port, endpoint, ws_endpoint, EXPLORER_VERSION)
     regenerate_nginx_config()
     restart_nginx()
     logger.info(f'sChain explorer is running on {schain_name}. subdomain')
@@ -44,7 +45,7 @@ def run_explorer_for_schain(schain_name):
     run_explorer(schain_name, endpoint, ws_endpoint)
 
 
-def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint):
+def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint, version):
     logger.info(f'Updating meta data for {schain_name}')
     if not os.path.isfile(EXPLORERS_META_DATA_PATH):
         explorers = {}
@@ -55,11 +56,17 @@ def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint):
             'port': port,
             'db_port': db_port,
             'endpoint': endpoint,
-            'ws_endpoint': ws_endpoint
+            'ws_endpoint': ws_endpoint,
+            'version': version
         }
     }
     explorers.update(new_schain)
     write_json(EXPLORERS_META_DATA_PATH, explorers)
+
+
+def is_current_version(schain_name):
+    explorers = read_json(EXPLORERS_META_DATA_PATH)
+    return explorers[schain_name].get('version') == EXPLORER_VERSION
 
 
 def run_iteration():
@@ -71,8 +78,11 @@ def run_iteration():
         if schain_name not in explorers:
             run_explorer_for_schain(schain_name)
             set_schain_upgraded(schain_name)
-        if not is_explorer_running(schain_name):
-            logger.warning(f'Blockscout is not working for {schain_name}. Recreating...')
+        if not is_explorer_running(schain_name) or is_current_version(schain_name):
+            if not is_explorer_running(schain_name):
+                logger.warning(f'Blockscout is not working for {schain_name}. Recreating...')
+            else:
+                logger.warning(f'Blockscout version is outdated for {schain_name}. Recreating...')
             remove_explorer(schain_name)
             if not is_schain_upgraded(schain_name):
                 upgrade(schain_name)
