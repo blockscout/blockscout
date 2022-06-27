@@ -349,7 +349,7 @@ defmodule BlockScoutWeb.TransactionView do
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")
       {:error, :awaiting_internal_transactions} -> gettext("Error: (Awaiting internal transactions for reason)")
-      {:error, :unrecozgnized_error} -> gettext("Error")
+      {:error, :unrecognized_error} -> gettext("Error")
       # The pool of possible error reasons is unknown or even if it is enumerable, so we can't translate them
       {:error, reason} when is_binary(reason) -> gettext("Error: %{reason}", reason: reason)
     end
@@ -429,6 +429,7 @@ defmodule BlockScoutWeb.TransactionView do
       :awaiting_internal_transactions -> "tile-status--awaiting-internal-transactions"
       :success -> "tile-status--success"
       {:error, :awaiting_internal_transactions} -> "tile-status--error--awaiting-internal-transactions"
+      {:error, :unrecognized_error} -> "tile-status--error--reason"
       {:error, reason} when is_binary(reason) -> "tile-status--error--reason"
     end
   end
