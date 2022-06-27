@@ -78,7 +78,7 @@ def run_iteration():
         if schain_name not in explorers:
             run_explorer_for_schain(schain_name)
             set_schain_upgraded(schain_name)
-        if not is_explorer_running(schain_name) or is_current_version(schain_name):
+        if not is_explorer_running(schain_name) or not is_current_version(schain_name):
             if not is_explorer_running(schain_name):
                 logger.warning(f'Blockscout is not working for {schain_name}. Recreating...')
             else:
