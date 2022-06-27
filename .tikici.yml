@@ -5,23 +5,10 @@ config:
 environment:
   BUILD_IMAGE: 'maven:3.6-jdk-11'
 jobs:
-  # build:
-  #   steps:
-  #     - restore_cache:
-  #         key: blockscout
-  #     - run:
-  #         name: 'Run command'
-  #         command: 'cd docker && sh init.sh'
-  #     - save_cache:
-  #         key: blockscout
-  #         paths:
-  #           - .cache
   build_docker:
     steps:
       - build_image:
           dockerfile: docker/Dockerfile
-      # - build_image:
-      #     dockerfile: docker
   publish_docker:
     steps:
       - push_image
@@ -42,15 +29,12 @@ jobs:
 workflows:
   jenkins_pipeline:
     jobs:
-      # - build
       - build_docker:
-          # requires:
-          #   - build
           filters:
             branches:
               only:
-                - astra
-                - master
+                - astra 
+                - dev
       - publish_docker:
           requires:
             - build_docker
@@ -58,21 +42,21 @@ workflows:
             branches:
               only:
                 - astra
-                - master
+                - dev
       - deploy_dev:
           requires:
             - publish_docker
           filters:
             branches:
               only:
-                - astra
+                - dev
       - deploy_prod:
           requires:
             - publish_docker
           filters:
             branches:
               only:
-                - master
+                - astra
 deployment_config:
   dev:
     ingress:
