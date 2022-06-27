@@ -31,6 +31,7 @@ def upgrade_revert_reasons(schain_name):
     cursor.execute(select_query)
 
     data = cursor.fetchall()
+    logger.info(f'Found {len(data)} txs to be checked')
     data_to_update = []
     for i in data:
         hash = bytes(i[0]).hex()
