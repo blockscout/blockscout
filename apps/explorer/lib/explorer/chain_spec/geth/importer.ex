@@ -22,7 +22,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-      EthereumJSONRPC.fetch_blocks_by_range(1..1, json_rpc_named_arguments)
+      EthereumJSONRPC.fetch_blocks_by_range(0..0, json_rpc_named_arguments)
 
     day = DateTime.to_date(timestamp)
 
