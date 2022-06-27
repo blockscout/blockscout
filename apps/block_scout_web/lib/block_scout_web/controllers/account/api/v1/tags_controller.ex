@@ -1,34 +1,92 @@
 defmodule BlockScoutWeb.Account.Api.V1.TagsController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Models.UserFromAuth
+  alias BlockScoutWeb.Models.{UserFromAuth, GetAddressTags, GetTransactionTags}
   alias Explorer.Account.Identity
+  alias Explorer.Chain.Hash.{Address, Full}
+  alias Explorer.Chain
+  alias Explorer.Repo
   alias Guardian.Plug
 
-  def tags_address(conn, %{"address_hash" => _address_hash}) do
-    if is_nil(Plug.current_claims(conn)) do
-      uid = Plug.current_claims(conn)["sub"]
+  action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
 
-      with {:identity, [%Identity{} = _identity]} <- {:identity, UserFromAuth.find_identity(uid)} do
-      else
-        _ ->
-          %{}
-      end
-    else
-    end
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
   end
 
-  def tags_transaction(conn, %{"transaction_hash" => _transaction_hash}) do
-    _personal_tags =
-      if is_nil(Plug.current_claims(conn)) do
+  def tags_address(conn, %{"address_hash" => address_hash}) do
+    personal_tags =
+      if is_nil(Plug.current_claims(conn) |> debug("cur claims")) do
+        %{personal_tags: [], watchlist_names: []}
+      else
         uid = Plug.current_claims(conn)["sub"]
 
-        with {:identity, [%Identity{} = _identity]} <- {:identity, UserFromAuth.find_identity(uid)} do
+        with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+             {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
+             {:address_hash, {:ok, address_hash}} <- {:address_hash, Address.cast(address_hash)} do
+          GetAddressTags.get_address_tags(address_hash, %{id: identity.id, watchlist_id: watchlist.id})
         else
           _ ->
-            %{}
+            %{personal_tags: [], watchlist_names: []}
         end
-      else
       end
+
+    public_tags =
+      with {:address_hash, {:ok, address_hash}} <- {:address_hash, Address.cast(address_hash)} do
+        GetAddressTags.get_public_tags(address_hash)
+      else
+        _ ->
+          %{common_tags: []}
+      end
+
+    conn
+    |> put_status(200)
+    |> render(:address_tags, %{tags_map: Map.merge(personal_tags, public_tags)})
+  end
+
+  def tags_transaction(conn, %{"transaction_hash" => transaction_hash}) do
+    transaction =
+      with {:ok, transaction_hash} <- Full.cast(transaction_hash),
+           {:ok, transaction} <- Chain.hash_to_transaction(transaction_hash) do
+        transaction
+      else
+        _ ->
+          nil
+      end
+
+    personal_tags =
+      if is_nil(Plug.current_claims(conn)) do
+        %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+      else
+        uid = Plug.current_claims(conn)["sub"]
+
+        with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+             {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
+             false <- is_nil(transaction) do
+          GetTransactionTags.get_transaction_with_addresses_tags(transaction, %{
+            id: identity.id,
+            watchlist_id: watchlist.id
+          })
+        else
+          _ ->
+            %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+        end
+      end
+
+    public_tags_from =
+      if is_nil(transaction), do: [], else: GetAddressTags.get_public_tags(transaction.from_address_hash).common_tags
+
+    public_tags_to =
+      if is_nil(transaction), do: [], else: GetAddressTags.get_public_tags(transaction.to_address_hash).common_tags
+
+    public_tags = %{common_tags: public_tags_from ++ public_tags_to}
+
+    conn
+    |> put_status(200)
+    |> render(:transaction_tags, %{tags_map: Map.merge(personal_tags, public_tags)})
   end
 end

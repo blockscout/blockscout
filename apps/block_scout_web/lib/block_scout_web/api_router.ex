@@ -25,7 +25,12 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :tags_api do
-    plug(Guardian.Plug.VerifyHeader, module: BlockScoutWeb.Guardian, error_handler: BlockScoutWeb.GuardianErrorHandler)
+    plug(Guardian.Plug.VerifyHeader,
+      module: BlockScoutWeb.Guardian,
+      error_handler: BlockScoutWeb.GuardianErrorHandler,
+      tolerant?: true,
+      halt: false
+    )
   end
 
   scope "/account/v1" do
