@@ -341,7 +341,7 @@ else
 endif
 
 
-start: build postgres 
+start: build  
 	@echo "==> Starting blockscout"
 	@docker run -d --restart unless-stopped --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
@@ -350,6 +350,5 @@ start: build postgres
 
 run: start
 
-.PHONY: build \
-				start \
-				run
+.PHONY: start \
+		run

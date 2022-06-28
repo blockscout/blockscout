@@ -9,7 +9,7 @@ jobs:
   build_docker:
     steps:
       - build_image:
-          dockerfile: docker/Dockerfile
+          dockerfile: Dockerfile
   publish_docker:
     steps:
       - push_image
