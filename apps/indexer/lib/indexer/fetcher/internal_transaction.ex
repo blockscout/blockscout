@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
-  alias Explorer.Celo.Util
+  alias Explorer.Celo.{InternalTransactionCache, Util}
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
@@ -161,11 +161,17 @@ defmodule Indexer.Fetcher.InternalTransaction do
       block_number, {:ok, acc_list} ->
         {:ok, block} = Chain.number_to_any_block(block_number)
 
-        block_number
-        |> Chain.get_transactions_of_block_number()
-        |> extract_transaction_parameters()
-        |> perform_internal_transaction_fetch(block, json_rpc_named_arguments)
-        |> handle_transaction_fetch_results(block_number, acc_list)
+        cached = InternalTransactionCache.get(block_number)
+
+        if cached do
+          {:ok, cached}
+        else
+          block_number
+          |> Chain.get_transactions_of_block_number()
+          |> extract_transaction_parameters()
+          |> perform_internal_transaction_fetch(block, json_rpc_named_arguments)
+          |> handle_transaction_fetch_results(block_number, acc_list)
+        end
 
       _, error_or_ignore ->
         error_or_ignore
@@ -212,6 +218,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(
           "Block #{block_number} not indexed properly: tx_count=#{tx_count} used_gas=#{used_gas}, itx fetch will be retried"
         )
+
+        InternalTransactionCache.store(block_number, add_block_hash(block_hash, internal_transactions))
 
         {:ok, acc}
     end

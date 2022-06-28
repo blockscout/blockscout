@@ -5,6 +5,8 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
+  alias Explorer.Celo.InternalTransactionCache
+
   alias Explorer.Chain
 
   alias Indexer.{
@@ -164,7 +166,8 @@ defmodule Indexer.Supervisor do
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {CeloUnlocked.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {CeloVoters.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CeloMaterializedViewRefresh, [[], []]}
+      {CeloMaterializedViewRefresh, [[], []]},
+      {InternalTransactionCache, [[], []]}
     ]
 
     fetchers_with_bridged_tokens =
