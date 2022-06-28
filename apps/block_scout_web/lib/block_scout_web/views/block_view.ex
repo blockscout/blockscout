@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.BlockView do
     "#{average} #{unit_text}"
   end
 
-  def block_type(%Block{consensus: false, nephews: []}), do: "Reorg"
+  def block_type(%Block{consensus: false, nephews: []}), do: "Fetching"
   def block_type(%Block{consensus: false}), do: "Uncle"
   def block_type(_block), do: "Block"
 

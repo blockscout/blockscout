@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       session
       |> BlockPage.visit_page(reorg)
       |> assert_has(BlockPage.detail_number(reorg))
-      |> assert_has(BlockPage.page_type("Reorg Details"))
+      |> assert_has(BlockPage.page_type("Fetching Details"))
     end
 
     test "show uncle detail page", %{session: session} do
