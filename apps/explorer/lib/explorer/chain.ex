@@ -4146,6 +4146,7 @@ defmodule Explorer.Chain do
       new_contract
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
+      |> apply_smart_contract_contract_code_md5_changeset
 
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
@@ -4199,6 +4200,18 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp apply_smart_contract_contract_code_md5_changeset(changeset) do
+    address_hash = Changeset.get_field(changeset, :address_hash)
+
+    case Repo.get(Address, address_hash) do
+      %Address{} = address ->
+        Changeset.put_change(changeset, :contract_byte_code_md5, address |> Address.contract_code_md5())
+
+      _ ->
+        changeset
+    end
+  end
+
   @doc """
   Updates a `t:SmartContract.t/0`.
 
@@ -4230,6 +4243,7 @@ defmodule Explorer.Chain do
       smart_contract
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
+      |> apply_smart_contract_contract_code_md5_changeset
 
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
@@ -4411,19 +4425,13 @@ defmodule Explorer.Chain do
 
         case contract_code do
           %Data{bytes: contract_code_bytes} ->
-            contract_code_md5 =
-              Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
-                case: :lower
-              )
+            contract_code_md5 = Address.contract_code_md5(contract_code_bytes)
 
             verified_contract_twin_query =
               from(
-                address in Address,
-                inner_join: smart_contract in SmartContract,
-                on: address.hash == smart_contract.address_hash,
-                where: fragment("md5(contract_code::text)") == ^contract_code_md5,
-                where: address.hash != ^target_address_hash,
-                select: smart_contract,
+                sc in SmartContract,
+                where: sc.contract_byte_code_md5 == ^contract_code_md5,
+                where: sc.address_hash != ^target_address_hash,
                 limit: 1
               )
 
