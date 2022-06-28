@@ -2,6 +2,7 @@ version: '2'
 config:
   slack_notify: true
   slack_channel: astra_ci
+  slack_cc: '<@U03DZMYJSRH>'
 environment:
   BUILD_IMAGE: 'maven:3.6-jdk-11'
 jobs:
