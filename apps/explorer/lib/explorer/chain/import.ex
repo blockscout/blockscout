@@ -346,7 +346,20 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_batch_transaction(multis, options) do
-    Repo.logged_batch_transaction(multis, timeout: Map.get(options, :timeout, @transaction_timeout))
+    log_timing(
+      fn -> Repo.logged_batch_transaction(multis, timeout: Map.get(options, :timeout, @transaction_timeout)) end,
+      multis
+    )
+  end
+
+  defp log_timing(function, multis) do
+    {time, value} = :timer.tc(function)
+
+    multis_names = Enum.map(multis, fn %{names: names} -> names end)
+
+    Logger.info(fn -> "Stage time: #{time / 1_000_000}s., multis: #{inspect(List.flatten(multis_names))}" end)
+
+    value
   end
 
   @spec timestamps() :: timestamps
