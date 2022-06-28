@@ -27,15 +27,12 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 ADD . .
 
 ARG COIN
-# ARG GITHUB_TOKEN
 RUN if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
 # Run forderground build and phoenix digest
 RUN mix compile
 
 RUN npm install -g npm@latest
-# RUN npm config set "@astraprotocol:registry" "https://npm.pkg.github.com"
-# RUN npm config set "//npm.pkg.github.com/:_authToken" "${GITHUB_TOKEN}"
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
@@ -52,3 +49,5 @@ RUN mkdir -p apps/block_scout_web/priv/static && \
     mkdir -p apps/indexer/priv/static
 
 RUN mix phx.digest
+
+ENTRYPOINT ["/bin/sh", "-c", "init.sh"]

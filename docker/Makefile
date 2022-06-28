@@ -1,22 +1,15 @@
 HOST_SYSTEM ?= '$(shell uname -s)'
 HOST = host.docker.internal
-DB_USERNAME = postgres
-DB_PASSWORD = 
-DB_PORT = 5432
-DOCKER_IMAGE = blockscout_prod
 BS_CONTAINER_NAME = blockscout
-PG_CONTAINER_NAME = postgres
-PG_CONTAINER_IMAGE = postgres:12.5
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-GITHUB_TOKEN=
 
 ifeq ($(HOST_SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(HOST):$(DB_PORT)/explorer?ssl=false
+DB_URL = postgresql://$(DATABASE_URL)
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
-															 -e 'DATABASE_URL=$(DB_URL)'
+															 -e 'DATABASE_URL=$(DATABASE_URL)'
 ifeq ($(HOST_SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -344,43 +337,9 @@ ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
 else
 	@echo "==> No image found trying to build one..."
-	@docker build --build-arg COIN="$(COIN)" --build-arg GITHUB_TOKEN="$(GITHUB_TOKEN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+	@docker build --build-arg COIN="$(COIN)" --build-arg -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 endif
 
-migrate_only:
-	@echo "==> Running migrations"
-	@docker run --rm \
-					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
-
-migrate: build postgres
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-
-
-PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
-PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
-postgres:
-ifdef PG_EXIST
-	@echo "==> Checking PostrgeSQL container"
-ifdef PG_STARTED
-	@echo "==> PostgreSQL Already started"
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-else
-	@echo "==> Starting PostgreSQL container"
-	@docker start $(PG_CONTAINER_NAME)
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-endif
-else
-	@echo "==> Creating new PostgreSQL container"
-	@docker run -d --restart unless-stopped --name $(PG_CONTAINER_NAME) \
-					-e POSTGRES_PASSWORD="" \
-					-e POSTGRES_USER="postgres" \
-					-e POSTGRES_HOST_AUTH_METHOD="trust" \
-					-p 5432:5432 \
-					$(PG_CONTAINER_IMAGE)
-	@sleep 1
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-endif
 
 start: build postgres 
 	@echo "==> Starting blockscout"
@@ -392,7 +351,5 @@ start: build postgres
 run: start
 
 .PHONY: build \
-				migrate \
 				start \
-				postgres \
-				run 
+				run
