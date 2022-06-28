@@ -50,4 +50,4 @@ RUN mkdir -p apps/block_scout_web/priv/static && \
 
 RUN mix phx.digest
 
-ENTRYPOINT ["/bin/sh", "-c", "init.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "mix do ecto.create, ecto.migrate; mix phx.server"]
