@@ -36,6 +36,8 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 
+COPY . .
+
 ARG COIN
 RUN if [ "$COIN" != "" ]; then \
         sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
@@ -61,3 +63,6 @@ RUN cd apps/explorer/ && \
     apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
 RUN mix phx.digest
+
+RUN mix release blockscout \
+  && cp -R _build/${MIX_ENV}/rel/blockscout/* ./
