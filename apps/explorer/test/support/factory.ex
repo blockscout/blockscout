@@ -48,11 +48,60 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
+  alias Ueberauth.Strategy.Auth0
+  alias Ueberauth.Auth.Info
+  alias Ueberauth.Auth
+
   def account_identity_factory do
     %Identity{
       uid: sequence("github|"),
       email: sequence(:email, &"me-#{&1}@blockscout.com"),
       name: sequence("John")
+    }
+  end
+
+  def auth_factory do
+    %Auth{
+      info: %Info{
+        birthday: nil,
+        description: nil,
+        email: sequence(:email, &"test_user-#{&1}@blockscout.com"),
+        first_name: nil,
+        image: sequence("https://example.com/avatar/test_user"),
+        last_name: nil,
+        location: nil,
+        name: sequence("User Test"),
+        nickname: sequence("test_user"),
+        phone: nil,
+        urls: %{profile: nil, website: nil}
+      },
+      provider: :auth0,
+      strategy: Auth0,
+      uid: sequence("blockscout|000")
+    }
+  end
+
+  def watchlist_address_factory do
+    %{
+      "address_hash" => to_string(build(:address).hash),
+      "name" => sequence("test"),
+      "notification_settings" => %{
+        "native" => %{
+          "incoming" => Enum.random([true, false]),
+          "outcoming" => Enum.random([true, false])
+        },
+        "ERC-20" => %{
+          "incoming" => Enum.random([true, false]),
+          "outcoming" => Enum.random([true, false])
+        },
+        "ERC-721" => %{
+          "incoming" => Enum.random([true, false]),
+          "outcoming" => Enum.random([true, false])
+        }
+      },
+      "notification_methods" => %{
+        "email" => Enum.random([true, false])
+      }
     }
   end
 

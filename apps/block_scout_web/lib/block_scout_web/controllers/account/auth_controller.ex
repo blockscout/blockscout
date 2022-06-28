@@ -21,14 +21,6 @@ defmodule BlockScoutWeb.Account.AuthController do
   defp do_profile(%{} = user, conn),
     do: render(conn, :profile, user: user)
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Failed to authenticate.")
@@ -36,9 +28,6 @@ defmodule BlockScoutWeb.Account.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-    debug(conn, "conn")
-    debug(auth, "auth")
-
     case UserFromAuth.find_or_create(auth) do
       {:ok, user} ->
         conn
@@ -57,7 +46,7 @@ defmodule BlockScoutWeb.Account.AuthController do
   end
 
   def api_callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-    case UserFromAuth.find_or_create(auth, true) |> debug("find or create") do
+    case UserFromAuth.find_or_create(auth, true) do
       {:ok, user} ->
         {:ok, token, _} = Guardian.encode_and_sign(user)
 

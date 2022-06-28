@@ -10,17 +10,9 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   def tags_address(conn, %{"address_hash" => address_hash}) do
     personal_tags =
-      if is_nil(Plug.current_claims(conn) |> debug("cur claims")) do
+      if is_nil(Plug.current_claims(conn)) do
         %{personal_tags: [], watchlist_names: []}
       else
         uid = Plug.current_claims(conn)["sub"]

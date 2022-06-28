@@ -80,11 +80,12 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
         "ERC-721" => %{
           "incoming" => watchlist.watch_erc_721_input,
           "outcoming" => watchlist.watch_erc_721_output
-        },
-        "ERC-1155" => %{
-          "incoming" => watchlist.watch_erc_1155_input,
-          "outcoming" => watchlist.watch_erc_1155_output
         }
+        # ,
+        # "ERC-1155" => %{
+        #   "incoming" => watchlist.watch_erc_1155_input,
+        #   "outcoming" => watchlist.watch_erc_1155_output
+        # }
       },
       "notification_methods" => %{
         "email" => watchlist.notify_email
@@ -106,12 +107,12 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
   end
 
   def prepare_address_tag(address_tag) do
-    %{"id" => address_tag.id, "address_hash" => address_tag.address_hash, "tag_name" => address_tag.name}
+    %{"id" => address_tag.id, "address_hash" => address_tag.address_hash, "name" => address_tag.name}
   end
 
   def prepare_transaction_tag(nil), do: nil
 
   def prepare_transaction_tag(transaction_tag) do
-    %{"id" => transaction_tag.id, "transaction_hash" => transaction_tag.tx_hash, "tag_name" => transaction_tag.name}
+    %{"id" => transaction_tag.id, "transaction_hash" => transaction_tag.tx_hash, "name" => transaction_tag.name}
   end
 end

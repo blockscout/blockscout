@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.ConnCase do
       import Phoenix.ConnTest
       import BlockScoutWeb.Router.Helpers
       import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
+      import Bureaucrat.Helpers
 
       # The default endpoint for testing
       @endpoint BlockScoutWeb.Endpoint

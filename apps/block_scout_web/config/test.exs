@@ -38,3 +38,7 @@ config :ueberauth, Ueberauth,
   ],
   logout_url: "example.com/logout",
   logout_return_to_url: "example.com/return"
+
+config :block_scout_web, BlockScoutWeb.Guardian,
+  issuer: "block_scout_web",
+  secret_key: "secret_key"
