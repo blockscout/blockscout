@@ -410,6 +410,8 @@ defmodule Explorer.GraphQL do
       on: tt.from_address_hash == wf.wallet_address_hash,
       left_join: wt in CeloWalletAccounts,
       on: tt.to_address_hash == wt.wallet_address_hash,
+      left_join: token in Token,
+      on: tt.token_contract_address_hash == token.contract_address_hash,
       select: %{
         gas_used: tx.gas_used,
         gas_price: tx.gas_price,
@@ -426,7 +428,8 @@ defmodule Explorer.GraphQL do
         token: tkn.token_symbol,
         token_address: tt.token_contract_address_hash,
         nonce: tx.nonce,
-        block_number: tt.block_number
+        block_number: tt.block_number,
+        token_type: token.type
       },
       order_by: [desc: tt.block_number, desc: tt.amount, desc: tt.log_index]
     )
