@@ -9,7 +9,7 @@ jobs:
   build_docker:
     steps:
       - build_image:
-          dockerfile: Dockerfile
+          dockerfile: docker/Dockerfile
   publish_docker:
     steps:
       - push_image
@@ -65,7 +65,7 @@ deployment_config:
         - host: blockscout.dev.tiki.services
           paths:
             - path: /
-              port: '4000'
+              port: 4000
     replicaCount: 1
   prod:
     ingress:
@@ -73,5 +73,5 @@ deployment_config:
         - host: blockscout.tiki.services
           paths:
             - path: /
-              port: '4000'
+              port: 4000
     replicaCount: 1
