@@ -50,4 +50,4 @@ RUN mkdir -p apps/block_scout_web/priv/static && \
 
 RUN mix phx.digest
 
-ENTRYPOINT ["/bin/sh", "-c", "init.sh"]
+ENTRYPOINT ["/bin/sh", "-c", "docker/init.sh"]
