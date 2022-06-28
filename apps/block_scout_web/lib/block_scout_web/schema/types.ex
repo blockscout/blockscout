@@ -244,7 +244,7 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
-  Leaderboard entry 
+  Leaderboard entry
   """
   object :competitor do
     field(:address, :address_hash)
@@ -328,6 +328,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:value, :decimal)
     field(:token, :string)
     field(:token_address, :string)
+    field(:token_type, :string)
     field(:block_number, :integer)
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
