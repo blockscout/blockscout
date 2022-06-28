@@ -13,6 +13,8 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  require Logger
+
   alias EthereumJSONRPC.FetchedBalances
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address
@@ -128,6 +130,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
          query_balances_daily
        ) do
     if address.fetched_coin_balance_block_number < stale_balance_window do
+      Logger.info("Fetch and update")
       do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
       GenServer.cast(__MODULE__, {:fetch_and_update, latest_block_number, address})
 
@@ -135,6 +138,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     else
       case Repo.one(query_balances) do
         nil ->
+          Logger.info("Query balances nil")
           # There is no recent coin balance to fetch, so we check to see how old the
           # balance is on the address. If it is too old, we check again, just to be safe.
           do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
@@ -142,11 +146,13 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
           :current
 
         %CoinBalance{value_fetched_at: nil, block_number: block_number} ->
+          Logger.info("Fetch and import")
           GenServer.cast(__MODULE__, {:fetch_and_import, block_number, address})
 
           {:pending, block_number}
 
         %CoinBalance{} ->
+          Logger.info("Coin balance present")
           do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
 
           :current
