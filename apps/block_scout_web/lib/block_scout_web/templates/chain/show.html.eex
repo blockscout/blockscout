@@ -55,21 +55,6 @@
                   <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
                   <span style="display: contents;" class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= total_market_cap %>">
                   </span>
-                  <%= if token_bridge_supply?() do %>
-                    <% token_bridge_market_cap = total_market_cap_from_token_bridge(@exchange_rate) %>
-                    <% omni_bridge_market_cap = total_market_cap_from_omni_bridge() %>
-                    <% formatted_total_market_cap = if Decimal.compare(total_market_cap, 0) == :gt, do: format_currency_value(total_market_cap), else: "N/A" %>
-                    <% formatted_token_bridge_market_cap = if Decimal.compare(token_bridge_market_cap, 0) == :gt, do: format_currency_value(token_bridge_market_cap), else: "N/A" %>
-                    <% formatted_omni_bridge_market_cap = if Decimal.compare(omni_bridge_market_cap, 0) == :gt, do: format_currency_value(omni_bridge_market_cap), else: "N/A" %>
-                    <span
-                      data-toggle="tooltip"
-                      data-placement="top"
-                      data-html="true"
-                      data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                      title="<div class='custom-tooltip header'><b><%= formatted_total_market_cap %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip description left'><b><%= formatted_token_bridge_market_cap %></b> locked in Dai in TokenBridge <br/><b><%= formatted_omni_bridge_market_cap %></b> locked in different assets on xDai in OmniBridge</div>">
-                      <span style="display: inline-block; height: 20px; width: 12px;" class="fontawesome-icon info-circle ml-1" data-test="token-bridge-supply"></span>
-                    </span>
-                  <% end %>
                 </div>
             </div>
             <% end %>
