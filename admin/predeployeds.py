@@ -132,7 +132,7 @@ def generate_owner_accounts(schain_name):
     schain_info = get_schain_info(schain_name)
     accounts = {}
     if schain_info['generation'] == 0:
-        add_to_accounts(accounts, schain_info['owner'], SCHAIN_OWNER_ALLOC)
+        add_to_accounts(accounts, schain_info['mainnetOwner'], SCHAIN_OWNER_ALLOC)
     if schain_info['generation'] == 1:
         add_to_accounts(accounts, get_schain_originator(schain_info), SCHAIN_OWNER_ALLOC)
     for wallet in schain_info['nodes']:

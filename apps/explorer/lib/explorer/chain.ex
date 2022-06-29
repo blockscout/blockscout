@@ -100,6 +100,7 @@ defmodule Explorer.Chain do
   @revert_error_method_id "08c379a0"
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
+  @out_of_gas_msg "Out of gas"
 
   # seconds
   @check_bytecode_interval 86_400
@@ -3669,6 +3670,7 @@ defmodule Explorer.Chain do
     * `:success` - the transaction has been confirmed in a block
     * `{:error, :awaiting_internal_transactions}` - the transactions happened post-Byzantium, but the error message
        requires the internal transactions.
+    * `{:error, :unrecognized_error}` - the transaction failed without any information about reason.
     * `{:error, reason}` - the transaction failed due to `reason` in its first internal transaction.
 
   """
@@ -3677,14 +3679,22 @@ defmodule Explorer.Chain do
           | :awaiting_internal_transactions
           | :success
           | {:error, :awaiting_internal_transactions}
+          | {:error, :unrecognized_error}
           | {:error, reason :: String.t()}
   def transaction_to_status(%Transaction{error: "dropped/replaced"}), do: {:error, "dropped/replaced"}
   def transaction_to_status(%Transaction{block_hash: nil, status: nil}), do: :pending
   def transaction_to_status(%Transaction{status: nil}), do: :awaiting_internal_transactions
   def transaction_to_status(%Transaction{status: :ok}), do: :success
+  def transaction_to_status(%Transaction{status: :error, revert_reason: nil} = transaction) do
+    if transaction.gas == transaction.gas_used do
+      {:error, @out_of_gas_msg}
+    else
+      {:error, :unrecognized_error}
+    end
+  end
 
-  def transaction_to_status(%Transaction{status: :error, error: nil}),
-    do: {:error, :awaiting_internal_transactions}
+  def transaction_to_status(%Transaction{status: :error, revert_reason: revert_reason}),
+    do: {:error, revert_reason}
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
 
