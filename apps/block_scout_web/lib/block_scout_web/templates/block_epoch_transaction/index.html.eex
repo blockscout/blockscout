@@ -17,7 +17,7 @@
 
         <div data-empty-response-message style="display: none;">
           <div class="tile tile-muted text-center" data-selector="empty-transactions-list">
-            <%= gettext "There are no transactions for this block." %>
+            <%= gettext "There are no epoch transactions for this block." %>
           </div>
         </div>
 

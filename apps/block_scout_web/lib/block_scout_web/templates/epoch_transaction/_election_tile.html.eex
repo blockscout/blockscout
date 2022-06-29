@@ -1,0 +1,72 @@
+<div class="tile tile-type-epoch-transaction fade-in" data-test="epoch_transaction"
+     data-key="<%= @epoch_transaction.block_number %>_<%= if @epoch_transaction.reward_type == "group", do: @epoch_transaction.associated_account_name, else: @epoch_transaction.account_hash %>"
+     data-epoch-transaction-block-number="<%= @epoch_transaction.block_number %>"
+     data-epoch-transaction-group="<%= if @epoch_transaction.reward_type == "group", do: @epoch_transaction.account_hash, else: @epoch_transaction.associated_account_name %>">
+  <div class="row tile-body">
+    <!-- Color Block -->
+    <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
+      <span class="tile-label">
+        <%= case @epoch_transaction.reward_type do %>
+          <% "voter" -> %>
+            <%= gettext("Voting Rewards") %>
+          <% "validator" -> %>
+            <%= gettext("Validator Rewards") %>
+          <% "group" -> %>
+          <%= gettext("Validator Group Rewards") %>
+        <% end %>
+      </span>
+      <span class="tile-status-label ml-2 ml-md-0" data-epoch-transaction-type="Success">Success</span>
+    </div>
+    <!-- Content -->
+    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+      <%= if @epoch_transaction.reward_type == "voter" do%>
+      <span class="bs-label reward font-weight-bold">
+        <%= gettext "Rewards: " %> <%= wei_to_ether_rounded(@epoch_transaction.amount) %> <%= gettext "CELO" %>
+      </span>
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="tile-title--truncated">
+          <%= gettext "Validator Group:" %> <%= @epoch_transaction.associated_account_name %>
+        </span>
+      </span>
+      <% end %>
+      <%= if @epoch_transaction.reward_type == "validator" do%>
+      <span class="bs-label reward font-weight-bold">
+        <%= gettext "Rewards: " %> <%= wei_to_ether_rounded(@epoch_transaction.amount) %>
+        <%= get_reward_currency(@epoch_transaction.reward_type) %>
+      </span>
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="tile-title--truncated">
+          <%= gettext "Validator Group:" %> <%= @epoch_transaction.associated_account_name %>
+        </span>
+      </span>
+      <% end %>
+      <%= if @epoch_transaction.reward_type == "group" do%>
+      <span class="bs-label reward font-weight-bold">
+        <%= gettext "Rewards: " %> <%= wei_to_ether_rounded(@epoch_transaction.amount) %>
+        <%= get_reward_currency(@epoch_transaction.reward_type) %>
+      </span>
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="tile-title--truncated">
+          <%= gettext "Validator:" %> <%= @epoch_transaction.associated_account_name %>
+        </span>
+      </span>
+      <% end %>
+    </div>
+    <!-- Block info -->
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0">
+      <span class="mr-2 mr-md-0 order-1">
+        <%= gettext "Epoch #" %> <%= EpochUtil.epoch_by_block_number(@epoch_transaction.block_number) %>
+      </span>
+      <span class="mr-2 mr-md-0 order-1">
+        <%= link(
+          gettext("Block #%{number}", number: to_string(@epoch_transaction.block_number)),
+          to: block_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.block_number)
+        ) %>
+      </span>
+      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= @epoch_transaction.date %>"></span>
+      <span class="mr-2 mr-md-0 order-0 order-md-3">
+          <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
+      </span>
+    </div>
+  </div>
+</div>

@@ -8,6 +8,7 @@ $celo-dark: #2E3338;
 $celo-blue: #0c74d4;
 
 $purple: #BF97FF;
+$happy-purple: #C955FF;
 $orange: #FFB765;
 $cyan: #7ADEFF;
 $green: #35D07F;
@@ -52,7 +53,7 @@ $dashboard-stats-item-label-color: $dashboard-banner-chart-legend-label-color;
 $dashboard-banner-chart-legend-value-color: #fff; // chart labels
 $dashboard-stats-item-value-color: #fff; // stat values
 
-$dashboard-stats-item-border-color: $secondary; // stat border  
+$dashboard-stats-item-border-color: $secondary; // stat border
 
 $dashboard-banner-gradient-start: $primary; // gradient begin
 
@@ -83,7 +84,7 @@ $header-icon-color-hover: mix($white, $header-background-color, 75%);
 $header-links-color: $white;
 $header-links-color-active: rgba($white, 0.75);
 
-body:not(.dark-theme-applied) {   
+body:not(.dark-theme-applied) {
   .navbar.navbar-primary .form-control[placeholder] {
     color: #666 !important;
   }
@@ -159,7 +160,7 @@ form.network-selector-search-container {
 // Dark theme
 $dark-primary: #2b9f7a;
 $dark-secondary: #20745a;
-$dark-primary-alternate: #2b9f7a; 
+$dark-primary-alternate: #2b9f7a;
 
 .dark-theme-applied .dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(1)::before {
     background-color: white!important;

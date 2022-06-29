@@ -39,6 +39,11 @@
         background: $primary;
         color: #fff;
     }
+    &.reward {
+        background: $primary;
+        color: #fff;
+        width: fit-content;
+    }
     &.secondary {
         background: $secondary;
         color: #fff;

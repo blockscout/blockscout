@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.CeloEpochRewards do
 
   require Logger
 
-  alias Explorer.Celo.AccountReader
+  alias Explorer.Celo.{AccountReader, EpochUtil}
   alias Explorer.Chain
   alias Explorer.Chain.{Block, CeloEpochRewards, Hash}
 
@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.CeloEpochRewards do
   def async_fetch(blocks) when is_list(blocks) do
     filtered_blocks =
       blocks
-      |> Enum.filter(&(rem(&1.block_number, 17_280) == 0))
+      |> Enum.filter(fn block -> EpochUtil.is_epoch_block?(block.block_number) end)
 
     BufferedTask.buffer(__MODULE__, filtered_blocks)
   end

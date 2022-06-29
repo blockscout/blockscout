@@ -40,8 +40,6 @@ config :explorer, Explorer.Tracer, disabled?: false
 
 config :explorer, Explorer.Staking.ContractState, enabled: false
 
-config :explorer, :voter_rewards_for_group, Explorer.Fakes.VoterRewardsForGroup
-
 config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")

@@ -79,7 +79,7 @@
                     @address.hash),
                     "data-test":
                     "token_hash_link"
-                  ) 
+                  )
                   %>
                 </dd>
               </dl>
@@ -153,7 +153,7 @@
                   to: address_path(@conn, :show, implementation_address),
                   class: "contract-address mb-2",
                   style: "margin-top: 0.5rem;"
-                ) 
+                )
                 %>
               </dd>
             </dl>
@@ -176,13 +176,38 @@
                     data-placement="top"
                     data-toggle="tooltip"
                     data-html="true"
-                    title='<%= "@ " <> usd_value <> "/" <> gettext("Ether") %>'  
+                    title='<%= "@ " <> usd_value <> "/" <> gettext("Ether") %>'
                   >
                   </span>)
                 </span>
               <% end %>
             </dd>
           </dl>
+          <%= if assigns[:voting_sum] do %>
+          <!-- Rewards -->
+          <dl class="row">
+            <%= if @address.celo_account.account_type == "normal" do%>
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Voting rewards accumulated over time.") %>
+                <%= gettext("Lifetime Voting Rewards") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9">
+              <%= wei_to_ether_rounded(@voting_sum) %> <%= gettext "CELO" %>
+            </dd>
+            <% end %>
+            <%= if (@address.celo_account.account_type == "validator" or @address.celo_account.account_type == "group") and System.get_env("DISPLAY_REWARDS") === "true" do%>
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Validating and voting rewards accumulated over time.") %>
+              <%= gettext("Lifetime Validating | Voting Rewards") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9">
+              <%= wei_to_ether_rounded(@validator_or_group_sum) %> <%= gettext "cUSD" %> | <%= wei_to_ether_rounded(@voting_sum) %> <%= gettext "CELO" %>
+            </dd>
+            <% end %>
+          </dl>
+          <% end %>
           <!-- Tokens -->
           <dl class="row" data-test="outside_of_dropdown">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">

@@ -8,7 +8,7 @@ defmodule Explorer.Celo.AccountReader do
 
   use Bitwise
 
-  import Explorer.Celo.Util
+  import Explorer.Celo.{EpochUtil, Util}
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
@@ -52,6 +52,15 @@ defmodule Explorer.Celo.AccountReader do
     data = call_methods([{:validators, "getValidatorGroup", [address]}])
 
     case data["getValidatorGroup"] do
+      {:ok, [res | _]} -> {:ok, res}
+      _ -> :error
+    end
+  end
+
+  def get_carbon_offsetting_partner(bn) do
+    data = call_methods([{:epochrewards, "carbonOffsettingPartner", [], bn}])
+
+    case data["carbonOffsettingPartner"] do
       {:ok, [res | _]} -> {:ok, res}
       _ -> :error
     end

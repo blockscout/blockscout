@@ -9,6 +9,7 @@ $tile-type-token-transfer-color: $orange !default;
 $tile-type-unique-token-color: $orange !default;
 $tile-type-unique-token-image-color: $orange !default;
 $tile-type-internal-transaction-color: $teal !default;
+$tile-type-epoch-transaction-color: $happy-purple !default;
 $tile-type-api-documentation-color: $primary !default;
 $tile-type-progress-bar-color: $primary !default;
 $tile-status-error-reason: #ff7986 !default;
@@ -113,6 +114,27 @@ $tile-body-a-color: #5959d8 !default;
 .tile-bottom {
   @media (max-width: 767px) {
     justify-content: flex-start !important;
+  }
+}
+
+.tile-address-wrapper {
+  @media (min-width: 768px) {
+    margin-left: 48px;
+  }
+  @media (max-width: 767px) {
+    margin-top: 0 !important;
+  }
+}
+
+.tile-address-link-desktop {
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.tile-address-link-mobile {
+  @media (min-width: 768px) {
+    display: none;
   }
 }
 
@@ -247,6 +269,10 @@ $tile-body-a-color: #5959d8 !default;
     $tile-type-internal-transaction-color
   );
   @include generate-tile-block(
+    ".tile-type-epoch-transaction",
+    $tile-type-epoch-transaction-color
+  );
+  @include generate-tile-block(
     ".tile-type-api-documentation",
     $tile-type-api-documentation-color
   );
@@ -283,6 +309,13 @@ $tile-body-a-color: #5959d8 !default;
       margin-bottom: 12px;
       padding: 1rem 1rem 0 1rem;
     }
+  }
+
+  .tile-title--truncated {
+    width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &.tile-type-contract-creation {
@@ -344,8 +377,8 @@ $tile-body-a-color: #5959d8 !default;
         padding-right: 6px;
       }
     }
-    .tile-type-block {  
-      overflow: hidden; 
+    .tile-type-block {
+      overflow: hidden;
     }
     .row {
       @include media-breakpoint-down(lg) {

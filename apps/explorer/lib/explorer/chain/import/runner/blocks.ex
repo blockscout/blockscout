@@ -9,11 +9,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
+  alias Explorer.Celo.EpochUtil
   alias Explorer.Chain.{Block, CeloPendingEpochOperation, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
-  alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
-  alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Repo, as: ExplorerRepo
 
   @behaviour Runner
@@ -369,7 +368,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         |> Enum.map(& &1.number)
         |> MapSet.new()
         |> MapSet.to_list()
-        |> Enum.filter(&(rem(&1, 17_280) == 0))
+        |> Enum.filter(fn block_number -> EpochUtil.is_epoch_block?(block_number) end)
         |> Enum.map(&Enum.find(changes_list, fn block -> block.number == &1 end))
         |> Enum.map(&%{block_number: &1.number, fetch_epoch_rewards: true, election_rewards: true})
 

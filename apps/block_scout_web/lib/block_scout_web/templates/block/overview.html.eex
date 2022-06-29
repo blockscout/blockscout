@@ -42,7 +42,7 @@
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
               text: gettext("The block height of a particular block is defined as the number of blocks preceding it in the blockchain.") %>
-              <%= if block_type(@block) == "Block" do %>
+              <%= if block_type(@block) == "Block" or Explorer.Celo.EpochUtil.is_epoch_block?(@block.number) do %>
                 <%= gettext("Block Height") %>
               <% else %>
                 <%= gettext("%{block_type} Height", block_type: block_type(@block)) %>
@@ -82,6 +82,21 @@
               </a>
             </dd>
           </dl>
+          <!-- # of Epoch Transactions -->
+          <%= if Explorer.Celo.EpochUtil.is_epoch_block?(@block.number) and System.get_env("DISPLAY_REWARDS") === "true" do %>
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("The number of epoch transactions in the block.") %>
+              <%= gettext("Epoch Transactions") %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <a href="#a.card-tab" class="page-link bs-label large btn-no-border-link-to-tems">
+                <%= gettext "%{count} Epoch Transactions", count: @epoch_transaction_count %>
+              </a>
+            </dd>
+          </dl>
+          <% end %>
           <!-- Miner/Validator -->
           <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
             <dl class="row">

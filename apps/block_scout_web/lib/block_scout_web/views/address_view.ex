@@ -32,6 +32,7 @@ defmodule BlockScoutWeb.AddressView do
     "coin-balances",
     "contracts",
     "decompiled-contracts",
+    "epoch-transactions",
     "internal-transactions",
     "token-transfers",
     "read-contract",
@@ -415,6 +416,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
   defp tab_name(["celo"]), do: "Celo Info"
+  defp tab_name(["epoch-transactions"]), do: "Epoch Transactions"
   defp tab_name(["signed"]), do: "Downtime"
 
   def short_hash(%Address{hash: hash}) do
@@ -508,4 +510,6 @@ defmodule BlockScoutWeb.AddressView do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
     String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
   end
+
+  def wei_to_ether_rounded(amount), do: amount |> Wei.to(:ether) |> then(&Decimal.round(&1, 2))
 end

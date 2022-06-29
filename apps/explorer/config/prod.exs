@@ -15,8 +15,6 @@ config :explorer, Explorer.Repo,
 
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 
-config :explorer, :voter_rewards_for_group, Explorer.Celo.VoterRewardsForGroup
-
 config :logger, :explorer,
   level: :info,
   path: Path.absname("logs/prod/explorer.log"),

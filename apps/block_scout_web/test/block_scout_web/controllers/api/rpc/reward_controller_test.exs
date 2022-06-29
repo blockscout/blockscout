@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
 
   import Explorer.Factory
 
-  alias Explorer.Chain.{Address, Block}
+  alias Explorer.Chain.{Address, Block, CeloAccount}
 
   describe "getvoterrewardsforgroup" do
     test "with missing voter address", %{conn: conn} do
@@ -131,16 +131,16 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       expected_result = %{
         "rewards" => [
           %{
-            "amount" => "80",
-            "blockNumber" => "17280",
-            "date" => "2022-01-01T17:42:43.162804Z",
-            "epochNumber" => "1"
-          },
-          %{
             "amount" => "20",
             "blockNumber" => "34560",
             "date" => "2022-01-02T17:42:43.162804Z",
             "epochNumber" => "2"
+          },
+          %{
+            "amount" => "80",
+            "blockNumber" => "17280",
+            "date" => "2022-01-01T17:42:43.162804Z",
+            "epochNumber" => "1"
           }
         ],
         "total" => "100"
@@ -244,7 +244,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
     test "with valid voter hash", %{conn: conn} do
       %Address{hash: voter_hash} = insert(:address)
       %Address{hash: group_hash} = insert(:address)
-      insert(:celo_account, address: group_hash)
+      %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
 
       %Block{number: block_1_number, timestamp: block_1_timestamp} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
@@ -278,7 +278,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
             "date" => "2022-01-05T17:42:43.162804Z",
             "blockNumber" => "17280",
             "epochNumber" => "1",
-            "group" => to_string(group_hash)
+            "group" => group_name
           }
         ],
         "totalRewardCelo" => "80",
@@ -386,7 +386,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %Address{hash: validator_1_hash} = insert(:address)
       %Address{hash: validator_2_hash} = insert(:address)
       %Address{hash: group_hash} = insert(:address)
-      insert(:celo_account, address: group_hash)
+      %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
 
       %Block{number: block_number, timestamp: block_timestamp} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
@@ -419,7 +419,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
             "date" => "2022-01-05T17:42:43.162804Z",
             "blockNumber" => "17280",
             "epochNumber" => "1",
-            "group" => to_string(group_hash)
+            "group" => group_name
           }
         ],
         "totalRewardCelo" => "150000",
@@ -449,7 +449,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %Address{hash: validator_1_hash} = insert(:address)
       %Address{hash: validator_2_hash} = insert(:address)
       %Address{hash: group_hash} = insert(:address)
-      insert(:celo_account, address: group_hash)
+      %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
 
       %Block{number: block_number, timestamp: block_timestamp} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
@@ -482,7 +482,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
             "date" => "2022-01-05T17:42:43.162804Z",
             "blockNumber" => "17280",
             "epochNumber" => "1",
-            "group" => to_string(group_hash)
+            "group" => group_name
           },
           %{
             "account" => to_string(validator_2_hash),
@@ -490,7 +490,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
             "date" => "2022-01-05T17:42:43.162804Z",
             "blockNumber" => "17280",
             "epochNumber" => "1",
-            "group" => to_string(group_hash)
+            "group" => group_name
           }
         ],
         "totalRewardCelo" => "250000",
@@ -598,8 +598,8 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %Address{hash: validator_1_hash} = insert(:address)
       %Address{hash: validator_2_hash} = insert(:address)
       %Address{hash: group_hash} = insert(:address)
-      insert(:celo_account, address: validator_1_hash)
-      insert(:celo_account, address: validator_2_hash)
+      %CeloAccount{name: validator_1_name} = insert(:celo_account, address: validator_1_hash)
+      %CeloAccount{name: validator_2_name} = insert(:celo_account, address: validator_2_hash)
 
       %Block{number: block_number, timestamp: block_timestamp} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
@@ -632,7 +632,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
             "blockNumber" => "17280",
             "epochNumber" => "1",
             "group" => to_string(group_hash),
-            "validator" => to_string(validator_1_hash)
+            "validator" => validator_1_name
           },
           %{
             "amount" => "400000",
@@ -640,7 +640,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
             "blockNumber" => "17280",
             "epochNumber" => "1",
             "group" => to_string(group_hash),
-            "validator" => to_string(validator_2_hash)
+            "validator" => validator_2_name
           }
         ],
         "totalRewardCelo" => "700000",

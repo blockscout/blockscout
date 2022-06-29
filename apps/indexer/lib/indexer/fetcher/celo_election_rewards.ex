@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
 
   require Logger
 
-  alias Explorer.Celo.{AccountReader, VoterRewards}
+  alias Explorer.Celo.{AccountReader, EpochUtil, VoterRewards}
   alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
   alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent
   alias Explorer.Chain
@@ -23,7 +23,7 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
   def async_fetch(blocks) when is_list(blocks) do
     filtered_blocks =
       blocks
-      |> Enum.filter(&(rem(&1.block_number, 17_280) == 0))
+      |> Enum.filter(fn block -> EpochUtil.is_epoch_block?(block.block_number) end)
 
     BufferedTask.buffer(__MODULE__, filtered_blocks)
   end

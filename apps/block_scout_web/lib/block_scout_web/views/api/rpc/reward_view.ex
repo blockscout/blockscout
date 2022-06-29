@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
       blockNumber: to_string(reward.block_number),
       date: reward.date,
       epochNumber: to_string(reward.epoch_number),
-      group: to_string(reward.associated_account_hash)
+      group: to_string(reward.associated_account_name)
     }
   end
 
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.RPC.RewardView do
       date: reward.date,
       epochNumber: to_string(reward.epoch_number),
       group: to_string(reward.account_hash),
-      validator: to_string(reward.associated_account_hash)
+      validator: to_string(reward.associated_account_name)
     }
   end
 end

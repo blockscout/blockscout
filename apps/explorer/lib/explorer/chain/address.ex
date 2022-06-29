@@ -92,6 +92,7 @@ defmodule Explorer.Chain.Address do
              :celo_delegator,
              :celo_signers,
              :celo_members,
+             :celo_unlocked,
              :celo_voters,
              :celo_voted,
              :celo_claims,

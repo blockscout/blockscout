@@ -6,13 +6,13 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
   alias Explorer.Chain
   alias Explorer.Chain.Wei
 
-  alias Chain.{Address, Block, CeloElectionRewards}
+  alias Chain.{Address, Block, CeloAccount, CeloElectionRewards}
 
   describe "get_rewards/2" do
     test "returns rewards for an account that has both voter and validator rewards" do
       %Address{hash: account_hash} = insert(:address)
       %Address{hash: group_hash} = insert(:address)
-      insert(:celo_account, address: group_hash)
+      %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
       %Block{number: block_number, timestamp: block_timestamp} = insert(:block, number: 17_280)
 
       insert(
@@ -39,7 +39,7 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
         %{
           account_hash: account_hash,
           amount: one_wei,
-          associated_account_hash: group_hash,
+          associated_account_name: group_name,
           block_number: block_number,
           date: block_timestamp,
           epoch_number: 1,
@@ -48,7 +48,7 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
         %{
           account_hash: account_hash,
           amount: one_wei,
-          associated_account_hash: group_hash,
+          associated_account_name: group_name,
           block_number: block_number,
           date: block_timestamp,
           epoch_number: 1,
@@ -70,7 +70,7 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
     test "returns rewards for a voter for given time frame" do
       %Address{hash: account_hash} = insert(:address)
       %Address{hash: group_hash} = insert(:address)
-      insert(:celo_account, address: group_hash)
+      %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
 
       %Block{number: block_1_number, timestamp: block_1_timestamp} =
         insert(:block, number: 17_280, timestamp: ~U[2021-04-20 16:00:00.000000Z])
@@ -111,7 +111,7 @@ defmodule Explorer.Chain.CeloElectionRewardsTest do
         %{
           account_hash: account_hash,
           amount: one_wei,
-          associated_account_hash: group_hash,
+          associated_account_name: group_name,
           block_number: block_2_number,
           date: block_2_timestamp,
           epoch_number: 2,

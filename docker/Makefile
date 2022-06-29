@@ -330,12 +330,15 @@ endif
 ifdef DISPLAY_TOKEN_ICONS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISPLAY_TOKEN_ICONS=$(DISPLAY_TOKEN_ICONS)'
 endif
+ifdef DISPLAY_REWARDS
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISPLAY_REWARDS=$(DISPLAY_REWARDS)'
+endif
 
 BLOCKSCOUT_CONTAINNER_PARAMS += -e 'ECTO_USE_SSL=false'
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
 
-build: 
+build:
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
@@ -394,4 +397,4 @@ run: start
 		migrate \
 		start \
 		postgres \
-		run 
+		run

@@ -1,0 +1,25 @@
+<div class="card-tabs js-card-tabs">
+  <%=
+          link(
+            gettext("Transactions"),
+            class: "card-tab #{tab_status("transactions", @conn.request_path)}",
+            to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
+            )
+        %>
+  <%= if EpochUtil.is_epoch_block?(@conn.assigns.block.number) and System.get_env("DISPLAY_REWARDS") === "true" do %>
+  <%=
+          link(
+            gettext("Epoch Transactions"),
+            class: "card-tab #{tab_status("epoch-transactions", @conn.request_path)}",
+            to: block_epoch_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
+            )
+        %>
+  <% end %>
+  <%=
+          link(
+            gettext("Signers"),
+            class: "card-tab #{tab_status("signers", @conn.request_path)}",
+            to: block_signers_path(@conn, :index, @conn.params["block_hash_or_number"])
+            )
+        %>
+</div>
