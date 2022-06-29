@@ -111,15 +111,6 @@ if config_env() == :prod do
     static_api_key: System.get_env("API_RATE_LIMIT_STATIC_API_KEY", nil),
     whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS", nil)
 
-  # Runtime endpoint config
-  config :block_scout_web, BlockScoutWeb.Endpoint,
-    url: [
-      scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
-      host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
-      path: System.get_env("NETWORK_PATH") || "/",
-      api_path: System.get_env("API_PATH") || "/"
-    ]
-
   # Configures History
   price_chart_config =
     if System.get_env("SHOW_PRICE_CHART", "false") != "false" do
@@ -150,6 +141,7 @@ if config_env() == :prod do
   config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
   config :block_scout_web, BlockScoutWeb.Endpoint,
+    server: true,
     cache_static_manifest: "priv/static/cache_manifest.json",
     force_ssl: false,
     secret_key_base: System.get_env("SECRET_KEY_BASE"),
