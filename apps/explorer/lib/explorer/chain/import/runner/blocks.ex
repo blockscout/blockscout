@@ -6,13 +6,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   require Ecto.Query
   require Logger
 
-  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Address, Block, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
-  alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Repo, as: ExplorerRepo
 

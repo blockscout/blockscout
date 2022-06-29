@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
   `Explorer.Chain.Import.Stage.Addresses`.
   """
 
-  alias Explorer.Chain.Import.{Runner, Stage}
+  alias Explorer.Chain.Import.Stage
 
   @behaviour Stage
 
