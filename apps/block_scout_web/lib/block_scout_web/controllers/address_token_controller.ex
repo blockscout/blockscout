@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.AddressTokenController do
         address: address,
         current_path: Controller.current_full_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else

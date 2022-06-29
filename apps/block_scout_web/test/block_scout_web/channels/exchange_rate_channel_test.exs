@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       last_updated: DateTime.utc_now(),
       market_cap_usd: Decimal.new("1000000.0"),
       name: "test",
-      symbol: "cGLD",
+      symbol: "CELO",
       usd_value: Decimal.new("2.5"),
       volume_24h_usd: Decimal.new("1000.0")
     }

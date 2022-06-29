@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.AddressController do
           )
       end
 
-    exchange_rate = Market.get_exchange_rate("cGLD") || Token.null()
+    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
     total_supply = Chain.total_supply()
 
     items_count_str = Map.get(params, "items_count")
