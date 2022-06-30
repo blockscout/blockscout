@@ -44,6 +44,9 @@ ADD apps/explorer/package*.json ./apps/explorer/
 
 RUN npm install npm@latest
 
+RUN npm install npm@latest
+RUN npm install canvas
+
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
