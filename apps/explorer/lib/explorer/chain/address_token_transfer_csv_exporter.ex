@@ -4,7 +4,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, TokenTransfer}
+  alias Explorer.Chain.{Address, TokenTransfer, CurrencyHelpers}
   alias NimbleCSV.RFC4180
 
   @page_size 150
@@ -75,7 +75,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
           token_transfer.token_contract_address_hash |> to_string() |> String.downcase(),
           type(token_transfer, address.hash),
           token_transfer.token.symbol,
-          token_transfer.amount,
+          CurrencyHelpers.divide_decimals(token_transfer.amount, token_transfer.token.decimals),
           fee(token_transfer.transaction),
           token_transfer.transaction.status,
           token_transfer.transaction.error
@@ -95,8 +95,12 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
     transaction
     |> Chain.fee(:wei)
     |> case do
-      {:actual, value} -> value
-      {:maximum, value} -> "Max of #{value}"
+      {:actual, value} ->
+        CurrencyHelpers.divide_decimals(value, Decimal.new(18))
+
+      {:maximum, value} ->
+        token_fee = CurrencyHelpers.divide_decimals(value, Decimal.new(18))
+        "Max of #{token_fee}"
     end
   end
 end

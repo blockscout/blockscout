@@ -10,7 +10,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
 
   alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Explorer.Market.MarketHistory
-  alias Explorer.Chain.{Address, Transaction, Wei}
+  alias Explorer.Chain.{Address, Transaction, Wei, CurrencyHelpers}
   alias Explorer.ExchangeRates.Token
   alias NimbleCSV.RFC4180
 
@@ -100,7 +100,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
           to_string(transaction.to_address),
           to_string(transaction.created_contract_address),
           type(transaction, address.hash),
-          Wei.to(transaction.value, :wei),
+          Wei.to(transaction.value, :ether),
           fee(transaction),
           transaction.status,
           transaction.error,
@@ -123,8 +123,12 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     transaction
     |> Chain.fee(:wei)
     |> case do
-      {:actual, value} -> value
-      {:maximum, value} -> "Max of #{value}"
+      {:actual, value} ->
+        CurrencyHelpers.divide_decimals(value, Decimal.new(18))
+
+      {:maximum, value} ->
+        token_fee = CurrencyHelpers.divide_decimals(value, Decimal.new(18))
+        "Max of #{token_fee}"
     end
   end
 
