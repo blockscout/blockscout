@@ -1,4 +1,7 @@
 defmodule BlockScoutWeb.Guardian do
+  @moduledoc """
+    Module is responsible for selecting the info which will be included into jwt
+  """
   use Guardian, otp_app: :block_scout_web
 
   alias BlockScoutWeb.Models.UserFromAuth

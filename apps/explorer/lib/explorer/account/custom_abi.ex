@@ -88,7 +88,7 @@ defmodule Explorer.Account.CustomABI do
     end
   end
 
-  defp check_is_abi_valid?(custom_abi, given_abi \\ "")
+  defp check_is_abi_valid?(custom_abi, given_abi \\ nil)
 
   defp check_is_abi_valid?(%{abi: abi} = custom_abi, given_abi) when is_list(abi) do
     with true <- length(abi) > 0,
@@ -99,7 +99,10 @@ defmodule Explorer.Account.CustomABI do
       _ ->
         custom_abi
         |> Map.put(:abi, "")
-        |> Map.put(:given_abi, given_abi)
+        |> (&if(is_nil(given_abi),
+              do: Map.put(&1, :given_abi, Jason.encode!(abi)),
+              else: Map.put(&1, :given_abi, given_abi)
+            )).()
         |> Map.put(:abi_validating_error, "ABI must contain functions")
     end
   end

@@ -21,7 +21,7 @@
                 <%= error_tag f, :name, class: "text-danger form-error" %>
               </div>
               <br>
-              <p style="font-size: 14px;">Please select what types of notifications you will receive:</p>
+              <p style="font-size: 14px;"><%= gettext("Please select what types of notifications you will receive:") %></p>
               <div class="row">
                 <div class="col-sm">
                   <h3><%= gettext("Ether") %></h3>

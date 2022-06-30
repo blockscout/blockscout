@@ -38,4 +38,32 @@ defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
     |> put_view(UserView)
     |> render(:error, %{message: message})
   end
+
+  def call(conn, {:watchlist_delete, false}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(UserView)
+    |> render(:error, %{message: "Watchlist address not found"})
+  end
+
+  def call(conn, {:tag_delete, false}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(UserView)
+    |> render(:error, %{message: "Tag not found"})
+  end
+
+  def call(conn, {:api_key_delete, false}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(UserView)
+    |> render(:error, %{message: "Api key not found"})
+  end
+
+  def call(conn, {:custom_abi_delete, false}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(UserView)
+    |> render(:error, %{message: "Custom ABI not found"})
+  end
 end

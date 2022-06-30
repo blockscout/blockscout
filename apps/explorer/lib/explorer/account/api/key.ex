@@ -40,8 +40,7 @@ defmodule Explorer.Account.Api.Key do
 
   def create(attrs) do
     %__MODULE__{}
-    |> changeset(attrs)
-    |> put_change(:value, generate_api_key())
+    |> changeset(Map.put(attrs, :value, generate_api_key()))
     |> Repo.insert()
   end
 

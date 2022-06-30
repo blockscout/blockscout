@@ -105,6 +105,12 @@ defmodule Explorer.Factory do
     }
   end
 
+  def custom_abi_factory do
+    contract_address_hash = to_string(insert(:contract_address).hash)
+
+    %{"contract_address_hash" => contract_address_hash, "name" => sequence("test"), "abi" => contract_code_info().abi}
+  end
+
   def account_watchlist_factory do
     %Watchlist{
       name: "default",

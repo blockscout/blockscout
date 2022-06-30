@@ -7,8 +7,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   alias Explorer.Account.CustomABI
   alias Explorer.Account.{Identity, TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Market
-  alias Explorer.Repo
+  alias Explorer.{Market, Repo}
   alias Guardian.Plug
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
@@ -44,13 +43,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
          {count, _} <- WatchlistAddress.delete(watchlist_address_id, watchlist.id),
-         true <- count > 0 do
+         {:watchlist_delete, true} <- {:watchlist_delete, count > 0} do
       send_resp(conn, 200, "")
-    else
-      false ->
-        conn
-        |> put_status(404)
-        |> render(:error, %{message: "Watchlist address not found"})
     end
   end
 
@@ -184,13 +178,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- TagAddress.delete(tag_id, identity.id),
-         true <- count > 0 do
+         {:tag_delete, true} <- {:tag_delete, count > 0} do
       send_resp(conn, 200, "")
-    else
-      false ->
-        conn
-        |> put_status(404)
-        |> render(:error, %{message: "Tag not found"})
     end
   end
 
@@ -226,13 +215,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- TagTransaction.delete(tag_id, identity.id),
-         true <- count > 0 do
+         {:tag_delete, true} <- {:tag_delete, count > 0} do
       send_resp(conn, 200, "")
-    else
-      false ->
-        conn
-        |> put_status(404)
-        |> render(:error, %{message: "Tag not found"})
     end
   end
 
@@ -268,13 +252,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- ApiKey.delete(api_key_uuid, identity.id),
-         true <- count > 0 do
+         {:api_key_delete, true} <- {:api_key_delete, count > 0} do
       send_resp(conn, 200, "")
-    else
-      false ->
-        conn
-        |> put_status(404)
-        |> render(:error, %{message: "Api key not found"})
     end
   end
 
@@ -318,13 +297,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- CustomABI.delete(id, identity.id),
-         true <- count > 0 do
+         {:custom_abi_delete, true} <- {:custom_abi_delete, count > 0} do
       send_resp(conn, 200, "")
-    else
-      false ->
-        conn
-        |> put_status(404)
-        |> render(:error, %{message: "Custom ABI not found"})
     end
   end
 
