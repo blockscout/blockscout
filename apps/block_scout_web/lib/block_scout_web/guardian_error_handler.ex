@@ -1,4 +1,7 @@
 defmodule BlockScoutWeb.GuardianErrorHandler do
+  @moduledoc """
+    Module is responsible for handling errors on decoding Authorization header
+  """
   import Plug.Conn
 
   @behaviour Guardian.Plug.ErrorHandler

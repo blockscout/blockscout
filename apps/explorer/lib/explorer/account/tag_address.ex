@@ -7,11 +7,10 @@ defmodule Explorer.Account.TagAddress do
 
   import Ecto.Changeset
 
-  alias Explorer.Account.Identity
   alias Ecto.Changeset
-  alias Explorer.Chain
+  alias Explorer.Account.Identity
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Repo
 
   schema "account_tag_addresses" do
     field(:name, :string)
@@ -32,7 +31,7 @@ defmodule Explorer.Account.TagAddress do
   def changeset(tag, attrs) do
     tag
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
     |> unique_constraint([:identity_id, :address_hash], message: "Address tag already exists")
     |> check_existance_or_create_address()

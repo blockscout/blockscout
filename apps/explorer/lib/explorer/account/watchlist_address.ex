@@ -10,9 +10,8 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Ecto.Changeset
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Repo
 
   schema "account_watchlist_addresses" do
     field(:name, :string)

@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
   end
 
   def prepare_api_key(api_key) do
-    %{"api_key" => api_key.value, "api_key_name" => api_key.name}
+    %{"api_key" => api_key.value, "name" => api_key.name}
   end
 
   def prepare_address_tag(address_tag) do

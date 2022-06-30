@@ -1,11 +1,10 @@
 defmodule BlockScoutWeb.Account.Api.V1.TagsController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Models.{UserFromAuth, GetAddressTags, GetTransactionTags}
+  alias BlockScoutWeb.Models.{GetAddressTags, GetTransactionTags, UserFromAuth}
   alias Explorer.Account.Identity
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash.{Address, Full}
-  alias Explorer.Chain
-  alias Explorer.Repo
   alias Guardian.Plug
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
@@ -28,9 +27,10 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
       end
 
     public_tags =
-      with {:address_hash, {:ok, address_hash}} <- {:address_hash, Address.cast(address_hash)} do
-        GetAddressTags.get_public_tags(address_hash)
-      else
+      case Address.cast(address_hash) do
+        {:ok, address_hash} ->
+          GetAddressTags.get_public_tags(address_hash)
+
         _ ->
           %{common_tags: []}
       end

@@ -30,7 +30,7 @@ defmodule Explorer.Account.TagTransaction do
   def changeset(tag, attrs) do
     tag
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
     |> unique_constraint([:identity_id, :tx_hash], message: "Transaction tag already exists")
     |> foreign_key_constraint(:tx_hash, message: "Transaction does not exist")

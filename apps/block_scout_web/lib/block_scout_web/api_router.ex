@@ -33,9 +33,9 @@ defmodule BlockScoutWeb.ApiRouter do
     )
   end
 
-  scope "/account/v1" do
-    alias BlockScoutWeb.Account.Api.V1.UserController
+  alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
 
+  scope "/account/v1" do
     pipe_through(:api)
     pipe_through(:account_api)
 
@@ -72,8 +72,6 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   scope "/account/v1" do
-    alias BlockScoutWeb.Account.Api.V1.TagsController
-
     pipe_through(:api)
     pipe_through(:tags_api)
 
