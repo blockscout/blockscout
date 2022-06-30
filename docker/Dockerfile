@@ -1,4 +1,6 @@
-FROM bitwalker/alpine-elixir-phoenix:1.13
+FROM bitwalker/alpine-elixir-phoenix:1.13 AS builder
+
+WORKDIR /opt/app
 
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
 
@@ -64,5 +66,15 @@ RUN cd apps/explorer/ && \
 
 RUN mix phx.digest
 
-RUN mix release blockscout \
-  && cp -R _build/${MIX_ENV}/rel/blockscout/* ./
+RUN mkdir -p /opt/release \
+  && mix release blockscout \
+  && mv _build/${MIX_ENV}/rel/blockscout /opt/release
+
+##############################################################
+FROM bitwalker/alpine-elixir-phoenix:1.13
+
+WORKDIR /opt/app
+
+COPY --from=builder /opt/release/blockscout .
+
+
