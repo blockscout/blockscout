@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - account
+      - np-account-api
 
 env:
   MIX_ENV: test
