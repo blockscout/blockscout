@@ -23,7 +23,7 @@ from filestorage_predeployed import (
 from config_controller_predeployed import (
     UpgradeableConfigControllerGenerator,
     CONFIG_CONTROLLER_ADDRESS,
-    CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS
+    CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS, ConfigControllerGenerator
 )
 from multisigwallet_predeployed import MultiSigWalletGenerator, MULTISIGWALLET_ADDRESS
 from context_predeployed import ContextGenerator, CONTEXT_ADDRESS
@@ -40,9 +40,10 @@ def generate_config(schain_name):
         config = {
             'alloc': {
                 **get_predeployed_data(),
-                **get_ima_contracts(),
+                # **get_ima_contracts(),
                 **generate_owner_accounts(schain_name)
-            }
+            },
+            'verify': generate_verify_data()
         }
         with open(config_path, 'w') as f:
             f.write(json.dumps(config, indent=4))
@@ -145,6 +146,21 @@ def add_to_accounts(accounts, address, balance):
     accounts[fixed_address] = {
         'balance': str(balance)
     }
+
+
+def generate_verify_data():
+    verify_data = {}
+
+    proxy_admin_meta = ProxyAdminGenerator().get_meta()
+    verify_data.update({PROXY_ADMIN_PREDEPLOYED_ADDRESS: proxy_admin_meta})
+
+    context_meta = ContextGenerator().get_meta()
+    verify_data.update({CONTEXT_ADDRESS: context_meta})
+
+    config_meta = ConfigControllerGenerator().get_meta()
+    verify_data.update({CONFIG_CONTROLLER_ADDRESS: config_meta})
+
+    return verify_data
 
 
 def get_schain_originator(schain: dict):

@@ -7,7 +7,7 @@ ima-predeployed==1.1.3b0
 etherbase-predeployed==1.0.0
 marionette-predeployed==1.0.0
 filestorage-predeployed==1.0.1b1
-config-controller-predeployed==1.0.0.dev6
+config-controller-predeployed==1.0.1.dev0
 multisigwallet-predeployed==0.0.1a5
-predeployed-generator==1.0.0
-context-predeployed==1.0.0.dev0
+predeployed-generator==1.1.0a0
+context-predeployed==1.0.0.dev1

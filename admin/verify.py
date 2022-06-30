@@ -1,36 +1,29 @@
-import pkg_resources
+import os.path
 import requests
 import json
-from context_predeployed import CONTEXT_ADDRESS
+from admin import SCHAIN_CONFIG_DIR_PATH, EXPLORERS_META_DATA_PATH
 
 
 def verify(schain_name=None):
-    r = pkg_resources.resource_filename('context_predeployed', 'artifacts/Context.json')
-    with open(r) as file:
-        j = json.loads(file.read())
+    with open(os.path.join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json')) as file:
+        j = json.loads(file.read())['verify']
 
-        contract = {
-            'addressHash': CONTEXT_ADDRESS,
-            'name': j['contractName'],
-            'compilerVersion': f'v{j["compiler"]["version"]}',
-            'contractSourceCode': j['source']
-        }
-        if j['optimizer']['enabled']:
-            contract.update({
-                'optimizer': True,
-                'optimizationRuns': j['optimizer']['enabled']['runs']
-            })
-        else:
-            contract.update({
-                'optimizer': False
-            })
-        print(send_verify_request(schain_name, contract))
-    pass
+        for verifying_address in j.keys():
+            contract_meta = j[verifying_address]
+            contract = {
+                'contractaddress': verifying_address,
+                'contractname': contract_meta['name'],
+                'compilerversion': f'v{contract_meta["solcLongVersion"]}',
+                'sourceCode': json.dumps(contract_meta['input'])
+            }
+            send_verify_request(schain_name, contract)
 
 
 def get_veify_url(schain_name):
-    schain_explorer_endpoint = ''
-    return f'{schain_explorer_endpoint}/api?module=contract&action=verify'
+    with open(EXPLORERS_META_DATA_PATH) as explorers:
+        data = json.loads(explorers.read())
+        schain_explorer_endpoint = f'http://127.0.0.1:{data[schain_name]["port"]}'
+        return f'{schain_explorer_endpoint}/api?module=contract&action=verifysourcecode&codeformat=solidity-standard-json-input'
 
 
 def send_verify_request(schain_name, verification_data):
@@ -43,4 +36,3 @@ def send_verify_request(schain_name, verification_data):
         ).json()
     except:
         pass
-
