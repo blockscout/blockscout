@@ -14,6 +14,7 @@ defmodule Explorer.Application do
     Block,
     BlockNumber,
     Blocks,
+    GasPriceOracle,
     GasUsage,
     MinMissingBlockNumber,
     NetVersion,
@@ -56,6 +57,7 @@ defmodule Explorer.Application do
       AddressSumMinusBurnt,
       Block,
       Blocks,
+      GasPriceOracle,
       GasUsage,
       NetVersion,
       BlockNumber,
@@ -95,7 +97,6 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
-      configure(Explorer.Staking.ContractState),
       configure(MinMissingBlockNumber)
     ]
     |> List.flatten()

@@ -58,6 +58,8 @@ defmodule BlockScoutWeb.TabHelpers do
   iex> BlockScoutWeb.TabHelpers.tab_active?("token", "/page/0xSom3tH1ng/token_transfer")
   false
   """
+  def tab_active?("transactions", "/address/" <> "0x" <> <<_address_hash::binary-size(40)>>), do: true
+
   def tab_active?(tab_name, request_path) do
     String.match?(request_path, ~r/\/\b#{tab_name}\b/)
   end

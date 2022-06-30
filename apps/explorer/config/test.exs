@@ -23,7 +23,7 @@ config :explorer, Explorer.Repo.Replica1,
   timeout: :timer.seconds(60),
   queue_target: 1000
 
-config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc_value: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
@@ -43,8 +43,6 @@ config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_con
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false
-
-config :explorer, Explorer.Staking.ContractState, enabled: false
 
 config :logger, :explorer,
   level: :warn,
