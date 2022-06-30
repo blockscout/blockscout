@@ -83,6 +83,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Reserve.SpenderAddedEvent,
     "0xa6e2c5a23bb917ba0a584c4b250257ddad698685829b66a8813c004b39934fe4" =>
       Elixir.Explorer.Celo.ContractEvents.Accounts.AccountNameSetEvent,
+    "0x954fa47fa6f4e8017b99f93c73f4fbe599d786f9f5da73fe9086ab473fb455d8" =>
+      Elixir.Explorer.Celo.ContractEvents.Attestations.SelectIssuersWaitBlocksSetEvent,
     "0x60c5b4756af49d7b071b00dbf0f87af605cce11896ecd3b760d19f0f9d3fbcef" =>
       Elixir.Explorer.Celo.ContractEvents.Governance.ConstitutionSetEvent,
     "0xaf7f470b643316cf44c1f2898328a075e7602945b4f8584f48ba4ad2d8a2ea9d" =>
@@ -109,6 +111,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Common.SpreadSetEvent,
     "0x3e069fb74dcf5fbc07740b0d40d7f7fc48e9c0ca5dc3d19eb34d2e05d74c5543" =>
       Elixir.Explorer.Celo.ContractEvents.Governance.ProposalDequeuedEvent,
+    "0x35bc19e2c74829d0a96c765bb41b09ce24a9d0757486ced0d075e79089323638" =>
+      Elixir.Explorer.Celo.ContractEvents.Attestations.AttestationsTransferredEvent,
     "0x828d2be040dede7698182e08dfa8bfbd663c879aee772509c4a2bd961d0ed43f" =>
       Elixir.Explorer.Celo.ContractEvents.Sortedoracles.OracleAddedEvent,
     "0x2717ead6b9200dd235aad468c9809ea400fe33ac69b5bfaa6d3e90fc922b6398" =>
@@ -147,12 +151,16 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Reserve.TokenAddedEvent,
     "0x4166d073a7a5e704ce0db7113320f88da2457f872d46dc020c805c562c1582a0" =>
       Elixir.Explorer.Celo.ContractEvents.Registry.RegistryUpdatedEvent,
+    "0xc1f217a1246a98ce04e938768309107630ed86c1e0e9f9995af28e23a9c06178" =>
+      Elixir.Explorer.Celo.ContractEvents.Attestations.MaxAttestationsSetEvent,
     "0xab64f92ab780ecbf4f3866f57cee465ff36c89450dcce20237ca7a8d81fb7d13" =>
       Elixir.Explorer.Celo.ContractEvents.Common.ImplementationSetEvent,
     "0xf3709dc32cf1356da6b8a12a5be1401aeb00989556be7b16ae566e65fef7a9df" =>
       Elixir.Explorer.Celo.ContractEvents.Governance.ProposalVotedEvent,
     "0x43fdefe0a824cb0e3bbaf9c4bc97669187996136fe9282382baf10787f0d808d" =>
       Elixir.Explorer.Celo.ContractEvents.Accounts.AccountDataEncryptionKeySetEvent,
+    "0x7cf8b633f218e9f9bc2c06107bcaddcfee6b90580863768acdcfd4f05d7af394" =>
+      Elixir.Explorer.Celo.ContractEvents.Attestations.AttestationRequestFeeSetEvent,
     "0x49d8cdfe05bae61517c234f65f4088454013bafe561115126a8fe0074dc7700e" =>
       Elixir.Explorer.Celo.ContractEvents.Epochrewards.TargetVotingYieldUpdatedEvent,
     "0x5c8cd4e832f3a7d79f9208c2acf25a412143aa3f751cfd3728c42a0fea4921a8" =>
@@ -171,6 +179,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Governance.HotfixPreparedEvent,
     "0xbf4b45570f1907a94775f8449817051a492a676918e38108bb762e991e6b58dc" =>
       Elixir.Explorer.Celo.ContractEvents.Validators.ValidatorGroupRegisteredEvent,
+    "0x14d7ffb83f4265cb6fb62188eb603269555bf46efbc2923909ed7ac313d57af7" =>
+      Elixir.Explorer.Celo.ContractEvents.Attestations.TransferApprovalEvent,
     "0x402ac9185b4616422c2794bf5b118bfcc68ed496d52c0d9841dfa114fdeb05ba" =>
       Elixir.Explorer.Celo.ContractEvents.Common.ExchangedEvent,
     "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0" =>
@@ -225,6 +235,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Accounts.VoteSignerAuthorizedEvent,
     "0xbae2f33c70949fbc7325c98655f3039e5e1c7f774874c99fd4f31ec5f432b159" =>
       Elixir.Explorer.Celo.ContractEvents.Epochrewards.TargetVotingGoldFractionSetEvent,
+    "0x3bff8b126c8f283f709ae37dc0d3fc03cae85ca4772cfb25b601f4b0b49ca6df" =>
+      Elixir.Explorer.Celo.ContractEvents.Accounts.PaymentDelegationSetEvent,
     "0x557d39a57520d9835859d4b7eda805a7f4115a59c3a374eeed488436fc62a152" =>
       Elixir.Explorer.Celo.ContractEvents.Validators.ValidatorGroupCommissionUpdateQueuedEvent,
     "0x292d39ba701489b7f640c83806d3eeabe0a32c9f0a61b49e95612ebad42211cd" =>

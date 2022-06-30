@@ -84,8 +84,8 @@ defmodule Explorer.Repo.Migrations.DataMigration do
       defp event_page_query({last_block_number, last_index}) do
         from(
           l in "logs",
-          left_join: e in "celo_contract_events",
-          on: e.topic == l.first_topic and e.block_number == l.block_number and e.log_index == l.index,
+          inner_join: ccc in "celo_core_contracts",
+          on: ccc.address_hash == l.address_hash,
           select: %{
             first_topic: l.first_topic,
             second_topic: l.second_topic,
@@ -97,9 +97,7 @@ defmodule Explorer.Repo.Migrations.DataMigration do
             block_number: l.block_number,
             index: l.index
           },
-          where:
-            is_nil(e.topic) and l.first_topic in ^@topics and
-              {l.block_number, l.index} > {^last_block_number, ^last_index},
+          where: l.first_topic in ^@topics and {l.block_number, l.index} > {^last_block_number, ^last_index},
           order_by: [asc: l.block_number, asc: l.index],
           limit: @batch_size
         )

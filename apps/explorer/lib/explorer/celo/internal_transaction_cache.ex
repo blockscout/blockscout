@@ -57,6 +57,10 @@ defmodule Explorer.Celo.InternalTransactionCache do
     {:noreply, state}
   end
 
+  def handle_cast({:clear, block_number}, _from, state) do
+    {:noreply, remove_item(block_number, state)}
+  end
+
   def handle_call({:get, block_number}, _from, %{cache: cache} = state) do
     itx = cache[block_number]
 
@@ -67,7 +71,7 @@ defmodule Explorer.Celo.InternalTransactionCache do
     {:reply, itx, state}
   end
 
-  defp remove_item(block_number, %{cache: cache, timers: timers} = state) do
+  defp remove_item(block_number, %{cache: cache, timers: timers}) do
     cache = Map.delete(cache, block_number)
 
     timers =
@@ -79,10 +83,6 @@ defmodule Explorer.Celo.InternalTransactionCache do
       end
 
     %{cache: cache, timers: timers}
-  end
-
-  def handle_cast({:clear, block_number}, _from, state) do
-    {:noreply, remove_item(block_number, state)}
   end
 
   def handle_info({:clear, block_number}, _from, state) do

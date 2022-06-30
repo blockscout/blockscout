@@ -11,15 +11,33 @@ defmodule Mix.Tasks.GenerateCeloEvents do
 
   def run(args) do
     {options, args, _} =
-      OptionParser.parse(args, strict: [path: :string, destination: :string, only: :boolean, overwrite: :boolean])
+      OptionParser.parse(args,
+        strict: [path: :string, destination: :string, contract: :string, only: :boolean, overwrite: :boolean]
+      )
 
     path = options[:path] || @abi_path
     destination = options[:destination] || @destination_path
+
+    # use only a specific contract
+    contract_filter =
+      if options[:contract] do
+        fn contract_path ->
+          contract_name =
+            contract_path
+            |> Path.basename(".json")
+            |> String.downcase()
+
+          contract_name == options[:contract] |> String.downcase()
+        end
+      else
+        fn _ -> true end
+      end
 
     # glob all json files in path (assumed to be contract abis) and create a map of filename -> event defs
     contract_name_to_event_defs =
       (path <> "/*.json")
       |> Path.wildcard()
+      |> Enum.filter(contract_filter)
       |> Enum.into(%{}, fn path ->
         {path |> Path.basename(".json") |> String.capitalize(), parse_abi(path)}
       end)
@@ -103,7 +121,7 @@ defmodule Mix.Tasks.GenerateCeloEvents do
     # create a map of all events grouped by topic
     events_by_topic =
       contract_name_to_event_defs
-      |> Enum.reduce(%{}, fn {name, defs}, acc -> reduce_contracts_to_map(name, acc, defs) end)
+      |> Enum.reduce(%{}, fn {contract_name, defs}, acc -> reduce_contracts_to_map(contract_name, acc, defs) end)
 
     # get events with more than one entry per topic
     duplicates =

@@ -142,7 +142,7 @@ defmodule Mix.Tasks.Ecto.Gen.DataMigration do
     end
 
     @doc "Handle unsuccessful insertions"
-    def handle_failure(ids), do: raise "Failed to insert - \#{inspect(ids)}"
+    def handle_non_insert(ids), do: raise "Failed to insert - \#{inspect(ids)}"
   end
   """)
 end
