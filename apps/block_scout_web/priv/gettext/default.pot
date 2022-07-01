@@ -1522,21 +1522,7 @@ msgid "Price"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
 #: lib/block_scout_web/templates/block/overview.html.eex:219
-=======
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:93
-msgid "Price per token on the exchanges"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:352
-msgid "Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:225
->>>>>>> origin/master
 #: lib/block_scout_web/templates/transaction/overview.html.eex:402
 msgid "Priority Fee / Tip"
 msgstr ""
