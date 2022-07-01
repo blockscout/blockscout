@@ -135,7 +135,7 @@ defmodule Explorer.Repo.Migrations.DataMigration do
         {inserted_count, results} =
           Explorer.Repo.insert_all("celo_contract_events", params,
             returning: [:block_number, :log_index],
-            on_conflict: CeloContractEvent.default_upsert(),
+            on_conflict: CeloContractEvent.schemaless_upsert(),
             conflict_target: CeloContractEvent.conflict_target()
           )
 
