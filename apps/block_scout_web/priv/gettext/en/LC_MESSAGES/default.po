@@ -3480,6 +3480,7 @@ msgid "Transaction %{transaction}, %{subnetwork} %{transaction}"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/overview.html.eex:401
 #: lib/block_scout_web/templates/transaction/overview.html.eex:401
 msgid "Transaction Burnt Fee"
@@ -3488,6 +3489,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:49
 #: lib/block_scout_web/templates/transaction/overview.html.eex:49
+=======
+#: lib/block_scout_web/templates/transaction/overview.html.eex:39
+>>>>>>> a517abd161c2
 msgid "Transaction Details"
 msgstr ""
 
@@ -4355,4 +4359,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:206
 #: lib/block_scout_web/templates/address/overview.html.eex:206
 msgid "cUSD"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction/overview.html.eex:379
+msgid "Transaction Burnt Fee"
 msgstr ""
