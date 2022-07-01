@@ -24,10 +24,11 @@ def upgrade_revert_reasons(schain_name):
     provider = HTTPProvider(schain_meta['endpoint'])
     web3 = Web3(provider)
     cursor = conn.cursor()
-
-    select_query = """SELECT hash,status,revert_reason 
+    limit_number = 1000
+    select_query = f"""SELECT hash,status,revert_reason,block_number 
                         FROM transactions 
-                        WHERE status=0 AND revert_reason is null;"""
+                        WHERE status=0 AND revert_reason is null 
+                        ORDER BY block_number DESC LIMIT {limit_number};"""
     cursor.execute(select_query)
 
     data = cursor.fetchall()
@@ -35,9 +36,12 @@ def upgrade_revert_reasons(schain_name):
     data_to_update = []
     for i in data:
         hash = bytes(i[0]).hex()
-        receipt = web3.eth.get_transaction_receipt(hash)
-        if receipt.get('revertReason'):
-            data_to_update.append((hash, receipt.revertReason))
+        try:
+            receipt = web3.eth.get_transaction_receipt(hash)
+            if receipt.get('revertReason'):
+                data_to_update.append((hash, receipt.revertReason))
+        except Exception:
+            continue
 
     if data_to_update:
         logger.info(f'Updating {len(data_to_update)} txs')
