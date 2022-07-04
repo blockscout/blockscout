@@ -7,6 +7,7 @@
 - [#6897](https://github.com/blockscout/blockscout/pull/6897) - Support basic auth in JSON RPC endpoint
 - [#6908](https://github.com/blockscout/blockscout/pull/6908) - Allow disable API rate limit
 - [#6951](https://github.com/blockscout/blockscout/pull/6951) - Set poll: true for TokenInstance fetcher
+- [#5720](https://github.com/blockscout/blockscout/pull/5720) - Fetchers graceful shutdown
 
 ### Fixes
 
