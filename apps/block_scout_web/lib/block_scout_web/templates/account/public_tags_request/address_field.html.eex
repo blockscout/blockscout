@@ -1,5 +1,5 @@
 <div class="form-group">
-  <%= label @f, :addresses_array, gettext("Address"), class: "control-label", style: "font-size: 14px" %>
+  <%= label @f, :addresses_array, gettext("Address*"), class: "control-label", style: "font-size: 14px" %>
   <div>
     <%= array_input @f, :addresses_array, maxlength: 42, size: 70, placeholder: gettext "Smart contract / Address (0x...)" %>
     <%= array_add_button @f, :addresses_array, maxlength: 42, size: 70, placeholder: gettext "Smart contract / Address (0x...)" %>
