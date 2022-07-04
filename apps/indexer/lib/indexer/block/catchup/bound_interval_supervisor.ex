@@ -268,7 +268,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
           task: %Task{ref: ref}
         } = state
       ) do
-    Logger.info("Index had to catch up, but the but request is timing out, so retrying immediately.")
+    Logger.info("Index had to catch up, but the request is timing out, so retrying immediately.")
 
     send(self(), :catchup_index)
 
@@ -276,23 +276,12 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   end
 
   def handle_info(
-        {ref, {:error, :econnrefused}},
+        {_ref1, {:error, :enetunreach}},
         %__MODULE__{
-          fetcher: %Catchup.Fetcher{
-            block_fetcher: %Block.Fetcher{
-              json_rpc_named_arguments: [
-                transport: _,
-                transport_options: [http: _, url: url, http_options: _],
-                variant: _
-              ]
-            }
-          },
-          task: %Task{ref: ref}
+          task: _
         } = state
       ) do
-    Logger.error(fn ->
-      "Catchup index stream exited because the archive node endpoint at #{url} is unavailable. Restarting"
-    end)
+    Logger.info("Index had to catch up, but the request is timing out, so retrying immediately.")
 
     send(self(), :catchup_index)
 
@@ -306,16 +295,16 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
             block_fetcher: %Block.Fetcher{
               json_rpc_named_arguments: [
                 transport: _,
-                transport_options: [http: _, url: url, http_options: _],
+                transport_options: options,
                 variant: _
               ]
             }
           },
-          task: nil
+          task: _
         } = state
       ) do
     Logger.error(fn ->
-      "Catchup index stream exited because the archive node endpoint at #{url} is unavailable. Restarting"
+      "Catchup index stream exited because the archive node endpoint at #{Keyword.get(options, :url)} is unavailable. Restarting"
     end)
 
     send(self(), :catchup_index)

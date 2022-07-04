@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
-        "/verify-via-json",
+        "/verify-via-metadata-json",
         AddressContractVerificationViaJsonController,
         only: [:new],
         as: :verify_contract_via_json
@@ -416,10 +416,6 @@ defmodule BlockScoutWeb.WebRouter do
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/token-counters", Tokens.TokenController, :token_counters)
-
-    get("/faucet", FaucetController, :index)
-
-    post("/faucet", FaucetController, :request)
 
     get("/*path", PageNotFoundController, :index)
   end
