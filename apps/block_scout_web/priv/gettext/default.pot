@@ -156,7 +156,6 @@ msgstr ""
 msgid "Add Custom ABI"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/public_tags_request/address_field.html.eex:2
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/views/address_view.ex:107
@@ -182,6 +181,11 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:50
 #, elixir-autogen, elixir-format
 msgid "Address of the token contract"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/public_tags_request/address_field.html.eex:2
+#, elixir-autogen, elixir-format
+msgid "Address*"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/index.html.eex:5
@@ -452,7 +456,7 @@ msgstr ""
 msgid "Collapse"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:27
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:20
 #, elixir-autogen, elixir-format
 msgid "Company name"
 msgstr ""
@@ -864,13 +868,17 @@ msgstr ""
 msgid "Deployed ByteCode"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:56
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:53
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:188
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:60
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:150
 #, elixir-autogen, elixir-format
 msgid "Description"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:56
+#, elixir-autogen, elixir-format
+msgid "Description*"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:30
@@ -915,9 +923,9 @@ msgstr ""
 msgid "During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
 msgstr ""
 
-#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:20
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:27
 #, elixir-autogen, elixir-format
-msgid "E-mail"
+msgid "E-mail*"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_minimal_proxy_pattern.html.eex:6
@@ -1288,11 +1296,6 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "Indexing Tokens"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:11
-#, elixir-autogen, elixir-format
-msgid "Indicate a category that an address, token, transaction or block page belongs to. Displaying the public tag allows users to easily figure out more context for the page. Clicking a tag allows them to see other pages related to the same tag. Some examples"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:3
@@ -1784,7 +1787,6 @@ msgid "Public tag"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:22
-#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:7
 #: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Public tags"
@@ -1792,7 +1794,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:50
 #, elixir-autogen, elixir-format
-msgid "Public tags (2 tags maximum, please use \";\" as a divider)"
+msgid "Public tags* (2 tags maximum, please use \";\" as a divider)"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10
@@ -1855,9 +1857,19 @@ msgstr ""
 msgid "Request URL"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Request a public tag/label"
+msgstr ""
+
 #: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:36
 #, elixir-autogen, elixir-format
 msgid "Request to add public tag"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Request to edit a public tag/label"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:142
@@ -1935,7 +1947,7 @@ msgstr ""
 msgid "Self-Destruct"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:62
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:63
 #, elixir-autogen, elixir-format
 msgid "Send request"
 msgstr ""
@@ -2881,10 +2893,19 @@ msgstr ""
 msgid "You can create up to 15 Custom ABIs per account."
 msgstr ""
 
-#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:14
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:11
+#, elixir-autogen, elixir-format
+msgid "You can request a public category tag which is displayed to all Blockscout users. Public tags may be added to contract or external addresses, and any associated transactions will inherit that tag. Clicking a tag opens a page with related information and helps provide context and data organization. Requests are sent to a moderator for review and approval. This process can take several days."
+msgstr ""
+
 #: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:15
 #, elixir-autogen, elixir-format
 msgid "Your name"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:14
+#, elixir-autogen, elixir-format
+msgid "Your name*"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:111

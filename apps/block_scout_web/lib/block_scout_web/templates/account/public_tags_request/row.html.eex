@@ -15,6 +15,6 @@
       <input type="hidden" name="_method" value="delete">
       <input type="hidden" name="remove_reason" value="">
     </form>  
-    <a href="" delete-request><%= (render BlockScoutWeb.CommonComponentsView, "_svg_trash.html") %></a>
+    <a href="" data-delete-request data-tags="<%= @public_tags_request.tags %>"><%= (render BlockScoutWeb.CommonComponentsView, "_svg_trash.html") %></a>
   </td>
 </tr>

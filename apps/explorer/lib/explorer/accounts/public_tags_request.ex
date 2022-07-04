@@ -26,7 +26,7 @@ defmodule Explorer.Account.PublicTagsRequest do
     field(:description, :string)
     field(:additional_comment, :string)
     field(:request_type, :string)
-    field(:is_owner, :boolean)
+    field(:is_owner, :boolean, default: true)
     field(:remove_reason, :string)
     field(:request_id, :string)
     field(:addresses_array, {:array, :string}, virtual: true)
@@ -91,10 +91,10 @@ defmodule Explorer.Account.PublicTagsRequest do
          {:filter_empty, [_ | _] = filtered_addresses} <-
            {:filter_empty, Enum.filter(addresses, fn addr -> addr != "" end)},
          {:validate, false} <-
-           {:validate, Enum.any?(addresses, fn addr -> !match?({:ok, _}, Hash.Address.cast(addr)) end)},
+           {:validate, Enum.any?(filtered_addresses, fn addr -> !match?({:ok, _}, Hash.Address.cast(addr)) end)},
          {:uniqueness, true} <-
            {:uniqueness,
-            Enum.count(Enum.uniq(filtered_addresses, &String.downcase(&1))) == Enum.count(filtered_addresses)},
+            Enum.count(Enum.uniq_by(filtered_addresses, &String.downcase(&1))) == Enum.count(filtered_addresses)},
          trimmed_address_list <- Enum.take(filtered_addresses, @max_addresses_per_request) do
       put_change(changeset, :addresses, Enum.join(trimmed_address_list, ";"))
     else
@@ -120,7 +120,7 @@ defmodule Explorer.Account.PublicTagsRequest do
          {:filter_empty, [_ | _] = filtered_tags} <- {:filter_empty, Enum.filter(tags_list, fn tag -> tag != "" end)},
          {:validate, false} <- {:validate, Enum.any?(tags_list, fn tag -> String.length(tag) > @max_tag_length end)},
          {:uniqueness, true} <-
-           {:uniqueness, Enum.count(Enum.uniq(filtered_tags, &String.downcase(&1))) == Enum.count(filtered_tags)},
+           {:uniqueness, Enum.count(Enum.uniq_by(filtered_tags, &String.downcase(&1))) == Enum.count(filtered_tags)},
          trimmed_tags_list <- Enum.take(filtered_tags, @max_tags_per_request) do
       force_change(changeset, :tags, Enum.join(trimmed_tags_list, ";"))
     else

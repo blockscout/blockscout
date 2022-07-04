@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestView do
         apply(Form, type, [form, field, input_opts]),
         content_tag(:button, render(BlockScoutWeb.CommonComponentsView, "_svg_minus.html"),
           data: [container: container_id(id)],
-          class: "remove-form-field"
+          class: "remove-form-field ml-1"
         )
       ]
     end

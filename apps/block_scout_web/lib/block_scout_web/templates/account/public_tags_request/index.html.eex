@@ -8,7 +8,7 @@
           <br>
           <div style="min-width: 100%;">
             <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
-              <%= gettext "Indicate a category that an address, token, transaction or block page belongs to. Displaying the public tag allows users to easily figure out more context for the page. Clicking a tag allows them to see other pages related to the same tag. Some examples" %>
+              <%= gettext "You can request a public category tag which is displayed to all Blockscout users. Public tags may be added to contract or external addresses, and any associated transactions will inherit that tag. Clicking a tag opens a page with related information and helps provide context and data organization. Requests are sent to a moderator for review and approval. This process can take several days." %>
             </div>
           </div>
           <div class="col-sm">
