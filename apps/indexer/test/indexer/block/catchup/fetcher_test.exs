@@ -132,6 +132,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     test "ignores fetched beneficiaries with different hash for same number", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -286,6 +287,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     test "async fetches beneficiaries when individual responses error out", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -437,6 +439,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     test "async fetches beneficiaries when entire call errors out", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
