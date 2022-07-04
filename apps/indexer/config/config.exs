@@ -66,12 +66,8 @@ config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on
 
 config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 
-if System.get_env("POS_STAKING_CONTRACT") do
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
-else
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
-    disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"
-end
+config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"
 
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"

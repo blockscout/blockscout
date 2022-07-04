@@ -401,7 +401,7 @@ defmodule BlockScoutWeb.TransactionView do
   def gas_used_perc(%Transaction{gas_used: nil}), do: nil
 
   def gas_used_perc(%Transaction{gas_used: gas_used, gas: gas}) do
-    if Decimal.cmp(gas, 0) == :gt do
+    if Decimal.compare(gas, 0) == :gt do
       gas_used
       |> Decimal.div(gas)
       |> Decimal.mult(100)
@@ -543,21 +543,6 @@ defmodule BlockScoutWeb.TransactionView do
       Enum.count(token_transfers_types) == mintings_count -> @token_minting_type
       Enum.count(token_transfers_types) == creations_count -> @token_creation_type
       true -> @token_transfer_type
-    end
-  end
-
-  defp amb_tx?(hash) do
-    Chain.amb_xdai_tx?(hash)
-  end
-
-  defp show_alm_link?(hash) do
-    amb_tx?(hash)
-  end
-
-  defp get_alm_app_link(hash) do
-    cond do
-      Chain.amb_xdai_tx?(hash) == true -> "alm-poa-xdai.herokuapp.com"
-      true -> nil
     end
   end
 
