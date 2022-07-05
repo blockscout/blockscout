@@ -9,6 +9,8 @@ lib/explorer/smart_contract/solidity/publisher_worker.ex:1
 lib/explorer/smart_contract/vyper/publisher_worker.ex:1
 lib/explorer/smart_contract/solidity/publisher_worker.ex:6
 lib/explorer/smart_contract/vyper/publisher_worker.ex:6
+lib/explorer/smart_contract/publisher_worker.ex:1
+lib/explorer/smart_contract/publisher_worker.ex:6
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: Function microseconds_time/1 has no local return
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: The call 'Elixir.System':convert_time_unit(__@1::any(),'native','microseconds') breaks the contract (integer(),time_unit() | 'native',time_unit() | 'native') -> integer()
 lib/block_scout_web/router.ex:1

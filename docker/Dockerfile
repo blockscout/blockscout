@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix:1.12.2
+FROM bitwalker/alpine-elixir-phoenix:1.12
 
 RUN apk --no-cache --update add expat-dev alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file pango-dev jpeg-dev libjpeg-turbo-dev giflib-dev librsvg-dev
 
