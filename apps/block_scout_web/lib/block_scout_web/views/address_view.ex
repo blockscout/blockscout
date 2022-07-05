@@ -229,6 +229,12 @@ defmodule BlockScoutWeb.AddressView do
 
   def validator?(_), do: false
 
+  def is_validator_signer?(%Address{hash: hash}) do
+    Chain.is_validator_address_signer_address?(hash)
+  end
+
+  def is_validator_signer?(nil), do: false
+
   def hash(%Address{hash: hash}) do
     to_string(hash)
   end

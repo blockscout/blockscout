@@ -36,12 +36,14 @@
         "data-test": "coin_balance_tab_link",
         to: AccessHelpers.get_path(@conn, :address_coin_balance_path, :index, @address.hash)
       ) %>
+  <%= if BlockScoutWeb.AddressView.is_validator_signer?(@address) do %>
     <%= link(
       gettext("Downtime"),
       class: "card-tab #{tab_status("signed", @conn.request_path)}",
       "data-test": "signed_tab_link",
       to: AccessHelpers.get_path(@conn, :address_signed_path, :index, @address.hash)
     ) %>
+  <% end %>
   <%= if Chain.check_if_logs_at_address(@address.hash) do %>
     <%= link(
         gettext("Logs"),

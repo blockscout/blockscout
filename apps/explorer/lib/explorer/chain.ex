@@ -6768,6 +6768,16 @@ defmodule Explorer.Chain do
     end
   end
 
+  def is_validator_address_signer_address?(address_hash) do
+    CeloValidator
+    |> where(signer_address_hash: ^address_hash)
+    |> Repo.aggregate(:count, :address)
+    |> case do
+      0 -> false
+      _ -> true
+    end
+  end
+
   @spec get_celo_validator_group(Hash.Address.t()) :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
   def get_celo_validator_group(address_hash) do
     celo_validator_group_query()
