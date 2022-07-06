@@ -1,5 +1,7 @@
 /* Custom Validator Tooltip at Block Details Page */
 $tooltip-background-color: $btn-line-color !default;
+$tooltip-inversed-background-color: #fff !default;
+$tooltip-inversed-color: #333 !default;
 
 .tooltip-validator-details {
     left: -100px !important;
@@ -12,30 +14,30 @@ $tooltip-background-color: $btn-line-color !default;
 
 .tooltip-inversed-color {
     .tooltip-inner {
-        background-color: #fff !important;
-        color: #333 !important;
+        background-color: $tooltip-inversed-background-color !important;
+        color: $tooltip-inversed-color !important;
     }
 }
 
 .tooltip-inversed-color.bs-tooltip-top .arrow::before,
 .tooltip-inversed-color.bs-tooltip-auto[x-placement^="top"] .arrow::before {
-    border-top-color: #fff !important;
+    border-top-color: $tooltip-inversed-background-color !important;
 }
     
 .tooltip-inversed-color.bs-tooltip-right .arrow::before,
 .tooltip-inversed-color.bs-tooltip-auto[x-placement^="right"] .arrow::before {
-    border-right-color: #fff !important;
+    border-right-color: $tooltip-inversed-background-color !important;
 }
     
 .tooltip-inversed-color.bs-tooltip-bottom .arrow::before,
 .tooltip-inversed-color.bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
-    border-bottom-color: #fff !important;
+    border-bottom-color: $tooltip-inversed-background-color !important;
 }
     
     
 .tooltip-inversed-color.bs-tooltip-left .arrow::before,
 .tooltip-inversed-color.bs-tooltip-auto[x-placement^="left"] .arrow::before {
-    border-left-color: #fff !important;
+    border-left-color: $tooltip-inversed-background-color !important;
 }
 
 /* Inversed color Bootstrap Tooltip end*/

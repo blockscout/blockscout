@@ -12,6 +12,7 @@ $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
 $navbar-logo-height: auto !default;
 $navbar-logo-width: 100% !default;
+$dropdown-item-hover-color: #333 !default;
 
 .navbar.navbar-primary {
   background-color: $header-background-color;
@@ -23,6 +24,15 @@ $navbar-logo-width: 100% !default;
   }
 
   .navbar-nav {
+
+    .nav-item .dropdown-menu .dropdown-item {
+      &.active,
+      &:focus,
+      &:hover {
+        background-color: rgba($primary, .1);
+        color: $dropdown-item-hover-color;
+      }
+    }
     
     .nav-link {
       outline: none;
@@ -242,7 +252,8 @@ $navbar-logo-width: 100% !default;
 }
 
 .navbar-logo {
-  max-height: $navbar-logo-height;
+  max-height: 28px;
+  height: $navbar-logo-height;
   width: $navbar-logo-width;
 }
 

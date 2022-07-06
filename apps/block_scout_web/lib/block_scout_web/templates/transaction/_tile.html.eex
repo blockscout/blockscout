@@ -42,7 +42,7 @@
         <span class="tile-title">
           <%= value(@transaction, include_label: false) %> <%= gettext "Ether" %>
         </span>
-        <span class="ml-0 ml-md-1 text-nowrap">
+        <span class="ml-0 ml-md-1 text-nowrap" data-test="tx-fee">
           <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
         </span>
       </span>
@@ -74,7 +74,7 @@
       <span class="mr-2 mr-md-0 order-1">
         <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= block_timestamp(@transaction) %>"></span>
+      <span class="mr-2 mr-md-0 order-2" in-tile data-test="data-from-now" data-from-now="<%= block_timestamp(@transaction) %>"></span>
       <%= if from_or_to_address?(@transaction, assigns[:current_address]) do %>
         <span class="mr-2 mr-md-0 order-0 order-md-3">
           <%= if @transaction.from_address_hash == assigns[:current_address].hash do %>

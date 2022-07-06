@@ -33,7 +33,7 @@
           to: block_path(BlockScoutWeb.Endpoint, :show, @internal_transaction.block_number)
         ) %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= @internal_transaction.transaction.block.timestamp %>"></span>
+      <span class="mr-2 mr-md-0 order-2" in-tile data-test="data-from-now" data-from-now="<%= @internal_transaction.transaction.block.timestamp %>"></span>
       <%= if assigns[:current_address] do %>
         <span class="mr-2 mr-md-0 order-0 order-md-3">
           <%= if assigns[:current_address].hash == @internal_transaction.from_address_hash do %>

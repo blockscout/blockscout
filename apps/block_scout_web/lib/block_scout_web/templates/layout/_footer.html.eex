@@ -27,9 +27,6 @@
           <a href="https://www.twitter.com/blockscoutcom/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
-          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
-            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
-          </a>
         </div>
       </div>
 
