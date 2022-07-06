@@ -16,30 +16,38 @@ defmodule Explorer.Account.WatchlistNotification do
     field(:block_number, :integer)
     field(:direction, :string)
     field(:method, :string)
-    # field(:name, :string)
-    # field(:subject, :string)
     field(:tx_fee, :decimal)
     field(:type, :string)
     field(:viewed_at, :integer)
-    # field(:encrypted_name, Explorer.Encrypted.Binary)
-    # field(:encrypted_subject, Explorer.Encrypted.Binary)
 
-    field(:name, Explorer.Encrypted.Binary)
-    field(:subject, Explorer.Encrypted.Binary)
+    field(:name, :string)
+    field(:subject, :string)
+
+    field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:encrypted_subject, Explorer.Encrypted.Binary)
+
+    # field(:name, Explorer.Encrypted.Binary)
+    # field(:subject, Explorer.Encrypted.Binary)
+
+    field(:subject_hash, Cloak.Ecto.SHA256)
 
     belongs_to(:watchlist_address, WatchlistAddress)
 
-    # field(:encrypted_from_address_hash, Explorer.Encrypted.AddressHash)
-    # field(:encrypted_to_address_hash, Explorer.Encrypted.AddressHash)
-    # field(:encrypted_transaction_hash, Explorer.Encrypted.TransactionHash)
+    field(:encrypted_from_address_hash, Explorer.Encrypted.AddressHash)
+    field(:encrypted_to_address_hash, Explorer.Encrypted.AddressHash)
+    field(:encrypted_transaction_hash, Explorer.Encrypted.TransactionHash)
 
-    # field(:from_address_hash, Hash.Address)
-    # field(:to_address_hash, Hash.Address)
-    # field(:transaction_hash, Hash.Full)
+    field(:from_address_hash, Hash.Address)
+    field(:to_address_hash, Hash.Address)
+    field(:transaction_hash, Hash.Full)
 
-    field(:from_address_hash, Explorer.Encrypted.AddressHash)
-    field(:to_address_hash, Explorer.Encrypted.AddressHash)
-    field(:transaction_hash, Explorer.Encrypted.TransactionHash)
+    # field(:from_address_hash, Explorer.Encrypted.AddressHash)
+    # field(:to_address_hash, Explorer.Encrypted.AddressHash)
+    # field(:transaction_hash, Explorer.Encrypted.TransactionHash)
+
+    field(:from_address_hash_hash, Cloak.Ecto.SHA256)
+    field(:to_address_hash_hash, Cloak.Ecto.SHA256)
+    field(:transaction_hash_hash, Cloak.Ecto.SHA256)
 
     timestamps()
   end

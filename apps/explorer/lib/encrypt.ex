@@ -8,14 +8,15 @@ defmodule Mix.Tasks.Encrypt do
 
     Explorer.Account.Identity
     |> Explorer.Repo.Account.all()
-    |> Enum.map(fn identity ->
-      identity
+    |> Enum.map(fn element ->
+      element
       |> Ecto.Changeset.change(%{
-        encrypted_uid: identity.uid,
-        encrypted_email: identity.email,
-        encrypted_name: identity.name,
-        encrypted_nickname: identity.nickname,
-        encrypted_avatar: identity.avatar
+        encrypted_uid: element.uid,
+        encrypted_email: element.email,
+        encrypted_name: element.name,
+        encrypted_nickname: element.nickname,
+        encrypted_avatar: element.avatar,
+        uid_hash: Cloak.Ecto.SHA256.hash(element.uid)
       })
       |> Explorer.Repo.Account.update!()
     end)
@@ -26,7 +27,8 @@ defmodule Mix.Tasks.Encrypt do
       element
       |> Ecto.Changeset.change(%{
         encrypted_name: element.name,
-        encrypted_address_hash: element.address_hash
+        encrypted_address_hash: element.address_hash,
+        address_hash_hash: Cloak.Ecto.SHA256.hash(to_string(element.address_hash))
       })
       |> Explorer.Repo.Account.update!()
     end)
@@ -37,7 +39,8 @@ defmodule Mix.Tasks.Encrypt do
       element
       |> Ecto.Changeset.change(%{
         encrypted_name: element.name,
-        encrypted_tx_hash: element.tx_hash
+        encrypted_tx_hash: element.tx_hash,
+        tx_hash_hash: Cloak.Ecto.SHA256.hash(to_string(element.tx_hash))
       })
       |> Explorer.Repo.Account.update!()
     end)
@@ -48,7 +51,8 @@ defmodule Mix.Tasks.Encrypt do
       element
       |> Ecto.Changeset.change(%{
         encrypted_name: element.name,
-        encrypted_address_hash: element.address_hash
+        encrypted_address_hash: element.address_hash,
+        address_hash_hash: Cloak.Ecto.SHA256.hash(to_string(element.address_hash))
       })
       |> Explorer.Repo.Account.update!()
     end)
@@ -59,7 +63,8 @@ defmodule Mix.Tasks.Encrypt do
       element
       |> Ecto.Changeset.change(%{
         encrypted_name: element.name,
-        encrypted_address_hash: element.address_hash
+        encrypted_address_hash: element.address_hash,
+        address_hash_hash: Cloak.Ecto.SHA256.hash(to_string(element.address_hash))
       })
       |> Explorer.Repo.Account.update!()
     end)
@@ -73,7 +78,11 @@ defmodule Mix.Tasks.Encrypt do
         encrypted_from_address_hash: element.from_address_hash,
         encrypted_to_address_hash: element.to_address_hash,
         encrypted_transaction_hash: element.transaction_hash,
-        encrypted_subject: element.subject
+        encrypted_subject: element.subject,
+        from_address_hash_hash: Cloak.Ecto.SHA256.hash(to_string(element.from_address_hash)),
+        to_address_hash_hash: Cloak.Ecto.SHA256.hash(to_string(element.to_address_hash)),
+        transaction_hash_hash: Cloak.Ecto.SHA256.hash(to_string(element.transaction_hash)),
+        subject_hash: Cloak.Ecto.SHA256.hash(element.subject)
       })
       |> Explorer.Repo.Account.update!()
     end)
