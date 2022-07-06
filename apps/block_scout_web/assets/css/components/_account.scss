@@ -102,11 +102,13 @@ li.public-tags-address {
 
 input.public-tags-address {
   flex-basis: 557px;
+  width: auto;
 }
 
 .add-form-field {
   background: none;
   border: none;
+  margin-left: 0.5px;
 }
 
 .remove-form-field {
