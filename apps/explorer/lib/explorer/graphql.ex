@@ -373,7 +373,8 @@ defmodule Explorer.GraphQL do
         token_address: token.contract_address_hash,
         nonce: tx.nonce,
         block_number: tt.block_number,
-        token_type: token.type
+        token_type: token.type,
+        token_id: tt.token_id
       },
       order_by: [desc: tt.block_number, desc: tt.amount, desc: tt.log_index]
     )
@@ -429,7 +430,8 @@ defmodule Explorer.GraphQL do
         token_address: tt.token_contract_address_hash,
         nonce: tx.nonce,
         block_number: tt.block_number,
-        token_type: token.type
+        token_type: token.type,
+        token_id: tt.token_id
       },
       order_by: [desc: tt.block_number, desc: tt.amount, desc: tt.log_index]
     )

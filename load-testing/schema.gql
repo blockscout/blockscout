@@ -149,6 +149,7 @@ type CeloTransfer implements Node {
   toAddressHash: AddressHash
   token: String
   tokenType: String
+  tokenId: Decimal
   transactionHash: FullHash
   value: Decimal
 }
