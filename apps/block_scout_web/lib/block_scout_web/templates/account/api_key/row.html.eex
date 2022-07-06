@@ -10,7 +10,7 @@
       <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
       <input type="hidden" name="_method" value="delete">
     </form>  
-    <a href="" delete-item><%= gettext("Remove") %></a>
+    <a href="" data-delete-item><%= gettext("Remove") %></a>
   </td>
   <td>
     <%= link gettext("Edit"), to: api_key_path(@conn, :edit, @api_key.value) %>

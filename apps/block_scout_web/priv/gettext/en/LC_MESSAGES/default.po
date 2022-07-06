@@ -229,6 +229,12 @@ msgid "Address (external or contract) sending the transaction."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:10
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:217
+msgid "Address Tags"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:147
 msgid "Address balance in xDAI (doesn't include ERC20, ERC721, ERC1155 tokens)."
 msgstr ""
@@ -321,6 +327,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:48
 msgid "Available Now:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:21
+msgid "Average"
 msgstr ""
 
 #, elixir-format
@@ -526,6 +537,7 @@ msgid "Call Code"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:62
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:105
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:145
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:41
@@ -621,6 +633,16 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:55
 msgid "Collapse"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:20
+msgid "Company name"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:32
+msgid "Company website"
 msgstr ""
 
 #, elixir-format
@@ -964,6 +986,11 @@ msgid "DApp for Staking %{symbol} tokens"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/chain/show.html.eex:84
+msgid "Daily Transactions"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:101
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7 lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:23
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:121
@@ -1255,6 +1282,11 @@ msgid "Failed to decode log data."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:22
+msgid "Fast"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:24
 msgid "Favorites"
 msgstr ""
@@ -1334,6 +1366,12 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:434
 msgid "Gas Used by Transaction"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:3
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:18
+msgid "Gas tracker"
 msgstr ""
 
 #, elixir-format
@@ -2021,6 +2059,28 @@ msgid "Priority Fees"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:4
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:215
+msgid "Profile"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:221
+msgid "Public Tags"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:20
+msgid "Public tag"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:22
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:7
+msgid "Public tags"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:5 lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:83
 msgid "QR Code"
@@ -2094,6 +2154,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:155
 msgid "Request URL"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:36
+msgid "Request to add public tag"
 msgstr ""
 
 #, elixir-format
@@ -2195,6 +2260,11 @@ msgid "Self-Destruct"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:63
+msgid "Send request"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:163
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:124
 msgid "Server Response"
@@ -2246,6 +2316,11 @@ msgid "Shows total assets held in the address"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:222
+msgid "Sign out"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:114
 msgid "Size"
 msgstr ""
@@ -2253,6 +2328,22 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:113
 msgid "Size of the block in bytes."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:20
+msgid "Slow"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:21
+msgid "Smart contract / Address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/address_field.html.eex:4
+#: lib/block_scout_web/templates/account/public_tags_request/address_field.html.eex:5
+msgid "Smart contract / Address (0x...)"
 msgstr ""
 
 #, elixir-format
@@ -2365,6 +2456,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:109
 msgid "Status"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:22
+msgid "Submission date"
 msgstr ""
 
 #, elixir-format
@@ -2900,6 +2996,12 @@ msgid "Transaction Inputs"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:13
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:218
+msgid "Transaction Tags"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:370
 msgid "Transaction Type"
 msgstr ""
@@ -3226,6 +3328,16 @@ msgid "Warning! Contract bytecode has been changed and doesn't match the verifie
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+msgid "Watch list"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:7
+msgid "Watchlist"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:2
 msgid "We found the following pools you can claim reward from:"
 msgstr ""
@@ -3348,6 +3460,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:16
 msgid "Your Pool Short Description (optional)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:15
+msgid "Your name"
 msgstr ""
 
 #, elixir-format
@@ -3484,28 +3601,42 @@ msgstr ""
 msgid "validator"
 msgstr ""
 
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/account/public_tags_request/address_field.html.eex:2
+msgid "Address*"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:56
+msgid "Description*"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:27
+msgid "E-mail*"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:50
+msgid "Public tags* (2 tags maximum, please use \";\" as a divider)"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:7
+msgid "Request a public tag/label"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:7
+msgid "Request to edit a public tag/label"
+msgstr ""
+
 #, elixir-format
-#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:21
-msgid "Average"
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:11
+msgid "You can request a public category tag which is displayed to all Blockscout users. Public tags may be added to contract or external addresses, and any associated transactions will inherit that tag. Clicking a tag opens a page with related information and helps provide context and data organization. Requests are sent to a moderator for review and approval. This process can take several days."
 msgstr ""
 
 #, elixir-format, fuzzy
-#: lib/block_scout_web/templates/chain/show.html.eex:84
-msgid "Daily Transactions"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:22
-msgid "Fast"
-msgstr ""
-
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:3
-#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:18
-msgid "Gas tracker"
-msgstr ""
-
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:20
-msgid "Slow"
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:14
+msgid "Your name*"
 msgstr ""
