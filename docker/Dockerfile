@@ -22,10 +22,10 @@ ENV RUSTFLAGS="-C target-feature=-crt-static"
 EXPOSE 4000
 
 ENV MIX_ENV="prod"
-ENV NETWORK_PATH="/xdai/optimism"
-ENV SOCKET_ROOT="/xdai/optimism"
-ENV CHAIN_ID="300"
-ENV COIN_NAME="xDai"
+ENV NETWORK_PATH="/optimism/goerli"
+ENV SOCKET_ROOT="/optimism/goerli"
+ENV CHAIN_ID="420"
+ENV COIN_NAME="ETH"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./

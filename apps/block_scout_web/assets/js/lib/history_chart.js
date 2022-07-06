@@ -247,8 +247,24 @@ class MarketHistoryChart {
       cubicInterpolationMode: 'monotone',
       fill: false,
       pointRadius: 0,
-      backgroundColor: getTxChartColor(),
-      borderColor: getTxChartColor()
+      backgroundColor: function (context) {
+        const chart = context.chart
+        const {ctx, chartArea} = chart
+      
+        if (!chartArea) {
+          return
+        }
+        return getGradient(ctx, chartArea)
+      },
+      borderColor: function (context) {
+        const chart = context.chart
+        const {ctx, chartArea} = chart
+      
+        if (!chartArea) {
+          return
+        }
+        return getGradient(ctx, chartArea)
+      },
       // lineTension: 0
     }
 
@@ -334,6 +350,16 @@ export function createMarketHistoryChart (el) {
       })
   })
   return chart
+}
+
+function getGradient(ctx, chartArea) {
+  const chartWidth = chartArea.right - chartArea.left
+  const chartHeight = chartArea.bottom - chartArea.top
+  var gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+  gradient.addColorStop(0, '#E93434')
+  gradient.addColorStop(1, '#861BF5')
+
+  return gradient
 }
 
 $('[data-chart-error-message]').on('click', _event => {
