@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - account
-      - np-public-tags-1
 
 env:
   MIX_ENV: test
