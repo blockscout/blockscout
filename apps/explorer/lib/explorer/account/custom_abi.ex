@@ -18,12 +18,16 @@ defmodule Explorer.Account.CustomABI do
     field(:abi, {:array, :map})
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
-    # field(:name, :string)
-    # field(:address_hash, Hash.Address, null: false)
-    # field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
-    # field(:encrypted_name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
-    field(:name, Explorer.Encrypted.Binary)
+
+    field(:name, :string)
+    field(:address_hash, Hash.Address, null: false)
+
+    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:address_hash_hash, Cloak.Ecto.SHA256)
+
+    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    # field(:name, Explorer.Encrypted.Binary)
 
     belongs_to(:identity, Identity)
 
