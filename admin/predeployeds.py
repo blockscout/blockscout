@@ -78,15 +78,15 @@ def get_predeployed_data():
         owner=MULTISIGWALLET_ADDRESS,
         ima=BASE_ADDRESS,
     )
-
-    filestorage_generator = UpgradeableFileStorageGenerator()
-    filestorage_predeployed = filestorage_generator.generate_allocation(
-        contract_address=FILESTORAGE_ADDRESS,
-        implementation_address=FILESTORAGE_IMPLEMENTATION_ADDRESS,
-        schain_owner=BASE_ADDRESS,
-        proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-        allocated_storage=0
-    )
+    #
+    # filestorage_generator = UpgradeableFileStorageGenerator()
+    # filestorage_predeployed = filestorage_generator.generate_allocation(
+    #     contract_address=FILESTORAGE_ADDRESS,
+    #     implementation_address=FILESTORAGE_IMPLEMENTATION_ADDRESS,
+    #     schain_owner=BASE_ADDRESS,
+    #     proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
+    #     allocated_storage=0
+    # )
 
     config_generator = UpgradeableConfigControllerGenerator()
     config_controller_predeployed = config_generator.generate_allocation(
@@ -113,7 +113,7 @@ def get_predeployed_data():
         **proxy_admin_predeployed,
         **etherbase_predeployed,
         **marionette_predeployed,
-        **filestorage_predeployed,
+        # **filestorage_predeployed,
         **config_controller_predeployed,
         **multisigwallet_predeployed,
         **context_predeployed
@@ -157,8 +157,11 @@ def generate_verify_data():
     context_meta = ContextGenerator().get_meta()
     verify_data.update({CONTEXT_ADDRESS: context_meta})
 
+    upg_config_meta = UpgradeableConfigControllerGenerator().get_meta()
+    verify_data.update({CONFIG_CONTROLLER_ADDRESS: upg_config_meta})
+
     config_meta = ConfigControllerGenerator().get_meta()
-    verify_data.update({CONFIG_CONTROLLER_ADDRESS: config_meta})
+    verify_data.update({CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS: config_meta})
 
     return verify_data
 
