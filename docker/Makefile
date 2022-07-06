@@ -88,7 +88,6 @@ ifdef BS_PROXY_STARTED
 else
 	@echo "==> Nginx proxy container already stopped before."
 endif
-<<<<<<< HEAD
 ifdef PG_STARTED
 	@echo "==> Stopping Postgres container."
 	@docker stop $(PG_CONTAINER_NAME)
@@ -96,27 +95,6 @@ ifdef PG_STARTED
 else
 	@echo "==> Postgres container already stopped before."
 endif
-=======
-
-migrate_only:
-	@echo "==> Running migrations"
-	@docker run --rm \
-					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
-
-migrate:
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-
-
-start:
-	@$(MAKE) -f $(THIS_FILE) build
-	@$(MAKE) -f $(THIS_FILE) migrate
-	@echo "==> Starting blockscout"
-	@docker run --rm --name $(BS_CONTAINER_NAME) \
-					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					-p 4000:4000 \
-					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
->>>>>>> bdd85e14cb (Transaction page L1 fields)
 
 run: start
 
@@ -161,7 +139,6 @@ tag-stable-version: ## Generate container `{version}` tag
 
 .PHONY: build \
 				start \
-<<<<<<< HEAD
 				stop \
 				run \
 				docker-login \
@@ -172,6 +149,3 @@ tag-stable-version: ## Generate container `{version}` tag
 				tag \
 				tag-latest \
 				tag-version
-=======
-				run 
->>>>>>> bdd85e14cb (Transaction page L1 fields)

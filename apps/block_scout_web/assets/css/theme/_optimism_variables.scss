@@ -1,0 +1,129 @@
+// general
+$primary: #ff0420;
+$secondary: #638BAF;
+$common-link-color: $secondary;
+$button-primary-color: $secondary;
+$tertiary: #A3A9B5;
+$quaternary: #68778d;
+$quinary: #101112;
+$sextuple: #1B1E21;
+$octonary: #1a1e23;
+$additional-font: #fff;
+
+// Dark theme
+$dark-primary: #638BAF;
+$dark-primary-nav: $primary;
+$dark-primary-alternate: $secondary;
+$body-dark: $quinary; // body background
+$dark-bg: $octonary;
+$dark-light-bg: $octonary; 
+$dark-light: #232629;
+$labels-dark: #A3A9B5;
+
+$navbar-color-dark-mode: $octonary;
+$navbar-search-color-dark-mode: $octonary;
+$navbar-search-slash-icon-color: #fff;
+$navbar-link-color-dark-mode: #fff;
+$navbar-menu-icons-fill: #828ba0;
+$navbar-toggler-icon-dark-mode: invert(0);
+$navbar-dropdown-item-color-hover-dark-mode: $primary;
+$dropdown-item-color-dark-mode: $octonary;
+$dropdown-item-color-hover-dark-mode: $secondary;
+$header-icon-color-hover: $primary;
+$header-icon-border-color-hover: $primary;
+
+$btn-line-dark-mode: #fff;
+$btn-line-border-hover-dark-mode: $secondary;
+$btn-line-background-color-hover-dark-mode: $secondary;
+$btn-dropdown-line-background-color-dark-mode: #232629;
+$btn-dropdown-line-color-dark-mode: #828ba0;
+
+$logo-filter-dark-mode: brightness(1) invert(0);
+$layout-container-color-dark-mode: $quinary;
+
+$tile-block-number-color: $secondary;
+$tile-block-number-color-dark-mode: $secondary;
+$tile-transaction_hash_link-color-dark-mode: $secondary;
+$tile-address_hash_link-color: $secondary;
+$tile-address_hash_link-color-dark-mode: $secondary;
+$tile-body-color-dark-mode: #232629;
+$tile-bottom-contents-color-dark-mode: $quinary;
+$tile-type-block-border-left-color: $tertiary;
+$tile-tx-fee-color-dark-mode: $tertiary;
+$tile-data-from-now-color-dark-mode: $tertiary;
+$pagination-page-link-background-active: $secondary;
+
+$card-color-dark-mode: $sextuple;
+$card-title-color-dark-mode: $tertiary;
+$alert-danger-background-color-dark-mode: #232629;
+$form-control-background-color-dark-mode: #232629;
+$stakes-td-border-bottom-color-dark-mode: #232629;
+$stakes-table-head-color-dark-mode: $tertiary;
+$text-muted-dark-mode: $tertiary;
+$data-empty-response-message-dark-mode: $tertiary;
+$tooltip-background-color-dark-mode: #2D3748;
+$tooltip-inversed-background-color: #2D3748;
+$tooltip-inversed-color: #fff;
+$tooltip-inversed-background-color-dark-mode: #2D3748;
+
+// footer
+$footer-background-color: $quinary;
+$footer-title-color: $tertiary;
+$footer-text-color: $tertiary;
+$footer-item-disc-color: $tertiary;
+$footer-fontawesome-color: $primary;
+$footer-link-color: #fff;
+
+// footer in the dark mode
+$footer-background-color-dark-mode: $quinary;
+$footer-title-color-dark-mode: $tertiary;
+$footer-text-color-dark-mode: $tertiary;
+$footer-item-disc-color-dark-mode: $tertiary;
+$footer-fontawesome-color-dark-mode: $primary;
+$footer-link-color-dark-mode: #fff;
+
+// dashboard
+$dashboard-line-color-price: #93d7ff; // price left border
+$dashboard-banner-chart-legend-label-color: $footer-text-color;
+$dashboard-stats-item-label-color: $footer-text-color;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
+$dashboard-stats-left-border-color: $primary;
+$dashboard-banner-network-stats-label: $quaternary;
+$dashboard-stats-item-border-color: $primary; // stat border
+$dashboard-banner-gradient-start: #000; // gradient begin
+$dashboard-banner-gradient-end: #1B1E23; // gradient end
+$dashboard-banner-network-plain-container-background-color: $sextuple; // stats bg
+$dashboard-line-color-transactions: linear-gradient(0.52deg, #E93434 -35.19%, #861BF5 139.35%);
+
+// dashboard in the dark mode
+$dashboard-line-color-price-dark-mode: #93d7ff; // price left border
+$dashboard-banner-chart-legend-label-color-dark-mode: $footer-text-color;
+$dashboard-stats-item-label-color-dark-mode: $footer-text-color;
+$dashboard-banner-chart-legend-value-color-dark-mode: #fff; // chart labels
+$dashboard-stats-item-value-color-dark-mode: #fff; // stat values
+$dashboard-stats-left-border-color-dark-mode: $primary;
+$dashboard-banner-network-stats-label-dark-mode: $quaternary;
+$dashboard-stats-item-border-color-dark-mode: $primary; // stat border
+$dashboard-banner-network-plain-container-background-color-dark-mode: $sextuple; // stats bg
+$dashboard-line-color-transactions-dark-theme: linear-gradient(0.52deg, #E93434 -35.19%, #861BF5 139.35%);;
+
+// form
+$form-control-border-color-active: $secondary;
+
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $secondary; // button border and font color && hover bg color
+$btn-copy-color: $secondary; // btn copy
+$btn-qr-color: $secondary; // btn qr-code
+$btn-address-card-icon-color: $secondary; // btn address color
+$btn-contract-color: $secondary;
+
+//links & tile
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+
+// card
+$card-background-1: $secondary;
+$card-tab-active: $secondary;
