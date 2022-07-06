@@ -601,6 +601,16 @@ msgid "Collapse"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:20
+msgid "Company name"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:32
+msgid "Company website"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_compiler_field.html.eex:3
 msgid "Compiler"
 msgstr ""
@@ -926,7 +936,7 @@ msgid "DApp for Staking %{symbol} tokens"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:151
+#: lib/block_scout_web/templates/chain/show.html.eex:84
 msgid "Daily Transactions"
 msgstr ""
 
@@ -2033,6 +2043,28 @@ msgid "Priority Fees"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:4
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:215
+msgid "Profile"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:221
+msgid "Public Tags"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:20
+msgid "Public tag"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:22
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:7
+msgid "Public tags"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:5
 msgid "QR Code"
@@ -2201,6 +2233,11 @@ msgid "Self-Destruct"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:63
+msgid "Send request"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:163
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:124
 msgid "Server Response"
@@ -2254,6 +2291,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_token/overview.html.eex:45
 msgid "Shows total assets held in the address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:222
+msgid "Sign out"
 msgstr ""
 
 #, elixir-format
@@ -3278,6 +3320,16 @@ msgid "Warning! Contract bytecode has been changed and doesn't match the verifie
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+msgid "Watch list"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:7
+msgid "Watchlist"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:2
 msgid "We found the following pools you can claim reward from:"
 msgstr ""
@@ -3400,6 +3452,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:16
 msgid "Your Pool Short Description (optional)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:15
+msgid "Your name"
 msgstr ""
 
 #, elixir-format

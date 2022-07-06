@@ -60,6 +60,11 @@ defmodule BlockScoutWeb.WebRouter do
       only: [:new, :create, :edit, :update, :delete, :index],
       as: :custom_abi
     )
+
+    resources("/public_tags_request", Account.PublicTagsRequestController,
+      only: [:new, :create, :edit, :update, :delete, :index],
+      as: :public_tags_request
+    )
   end
 
   # Disallows Iframes (write routes)

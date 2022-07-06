@@ -44,10 +44,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
 
     case get_watchlist_address!(conn, id) do
       nil ->
-        conn
-        |> put_status(404)
-        |> put_view(BlockScoutWeb.ErrorView)
-        |> render(:"404")
+        not_found(conn)
 
       %WatchlistAddress{} = wla ->
         form = WatchlistAddress.to_form(wla)
