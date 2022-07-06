@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Supply.ExchangeRate do
 
       circulating_supply = Decimal.sub(available_supply, wpoa_total_supply)
 
-      if Decimal.cmp(circulating_supply, 0) == :gt do
+      if Decimal.compare(circulating_supply, 0) == :gt do
         circulating_supply
       else
         Decimal.new(0)

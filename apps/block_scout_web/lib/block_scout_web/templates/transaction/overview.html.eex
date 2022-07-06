@@ -8,7 +8,7 @@
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
 <% burned_fee = 
   if !is_nil(max_fee_per_gas) and !is_nil(@transaction.gas_used) and !is_nil(base_fee_per_gas) do
-    if Decimal.cmp(max_fee_per_gas.value, 0) == :eq do
+    if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
       %Wei{value: Decimal.new(0)}
     else
       Wei.mult(base_fee_per_gas, @transaction.gas_used)
@@ -59,13 +59,6 @@
             </div>
           <% end %>
           <div class="d-flex flex-row">
-            <%= if show_alm_link?(@transaction.hash) do %>
-              <div class="mr-4 mb-2">
-                <a data-test="external_url" class="d-flex flex-row" href=<%= "https://#{get_alm_app_link(@transaction.hash)}/100/#{@transaction.hash}" %> target="_blank">
-                View In ALM App <span class="external-link-icon-2"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
-                </a>
-              </div>
-            <% end %>
             <%= if show_tenderly_link?() do %>
               <div class="mr-4 mb-4">
                 <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",

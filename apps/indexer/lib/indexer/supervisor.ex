@@ -5,15 +5,10 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
-  alias Explorer.Chain
-
   alias Indexer.{
     Block,
-    CalcLpTokensTotalLiqudity,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer,
-    SetAmbBridgedMetadataForTokens,
-    SetOmniBridgedMetadataForTokens
+    PendingTransactionsSanitizer
   }
 
   alias Indexer.Block.{Catchup, Realtime}
@@ -140,25 +135,8 @@ defmodule Indexer.Supervisor do
       {PendingOpsCleaner, [[], []]}
     ]
 
-    extended_fetchers =
-      if Chain.bridged_tokens_enabled?() do
-        fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
-        [{CalcLpTokensTotalLiqudity, [[], []]} | fetchers_with_omni_status]
-      else
-        basic_fetchers
-      end
-
-    amb_bridge_mediators = Application.get_env(:block_scout_web, :amb_bridge_mediators)
-
-    all_fetchers =
-      if amb_bridge_mediators && amb_bridge_mediators !== "" do
-        [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
-      else
-        extended_fetchers
-      end
-
     Supervisor.init(
-      all_fetchers,
+      basic_fetchers,
       strategy: :one_for_one
     )
   end
