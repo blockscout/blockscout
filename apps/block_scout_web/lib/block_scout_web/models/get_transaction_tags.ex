@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.Models.GetTransactionTags do
   def get_transaction_with_addresses_tags(_, _), do: %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
 
   def get_transaction_tags(transaction_hash, %{id: identity_id}) do
-    Repo.account_repo().get_by(TagTransaction, tx_hash: transaction_hash, identity_id: identity_id)
+    Repo.account_repo().get_by(TagTransaction, tx_hash: transaction_hash, identity_id: identity_id) |> debug("2434")
   end
 
   def get_transaction_tags(_, _), do: nil
@@ -37,5 +37,13 @@ defmodule BlockScoutWeb.Models.GetTransactionTags do
       personal_tags: Enum.dedup(from_tags.personal_tags ++ to_tags.personal_tags),
       watchlist_names: Enum.dedup(from_tags.watchlist_names ++ to_tags.watchlist_names)
     }
+  end
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
   end
 end

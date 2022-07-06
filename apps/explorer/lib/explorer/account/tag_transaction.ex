@@ -15,8 +15,13 @@ defmodule Explorer.Account.TagTransaction do
   @max_tag_transaction_per_account 15
 
   schema "account_tag_transactions" do
-    field(:name, :string)
-    field(:tx_hash, Hash.Full, null: false)
+    # field(:name, :string)
+    # field(:tx_hash, Hash.Full, null: false)
+    # field(:encrypted_name, Explorer.Encrypted.Binary)
+    # field(:encrypted_tx_hash, Explorer.Encrypted.TransactionHash, null: false)
+
+    field(:name, Explorer.Encrypted.Binary)
+    field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
 
     belongs_to(:identity, Identity)
 
@@ -51,9 +56,7 @@ defmodule Explorer.Account.TagTransaction do
     check_transaction_existance_inner(changeset, tx_hash)
   end
 
-  defp check_transaction_existance(%Changeset{data: %{tx_hash: tx_hash}} = changeset) do
-    check_transaction_existance_inner(changeset, tx_hash)
-  end
+  defp check_transaction_existance(changeset), do: changeset
 
   defp check_transaction_existance_inner(changeset, tx_hash) do
     if match?({:ok, _}, Chain.hash_to_transaction(tx_hash)) do
