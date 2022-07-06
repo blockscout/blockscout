@@ -307,11 +307,7 @@ defmodule EthereumJSONRPC.Receipt do
        do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
-<<<<<<< HEAD
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed blobGasPrice) do
-=======
-       when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex l1Fee l1GasPrice l1GasUsed) do
->>>>>>> bdd85e14cb (Transaction page L1 fields)
     result =
       if is_nil(quantity) do
         nil
