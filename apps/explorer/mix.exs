@@ -113,7 +113,8 @@ defmodule Explorer.Mixfile do
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
       {:tesla, "~> 1.4.4"},
-      {:cbor, "~> 1.0"}
+      {:cbor, "~> 1.0"},
+      {:cloak_ecto, "~> 1.2.0"}
     ]
   end
 

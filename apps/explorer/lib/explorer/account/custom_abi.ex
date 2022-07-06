@@ -15,11 +15,15 @@ defmodule Explorer.Account.CustomABI do
   @max_abis_per_account 15
 
   schema "account_custom_abis" do
-    field(:name, :string)
     field(:abi, {:array, :map})
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
-    field(:address_hash, Hash.Address, null: false)
+    # field(:name, :string)
+    # field(:address_hash, Hash.Address, null: false)
+    # field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+    # field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:name, Explorer.Encrypted.Binary)
 
     belongs_to(:identity, Identity)
 

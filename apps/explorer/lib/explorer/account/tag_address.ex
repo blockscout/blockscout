@@ -15,8 +15,14 @@ defmodule Explorer.Account.TagAddress do
   @max_tag_address_per_account 15
 
   schema "account_tag_addresses" do
-    field(:name, :string)
-    field(:address_hash, Hash.Address, null: false)
+    # field(:name, :string)
+    # field(:address_hash, Hash.Address, null: false)
+    # field(:encrypted_name, Explorer.Encrypted.Binary)
+    # field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+
+    field(:name, Explorer.Encrypted.Binary)
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+
     belongs_to(:identity, Identity)
 
     timestamps()
@@ -47,10 +53,6 @@ defmodule Explorer.Account.TagAddress do
   end
 
   defp check_existance_or_create_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do
-    check_existance_or_create_address_inner(changeset, address_hash)
-  end
-
-  defp check_existance_or_create_address(%Changeset{data: %{address_hash: address_hash}, valid?: true} = changeset) do
     check_existance_or_create_address_inner(changeset, address_hash)
   end
 
