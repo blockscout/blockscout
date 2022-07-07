@@ -90,7 +90,8 @@ defmodule Explorer.Market.History.Cataloger do
 
   @spec source() :: module()
   defp source do
-    config_or_default(:source, Explorer.Market.History.Source.CryptoCompare)
+    config_or_default(:source, Explorer.Market.History.Source.AstraExchange)
+    #config_or_default(:source, Explorer.Market.History.Source.CryptoCompare)
   end
 
   @spec fetch_history(non_neg_integer(), non_neg_integer()) :: Task.t()
