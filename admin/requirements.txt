@@ -3,10 +3,10 @@ docker==5.0.2
 crossplane==0.5.7
 psycopg2==2.9.3
 
-ima-predeployed==1.3.1a5
+ima-predeployed==1.3.1a7
 etherbase-predeployed==1.1.0a1
 marionette-predeployed==1.1.0a0
-filestorage-predeployed==1.0.1b1
+filestorage-predeployed==1.1.0.dev2
 config-controller-predeployed==1.0.1.dev0
 multisigwallet-predeployed==1.1.0a0
 predeployed-generator==1.1.0a1

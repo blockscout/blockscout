@@ -20,7 +20,8 @@ from marionette_predeployed import (
     UpgradeableMarionetteGenerator, MARIONETTE_ADDRESS, MARIONETTE_IMPLEMENTATION_ADDRESS
 )
 from filestorage_predeployed import (
-    UpgradeableFileStorageGenerator, FILESTORAGE_ADDRESS, FILESTORAGE_IMPLEMENTATION_ADDRESS
+    UpgradeableFileStorageGenerator, FILESTORAGE_ADDRESS, FILESTORAGE_IMPLEMENTATION_ADDRESS,
+    FileStorageGenerator
 )
 from config_controller_predeployed import (
     UpgradeableConfigControllerGenerator,
@@ -44,7 +45,7 @@ def generate_config(schain_name):
         config = {
             'alloc': {
                 **fetch_predeployed_info(schain_name, addresses),
-                **generate_owner_accounts(schain_name)
+                # **generate_owner_accounts(schain_name)
             },
             'verify': verification_data
         }
@@ -100,6 +101,8 @@ def generate_verify_data():
         ETHERBASE_ADDRESS: UpgradeableEtherbaseUpgradeableGenerator().get_meta(),
         ETHERBASE_IMPLEMENTATION_ADDRESS: EtherbaseUpgradeableGenerator().get_meta(),
         MULTISIGWALLET_ADDRESS: MultiSigWalletGenerator().get_meta(),
+        FILESTORAGE_ADDRESS: UpgradeableFileStorageGenerator().get_meta(),
+        FILESTORAGE_IMPLEMENTATION_ADDRESS: FileStorageGenerator().get_meta(),
         **generate_meta()
     }
     return {
