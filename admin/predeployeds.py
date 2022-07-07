@@ -9,7 +9,7 @@ from web3 import Web3, HTTPProvider
 from admin import (
     SCHAIN_CONFIG_DIR_PATH, MAINNET_IMA_ABI_FILEPATH, PROXY_ADMIN_PREDEPLOYED_ADDRESS, BASE_ADDRESS,
     ETHERBASE_ALLOC, SCHAIN_OWNER_ALLOC, NODE_OWNER_ALLOC, ZERO_ADDRESS, ENDPOINT, ABI_FILEPATH,
-    HOST_SCHAIN_CONFIG_DIR_PATH
+    HOST_SCHAIN_CONFIG_DIR_PATH, EXPLORERS_META_DATA_PATH
 )
 from admin.endpoints import read_json, schain_name_to_id
 
@@ -30,7 +30,7 @@ from config_controller_predeployed import (
 from multisigwallet_predeployed import MultiSigWalletGenerator, MULTISIGWALLET_ADDRESS
 from context_predeployed import ContextGenerator, CONTEXT_ADDRESS
 from predeployed_generator.openzeppelin.proxy_admin_generator import ProxyAdminGenerator
-from ima_predeployed.generator import generate_contracts
+from ima_predeployed.generator import generate_contracts, generate_meta
 
 logger = logging.getLogger(__name__)
 
@@ -39,87 +39,19 @@ def generate_config(schain_name):
     config_path = os.path.join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json')
     if not os.path.exists(config_path):
         logger.info(f'Generating config for {schain_name}')
+        verification_data = generate_verify_data()
+        addresses = verification_data.keys()
         config = {
             'alloc': {
-                **get_predeployed_data(),
-                # **get_ima_contracts(),
-                # **generate_owner_accounts(schain_name)
+                **fetch_predeployed_info(schain_name, addresses),
+                **generate_owner_accounts(schain_name)
             },
-            'verify': generate_verify_data()
+            'verify': verification_data
         }
         with open(config_path, 'w') as f:
             f.write(json.dumps(config, indent=4))
     host_config_path = os.path.join(HOST_SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json')
     return host_config_path
-
-
-def get_predeployed_data():
-    proxy_admin_generator = ProxyAdminGenerator()
-    proxy_admin_predeployed = proxy_admin_generator.generate_allocation(
-        contract_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-        owner_address=BASE_ADDRESS
-    )
-
-    etherbase_generator = UpgradeableEtherbaseUpgradeableGenerator()
-    etherbase_predeployed = etherbase_generator.generate_allocation(
-        contract_address=ETHERBASE_ADDRESS,
-        implementation_address=ETHERBASE_IMPLEMENTATION_ADDRESS,
-        schain_owner=BASE_ADDRESS,
-        ether_managers=[BASE_ADDRESS],
-        proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-        balance=ETHERBASE_ALLOC
-    )
-
-    marionette_generator = UpgradeableMarionetteGenerator()
-    marionette_predeployed = marionette_generator.generate_allocation(
-        contract_address=MARIONETTE_ADDRESS,
-        implementation_address=MARIONETTE_IMPLEMENTATION_ADDRESS,
-        proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-        schain_owner=BASE_ADDRESS,
-        marionette=BASE_ADDRESS,
-        owner=MULTISIGWALLET_ADDRESS,
-        ima=BASE_ADDRESS,
-    )
-    #
-    # filestorage_generator = UpgradeableFileStorageGenerator()
-    # filestorage_predeployed = filestorage_generator.generate_allocation(
-    #     contract_address=FILESTORAGE_ADDRESS,
-    #     implementation_address=FILESTORAGE_IMPLEMENTATION_ADDRESS,
-    #     schain_owner=BASE_ADDRESS,
-    #     proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS,
-    #     allocated_storage=0
-    # )
-
-    config_generator = UpgradeableConfigControllerGenerator()
-    config_controller_predeployed = config_generator.generate_allocation(
-        contract_address=CONFIG_CONTROLLER_ADDRESS,
-        implementation_address=CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS,
-        schain_owner=BASE_ADDRESS,
-        proxy_admin_address=PROXY_ADMIN_PREDEPLOYED_ADDRESS
-    )
-
-    multisigwallet_generator = MultiSigWalletGenerator()
-    multisigwallet_predeployed = multisigwallet_generator.generate_allocation(
-        contract_address=MULTISIGWALLET_ADDRESS,
-        originator_addresses=[BASE_ADDRESS]
-    )
-
-    context_generator = ContextGenerator()
-    context_predeployed = context_generator.generate_allocation(
-        contract_address=CONTEXT_ADDRESS,
-        schain_owner=BASE_ADDRESS,
-        schain_name=''
-    )
-
-    return {
-        **proxy_admin_predeployed,
-        **etherbase_predeployed,
-        **marionette_predeployed,
-        # **filestorage_predeployed,
-        **config_controller_predeployed,
-        **multisigwallet_predeployed,
-        **context_predeployed
-    }
 
 
 def get_ima_contracts():
@@ -143,15 +75,22 @@ def generate_owner_accounts(schain_name):
     return accounts
 
 
-def add_to_accounts(accounts, address, balance):
+def add_to_accounts(accounts, address, balance=0, nonce=0, code=""):
     fixed_address = Web3.toChecksumAddress(address)
-    accounts[fixed_address] = {
-        'balance': str(balance)
+    account = {
+        'balance': str(balance),
     }
+    if code:
+        account.update({
+            'code': code,
+            'nonce': hex(nonce),
+            'storage': {}
+        })
+    accounts[fixed_address] = account
 
 
 def generate_verify_data():
-    return {
+    raw_verification_dict = {
         PROXY_ADMIN_PREDEPLOYED_ADDRESS: ProxyAdminGenerator().get_meta(),
         CONTEXT_ADDRESS: ContextGenerator().get_meta(),
         CONFIG_CONTROLLER_ADDRESS: UpgradeableConfigControllerGenerator().get_meta(),
@@ -160,7 +99,12 @@ def generate_verify_data():
         MARIONETTE_IMPLEMENTATION_ADDRESS: MarionetteGenerator().get_meta(),
         ETHERBASE_ADDRESS: UpgradeableEtherbaseUpgradeableGenerator().get_meta(),
         ETHERBASE_IMPLEMENTATION_ADDRESS: EtherbaseUpgradeableGenerator().get_meta(),
-        MULTISIGWALLET_ADDRESS: MultiSigWalletGenerator().get_meta()
+        MULTISIGWALLET_ADDRESS: MultiSigWalletGenerator().get_meta(),
+        **generate_meta()
+    }
+    return {
+        Web3.toChecksumAddress(k): raw_verification_dict[k]
+        for k in raw_verification_dict
     }
 
 
@@ -168,6 +112,22 @@ def get_schain_originator(schain: dict):
     if schain['originator'] == ZERO_ADDRESS:
         return schain['mainnetOwner']
     return schain['originator']
+
+
+def fetch_predeployed_info(schain_name, contract_addresses):
+    predeployed_contracts = {}
+    with open(EXPLORERS_META_DATA_PATH) as explorers:
+        data = json.loads(explorers.read())
+        schain_endpoint = data[schain_name]['endpoint']
+    provider = HTTPProvider(schain_endpoint)
+    web3 = Web3(provider)
+    for address in contract_addresses:
+        code = web3.eth.get_code(address).hex()
+        if address == ETHERBASE_ADDRESS:
+            add_to_accounts(predeployed_contracts, address, balance=ETHERBASE_ALLOC, code=code)
+        else:
+            add_to_accounts(predeployed_contracts, address, code=code)
+    return predeployed_contracts
 
 
 def get_schain_info(schain_name):
