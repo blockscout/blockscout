@@ -2,6 +2,8 @@ import json
 import logging
 import os
 
+from etherbase_predeployed.etherbase_upgradeable_generator import EtherbaseUpgradeableGenerator
+from marionette_predeployed.marionette_generator import MarionetteGenerator
 from web3 import Web3, HTTPProvider
 
 from admin import (
@@ -41,7 +43,7 @@ def generate_config(schain_name):
             'alloc': {
                 **get_predeployed_data(),
                 # **get_ima_contracts(),
-                **generate_owner_accounts(schain_name)
+                # **generate_owner_accounts(schain_name)
             },
             'verify': generate_verify_data()
         }
@@ -149,21 +151,17 @@ def add_to_accounts(accounts, address, balance):
 
 
 def generate_verify_data():
-    verify_data = {}
-
-    proxy_admin_meta = ProxyAdminGenerator().get_meta()
-    verify_data.update({PROXY_ADMIN_PREDEPLOYED_ADDRESS: proxy_admin_meta})
-
-    context_meta = ContextGenerator().get_meta()
-    verify_data.update({CONTEXT_ADDRESS: context_meta})
-
-    upg_config_meta = UpgradeableConfigControllerGenerator().get_meta()
-    verify_data.update({CONFIG_CONTROLLER_ADDRESS: upg_config_meta})
-
-    config_meta = ConfigControllerGenerator().get_meta()
-    verify_data.update({CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS: config_meta})
-
-    return verify_data
+    return {
+        PROXY_ADMIN_PREDEPLOYED_ADDRESS: ProxyAdminGenerator().get_meta(),
+        CONTEXT_ADDRESS: ContextGenerator().get_meta(),
+        CONFIG_CONTROLLER_ADDRESS: UpgradeableConfigControllerGenerator().get_meta(),
+        CONFIG_CONTROLLER_IMPLEMENTATION_ADDRESS: ConfigControllerGenerator().get_meta(),
+        MARIONETTE_ADDRESS: UpgradeableMarionetteGenerator().get_meta(),
+        MARIONETTE_IMPLEMENTATION_ADDRESS: MarionetteGenerator().get_meta(),
+        ETHERBASE_ADDRESS: UpgradeableEtherbaseUpgradeableGenerator().get_meta(),
+        ETHERBASE_IMPLEMENTATION_ADDRESS: EtherbaseUpgradeableGenerator().get_meta(),
+        MULTISIGWALLET_ADDRESS: MultiSigWalletGenerator().get_meta()
+    }
 
 
 def get_schain_originator(schain: dict):

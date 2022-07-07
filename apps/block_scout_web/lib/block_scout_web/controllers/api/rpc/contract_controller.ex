@@ -516,8 +516,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractaddress", "address_hash")
     |> required_param(params, "contractname", "name")
     |> required_param(params, "compilerversion", "compiler_version")
-    |> optional_param(params, "constructorArguements", "constructor_arguments")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+    |> optional_param(params, "autodetectConstructorArguments", "autodetect_constructor_args")
   end
 
   defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do
