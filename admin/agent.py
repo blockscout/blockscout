@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+from os.path import isfile
 from time import sleep
 
 from admin import EXPLORER_SCRIPT_PATH, EXPLORERS_META_DATA_PATH, EXPLORER_VERSION
@@ -48,21 +49,18 @@ def run_explorer_for_schain(schain_name):
 
 def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint, version):
     logger.info(f'Updating meta data for {schain_name}')
-    if not os.path.isfile(EXPLORERS_META_DATA_PATH):
-        explorers = {}
-    else:
-        explorers = read_json(EXPLORERS_META_DATA_PATH)
-    new_schain = {
-        schain_name: {
-            'port': port,
-            'db_port': db_port,
-            'endpoint': endpoint,
-            'ws_endpoint': ws_endpoint,
-            'version': version,
-            'verified_contracts': False
-        }
-    }
-    explorers.update(new_schain)
+    explorers = read_json(EXPLORERS_META_DATA_PATH) if isfile(EXPLORERS_META_DATA_PATH) else {}
+    schain_meta = explorers.get(schain_name, {})
+    schain_meta.update({
+        'port': port,
+        'db_port': db_port,
+        'endpoint': endpoint,
+        'ws_endpoint': ws_endpoint,
+        'version': version,
+    })
+    explorers.update({
+        schain_name: schain_meta
+    })
     write_json(EXPLORERS_META_DATA_PATH, explorers)
 
 
