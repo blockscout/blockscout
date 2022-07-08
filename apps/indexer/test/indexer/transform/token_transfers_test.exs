@@ -158,6 +158,50 @@ defmodule Indexer.Transform.TokenTransfersTest do
     end
   end
 
+  test "parses itx without duplicate ids" do
+    # values below taken from problematic CELO transfers at https://github.com/celo-org/data-services/issues/331
+    itxi_txi_pairs = [
+      {114, 5},
+      {158, 11},
+      {323, 11},
+      {446, 11},
+      {568, 11},
+      {758, 11},
+      {907, 11},
+      {1134, 11},
+      {1258, 11},
+      {1395, 11},
+      {134, 12},
+      {175, 13},
+      {34, 2}
+    ]
+
+    test_itx_maps =
+      itxi_txi_pairs
+      |> Enum.map(fn {itx_i, tx_i} ->
+        %{
+          value: 1,
+          block_number: 13_606_235,
+          block_hash: "0xtestdata",
+          from_address_hash: "0xfrom",
+          to_address_hash: "0xto",
+          index: itx_i,
+          transaction_index: tx_i,
+          transaction_hash: "0xtransaction hash"
+        }
+      end)
+
+    %{token_transfers: result} = TokenTransfers.parse_itx(test_itx_maps, "0xgoldtokenaddresshash")
+
+    # create a map of log_index -> count of log_index in result
+    log_indexes = result |> Enum.map(& &1.log_index) |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(&2, &1, 0) + 1))
+
+    log_indexes
+    |> Enum.each(fn {index, count} ->
+      assert count == 1, "Index #{index} should be unique but was found #{count} times"
+    end)
+  end
+
   defp truncated_hash("0x000000000000000000000000" <> rest) do
     "0x" <> rest
   end
