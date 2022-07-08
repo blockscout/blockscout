@@ -1,3 +1,4 @@
+import logging
 from os.path import join
 import requests
 import json
@@ -7,6 +8,8 @@ from web3 import Web3
 from admin import SCHAIN_CONFIG_DIR_PATH, EXPLORERS_META_DATA_PATH
 from admin.endpoints import read_json, write_json
 
+logger = logging.getLogger(__name__)
+
 
 def verify(schain_name):
     config = read_json(join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json'))
@@ -15,6 +18,7 @@ def verify(schain_name):
     for verifying_address in j.keys():
         status = contracts.get(verifying_address)
         if status is False:
+            logging.info(f'Verifying {verifying_address} contract')
             contract_meta = j[verifying_address]
             contract = {
                 'contractaddress': verifying_address,
@@ -38,14 +42,18 @@ def get_contract_list(schain_name):
     data = read_json(EXPLORERS_META_DATA_PATH)
     schain_explorer_endpoint = f'http://127.0.0.1:{data[schain_name]["port"]}'
     headers = {'content-type': 'application/json'}
-    result = requests.get(
-        f'{schain_explorer_endpoint}/api?module=contract&action=listcontracts',
-        headers=headers
-    ).json()['result']
-    addresses = {
-        Web3.toChecksumAddress(contract['Address']): contract['ABI'] != 'Contract source code not verified'
-        for contract in result
-    }
+    addresses = {}
+    try:
+        result = requests.get(
+            f'{schain_explorer_endpoint}/api?module=contract&action=listcontracts',
+            headers=headers
+        ).json()['result']
+        addresses = {
+            Web3.toChecksumAddress(contract['Address']): contract['ABI'] != 'Contract source code not verified'
+            for contract in result
+        }
+    except ConnectionError as e:
+        logger.warning(f'get_contract_list failed with {e}')
     return addresses
 
 
@@ -55,7 +63,7 @@ def get_veify_url(schain_name):
     return f'{schain_explorer_endpoint}/api?module=contract&action=verifysourcecode&codeformat=solidity-standard-json-input'
 
 
-def send_verify_request(schain_name, verification_data):
+def verifying_address(schain_name, verification_data):
     headers = {'content-type': 'application/json'}
     try:
         return requests.post(
@@ -63,5 +71,5 @@ def send_verify_request(schain_name, verification_data):
             data=json.dumps(verification_data),
             headers=headers
         ).json()
-    except:
-        pass
+    except ConnectionError as e:
+        logger.warning(f'verifying_address failer with {e}')
