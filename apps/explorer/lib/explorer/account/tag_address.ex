@@ -46,27 +46,15 @@ defmodule Explorer.Account.TagAddress do
     |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
     |> put_hashed_fields()
-    |> debug("put_hashed_fields")
     |> unique_constraint([:identity_id, :address_hash_hash], message: "Address tag already exists")
-    |> debug("unique_constraint")
     |> check_existance_or_create_address()
     |> tag_address_count_constraint()
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
   end
 
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> debug("changeset")
     |> Repo.account_repo().insert()
-    |> debug("insert")
   end
 
   defp put_hashed_fields(changeset) do

@@ -67,16 +67,8 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
          do: {:ok, identity}
   end
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   def find_identity(auth_or_uid) do
-    Repo.account_repo().all(query_identity(auth_or_uid)) |> debug("identity")
+    Repo.account_repo().all(query_identity(auth_or_uid))
   end
 
   def query_identity(%Auth{} = auth) do
