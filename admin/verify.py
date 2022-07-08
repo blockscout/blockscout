@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def verify(schain_name):
+    logger.info(f'Verifying contracts for {schain_name}')
     config = read_json(join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json'))
     j = config['verify']
     contracts = get_contract_list(schain_name)
@@ -52,7 +53,7 @@ def get_contract_list(schain_name):
             Web3.toChecksumAddress(contract['Address']): contract['ABI'] != 'Contract source code not verified'
             for contract in result
         }
-    except ConnectionError as e:
+    except requests.exceptions.ConnectionError as e:
         logger.warning(f'get_contract_list failed with {e}')
     return addresses
 
@@ -71,5 +72,5 @@ def send_verify_request(schain_name, verification_data):
             data=json.dumps(verification_data),
             headers=headers
         ).json()
-    except ConnectionError as e:
+    except requests.exceptions.ConnectionError as e:
         logger.warning(f'verifying_address failer with {e}')
