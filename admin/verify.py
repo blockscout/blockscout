@@ -63,7 +63,7 @@ def get_veify_url(schain_name):
     return f'{schain_explorer_endpoint}/api?module=contract&action=verifysourcecode&codeformat=solidity-standard-json-input'
 
 
-def verifying_address(schain_name, verification_data):
+def send_verify_request(schain_name, verification_data):
     headers = {'content-type': 'application/json'}
     try:
         return requests.post(
