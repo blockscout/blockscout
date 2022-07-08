@@ -52,6 +52,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   defp new_identity(auth) do
     %Identity{
       uid: auth.uid,
+      uid_hash: auth.uid,
       email: email_from_auth(auth),
       name: name_from_auth(auth),
       nickname: nickname_from_auth(auth),
@@ -79,11 +80,11 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   end
 
   def query_identity(%Auth{} = auth) do
-    from(i in Identity, where: i.uid == ^auth.uid)
+    from(i in Identity, where: i.uid_hash == ^auth.uid)
   end
 
   def query_identity(uid) do
-    from(i in Identity, where: i.uid == ^uid)
+    from(i in Identity, where: i.uid_hash == ^uid)
   end
 
   defp basic_info(auth, identity) do

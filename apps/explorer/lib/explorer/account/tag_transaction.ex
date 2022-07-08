@@ -11,19 +11,20 @@ defmodule Explorer.Account.TagTransaction do
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   @max_tag_transaction_per_account 15
 
   schema "account_tag_transactions" do
-    field(:name, :string)
-    field(:tx_hash, Hash.Full, null: false)
+    # field(:name, :string)
+    # field(:tx_hash, Hash.Full, null: false)
 
-    field(:encrypted_name, Explorer.Encrypted.Binary)
-    field(:encrypted_tx_hash, Explorer.Encrypted.TransactionHash, null: false)
+    # field(:encrypted_name, Explorer.Encrypted.Binary)
+    # field(:encrypted_tx_hash, Explorer.Encrypted.TransactionHash, null: false)
     field(:tx_hash_hash, Cloak.Ecto.SHA256)
 
-    # field(:name, Explorer.Encrypted.Binary)
-    # field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
+    field(:name, Explorer.Encrypted.Binary)
+    field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
 
     belongs_to(:identity, Identity)
 
@@ -43,7 +44,8 @@ defmodule Explorer.Account.TagTransaction do
     |> cast(attrs, @attrs)
     |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
-    |> unique_constraint([:identity_id, :tx_hash], message: "Transaction tag already exists")
+    |> put_hashed_fields()
+    |> unique_constraint([:identity_id, :tx_hash_hash], message: "Transaction tag already exists")
     |> tag_transaction_count_constraint()
     |> check_transaction_existance()
   end
@@ -52,6 +54,22 @@ defmodule Explorer.Account.TagTransaction do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.account_repo().insert()
+  end
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+  end
+
+  defp put_hashed_fields(changeset) do
+    debug(get_field(changeset, :tx_hash), "tx")
+    debug(to_string(get_field(changeset, :tx_hash)), "tx")
+
+    changeset
+    |> put_change(:tx_hash_hash, hash_to_lower_case_string(get_field(changeset, :tx_hash)))
   end
 
   defp check_transaction_existance(%Changeset{changes: %{tx_hash: tx_hash}} = changeset) do
@@ -98,22 +116,23 @@ defmodule Explorer.Account.TagTransaction do
 
   def get_tags_transaction_by_identity_id(_), do: nil
 
-  def tag_transaction_by_address_hash_and_identity_id_query(address_hash, identity_id)
-      when not is_nil(address_hash) and not is_nil(identity_id) do
+  def tag_transaction_by_transaction_hash_and_identity_id_query(tx_hash, identity_id)
+      when not is_nil(tx_hash) and not is_nil(identity_id) do
     __MODULE__
-    |> where([tag], tag.identity_id == ^identity_id and tag.address_hash == ^address_hash)
+    |> where([tag], tag.identity_id == ^identity_id and tag.tx_hash == ^tx_hash)
   end
 
-  def tag_transaction_by_address_hash_and_identity_id_query(_, _), do: nil
+  def tag_transaction_by_transaction_hash_and_identity_id_query(_, _), do: nil
 
-  def get_tag_transaction_by_address_hash_and_identity_id(address_hash, identity_id)
-      when not is_nil(address_hash) and not is_nil(identity_id) do
-    address_hash
-    |> tag_transaction_by_address_hash_and_identity_id_query(identity_id)
+  def get_tag_transaction_by_transaction_hash_and_identity_id(tx_hash, identity_id)
+      when not is_nil(tx_hash) and not is_nil(identity_id) do
+    tx_hash
+    |> hash_to_lower_case_string()
+    |> tag_transaction_by_transaction_hash_and_identity_id_query(identity_id)
     |> Repo.account_repo().one()
   end
 
-  def get_tag_transaction_by_address_hash_and_identity_id(_, _), do: nil
+  def get_tag transaction_by_transaction_hash_and_identity_id(_, _), do: nil
 
   def tag_transaction_by_id_and_identity_id_query(tag_id, identity_id)
       when not is_nil(tag_id) and not is_nil(identity_id) do

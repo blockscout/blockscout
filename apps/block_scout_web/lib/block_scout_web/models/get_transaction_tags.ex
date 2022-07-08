@@ -21,7 +21,8 @@ defmodule BlockScoutWeb.Models.GetTransactionTags do
   def get_transaction_with_addresses_tags(_, _), do: %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
 
   def get_transaction_tags(transaction_hash, %{id: identity_id}) do
-    Repo.account_repo().get_by(TagTransaction, tx_hash: transaction_hash, identity_id: identity_id) |> debug("2434")
+    Repo.account_repo().get_by(TagTransaction, tx_hash_hash: transaction_hash, identity_id: identity_id)
+    |> debug("2434")
   end
 
   def get_transaction_tags(_, _), do: nil

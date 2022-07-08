@@ -12,13 +12,13 @@
                 <div class="form-group">
                   <%= label f, :value, gettext("API key"), class: "control-label", style: "font-size: 14px" %>
                   <%= text_input f, :value, class: "form-control", placeholder: gettext("API key"), readonly: true %>
-                  <%= error_tag f, :value %>
+                  <%= error_tag f, :value, class: "text-danger form-error" %>
                 </div>
               <% end %>
               <div class="form-group">
                 <%= label f, :name, gettext("Name"), class: "control-label", style: "font-size: 14px" %>
                 <%= text_input f, :name, class: "form-control", placeholder: gettext("Name this API key"), maxlength: 255 %>
-                <%= error_tag f, :name %>
+                <%= error_tag f, :name, class: "text-danger form-error" %>
               </div>
               <br>
               <div class="form-group float-right form-input">

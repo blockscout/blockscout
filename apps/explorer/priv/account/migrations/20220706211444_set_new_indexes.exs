@@ -20,7 +20,13 @@ defmodule Explorer.Repo.Account.Migrations.SetNewIndexes do
 
     create(unique_index(:account_tag_addresses, [:identity_id, :address_hash_hash]))
     create(unique_index(:account_tag_transactions, [:identity_id, :tx_hash_hash]))
-    create(unique_index(:account_watchlist_addresses, [:watchlist_id, :address_hash_hash]))
+
+    create(
+      unique_index(:account_watchlist_addresses, [:watchlist_id, :address_hash_hash],
+        name: "unique_watchlist_id_address_hash_hash_index"
+      )
+    )
+
     create(unique_index(:account_custom_abis, [:identity_id, :address_hash_hash]))
 
     create(index(:account_watchlist_notifications, [:transaction_hash_hash]))
