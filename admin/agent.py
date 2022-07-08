@@ -11,6 +11,7 @@ from admin.logger import init_logger
 from admin.migrations.revert_reasons import upgrade, is_schain_upgraded, set_schain_upgraded
 from admin.nginx import regenerate_nginx_config
 from admin.predeployeds import generate_config
+from admin.verify import verify
 
 init_logger()
 logger = logging.getLogger(__name__)
@@ -57,7 +58,8 @@ def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint, version)
             'db_port': db_port,
             'endpoint': endpoint,
             'ws_endpoint': ws_endpoint,
-            'version': version
+            'version': version,
+            'verified_contracts': False
         }
     }
     explorers.update(new_schain)
@@ -67,6 +69,11 @@ def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint, version)
 def is_current_version(schain_name):
     explorers = read_json(EXPLORERS_META_DATA_PATH)
     return explorers[schain_name].get('version') == EXPLORER_VERSION
+
+
+def verified_contracts(schain_name):
+    explorers = read_json(EXPLORERS_META_DATA_PATH)
+    return explorers[schain_name].get('contracts_verified') is True
 
 
 def run_iteration():
@@ -87,6 +94,8 @@ def run_iteration():
             if not is_schain_upgraded(schain_name):
                 upgrade(schain_name)
             run_explorer_for_schain(schain_name)
+        if not verified_contracts(schain_name):
+            verify(schain_name)
 
 
 def main():
