@@ -48,14 +48,6 @@ defmodule Explorer.Account.WatchlistAddress do
     timestamps()
   end
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
 
   def changeset do
@@ -70,12 +62,10 @@ defmodule Explorer.Account.WatchlistAddress do
     |> validate_length(:name, min: 1, max: 35)
     |> validate_required([:name, :address_hash, :watchlist_id], message: "Required")
     |> put_hashed_fields()
-    |> debug("put_hashed_fields")
     |> unique_constraint([:watchlist_id, :address_hash_hash],
       name: "unique_watchlist_id_address_hash_hash_index",
       message: "Address already added to the watchlist"
     )
-    |> debug("unique_constraint")
     |> check_address()
     |> watchlist_address_count_constraint()
   end
@@ -88,9 +78,7 @@ defmodule Explorer.Account.WatchlistAddress do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> debug("changeset ")
     |> Repo.account_repo().insert()
-    |> debug("insert")
   end
 
   def watchlist_address_count_constraint(%Changeset{changes: %{watchlist_id: watchlist_id}} = watchlist_address) do

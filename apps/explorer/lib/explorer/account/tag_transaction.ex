@@ -56,18 +56,7 @@ defmodule Explorer.Account.TagTransaction do
     |> Repo.account_repo().insert()
   end
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   defp put_hashed_fields(changeset) do
-    debug(get_field(changeset, :tx_hash), "tx")
-    debug(to_string(get_field(changeset, :tx_hash)), "tx")
-
     changeset
     |> put_change(:tx_hash_hash, hash_to_lower_case_string(get_field(changeset, :tx_hash)))
   end

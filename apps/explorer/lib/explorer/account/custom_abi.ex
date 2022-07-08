@@ -194,14 +194,6 @@ defmodule Explorer.Account.CustomABI do
     |> Repo.account_repo().one()
   end
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   def get_custom_abi_by_identity_id_and_address_hash(_, _), do: nil
 
   def get_custom_abi_by_id_and_identity_id(id, identity_id) when not is_nil(id) and not is_nil(identity_id) do
