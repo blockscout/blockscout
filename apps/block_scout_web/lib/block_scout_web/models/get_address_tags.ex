@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
     query =
       from(
         ta in TagAddress,
-        where: ta.address_hash == ^address_hash,
+        where: ta.address_hash_hash == ^address_hash,
         where: ta.identity_id == ^id,
         select: %{label: ta.name, display_name: ta.name, address_hash: ta.address_hash}
       )
@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
     query =
       from(
         wa in WatchlistAddress,
-        where: wa.address_hash == ^address_hash,
+        where: wa.address_hash_hash == ^address_hash,
         where: wa.watchlist_id == ^watchlist_id,
         select: %{label: wa.name, display_name: wa.name}
       )

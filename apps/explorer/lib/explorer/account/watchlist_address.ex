@@ -13,18 +13,20 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash, Wei}
 
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
+
   @max_watchlist_addresses_per_account 10
 
   schema "account_watchlist_addresses" do
-    field(:name, :string)
-    field(:address_hash, Hash.Address, null: false)
-    field(:encrypted_name, Explorer.Encrypted.Binary)
-    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+    # field(:name, :string)
+    # field(:address_hash, Hash.Address, null: false)
+    # field(:encrypted_name, Explorer.Encrypted.Binary)
+    # field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
 
     field(:address_hash_hash, Cloak.Ecto.SHA256)
 
-    # field(:name, Explorer.Encrypted.Binary)
-    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:name, Explorer.Encrypted.Binary)
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
 
     belongs_to(:watchlist, Watchlist)
 
@@ -46,6 +48,14 @@ defmodule Explorer.Account.WatchlistAddress do
     timestamps()
   end
 
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+  end
+
   @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
 
   def changeset do
@@ -59,15 +69,28 @@ defmodule Explorer.Account.WatchlistAddress do
     |> cast(attrs, @attrs)
     |> validate_length(:name, min: 1, max: 35)
     |> validate_required([:name, :address_hash, :watchlist_id], message: "Required")
-    |> unique_constraint([:watchlist_id, :address_hash], message: "Address already added to the watch list")
+    |> put_hashed_fields()
+    |> debug("put_hashed_fields")
+    |> unique_constraint([:watchlist_id, :address_hash_hash],
+      name: "unique_watchlist_id_address_hash_hash_index",
+      message: "Address already added to the watchlist"
+    )
+    |> debug("unique_constraint")
     |> check_address()
     |> watchlist_address_count_constraint()
+  end
+
+  defp put_hashed_fields(changeset) do
+    changeset
+    |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
+    |> debug("changeset ")
     |> Repo.account_repo().insert()
+    |> debug("insert")
   end
 
   def watchlist_address_count_constraint(%Changeset{changes: %{watchlist_id: watchlist_id}} = watchlist_address) do

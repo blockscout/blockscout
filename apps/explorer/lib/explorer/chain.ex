@@ -6195,4 +6195,10 @@ defmodule Explorer.Chain do
         false
     end
   end
+
+  def hash_to_lower_case_string(hash) do
+    hash
+    |> to_string()
+    |> String.downcase()
+  end
 end

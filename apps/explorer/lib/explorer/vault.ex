@@ -10,8 +10,8 @@ defmodule Explorer.Vault do
   end
 
   defp decode_env!(var) do
-    var
-    |> System.get_env()
-    |> Base.decode64!()
+    env = if Mix.env() == :test, do: "+fh7IElJfA61+vMMw8rW9SBJFHmhVL1DLpKE22qUJgw=", else: System.get_env(var)
+
+    Base.decode64!(env)
   end
 end
