@@ -44,7 +44,10 @@ def run_explorer(schain_name, endpoint, ws_endpoint):
 def run_explorer_for_schain(schain_name):
     endpoint = get_schain_endpoint(schain_name)
     ws_endpoint = get_schain_endpoint(schain_name, ws=True)
-    run_explorer(schain_name, endpoint, ws_endpoint)
+    if endpoint and ws_endpoint:
+        run_explorer(schain_name, endpoint, ws_endpoint)
+    else:
+        logger.warning(f"Couldn't create blockexplorer instance for {schain_name}")
 
 
 def update_meta_data(schain_name, port, db_port, endpoint, ws_endpoint, version):
