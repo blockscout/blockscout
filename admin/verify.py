@@ -9,9 +9,7 @@ from web3 import Web3
 
 from admin import SCHAIN_CONFIG_DIR_PATH, EXPLORERS_META_DATA_PATH
 from admin.endpoints import read_json, write_json
-from admin.logger import init_logger
 
-init_logger()
 logger = logging.getLogger(__name__)
 
 
