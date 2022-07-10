@@ -42,12 +42,14 @@ def generate_config(schain_name):
         logger.info(f'Generating config for {schain_name}')
         verification_data = generate_verify_data()
         addresses = verification_data.keys()
+        verification_status_data = {address: False for address in addresses}
         config = {
             'alloc': {
                 **fetch_predeployed_info(schain_name, addresses),
-                # **generate_owner_accounts(schain_name)
+                **generate_owner_accounts(schain_name)
             },
-            'verify': verification_data
+            'verify': verification_data,
+            'verification_status': verification_status_data
         }
         with open(config_path, 'w') as f:
             f.write(json.dumps(config, indent=4))
