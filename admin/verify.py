@@ -17,11 +17,9 @@ def verify(schain_name):
     logger.info(f'Verifying contracts for {schain_name}')
     config = read_json(join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json'))
     j = config['verify']
+    verified_contracts = get_verified_contract_list(schain_name)
     for verifying_address in j.keys():
-        status = is_contract_verified(schain_name, verifying_address)
-        if status is None:
-            continue
-        if status == 0:
+        if verifying_address not in verified_contracts:
             logging.info(f'Verifying {verifying_address} contract')
             contract_meta = j[verifying_address]
             contract = {
@@ -33,8 +31,9 @@ def verify(schain_name):
             response = send_verify_request(schain_name, contract)
             check_verify_status(schain_name, response['result'])
     all_verified = True
+    verified_contracts = get_verified_contract_list(schain_name)
     for verifying_address in j.keys():
-        if not is_contract_verified(schain_name, verifying_address):
+        if verifying_address not in verified_contracts:
             logger.info(f'Contract {verifying_address} is not verified')
             all_verified = False
     if all_verified:
@@ -44,20 +43,17 @@ def verify(schain_name):
         write_json(EXPLORERS_META_DATA_PATH, data)
 
 
-def get_contract_list(schain_name):
+def get_verified_contract_list(schain_name):
     data = read_json(EXPLORERS_META_DATA_PATH)
     schain_explorer_endpoint = f'http://127.0.0.1:{data[schain_name]["port"]}'
     headers = {'content-type': 'application/json'}
-    addresses = {}
+    addresses = []
     try:
         result = requests.get(
-            f'{schain_explorer_endpoint}/api?module=contract&action=listcontracts',
+            f'{schain_explorer_endpoint}/api?module=contract&action=listcontracts&filter=verified',
             headers=headers
         ).json()['result']
-        addresses = {
-            Web3.toChecksumAddress(contract['Address']): contract['ABI'] != 'Contract source code not verified'
-            for contract in result
-        }
+        addresses = [Web3.toChecksumAddress(contract['Address']) for contract in result]
     except requests.exceptions.ConnectionError as e:
         logger.warning(f'get_contract_list failed with {e}')
     return addresses
