@@ -18,7 +18,10 @@ def verify(schain_name):
     config = read_json(join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json'))
     j = config['verify']
     for verifying_address in j.keys():
-        if int(is_contract_verified(schain_name, verifying_address)) == 0:
+        status = is_contract_verified(schain_name, verifying_address)
+        if status is None:
+            continue
+        if status == 0:
             logging.info(f'Verifying {verifying_address} contract')
             contract_meta = j[verifying_address]
             contract = {
@@ -87,7 +90,7 @@ def is_contract_verified(schain_name, address):
             f'{schain_explorer_endpoint}/api?module=contract&action=getabi&address={address}',
             headers=headers
         ).json()['status']
-        return result
+        return False if int(result) == 0 else True
     except requests.exceptions.ConnectionError as e:
         logger.warning(f'is_contract_verified failed with {e}')
 
