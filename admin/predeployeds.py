@@ -45,7 +45,7 @@ def generate_config(schain_name):
         config = {
             'alloc': {
                 **fetch_predeployed_info(schain_name, addresses),
-                **generate_owner_accounts(schain_name)
+                # **generate_owner_accounts(schain_name)
             },
             'verify': verification_data
         }
@@ -153,3 +153,6 @@ def get_schain_info(schain_name):
         'generation': schain_info[9],
         'nodes': wallets
     }
+
+
+generate_config('fancy-rasalhague')

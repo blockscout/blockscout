@@ -1,5 +1,7 @@
 import logging
 from os.path import join
+from time import sleep
+
 import requests
 import json
 
@@ -7,7 +9,9 @@ from web3 import Web3
 
 from admin import SCHAIN_CONFIG_DIR_PATH, EXPLORERS_META_DATA_PATH
 from admin.endpoints import read_json, write_json
+from admin.logger import init_logger
 
+init_logger()
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +31,8 @@ def verify(schain_name):
                 'compilerversion': f'v{contract_meta["solcLongVersion"]}',
                 'sourceCode': json.dumps(contract_meta['input'])
             }
-            send_verify_request(schain_name, contract)
+            response = send_verify_request(schain_name, contract)
+            check_verify_status(schain_name, response['result'])
     post_contracts = get_contract_list(schain_name)
     all_verified = True
     for verifying_address in j.keys():
@@ -74,3 +79,33 @@ def send_verify_request(schain_name, verification_data):
         ).json()
     except requests.exceptions.ConnectionError as e:
         logger.warning(f'verifying_address failer with {e}')
+
+
+def check_verify_status(schain_name, uid):
+    data = read_json(EXPLORERS_META_DATA_PATH)
+    schain_explorer_endpoint = f'http://127.0.0.1:{data[schain_name]["port"]}'
+    headers = {'content-type': 'application/json'}
+    print(uid)
+    try:
+        while True:
+            sleep(10)
+            url = f'{schain_explorer_endpoint}/api?module=contract&action=checkverifystatus&guid={uid}'
+            response = requests.get(
+                url,
+                headers=headers
+            ).json()
+            if response['result'] != 'Pending in queue':
+                if response['result'] == 'Pass - Verified':
+                    logger.info('Contract successfully verified')
+                elif response['result'] == 'Fail - Unable to verify':
+                    logger.info('Failed to verified contract')
+                else:
+                    logger.info(response['result'])
+                break
+            else:
+                logger.info('Verify request is in the queue...')
+    except requests.exceptions.ConnectionError as e:
+        logger.warning(f'check_verify_id failed with {e}')
+
+
+verify('fancy-rasalhague')
