@@ -28,7 +28,7 @@ def verify(schain_name):
                 'sourceCode': json.dumps(contract_meta['input'])
             }
             response = send_verify_request(schain_name, contract)
-            if check_verify_status(schain_name, response['result']):
+            if response and check_verify_status(schain_name, response['result']):
                 set_contract_verified(schain_name, verifying_address)
     all_verified = True
     upd_config = read_json(join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json'))
@@ -100,6 +100,7 @@ def is_contract_verified(schain_name, address):
 
 def check_verify_status(schain_name, uid):
     if uid == 'Smart-contract already verified':
+        logger.info('Contract already verified')
         return True
     data = read_json(EXPLORERS_META_DATA_PATH)
     schain_explorer_endpoint = f'http://127.0.0.1:{data[schain_name]["port"]}'
