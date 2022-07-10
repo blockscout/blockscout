@@ -95,7 +95,7 @@ def run_iteration():
             if not is_schain_upgraded(schain_name):
                 upgrade(schain_name)
             run_explorer_for_schain(schain_name)
-        if not verified_contracts(schain_name):
+        if not verified_contracts(schain_name) and is_explorer_running(schain_name):
             verify(schain_name)
 
 
