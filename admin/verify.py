@@ -19,10 +19,8 @@ def verify(schain_name):
     logger.info(f'Verifying contracts for {schain_name}')
     config = read_json(join(SCHAIN_CONFIG_DIR_PATH, f'{schain_name}.json'))
     j = config['verify']
-    contracts = get_contract_list(schain_name)
     for verifying_address in j.keys():
-        status = contracts.get(verifying_address)
-        if status is False:
+        if int(is_contract_verified(schain_name, verifying_address)) == 0:
             logging.info(f'Verifying {verifying_address} contract')
             contract_meta = j[verifying_address]
             contract = {
@@ -33,14 +31,15 @@ def verify(schain_name):
             }
             response = send_verify_request(schain_name, contract)
             check_verify_status(schain_name, response['result'])
-    post_contracts = get_contract_list(schain_name)
     all_verified = True
     for verifying_address in j.keys():
-        if post_contracts.get(verifying_address) is not True:
+        if not is_contract_verified(schain_name, verifying_address):
+            logger.info(f'Contract {verifying_address} is not verified')
             all_verified = False
     if all_verified:
+        logger.info(f'All contracts are verified for {schain_name}')
         data = read_json(EXPLORERS_META_DATA_PATH)
-        data[schain_name]['contracts_verified'] = True
+        data[schain_name]['contracts_ verified'] = True
         write_json(EXPLORERS_META_DATA_PATH, data)
 
 
@@ -81,11 +80,24 @@ def send_verify_request(schain_name, verification_data):
         logger.warning(f'verifying_address failer with {e}')
 
 
+def is_contract_verified(schain_name, address):
+    data = read_json(EXPLORERS_META_DATA_PATH)
+    schain_explorer_endpoint = f'http://127.0.0.1:{data[schain_name]["port"]}'
+    headers = {'content-type': 'application/json'}
+    try:
+        result = requests.get(
+            f'{schain_explorer_endpoint}/api?module=contract&action=getabi&address={address}',
+            headers=headers
+        ).json()['status']
+        return result
+    except requests.exceptions.ConnectionError as e:
+        logger.warning(f'is_contract_verified failed with {e}')
+
+
 def check_verify_status(schain_name, uid):
     data = read_json(EXPLORERS_META_DATA_PATH)
     schain_explorer_endpoint = f'http://127.0.0.1:{data[schain_name]["port"]}'
     headers = {'content-type': 'application/json'}
-    print(uid)
     try:
         while True:
             sleep(10)
@@ -105,7 +117,4 @@ def check_verify_status(schain_name, uid):
             else:
                 logger.info('Verify request is in the queue...')
     except requests.exceptions.ConnectionError as e:
-        logger.warning(f'check_verify_id failed with {e}')
-
-
-verify('fancy-rasalhague')
+        logger.warning(f'checkverifystatus failed with {e}')

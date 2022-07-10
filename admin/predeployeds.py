@@ -153,6 +153,3 @@ def get_schain_info(schain_name):
         'generation': schain_info[9],
         'nodes': wallets
     }
-
-
-generate_config('fancy-rasalhague')
