@@ -97,13 +97,15 @@ def check_verify_status(schain_name, uid):
     headers = {'content-type': 'application/json'}
     try:
         while True:
-            sleep(10)
             url = f'{schain_explorer_endpoint}/api?module=contract&action=checkverifystatus&guid={uid}'
             response = requests.get(
                 url,
                 headers=headers
             ).json()
-            if response['result'] != 'Pending in queue':
+            if response['result'] == 'Pending in queue' or response['result'] == 'Unknown UID':
+                logger.info('Verify request is pending...')
+                sleep(10)
+            else:
                 if response['result'] == 'Pass - Verified':
                     logger.info('Contract successfully verified')
                 elif response['result'] == 'Fail - Unable to verify':
@@ -111,7 +113,5 @@ def check_verify_status(schain_name, uid):
                 else:
                     logger.info(response['result'])
                 break
-            else:
-                logger.info('Verify request is in the queue...')
     except requests.exceptions.ConnectionError as e:
         logger.warning(f'checkverifystatus failed with {e}')
