@@ -8,6 +8,9 @@
       <%= if logo_text() do %>
         <span class="logo-text <%= unless logo(), do: "no-logo" %>"> <%= logo_text() %> </span>
       <% end %>
+      <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:enable_testnet_label] do %>
+        <%= render BlockScoutWeb.FormView, "_tag.html", text: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:testnet_label_text], additional_classes: ["testnet-label", "ml-2"] %>
+      <% end %>
     <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
