@@ -10,6 +10,7 @@
 - [#5690](https://github.com/blockscout/blockscout/pull/5690) - Allow special characters for password in DB URL parser
 
 ### Chore
+- [#5736](https://github.com/blockscout/blockscout/pull/5736) - Remove obsolete network selector
 - [#5703](https://github.com/blockscout/blockscout/pull/5703) - Remove bridged tokens functionality from Blockscout core
 - [#5700](https://github.com/blockscout/blockscout/pull/5700) - Remove Staking dapp logic from Blockscout core
 - [#5696](https://github.com/blockscout/blockscout/pull/5696) - Update .tool-versions

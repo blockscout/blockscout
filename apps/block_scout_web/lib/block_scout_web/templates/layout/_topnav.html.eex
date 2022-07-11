@@ -133,7 +133,7 @@
           </li>
         <% end %>
         <li class="nav-item dropdown">
-          <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>

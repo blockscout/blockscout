@@ -174,9 +174,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:28 lib/block_scout_web/templates/address_transaction/index.html.eex:22
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:21 lib/block_scout_web/templates/layout/_topnav.html.eex:71
-#: lib/block_scout_web/views/address_internal_transaction_view.ex:11 lib/block_scout_web/views/address_token_transfer_view.ex:11
-#: lib/block_scout_web/views/address_transaction_view.ex:11
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:71 lib/block_scout_web/views/address_internal_transaction_view.ex:11
+#: lib/block_scout_web/views/address_token_transfer_view.ex:11 lib/block_scout_web/views/address_transaction_view.ex:11
 msgid "All"
 msgstr ""
 
@@ -372,11 +371,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:51 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:54
 msgid "Cancel"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
-msgid "Change Network"
 msgstr ""
 
 #, elixir-format
@@ -942,11 +936,6 @@ msgid "Failed to decode log data."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:24
-msgid "Favorites"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:263
 msgid "Fetching gas used..."
 msgstr ""
@@ -1254,11 +1243,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:52
 msgid "Main Networks"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
-msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
@@ -1670,11 +1654,6 @@ msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
-msgid "Search network"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:47
 msgid "Search tokens"
 msgstr ""
@@ -1810,11 +1789,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:65
 msgid "Test Networks"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
-msgid "Testnet"
 msgstr ""
 
 #, elixir-format
@@ -2329,11 +2303,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:73
 msgid "Unique character string (TxID) assigned to every verified transaction."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
-msgid "Use the search box to find a hosted network, or select from the list of available networks below."
 msgstr ""
 
 #, elixir-format
