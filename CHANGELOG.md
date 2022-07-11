@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5732](https://github.com/blockscout/blockscout/pull/5732) - Manage testnet label (right to the navbar logo)
 - [#5699](https://github.com/blockscout/blockscout/pull/5699) - Switch to basic (non-pro) API endpoint for Coingecko requests, if API key is not provided
 
 ### Fixes
