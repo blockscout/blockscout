@@ -242,7 +242,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-logo {
-  height: $navbar-logo-height;
+  max-height: $navbar-logo-height;
   width: $navbar-logo-width;
 }
 
