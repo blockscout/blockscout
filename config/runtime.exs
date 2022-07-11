@@ -69,6 +69,11 @@ if config_env() == :prod do
     re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
     admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
+  config :block_scout_web, :footer,
+    chat_link: System.get_env("FOOTER_CHAT_LINK", "https://discord.gg/XmNatGKbPS"),
+    forum_link: System.get_env("FOOTER_FORUM_LINK", "https://forum.poa.network/c/blockscout"),
+    github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/blockscout/blockscout")
+
   default_api_rate_limit = 50
   default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
 
