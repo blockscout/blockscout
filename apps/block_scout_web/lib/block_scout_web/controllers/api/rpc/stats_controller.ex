@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(@wpoa_address),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       circulating_supply =
-        if Decimal.cmp(coin_total_supply_wei_decimal, address.token.total_supply) == :gt do
+        if Decimal.compare(coin_total_supply_wei_decimal, address.token.total_supply) == :gt do
           Decimal.sub(coin_total_supply_wei_decimal, address.token.total_supply)
         else
           Decimal.new(0)
