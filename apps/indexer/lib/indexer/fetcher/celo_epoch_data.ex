@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.CeloElectionRewards do
+defmodule Indexer.Fetcher.CeloEpochData do
   @moduledoc """
-  Fetches and imports celo voter votes, calculates and imports voter along with validator and validator group rewards.
+  Calculates and imports voter along with validator and validator group rewards.
   """
   use Indexer.Fetcher
   use Spandex.Decorators
@@ -11,8 +11,9 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
   alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
   alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent
   alias Explorer.Chain
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, CeloPendingEpochOperation}
   alias Explorer.Chain.CeloElectionRewards, as: CeloElectionRewardsChain
+  alias Explorer.Chain.CeloEpochRewards, as: CeloEpochRewardsChain
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
@@ -42,7 +43,7 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
     {:ok, final} =
-      Chain.stream_blocks_with_unfetched_election_rewards(initial, fn block, acc ->
+      Chain.stream_blocks_with_unfetched_rewards(initial, fn block, acc ->
         block
         |> reducer.(acc)
       end)
@@ -54,23 +55,29 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
   def run(entries, _json_rpc_named_arguments) do
     response =
       entries
-      |> Enum.map(fn entry ->
-        entry
-        |> get_voter_rewards()
-        |> get_validator_and_group_rewards()
-        |> import_items()
-      end)
+      |> Task.async_stream(
+        fn entry ->
+          entry
+          |> get_voter_rewards()
+          |> get_validator_and_group_rewards()
+          |> get_epoch_rewards()
+          |> import_items()
+        end,
+        timeout: 30_000
+      )
 
-    if Enum.all?(response, &(&1 == :ok)) do
+    failed = Enum.filter(response, &(&1 != :ok))
+
+    if Enum.empty?(failed) do
       :ok
     else
-      {:retry, response}
+      {:retry, failed}
     end
   end
 
   def get_voter_rewards(%{voter_rewards: _voter_rewards} = block_with_rewards), do: block_with_rewards
 
-  def get_voter_rewards(%{block_number: block_number, block_timestamp: block_timestamp}) do
+  def get_voter_rewards(%{block_number: block_number, block_timestamp: block_timestamp} = block) do
     account_group_pairs = ValidatorGroupVoteActivatedEvent.get_account_group_pairs_with_activated_votes(block_number)
 
     voter_rewards =
@@ -80,8 +87,8 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
         # chosen to get the votes at the end of each epoch, but in that case we would need to consider all additional
         # activations and revocations during the epoch (See VoterRewards.subtract_activated_add_revoked for more
         # details).
-        before_rewards_votes = fetch_from_blockchain(Map.put(account_group_pair, :block_number, block_number - 1))
-        after_rewards_votes = fetch_from_blockchain(Map.put(account_group_pair, :block_number, block_number))
+        before_rewards_votes = fetch_votes_from_blockchain(Map.put(account_group_pair, :block_number, block_number - 1))
+        after_rewards_votes = fetch_votes_from_blockchain(Map.put(account_group_pair, :block_number, block_number))
 
         plus_revoked_minus_activated_votes =
           VoterRewards.subtract_activated_add_revoked(%{
@@ -103,7 +110,7 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
         }
       end)
 
-    %{block_number: block_number, block_timestamp: block_timestamp, voter_rewards: voter_rewards}
+    Map.merge(block, %{voter_rewards: voter_rewards})
   end
 
   def calculate_voter_rewards(after_rewards_votes, before_rewards_votes, nil = _votes_plus_revoked_minus_activated),
@@ -112,7 +119,7 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
   def calculate_voter_rewards(after_rewards_votes, before_rewards_votes, plus_revoked_minus_activated_votes),
     do: after_rewards_votes - before_rewards_votes + plus_revoked_minus_activated_votes
 
-  def fetch_from_blockchain(entry) do
+  def fetch_votes_from_blockchain(entry) do
     case AccountReader.active_votes(entry) do
       {:ok, data} ->
         data
@@ -128,9 +135,7 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
       ),
       do: block_with_rewards
 
-  def get_validator_and_group_rewards(
-        %{block_number: block_number, block_timestamp: block_timestamp} = block_with_rewards
-      ) do
+  def get_validator_and_group_rewards(%{block_number: block_number, block_timestamp: block_timestamp} = block) do
     validator_and_group_rewards =
       ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(block_number)
 
@@ -158,14 +163,32 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
         }
       end)
 
-    Map.merge(block_with_rewards, %{validator_rewards: validator_rewards, group_rewards: group_rewards})
+    Map.merge(block, %{validator_rewards: validator_rewards, group_rewards: group_rewards})
+  end
+
+  def get_epoch_rewards(%{epoch_rewards: _epoch_rewards} = block_with_rewards), do: block_with_rewards
+
+  def get_epoch_rewards(block) do
+    epoch_rewards = fetch_epoch_rewards_from_blockchain(block)
+    Map.merge(block, %{epoch_rewards: epoch_rewards})
+  end
+
+  def fetch_epoch_rewards_from_blockchain(entry) do
+    case AccountReader.epoch_reward_data(entry) do
+      {:ok, data} ->
+        data
+
+      error ->
+        Logger.debug(inspect(error))
+        Map.put(entry, :error, error)
+    end
   end
 
   def import_items(block_with_rewards) do
     reward_types_present_for_block =
       MapSet.intersection(
         MapSet.new(Map.keys(block_with_rewards)),
-        MapSet.new([:voter_rewards, :validator_rewards, :group_rewards])
+        MapSet.new([:voter_rewards, :validator_rewards, :group_rewards, :epoch_rewards])
       )
 
     block_with_changes =
@@ -181,6 +204,21 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
       :ok -> :ok
       {:error, :changeset} -> block_with_changes
       {:error, :import} -> block_with_rewards
+    end
+  end
+
+  def changeset(epoch_rewards) when is_map(epoch_rewards) do
+    changeset = CeloEpochRewardsChain.changeset(%CeloEpochRewardsChain{}, epoch_rewards)
+
+    if changeset.valid? do
+      {:ok, changeset.changes}
+    else
+      Logger.error(
+        fn -> "Epoch rewards changeset errors. Block #{inspect(changeset.changes.block_number)} requeued." end,
+        errors: changeset.errors
+      )
+
+      {:error}
     end
   end
 
@@ -212,8 +250,13 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
 
   def chain_import(block_with_changes) when not is_map_key(block_with_changes, :group_rewards), do: {:error, :changeset}
 
+  def chain_import(block_with_changes) when not is_map_key(block_with_changes, :epoch_rewards), do: {:error, :changeset}
+
   def chain_import(block_with_changes) do
     import_params = %{
+      celo_epoch_rewards: %{
+        params: [block_with_changes.epoch_rewards]
+      },
       celo_election_rewards: %{
         params:
           List.flatten([
@@ -227,6 +270,7 @@ defmodule Indexer.Fetcher.CeloElectionRewards do
 
     case Chain.import(import_params) do
       {:ok, _} ->
+        CeloPendingEpochOperation.delete_celo_pending_epoch_operation(block_with_changes.block_number)
         :ok
 
       {:error, reason} ->

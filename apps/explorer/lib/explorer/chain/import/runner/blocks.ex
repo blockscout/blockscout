@@ -370,7 +370,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         |> MapSet.to_list()
         |> Enum.filter(fn block_number -> EpochUtil.is_epoch_block?(block_number) end)
         |> Enum.map(&Enum.find(changes_list, fn block -> block.number == &1 end))
-        |> Enum.map(&%{block_number: &1.number, fetch_epoch_rewards: true, election_rewards: true})
+        |> Enum.map(&%{block_number: &1.number, fetch_epoch_data: true})
 
       Import.insert_changes_list(
         repo,

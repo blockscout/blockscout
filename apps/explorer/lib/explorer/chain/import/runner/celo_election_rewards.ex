@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Runner.CeloElectionRewards do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.CeloElectionRewards, as: CeloElectionRewardsChain
-  alias Explorer.Chain.{CeloPendingEpochOperation, Import}
+  alias Explorer.Chain.Import
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]
@@ -38,22 +38,8 @@ defmodule Explorer.Chain.Import.Runner.CeloElectionRewards do
     insert_options = Util.make_insert_options(option_key(), @timeout, options)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    multi_chain =
-      Multi.run(multi, :insert_celo_election_rewards_items, fn repo, _ ->
-        insert(repo, changes_list, insert_options)
-      end)
-
-    multi_chain
-    |> Multi.run(:falsify_election_rewards, fn _, _ ->
-      [first_reward | _] = changes_list
-
-      changes =
-        CeloPendingEpochOperation.falsify_celo_pending_epoch_operation(
-          first_reward.block_number,
-          :election_rewards
-        )
-
-      {:ok, changes}
+    Multi.run(multi, :insert_celo_election_rewards_items, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
     end)
   end
 
