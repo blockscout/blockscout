@@ -104,7 +104,7 @@
                   <% else %>
                     <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
-                
+
                 <%= if confirmations > 0 do %>
                   <span class="bs-label large ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= " " <> confirmations_ds_name(confirmations) %></span>
                 <% end %>
@@ -203,7 +203,7 @@
                   <%= link(
                     recipient_address_hash,
                     to: address_path(@conn, :show, recipient_address_hash)
-                  ) %> 
+                  ) %>
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
@@ -298,7 +298,7 @@
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Value sent in the native token (and USD) if applicable.") %>
+                text: gettext("Value sent in the native token (and VND) if applicable.") %>
               <%= gettext "Value" %>
             </dt>
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
@@ -382,7 +382,7 @@
               </dt>
               <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(priority_fee, :ether) %> </dd>
             </dl>
-          <% end %> 
+          <% end %>
            <%= if !is_nil(burned_fee) do %>
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">

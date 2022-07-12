@@ -36,10 +36,10 @@ defmodule BlockScoutWeb.ChainView do
   end
 
   def format_usd_value(value) do
-    "#{format_currency_value(value)} USD"
+    "#{format_currency_value(value)} ₫"
   end
 
-  defp format_currency_value(value, symbol \\ "$")
+  defp format_currency_value(value, symbol \\ "₫")
 
   defp format_currency_value(value, symbol) when value < 0 do
     "#{symbol}0.000000"

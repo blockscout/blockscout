@@ -10,7 +10,7 @@
   </td>
   <td class="stakes-td">
     <span data-test="address_balance"><%= balance(@address) %></span>
-    <!-- USD value of the balance -->
+    <!-- VND value of the balance -->
     <span
       data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
       <%= if !empty_exchange_rate?(@exchange_rate) do %>

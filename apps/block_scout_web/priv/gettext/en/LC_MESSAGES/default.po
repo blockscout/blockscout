@@ -2703,7 +2703,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:301
-msgid "Value sent in the native token (and USD) if applicable."
+msgid "Value sent in the native token (and VND) if applicable."
 msgstr ""
 
 #, elixir-format

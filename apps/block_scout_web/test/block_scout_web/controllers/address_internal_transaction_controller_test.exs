@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+    test "includes VND exchange rate value for address in assigns", %{conn: conn} do
       address = insert(:address)
 
       conn =

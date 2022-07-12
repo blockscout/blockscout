@@ -1,6 +1,6 @@
 defmodule Explorer.Market.MarketHistory do
   @moduledoc """
-  Represents market history of configured coin to USD.
+  Represents market history of configured coin to VND.
   """
 
   use Explorer.Schema
@@ -12,11 +12,11 @@ defmodule Explorer.Market.MarketHistory do
   end
 
   @typedoc """
-  The recorded values of the configured coin to USD for a single day.
+  The recorded values of the configured coin to VND for a single day.
 
-   * `:closing_price` - Closing price in USD.
+   * `:closing_price` - Closing price in VND.
    * `:date` - The date in UTC.
-   * `:opening_price` - Opening price in USD.
+   * `:opening_price` - Opening price in VND.
   """
   @type t :: %__MODULE__{
           closing_price: Decimal.t(),

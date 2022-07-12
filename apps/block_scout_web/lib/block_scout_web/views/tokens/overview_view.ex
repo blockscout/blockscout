@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
   @doc """
-  Get the total value of the token supply in USD.
+  Get the total value of the token supply in VND.
   """
   def total_supply_usd(token) do
     if token.custom_cap do

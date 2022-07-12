@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Cache.TokenExchangeRate do
   @moduledoc """
-  Caches Token USD exchange_rate.
+  Caches Token VND exchange_rate.
   """
   use GenServer
 

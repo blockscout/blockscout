@@ -2,16 +2,17 @@ import $ from 'jquery'
 import numeral from 'numeral'
 import { BigNumber } from 'bignumber.js'
 
+
 export function formatUsdValue (value) {
-  return `${formatCurrencyValue(value)} USD`
+  return `${formatCurrencyValue(value)} ₫`
 }
 
 function formatTokenUsdValue (value) {
-  return formatCurrencyValue(value, '@')
+  return formatCurrencyValue(value, '₫')
 }
 
 function formatCurrencyValue (value, symbol) {
-  symbol = symbol || '$'
+  symbol = symbol || ''
   if (isNaN(value) || value === '0') return 'N/A'
   if (value === 0) return `${symbol}0.000000`
   if (value < 0.000001) return `${window.localized['Less than']} ${symbol}0.000001`

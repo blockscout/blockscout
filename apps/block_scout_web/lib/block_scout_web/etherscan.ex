@@ -2070,7 +2070,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @stats_coinprice_action %{
     name: "coinprice",
-    description: "Get latest price of native coin in USD and BTC.",
+    description: "Get latest price of native coin in VND and BTC.",
     required_params: [],
     optional_params: [],
     responses: [
