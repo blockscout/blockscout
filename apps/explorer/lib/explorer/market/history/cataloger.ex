@@ -90,7 +90,7 @@ defmodule Explorer.Market.History.Cataloger do
 
   @spec source() :: module()
   defp source do
-    config_or_default(:source, Explorer.Market.History.Source.AstraExchange)
+    config_or_default(:source, Explorer.Market.History.Source.TikiExchange)
     #config_or_default(:source, Explorer.Market.History.Source.CryptoCompare)
   end
 

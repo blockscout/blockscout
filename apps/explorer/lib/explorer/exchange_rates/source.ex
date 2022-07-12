@@ -35,7 +35,7 @@ defmodule Explorer.ExchangeRates.Source do
           result_formatted =
             result
             |> source.format_data()
-
+            
           {:ok, result_formatted}
         else
           resp
@@ -82,7 +82,7 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+    config(:source) || Explorer.ExchangeRates.Source.TikiExchange
   end
 
   @spec config(atom()) :: term

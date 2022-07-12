@@ -1,4 +1,4 @@
-defmodule Explorer.Market.History.Source.AstraExchange do
+defmodule Explorer.Market.History.Source.TikiExchange do
   @moduledoc """
   Adapter for fetching market history from https://api.tiki.vn.
 
@@ -6,7 +6,7 @@ defmodule Explorer.Market.History.Source.AstraExchange do
   different coin by changing the targeted coin.
 
       # In config.exs
-      config :explorer, coin: "ASTRA"
+      config :explorer, coin: "ASA"
 
   """
 
