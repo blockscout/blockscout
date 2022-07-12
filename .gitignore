@@ -48,3 +48,6 @@ screenshots/
 
 .idea/
 *.iml
+
+# Visual Studio Code
+.vscode
