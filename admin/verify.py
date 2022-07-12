@@ -39,7 +39,7 @@ def verify(schain_name):
     if all_verified:
         logger.info(f'All contracts are verified for {schain_name}')
         data = read_json(EXPLORERS_META_DATA_PATH)
-        data[schain_name]['contracts_ verified'] = True
+        data[schain_name]['contracts_verified'] = True
         write_json(EXPLORERS_META_DATA_PATH, data)
 
 
@@ -113,7 +113,7 @@ def check_verify_status(schain_name, uid):
                 headers=headers
             ).json()
             if response['result'] == 'Pending in queue' or response['result'] == 'Unknown UID':
-                logger.info('Verify request is pending...')
+                logger.debug(f'Verify status: {response["result"]}...')
                 sleep(10)
             else:
                 if response['result'] == 'Pass - Verified':
