@@ -199,7 +199,41 @@ defmodule Indexer.Transform.TokenTransfersTest do
     log_indexes
     |> Enum.each(fn {index, count} ->
       assert count == 1, "Index #{index} should be unique but was found #{count} times"
+      assert index in -2_147_483_648..2_147_483_647
     end)
+  end
+
+  test "creates log indices within the valid range for postgres integer field" do
+    itxi_txi_pairs = [
+      {407, 26},
+      {39, 34},
+      # max tx_i found from sampling 10000000 values in live data
+      {39, 199},
+      # 1000 transactions in block
+      {39, 1000},
+      # 9000 transactions in block
+      {39, 9000}
+    ]
+
+    test_itx_maps =
+      itxi_txi_pairs
+      |> Enum.map(fn {itx_i, tx_i} ->
+        %{
+          value: 1,
+          block_number: 13_606_235,
+          block_hash: "0xtestdata",
+          from_address_hash: "0xfrom",
+          to_address_hash: "0xto",
+          index: itx_i,
+          transaction_index: tx_i,
+          transaction_hash: "0xtransaction hash"
+        }
+      end)
+
+    %{token_transfers: result} = TokenTransfers.parse_itx(test_itx_maps, "0xgoldtokenaddresshash")
+
+    # require IEx; IEx.pry
+    for transfer <- result, do: assert(transfer.log_index in -2_147_483_648..2_147_483_647)
   end
 
   defp truncated_hash("0x000000000000000000000000" <> rest) do

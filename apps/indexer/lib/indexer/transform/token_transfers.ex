@@ -80,8 +80,9 @@ defmodule Indexer.Transform.TokenTransfers do
     %{token_transfers: [token_transfer | token_transfers], gold_token: gold_token}
   end
 
+  @doc "Discerns CELO token transfers from internal transactions"
   def parse_itx(txs, gold_token) do
-    initial_acc = %{token_transfers: [], gold_token: gold_token}
+    initial_acc = %{token_transfers: [], gold_token: gold_token, transfer_count: 0}
 
     txs
     |> Enum.filter(fn a -> a.value > 0 end)
@@ -91,24 +92,24 @@ defmodule Indexer.Transform.TokenTransfers do
     |> Enum.reduce(initial_acc, &do_parse_itx/2)
   end
 
-  defp do_parse_itx(tx, %{token_transfers: token_transfers, gold_token: gold_token}) do
-    to_hash = Map.get(tx, :to_address_hash, nil) || Map.get(tx, :created_contract_address_hash, nil)
+  defp do_parse_itx(itx, %{token_transfers: token_transfers, gold_token: gold_token, transfer_count: transfer_count}) do
+    to_hash = Map.get(itx, :to_address_hash, nil) || Map.get(itx, :created_contract_address_hash, nil)
 
     token_transfer = %{
-      amount: Decimal.new(tx.value),
-      block_number: tx.block_number,
-      block_hash: tx.block_hash,
+      amount: Decimal.new(itx.value),
+      block_number: itx.block_number,
+      block_hash: itx.block_hash,
       # Celo token transfers discerned from itx do not have a valid log index, so an id is calculated here to
       # satisfy schema constraints
-      log_index: -(tx.index + tx.transaction_index * 100_000_000),
-      from_address_hash: tx.from_address_hash,
+      log_index: -transfer_count,
+      from_address_hash: itx.from_address_hash,
       to_address_hash: to_hash,
       token_contract_address_hash: gold_token,
-      transaction_hash: tx.transaction_hash,
+      transaction_hash: itx.transaction_hash,
       token_type: "ERC-20"
     }
 
-    %{token_transfers: [token_transfer | token_transfers], gold_token: gold_token}
+    %{token_transfers: [token_transfer | token_transfers], gold_token: gold_token, transfer_count: transfer_count + 1}
   end
 
   defp combine_comments([a | [b | tl]]) do
