@@ -28,13 +28,13 @@ defmodule Explorer.Repo.ConfigHelperTest do
       assert result[:database] == "test_database"
     end
 
-    test "parse params from database url with hyphen in password" do
-      database_url = "postgresql://test_username:test-password@hostname.test.com:7777/test_database"
+    test "parse params from database url with special characters in password" do
+      database_url = "postgresql://test_username:awN!l#W*g$P%t-l^q&d@hostname.test.com:7777/test_database"
 
       result = ConfigHelper.get_db_config(%{url: database_url, env_func: fn _ -> nil end})
 
       assert result[:username] == "test_username"
-      assert result[:password] == "test-password"
+      assert result[:password] == "awN!l#W*g$P%t-l^q&d"
       assert result[:hostname] == "hostname.test.com"
       assert result[:port] == "7777"
       assert result[:database] == "test_database"

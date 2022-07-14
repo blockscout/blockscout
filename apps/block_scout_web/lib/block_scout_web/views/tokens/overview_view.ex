@@ -10,8 +10,6 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
 
   @tabs ["token-transfers", "token-holders", "read-contract", "inventory"]
-  @etherscan_token_link "https://etherscan.io/token/"
-  @blockscout_base_link "https://blockscout.com/"
 
   def decimals?(%Token{decimals: nil}), do: false
   def decimals?(%Token{decimals: _}), do: true
@@ -84,58 +82,4 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
       Decimal.mult(tokens, price)
     end
   end
-
-  def foreign_bridged_token_explorer_link(token) do
-    chain_id = Map.get(token, :foreign_chain_id)
-
-    base_token_explorer_link = get_base_token_explorer_link(chain_id)
-
-    foreign_token_contract_address_hash_string_no_prefix =
-      token.foreign_token_contract_address_hash.bytes
-      |> Base.encode16(case: :lower)
-
-    foreign_token_contract_address_hash_string = "0x" <> foreign_token_contract_address_hash_string_no_prefix
-
-    base_token_explorer_link <> foreign_token_contract_address_hash_string
-  end
-
-  # credo:disable-for-next-line /Complexity/
-  defp get_base_token_explorer_link(chain_id) when not is_nil(chain_id) do
-    case Decimal.to_integer(chain_id) do
-      181 ->
-        @blockscout_base_link <> "poa/qdai/tokens/"
-
-      100 ->
-        @blockscout_base_link <> "poa/xdai/tokens/"
-
-      99 ->
-        @blockscout_base_link <> "poa/core/tokens/"
-
-      77 ->
-        @blockscout_base_link <> "poa/sokol/tokens/"
-
-      42 ->
-        "https://kovan.etherscan.io/token/"
-
-      3 ->
-        "https://ropsten.etherscan.io/token/"
-
-      4 ->
-        "https://rinkeby.etherscan.io/token/"
-
-      5 ->
-        "https://goerli.etherscan.io/token/"
-
-      1 ->
-        @etherscan_token_link
-
-      56 ->
-        "https://bscscan.com/token/"
-
-      _ ->
-        @etherscan_token_link
-    end
-  end
-
-  defp get_base_token_explorer_link(_), do: @etherscan_token_link
 end
