@@ -6,7 +6,7 @@ defmodule Mix.Tasks.GenerateCeloEvents do
   require Logger
 
   @abi_path "priv/contracts_abi/celo/"
-  @destination_path "lib/explorer/celo/events/contract_events"
+  @destination_path "lib/explorer/celo/events/celo_contract_events"
   @shortdoc "Create event structs for provided abi files"
 
   def run(args) do
