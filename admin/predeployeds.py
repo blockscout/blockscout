@@ -9,9 +9,9 @@ from web3 import Web3, HTTPProvider
 from admin import (
     SCHAIN_CONFIG_DIR_PATH, MAINNET_IMA_ABI_FILEPATH, PROXY_ADMIN_PREDEPLOYED_ADDRESS, BASE_ADDRESS,
     ETHERBASE_ALLOC, SCHAIN_OWNER_ALLOC, NODE_OWNER_ALLOC, ZERO_ADDRESS, ENDPOINT, ABI_FILEPATH,
-    HOST_SCHAIN_CONFIG_DIR_PATH, EXPLORERS_META_DATA_PATH
+    HOST_SCHAIN_CONFIG_DIR_PATH
 )
-from admin.endpoints import read_json, schain_name_to_id
+from admin.endpoints import read_json, schain_name_to_id, get_schain_endpoint
 
 from etherbase_predeployed import (
     UpgradeableEtherbaseUpgradeableGenerator, ETHERBASE_ADDRESS, ETHERBASE_IMPLEMENTATION_ADDRESS
@@ -121,9 +121,7 @@ def get_schain_originator(schain: dict):
 
 def fetch_predeployed_info(schain_name, contract_addresses):
     predeployed_contracts = {}
-    with open(EXPLORERS_META_DATA_PATH) as explorers:
-        data = json.loads(explorers.read())
-        schain_endpoint = data[schain_name]['endpoint']
+    schain_endpoint = get_schain_endpoint(schain_name)
     provider = HTTPProvider(schain_endpoint)
     web3 = Web3(provider)
     for address in contract_addresses:
