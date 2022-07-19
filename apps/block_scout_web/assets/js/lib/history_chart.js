@@ -232,7 +232,8 @@ class MarketHistoryChart {
     }
 
     this.availableSupply = availableSupply
-    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
+    // config.data.datasets = [this.price, this.marketCap, this.numTransactions]
+    config.data.datasets = [this.price]
 
     const isChartLoadedKey = 'isChartLoaded'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
@@ -250,9 +251,9 @@ class MarketHistoryChart {
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
       const today = new Date().toJSON().slice(0, 10)
       this.availableSupply[today] = availableSupply
-      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
+      // this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
     } else {
-      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
+      // this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
     }
     this.chart.update()
   }
