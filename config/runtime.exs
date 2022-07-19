@@ -51,7 +51,9 @@ if config_env() == :prod do
     logo_footer: System.get_env("LOGO_FOOTER"),
     logo_text: System.get_env("LOGO_TEXT"),
     has_emission_funds: false,
-    show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true"
+    show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
+    enable_testnet_label: System.get_env("SHOW_TESTNET_LABEL", "false") == "true",
+    testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
   config :block_scout_web,
     link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
@@ -371,7 +373,8 @@ if config_env() == :prod do
     "ganache" => EthereumJSONRPC.Ganache,
     "geth" => EthereumJSONRPC.Geth,
     "parity" => EthereumJSONRPC.Parity,
-    "rsk" => EthereumJSONRPC.RSK
+    "rsk" => EthereumJSONRPC.RSK,
+    "erigon" => EthereumJSONRPC.Erigon
   }
 
   cond do
@@ -399,7 +402,7 @@ if config_env() == :prod do
           variant: variant_name_map[variant]
         ]
 
-    variant in ["besu", "parity", "rsk"] ->
+    variant in ["besu", "parity", "rsk", "erigon"] ->
       config :explorer,
         json_rpc_named_arguments: [
           transport: EthereumJSONRPC.HTTP,
@@ -710,6 +713,41 @@ if config_env() == :prod do
             ]
           ],
           variant: EthereumJSONRPC.RSK
+        ],
+        subscribe_named_arguments: [
+          transport:
+            System.get_env("ETHEREUM_JSONRPC_WS_URL") && System.get_env("ETHEREUM_JSONRPC_WS_URL") !== "" &&
+              EthereumJSONRPC.WebSocket,
+          transport_options: [
+            web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
+            url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
+          ]
+        ]
+
+    "erigon" ->
+      config :indexer,
+        block_interval: :timer.seconds(5),
+        json_rpc_named_arguments: [
+          transport:
+            if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
+              do: EthereumJSONRPC.HTTP,
+              else: EthereumJSONRPC.IPC
+            ),
+          transport_options: [
+            http: EthereumJSONRPC.HTTP.HTTPoison,
+            url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL"),
+            method_to_url: [
+              eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
+              trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
+              trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL")
+            ],
+            http_options: [
+              recv_timeout: :timer.minutes(10),
+              timeout: :timer.minutes(10),
+              hackney: [pool: :ethereum_jsonrpc]
+            ]
+          ],
+          variant: EthereumJSONRPC.Erigon
         ],
         subscribe_named_arguments: [
           transport:
