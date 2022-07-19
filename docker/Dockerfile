@@ -27,6 +27,7 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 ADD . .
 
 ARG COIN
+ENV BLOCKSCOUT_VERSION=$(date)
 RUN if [ "$COIN" != "" ]; then sed -i s/"ASA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
 # Run forderground build and phoenix digest
