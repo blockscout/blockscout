@@ -7,6 +7,7 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
   alias HTTP.RpcResponseEts
 
   require UUID
+  require Logger
 
   @behaviour HTTP
 
@@ -22,6 +23,13 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         RpcResponseEts.delete(id)
+
+        if reason == :checkout_timeout do
+          # https://github.com/edgurgel/httpoison/issues/414#issuecomment-693758760
+          Logger.error("Restarting hackney pool after :checkout_timeout error")
+          :hackney_pool.stop_pool(:ethereum_jsonrpc)
+        end
+
         {:error, reason}
     end
   end
