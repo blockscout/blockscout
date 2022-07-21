@@ -150,7 +150,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       result = Chain.balance_in_usd(token_balance)
 
-      assert Decimal.cmp(result, 30) == :eq
+      assert Decimal.compare(result, 30) == :eq
     end
 
     test "return nil if usd_value is not present" do
@@ -174,7 +174,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       result = Chain.balance_in_usd(token_balance)
 
-      assert Decimal.cmp(result, Decimal.from_float(0.3)) == :eq
+      assert Decimal.compare(result, Decimal.from_float(0.3)) == :eq
     end
   end
 end
