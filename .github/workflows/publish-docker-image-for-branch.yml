@@ -12,6 +12,15 @@ on:
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
+  MIX_ENV: 'prod'
+  NETWORK_PATH: '/xdai/mainnet'
+  SOCKET_ROOT: '/xdai/mainnet'
+  CHAIN_ID: '100'
+  JSON_RPC: 'https://dai.poa.network'
+  COIN_NAME: 'xDai'
+  SUBNETWORK: 'Gnosis Chain'
+  AUTH0_DOMAIN: 'login.blockscout.com'
+  AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/xdai/mainnet/auth/logout'
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
