@@ -157,11 +157,6 @@ msgid "Address (external or contract) sending the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:165
-msgid "Address balance in xDAI (doesn't include ERC20, ERC721, ERC1155 tokens)."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:50
 msgid "Address of the token contract"
 msgstr ""
@@ -2645,4 +2640,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:20
 msgid "Slow"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:165
+msgid "Address balance in"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address/overview.html.eex:165
+msgid "doesn't include ERC20, ERC721, ERC1155 tokens)."
 msgstr ""
