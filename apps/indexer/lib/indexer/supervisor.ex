@@ -97,14 +97,21 @@ defmodule Indexer.Supervisor do
 
     realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
 
+    realtime_fetcher =
+      if Application.get_env(:indexer, Realtime.Supervisor)[:enabled] do
+        [
+          {Realtime.Supervisor,
+           [
+             %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
+             [name: Realtime.Supervisor]
+           ]}
+        ]
+      else
+        []
+      end
+
     basic_fetchers = [
       # Root fetchers
-      {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
-      {Realtime.Supervisor,
-       [
-         %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
-         [name: Realtime.Supervisor]
-       ]},
       {Catchup.Supervisor,
        [
          %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
@@ -150,12 +157,19 @@ defmodule Indexer.Supervisor do
 
     amb_bridge_mediators = Application.get_env(:block_scout_web, :amb_bridge_mediators)
 
-    all_fetchers =
+    extended_fetchers_2 =
       if amb_bridge_mediators && amb_bridge_mediators !== "" do
         [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
       else
         extended_fetchers
       end
+
+    all_fetchers =
+      [
+        {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
+      ] ++
+        realtime_fetcher ++
+        extended_fetchers_2
 
     Supervisor.init(
       all_fetchers,

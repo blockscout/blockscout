@@ -2213,11 +2213,6 @@ msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
-msgid "Search network"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:47
 msgid "Search tokens"
 msgstr ""

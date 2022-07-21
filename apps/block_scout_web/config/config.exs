@@ -28,7 +28,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
   show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
   show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
   # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
-  staking_pool_list_refresh_interval: 5
+  staking_pool_list_refresh_interval: 5,
+  enable_testnet_label: System.get_env("SHOW_TESTNET_LABEL", "false") == "true",
+  testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
