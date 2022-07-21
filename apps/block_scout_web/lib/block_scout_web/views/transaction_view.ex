@@ -539,7 +539,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   defp amb_tx?(hash) do
-    Chain.amb_eth_tx?(hash) || Chain.amb_bsc_tx?(hash) || Chain.amb_poa_tx?(hash)
+    Chain.amb_eth_tx?(hash) || Chain.amb_bsc_tx?(hash) || Chain.amb_poa_tx?(hash) || Chain.amb_nft_tx?(hash)
   end
 
   defp show_alm_link?(hash) do

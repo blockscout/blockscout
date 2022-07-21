@@ -7404,71 +7404,55 @@ defmodule Explorer.Chain do
 
   @spec amb_eth_tx?(Address.t()) :: boolean()
   def amb_eth_tx?(hash) do
-    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
-
-    eth_omni_bridge_mediator = String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", ""))
-
-    if eth_omni_bridge_mediator == "" do
-      false
-    else
-      Repo.exists?(
-        from(
-          l in Log,
-          where: l.transaction_hash == ^hash,
-          where: fragment("first_topic like '0x59a9a802%'"),
-          where: l.address_hash == ^eth_omni_bridge_mediator
-        )
-      )
-    end
+    amb_tx?(hash, "ETH_OMNI_BRIDGE_MEDIATOR")
   end
 
   @spec amb_bsc_tx?(Address.t()) :: boolean()
   def amb_bsc_tx?(hash) do
-    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
-
-    bsc_omni_bridge_mediator = String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
-
-    if bsc_omni_bridge_mediator == "" do
-      false
-    else
-      Repo.exists?(
-        from(
-          l in Log,
-          where: l.transaction_hash == ^hash,
-          where: fragment("first_topic like '0x59a9a802%'"),
-          where: l.address_hash == ^bsc_omni_bridge_mediator
-        )
-      )
-    end
+    amb_tx?(hash, "BSC_OMNI_BRIDGE_MEDIATOR")
   end
 
   @spec amb_poa_tx?(Address.t()) :: boolean()
   def amb_poa_tx?(hash) do
-    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
+    amb_tx?(hash, "POA_OMNI_BRIDGE_MEDIATOR")
+  end
 
-    poa_omni_bridge_mediator = String.downcase(System.get_env("POA_OMNI_BRIDGE_MEDIATOR", ""))
+  @spec amb_nft_tx?(Address.t()) :: boolean()
+  def amb_nft_tx?(hash) do
+    amb_tx?(hash, "NFT_OMNI_BRIDGE_MEDIATOR")
+  end
 
-    if poa_omni_bridge_mediator == "" do
+  defp amb_tx?(hash, env_var) do
+    omni_bridge_mediator = String.downcase(System.get_env(env_var, ""))
+
+    if omni_bridge_mediator == "" do
       false
     else
-      Repo.exists?(
-        from(
-          l in Log,
-          where: l.transaction_hash == ^hash,
-          where: fragment("first_topic like '0x59a9a802%'"),
-          where: l.address_hash == ^poa_omni_bridge_mediator
-        )
-      )
+      log_exist?(hash, omni_bridge_mediator)
     end
+  end
+
+  defp log_exist?(transaction_hash, address_hash) do
+    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
+    # "0x4592bc44" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256[] tokenIds, uint256[] values, bytes32 indexed messageId) (NFT Omni bridge)
+
+    Repo.exists?(
+      from(
+        l in Log,
+        where: l.transaction_hash == ^transaction_hash,
+        where: l.address_hash == ^address_hash,
+        where: fragment("first_topic like '0x59a9a802%'") or fragment("first_topic like '0x4592bc44%'")
+      )
+    )
   end
 
   def token_display_name_based_on_bridge_destination(name, foreign_chain_id) do
     cond do
-      Decimal.cmp(foreign_chain_id, 1) == :eq ->
+      Decimal.compare(foreign_chain_id, 1) == :eq ->
         name
         |> String.replace("on xDai", "from Ethereum")
 
-      Decimal.cmp(foreign_chain_id, 56) == :eq ->
+      Decimal.compare(foreign_chain_id, 56) == :eq ->
         name
         |> String.replace("on xDai", "from BSC")
 
@@ -7480,11 +7464,11 @@ defmodule Explorer.Chain do
   def token_display_name_based_on_bridge_destination(name, symbol, foreign_chain_id) do
     token_name =
       cond do
-        Decimal.cmp(foreign_chain_id, 1) == :eq ->
+        Decimal.compare(foreign_chain_id, 1) == :eq ->
           name
           |> String.replace("on xDai", "from Ethereum")
 
-        Decimal.cmp(foreign_chain_id, 56) == :eq ->
+        Decimal.compare(foreign_chain_id, 56) == :eq ->
           name
           |> String.replace("on xDai", "from BSC")
 
