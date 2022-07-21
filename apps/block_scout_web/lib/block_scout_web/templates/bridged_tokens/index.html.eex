@@ -1,7 +1,7 @@
 <section class="container" data-page="tokens">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
-    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
 	  <div class="tokens-list-search-input-outer-container">
 		<% tag = Chain.chain_id_display_name(@chain_id) %>
 		<h1 class="card-title"><div class="title-with-label"><%= gettext "Bridged Tokens from " %><%= @chain %></div><div class="bs-label ml-2 destination-<%= tag %>"><%= String.upcase(tag) %></div></h1>
