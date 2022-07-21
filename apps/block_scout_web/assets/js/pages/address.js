@@ -199,14 +199,14 @@ const elements = {
   },
   '[data-selector="current-coin-balance"]': {
     render ($el, state, oldState) {
-      if (!state.newBlockNumber || state.newBlockNumber > oldState.newBlockNumber) return
+      if (!state.newBlockNumber || state.newBlockNumber <= oldState.newBlockNumber) return
       $el.empty().append(state.currentCoinBalance)
       updateAllCalculatedUsdValues()
     }
   },
   '[data-selector="last-balance-update"]': {
     render ($el, state, oldState) {
-      if (!state.newBlockNumber || state.newBlockNumber > oldState.newBlockNumber) return
+      if (!state.newBlockNumber || state.newBlockNumber <= oldState.newBlockNumber) return
       $el.empty().append(state.currentCoinBalanceBlockNumber)
     }
   },
@@ -306,11 +306,12 @@ if ($addressDetailsPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  addressChannel.push('get_balance', {})
-    .receive('ok', (msg) => store.dispatch({
-      type: 'RECEIVED_UPDATED_BALANCE',
-      msg: humps.camelizeKeys(msg)
-    }))
+  // following lines causes double /token-balances request
+  // addressChannel.push('get_balance', {})
+  //   .receive('ok', (msg) => store.dispatch({
+  //     type: 'RECEIVED_UPDATED_BALANCE',
+  //     msg: humps.camelizeKeys(msg)
+  //   }))
 
   loadCounters(store)
 
