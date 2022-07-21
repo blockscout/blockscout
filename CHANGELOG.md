@@ -6,6 +6,7 @@
 - [#5699](https://github.com/blockscout/blockscout/pull/5699) - Switch to basic (non-pro) API endpoint for Coingecko requests, if API key is not provided
 
 ### Fixes
+- [#5737](https://github.com/blockscout/blockscout/pull/5737) - Fix double requests; Fix token balances dropdown view
 - [#5723](https://github.com/blockscout/blockscout/pull/5723) - Add nil clause for Data.to_string/1
 - [#5714](https://github.com/blockscout/blockscout/pull/5714) - Add clause for EthereumJSONRPC.Transaction.elixir_to_params/1 when gas_price is missing in the response
 - [#5697](https://github.com/blockscout/blockscout/pull/5697) - Gas price oracle: ignore gas price rounding for values less than 0.01
