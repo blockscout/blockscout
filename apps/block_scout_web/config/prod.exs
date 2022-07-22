@@ -16,13 +16,7 @@ import Config
 config :block_scout_web, BlockScoutWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   force_ssl: false,
-  secret_key_base: System.get_env("SECRET_KEY_BASE"),
-  check_origin: System.get_env("CHECK_ORIGIN", "false") == "true" || false,
-  http: [port: System.get_env("PORT")],
   url: [
-    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "https",
-    port: System.get_env("PORT"),
-    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
     path: System.get_env("NETWORK_PATH") || "/",
     api_path: System.get_env("API_PATH") || "/"
   ]

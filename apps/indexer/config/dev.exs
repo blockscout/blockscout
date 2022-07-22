@@ -35,17 +35,3 @@ config :logger, :block_import_timings,
   level: :debug,
   path: Path.absname("logs/dev/indexer/block_import_timings.log"),
   metadata_filter: [fetcher: :block_import_timings]
-
-variant =
-  if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "ganache"
-  else
-    System.get_env("ETHEREUM_JSONRPC_VARIANT")
-    |> String.split(".")
-    |> List.last()
-    |> String.downcase()
-  end
-
-# Import variant specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "dev/#{variant}.exs"
