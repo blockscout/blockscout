@@ -9,6 +9,15 @@ on:
   push:
     branches:
       - production-optimism-stg
+
+env:
+  OTP_VERSION: '24.3.4.1'
+  ELIXIR_VERSION: '1.13.4'
+  NETWORK_PATH: '/xdai/optimism'
+  SOCKET_ROOT: '/xdai/optimism'
+  CHAIN_ID: '300'
+  COIN_NAME: 'xDai'
+
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
