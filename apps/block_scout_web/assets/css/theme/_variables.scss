@@ -1,5 +1,5 @@
 @import "base_variables";
-@import "neutral_variables";
+// @import "neutral_variables";
 // @import "xusdt_variables";
 // @import "dai_variables";
 // @import "ethereum_classic_variables";
@@ -12,7 +12,7 @@
 // @import "lukso_variables";
 // @import "musicoin_variables";
 // @import "pirl_variables";
-// @import "poa_variables";
+@import "poa_variables";
 // @import "rinkeby_variables";
 // @import "ropsten_variables";
 // @import "social_variables";

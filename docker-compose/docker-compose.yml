@@ -20,7 +20,8 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
       args:
-        COIN: ""
+        COIN: "POA"
+        MIX_ENV: "prod"
     restart: always
     container_name: 'blockscout'
     links:
@@ -28,10 +29,10 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
-      -  ./envs/common-blockscout.env
+      -  "./envs/common-blockscout-poa-arianee.env"
     environment:
       SECRET_KEY_BASE: 'test'
       DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
     ports:
-      - 4000:4000
+      - 80:4000
 
