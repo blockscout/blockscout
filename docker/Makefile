@@ -427,7 +427,8 @@ else
 					-e POSTGRES_USER="postgres" \
 					-e POSTGRES_HOST_AUTH_METHOD="trust" \
 					-p $(DB_PORT):5432 \
-					$(PG_CONTAINER_IMAGE)
+					$(PG_CONTAINER_IMAGE) \
+					postgres -c "max_connections=128" -c "shared_buffers=130MB"
 	@sleep 1
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
