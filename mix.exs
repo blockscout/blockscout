@@ -24,13 +24,30 @@ defmodule BlockScout.Mixfile do
             ethereum_jsonrpc: :permanent,
             explorer: :permanent,
             indexer: :permanent
-          ]
+          ],
+          steps: [:assemble, &copy_prod_runtime_config/1]
         ]
       ]
     ]
   end
 
   ## Private Functions
+
+  defp copy_prod_runtime_config(%Mix.Release{path: path} = release) do
+    File.mkdir_p!(Path.join([path, "config", "runtime"]))
+    File.cp!(Path.join(["config", "runtime", "prod.exs"]), Path.join([path, "config", "runtime", "prod.exs"]))
+    File.mkdir_p!(Path.join([path, "apps", "explorer", "config", "prod"]))
+
+    File.cp_r!(
+      Path.join(["apps", "explorer", "config", "prod"]),
+      Path.join([path, "apps", "explorer", "config", "prod"])
+    )
+
+    File.mkdir_p!(Path.join([path, "apps", "indexer", "config", "prod"]))
+    File.cp_r!(Path.join(["apps", "indexer", "config", "prod"]), Path.join([path, "apps", "indexer", "config", "prod"]))
+
+    release
+  end
 
   defp dialyzer() do
     [
