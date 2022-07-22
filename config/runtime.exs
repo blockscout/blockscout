@@ -379,8 +379,8 @@ config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") 
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
 
-case config_env() do
-  :dev -> Code.require_file("dev.exs", "config/runtime")
-  :test -> Code.require_file("test.exs", "config/runtime")
-  :prod -> Code.require_file("prod.exs", "config/runtime")
+Code.require_file("#{config_env()}.exs", "config/runtime")
+
+for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
+  Code.require_file("#{config_env()}.exs", Path.dirname(config))
 end
