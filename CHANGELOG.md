@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5542](https://github.com/blockscout/blockscout/pull/5542) - Add `jq` in docker image
 
 ### Fixes
 - [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
