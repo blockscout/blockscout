@@ -12,7 +12,7 @@ disable_webapp = System.get_env("DISABLE_WEBAPP")
 config :explorer,
   ecto_repos: [Explorer.Repo],
   coin: System.get_env("COIN") || "POA",
-  coingecko_coin_id: System.get_env("COINGECKO_COIN_ID"),
+  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "POA",
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
@@ -126,23 +126,22 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
 config :explorer, Explorer.Chain.Cache.GasUsage,
   enabled: System.get_env("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER") == "true"
 
-cache_bridge_market_cap_update_interval = System.get_env("CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL")
+config :explorer, Explorer.ExchangeRates,
+  enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
+  store: :ets,
+  coingecko_coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
+  coingecko_api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
+  coinmarketcap_api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
+  fetch_btc_value: System.get_env("EXCHANGE_RATES_FETCH_BTC_VALUE") == "true"
 
-bridge_market_cap_update_interval =
-  if cache_bridge_market_cap_update_interval do
-    case Integer.parse(cache_bridge_market_cap_update_interval) do
-      {integer, ""} -> integer
-      _ -> nil
-    end
+exchange_rates_source =
+  cond do
+    System.get_env("EXCHANGE_RATES_SOURCE") == "coin_gecko" -> Explorer.ExchangeRates.Source.CoinGecko
+    System.get_env("EXCHANGE_RATES_SOURCE") == "coin_market_cap" -> Explorer.ExchangeRates.Source.CoinMarketCap
+    true -> Explorer.ExchangeRates.Source.CoinGecko
   end
 
-config :explorer, Explorer.Counters.Bridge,
-  enabled: if(System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false),
-  enable_consolidation: System.get_env("DISABLE_BRIDGE_MARKET_CAP_UPDATER") !== "true",
-  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60,
-  disable_lp_tokens_in_market_cap: System.get_env("DISABLE_LP_TOKENS_IN_MARKET_CAP") == "true"
-
-config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
+config :explorer, Explorer.ExchangeRates.Source, source: exchange_rates_source
 
 config :explorer, Explorer.KnownTokens, enabled: System.get_env("DISABLE_KNOWN_TOKENS") != "true", store: :ets
 
@@ -164,7 +163,7 @@ txs_stats_days_to_compile_at_init =
   |> elem(0)
 
 config :explorer, Explorer.Chain.Transaction.History.Historian,
-  enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
+  enabled: System.get_env("ENABLE_TXS_STATS", "true") != "false",
   init_lag: txs_stats_init_lag,
   days_to_compile_at_init: txs_stats_days_to_compile_at_init
 
@@ -198,31 +197,12 @@ config :explorer, Explorer.Chain.Block.Reward,
   validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
   keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
-pos_staking_contract = System.get_env("POS_STAKING_CONTRACT")
-
-if pos_staking_contract do
-  config :explorer, Explorer.Staking.ContractState,
-    enabled: true,
-    staking_contract_address: pos_staking_contract,
-    eth_subscribe_max_delay: System.get_env("POS_ETH_SUBSCRIBE_MAX_DELAY", "60"),
-    eth_blocknumber_pull_interval: System.get_env("POS_ETH_BLOCKNUMBER_PULL_INTERVAL", "500")
-else
-  config :explorer, Explorer.Staking.ContractState, enabled: false
-end
-
 case System.get_env("SUPPLY_MODULE") do
-  "TokenBridge" ->
-    config :explorer, supply: Explorer.Chain.Supply.TokenBridge
-
   "rsk" ->
     config :explorer, supply: Explorer.Chain.Supply.RSK
 
   _ ->
     :ok
-end
-
-if System.get_env("SOURCE_MODULE") == "TokenBridge" do
-  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TokenBridge
 end
 
 config :explorer,
