@@ -7408,17 +7408,17 @@ defmodule Explorer.Chain do
 
   @spec amb_eth_tx?(Address.t()) :: boolean()
   def amb_eth_tx?(hash) do
-    amb_tx?(hash, "ETH_OMNI_BRIDGE_MEDIATOR")
+    amb_tx?(hash, "ETH_OMNI_BRIDGE_MEDIATOR") || amb_tx?(hash, "ETH_OMNI_BRIDGE")
   end
 
   @spec amb_bsc_tx?(Address.t()) :: boolean()
   def amb_bsc_tx?(hash) do
-    amb_tx?(hash, "BSC_OMNI_BRIDGE_MEDIATOR")
+    amb_tx?(hash, "BSC_OMNI_BRIDGE_MEDIATOR") || amb_tx?(hash, "BSC_OMNI_BRIDGE")
   end
 
   @spec amb_poa_tx?(Address.t()) :: boolean()
   def amb_poa_tx?(hash) do
-    amb_tx?(hash, "POA_OMNI_BRIDGE_MEDIATOR")
+    amb_tx?(hash, "POA_OMNI_BRIDGE_MEDIATOR") || amb_tx?(hash, "POA_OMNI_BRIDGE")
   end
 
   @spec amb_nft_tx?(Address.t()) :: boolean()
@@ -7439,13 +7439,19 @@ defmodule Explorer.Chain do
   defp log_exist?(transaction_hash, address_hash) do
     # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
     # "0x4592bc44" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256[] tokenIds, uint256[] values, bytes32 indexed messageId) (NFT Omni bridge)
+    # "0x520d2afd" - UserRequestForSignature(bytes32 indexed messageId, bytes encodedData)
+    # "0xe7a2c01f" - executeAffirmation(bytes message)
 
     Repo.exists?(
       from(
         l in Log,
         where: l.transaction_hash == ^transaction_hash,
         where: l.address_hash == ^address_hash,
-        where: fragment("first_topic like '0x59a9a802%'") or fragment("first_topic like '0x4592bc44%'")
+        where:
+          fragment("first_topic like '0x59a9a802%'") or
+            fragment("first_topic like '0x4592bc44%'") or
+            fragment("first_topic like '0x520d2afd%'") or
+            fragment("first_topic like '0xe7a2c01f%'")
       )
     )
   end
