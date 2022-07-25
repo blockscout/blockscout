@@ -1,11 +1,16 @@
 FROM bitwalker/alpine-elixir-phoenix:1.13 AS builder
 
-WORKDIR /opt/app
+WORKDIR /app
 
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
 
-ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc
-ENV GLIBC_VERSION=2.30-r0
+ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
+    GLIBC_VERSION=2.30-r0 \
+    PORT=4000 \
+    MIX_ENV="prod" \
+    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5" \
+    PATH="$HOME/.cargo/bin:${PATH}" \
+    RUSTFLAGS="-C target-feature=-crt-static"
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -18,11 +23,6 @@ RUN set -ex && \
 # Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-ENV PATH="$HOME/.cargo/bin:${PATH}"
-ENV RUSTFLAGS="-C target-feature=-crt-static"
-
-EXPOSE 4000
-
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG DISABLE_READ_API
 ARG API_PATH
@@ -32,10 +32,6 @@ ARG DISABLE_WRITE_API
 ARG CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER
 ARG WOBSERVER_ENABLED
 ARG ADMIN_PANEL_ENABLED
-
-ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -60,19 +56,16 @@ RUN if [ "$COIN" != "" ]; then \
     fi
 
 # Run forderground build and phoenix digest
-RUN mix compile
-
-RUN npm install npm@latest
+RUN mix compile && npm install npm@latest
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
     npm run deploy && \
-    cd -
-
-RUN cd apps/explorer/ && \
+    cd /app/apps/explorer/ && \
     npm install && \
-    apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+    apk update && \
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
 RUN mix phx.digest
 
@@ -83,7 +76,7 @@ RUN mkdir -p /opt/release \
 ##############################################################
 FROM bitwalker/alpine-elixir-phoenix:1.13
 
-WORKDIR /opt/app
+WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
 
