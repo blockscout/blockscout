@@ -41,7 +41,7 @@ defmodule UserFromAuthTest do
 
       %{
         id: watchlist_id,
-        identity_id: identity_id,
+        identity_id: ^identity_id,
         name: "default"
       } = Watchlist |> first |> Repo.one()
 
@@ -49,11 +49,11 @@ defmodule UserFromAuthTest do
               %{
                 avatar: "https://avatars.githubusercontent.com/u/666666=4",
                 email: "john@blockscout.com",
-                id: identity_id,
+                id: ^identity_id,
                 name: "John Snow",
                 nickname: "johnnny",
                 uid: "github|666666",
-                watchlist_id: watchlist_id
+                watchlist_id: ^watchlist_id
               }} = user_data
     end
 
@@ -88,7 +88,7 @@ defmodule UserFromAuthTest do
 
       %{
         id: watchlist_id,
-        identity_id: identity_id,
+        identity_id: ^identity_id,
         name: "default"
       } = Watchlist |> first |> Repo.one()
 
@@ -96,11 +96,11 @@ defmodule UserFromAuthTest do
               %{
                 avatar: "https://lh3.googleusercontent.com/a/xxx666-yyy777=s99-c",
                 email: "john@blockscout.com",
-                id: identity_id,
+                id: ^identity_id,
                 name: "John Snow",
                 nickname: "johnnny",
                 uid: "google-oauth2|666666",
-                watchlist_id: watchlist_id
+                watchlist_id: ^watchlist_id
               }} = user_data
     end
   end

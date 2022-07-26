@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
         on: tt.id == att.tag_id,
         where: att.address_hash == ^address_hash,
         where: tt.label != ^"validator",
-        select: %{label: tt.label, display_name: tt.display_name}
+        select: %{label: tt.label, display_name: tt.display_name, address_hash: att.address_hash}
       )
 
     Repo.all(query)
@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
         ta in TagAddress,
         where: ta.address_hash == ^address_hash,
         where: ta.identity_id == ^id,
-        select: %{label: ta.name, display_name: ta.name}
+        select: %{label: ta.name, display_name: ta.name, address_hash: ta.address_hash}
       )
 
     Repo.all(query)

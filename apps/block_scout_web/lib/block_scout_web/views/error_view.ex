@@ -1,15 +1,20 @@
 defmodule BlockScoutWeb.ErrorView do
   use BlockScoutWeb, :view
 
-  def render("404.html", _assigns) do
+  # when type in ["json", "html"]
+  def render("404." <> _type, _assigns) do
     "Page not found"
   end
 
-  def render("422.html", _assigns) do
+  def render("400." <> _type, _assigns) do
+    "Bad request"
+  end
+
+  def render("422." <> _type, _assigns) do
     "Unprocessable entity"
   end
 
-  def render("500.html", _assigns) do
+  def render("500." <> _type, _assigns) do
     "Internal server error"
   end
 

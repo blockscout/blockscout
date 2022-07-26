@@ -5,7 +5,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Accounts.Identity
+  alias Explorer.Account.Identity
   alias Explorer.Chain.Hash
   alias Explorer.Repo
   alias Explorer.ThirdPartyIntegrations.AirTable
@@ -67,8 +67,8 @@ defmodule Explorer.Account.PublicTagsRequest do
     |> extract_addresses_array()
   end
 
-  def create_new_public_tags_request(public_tags_request, attrs) do
-    public_tags_request
+  def create(attrs) do
+    %__MODULE__{}
     |> changeset(Map.put(attrs, :request_type, "add"))
     |> Repo.insert()
     |> AirTable.submit()
@@ -179,23 +179,17 @@ defmodule Explorer.Account.PublicTagsRequest do
 
   def delete_public_tags_request(_, _), do: nil
 
-  def update_public_tags_request(%{id: id, identity_id: identity_id} = attrs) do
+  def update(%{id: id, identity_id: identity_id} = attrs) do
     with public_tags_request <- get_public_tags_request_by_id_and_identity_id(id, identity_id),
          false <- is_nil(public_tags_request),
          {:ok, changeset} <- public_tags_request |> changeset(Map.put(attrs, :request_type, "edit")) |> Repo.update() do
-      case AirTable.submit({:ok, changeset}) do
-        {:error, changeset} ->
-          changeset
-
-        _ ->
-          true
-      end
+      AirTable.submit({:ok, changeset})
     else
-      {:error, changeset} ->
-        changeset
+      true ->
+        {:error, %{reason: :item_not_found}}
 
-      _ ->
-        false
+      other ->
+        other
     end
   end
 

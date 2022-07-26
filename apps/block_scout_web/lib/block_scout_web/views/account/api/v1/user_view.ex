@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
   alias BlockScoutWeb.Account.Api.V1.AccountView
   alias Ecto.Changeset
 
-  def render("error.json", assigns) do
-    AccountView.render("error.json", assigns)
+  def render("message.json", assigns) do
+    AccountView.render("message.json", assigns)
   end
 
   def render("user_info.json", %{identity: identity}) do
@@ -48,6 +48,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
 
   def render("custom_abi.json", %{custom_abi: custom_abi}) do
     prepare_custom_abi(custom_abi)
+  end
+
+  def render("public_tags_requests.json", %{public_tags_requests: public_tags_requests}) do
+    Enum.map(public_tags_requests, &prepare_public_tags_request/1)
+  end
+
+  def render("public_tags_request.json", %{public_tags_request: public_tags_request}) do
+    prepare_public_tags_request(public_tags_request)
   end
 
   def render("changeset_errors.json", %{changeset: changeset}) do
@@ -114,5 +122,19 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
 
   def prepare_transaction_tag(transaction_tag) do
     %{"id" => transaction_tag.id, "transaction_hash" => transaction_tag.tx_hash, "name" => transaction_tag.name}
+  end
+
+  def prepare_public_tags_request(public_tags_request) do
+    %{
+      "id" => public_tags_request.id,
+      "full_name" => public_tags_request.full_name,
+      "email" => public_tags_request.email,
+      "company" => public_tags_request.company,
+      "website" => public_tags_request.website,
+      "tags" => public_tags_request.tags,
+      "addresses" => public_tags_request.addresses,
+      "additional_comment" => public_tags_request.additional_comment,
+      "is_owner" => public_tags_request.is_owner
+    }
   end
 end

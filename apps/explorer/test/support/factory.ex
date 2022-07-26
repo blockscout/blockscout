@@ -87,20 +87,20 @@ defmodule Explorer.Factory do
       "name" => sequence("test"),
       "notification_settings" => %{
         "native" => %{
-          "incoming" => Enum.random([true, false]),
-          "outcoming" => Enum.random([true, false])
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
         },
         "ERC-20" => %{
-          "incoming" => Enum.random([true, false]),
-          "outcoming" => Enum.random([true, false])
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
         },
         "ERC-721" => %{
-          "incoming" => Enum.random([true, false]),
-          "outcoming" => Enum.random([true, false])
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
         }
       },
       "notification_methods" => %{
-        "email" => Enum.random([true, false])
+        "email" => random_bool()
       }
     }
   end
@@ -111,11 +111,32 @@ defmodule Explorer.Factory do
     %{"contract_address_hash" => contract_address_hash, "name" => sequence("test"), "abi" => contract_code_info().abi}
   end
 
+  def public_tags_request_factory do
+    %{
+      "full_name" => sequence("full name"),
+      "email" => sequence("email"),
+      "tags" => Enum.join(Enum.map(1..Enum.random(1..2), fn _ -> sequence("Tag") end), ";"),
+      "website" => sequence("website"),
+      "additional_comment" => sequence("additional_comment"),
+      "addresses_array" => Enum.map(1..Enum.random(1..10), fn _ -> to_string(build(:address).hash) end),
+      "company" => sequence("company"),
+      "is_owner" => random_bool()
+    }
+  end
+
   def account_watchlist_factory do
     %Watchlist{
       name: "default",
       identity: build(:account_identity)
     }
+  end
+
+  def tag_address_factory do
+    %{"name" => sequence("name"), "address_hash" => to_string(build(:address).hash)}
+  end
+
+  def tag_transaction_factory do
+    %{"name" => sequence("name"), "transaction_hash" => to_string(insert(:transaction).hash)}
   end
 
   def account_watchlist_address_factory do
@@ -878,4 +899,6 @@ defmodule Explorer.Factory do
       user: build(:user)
     }
   end
+
+  def random_bool, do: Enum.random([true, false])
 end

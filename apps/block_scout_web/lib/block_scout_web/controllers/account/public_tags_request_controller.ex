@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestController do
   def create(conn, %{"public_tags_request" => public_tags_request}) do
     current_user = authenticate!(conn)
 
-    case PublicTagsRequest.create_new_public_tags_request(%PublicTagsRequest{}, %{
+    case PublicTagsRequest.create(%{
            full_name: public_tags_request["full_name"],
            email: public_tags_request["email"],
            tags: public_tags_request["tags"],
@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestController do
       }) do
     current_user = authenticate!(conn)
 
-    case PublicTagsRequest.update_public_tags_request(%{
+    case PublicTagsRequest.update(%{
            id: id,
            full_name: public_tags_request["full_name"],
            email: public_tags_request["email"],
@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestController do
            is_owner: public_tags_request["is_owner"],
            identity_id: current_user.id
          }) do
-      %Changeset{} = public_tags_request ->
+      {:error, %Changeset{}} = public_tags_request ->
         render(conn, "form.html", method: :update, public_tags_request: public_tags_request)
 
       _ ->
