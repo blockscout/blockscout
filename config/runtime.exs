@@ -113,6 +113,7 @@ config :block_scout_web, :api_rate_limit,
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS", nil)
 
 config :block_scout_web, BlockScoutWeb.Endpoint,
+  server: true,
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
