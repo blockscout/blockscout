@@ -161,10 +161,6 @@ defmodule Explorer.Account.Notify.SummaryTest do
 
       {_, fee} = Chain.fee(tx, :gwei)
 
-      token_decimals = Decimal.to_integer(token.decimals)
-
-      decimals = Decimal.new(Integer.pow(10, token_decimals))
-
       assert Summary.process(transfer) == [
                %Summary{
                  amount: 0,
@@ -210,10 +206,6 @@ defmodule Explorer.Account.Notify.SummaryTest do
         ])
 
       {_, fee} = Chain.fee(tx, :gwei)
-
-      token_decimals = Decimal.to_integer(token.decimals)
-
-      decimals = Decimal.new(Integer.pow(10, token_decimals))
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -261,10 +253,6 @@ defmodule Explorer.Account.Notify.SummaryTest do
         ])
 
       {_, fee} = Chain.fee(tx, :gwei)
-
-      token_decimals = Decimal.to_integer(token.decimals)
-
-      decimals = Decimal.new(Integer.pow(10, token_decimals))
 
       assert Summary.process(transfer) == [
                %Summary{

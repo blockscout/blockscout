@@ -5,12 +5,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Explorer.Account.CustomABI
-  alias Explorer.Account.{Identity, TagAddress, TagTransaction, WatchlistAddress}
+  alias Explorer.Account.{Identity, PublicTagsRequest, TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Market, Repo}
   alias Guardian.Plug
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
+
+  @ok_message "OK"
 
   def info(conn, _params) do
     uid = Plug.current_claims(conn)["sub"]
@@ -44,7 +46,9 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
          {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
          {count, _} <- WatchlistAddress.delete(watchlist_address_id, watchlist.id),
          {:watchlist_delete, true} <- {:watchlist_delete, count > 0} do
-      send_resp(conn, 200, "")
+      conn
+      |> put_status(200)
+      |> render(:message, %{message: @ok_message})
     end
   end
 
@@ -173,13 +177,15 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     end
   end
 
-  def delete_tag_address(conn, %{"tag_id" => tag_id}) do
+  def delete_tag_address(conn, %{"id" => tag_id}) do
     uid = Plug.current_claims(conn)["sub"]
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- TagAddress.delete(tag_id, identity.id),
          {:tag_delete, true} <- {:tag_delete, count > 0} do
-      send_resp(conn, 200, "")
+      conn
+      |> put_status(200)
+      |> render(:message, %{message: @ok_message})
     end
   end
 
@@ -199,6 +205,25 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     end
   end
 
+  def update_tag_address(conn, %{"id" => tag_id} = attrs) do
+    uid = Plug.current_claims(conn)["sub"]
+
+    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+         {:ok, address_tag} <-
+           TagAddress.update(
+             reject_nil_map_values(%{
+               id: tag_id,
+               name: attrs["name"],
+               address_hash: attrs["address_hash"],
+               identity_id: identity.id
+             })
+           ) do
+      conn
+      |> put_status(200)
+      |> render(:address_tag, %{address_tag: address_tag})
+    end
+  end
+
   def tags_transaction(conn, _params) do
     uid = Plug.current_claims(conn)["sub"]
 
@@ -210,13 +235,15 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     end
   end
 
-  def delete_tag_transaction(conn, %{"tag_id" => tag_id}) do
+  def delete_tag_transaction(conn, %{"id" => tag_id}) do
     uid = Plug.current_claims(conn)["sub"]
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- TagTransaction.delete(tag_id, identity.id),
          {:tag_delete, true} <- {:tag_delete, count > 0} do
-      send_resp(conn, 200, "")
+      conn
+      |> put_status(200)
+      |> render(:message, %{message: @ok_message})
     end
   end
 
@@ -230,6 +257,25 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
              tx_hash: tx_hash,
              identity_id: identity.id
            }) do
+      conn
+      |> put_status(200)
+      |> render(:transaction_tag, %{transaction_tag: transaction_tag})
+    end
+  end
+
+  def update_tag_transaction(conn, %{"id" => tag_id} = attrs) do
+    uid = Plug.current_claims(conn)["sub"]
+
+    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+         {:ok, transaction_tag} <-
+           TagTransaction.update(
+             reject_nil_map_values(%{
+               id: tag_id,
+               name: attrs["name"],
+               tx_hash: attrs["transaction_hash"],
+               identity_id: identity.id
+             })
+           ) do
       conn
       |> put_status(200)
       |> render(:transaction_tag, %{transaction_tag: transaction_tag})
@@ -253,7 +299,9 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- ApiKey.delete(api_key_uuid, identity.id),
          {:api_key_delete, true} <- {:api_key_delete, count > 0} do
-      send_resp(conn, 200, "")
+      conn
+      |> put_status(200)
+      |> render(:message, %{message: @ok_message})
     end
   end
 
@@ -298,7 +346,9 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- CustomABI.delete(id, identity.id),
          {:custom_abi_delete, true} <- {:custom_abi_delete, count > 0} do
-      send_resp(conn, 200, "")
+      conn
+      |> put_status(200)
+      |> render(:message, %{message: @ok_message})
     end
   end
 
@@ -341,6 +391,86 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       conn
       |> put_status(200)
       |> render(:custom_abi, %{custom_abi: custom_abi})
+    end
+  end
+
+  def public_tags_requests(conn, _params) do
+    uid = Plug.current_claims(conn)["sub"]
+
+    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+         public_tags_requests <- PublicTagsRequest.get_public_tags_requests_by_identity_id(identity.id) do
+      conn
+      |> put_status(200)
+      |> render(:public_tags_requests, %{public_tags_requests: public_tags_requests})
+    end
+  end
+
+  def delete_public_tags_request(conn, %{"id" => id, "remove_reason" => remove_reason}) do
+    uid = Plug.current_claims(conn)["sub"]
+
+    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+         {:public_tag_delete, true} <-
+           {:public_tag_delete,
+            PublicTagsRequest.mark_as_deleted_public_tags_request(%{
+              id: id,
+              identity_id: identity.id,
+              remove_reason: remove_reason
+            })} do
+      conn
+      |> put_status(200)
+      |> render(:message, %{message: @ok_message})
+    end
+  end
+
+  def create_public_tags_request(conn, params) do
+    uid = Plug.current_claims(conn)["sub"]
+
+    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+         {:ok, public_tags_request} <-
+           PublicTagsRequest.create(%{
+             full_name: params["full_name"],
+             email: params["email"],
+             tags: params["tags"],
+             website: params["website"],
+             additional_comment: params["additional_comment"],
+             addresses_array: params["addresses_array"],
+             company: params["company"],
+             is_owner: params["is_owner"],
+             identity_id: identity.id
+           }) do
+      conn
+      |> put_status(200)
+      |> render(:public_tags_request, %{public_tags_request: public_tags_request})
+    end
+  end
+
+  def update_public_tags_request(
+        conn,
+        %{
+          "id" => id
+        } = params
+      ) do
+    uid = Plug.current_claims(conn)["sub"]
+
+    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+         {:ok, public_tags_request} <-
+           PublicTagsRequest.update(
+             reject_nil_map_values(%{
+               id: id,
+               full_name: params["full_name"],
+               email: params["email"],
+               tags: params["tags"],
+               website: params["website"],
+               additional_comment: params["additional_comment"],
+               addresses_array: params["addresses_array"],
+               company: params["company"],
+               is_owner: params["is_owner"],
+               identity_id: identity.id
+             })
+           ) do
+      conn
+      |> put_status(200)
+      |> render(:public_tags_request, %{public_tags_request: public_tags_request})
     end
   end
 

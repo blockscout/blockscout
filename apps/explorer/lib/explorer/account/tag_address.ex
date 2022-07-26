@@ -93,6 +93,15 @@ defmodule Explorer.Account.TagAddress do
 
   def tag_address_by_id_and_identity_id_query(_, _), do: nil
 
+  def get_tag_address_by_id_and_identity_id_query(tag_id, identity_id)
+      when not is_nil(tag_id) and not is_nil(identity_id) do
+    tag_id
+    |> tag_address_by_id_and_identity_id_query(identity_id)
+    |> Repo.one()
+  end
+
+  def get_tag_address_by_id_and_identity_id_query(_, _), do: nil
+
   def delete(tag_id, identity_id) when not is_nil(tag_id) and not is_nil(identity_id) do
     tag_id
     |> tag_address_by_id_and_identity_id_query(identity_id)
@@ -100,4 +109,14 @@ defmodule Explorer.Account.TagAddress do
   end
 
   def delete(_, _), do: nil
+
+  def update(%{id: tag_id, identity_id: identity_id} = attrs) do
+    with tag <- get_tag_address_by_id_and_identity_id_query(tag_id, identity_id),
+         false <- is_nil(tag) do
+      tag |> changeset(attrs) |> Repo.update()
+    else
+      true ->
+        {:error, %{reason: :item_not_found}}
+    end
+  end
 end

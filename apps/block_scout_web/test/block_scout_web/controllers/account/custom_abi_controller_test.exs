@@ -2,9 +2,6 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias BlockScoutWeb.Models.UserFromAuth
-  alias Ueberauth.Strategy.Auth0
-  alias Ueberauth.Auth.Info
-  alias Ueberauth.Auth
 
   @custom_abi "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true}]"
 

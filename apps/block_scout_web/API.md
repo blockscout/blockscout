@@ -3,9 +3,17 @@
   * [BlockScoutWeb.Account.Api.V1.UserController](#blockscoutweb-account-api-v1-usercontroller)
     * [info](#blockscoutweb-account-api-v1-usercontroller-info)
     * [create_tag_address](#blockscoutweb-account-api-v1-usercontroller-create_tag_address)
+  * [BlockScoutWeb.Account.Api.V1.TagsController](#blockscoutweb-account-api-v1-tagscontroller)
+    * [tags_address](#blockscoutweb-account-api-v1-tagscontroller-tags_address)
+  * [BlockScoutWeb.Account.Api.V1.UserController](#blockscoutweb-account-api-v1-usercontroller)
+    * [update_tag_address](#blockscoutweb-account-api-v1-usercontroller-update_tag_address)
     * [tags_address](#blockscoutweb-account-api-v1-usercontroller-tags_address)
     * [delete_tag_address](#blockscoutweb-account-api-v1-usercontroller-delete_tag_address)
     * [create_tag_transaction](#blockscoutweb-account-api-v1-usercontroller-create_tag_transaction)
+  * [BlockScoutWeb.Account.Api.V1.TagsController](#blockscoutweb-account-api-v1-tagscontroller)
+    * [tags_transaction](#blockscoutweb-account-api-v1-tagscontroller-tags_transaction)
+  * [BlockScoutWeb.Account.Api.V1.UserController](#blockscoutweb-account-api-v1-usercontroller)
+    * [update_tag_transaction](#blockscoutweb-account-api-v1-usercontroller-update_tag_transaction)
     * [tags_transaction](#blockscoutweb-account-api-v1-usercontroller-tags_transaction)
     * [delete_tag_transaction](#blockscoutweb-account-api-v1-usercontroller-delete_tag_transaction)
     * [create_watchlist](#blockscoutweb-account-api-v1-usercontroller-create_watchlist)
@@ -22,9 +30,10 @@
     * [custom_abis](#blockscoutweb-account-api-v1-usercontroller-custom_abis)
     * [update_custom_abi](#blockscoutweb-account-api-v1-usercontroller-update_custom_abi)
     * [delete_custom_abi](#blockscoutweb-account-api-v1-usercontroller-delete_custom_abi)
-  * [BlockScoutWeb.Account.Api.V1.TagsController](#blockscoutweb-account-api-v1-tagscontroller)
-    * [tags_address](#blockscoutweb-account-api-v1-tagscontroller-tags_address)
-    * [tags_transaction](#blockscoutweb-account-api-v1-tagscontroller-tags_transaction)
+    * [create_public_tags_request](#blockscoutweb-account-api-v1-usercontroller-create_public_tags_request)
+    * [public_tags_requests](#blockscoutweb-account-api-v1-usercontroller-public_tags_requests)
+    * [delete_public_tags_request](#blockscoutweb-account-api-v1-usercontroller-delete_public_tags_request)
+    * [update_public_tags_request](#blockscoutweb-account-api-v1-usercontroller-update_public_tags_request)
   * [BlockScoutWeb.Account.Api.V1.AuthController](#blockscoutweb-account-api-v1-authcontroller)
 
 ## BlockScoutWeb.Account.Api.V1.AuthController
@@ -52,7 +61,7 @@
 * __Path:__ /api/account/v1/user/info
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjgwZDE2ZmMtODIxYi00ZjE5LWEwNjctMzhmNjg0MzIzZTNjIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDQiLCJ0eXAiOiJhY2Nlc3MifQ.jotiQ5Pldu8CBfMxehUqtxczNDT69TBTdQtqNcR2_XM5dlCvBcGtGzi_kPmzoHBhtexhd_ALTBVQw_IpNVN2Ag
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZWNhMTBiMjAtOGNjMy00ZjQzLWFkMTYtZjk3YjM5NTg3NmUwIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEwIiwidHlwIjoiYWNjZXNzIn0.7H-cTTAH-o4SpgqoVFWAT_DwhqGISbgu24T-fivJ6I0nx9OafsNCxNhqK3WunhEV84QRtOir1QFusCbmXzD0hQ
 ```
 
 ##### Response
@@ -61,7 +70,7 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrExR_T21P4AABoi
+x-request-id: FwX9FD0vQMD5E60AAAei
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -69,10 +78,10 @@ access-control-allow-credentials: true
 * __Response body:__
 ```json
 {
-  "nickname": "test_user4",
-  "name": "User Test4",
-  "email": "test_user-4@blockscout.com",
-  "avatar": "https://example.com/avatar/test_user4"
+  "nickname": "test_user10",
+  "name": "User Test10",
+  "email": "test_user-10@blockscout.com",
+  "avatar": "https://example.com/avatar/test_user10"
 }
 ```
 
@@ -84,7 +93,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/tags/address
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMjczZjNkZDYtNGZjNS00ZDUzLTk5YmItOTZhZTk3N2UyNmM3IiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE3IiwidHlwIjoiYWNjZXNzIn0.1prZNi5Xq_WAIujVc9V3321d-uFA3mPcUT16QWs0khgoqHTA8mOZNt-n7eI_tZN-hcNydzxeT6xVy_GyPCZHBw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTQ1YmJiOGQtMTg1Ni00NWRkLWJhMjgtODM1MzIwMWQ3YmE2IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.UXLszHWCt3aN_YuIA5PvweGxQASesXIXn-Htam-7ptXaTgCMxgecigOpYYopG7IFJBKfg61ypzjgKwd5OiXr4A
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -101,7 +110,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrt4eg4v1xMAACdi
+x-request-id: FwX9FEAXw_eXFKIAACPh
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -110,7 +119,7 @@ access-control-allow-credentials: true
 ```json
 {
   "name": "MyName",
-  "id": 84,
+  "id": 123,
   "address_hash": "0x3e9ac8f16c92bc4f093357933b5befbf1e16987b"
 }
 ```
@@ -124,7 +133,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/tags/address/0x3e9ac8f16c92bc4f093357933b5befbf1e16987b
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMjczZjNkZDYtNGZjNS00ZDUzLTk5YmItOTZhZTk3N2UyNmM3IiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE3IiwidHlwIjoiYWNjZXNzIn0.1prZNi5Xq_WAIujVc9V3321d-uFA3mPcUT16QWs0khgoqHTA8mOZNt-n7eI_tZN-hcNydzxeT6xVy_GyPCZHBw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTQ1YmJiOGQtMTg1Ni00NWRkLWJhMjgtODM1MzIwMWQ3YmE2IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.UXLszHWCt3aN_YuIA5PvweGxQASesXIXn-Htam-7ptXaTgCMxgecigOpYYopG7IFJBKfg61ypzjgKwd5OiXr4A
 ```
 
 ##### Response
@@ -133,7 +142,7 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJruw6IIv1xMAACeC
+x-request-id: FwX9FEBJLwKXFKIAACQB
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -145,7 +154,8 @@ access-control-allow-credentials: true
   "personal_tags": [
     {
       "label": "MyName",
-      "display_name": "MyName"
+      "display_name": "MyName",
+      "address_hash": "0x3e9ac8f16c92bc4f093357933b5befbf1e16987b"
     }
   ],
   "common_tags": []
@@ -153,15 +163,23 @@ access-control-allow-credentials: true
 ```
 
 ## BlockScoutWeb.Account.Api.V1.UserController
-### <a id=blockscoutweb-account-api-v1-usercontroller-tags_address></a>tags_address
-#### Get private addresses tags
+### <a id=blockscoutweb-account-api-v1-usercontroller-update_tag_address></a>update_tag_address
+#### Edit private address tag
 
 ##### Request
-* __Method:__ GET
-* __Path:__ /api/account/v1/user/tags/address
+* __Method:__ PUT
+* __Path:__ /api/account/v1/user/tags/address/116
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNmMwNjZmZmUtMjQ2OS00NzY5LTlkNmEtNjg2ZDNjOWI4MGYyIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEwIiwidHlwIjoiYWNjZXNzIn0.7oAYBVq380UTK0wQ29Vxwy8ulbFXjo9TLMed01zZxBIVlyU20-VxhgzYyyNupgy6gyErHcKTb4qam06vUtN71A
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDAsImlhdCI6MTY1OTAxMDMwMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNjk0ZjIyYjQtYTBkOS00MGNiLThlNTAtYTM2MzI1MDhhMzc4IiwibmJmIjoxNjU5MDEwMjk5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDAiLCJ0eXAiOiJhY2Nlc3MifQ.6_RT4rbm1vwbi9_eUtze3-ZN_EBbmdqycGyOVJ9AJ6PVvIzyRQFlWlRrvhq7YKiZt8ue2ljL8XJyqvBbGplQFQ
+content-type: multipart/mixed; boundary=plug_conn_test
+```
+* __Request body:__
+```json
+{
+  "name": "name1",
+  "address_hash": "0x0000000000000000000000000000000000000002"
+}
 ```
 
 ##### Response
@@ -170,7 +188,38 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrWZ_VYkN5QAAB8C
+x-request-id: FwX9FC8B36iSrmsAAAHk
+access-control-allow-origin: *
+access-control-expose-headers: 
+access-control-allow-credentials: true
+```
+* __Response body:__
+```json
+{
+  "name": "name1",
+  "id": 116,
+  "address_hash": "0x0000000000000000000000000000000000000002"
+}
+```
+
+### <a id=blockscoutweb-account-api-v1-usercontroller-tags_address></a>tags_address
+#### Get private addresses tags
+
+##### Request
+* __Method:__ GET
+* __Path:__ /api/account/v1/user/tags/address
+* __Request headers:__
+```
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNzdiYTcxNWEtNDI1OS00ODAxLWIxOTktZDgwNDM2MWUwNmU1IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDgiLCJ0eXAiOiJhY2Nlc3MifQ.NC-jt9HzTIfusCKVF43c-3aNHfKReziLQIzpICuuBNnqUj6em1VaMnwLttW8FSYxLwxfcF6U9wbx-EhtE7K0pA
+```
+
+##### Response
+* __Status__: 200
+* __Response headers:__
+```
+content-type: application/json; charset=utf-8
+cache-control: max-age=0, private, must-revalidate
+x-request-id: FwX9FDtkAYijgTYAACDB
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -180,18 +229,18 @@ access-control-allow-credentials: true
 [
   {
     "name": "name0",
-    "id": 81,
-    "address_hash": "0x0000000000000000000000000000000000000014"
+    "id": 120,
+    "address_hash": "0x0000000000000000000000000000000000000023"
   },
   {
     "name": "name1",
-    "id": 82,
-    "address_hash": "0x0000000000000000000000000000000000000015"
+    "id": 121,
+    "address_hash": "0x0000000000000000000000000000000000000024"
   },
   {
     "name": "name2",
-    "id": 83,
-    "address_hash": "0x0000000000000000000000000000000000000016"
+    "id": 122,
+    "address_hash": "0x0000000000000000000000000000000000000025"
   }
 ]
 ```
@@ -201,25 +250,28 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/tags/address/78
+* __Path:__ /api/account/v1/user/tags/address/117
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMzViZjA1MDgtYTRlMS00ZTcwLWJhNDUtOTNmN2U2NGFkZjY0IiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDMiLCJ0eXAiOiJhY2Nlc3MifQ.1_g_NHHOIizEzw-l4RdwrVH8PVRkXfcwWOmC8gpp-T8alEfamEfGhvvcXRfjmcug9kRDP5WKRkGMPi0XTcULRg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDAsImlhdCI6MTY1OTAxMDMwMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjViNzE0ZmQtYWFhYS00N2NmLTk4YmUtYzk1MzBhZTA4YTk0IiwibmJmIjoxNjU5MDEwMjk5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIiLCJ0eXAiOiJhY2Nlc3MifQ.jJdgLf3d71x_VL-lP8eOjfewv71UjT4R7SBp_TFmRb_rxV0GeE37R1B-nDZKvoABHKODctz6kIaS6Koyizv9YQ
 ```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrB7MoNP5PQAABmC
+x-request-id: FwX9FDJLG3NmonIAAB0B
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
 ```
 * __Response body:__
 ```json
-
+{
+  "message": "OK"
+}
 ```
 
 ### <a id=blockscoutweb-account-api-v1-usercontroller-create_tag_transaction></a>create_tag_transaction
@@ -230,7 +282,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/tags/transaction
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZGVhODZkYTktYjRmNC00NGE0LTgzMzQtYjhiZjgwZWRlNDUyIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEiLCJ0eXAiOiJhY2Nlc3MifQ.L4-N8gW9sOwXvSwUijEX-U6XHcelJQK0DJb8Weqg1Eu2jIBlY6NplembDqEsO1Rb-9Jr1nv3VzWMeWYH4Thatw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOGI2MjFlYmYtZDY2OC00MWExLWI4YzMtOGUzZWQxZWIxZGU3IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.8oBFdtsSqTeo9zaHHQ8LKeVLnRZi5GFVxSuN_9OY6zlijPftT2qDSN5Qu6cLz5MCm8218caXVBA3MoOmjh81-Q
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -247,7 +299,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJq46Ly5S0w4AABFh
+x-request-id: FwX9FDw_irSTUzMAAAdi
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -270,7 +322,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/tags/transaction
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZGVhODZkYTktYjRmNC00NGE0LTgzMzQtYjhiZjgwZWRlNDUyIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEiLCJ0eXAiOiJhY2Nlc3MifQ.L4-N8gW9sOwXvSwUijEX-U6XHcelJQK0DJb8Weqg1Eu2jIBlY6NplembDqEsO1Rb-9Jr1nv3VzWMeWYH4Thatw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOGI2MjFlYmYtZDY2OC00MWExLWI4YzMtOGUzZWQxZWIxZGU3IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.8oBFdtsSqTeo9zaHHQ8LKeVLnRZi5GFVxSuN_9OY6zlijPftT2qDSN5Qu6cLz5MCm8218caXVBA3MoOmjh81-Q
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -287,7 +339,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJq58ynNS0w4AABgi
+x-request-id: FwX9FDxm9yaTUzMAAAeC
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -297,7 +349,7 @@ access-control-allow-credentials: true
 {
   "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
   "name": "MyName",
-  "id": 68
+  "id": 133
 }
 ```
 
@@ -310,7 +362,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/tags/transaction/0x0000000000000000000000000000000000000000000000000000000000000001
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZGVhODZkYTktYjRmNC00NGE0LTgzMzQtYjhiZjgwZWRlNDUyIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEiLCJ0eXAiOiJhY2Nlc3MifQ.L4-N8gW9sOwXvSwUijEX-U6XHcelJQK0DJb8Weqg1Eu2jIBlY6NplembDqEsO1Rb-9Jr1nv3VzWMeWYH4Thatw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOGI2MjFlYmYtZDY2OC00MWExLWI4YzMtOGUzZWQxZWIxZGU3IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.8oBFdtsSqTeo9zaHHQ8LKeVLnRZi5GFVxSuN_9OY6zlijPftT2qDSN5Qu6cLz5MCm8218caXVBA3MoOmjh81-Q
 ```
 
 ##### Response
@@ -319,7 +371,7 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJq6MxEtS0w4AABGB
+x-request-id: FwX9FDyRX0WTUzMAACDh
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -337,15 +389,23 @@ access-control-allow-credentials: true
 ```
 
 ## BlockScoutWeb.Account.Api.V1.UserController
-### <a id=blockscoutweb-account-api-v1-usercontroller-tags_transaction></a>tags_transaction
-#### Get private transactions tags
+### <a id=blockscoutweb-account-api-v1-usercontroller-update_tag_transaction></a>update_tag_transaction
+#### Edit private transaction tag
 
 ##### Request
-* __Method:__ GET
-* __Path:__ /api/account/v1/user/tags/transaction
+* __Method:__ PUT
+* __Path:__ /api/account/v1/user/tags/transaction/140
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTYwZGFmZDQtMTJiOS00OTIzLTgzNmItNDE0YTA4NzZjMjYwIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDgiLCJ0eXAiOiJhY2Nlc3MifQ.wLMhbPAPYu2wF5JtRnUjsvGWzV9y-LI3YNyUoo3zj_HdSNFWsBIhORaVCIeHSGp4kBggFmv4myRZe7S4hUCh_g
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNWJlMjZkYWYtMzcxZi00MTA0LWEwMWItOTJiNjM0ZjA4ZDQxIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIxIiwidHlwIjoiYWNjZXNzIn0.5St_z_24WME_Eu7tpgziqcn1oXAIdJOGEeISmVS5bbYYDQqBRa49-v6Xm9h1fsjCSg8ZbJ4Vi3WEcn84ygCRzA
+content-type: multipart/mixed; boundary=plug_conn_test
+```
+* __Request body:__
+```json
+{
+  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
+  "name": "name3"
+}
 ```
 
 ##### Response
@@ -354,7 +414,38 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrQvRgis4YIAABYB
+x-request-id: FwX9FEojjETdulQAAA2i
+access-control-allow-origin: *
+access-control-expose-headers: 
+access-control-allow-credentials: true
+```
+* __Response body:__
+```json
+{
+  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
+  "name": "name3",
+  "id": 140
+}
+```
+
+### <a id=blockscoutweb-account-api-v1-usercontroller-tags_transaction></a>tags_transaction
+#### Get private transactions tags
+
+##### Request
+* __Method:__ GET
+* __Path:__ /api/account/v1/user/tags/transaction
+* __Request headers:__
+```
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODZiOTVmZTMtZWYzMC00MWFiLWJkYWQtNDRjZmY0NmYwYTVmIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE5IiwidHlwIjoiYWNjZXNzIn0.SR5s3ma8zaDJjGJqwsJcRGz3iHUBtFz4TuzSJF1k9NL-4ri2XSAIPnidyvUWsmzPe0M6k4xfwgBaaloqDtIwCA
+```
+
+##### Response
+* __Status__: 200
+* __Response headers:__
+```
+content-type: application/json; charset=utf-8
+cache-control: max-age=0, private, must-revalidate
+x-request-id: FwX9FEkKMJngvGIAACpB
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -363,19 +454,19 @@ access-control-allow-credentials: true
 ```json
 [
   {
-    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
+    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000005",
     "name": "name0",
-    "id": 69
+    "id": 137
   },
   {
-    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000003",
+    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000006",
     "name": "name1",
-    "id": 70
+    "id": 138
   },
   {
-    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000004",
+    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000007",
     "name": "name2",
-    "id": 71
+    "id": 139
   }
 ]
 ```
@@ -385,25 +476,28 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/tags/transaction/72
+* __Path:__ /api/account/v1/user/tags/transaction/134
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYjY2MjU0NjMtNGEyMi00NzU5LTkxNGEtYWYyMWZkYWI4MzI0IiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.TSD0Q0k6vLQWHLW69VNjHxuLj-d5UIQ_mGeE1SKBtHYlpK1FnSjml2Yvw9JnQ0R0X4J57rdpf0ei-ot7Tv3RGg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYTNhZTBjNTMtNWIyNS00MzQ0LTlmZmYtOWE1MzYzMDkxNTFiIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE4IiwidHlwIjoiYWNjZXNzIn0.ma-cNPZuf0Y580wWcgawrYy_rtWp0MmMp4FZGh9jDsTLPIQCcKNOvWpEgU0GbxHs0Lqlv4hFiugwopwKwfaaPA
 ```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrivA-UT9c4AACQC
+x-request-id: FwX9FEaIlUw09lsAACgB
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
 ```
 * __Response body:__
 ```json
-
+{
+  "message": "OK"
+}
 ```
 
 ### <a id=blockscoutweb-account-api-v1-usercontroller-create_watchlist></a>create_watchlist
@@ -414,7 +508,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/watchlist
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYjIyY2JmMzYtZDZiZC00YzQzLWI2YTMtYjE5ZjEwZGU2MzhhIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEyIiwidHlwIjoiYWNjZXNzIn0.7tuq-HJ1m8n17_RIW3d2skm47IB9tx2AiQAF6BdSoTtxd0EiZfbnz4sh7BT4JSQxmYXMzOjR9yqpCtnY-QW4gg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjVmMmEyZjMtYTNlMy00MWVjLWI0ZDItZjIwMmIzMzg3MmE5IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIyIiwidHlwIjoiYWNjZXNzIn0.AEALezStFrFEmQ8i9H6h9li-pbXKcb28NTNXW0bQC2YasdSAuCCVWythzzalZpKqY0Ta7OG7DQGNVGk0O026fw
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -423,22 +517,22 @@ content-type: multipart/mixed; boundary=plug_conn_test
   "notification_settings": {
     "native": {
       "outcoming": false,
-      "incoming": false
+      "incoming": true
     },
     "ERC-721": {
-      "outcoming": true,
+      "outcoming": false,
       "incoming": true
     },
     "ERC-20": {
-      "outcoming": false,
+      "outcoming": true,
       "incoming": true
     }
   },
   "notification_methods": {
-    "email": true
+    "email": false
   },
-  "name": "test6",
-  "address_hash": "0x0000000000000000000000000000000000000017"
+  "name": "test24",
+  "address_hash": "0x0000000000000000000000000000000000000071"
 }
 ```
 
@@ -448,7 +542,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrYMQz4yfYIAACDC
+x-request-id: FwX9FEp38eayqccAACph
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -459,24 +553,24 @@ access-control-allow-credentials: true
   "notification_settings": {
     "native": {
       "outcoming": false,
-      "incoming": false
+      "incoming": true
     },
     "ERC-721": {
-      "outcoming": true,
+      "outcoming": false,
       "incoming": true
     },
     "ERC-20": {
-      "outcoming": false,
+      "outcoming": true,
       "incoming": true
     }
   },
   "notification_methods": {
-    "email": true
+    "email": false
   },
-  "name": "test6",
-  "id": 32,
+  "name": "test24",
+  "id": 133,
   "exchange_rate": null,
-  "address_hash": "0x0000000000000000000000000000000000000017",
+  "address_hash": "0x0000000000000000000000000000000000000071",
   "address_balance": null
 }
 ```
@@ -489,7 +583,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/watchlist
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYjIyY2JmMzYtZDZiZC00YzQzLWI2YTMtYjE5ZjEwZGU2MzhhIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEyIiwidHlwIjoiYWNjZXNzIn0.7tuq-HJ1m8n17_RIW3d2skm47IB9tx2AiQAF6BdSoTtxd0EiZfbnz4sh7BT4JSQxmYXMzOjR9yqpCtnY-QW4gg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjVmMmEyZjMtYTNlMy00MWVjLWI0ZDItZjIwMmIzMzg3MmE5IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIyIiwidHlwIjoiYWNjZXNzIn0.AEALezStFrFEmQ8i9H6h9li-pbXKcb28NTNXW0bQC2YasdSAuCCVWythzzalZpKqY0Ta7OG7DQGNVGk0O026fw
 ```
 
 ##### Response
@@ -498,7 +592,7 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrZ44twyfYIAACFC
+x-request-id: FwX9FEsbBUuyqccAACqh
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -510,31 +604,31 @@ access-control-allow-credentials: true
     "notification_settings": {
       "native": {
         "outcoming": false,
-        "incoming": false
+        "incoming": true
       },
       "ERC-721": {
-        "outcoming": true,
+        "outcoming": false,
         "incoming": true
       },
       "ERC-20": {
-        "outcoming": false,
+        "outcoming": true,
         "incoming": true
       }
     },
     "notification_methods": {
-      "email": true
+      "email": false
     },
-    "name": "test6",
-    "id": 32,
+    "name": "test24",
+    "id": 133,
     "exchange_rate": null,
-    "address_hash": "0x0000000000000000000000000000000000000017",
+    "address_hash": "0x0000000000000000000000000000000000000071",
     "address_balance": null
   },
   {
     "notification_settings": {
       "native": {
-        "outcoming": false,
-        "incoming": true
+        "outcoming": true,
+        "incoming": false
       },
       "ERC-721": {
         "outcoming": false,
@@ -542,16 +636,16 @@ access-control-allow-credentials: true
       },
       "ERC-20": {
         "outcoming": false,
-        "incoming": false
+        "incoming": true
       }
     },
     "notification_methods": {
       "email": true
     },
-    "name": "test7",
-    "id": 33,
+    "name": "test25",
+    "id": 134,
     "exchange_rate": null,
-    "address_hash": "0x0000000000000000000000000000000000000018",
+    "address_hash": "0x0000000000000000000000000000000000000072",
     "address_balance": null
   }
 ]
@@ -562,25 +656,28 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/watchlist/35
+* __Path:__ /api/account/v1/user/watchlist/136
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODI2NDIyOTItZmVkNS00ZDVlLTg4ZWUtOWQ1Y2MzZTNmMmQ0IiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEzIiwidHlwIjoiYWNjZXNzIn0.54XGqd5ZJub6IwCFo5qsFmLnIdhZbxQzY8rNhSyqkSRnFyU24A3ilq47jJHGWDVua4D9sWq8rxW-UhdTB9_zcg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiY2YxNzVjOGUtMzIxYi00NGZkLWE1YTUtYTkzNjUxZDUxNGMyIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDI0IiwidHlwIjoiYWNjZXNzIn0.Kg9e3VxXE--Ufz_K8CB0oYL-q0fFC48refZlVkD2anbDbok9zmbTA-qYdhsZzDDB_t-gLxp4O_HgX7RQRR12Pw
 ```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrcxLRW6yO4AACJi
+x-request-id: FwX9FE0fElhW-8kAACxB
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
 ```
 * __Response body:__
 ```json
-
+{
+  "message": "OK"
+}
 ```
 
 ### <a id=blockscoutweb-account-api-v1-usercontroller-update_watchlist></a>update_watchlist
@@ -588,10 +685,10 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/watchlist/36
+* __Path:__ /api/account/v1/user/watchlist/132
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZTFkNWU2OWMtNWM0Ni00YTNiLWEzZGYtNWQ3ZGJlOGM4OTgzIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE4IiwidHlwIjoiYWNjZXNzIn0.w4Vbz2j63XnVkBnk9gJMxudnvflSuIqgxN_c7EYTsdQAgzzNGqwlQwXySaz7524n7lddc8Xi7_AW01WPz7EJig
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMWUwZWM1ZmQtMTNmNS00NGQ3LWI1NzItOGE1ZmZmYjhmMDM4IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE3IiwidHlwIjoiYWNjZXNzIn0.3hV0DtJ1rkeEA3jAeSWVy-bUajntQWht-iPhd4HpIP474qK_fyigl3wvj76Fr30L42MF3jdFWVC0F0uUnISMbQ
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -599,11 +696,11 @@ content-type: multipart/mixed; boundary=plug_conn_test
 {
   "notification_settings": {
     "native": {
-      "outcoming": true,
+      "outcoming": false,
       "incoming": true
     },
     "ERC-721": {
-      "outcoming": false,
+      "outcoming": true,
       "incoming": false
     },
     "ERC-20": {
@@ -614,8 +711,8 @@ content-type: multipart/mixed; boundary=plug_conn_test
   "notification_methods": {
     "email": false
   },
-  "name": "test27",
-  "address_hash": "0x0000000000000000000000000000000000000032"
+  "name": "test23",
+  "address_hash": "0x000000000000000000000000000000000000005b"
 }
 ```
 
@@ -625,7 +722,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrxOMiKxvrkAABkh
+x-request-id: FwX9FEQreO4tKUsAACdh
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -635,11 +732,11 @@ access-control-allow-credentials: true
 {
   "notification_settings": {
     "native": {
-      "outcoming": true,
+      "outcoming": false,
       "incoming": true
     },
     "ERC-721": {
-      "outcoming": false,
+      "outcoming": true,
       "incoming": false
     },
     "ERC-20": {
@@ -650,10 +747,10 @@ access-control-allow-credentials: true
   "notification_methods": {
     "email": false
   },
-  "name": "test27",
-  "id": 36,
+  "name": "test23",
+  "id": 132,
   "exchange_rate": null,
-  "address_hash": "0x0000000000000000000000000000000000000032",
+  "address_hash": "0x000000000000000000000000000000000000005b",
   "address_balance": null
 }
 ```
@@ -666,7 +763,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/watchlist
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjY0Mzc4NDktMDBiNi00MzlhLTliY2YtMzY5YWQ5NDI4YTgwIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.kifHyUUFcOpKZ07cmrfjJ2G_OhBq_SxKtQ8ftv4gq4wEhoNCeYuedrrwwQ-KEC8h02zUH6hzsCOrMxYeO5sPVA
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiM2NmYmMwNWMtNTRjNS00NWMyLWFmMGYtNWZlMGU3ZTVkNTUyIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEzIiwidHlwIjoiYWNjZXNzIn0.YB49bcxmnQXIZLo8PQCa7TyCPJEe7bh2RIXowME3ScFbz6OOJ6UrEBjFtgClTNtKUAfNyLc4w0XJp2T254bacw
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -674,23 +771,23 @@ content-type: multipart/mixed; boundary=plug_conn_test
 {
   "notification_settings": {
     "native": {
+      "outcoming": false,
+      "incoming": false
+    },
+    "ERC-721": {
       "outcoming": true,
       "incoming": true
     },
-    "ERC-721": {
-      "outcoming": false,
-      "incoming": false
-    },
     "ERC-20": {
-      "outcoming": false,
-      "incoming": false
+      "outcoming": true,
+      "incoming": true
     }
   },
   "notification_methods": {
-    "email": false
+    "email": true
   },
-  "name": "test4",
-  "address_hash": "0x0000000000000000000000000000000000000012"
+  "name": "test20",
+  "address_hash": "0x000000000000000000000000000000000000002a"
 }
 ```
 
@@ -700,7 +797,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrSb0Ppv5V8AAB2C
+x-request-id: FwX9FD8_qd3GWf4AACLh
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -721,10 +818,10 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/watchlist/31
+* __Path:__ /api/account/v1/user/watchlist/131
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjY0Mzc4NDktMDBiNi00MzlhLTliY2YtMzY5YWQ5NDI4YTgwIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.kifHyUUFcOpKZ07cmrfjJ2G_OhBq_SxKtQ8ftv4gq4wEhoNCeYuedrrwwQ-KEC8h02zUH6hzsCOrMxYeO5sPVA
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiM2NmYmMwNWMtNTRjNS00NWMyLWFmMGYtNWZlMGU3ZTVkNTUyIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEzIiwidHlwIjoiYWNjZXNzIn0.YB49bcxmnQXIZLo8PQCa7TyCPJEe7bh2RIXowME3ScFbz6OOJ6UrEBjFtgClTNtKUAfNyLc4w0XJp2T254bacw
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -732,23 +829,23 @@ content-type: multipart/mixed; boundary=plug_conn_test
 {
   "notification_settings": {
     "native": {
+      "outcoming": false,
+      "incoming": false
+    },
+    "ERC-721": {
       "outcoming": true,
       "incoming": true
     },
-    "ERC-721": {
-      "outcoming": false,
-      "incoming": false
-    },
     "ERC-20": {
-      "outcoming": false,
-      "incoming": false
+      "outcoming": true,
+      "incoming": true
     }
   },
   "notification_methods": {
-    "email": false
+    "email": true
   },
-  "name": "test4",
-  "address_hash": "0x0000000000000000000000000000000000000012"
+  "name": "test20",
+  "address_hash": "0x000000000000000000000000000000000000002a"
 }
 ```
 
@@ -758,7 +855,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrTQWtlv5V8AAB2i
+x-request-id: FwX9FD-je2nGWf4AACMh
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -782,7 +879,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/api_keys
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNWVhOWMwMDEtOGI4NS00YTRlLWIxZDEtNTVmZjVkZGY4YjFlIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIiLCJ0eXAiOiJhY2Nlc3MifQ.U_gPb7BluCbD63l10BMmlOdt8cw9kJZhG3-7ON2UUfWhjPEmlW8zBXZu60MBZ8lTeAlNDOzswG7do2DX7_Ffsg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNDU3MmM2OGItNWIwNy00YzY3LThiMGEtNjZiZmVhZjBmYzkxIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE2IiwidHlwIjoiYWNjZXNzIn0.013s29QLhAI8xvvUV7YsFnh-lvXcgqoyD5PGITjaJjipyUv9gpa9BlzokCBP7gabCjNyFIJWEHvOfX-u4Ls-dg
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -798,7 +895,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJq9YKU199NEAABlC
+x-request-id: FwX9FEM9W5OeXwUAAApC
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -807,7 +904,7 @@ access-control-allow-credentials: true
 ```json
 {
   "name": "test",
-  "api_key": "d7dafd5d-0166-4c82-b250-5b88722f32ee"
+  "api_key": "40e57889-7cbc-4a3e-b8a0-6da06b31fbba"
 }
 ```
 
@@ -818,7 +915,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/api_keys
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTNhMzRlMDctZWJlYS00OGM5LTg4OWMtYzY3YWIzZTIwNTNmIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDciLCJ0eXAiOiJhY2Nlc3MifQ.GSwD3mU7ZtEKUMv0PvUIprrEFzvOUitCU8iwRddfKvT01Z1U8BjMM8zroN6voHPZJasXGvznSC_PkarSVgZ7Mg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYWVlZTYwNzUtYjAxMy00N2M4LWI0YjUtOWU2NThiZDM1Yzg2IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEyIiwidHlwIjoiYWNjZXNzIn0.zVdgxdzf0nTBtu1SVPJI88uWM_7582ezIbX1QSM3pD1bZ1LCB4G3DnCflb_c4KAsuL_6oC9CblVxEZXRN9Yt4Q
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -834,7 +931,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrLc0AmvcEwAABxC
+x-request-id: FwX9FD4o8SlcVs8AACJh
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -858,7 +955,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/api_keys
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTNhMzRlMDctZWJlYS00OGM5LTg4OWMtYzY3YWIzZTIwNTNmIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDciLCJ0eXAiOiJhY2Nlc3MifQ.GSwD3mU7ZtEKUMv0PvUIprrEFzvOUitCU8iwRddfKvT01Z1U8BjMM8zroN6voHPZJasXGvznSC_PkarSVgZ7Mg
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYWVlZTYwNzUtYjAxMy00N2M4LWI0YjUtOWU2NThiZDM1Yzg2IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEyIiwidHlwIjoiYWNjZXNzIn0.zVdgxdzf0nTBtu1SVPJI88uWM_7582ezIbX1QSM3pD1bZ1LCB4G3DnCflb_c4KAsuL_6oC9CblVxEZXRN9Yt4Q
 ```
 
 ##### Response
@@ -867,7 +964,7 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrLl5l6vcEwAABxi
+x-request-id: FwX9FD448ddcVs8AACKB
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -877,15 +974,15 @@ access-control-allow-credentials: true
 [
   {
     "name": "test",
-    "api_key": "58316b23-e045-409a-9e35-3dd25636cde3"
+    "api_key": "00df6506-4849-44e1-bace-1d5d3eb8fea3"
   },
   {
     "name": "test",
-    "api_key": "850ee242-3bf1-45fa-95ed-4327f12a63f9"
+    "api_key": "2e44373a-f986-4ae7-95ae-162b34f7d90b"
   },
   {
     "name": "test",
-    "api_key": "30825a15-248b-494b-8429-052b9c9b2ee6"
+    "api_key": "aab962c6-f43f-4b41-b5a9-2363ed03bbde"
   }
 ]
 ```
@@ -895,10 +992,10 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/api_keys/b2273c9e-94fe-47fd-ae84-21bf60c4593f
+* __Path:__ /api/account/v1/user/api_keys/f0ce17a9-9461-4219-8bcd-e27722425bbb
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMTgxM2FmNjctZmU4Ny00NWVmLWExMjYtNTNjMTk2NjgxYzEwIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE2IiwidHlwIjoiYWNjZXNzIn0.qEYJPN44t6sTLrQ7y9M070-KRYmHfowMMn07PVwupun6o0s9wOiX-0XZNlW0ZcuTcBfqCuH77gAbG7wFABZCgA
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDAsImlhdCI6MTY1OTAxMDMwMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjY5MWY4YTEtMGM0Yi00MGVmLWFhMTMtMzEyMmZiMDA4NDQ3IiwibmJmIjoxNjU5MDEwMjk5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEiLCJ0eXAiOiJhY2Nlc3MifQ.kiuUCaTNIzeCCn5Rh4B4NavQCSeTHIHMSiFDIs5SIWtUMGZkNstH8fb-EJbS6uc6fXOpRaxVWDOOkCKyUL5GrQ
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -914,7 +1011,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrsuoJ5B5awAACaC
+x-request-id: FwX9FC_XiBww_lsAABuB
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -923,7 +1020,7 @@ access-control-allow-credentials: true
 ```json
 {
   "name": "test_1",
-  "api_key": "b2273c9e-94fe-47fd-ae84-21bf60c4593f"
+  "api_key": "f0ce17a9-9461-4219-8bcd-e27722425bbb"
 }
 ```
 
@@ -932,25 +1029,28 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/api_keys/d7209622-7f5d-4131-b876-87c97a8db8e7
+* __Path:__ /api/account/v1/user/api_keys/84c0098b-a0e3-45a9-bbb8-011d8027dcf0
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjFlYzdhOWUtYmM4Yi00YzU4LTkxYjMtNmY4NzY2MmEyY2Q2IiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDExIiwidHlwIjoiYWNjZXNzIn0.lUKviXl8YUVNBDMhpiRPN9ycI20iYatT7qH2EHlhhvkcP62r9asI5uEVwEJmH9J8Ziq8vDFdGjO65R6OULT4aQ
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZmRlODcyNDMtZWRmOC00NjIxLThkYWItZjkyN2I5MmY0MGQ5IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDExIiwidHlwIjoiYWNjZXNzIn0.ZjCdVNzT9iCU_Sb6Wi5oKo6Hn7LSEI3lANq68nXTn7v489OgqdAupEL_2eQLTy7HgZaQKqoCMhNJeAwYH_ZM9Q
 ```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrXeb09k2lAAAB_i
+x-request-id: FwX9FD2U_S_pPTUAAAhC
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
 ```
 * __Response body:__
 ```json
-
+{
+  "message": "OK"
+}
 ```
 
 ### <a id=blockscoutweb-account-api-v1-usercontroller-create_custom_abi></a>create_custom_abi
@@ -961,14 +1061,14 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/custom_abis
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNmUxNWI0ZTktMWQzYS00NWViLWEyODUtNzA2Mzc5MTM1ZDY3IiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDYiLCJ0eXAiOiJhY2Nlc3MifQ.1mVytXi_tg5A4bkQT6w1we1ha5MXDtHAQ2bu7mQIpLNaYM-tuSBtTcsdxpfXv8qvBM054eywTyvkORasR1ZVBw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDAsImlhdCI6MTY1OTAxMDMwMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTk4YjIzMWMtYzE2MS00YzAwLWE5ZDktYTU2NDcwNzBmODM1IiwibmJmIjoxNjU5MDEwMjk5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDMiLCJ0eXAiOiJhY2Nlc3MifQ.Xu99bTKlKhnG8SOgyFVRsM8HNrxCPZTQkQgSEeBnxGh9Y4k-bKMygbQ86ZYOOSvxLUVPReceMwaYJFq2untC1Q
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "name": "test3",
-  "contract_address_hash": "0x000000000000000000000000000000000000000b",
+  "name": "test0",
+  "contract_address_hash": "0x0000000000000000000000000000000000000006",
   "abi": [
     {
       "type": "function",
@@ -1008,7 +1108,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrIraAXV3gIAABtC
+x-request-id: FwX9FDOKezeB5iEAAB4B
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -1016,9 +1116,9 @@ access-control-allow-credentials: true
 * __Response body:__
 ```json
 {
-  "name": "test3",
-  "id": 114,
-  "contract_address_hash": "0x000000000000000000000000000000000000000b",
+  "name": "test0",
+  "id": 289,
+  "contract_address_hash": "0x0000000000000000000000000000000000000006",
   "abi": [
     {
       "type": "function",
@@ -1059,14 +1159,14 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/custom_abis
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOTM3NzM1ODktNTIxNy00NzU2LWIxMDEtMzQ1MTMzNTQzNDIzIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.xqRYJBXibGbwOGWKwLpgu_ZPOYqGHAuLngsXzuv_rm7YaxWqVfpWiUNgCz-Wa7FmwtufXQQ9MbIyeTurzCrxtw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDAsImlhdCI6MTY1OTAxMDMwMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYWY4OWIzMmMtNWVlMy00ZTU0LThjOTMtZDNiMDk5MmJmMDRkIiwibmJmIjoxNjU5MDEwMjk5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDQiLCJ0eXAiOiJhY2Nlc3MifQ.k2oQjv-o5qPSDdCT4idXEhI2oBEz6KiYy0pRPiQ0Ma77i2Z2Da3Xr8g2wb3W0vWbG65yvNnuywps4OXatgG2jA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "name": "test25",
-  "contract_address_hash": "0x0000000000000000000000000000000000000030",
+  "name": "test16",
+  "contract_address_hash": "0x0000000000000000000000000000000000000016",
   "abi": [
     {
       "type": "function",
@@ -1106,7 +1206,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrrStI6lmvsAABih
+x-request-id: FwX9FDcwa8LsvpkAAB8h
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -1130,7 +1230,7 @@ access-control-allow-credentials: true
 * __Path:__ /api/account/v1/user/custom_abis
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOTM3NzM1ODktNTIxNy00NzU2LWIxMDEtMzQ1MTMzNTQzNDIzIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.xqRYJBXibGbwOGWKwLpgu_ZPOYqGHAuLngsXzuv_rm7YaxWqVfpWiUNgCz-Wa7FmwtufXQQ9MbIyeTurzCrxtw
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDAsImlhdCI6MTY1OTAxMDMwMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYWY4OWIzMmMtNWVlMy00ZTU0LThjOTMtZDNiMDk5MmJmMDRkIiwibmJmIjoxNjU5MDEwMjk5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDQiLCJ0eXAiOiJhY2Nlc3MifQ.k2oQjv-o5qPSDdCT4idXEhI2oBEz6KiYy0pRPiQ0Ma77i2Z2Da3Xr8g2wb3W0vWbG65yvNnuywps4OXatgG2jA
 ```
 
 ##### Response
@@ -1139,7 +1239,7 @@ authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrrhcQSlmvsAABjB
+x-request-id: FwX9FDdCHYvsvpkAAB9B
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -1148,9 +1248,324 @@ access-control-allow-credentials: true
 ```json
 [
   {
+    "name": "test1",
+    "id": 290,
+    "contract_address_hash": "0x0000000000000000000000000000000000000007",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test2",
+    "id": 291,
+    "contract_address_hash": "0x0000000000000000000000000000000000000008",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test3",
+    "id": 292,
+    "contract_address_hash": "0x0000000000000000000000000000000000000009",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test4",
+    "id": 293,
+    "contract_address_hash": "0x000000000000000000000000000000000000000a",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test5",
+    "id": 294,
+    "contract_address_hash": "0x000000000000000000000000000000000000000b",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test6",
+    "id": 295,
+    "contract_address_hash": "0x000000000000000000000000000000000000000c",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test7",
+    "id": 296,
+    "contract_address_hash": "0x000000000000000000000000000000000000000d",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test8",
+    "id": 297,
+    "contract_address_hash": "0x000000000000000000000000000000000000000e",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test9",
+    "id": 298,
+    "contract_address_hash": "0x000000000000000000000000000000000000000f",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
     "name": "test10",
-    "id": 115,
-    "contract_address_hash": "0x0000000000000000000000000000000000000021",
+    "id": 299,
+    "contract_address_hash": "0x0000000000000000000000000000000000000010",
     "abi": [
       {
         "type": "function",
@@ -1184,8 +1599,8 @@ access-control-allow-credentials: true
   },
   {
     "name": "test11",
-    "id": 116,
-    "contract_address_hash": "0x0000000000000000000000000000000000000022",
+    "id": 300,
+    "contract_address_hash": "0x0000000000000000000000000000000000000011",
     "abi": [
       {
         "type": "function",
@@ -1219,8 +1634,8 @@ access-control-allow-credentials: true
   },
   {
     "name": "test12",
-    "id": 117,
-    "contract_address_hash": "0x0000000000000000000000000000000000000023",
+    "id": 301,
+    "contract_address_hash": "0x0000000000000000000000000000000000000012",
     "abi": [
       {
         "type": "function",
@@ -1254,8 +1669,8 @@ access-control-allow-credentials: true
   },
   {
     "name": "test13",
-    "id": 118,
-    "contract_address_hash": "0x0000000000000000000000000000000000000024",
+    "id": 302,
+    "contract_address_hash": "0x0000000000000000000000000000000000000013",
     "abi": [
       {
         "type": "function",
@@ -1289,8 +1704,8 @@ access-control-allow-credentials: true
   },
   {
     "name": "test14",
-    "id": 119,
-    "contract_address_hash": "0x0000000000000000000000000000000000000025",
+    "id": 303,
+    "contract_address_hash": "0x0000000000000000000000000000000000000014",
     "abi": [
       {
         "type": "function",
@@ -1324,323 +1739,8 @@ access-control-allow-credentials: true
   },
   {
     "name": "test15",
-    "id": 120,
-    "contract_address_hash": "0x0000000000000000000000000000000000000026",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test16",
-    "id": 121,
-    "contract_address_hash": "0x0000000000000000000000000000000000000027",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test17",
-    "id": 122,
-    "contract_address_hash": "0x0000000000000000000000000000000000000028",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test18",
-    "id": 123,
-    "contract_address_hash": "0x0000000000000000000000000000000000000029",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test19",
-    "id": 124,
-    "contract_address_hash": "0x000000000000000000000000000000000000002a",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test20",
-    "id": 125,
-    "contract_address_hash": "0x000000000000000000000000000000000000002b",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test21",
-    "id": 126,
-    "contract_address_hash": "0x000000000000000000000000000000000000002c",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test22",
-    "id": 127,
-    "contract_address_hash": "0x000000000000000000000000000000000000002d",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test23",
-    "id": 128,
-    "contract_address_hash": "0x000000000000000000000000000000000000002e",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test24",
-    "id": 129,
-    "contract_address_hash": "0x000000000000000000000000000000000000002f",
+    "id": 304,
+    "contract_address_hash": "0x0000000000000000000000000000000000000015",
     "abi": [
       {
         "type": "function",
@@ -1680,17 +1780,17 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/custom_abis/113
+* __Path:__ /api/account/v1/user/custom_abis/305
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYzRiYmVjYmYtZGFhMC00Y2ZkLWFkYWYtMWVmMjM1NWU0NmRmIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.TbQ1vfSLBn4SqF9b4r7qDEXDmILP9d5ksWAeV59ZjFubXH00jU_kuatAEHv0C1tIzu3H_991kZQwAnLHtiBo4A
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYzQ1YjRjYjMtMmUxYS00MTI2LThkMjgtMjE5OGM3MDg4MzNjIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.DNb34dNnY3Qs91NHvxtKVi_3wl9P8vPXyzFG6VTParQVzNhz4L7w4mJVcxl7dTpk4FqUMllokhM1NYM3fPFW5A
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "name": "test2",
-  "contract_address_hash": "0x000000000000000000000000000000000000000a",
+  "name": "test18",
+  "contract_address_hash": "0x0000000000000000000000000000000000000018",
   "abi": [
     {
       "type": "function",
@@ -1730,7 +1830,7 @@ content-type: multipart/mixed; boundary=plug_conn_test
 ```
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJrGw90vqUBIAABri
+x-request-id: FwX9FDgXjDdlqPkAAB-h
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
@@ -1738,9 +1838,9 @@ access-control-allow-credentials: true
 * __Response body:__
 ```json
 {
-  "name": "test2",
-  "id": 113,
-  "contract_address_hash": "0x000000000000000000000000000000000000000a",
+  "name": "test18",
+  "id": 305,
+  "contract_address_hash": "0x0000000000000000000000000000000000000018",
   "abi": [
     {
       "type": "function",
@@ -1779,23 +1879,318 @@ access-control-allow-credentials: true
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/custom_abis/112
+* __Path:__ /api/account/v1/user/custom_abis/306
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NTkwNDY5MzgsImlhdCI6MTY1NjYyNzczOCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMTc5NGUyNzgtOTY4ZS00NWE1LTk4MWEtNDkxM2YxZDBmZGNiIiwibmJmIjoxNjU2NjI3NzM3LCJzdWIiOiJibG9ja3Njb3V0fDAwMDAiLCJ0eXAiOiJhY2Nlc3MifQ.H026imc5Vl-TVTDQO5Splpyro1F92tN3WzbKv9pBmhrfFQ7uoIwXYkEpOG3YoqA5halY7qGJOoBy1YWJriadlA
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTRhYTYxYjItOWRjYi00MWZhLTkwMDQtODJjZjE1MDQ0NmJhIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDciLCJ0eXAiOiJhY2Nlc3MifQ.NSKNjPFqh3LLrRtBaliyxLCT37RsOnkW6Y__JyXlnZzH033xct94jFoB-BDuIrRGlsz4Infs9HIKTor3J1NbVw
 ```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: Fv2GJq2lPhwQF88AABfi
+x-request-id: FwX9FDnES_sdOgkAAAXC
 access-control-allow-origin: *
 access-control-expose-headers: 
 access-control-allow-credentials: true
 ```
 * __Response body:__
 ```json
-
+{
+  "message": "OK"
+}
 ```
+
+### <a id=blockscoutweb-account-api-v1-usercontroller-create_public_tags_request></a>create_public_tags_request
+#### Submit request to add a public tag
+
+##### Request
+* __Method:__ POST
+* __Path:__ /api/account/v1/user/public_tags
+* __Request headers:__
+```
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMzQ2MmFlNmItOWIwNS00NjkxLTgwNzktZjQ1MTUyZTc5ODEyIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIwIiwidHlwIjoiYWNjZXNzIn0.9mwp6vm2_RurBsJSU6puiu2qkMKbVZUMMuLzij9Js3wdoMa2YDk_Pm9ylP-7P6SakVeU9-wvf0XQu32IBrpLqQ
+content-type: multipart/mixed; boundary=plug_conn_test
+```
+* __Request body:__
+```json
+{
+  "website": "website12",
+  "tags": "Tag19;Tag20",
+  "is_owner": false,
+  "full_name": "full name12",
+  "email": "email12",
+  "company": "company12",
+  "addresses_array": [
+    "0x0000000000000000000000000000000000000068",
+    "0x0000000000000000000000000000000000000069",
+    "0x000000000000000000000000000000000000006a",
+    "0x000000000000000000000000000000000000006b",
+    "0x000000000000000000000000000000000000006c"
+  ],
+  "additional_comment": "additional_comment12"
+}
+```
+
+##### Response
+* __Status__: 200
+* __Response headers:__
+```
+content-type: application/json; charset=utf-8
+cache-control: max-age=0, private, must-revalidate
+x-request-id: FwX9FEk6QUkAq20AAAzC
+access-control-allow-origin: *
+access-control-expose-headers: 
+access-control-allow-credentials: true
+```
+* __Response body:__
+```json
+{
+  "website": "website12",
+  "tags": "Tag19;Tag20",
+  "is_owner": false,
+  "id": 95,
+  "full_name": "full name12",
+  "email": "email12",
+  "company": "company12",
+  "addresses": "0x0000000000000000000000000000000000000068;0x0000000000000000000000000000000000000069;0x000000000000000000000000000000000000006a;0x000000000000000000000000000000000000006b;0x000000000000000000000000000000000000006c",
+  "additional_comment": "additional_comment12"
+}
+```
+
+### <a id=blockscoutweb-account-api-v1-usercontroller-public_tags_requests></a>public_tags_requests
+#### Get list of requests to add a public tag
+
+##### Request
+* __Method:__ GET
+* __Path:__ /api/account/v1/user/public_tags
+* __Request headers:__
+```
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOGQyMTNmZjUtZjcwMi00MGY1LThlYTAtYmMwMmViNjdkOTgyIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.F3xDTfXJLm5BAoKT6KjUE56XPq-taA1R-KMYnf2p9uHgZ2ZcWbPZcJEmaaq8ejdB77t_AbqSothvP1AqrbnNWg
+```
+
+##### Response
+* __Status__: 200
+* __Response headers:__
+```
+content-type: application/json; charset=utf-8
+cache-control: max-age=0, private, must-revalidate
+x-request-id: FwX9FEG1TdpTy1EAACXh
+access-control-allow-origin: *
+access-control-expose-headers: 
+access-control-allow-credentials: true
+```
+* __Response body:__
+```json
+[
+  {
+    "website": "website2",
+    "tags": "Tag2;Tag3",
+    "is_owner": true,
+    "id": 85,
+    "full_name": "full name2",
+    "email": "email2",
+    "company": "company2",
+    "addresses": "0x000000000000000000000000000000000000002c;0x000000000000000000000000000000000000002d;0x000000000000000000000000000000000000002e;0x000000000000000000000000000000000000002f;0x0000000000000000000000000000000000000030;0x0000000000000000000000000000000000000031;0x0000000000000000000000000000000000000032;0x0000000000000000000000000000000000000033",
+    "additional_comment": "additional_comment2"
+  },
+  {
+    "website": "website3",
+    "tags": "Tag4;Tag5",
+    "is_owner": true,
+    "id": 86,
+    "full_name": "full name3",
+    "email": "email3",
+    "company": "company3",
+    "addresses": "0x0000000000000000000000000000000000000034;0x0000000000000000000000000000000000000035",
+    "additional_comment": "additional_comment3"
+  },
+  {
+    "website": "website4",
+    "tags": "Tag6",
+    "is_owner": true,
+    "id": 87,
+    "full_name": "full name4",
+    "email": "email4",
+    "company": "company4",
+    "addresses": "0x0000000000000000000000000000000000000036;0x0000000000000000000000000000000000000037;0x0000000000000000000000000000000000000038;0x0000000000000000000000000000000000000039;0x000000000000000000000000000000000000003a",
+    "additional_comment": "additional_comment4"
+  },
+  {
+    "website": "website5",
+    "tags": "Tag7;Tag8",
+    "is_owner": true,
+    "id": 88,
+    "full_name": "full name5",
+    "email": "email5",
+    "company": "company5",
+    "addresses": "0x000000000000000000000000000000000000003b;0x000000000000000000000000000000000000003c;0x000000000000000000000000000000000000003d",
+    "additional_comment": "additional_comment5"
+  },
+  {
+    "website": "website6",
+    "tags": "Tag9;Tag10",
+    "is_owner": false,
+    "id": 89,
+    "full_name": "full name6",
+    "email": "email6",
+    "company": "company6",
+    "addresses": "0x000000000000000000000000000000000000003e;0x000000000000000000000000000000000000003f;0x0000000000000000000000000000000000000040;0x0000000000000000000000000000000000000041;0x0000000000000000000000000000000000000042;0x0000000000000000000000000000000000000043",
+    "additional_comment": "additional_comment6"
+  },
+  {
+    "website": "website7",
+    "tags": "Tag11",
+    "is_owner": false,
+    "id": 90,
+    "full_name": "full name7",
+    "email": "email7",
+    "company": "company7",
+    "addresses": "0x0000000000000000000000000000000000000044;0x0000000000000000000000000000000000000045;0x0000000000000000000000000000000000000046;0x0000000000000000000000000000000000000047;0x0000000000000000000000000000000000000048;0x0000000000000000000000000000000000000049;0x000000000000000000000000000000000000004a;0x000000000000000000000000000000000000004b",
+    "additional_comment": "additional_comment7"
+  },
+  {
+    "website": "website8",
+    "tags": "Tag12",
+    "is_owner": true,
+    "id": 91,
+    "full_name": "full name8",
+    "email": "email8",
+    "company": "company8",
+    "addresses": "0x000000000000000000000000000000000000004c",
+    "additional_comment": "additional_comment8"
+  },
+  {
+    "website": "website9",
+    "tags": "Tag13;Tag14",
+    "is_owner": false,
+    "id": 92,
+    "full_name": "full name9",
+    "email": "email9",
+    "company": "company9",
+    "addresses": "0x000000000000000000000000000000000000004d;0x000000000000000000000000000000000000004e;0x000000000000000000000000000000000000004f",
+    "additional_comment": "additional_comment9"
+  },
+  {
+    "website": "website10",
+    "tags": "Tag15;Tag16",
+    "is_owner": true,
+    "id": 93,
+    "full_name": "full name10",
+    "email": "email10",
+    "company": "company10",
+    "addresses": "0x0000000000000000000000000000000000000050;0x0000000000000000000000000000000000000051;0x0000000000000000000000000000000000000052",
+    "additional_comment": "additional_comment10"
+  },
+  {
+    "website": "website11",
+    "tags": "Tag17;Tag18",
+    "is_owner": false,
+    "id": 94,
+    "full_name": "full name11",
+    "email": "email11",
+    "company": "company11",
+    "addresses": "0x0000000000000000000000000000000000000053;0x0000000000000000000000000000000000000054;0x0000000000000000000000000000000000000055;0x0000000000000000000000000000000000000056;0x0000000000000000000000000000000000000057;0x0000000000000000000000000000000000000058;0x0000000000000000000000000000000000000059",
+    "additional_comment": "additional_comment11"
+  }
+]
+```
+
+### <a id=blockscoutweb-account-api-v1-usercontroller-delete_public_tags_request></a>delete_public_tags_request
+#### Delete public tags request
+
+##### Request
+* __Method:__ DELETE
+* __Path:__ /api/account/v1/user/public_tags/85
+* __Request headers:__
+```
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOGQyMTNmZjUtZjcwMi00MGY1LThlYTAtYmMwMmViNjdkOTgyIiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.F3xDTfXJLm5BAoKT6KjUE56XPq-taA1R-KMYnf2p9uHgZ2ZcWbPZcJEmaaq8ejdB77t_AbqSothvP1AqrbnNWg
+content-type: multipart/mixed; boundary=plug_conn_test
+```
+* __Request body:__
+```json
+{
+  "remove_reason": "reason"
+}
+```
+
+##### Response
+* __Status__: 200
+* __Response headers:__
+```
+content-type: application/json; charset=utf-8
+cache-control: max-age=0, private, must-revalidate
+x-request-id: FwX9FEHJeHNTy1EAACYB
+access-control-allow-origin: *
+access-control-expose-headers: 
+access-control-allow-credentials: true
+```
+* __Response body:__
+```json
+{
+  "message": "OK"
+}
+```
+
+### <a id=blockscoutweb-account-api-v1-usercontroller-update_public_tags_request></a>update_public_tags_request
+#### Edit request to add a public tag
+
+##### Request
+* __Method:__ PUT
+* __Path:__ /api/account/v1/user/public_tags/84
+* __Request headers:__
+```
+authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1MDEsImlhdCI6MTY1OTAxMDMwMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYjM4MjljNTgtYzRjNC00NDQxLTlmNTYtZmY5YzJlZTU2MDE5IiwibmJmIjoxNjU5MDEwMzAwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDYiLCJ0eXAiOiJhY2Nlc3MifQ.2MJrq9MRPksGIJK2Ol-chZMOy677EHr3Pr7bJ3lKtGbOD4iiV49dqO5KnH1o2sXw3HLH1SEtytYrcNYM_0kYYA
+content-type: multipart/mixed; boundary=plug_conn_test
+```
+* __Request body:__
+```json
+{
+  "website": "website1",
+  "tags": "Tag1",
+  "is_owner": false,
+  "full_name": "full name1",
+  "email": "email1",
+  "company": "company1",
+  "addresses_array": [
+    "0x000000000000000000000000000000000000001a",
+    "0x000000000000000000000000000000000000001b",
+    "0x000000000000000000000000000000000000001c",
+    "0x000000000000000000000000000000000000001d",
+    "0x000000000000000000000000000000000000001e",
+    "0x000000000000000000000000000000000000001f",
+    "0x0000000000000000000000000000000000000020",
+    "0x0000000000000000000000000000000000000021"
+  ],
+  "additional_comment": "additional_comment1"
+}
+```
+
+##### Response
+* __Status__: 200
+* __Response headers:__
+```
+content-type: application/json; charset=utf-8
+cache-control: max-age=0, private, must-revalidate
+x-request-id: FwX9FDjgyH50TAgAAASi
+access-control-allow-origin: *
+access-control-expose-headers: 
+access-control-allow-credentials: true
+```
+* __Response body:__
+```json
+{
+  "website": "website1",
+  "tags": "Tag1",
+  "is_owner": false,
+  "id": 84,
+  "full_name": "full name1",
+  "email": "email1",
+  "company": "company1",
+  "addresses": "0x000000000000000000000000000000000000001a;0x000000000000000000000000000000000000001b;0x000000000000000000000000000000000000001c;0x000000000000000000000000000000000000001d;0x000000000000000000000000000000000000001e;0x000000000000000000000000000000000000001f;0x0000000000000000000000000000000000000020;0x0000000000000000000000000000000000000021",
+  "additional_comment": "additional_comment1"
+}
+```
+
