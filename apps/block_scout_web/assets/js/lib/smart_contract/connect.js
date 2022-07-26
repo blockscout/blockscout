@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/browser'
 
 const instanceChainId = process.env.CHAIN_ID ? parseInt(`${process.env.CHAIN_ID}`, 10) : 100
 const walletConnectOptions = { rpc: {}, chainId: instanceChainId }
-walletConnectOptions.rpc[instanceChainId] = process.env.JSON_RPC ? process.env.JSON_RPC : 'https://dai.poa.network'
+walletConnectOptions.rpc[instanceChainId] = process.env.JSON_RPC ? process.env.JSON_RPC : 'https://rpc.gnosischain.com/'
 
 // Chosen wallet provider given by the dialog window
 let provider

@@ -16,7 +16,7 @@ env:
   NETWORK_PATH: '/xdai/mainnet'
   SOCKET_ROOT: '/xdai/mainnet'
   CHAIN_ID: '100'
-  JSON_RPC: 'https://dai.poa.network'
+  JSON_RPC: 'https://rpc.gnosischain.com/'
   COIN_NAME: 'xDai'
   SUBNETWORK: 'Gnosis Chain'
   AUTH0_DOMAIN: 'login.blockscout.com'
