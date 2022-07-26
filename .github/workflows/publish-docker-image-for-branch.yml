@@ -21,6 +21,8 @@ env:
   SUBNETWORK: 'Gnosis Chain'
   AUTH0_DOMAIN: 'login.blockscout.com'
   AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/xdai/mainnet/auth/logout'
+  AUTH0_CALLBACK_URL: 'https://blockscout.com/auth/auth0/callback'
+  AUTH0_LOGOUT_URL: 'https://blockscoutcom.us.auth0.com/v2/logout'
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
