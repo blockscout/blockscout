@@ -133,7 +133,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:ueberauth_auth0, "~> 2.0"},
       {:guardian, "~> 2.2"},
       {:bureaucrat, "~> 0.2.9", only: :test},
-      {:poison, "~> 4.0.0"}
+      {:poison, "~> 4.0.0"},
+      {:guardian_db, "~> 2.0"}
     ]
   end
 
