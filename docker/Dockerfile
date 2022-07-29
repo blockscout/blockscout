@@ -47,7 +47,7 @@ RUN npm install npm@latest
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
-    npm run build && \
+    npm run deploy && \
     cd -
 
 RUN cd apps/explorer/ && \
