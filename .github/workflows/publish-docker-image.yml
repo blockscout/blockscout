@@ -56,6 +56,7 @@ jobs:
           --build-arg CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER="" \
           --build-arg WOBSERVER_ENABLED="false" \
           --build-arg ADMIN_PANEL_ENABLED="" \
+          --build-arg CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL="" \
           --build-arg SOCKET_ROOT="" \
           --build-arg CHAIN_ID="" \
           --build-arg JSON_RPC="" \

@@ -204,6 +204,7 @@ config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_globa
 config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, global_ttl: address_sum_global_ttl
 
 config :explorer, Explorer.ExchangeRates,
+  store: :ets,
   enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
   coingecko_coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   coingecko_api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
