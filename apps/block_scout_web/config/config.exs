@@ -89,7 +89,7 @@ config :ueberauth, Ueberauth,
   providers: [
     auth0_api: {
       Ueberauth.Strategy.Auth0,
-      [callback_url: System.get_env("AUTH0_CALLBACK_API_URL"), callback_path: System.get_env("AUTH0_CALLBACK_API_PATH")]
+      [callback_path: "/auth/auth0_api/api_callback"]
     },
     auth0: {
       Ueberauth.Strategy.Auth0,
