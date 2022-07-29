@@ -61,6 +61,17 @@ defmodule BlockScoutWeb.Account.AuthController do
     end
   end
 
+  def api_logout(conn, _params) do
+    if match?(["Bearer " <> _token], get_req_header(conn, "authorization")) do
+      ["Bearer " <> token] = get_req_header(conn, "authorization")
+      Guardian.revoke(token)
+    end
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Jason.encode!(%{"message" => "OK"}))
+  end
+
   # for importing in other controllers
   def authenticate!(conn) do
     current_user(conn) || redirect(conn, to: root())
