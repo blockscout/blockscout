@@ -78,12 +78,6 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
-# Configures Ueberauth's Auth0 auth provider
-config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
-  domain: System.get_env("AUTH0_DOMAIN"),
-  client_id: System.get_env("AUTH0_CLIENT_ID"),
-  client_secret: System.get_env("AUTH0_CLIENT_SECRET")
-
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth,
   providers: [
@@ -95,16 +89,12 @@ config :ueberauth, Ueberauth,
       Ueberauth.Strategy.Auth0,
       [callback_path: "/auth/auth0/callback"]
     }
-  ],
-  logout_url: System.get_env("AUTH0_LOGOUT_URL"),
-  logout_return_to_path: "/auth/logout"
+  ]
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
-config :block_scout_web, BlockScoutWeb.Guardian,
-  issuer: "block_scout_web",
-  secret_key: System.get_env("SECRET_KEY_GUARDIAN")
+config :block_scout_web, BlockScoutWeb.Guardian, issuer: "block_scout_web"
 
 config :guardian, Guardian.DB,
   repo: Explorer.Repo,
