@@ -42,4 +42,24 @@ jobs:
           images: blockscout/blockscout
       
       - name: Build & Push Docker image
-        run: docker buildx build -t blockscout/blockscout:latest -t blockscout/blockscout:${{ env.RELEASE_VERSION }} -f ./docker/Dockerfile --push --platform=linux/arm64,linux/amd64 .
+        run: |
+          docker buildx build \
+          -t blockscout/blockscout:latest \
+          -t blockscout/blockscout:${{ env.RELEASE_VERSION }} \
+          -f ./docker/Dockerfile \
+          --build-arg CACHE_EXCHANGE_RATES_PERIOD="" \
+          --build-arg DISABLE_READ_API="false" \
+          --build-arg API_PATH="/" \
+          --build-arg NETWORK_PATH="/" \
+          --build-arg DISABLE_WEBAPP="false" \
+          --build-arg DISABLE_WRITE_API="false" \
+          --build-arg CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER="" \
+          --build-arg WOBSERVER_ENABLED="false" \
+          --build-arg ADMIN_PANEL_ENABLED="" \
+          --build-arg CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL="" \
+          --build-arg SOCKET_ROOT="" \
+          --build-arg CHAIN_ID="" \
+          --build-arg JSON_RPC="" \
+          --build-arg SUBNETWORK="" \
+          --build-arg COIN_NAME="" \
+          --push --platform=linux/arm64,linux/amd64 .
