@@ -38,7 +38,7 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
   end
 
   defp get_supply() do
-    url = "https://api.astranaut.network/cosmos/bank/v1beta1/supply"
+    url = "http://159.223.36.174:1317/cosmos/bank/v1beta1/supply"
     {:ok, result} = Source.http_request(url)
     if is_map(result) do
       list_supply = result["supply"]
