@@ -78,4 +78,5 @@ jobs:
     with:
       blockscout_image: blockscout/blockscout:${{ needs.push_to_registry.outputs.output1 }}-prerelease-${{ needs.push_to_registry.outputs.output2 }}
       environment: 'test'
+      verification_image: 'ghcr.io/blockscout/verification:latest'
     secrets: inherit
