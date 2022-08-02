@@ -74,7 +74,7 @@ jobs:
             SUBNETWORK=
   tests:
     needs: push_to_registry
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_k8s.yaml@verification_tests
+    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_k8s.yaml@master
     with:
       blockscout_image: blockscout/blockscout:${{ needs.push_to_registry.outputs.output1 }}-prerelease-${{ needs.push_to_registry.outputs.output2 }}
       environment: 'test'
