@@ -572,6 +572,57 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     end
   end
 
+  describe "block_ranges/0" do
+    setup do
+      initial_env = Application.get_all_env(:indexer)
+      on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
+    end
+
+    test "ignores bad ranges", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
+        {:ok, %{"number" => "0x100"}}
+      end)
+
+      # doing such workaround is safe since this module is not async
+      Application.put_env(:indexer, :block_ranges, "1..5,3..5,2qw1..12,10..11a,,asd..qwe,10..latest")
+      # latest block is left for realtime_index
+      assert Fetcher.block_ranges(json_rpc_named_arguments) == {:ok, [1..5, 10..255]}
+    end
+
+    test "ignores FIRST_BLOCK/LAST_BLOCK when BLOCK_RANGES defined", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      Application.put_env(:indexer, :first_block, "1")
+      Application.put_env(:indexer, :last_block, "10")
+      Application.put_env(:indexer, :block_ranges, "2..5,10..100")
+      assert Fetcher.block_ranges(json_rpc_named_arguments) == {:ok, [2..5, 10..100]}
+    end
+
+    test "uses FIRST_BLOCK/LAST_BLOCK when BLOCK_RANGES is undefined or invalid", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      Application.put_env(:indexer, :first_block, "1")
+      Application.put_env(:indexer, :last_block, "10")
+      assert Fetcher.block_ranges(json_rpc_named_arguments) == {:ok, [1..9]}
+
+      Application.put_env(:indexer, :block_ranges, "latest..123,,fvdskvjglav!@#$%^&,2..1")
+      assert Fetcher.block_ranges(json_rpc_named_arguments) == {:ok, [1..9]}
+    end
+
+    test "all ranges are disjoint", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
+        {:ok, %{"number" => "0x100"}}
+      end)
+
+      Application.put_env(:indexer, :block_ranges, "10..20,5..15,18..25,35..40,30..50,100..latest,150..200")
+      assert Fetcher.block_ranges(json_rpc_named_arguments) == {:ok, [5..25, 30..50, 100..255]}
+    end
+  end
+
   defp count(schema) do
     Repo.one!(select(schema, fragment("COUNT(*)")))
   end
