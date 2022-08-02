@@ -73,8 +73,8 @@ jobs:
             COIN_NAME=xDai
             SUBNETWORK=
   tests:
-    needs: push_to_registry
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_k8s_account.yaml@verification_tests
+    # needs: push_to_registry
+    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_k8s.yaml@verification_tests
     with:
       blockscout_image: blockscout/blockscout:${{ needs.push_to_registry.outputs.output1 }}-prerelease-${{ needs.push_to_registry.outputs.output2 }}
       environment: 'test'
