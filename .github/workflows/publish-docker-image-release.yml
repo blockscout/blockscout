@@ -18,23 +18,29 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 4.1.4
+      RELEASE_VERSION: 4.1.5
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
-      
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Log in to Docker Hub
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v4
         with:
           images: blockscout/blockscout
-      
+
       - name: Build & Push Docker image
         run: |
           docker buildx build \
@@ -57,3 +63,44 @@ jobs:
           --build-arg SUBNETWORK="" \
           --build-arg COIN_NAME="" \
           --push --platform=linux/arm64,linux/amd64 .
+
+  merge-master-after-release:
+    name: Merge 'master' to specific branch after release
+    runs-on: ubuntu-latest
+    env:
+      BRANCHES: |
+        production-aox-stg
+        production-core-stg
+        production-eth-stg
+        production-harmony-mainnet-shard-0-stg
+        production-lukso-stg
+        production-optimism-goerli-stg
+        production-optimism-stg
+        production-rsk-stg
+        production-sokol-stg
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set Git config
+      run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
+    - name: Merge master back after release
+      run: |
+          git fetch --unshallow
+          git checkout master
+          touch errors.txt
+          for branch in $BRANCHES;
+          do
+            git fetch origin
+            echo $branch
+            git ls-remote --exit-code --heads origin $branch || { echo $branch >> errors.txt; continue; }
+            echo "Merge 'master' to $branch"
+            git checkout $branch
+            git pull || { echo $branch >> errors.txt; continue; }
+            git merge --no-ff master -m "Auto-merge master back to $branch" || { echo $branch >> errors.txt; continue; }
+            git push || { echo $branch >> errors.txt; continue; }
+            git checkout master;
+          done
+          [ -s errors.txt ] && echo "There are problems with merging 'master' to branches:" || echo "Errors file is empty"
+          cat errors.txt
+          [ ! -s errors.txt ]
