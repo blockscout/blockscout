@@ -15,7 +15,7 @@ services:
   blockscout:
     depends_on:
       - db
-    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    image: local/blockscout:latest
     restart: always
     container_name: 'blockscout'
     links:
@@ -27,9 +27,10 @@ services:
       -  ./envs/common-blockscout.env
     environment:
         ETHEREUM_JSONRPC_VARIANT: 'ganache'
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+        ETHEREUM_JSONRPC_HTTP_URL: https://edexa-pos.io-world.com/
+        ETHEREUM_JSONRPC_WS_URL: ws://3.74.91.245:10002/ws
+        ETHEREUM_JSONRPC_TRACE_URL: https://edexa-pos.io-world.com/ 
+        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'false'
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
         ECTO_USE_SSL: 'false'
     ports:
