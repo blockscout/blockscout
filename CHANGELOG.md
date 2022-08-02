@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 
 ### Chore
 
