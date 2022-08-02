@@ -1,25 +1,19 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Publish Docker image for specific chain branches
+name: Publish Docker image on every push to master branch
 
 on:
   push:
     branches:
-      - production-xdai-stg
+      - master
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
-  MIX_ENV: 'prod'
+
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 4.1.6
-      DOCKER_CHAIN_NAME: xdai
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -46,17 +40,17 @@ jobs:
         run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
-            API_PATH=/xdai/mainnet
-            NETWORK_PATH=/xdai/mainnet
+            API_PATH=
+            NETWORK_PATH=
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
@@ -65,8 +59,8 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
             CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/xdai/mainnet
-            CHAIN_ID=100
-            JSON_RPC=https://rpc.gnosischain.com/
+            SOCKET_ROOT=
+            CHAIN_ID=
+            JSON_RPC=
             COIN_NAME=xDai
-            SUBNETWORK=Gnosis Chain
+            SUBNETWORK=

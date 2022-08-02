@@ -12,7 +12,7 @@ defmodule Explorer.GraphQLTest do
         :address
         |> insert()
         |> Map.get(:hash)
-        |> GraphQL.address_to_transactions_query()
+        |> GraphQL.address_to_transactions_query(:desc)
         |> Repo.replica().all()
 
       assert result == []
@@ -25,7 +25,7 @@ defmodule Explorer.GraphQLTest do
 
       [found_transaction] =
         address_hash
-        |> GraphQL.address_to_transactions_query()
+        |> GraphQL.address_to_transactions_query(:desc)
         |> Repo.replica().all()
 
       assert found_transaction.hash == transaction.hash
@@ -38,7 +38,7 @@ defmodule Explorer.GraphQLTest do
 
       [found_transaction] =
         address_hash
-        |> GraphQL.address_to_transactions_query()
+        |> GraphQL.address_to_transactions_query(:desc)
         |> Repo.replica().all()
 
       assert found_transaction.hash == transaction.hash
@@ -51,7 +51,7 @@ defmodule Explorer.GraphQLTest do
 
       [found_transaction] =
         address_hash
-        |> GraphQL.address_to_transactions_query()
+        |> GraphQL.address_to_transactions_query(:desc)
         |> Repo.replica().all()
 
       assert found_transaction.hash == transaction.hash
@@ -78,7 +78,7 @@ defmodule Explorer.GraphQLTest do
 
       found_transactions =
         address_hash
-        |> GraphQL.address_to_transactions_query()
+        |> GraphQL.address_to_transactions_query(:desc)
         |> Repo.replica().all()
 
       block_number_and_index_order =

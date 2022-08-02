@@ -8,132 +8,16 @@ import Config
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo],
-  version: System.get_env("BLOCKSCOUT_VERSION"),
-  release_link: System.get_env("RELEASE_LINK"),
-  decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
-  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true),
-  checksum_address_hashes: if(System.get_env("CHECKSUM_ADDRESS_HASHES", "true") == "false", do: false, else: true)
-
-config :block_scout_web, BlockScoutWeb.Chain,
-  network: System.get_env("NETWORK"),
-  subnetwork: System.get_env("SUBNETWORK"),
-  network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO"),
-  logo_footer: System.get_env("LOGO_FOOTER"),
-  logo_text: System.get_env("LOGO_TEXT"),
-  has_emission_funds: false,
-  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
-  staking_enabled_in_menu: System.get_env("ENABLE_POS_STAKING_IN_MENU", "false") == "true",
-  show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
-  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
-  # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
-  staking_pool_list_refresh_interval: 5,
-  enable_testnet_label: System.get_env("SHOW_TESTNET_LABEL", "false") == "true",
-  testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
+  ecto_repos: [Explorer.Repo]
 
 config :block_scout_web,
-  link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
-  other_explorers: System.get_env("OTHER_EXPLORERS"),
-  bridges: System.get_env("BRIDGES"),
-  other_bridges: System.get_env("OTHER_BRIDGES"),
-  bridges_alm: System.get_env("BRIDGES_ALM"),
-  defi: System.get_env("DEFI_MENU_LIST"),
-  nft: System.get_env("NFT_MENU_LIST"),
-  other_networks: System.get_env("SUPPORTED_CHAINS"),
-  webapp_url: System.get_env("WEBAPP_URL"),
-  api_url: System.get_env("API_URL"),
-  apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
-  external_apps: System.get_env("EXTERNAL_APPS"),
-  moon_token_addresses: System.get_env("MOON_TOKEN_ADDRESSES"),
-  bricks_token_addresses: System.get_env("BRICKS_TOKEN_ADDRESSES"),
-  eth_omni_bridge_mediator: System.get_env("ETH_OMNI_BRIDGE_MEDIATOR"),
-  bsc_omni_bridge_mediator: System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"),
-  poa_omni_bridge_mediator: System.get_env("POA_OMNI_BRIDGE_MEDIATOR"),
-  amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
-  foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
-  gas_price: System.get_env("GAS_PRICE", nil),
-  restricted_list: System.get_env("RESTRICTED_LIST", nil),
-  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
-  dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
-  dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_5"),
-  dark_forest_addresses_v_0_6: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6"),
-  dark_forest_addresses_v_0_6_r2: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R2"),
-  dark_forest_addresses_v_0_6_r3: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R3"),
-  dark_forest_addresses_v_0_6_r4: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R4"),
-  dark_forest_addresses_v_0_6_r5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_0_6_R5"),
-  dark_forest_addresses_dao: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_DAO"),
-  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
-  test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
-  max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50")),
-  max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
-  gts_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN"),
-  chainlink_oracles: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES"),
-  re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
-  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
-  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true",
-  new_tags: System.get_env("NEW_TAGS")
-
-config :block_scout_web, :gas_tracker,
-  enabled: System.get_env("GAS_TRACKER_ENABLED", "false") == "true",
-  enabled_in_menu: System.get_env("GAS_TRACKER_ENABLED_IN_MENU", "false") == "true",
-  access_token: System.get_env("GAS_TRACKER_ACCESS_KEY", nil)
-
-api_rate_limit_value =
-  "API_RATE_LIMIT"
-  |> System.get_env("30")
-  |> Integer.parse()
-  |> case do
-    {integer, ""} -> integer
-    _ -> 30
-  end
-
-config :block_scout_web, api_rate_limit: api_rate_limit_value
-
-default_api_rate_limit = 50
-default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
-
-global_api_rate_limit_value =
-  "API_RATE_LIMIT"
-  |> System.get_env(default_api_rate_limit_str)
-  |> Integer.parse()
-  |> case do
-    {integer, ""} -> integer
-    _ -> default_api_rate_limit
-  end
-
-api_rate_limit_by_key_value =
-  "API_RATE_LIMIT_BY_KEY"
-  |> System.get_env(default_api_rate_limit_str)
-  |> Integer.parse()
-  |> case do
-    {integer, ""} -> integer
-    _ -> default_api_rate_limit
-  end
-
-api_rate_limit_by_ip_value =
-  "API_RATE_LIMIT_BY_IP"
-  |> System.get_env(default_api_rate_limit_str)
-  |> Integer.parse()
-  |> case do
-    {integer, ""} -> integer
-    _ -> default_api_rate_limit
-  end
-
-config :block_scout_web, :api_rate_limit,
-  global_limit: global_api_rate_limit_value,
-  limit_by_key: api_rate_limit_by_key_value,
-  limit_by_ip: api_rate_limit_by_ip_value,
-  static_api_key: System.get_env("API_RATE_LIMIT_STATIC_API_KEY", nil),
-  whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS", nil)
+  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   url: [
-    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
-    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
     path: System.get_env("NETWORK_PATH") || "/",
     api_path: System.get_env("API_PATH") || "/"
   ],
@@ -154,45 +38,9 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
 
-# Configures History
-price_chart_config =
-  if System.get_env("SHOW_PRICE_CHART", "false") != "false" do
-    %{market: [:price, :market_cap]}
-  else
-    %{}
-  end
-
-tx_chart_config =
-  if System.get_env("SHOW_TXS_CHART", "true") == "true" do
-    %{transactions: [:transactions_per_day]}
-  else
-    %{}
-  end
-
-gas_usage_chart_config =
-  if System.get_env("GAS_TRACKER_ENABLED", "false") == "true" do
-    %{gas_usage: [:gas_usage_per_day]}
-  else
-    %{}
-  end
-
-config :block_scout_web,
-  chart_config: Map.merge(price_chart_config, tx_chart_config)
-
-config :block_scout_web,
-  gas_usage_chart_config: gas_usage_chart_config
-
 config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
   # days
   history_size: 30
-
-config :block_scout_web, BlockScoutWeb.Chain.GasUsageHistoryChartController,
-  # days
-  history_size: 60
-
-config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
-  # days
-  coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
 
 config :ex_cldr,
   default_locale: "en",
