@@ -19,7 +19,7 @@
 - [#5778](https://github.com/blockscout/blockscout/pull/5778) - Allow hyphen in database name
 
 ### Chore
-
+- [#5787](https://github.com/blockscout/blockscout/pull/5787) - Add job for merging master to specific branch after release
 - [#5788](https://github.com/blockscout/blockscout/pull/5788) - Update Docker image on every push to master branch
 - [#5736](https://github.com/blockscout/blockscout/pull/5736) - Remove obsolete network selector
 - [#5730](https://github.com/blockscout/blockscout/pull/5730) - Add primary keys for DB tables where they do not exist
