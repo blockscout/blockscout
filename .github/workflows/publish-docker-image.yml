@@ -68,7 +68,16 @@ jobs:
     name: Merge 'master' to specific branch after release
     runs-on: ubuntu-latest
     env:
-      BRANCHES: production-aox-stg production-core-stg production-eth-stg production-harmony-mainnet-shard-0-stg production-lukso-stg production-optimism-goerli-stg production-optimism-stg production-rsk-stg production-sokol-stg
+      BRANCHES: |
+        production-aox-stg
+        production-core-stg
+        production-eth-stg
+        production-harmony-mainnet-shard-0-stg
+        production-lukso-stg
+        production-optimism-goerli-stg
+        production-optimism-stg
+        production-rsk-stg
+        production-sokol-stg
     steps:
     - uses: actions/checkout@v2
     - name: Set Git config
