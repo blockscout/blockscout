@@ -87,10 +87,11 @@ jobs:
     - name: Merge master back after release
       run: |
           git fetch --unshallow
-          git checkout master
           touch errors.txt
           for branch in $BRANCHES;
           do
+            git reset --merge
+            git checkout master
             git fetch origin
             echo $branch
             git ls-remote --exit-code --heads origin $branch || { echo $branch >> errors.txt; continue; }

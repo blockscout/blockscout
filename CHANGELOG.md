@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#5796](https://github.com/blockscout/blockscout/pull/5796) - Add job for e2e tests on every push to master + fix job "Merge 'master' to specific branch after release"
 
 ## 4.1.6-beta
 
