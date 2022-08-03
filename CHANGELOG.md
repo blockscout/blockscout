@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#5796](https://github.com/blockscout/blockscout/pull/5796) - Add job for e2e tests on every push to master + fix job "Merge 'master' to specific branch after release"
 
 ## 4.1.6-beta
 
@@ -27,7 +28,6 @@
 - [#5778](https://github.com/blockscout/blockscout/pull/5778) - Allow hyphen in database name
 
 ### Chore
-- [#5796](https://github.com/blockscout/blockscout/pull/5796) - Add job for e2e tests on every push to master + fix job "Merge 'master' to specific branch after release"
 - [#5787](https://github.com/blockscout/blockscout/pull/5787) - Add job for merging master to specific branch after release
 - [#5788](https://github.com/blockscout/blockscout/pull/5788) - Update Docker image on every push to master branch
 - [#5736](https://github.com/blockscout/blockscout/pull/5736) - Remove obsolete network selector
