@@ -101,7 +101,9 @@ defmodule Indexer.Transform.TokenTransfers do
       block_hash: itx.block_hash,
       # Celo token transfers discerned from itx do not have a valid log index, so an id is calculated here to
       # satisfy schema constraints
-      log_index: -transfer_count,
+      # and it needs to be negative (starting with -1) not to generate conflicts with
+      # log_index for token transfers from block transactions as they start from 0
+      log_index: -1 * (transfer_count + 1),
       from_address_hash: itx.from_address_hash,
       to_address_hash: to_hash,
       token_contract_address_hash: gold_token,

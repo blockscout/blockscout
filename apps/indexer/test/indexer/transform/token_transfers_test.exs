@@ -20,7 +20,6 @@ defmodule Indexer.Transform.TokenTransfersTest do
             second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
             third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
             transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
-            # block_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
             type: "mined"
           },
           %{
@@ -191,10 +190,56 @@ defmodule Indexer.Transform.TokenTransfersTest do
         }
       end)
 
-    %{token_transfers: result} = TokenTransfers.parse_itx(test_itx_maps, "0xgoldtokenaddresshash")
+    %{token_transfers: result_itx} = TokenTransfers.parse_itx(test_itx_maps, "0xgoldtokenaddresshash")
+
+    %{token_transfers: result_tx} =
+      TokenTransfers.parse([
+        %{
+          address_hash: "0xf2eec76e45b328df99a34fa696320a262cb92154",
+          block_number: 3_530_917,
+          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+          data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+          first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          fourth_topic: nil,
+          index: 0,
+          second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+          third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
+          type: "mined"
+        },
+        %{
+          address_hash: "0xf2eec76e45b328df99a34fa696320a262cb92154",
+          block_number: 3_530_917,
+          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+          data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+          first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          fourth_topic: nil,
+          index: 1,
+          second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+          third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
+          type: "mined"
+        },
+        %{
+          address_hash: "0xf2eec76e45b328df99a34fa696320a262cb92154",
+          block_number: 3_530_917,
+          block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+          data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+          first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          fourth_topic: nil,
+          index: 2,
+          second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+          third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+          transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5",
+          type: "mined"
+        }
+      ])
 
     # create a map of log_index -> count of log_index in result
-    log_indexes = result |> Enum.map(& &1.log_index) |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(&2, &1, 0) + 1))
+    log_indexes =
+      Enum.concat(result_itx, result_tx)
+      |> Enum.map(& &1.log_index)
+      |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(&2, &1, 0) + 1))
 
     log_indexes
     |> Enum.each(fn {index, count} ->
