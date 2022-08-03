@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5783](https://github.com/blockscout/blockscout/pull/5783) - Allow to setup multiple ranges of blocks to index
 
 ### Fixes
 
