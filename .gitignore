@@ -9,6 +9,9 @@
 /*.ez
 /logs
 
+# ignore docker compose
+/docker-compose
+
 # Generated on crash by the VM
 erl_crash.dump
 
