@@ -2,6 +2,15 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+- [#5796](https://github.com/blockscout/blockscout/pull/5796) - Add job for e2e tests on every push to master + fix job "Merge 'master' to specific branch after release"
+
+## 4.1.6-beta
+
+### Features
+
 - [#5739](https://github.com/blockscout/blockscout/pull/5739) - Erigon archive node support
 - [#5732](https://github.com/blockscout/blockscout/pull/5732) - Manage testnet label (right to the navbar logo)
 - [#5699](https://github.com/blockscout/blockscout/pull/5699) - Switch to basic (non-pro) API endpoint for Coingecko requests, if API key is not provided
