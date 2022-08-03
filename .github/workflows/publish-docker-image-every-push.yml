@@ -14,8 +14,8 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     outputs:
-      release-version: ${{ steps.outputStep1.outputs.release-version }}
-      short-sha: ${{ steps.outputStep1.outputs.short-sha }}
+      release-version: ${{ steps.output-step.outputs.release-version }}
+      short-sha: ${{ steps.output-step.outputs.short-sha }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -45,7 +45,7 @@ jobs:
         run: |
           echo "::set-output name=release-version::${{ env.RELEASE_VERSION }}"
           echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
-        id: outputStep1
+        id: output-step
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
