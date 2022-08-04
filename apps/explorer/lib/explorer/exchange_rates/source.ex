@@ -88,11 +88,7 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    if config(:source) == Explorer.ExchangeRates.Source.TokenBridge do
-      Explorer.ExchangeRates.Source.CoinGecko
-    else
-      config(:source) || Explorer.ExchangeRates.Source.CoinGecko
-    end
+    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
   end
 
   @spec config(atom()) :: term
