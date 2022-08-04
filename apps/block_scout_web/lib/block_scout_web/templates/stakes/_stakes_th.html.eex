@@ -1,6 +1,0 @@
-<th class="stakes-table-th">
-    <div class="stakes-table-th-content">
-        <span class="stakes-th-text"><%= raw(@title) %></span>
-        <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip.html", text: @tooltip %>
-    </div>
-</th>
