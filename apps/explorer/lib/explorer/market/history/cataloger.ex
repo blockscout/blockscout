@@ -30,7 +30,7 @@ defmodule Explorer.Market.History.Cataloger do
 
   @impl GenServer
   def init(:ok) do
-    send(self(), {:fetch_history, 365})
+    send(self(), {:fetch_history, 730})
 
     {:ok, %{}}
   end
