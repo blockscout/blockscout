@@ -28,6 +28,29 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     params_with_external_libaries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity(address_hash, params_with_external_libaries) do
+      {:ok,
+       %{
+         "abi" => abi_string,
+         "compiler_version" => _,
+         "constructor_arguments" => _,
+         "contract_libraries" => contract_libraries,
+         "contract_name" => contract_name,
+         "evm_version" => _,
+         "file_name" => filename,
+         "optimization" => _,
+         "optimization_runs" => _,
+         "sources" => sources
+       } = params} ->
+        %{^filename => contract_source_code} = sources
+
+        prepared_params =
+          params
+          |> Map.put("contract_source_code", contract_source_code)
+          |> Map.put("external_libraries", contract_libraries)
+          |> Map.put("name", contract_name)
+
+        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
         params_with_constructor_arguments =
           Map.put(params_with_external_libaries, "constructor_arguments", constructor_arguments)

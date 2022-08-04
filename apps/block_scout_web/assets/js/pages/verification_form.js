@@ -264,6 +264,13 @@ if ($contractVerificationPage.length) {
       }
     })
 
+    $('[data-submit-button]').on('click', (event) => {
+      // submit form without page updating in order to avoid websocket reconnecting
+      event.preventDefault()
+      const $form = $('form')[0]
+      $.post($form.action, convertFormToJSON($form))
+    })
+
     $('#verify-via-metadata-json-submit').on('click', (event) => {
       event.preventDefault()
       if (dropzone.files.length > 0) {
@@ -309,4 +316,13 @@ if ($contractVerificationPage.length) {
       $('#verify_via_standard_json_input').show()
     }
   })
+}
+
+function convertFormToJSON (form) {
+  const array = $(form).serializeArray()
+  const json = {}
+  $.each(array, function () {
+    json[this.name] = this.value || ''
+  })
+  return json
 }
