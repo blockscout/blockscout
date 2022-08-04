@@ -438,62 +438,6 @@ $dark-primary-alternate: $dark-primary;
 		background-color: $dark-primary;
 	}
 
-	//network select
-	.network-selector-overlay {
-		background-color: rgba($dark-bg, .9);
-	}
-	.network-selector {
-		background-color: $dark-light-bg;
-	}
-	.network-selector-title {
-		color: #fff;
-	}
-	.network-selector-text {
-		color: $labels-dark;
-	}
-	.network-selector-close path {
-		fill: #fff;
-	}
-	.network-selector-search-container {
-		background-color: $dark-light;
-	}
-	.network-selector-search-container path {
-		fill: $labels-dark;
-	}
-	.network-selector-search-input {
-		color: #fff !important;
-		&::placeholder {
-			color: $labels-dark;
-		}
-	}
-	.network-selector-tab {
-		color: $labels-dark;
-		&:hover, &.active {
-			color: #fff;
-		}
-		&.active {
-			&:after {
-				background-color: $dark-primary;
-			}
-		}
-	}
-	.network-selector-item,
-	.network-selector-tabs-container {
-		border-bottom-color: darken($labels-dark, 30);
-	}
-	.network-selector-item-title {
-		color: #fff;
-	}
-	.network-selector-item-type {
-		color: $labels-dark;
-	}
-	.radio .radio-icon {
-		border-color: $labels-dark
-	}
-	.network-selector-item-url:hover .network-selector-item-type {
-		color: #fff;
-	}
-
 	//coin dropdown
 	.token-balance-dropdown.dropdown-menu {
 		border-color: $dark-light !important;
