@@ -8,20 +8,8 @@ ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     GLIBC_VERSION=2.30-r0 \
     PORT=4000 \
     MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5" \
     PATH="$HOME/.cargo/bin:${PATH}" \
     RUSTFLAGS="-C target-feature=-crt-static"
-
-RUN set -ex && \
-    apk --update add libstdc++ curl ca-certificates && \
-    for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION}; \
-        do curl -sSL ${GLIBC_REPO}/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done && \
-    apk add --allow-untrusted /tmp/*.apk && \
-    rm -v /tmp/*.apk && \
-    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib
-
-ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc
-ENV GLIBC_VERSION=2.30-r0
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -57,7 +45,7 @@ ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
 
-RUN HEX_HTTP_TIMEOUT=3600 mix do deps.get, local.rebar --force, deps.compile
+RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 
@@ -97,5 +85,4 @@ WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/apps/explorer/node_modules ./node_modules
-
 
