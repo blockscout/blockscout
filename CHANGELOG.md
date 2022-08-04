@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
+
+### Chore
+
+## 4.1.7-beta
+
+### Features
 - [#5783](https://github.com/blockscout/blockscout/pull/5783) - Allow to setup multiple ranges of blocks to index
 
 ### Fixes
