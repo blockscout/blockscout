@@ -7,7 +7,7 @@ on:
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
-  RELEASE_VERSION: 4.1.7
+  NEXT_RELEASE_VERSION: 4.1.8
 
 jobs:
   push_to_registry:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Add outputs
         run: |
-          echo "::set-output name=release-version::${{ env.RELEASE_VERSION }}"
+          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
           echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
         id: output-step
 
@@ -53,7 +53,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.NEXT_RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
