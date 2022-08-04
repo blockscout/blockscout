@@ -1,30 +1,46 @@
+<% is_1155 = @token.type == "ERC-1155"%>
+<% is_unique = Chain.token_id_1155_is_unique?(@token.contract_address_hash, @token_transfer.token_id) or not is_1155%>
 <!-- use "tile-type-unique-token-image" to token with images -->
 <div class="tile tile-type-unique-token fade-in">
   <div class="row">
     <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
       <!-- substitute the span with <img class="tile-image" /> to token with images -->
-      <span class="tile-label"><%= gettext "Unique Token" %></span>
+      <%= if is_unique do%>
+        <span class="tile-label"><%= gettext "Unique Token" %></span>
+      <% else %>
+        <span class="tile-label"><%= gettext "Not unique Token" %></span>
+      <% end %>
     </div>
 
-    <div class="tile-content col-md-7 col-lg-8 d-flex flex-column">
-      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
-        <span class="mr-1"><%= gettext "Token ID" %>:</span>
-        <span class="tile-title">
-          <%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@token_transfer.token_id}")) %>
+    <%= if is_unique do %>
+      <div class="tile-content col-md-7 col-lg-8 d-flex flex-column">
+        <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+          <span class="mr-1"><%= gettext "Token ID" %>:</span>
+          <span class="tile-title">
+            <%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@token_transfer.token_id}")) %>
+          </span>
         </span>
-      </span>
-
-      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
-        <span class="mr-1"><%= gettext "Owner Address" %>:</span>
-        <span class="tile-title">
-          <%= render BlockScoutWeb.AddressView,
-            "_link.html",
-            address: @token_transfer.to_address,
-            contract: false,
-            use_custom_tooltip: false %>
+        <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+          <span class="mr-1"><%= gettext "Owner Address" %>:</span>
+          <span class="tile-title">
+            <%= render BlockScoutWeb.AddressView,
+              "_link.html",
+              address: @token_transfer.to_address,
+              contract: false,
+              use_custom_tooltip: false %>
+          </span>
         </span>
-      </span>
-    </div>
+      </div>
+    <% else %>
+      <div class="tile-content col-md-7 col-lg-8 d-flex flex-column justify-content-lg-center">
+        <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+          <span class="mr-1"><%= gettext "Token ID" %>:</span>
+          <span class="tile-title">
+            <%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@token_transfer.token_id}")) %>
+          </span>
+        </span>
+      </div>
+    <% end %>
 
     <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
       <!-- substitute the span with <img class="tile-image" /> to token with images -->

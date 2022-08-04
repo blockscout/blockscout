@@ -373,7 +373,7 @@ defmodule Explorer.Etherscan do
   Gets a list of tokens owned by the given address hash.
 
   """
-  @spec list_tokens(Hash.Address.t()) :: map() | []
+  @spec list_tokens(Hash.Address.t()) :: list()
   def list_tokens(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     query =
       from(
@@ -381,18 +381,23 @@ defmodule Explorer.Etherscan do
         inner_join: t in assoc(ctb, :token),
         where: ctb.address_hash == ^address_hash,
         where: ctb.value > 0,
-        distinct: :token_contract_address_hash,
         select: %{
           balance: ctb.value,
           contract_address_hash: ctb.token_contract_address_hash,
           name: t.name,
           decimals: t.decimals,
           symbol: t.symbol,
-          type: t.type
+          type: ctb.token_type,
+          id: ctb.token_id
         }
       )
 
-    Repo.all(query)
+    tokens = Repo.all(query)
+
+    tokens
+    |> Enum.map(fn item ->
+      %{item | decimals: if(not is_nil(item.id) && item.type == "ERC-1155", do: "", else: item.decimals)}
+    end)
   end
 
   @transaction_fields ~w(

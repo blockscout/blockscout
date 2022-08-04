@@ -17,8 +17,10 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
   describe "filter_by_type/2" do
     test "filter tokens by the given type" do
-      token_balance_a = build(:token_balance, token: build(:token, type: "ERC-20"))
-      token_balance_b = build(:token_balance, token: build(:token, type: "ERC-721"))
+      # token_balance_a simulates known scenario where token.type is "ERC-1155"
+      # while balance is "ERC-20" and the latter is correct
+      token_balance_a = build(:token_balance, token: build(:token, type: "ERC-1155"), token_type: "ERC-20")
+      token_balance_b = build(:token_balance, token: build(:token, type: "ERC-1155"), token_type: "ERC-721")
 
       token_balances = [{token_balance_a, %{}, %{}}, {token_balance_b, %{}, %{}}]
 

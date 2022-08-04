@@ -47,9 +47,11 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:transaction` - The `t:Explorer.Chain.Transaction.t/0` ledger
   * `:transaction_hash` - Transaction foreign key
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the transaction.
+  * `:amounts` - Tokens transferred amounts in case of batched transfer in ERC-1155
+  * `:token_ids` - IDs of the tokens (applicable to ERC-1155 tokens)
   """
   @type t :: %TokenTransfer{
-          amount: Decimal.t(),
+          amount: Decimal.t() | nil,
           block_number: non_neg_integer() | nil,
           block_hash: Hash.Full.t(),
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -62,13 +64,17 @@ defmodule Explorer.Chain.TokenTransfer do
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           comment: String.t(),
-          log_index: non_neg_integer()
+          log_index: non_neg_integer(),
+          amounts: [Decimal.t()] | nil,
+          token_ids: [non_neg_integer()] | nil
         }
 
   @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
   @comment_event "0xe5d4e30fb8364e57bc4d662a07d0cf36f4c34552004c4c3624620a2c1d1c03dc"
+  @erc1155_single_transfer_signature "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
+  @erc1155_batch_transfer_signature "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
 
   @transfer_function_signature "0xa9059cbb"
 
@@ -79,6 +85,8 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
     field(:comment, :string)
+    field(:amounts, {:array, :decimal})
+    field(:token_ids, {:array, :decimal})
 
     belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
     belongs_to(:to_address, Address, foreign_key: :to_address_hash, references: :hash, type: Hash.Address)
@@ -118,7 +126,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash)a
-  @optional_attrs ~w(amount token_id transaction_hash comment )a
+  @optional_attrs ~w(amount token_id transaction_hash amounts comment token_ids)a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -140,6 +148,9 @@ defmodule Explorer.Chain.TokenTransfer do
   def constant, do: @constant
 
   def comment_event, do: @comment_event
+  def erc1155_single_transfer_signature, do: @erc1155_single_transfer_signature
+
+  def erc1155_batch_transfer_signature, do: @erc1155_batch_transfer_signature
 
   @doc """
   ERC 20's transfer(address,uint256) function signature
@@ -301,6 +312,7 @@ defmodule Explorer.Chain.TokenTransfer do
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
       where: tt.token_contract_address_hash == ^contract_address_hash,
+      where: tt.to_address_hash != ^"0x0000000000000000000000000000000000000000",
       order_by: [desc: tt.block_number],
       distinct: [desc: tt.token_id],
       preload: [:to_address],

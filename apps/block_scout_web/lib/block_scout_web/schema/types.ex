@@ -328,6 +328,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:value, :decimal)
     field(:token, :string)
     field(:token_address, :string)
+    field(:token_id, :decimal)
     field(:token_type, :string)
     field(:token_id, :decimal)
     field(:block_number, :integer)

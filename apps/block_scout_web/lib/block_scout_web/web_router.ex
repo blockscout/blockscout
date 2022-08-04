@@ -287,6 +287,13 @@ defmodule BlockScoutWeb.WebRouter do
           only: [:index],
           as: :metadata
         )
+
+        resources(
+          "/token-holders",
+          Tokens.Instance.HolderController,
+          only: [:index],
+          as: :holder
+        )
       end
     end
 
@@ -337,6 +344,13 @@ defmodule BlockScoutWeb.WebRouter do
           Tokens.Instance.MetadataController,
           only: [:index],
           as: :metadata
+        )
+
+        resources(
+          "/token-holders",
+          Tokens.Instance.HolderController,
+          only: [:index],
+          as: :holder
         )
       end
     end

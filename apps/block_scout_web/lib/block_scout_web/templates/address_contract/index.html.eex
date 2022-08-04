@@ -171,7 +171,7 @@
                     </div>
                   <% else %>
                     <%= if !fully_verified do %>
-                      <% path = 
+                      <% path =
                         if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
                           address_verify_contract_path(@conn, :new, @address.hash)
                         else
@@ -191,7 +191,7 @@
               <div class="tile tile-muted mb-4">
                 <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= creation_code(@address) %></code></pre>
               </div>
-            <% end %>    
+            <% end %>
             <%= if fully_verified do %>
               <div class="d-flex justify-content-between align-items-baseline">
                 <h3><%= gettext "Deployed ByteCode" %></h3>
@@ -214,7 +214,7 @@
                     </div>
                   <% else %>
                     <%= if !fully_verified and !creation_code(@address) do %>
-                      <% path = 
+                      <% path =
                         if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
                           address_verify_contract_path(@conn, :new, @address.hash)
                         else

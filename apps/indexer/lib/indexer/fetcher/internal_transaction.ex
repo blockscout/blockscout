@@ -1,7 +1,6 @@
 defmodule Indexer.Fetcher.InternalTransaction do
   @moduledoc """
   Fetches and indexes `t:Explorer.Chain.InternalTransaction.t/0`.
-
   See `async_fetch/1` for details on configuring limits.
   """
 
@@ -37,17 +36,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @doc """
   Asynchronously fetches internal transactions.
-
   ## Limiting Upstream Load
-
   Internal transactions are an expensive upstream operation. The number of
   results to fetch is configured by `@max_batch_size` and represents the number
   of transaction hashes to request internal transactions in a single JSONRPC
   request. Defaults to `#{@max_batch_size}`.
-
   The `@max_concurrency` attribute configures the  number of concurrent requests
   of `@max_batch_size` to allow against the JSONRPC. Defaults to `#{@max_concurrency}`.
-
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
@@ -247,7 +242,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp add_gold_token_balances(gold_token, addresses, acc) do
     Enum.reduce(addresses, acc, fn
       %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
-        MapSet.put(acc, %{address_hash: decode(hash), token_contract_address_hash: decode(gold_token), block_number: bn})
+        MapSet.put(acc, %{
+          address_hash: decode(hash),
+          token_contract_address_hash: decode(gold_token),
+          block_number: bn,
+          token_type: "ERC-20",
+          token_id: nil
+        })
 
       _, acc ->
         acc

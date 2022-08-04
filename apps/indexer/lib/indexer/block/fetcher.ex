@@ -166,7 +166,13 @@ defmodule Indexer.Block.Fetcher do
   defp add_celo_token_balances(celo_token, addresses, acc) do
     Enum.reduce(addresses, acc, fn
       %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
-        MapSet.put(acc, %{address_hash: hash, token_contract_address_hash: celo_token, block_number: bn})
+        MapSet.put(acc, %{
+          address_hash: hash,
+          token_contract_address_hash: celo_token,
+          block_number: bn,
+          token_type: "ERC-20",
+          token_id: nil
+        })
 
       _, acc ->
         acc
