@@ -70,7 +70,7 @@ jobs:
             SOCKET_ROOT=
             CHAIN_ID=
             JSON_RPC=
-            COIN_NAME=xDai
+            COIN_NAME=
             SUBNETWORK=
   tests:
     needs: push_to_registry
