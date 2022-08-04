@@ -2506,17 +2506,6 @@ defmodule Explorer.Chain do
     Decimal.mult(tokens, price)
   end
 
-  def address_tokens_usd_sum(token_balances) do
-    token_balances
-    |> Enum.reduce(Decimal.new(0), fn {token_balance, _, _}, acc ->
-      if token_balance.value && token_balance.token.usd_value do
-        Decimal.add(acc, balance_in_usd(token_balance))
-      else
-        acc
-      end
-    end)
-  end
-
   defp contract?(%{contract_code: nil}), do: false
 
   defp contract?(%{contract_code: _}), do: true
