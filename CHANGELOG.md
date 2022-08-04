@@ -1,6 +1,18 @@
 ## Current
 
 ### Features
+- [#5783](https://github.com/blockscout/blockscout/pull/5783) - Allow to setup multiple ranges of blocks to index
+
+### Fixes
+- [#5797](https://github.com/blockscout/blockscout/pull/5797) - Fix flickering token tooltip
+- [#5798](https://github.com/blockscout/blockscout/pull/5798) - Copy explorer node_modules to result image
+
+### Chore
+- [#5796](https://github.com/blockscout/blockscout/pull/5796) - Add job for e2e tests on every push to master + fix job "Merge 'master' to specific branch after release"
+
+## 4.1.6-beta
+
+### Features
 
 - [#5739](https://github.com/blockscout/blockscout/pull/5739) - Erigon archive node support
 - [#5732](https://github.com/blockscout/blockscout/pull/5732) - Manage testnet label (right to the navbar logo)
