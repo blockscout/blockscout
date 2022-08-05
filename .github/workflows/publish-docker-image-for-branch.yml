@@ -12,13 +12,12 @@ on:
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
-  MIX_ENV: 'prod'
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 4.1.6
+      RELEASE_VERSION: 4.1.8
       DOCKER_CHAIN_NAME: xdai
     steps:
       - name: Check out the repo
@@ -46,7 +45,7 @@ jobs:
         run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: ./docker/Dockerfile
