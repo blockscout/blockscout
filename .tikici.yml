@@ -23,7 +23,7 @@ jobs:
       - deploy_dev:
           cluster: dev
           namespace: astra
-          workload: blockscout_v1
+          workload: blockscout-v1
           argocd_pipeline: generic-v2
           deployment_config: dev_v1
   deploy_prod:
