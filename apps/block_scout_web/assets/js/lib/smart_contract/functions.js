@@ -13,7 +13,7 @@ const loadFunctions = (element) => {
 
   $.get(
     url,
-    { hash: hash, type: type, action: action },
+    { hash, type, action },
     response => $element.html(response)
   )
     .done(function () {

@@ -36,7 +36,6 @@ const appJs =
   {
     entry: {
       'app': './js/app.js',
-      'stakes': './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
       'balance-chart-loader': './js/balance-chart-loader.js',
       'chain': './js/pages/chain.js',
@@ -66,7 +65,6 @@ const appJs =
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
       'main-page': './css/main-page.scss',
-      'staking': './css/stakes.scss',
       'tokens': './js/pages/token/search.js',
       'faucet': './js/pages/faucet.js',
       'text-ad': './js/lib/text_ad.js',

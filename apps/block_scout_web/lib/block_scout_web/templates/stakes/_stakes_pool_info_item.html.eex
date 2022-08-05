@@ -1,4 +1,0 @@
-<div class="modal-validator-info-item">
-    <h2 class="modal-validator-info-item-title"><%= @title %></h2>
-    <p class="modal-validator-info-item-value"><%= if assigns[:value] do @value else "-" end %></p>
-</div>
