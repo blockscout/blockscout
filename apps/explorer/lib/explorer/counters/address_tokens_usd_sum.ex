@@ -50,10 +50,11 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
-  @spec address_tokens_usd_sum([{Address.CurrentTokenBalance, Explorer.Chain.Token}]) :: Decimal.t()
+  @spec address_tokens_usd_sum([{Address.CurrentTokenBalance, Explorer.Chain.BridgedToken, Explorer.Chain.Token}]) ::
+          Decimal.t()
   defp address_tokens_usd_sum(token_balances) do
     token_balances
-    |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc ->
+    |> Enum.reduce(Decimal.new(0), fn {token_balance, _, _}, acc ->
       if token_balance.value && token_balance.token.usd_value do
         Decimal.add(acc, Chain.balance_in_usd(token_balance))
       else

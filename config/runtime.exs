@@ -184,7 +184,6 @@ gas_usage_chart_config =
     %{}
   end
 
-
 config :block_scout_web,
   chart_config: Map.merge(price_chart_config, tx_chart_config)
 
