@@ -2,8 +2,6 @@ version: '2'
 config:
   slack_notify: true
   slack_channel: astra_ci
-environment:
-  BUILD_IMAGE: 'maven:3.6-jdk-11'
 jobs:
   build_docker:
     steps:
