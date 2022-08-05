@@ -2,10 +2,11 @@ FROM bitwalker/alpine-elixir-phoenix:1.13 AS builder
 
 WORKDIR /app
 
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64 jq
 
 ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     GLIBC_VERSION=2.30-r0 \
+    PORT=4000 \
     MIX_ENV="prod" \
     PATH="$HOME/.cargo/bin:${PATH}" \
     RUSTFLAGS="-C target-feature=-crt-static"
@@ -21,17 +22,6 @@ RUN set -ex && \
 # Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-ARG SOCKET_ROOT
-ENV SOCKET_ROOT=$SOCKET_ROOT
-ARG NETWORK_PATH
-ENV NETWORK_PATH=$NETWORK_PATH
-ARG CHAIN_ID
-ENV CHAIN_ID=$CHAIN_ID
-ARG COIN_NAME
-ENV COIN_NAME=$COIN_NAME
-ARG SUBNETWORK
-ENV SUBNETWORK=$SUBNETWORK
-
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG DISABLE_READ_API
 ARG API_PATH
@@ -41,6 +31,12 @@ ARG DISABLE_WRITE_API
 ARG CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER
 ARG WOBSERVER_ENABLED
 ARG ADMIN_PANEL_ENABLED
+ARG CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL
+ARG SOCKET_ROOT
+ARG CHAIN_ID
+ARG JSON_RPC
+ARG SUBNETWORK
+ARG COIN_NAME
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -88,5 +84,6 @@ FROM bitwalker/alpine-elixir-phoenix:1.13
 WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
+COPY --from=builder /app/apps/explorer/node_modules ./node_modules
 
 

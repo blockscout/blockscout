@@ -46,7 +46,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: System.get_env("SUBNETWORK"),
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO") || "/images/ethereum_logo.svg",
+  logo: System.get_env("LOGO"),
   logo_footer: System.get_env("LOGO_FOOTER"),
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false,
@@ -72,8 +72,7 @@ config :block_scout_web,
   max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50")),
   max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
-  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
-  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
+  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil)
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -160,7 +159,8 @@ disable_indexer = System.get_env("DISABLE_INDEXER")
 disable_webapp = System.get_env("DISABLE_WEBAPP")
 
 config :explorer,
-  coin: System.get_env("COIN") || "ETH",
+  coin: System.get_env("COIN") || "POA",
+  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "POA",
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
@@ -203,6 +203,7 @@ config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_globa
 config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, global_ttl: address_sum_global_ttl
 
 config :explorer, Explorer.ExchangeRates,
+  store: :ets,
   enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true",
   coingecko_coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   coingecko_api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
@@ -326,6 +327,7 @@ config :indexer,
   block_transformer: block_transformer,
   metadata_updater_seconds_interval:
     String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{2 * 24 * 60 * 60}"),
+  block_ranges: System.get_env("BLOCK_RANGES") || "",
   first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || "",
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
