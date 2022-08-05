@@ -90,9 +90,7 @@ config :ueberauth, Ueberauth,
       Ueberauth.Strategy.Auth0,
       [callback_path: "/auth/auth0/callback"]
     }
-  ],
-  logout_url: System.get_env("AUTH0_LOGOUT_URL"),
-  logout_return_to_path: "/auth/logout"
+  ]
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
