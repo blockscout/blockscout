@@ -18,6 +18,17 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     http_post_request(multiple_files_verification_url(), body)
   end
 
+  def verify_standard_json_input(
+        %{
+          "creation_bytecode" => _,
+          "deployed_bytecode" => _,
+          "compiler_version" => _,
+          "input" => _
+        } = body
+      ) do
+    http_post_request(multiple_files_verification_url(), body)
+  end
+
   def http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
@@ -87,6 +98,8 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def proccess_verifier_response(other), do: {:error, other}
 
   def multiple_files_verification_url(), do: "#{base_url()}" <> "/api/v1/solidity/verify/multiple-files"
+
+  def standard_json_input_verification_url(), do: "#{base_url()}" <> "/api/v1/solidity/verify/standard-json"
 
   def versions_list_url(), do: "#{base_url()}" <> "/api/v1/solidity/versions"
 
