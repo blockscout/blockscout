@@ -7,6 +7,7 @@
 - [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
 
 ### Chore
+- [#5849](https://github.com/blockscout/blockscout/pull/5849) - Bump gettext 0.18.2 -> 0.20.0
 - [#5806](https://github.com/blockscout/blockscout/pull/5806) - Update target Postgres version in Docker: 13 -> 14
 
 ## 4.1.7-beta
