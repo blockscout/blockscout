@@ -121,6 +121,27 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     verify(address_hash, params, json_input)
   end
 
+  def evaluate_authenticity_via_multi_part_files(address_hash, params, files) do
+    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+
+    creation_tx_input =
+      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+        %{init: init, created_contract_code: _created_contract_code} ->
+          init
+
+        _ ->
+          ""
+      end
+
+    params
+    |> Map.put("creation_bytecode", creation_tx_input)
+    |> Map.put("deployed_bytecode", deployed_bytecode)
+    |> Map.put("sources", files)
+    |> Map.put("contract_libraries", params["external_libraries"])
+    |> Map.put("optimization_runs", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
+    |> RustVerifierInterface.verify_multi_part()
+  end
+
   defp verify(address_hash, params, json_input) do
     name = Map.get(params, "name", "")
     compiler_version = Map.fetch!(params, "compiler_version")

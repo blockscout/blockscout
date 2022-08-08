@@ -49,10 +49,29 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         conn,
         %{
           "smart_contract" => smart_contract,
+          "external_libraries" => external_libraries,
+          "file" => files,
+          "verification_type" => "multi-part-files"
+        }
+      ) do
+    files_array =
+      files
+      |> Map.values()
+      |> read_files()
+
+    Que.add(SolidityPublisherWorker, {smart_contract, files_array, external_libraries, conn})
+
+    send_resp(conn, 204, "")
+  end
+
+  def create(
+        conn,
+        %{
+          "smart_contract" => smart_contract,
           "external_libraries" => external_libraries
         }
       ) do
-    Que.add(SolidityPublisherWorker, {smart_contract["address_hash"], smart_contract, external_libraries, conn})
+    Que.add(SolidityPublisherWorker, {smart_contract, external_libraries, conn})
 
     send_resp(conn, 204, "")
   end
@@ -224,6 +243,13 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     files_array
     |> Enum.filter(fn file -> file.content_type == "application/json" end)
     |> Enum.at(0)
+  end
+
+  defp read_files(plug_uploads) do
+    Enum.reduce(plug_uploads, %{}, fn %Plug.Upload{path: path, filename: file_name}, acc ->
+      {:ok, file_content} = File.read(path)
+      Map.put(acc, file_name, file_content)
+    end)
   end
 
   defp prepare_verification_error(msg, address_hash_string, conn) do

@@ -128,6 +128,48 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     end
   end
 
+  def publish_with_multi_part_files(%{"address_hash" => address_hash} = params, external_libraries, files) do
+    params_with_external_libaries = add_external_libraries(params, external_libraries)
+
+    case Verifier.evaluate_authenticity_via_multi_part_files(address_hash, params_with_external_libaries, files) do
+      {:ok,
+       %{
+         "abi" => abi_string,
+         "compiler_version" => _,
+         "constructor_arguments" => _,
+         "contract_libraries" => contract_libraries,
+         "contract_name" => contract_name,
+         "evm_version" => _,
+         "file_name" => file_name,
+         "optimization" => _,
+         "optimization_runs" => _,
+         "sources" => sources
+       } = params} ->
+        secondary_sources =
+          for {file, source} <- sources,
+              file != file_name,
+              do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
+
+        %{^file_name => contract_source_code} = sources
+
+        prepared_params =
+          params
+          |> Map.put("contract_source_code", contract_source_code)
+          |> Map.put("external_libraries", contract_libraries)
+          |> Map.put("name", contract_name)
+          |> Map.put("file_path", file_name)
+          |> Map.put("secondary_sources", secondary_sources)
+
+        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+
+      {:error, error} ->
+        {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
+
+      _ ->
+        {:error, unverified_smart_contract(address_hash, params, "Failed to verify", nil, true)}
+    end
+  end
+
   def publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 

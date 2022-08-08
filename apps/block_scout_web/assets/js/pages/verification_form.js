@@ -170,6 +170,22 @@ if ($contractVerificationPage.length) {
       })
     }
 
+    function multiPartFilesBehavior () {
+      $('#metadata-json-dropzone-form').removeClass('dz-clickable')
+      this.on('addedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+        $('#file-help-block').text('')
+        $('#dropzone-previews').addClass('dz-started')
+      })
+
+      this.on('removedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+        if (this.files.length === 0) {
+          $('#dropzone-previews').removeClass('dz-started')
+        }
+      })
+    }
+
     const $jsonDropzoneMetadata = $('#metadata-json-dropzone-form')
     const $jsonDropzoneStandardInput = $('#standard-json-dropzone-form')
 
@@ -179,6 +195,29 @@ if ($contractVerificationPage.length) {
       const acceptedFiles = $jsonDropzoneMetadata.length ? 'text/plain,application/json,.sol,.json' : 'text/plain,application/json,.json'
       const tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone-form' : '#standard-json-dropzone-form'
       const jsonVerificationType = $jsonDropzoneMetadata.length ? 'json:metadata' : 'json:standard'
+
+      var dropzone = new Dropzone(tag, {
+        autoProcessQueue: false,
+        acceptedFiles,
+        parallelUploads: 100,
+        uploadMultiple: true,
+        addRemoveLinks: true,
+        maxFilesize: 10,
+        maxFiles,
+        previewsContainer: '#dropzone-previews',
+        params: { address_hash: $('#smart_contract_address_hash').val(), verification_type: jsonVerificationType },
+        init: func
+      })
+    }
+
+    const $dropzoneMultiPartFiles = $('#multi-part-dropzone-form')
+
+    if ($dropzoneMultiPartFiles.length) {
+      const func = multiPartFilesBehavior
+      const maxFiles = 100
+      const acceptedFiles = 'text/plain,.sol'
+      const tag = '#multi-part-dropzone-form'
+      const jsonVerificationType = 'multi-part-files'
 
       var dropzone = new Dropzone(tag, {
         autoProcessQueue: false,
@@ -286,7 +325,8 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').show()
       $('#verify_via_sourcify_button').hide()
       $('#verify_vyper_contract_button').hide()
-      $('#verify_via_standard_json_input').hide()
+      $('#verify_via_standard_json_input_button').hide()
+      $('#verify_via_multi_part_files_button').hide()
     }
   })
 
@@ -295,7 +335,8 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').show()
       $('#verify_vyper_contract_button').hide()
-      $('#verify_via_standard_json_input').hide()
+      $('#verify_via_standard_json_input_button').hide()
+      $('#verify_via_multi_part_files_button').hide()
     }
   })
 
@@ -304,7 +345,8 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').hide()
       $('#verify_vyper_contract_button').show()
-      $('#verify_via_standard_json_input').hide()
+      $('#verify_via_standard_json_input_button').hide()
+      $('#verify_via_multi_part_files_button').hide()
     }
   })
 
@@ -313,7 +355,18 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').hide()
       $('#verify_vyper_contract_button').hide()
-      $('#verify_via_standard_json_input').show()
+      $('#verify_via_standard_json_input_button').show()
+      $('#verify_via_multi_part_files_button').hide()
+    }
+  })
+
+  $('.verify-via-multi-part-files').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').hide()
+      $('#verify_via_sourcify_button').hide()
+      $('#verify_vyper_contract_button').hide()
+      $('#verify_via_standard_json_input_button').hide()
+      $('#verify_via_multi_part_files_button').show()
     }
   })
 }

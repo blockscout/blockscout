@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{
     AddressContractVerificationViaFlattenedCodeView,
     AddressContractVerificationViaJsonView,
+    AddressContractVerificationViaMultiPartFilesView,
     AddressContractVerificationViaStandardJsonInputView,
     AddressContractVerificationVyperView,
     Endpoint
@@ -215,6 +216,9 @@ defmodule BlockScoutWeb.Notifier do
     verification_from_vyper? =
       Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "vyper"
 
+    verification_from_multi_part_files? =
+      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "multi-part-files"
+
     compiler = if verification_from_vyper?, do: :vyper, else: :solc
 
     view =
@@ -222,6 +226,7 @@ defmodule BlockScoutWeb.Notifier do
         verification_from_standard_json_input? -> AddressContractVerificationViaStandardJsonInputView
         verification_from_metadata_json? -> AddressContractVerificationViaJsonView
         verification_from_vyper? -> AddressContractVerificationVyperView
+        verification_from_multi_part_files? -> AddressContractVerificationViaMultiPartFilesView
         true -> AddressContractVerificationViaFlattenedCodeView
       end
 
