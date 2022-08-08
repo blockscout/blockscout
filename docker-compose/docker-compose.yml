@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:13.6
+    image: postgres:14
     restart: always
     container_name: 'postgres'
     environment:
