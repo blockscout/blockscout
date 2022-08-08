@@ -42,7 +42,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "optimization_runs" => _,
           "sources" => sources
         } = params
-      } -> 
+      } ->
         %{^file_name => contract_source_code} = sources
 
         prepared_params =
