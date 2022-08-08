@@ -6,13 +6,11 @@ defmodule Explorer.Chain.Celo.ContractEventTracking do
 
   alias __MODULE__
   alias Explorer.Chain.Celo.TrackedContractEvent
-  alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Repo
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   use Explorer.Schema
-  import Ecto.Query
 
   @type t :: %__MODULE__{
           abi: map(),
