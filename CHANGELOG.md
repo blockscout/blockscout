@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#5850](https://github.com/blockscout/blockscout/pull/5850) - Fix too large postgres notifications
 
 ### Chore
 
