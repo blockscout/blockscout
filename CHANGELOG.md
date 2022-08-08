@@ -4,6 +4,7 @@
 
 ### Fixes
 - [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
+- [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
 
 ### Chore
 - [#5806](https://github.com/blockscout/blockscout/pull/5806) - Update target Postgres version in Docker: 13 -> 14
