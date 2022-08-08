@@ -6,9 +6,14 @@ updates:
     schedule:
       interval: "daily"
       
-updates:
   - package-ecosystem: "npm"
-    directory: "/apps"
+    directory: "/apps/block_scout_web/assets"
+    open-pull-requests-limit: 10
+    schedule:
+      interval: "daily"
+      
+  - package-ecosystem: "npm"
+    directory: "/apps/explorer"
     open-pull-requests-limit: 10
     schedule:
       interval: "daily"
