@@ -26,7 +26,7 @@
     "bignumber.js": "^9.0.2",
     "bootstrap": "^4.6.0",
     "chart.js": "^3.7.0",
-    "chartjs-adapter-luxon": "^1.1.0",
+    "chartjs-adapter-luxon": "^1.2.0",
     "clipboard": "^2.0.9",
     "core-js": "^3.20.3",
     "crypto-browserify": "^3.12.0",
