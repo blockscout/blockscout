@@ -103,7 +103,7 @@ defmodule Explorer.Mixfile do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
       # `:spandex` tracing of `:ecto`
-      {:spandex_ecto, "~> 0.6.2"},
+      {:spandex_ecto, "~> 0.7.0"},
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 0.4.3"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
