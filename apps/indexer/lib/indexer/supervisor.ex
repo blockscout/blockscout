@@ -139,17 +139,7 @@ defmodule Indexer.Supervisor do
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {BlocksTransactionsMismatch.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {PendingOpsCleaner, [[], []]},
-      {Realtime.Supervisor,
-       [
-         %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
-         [name: Realtime.Supervisor]
-       ]},
-      {Catchup.Supervisor,
-       [
-         %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
-         [name: Catchup.Supervisor]
-       ]}
+      {PendingOpsCleaner, [[], []]}
     ]
 
     all_fetchers =
