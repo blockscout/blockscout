@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - optimize-docker-build-ci
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
