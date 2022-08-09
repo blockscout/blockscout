@@ -10,11 +10,11 @@ defmodule Indexer.MixProject do
       deps: deps(),
       deps_path: "../../deps",
       description: "Fetches block chain data from on-chain node for later reading with Explorer.",
-      elixir: "~> 1.10",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "0.1.0"
+      version: "4.1.7"
     ]
   end
 
