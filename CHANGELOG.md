@@ -7,6 +7,7 @@
 - [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
 
 ### Chore
+- [#5861](https://github.com/blockscout/blockscout/pull/5861) - Add cache for docker build
 - [#5859](https://github.com/blockscout/blockscout/pull/5859) - Update ex_cldr hex packages
 - [#5858](https://github.com/blockscout/blockscout/pull/5858) - Update CHANGELOG; revert update of css-loader; rename fontawesome icons selectors
 - [#5811](https://github.com/blockscout/blockscout/pull/5811) - Bump chartjs-adapter-luxon from 1.1.0 to 1.2.0 in /apps/block_scout_web/assets
