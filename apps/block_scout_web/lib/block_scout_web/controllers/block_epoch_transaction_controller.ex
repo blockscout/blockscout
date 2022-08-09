@@ -41,65 +41,14 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
               block_epoch_transaction_path(conn, :index, block, Map.delete(next_page_params, "type"))
           end
 
-        carbon_fund_address =
-          case AccountReader.get_carbon_offsetting_partner(block.number) do
-            {:ok, address_string} ->
-              {:ok, carbon_fund_address_hash} = string_to_address_hash(address_string)
-              {:ok, carbon_fund_address} = hash_to_address(carbon_fund_address_hash)
-              carbon_fund_address
-
-            :error ->
-              :error
-          end
-
-        {:ok, community_fund_address_hash} = string_to_address_hash(@community_fund_address)
-        {:ok, community_fund_address} = hash_to_address(community_fund_address_hash)
-
         epoch_rewards = CeloEpochRewards.get_celo_epoch_rewards_for_block(block.number)
-
-        carbon_epoch_transaction = %{
-          address: carbon_fund_address,
-          amount: get_carbon_fund_amount(epoch_rewards),
-          block_number: block.number,
-          date: block.timestamp,
-          type: "carbon"
-        }
-
-        community_epoch_transaction = %{
-          address: community_fund_address,
-          amount: get_community_fund_amount(epoch_rewards),
-          block_number: block.number,
-          date: block.timestamp,
-          type: "community"
-        }
-
-        carbon_transaction_json =
-          View.render_to_string(
-            EpochTransactionView,
-            "_epoch_tile.html",
-            epoch_transaction: carbon_epoch_transaction
-          )
-
-        community_transaction_json =
-          View.render_to_string(
-            EpochTransactionView,
-            "_epoch_tile.html",
-            epoch_transaction: community_epoch_transaction
-          )
-
-        epoch_transactions_json =
-          Enum.map(epoch_transactions, fn epoch_transaction ->
-            View.render_to_string(
-              EpochTransactionView,
-              "_election_tile.html",
-              epoch_transaction: epoch_transaction
-            )
-          end)
 
         json(
           conn,
           %{
-            items: [community_transaction_json, carbon_transaction_json] ++ epoch_transactions_json,
+            items:
+              epoch_rewards
+              |> prepare_epoch_transaction_items(block, epoch_transactions),
             next_page_path: next_page_path
           }
         )
@@ -121,6 +70,65 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     end
   end
 
+  defp prepare_epoch_transaction_items(nil, _, _), do: []
+
+  defp prepare_epoch_transaction_items(epoch_rewards, block, epoch_transactions) do
+    carbon_fund_address =
+      case AccountReader.get_carbon_offsetting_partner(block.number) do
+        {:ok, address_string} ->
+          {:ok, carbon_fund_address_hash} = string_to_address_hash(address_string)
+          {:ok, carbon_fund_address} = hash_to_address(carbon_fund_address_hash)
+          carbon_fund_address
+
+        :error ->
+          :error
+      end
+
+    {:ok, community_fund_address_hash} = string_to_address_hash(@community_fund_address)
+    {:ok, community_fund_address} = hash_to_address(community_fund_address_hash)
+
+    carbon_epoch_transaction = %{
+      address: carbon_fund_address,
+      amount: get_carbon_fund_amount(epoch_rewards),
+      block_number: block.number,
+      date: block.timestamp,
+      type: "carbon"
+    }
+
+    community_epoch_transaction = %{
+      address: community_fund_address,
+      amount: get_community_fund_amount(epoch_rewards),
+      block_number: block.number,
+      date: block.timestamp,
+      type: "community"
+    }
+
+    carbon_transaction_json =
+      View.render_to_string(
+        EpochTransactionView,
+        "_epoch_tile.html",
+        epoch_transaction: carbon_epoch_transaction
+      )
+
+    community_transaction_json =
+      View.render_to_string(
+        EpochTransactionView,
+        "_epoch_tile.html",
+        epoch_transaction: community_epoch_transaction
+      )
+
+    epoch_transactions_json =
+      Enum.map(epoch_transactions, fn epoch_transaction ->
+        View.render_to_string(
+          EpochTransactionView,
+          "_election_tile.html",
+          epoch_transaction: epoch_transaction
+        )
+      end)
+
+    [community_transaction_json, carbon_transaction_json] ++ epoch_transactions_json
+  end
+
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
            necessity_by_association: %{
@@ -133,22 +141,14 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
          ) do
       {:ok, block} ->
         block_transaction_count = Chain.block_to_transaction_count(block.hash)
-
-        epoch_transaction_count =
-          if EpochUtil.is_epoch_block?(block.number) do
-            CeloElectionRewards.get_epoch_transaction_count_for_block(block.number)
-          else
-            0
-          end
+        epoch_rewards = CeloEpochRewards.get_celo_epoch_rewards_for_block(block.number)
 
         render(
           conn,
           "index.html",
           block: block,
           block_transaction_count: block_transaction_count,
-          # + 2 since we manually add the 2 fund transactions (rewards for carbon and community funds) at the top of
-          # the list.
-          epoch_transaction_count: epoch_transaction_count + 2,
+          epoch_transaction_count: EpochUtil.calculate_epoch_transaction_count_for_block(block.number, epoch_rewards),
           current_path: Controller.current_full_path(conn)
         )
 
@@ -203,10 +203,14 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     end
   end
 
+  defp get_carbon_fund_amount(nil), do: nil
+
   defp get_carbon_fund_amount(epoch_rewards) do
     {:ok, zero_wei} = Wei.cast(0)
     epoch_rewards.carbon_offsetting_target_epoch_rewards || zero_wei
   end
+
+  defp get_community_fund_amount(nil), do: nil
 
   defp get_community_fund_amount(epoch_rewards) do
     {:ok, zero_wei} = Wei.cast(0)
