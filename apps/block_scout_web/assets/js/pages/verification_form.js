@@ -188,6 +188,7 @@ if ($contractVerificationPage.length) {
 
     const $jsonDropzoneMetadata = $('#metadata-json-dropzone-form')
     const $jsonDropzoneStandardInput = $('#standard-json-dropzone-form')
+    let dropzone
 
     if ($jsonDropzoneMetadata.length || $jsonDropzoneStandardInput.length) {
       const func = $jsonDropzoneMetadata.length ? metadataJSONBehavior : standardJSONBehavior
@@ -196,7 +197,7 @@ if ($contractVerificationPage.length) {
       const tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone-form' : '#standard-json-dropzone-form'
       const jsonVerificationType = $jsonDropzoneMetadata.length ? 'json:metadata' : 'json:standard'
 
-      var dropzone = new Dropzone(tag, {
+      dropzone = new Dropzone(tag, {
         autoProcessQueue: false,
         acceptedFiles,
         parallelUploads: 100,
@@ -219,7 +220,7 @@ if ($contractVerificationPage.length) {
       const tag = '#multi-part-dropzone-form'
       const jsonVerificationType = 'multi-part-files'
 
-      var dropzone = new Dropzone(tag, {
+      dropzone = new Dropzone(tag, {
         autoProcessQueue: false,
         acceptedFiles,
         parallelUploads: 100,

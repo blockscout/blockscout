@@ -82,7 +82,7 @@ defmodule Explorer.SmartContract.Helper do
     |> String.trim()
   end
 
-  defp sol_file?(filename) do
+  def sol_file?(filename) do
     case List.last(String.split(String.downcase(filename), ".")) do
       "sol" ->
         true
@@ -92,7 +92,7 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
-  defp json_file?(filename) do
+  def json_file?(filename) do
     case List.last(String.split(String.downcase(filename), ".")) do
       "json" ->
         true

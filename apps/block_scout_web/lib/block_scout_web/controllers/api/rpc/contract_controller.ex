@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
          uid <- VerificationStatus.generate_uid(address_hash) do
-      Que.add(SolidityPublisherWorker, {fetched_params, json_input, uid})
+      Que.add(SolidityPublisherWorker, {"json_api", fetched_params, json_input, uid})
 
       render(conn, :show, %{result: uid})
     else

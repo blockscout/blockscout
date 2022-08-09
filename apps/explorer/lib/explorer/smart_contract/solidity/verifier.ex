@@ -113,8 +113,22 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(true, address_hash, params, json_input) do
-    # wait update from rust team with modifying json verification end point
-    verify(address_hash, params, json_input)
+    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+
+    creation_tx_input =
+      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+        %{init: init, created_contract_code: _created_contract_code} ->
+          init
+
+        _ ->
+          ""
+      end
+
+    params
+    |> Map.put("creation_bytecode", creation_tx_input)
+    |> Map.put("deployed_bytecode", deployed_bytecode)
+    |> Map.put("input", json_input)
+    |> RustVerifierInterface.verify_standard_json_input()
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(false, address_hash, params, json_input) do

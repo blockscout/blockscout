@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       |> Map.values()
       |> read_files()
 
-    Que.add(SolidityPublisherWorker, {smart_contract, files_array, external_libraries, conn})
+    Que.add(SolidityPublisherWorker, {"multipart", smart_contract, files_array, external_libraries, conn})
 
     send_resp(conn, 204, "")
   end
@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "external_libraries" => external_libraries
         }
       ) do
-    Que.add(SolidityPublisherWorker, {smart_contract, external_libraries, conn})
+    Que.add(SolidityPublisherWorker, {"flattened", smart_contract, external_libraries, conn})
 
     send_resp(conn, 204, "")
   end
@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
 
     with %Plug.Upload{path: path} <- get_one_json(files_array),
          {:ok, json_input} <- File.read(path) do
-      Que.add(SolidityPublisherWorker, {smart_contract, json_input, conn})
+      Que.add(SolidityPublisherWorker, {"json_web", smart_contract, json_input, conn})
     else
       _ ->
         nil
@@ -245,6 +245,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     |> Enum.at(0)
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp read_files(plug_uploads) do
     Enum.reduce(plug_uploads, %{}, fn %Plug.Upload{path: path, filename: file_name}, acc ->
       {:ok, file_content} = File.read(path)
