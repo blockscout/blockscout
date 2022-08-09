@@ -15,7 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.10",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -23,7 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "0.1.0"
+      version: "4.1.7"
     ]
   end
 
