@@ -3,10 +3,10 @@
 # Components include: local geth, postgres.
 
 # Build go-ethereum
-FROM ethereum/client-go:latest as builder
+FROM ethereum/client-go:latest as gethbuilder
 
 # Build postgres && blockscout
-FROM bitwalker/alpine-elixir-phoenix:1.13.1
+FROM bitwalker/alpine-elixir-phoenix:1.13
 
 # Important!  Update this no-op ENV variable when this Dockerfile
 # is updated with the current date. It will force refresh of all
@@ -189,10 +189,14 @@ RUN wget https://raw.githubusercontent.com/docker-library/postgres/master/$PG_MA
 #
 STOPSIGNAL SIGINT
 
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file qemu-x86_64 jq
 
-ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc
-ENV GLIBC_VERSION=2.30-r0
+ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
+    GLIBC_VERSION=2.30-r0 \
+    MIX_ENV="prod" \
+    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5" \
+    PATH="$HOME/.cargo/bin:${PATH}" \
+    RUSTFLAGS="-C target-feature=-crt-static"
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -205,9 +209,6 @@ RUN set -ex && \
 # Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-ENV PATH="$HOME/.cargo/bin:${PATH}"
-ENV RUSTFLAGS="-C target-feature=-crt-static"
-
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -219,25 +220,28 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 
 ADD . .
 
-# Run forderground build and phoenix digest
-RUN mix compile
+COPY . .
 
-RUN npm install npm@latest
+# Run forderground build and phoenix digest
+RUN mix compile && npm install npm@latest
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
     npm run deploy && \
-    cd -
-
-RUN cd apps/explorer/ && \
+	cd - && \
+    cd apps/explorer/ && \
     npm install && \
-    apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+    apk update && \
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+
 RUN mix phx.digest
 
+RUN mkdir -p /opt/release \
+  && mix release blockscout \
+  && mv _build/${MIX_ENV}/rel/blockscout /opt/release
+
 ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5" \
     ETHEREUM_JSONRPC_VARIANT="geth" \
     ETHEREUM_JSONRPC_HTTP_URL="http://localhost:8545" \
     ETHEREUM_JSONRPC_WS_URL="ws://localhost:8546" \ 
@@ -249,7 +253,9 @@ ENV PORT=4000 \
     POSTGRES_HOST_AUTH_METHOD="trust"\
     ECTO_USE_SSL=false
 
-COPY --from=builder /usr/local/bin/geth /usr/local/bin
+##############################################################
+
+COPY --from=gethbuilder /usr/local/bin/geth /usr/local/bin
 
 EXPOSE 5432 4000
 
