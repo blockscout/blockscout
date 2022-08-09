@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.Mixfile do
       app: :block_scout_web,
       build_path: "../../_build",
       config_path: "../../config/config.exs",
-      compilers: [:phoenix, :gettext | Mix.compilers()],
       deps: deps(),
       deps_path: "../../deps",
       description: "Web interface for BlockScout.",
@@ -15,7 +14,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.10",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -24,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "0.0.1"
+      version: "4.1.7"
     ]
   end
 
@@ -155,7 +154,7 @@ defmodule BlockScoutWeb.Mixfile do
 
   defp package do
     [
-      maintainers: ["POA Networks Ltd."],
+      maintainers: ["Blockscout"],
       licenses: ["GPL 3.0"],
       links: %{"GitHub" => "https://github.com/blockscout/blockscout"}
     ]
