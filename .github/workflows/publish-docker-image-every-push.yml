@@ -83,3 +83,4 @@ jobs:
       environment: 'test'
       verification_image: 'ghcr.io/blockscout/verification:latest'
     secrets: inherit
+
