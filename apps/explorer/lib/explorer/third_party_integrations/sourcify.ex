@@ -360,23 +360,12 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     config(__MODULE__, :server_url)
   end
 
-  defp base_rust_microservice_server_url do
-    server_url = config(RustVerifierInterface, :service_url)
-
-    if String.ends_with?(server_url, "/") do
-      server_url
-      |> String.slice(0..(String.length(server_url) - 2))
-    else
-      server_url
-    end
-  end
-
   defp verify_url do
     "#{base_server_url()}" <> "/verify"
   end
 
   defp verify_url_rust_microservice do
-    "#{base_rust_microservice_server_url()}" <> "/api/v1/sourcify/verify"
+    "#{RustVerifierInterface.base_url()}" <> "/api/v1/sourcify/verify"
   end
 
   defp check_by_address_url do

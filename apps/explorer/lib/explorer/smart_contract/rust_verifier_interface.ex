@@ -106,7 +106,16 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def versions_list_url, do: "#{base_url()}" <> "/api/v1/solidity/versions"
 
-  def base_url, do: Application.get_env(:explorer, __MODULE__)[:service_url]
+  def base_url do
+    url = Application.get_env(:explorer, __MODULE__)[:service_url]
+
+    if String.ends_with?(url, "/") do
+      url
+      |> String.slice(0..(String.length(url) - 2))
+    else
+      url
+    end
+  end
 
   def enabled?, do: Application.get_env(:explorer, __MODULE__)[:enabled]
 end
