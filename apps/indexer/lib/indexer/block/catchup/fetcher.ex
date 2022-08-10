@@ -10,6 +10,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   import Indexer.Block.Fetcher,
     only: [
       async_import_block_rewards: 1,
+      async_import_cosmos_hashes: 1,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 1,
       async_import_internal_transactions: 1,
@@ -162,6 +163,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_token_instances(imported)
+    async_import_cosmos_hashes(imported)
   end
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)

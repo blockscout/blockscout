@@ -3,6 +3,8 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
   Adapter for fetching exchange rates from https://api.tiki.vn.
   """
 
+  require Logger
+
   alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
@@ -38,15 +40,19 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
   end
 
   defp get_supply() do
-    url = "http://159.223.36.174:1317/cosmos/bank/v1beta1/supply"
-    {:ok, result} = Source.http_request(url)
-    if is_map(result) do
-      list_supply = result["supply"]
-      for %{"amount" => amount, "denom" => denom} when denom == "aastra" <- list_supply do
-        String.slice(amount, 0..-19)
-      end
-    else
-      [0]
+    url = "https://api.astranaut.dev/cosmos/bank/v1beta1/supply"
+    case Source.http_request(url) do
+      {:error, reason} ->
+        Logger.error("failed to get supply: ", inspect(reason))
+      {:ok, result} ->
+        if is_map(result) do
+          list_supply = result["supply"]
+          for %{"amount" => amount, "denom" => denom} when denom == "aastra" <- list_supply do
+            String.slice(amount, 0..-19)
+          end
+        else
+          [0]
+        end
     end
   end
 

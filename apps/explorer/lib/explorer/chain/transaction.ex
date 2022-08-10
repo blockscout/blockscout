@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status
-                     to_address_hash revert_reason)a
+                     to_address_hash revert_reason cosmos_hash)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -155,6 +155,7 @@ defmodule Explorer.Chain.Transaction do
           gas_price: wei_per_gas,
           gas_used: Gas.t() | nil,
           hash: Hash.t(),
+          cosmos_hash: String.t() | nil,
           index: transaction_index | nil,
           input: Data.t(),
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
@@ -182,6 +183,7 @@ defmodule Explorer.Chain.Transaction do
              :gas,
              :gas_price,
              :gas_used,
+             :cosmos_hash,
              :index,
              :created_contract_code_indexed_at,
              :input,
@@ -202,6 +204,7 @@ defmodule Explorer.Chain.Transaction do
              :gas,
              :gas_price,
              :gas_used,
+             :cosmos_hash,
              :index,
              :created_contract_code_indexed_at,
              :input,
@@ -223,6 +226,7 @@ defmodule Explorer.Chain.Transaction do
     field(:gas, :decimal)
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
+    field(:cosmos_hash, :string)
     field(:index, :integer)
     field(:created_contract_code_indexed_at, :utc_datetime_usec)
     field(:input, Data)
@@ -736,6 +740,16 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in Transaction,
       where: t.block_number == ^block_number
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transaction with cosmos hash
+  """
+  def transaction_with_cosmos_hash(cosmos_hash) do
+    from(
+      t in Transaction,
+      where: t.cosmos_hash == ^cosmos_hash
     )
   end
 

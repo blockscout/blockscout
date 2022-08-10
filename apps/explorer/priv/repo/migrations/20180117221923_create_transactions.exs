@@ -17,6 +17,8 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
 
       add(:hash, :bytea, null: false, primary_key: true)
 
+      add(:cosmos_hash, :string, default: fragment("NULL"), null: true)
+
       # `null` when a pending transaction
       add(:index, :integer, null: true)
 
@@ -182,6 +184,8 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     )
 
     create(index(:transactions, :block_hash))
+
+    create(index(:transactions, :cosmos_hash))
 
     create(index(:transactions, :inserted_at))
     create(index(:transactions, :updated_at))

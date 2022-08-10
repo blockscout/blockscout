@@ -21,6 +21,7 @@ defmodule Indexer.Block.Fetcher do
     BlockReward,
     CoinBalance,
     ContractCode,
+    CosmosHash,
     InternalTransaction,
     ReplacedTransaction,
     Token,
@@ -281,6 +282,14 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_created_contract_codes(_), do: :ok
+
+  def async_import_cosmos_hashes(%{blocks: blocks}) do
+    blocks
+    |> Enum.map(fn %Block{number: block_number} -> block_number end)
+    |> CosmosHash.async_fetch(10_000)
+  end
+
+  def async_import_cosmos_hashes(_), do: :ok
 
   def async_import_internal_transactions(%{blocks: blocks}) do
     blocks
