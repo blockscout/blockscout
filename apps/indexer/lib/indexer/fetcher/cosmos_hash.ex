@@ -64,9 +64,36 @@ defmodule Indexer.Fetcher.CosmosHash do
   def run(block_numbers, _) do
     unique_numbers = Enum.uniq(block_numbers)
     Logger.debug("fetching cosmos hashes for transactions")
+
     Enum.each(unique_numbers, fn(block_number) ->
-      #Logger.info(Integer.to_string(block_number))
+      case http_request(block_info_url() <> Integer.to_string(block_number)) do
+        {:error, reason} ->
+          Logger.error("failed to fetch block info via api node: ", inspect(reason))
+        {:ok, result} ->
+          case result["block"]["data"]["txs"] do
+            nil -> Logger.debug("block_number: #{block_number} does not have any transactions")
+            [] -> Logger.debug("block_number: #{block_number} does not have any transactions")
+            [_|_] -> Enum.each(result["block"]["data"]["txs"], fn(tx) ->
+              cosmos_hash = raw_txn_to_cosmos_hash(tx)
+              case http_request(txn_info_url() <> cosmos_hash) do
+                {:error, reason} ->
+                  Logger.error("failed to fetch txn info via api node: ", inspect(reason))
+                {:ok, result} ->
+                  tx_messages = result["tx"]["body"]["messages"]
+                  Enum.each(tx_messages, fn(message) ->
+                    if message["@type"] == "/ethermint.evm.v1.MsgEthereumTx" do
+                      tx_hash = message["hash"]
+                      #Logger.info(tx_hash)
+                    end
+                  end)
+              end
+            end)
+          end
+      end
     end)
+  end
+
+  defp import_cosmos_hash(cosmos_hash) do
 
   end
 
