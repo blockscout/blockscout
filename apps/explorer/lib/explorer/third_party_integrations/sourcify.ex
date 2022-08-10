@@ -361,7 +361,14 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp base_rust_microservice_server_url do
-    config(RustVerifierInterface, :service_url)
+    server_url = config(RustVerifierInterface, :service_url)
+
+    if String.ends_with?(server_url, "/") do
+      server_url
+      |> String.slice(0..(String.length(server_url) - 2))
+    else
+      server_url
+    end
   end
 
   defp verify_url do
