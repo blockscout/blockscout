@@ -29,19 +29,6 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @doc """
   Asynchronously fetches cosmos hashes.
-
-  ## Limiting Upstream Load
-
-  Internal transactions are an expensive upstream operation. The number of
-  results to fetch is configured by `@max_batch_size` and represents the number
-  of transaction hashes to request internal transactions in a single JSONRPC
-  request. Defaults to `#{@max_batch_size}`.
-
-  The `@max_concurrency` attribute configures the  number of concurrent requests
-  of `@max_batch_size` to allow against the JSONRPC. Defaults to `#{@max_concurrency}`.
-
-  *Note*: The internal transactions for individual transactions cannot be paginated,
-  so the total number of internal transactions that could be produced is unknown.
   """
   @spec async_fetch([Block.block_number()]) :: :ok
   def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
@@ -76,16 +63,27 @@ defmodule Indexer.Fetcher.CosmosHash do
             )
   def run(block_numbers, _) do
     unique_numbers = Enum.uniq(block_numbers)
-    Logger.info("TRUNG")
-    Enum.each(unique_numbers, fn(block_number) ->
-      Logger.info(block_number)
-    end)
     Logger.debug("fetching cosmos hashes for transactions")
+    Enum.each(unique_numbers, fn(block_number) ->
+      #Logger.info(Integer.to_string(block_number))
+    end)
 
   end
 
-  defp base_url() do
-    "https://api.astranaut.dev/cosmos/base/tendermint/v1beta1/blocks/"
+  @spec base_api_url :: String.t()
+  defp base_api_url() do
+    configured_url = Application.get_env(:indexer, __MODULE__, [])[:base_api_url]
+    configured_url || "https://api.astranaut.dev/"
+  end
+
+  @spec block_info_url :: String.t()
+  defp block_info_url() do
+    base_api_url() <> "cosmos/base/tendermint/v1beta1/blocks/"
+  end
+
+  @spec txn_info_url :: String.t()
+  defp txn_info_url() do
+    base_api_url() <> "cosmos/tx/v1beta1/txs/"
   end
 
   defp raw_txn_to_cosmos_hash(raw_txn) do
