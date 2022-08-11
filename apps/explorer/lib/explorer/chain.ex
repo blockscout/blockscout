@@ -2609,18 +2609,19 @@ defmodule Explorer.Chain do
     :ok
   end
 
-  @spec stream_transactions_with_unfetched_cosmos_hashes(
+  @spec stream_block_numbers_with_unfetched_cosmos_hashes(
           initial :: accumulator,
           reducer :: (entry :: term(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
 
-  def stream_transactions_with_unfetched_cosmos_hashes(initial, reducer)
+  def stream_block_numbers_with_unfetched_cosmos_hashes(initial, reducer)
       when is_function(reducer, 2) do
     query =
       from(t in Transaction,
         where:
           not is_nil(t.block_hash) and not is_nil(t.hash) and is_nil(t.cosmos_hash),
+        order_by: [desc: t.block_number],
         select: t.block_number
       )
 
