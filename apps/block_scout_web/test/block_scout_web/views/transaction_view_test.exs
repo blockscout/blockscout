@@ -295,4 +295,47 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert List.first(result.transfers).amount == nil
     end
   end
+
+  describe "value_transfer/1" do
+    test "base case" do
+      transaction =
+        insert(:transaction,
+          input: %Explorer.Chain.Data{bytes: <<0>>}
+        )
+
+      assert true == TransactionView.value_transfer?(transaction)
+    end
+
+    test "read input of sample" do
+      transaction =
+        insert(:transaction,
+          input: %Explorer.Chain.Data{bytes: Base.decode16!("9DCA362F")}
+        )
+
+      assert false == TransactionView.value_transfer?(transaction)
+    end
+
+    test "read input of sample 2" do
+      transaction =
+        insert(:transaction,
+          input: %Explorer.Chain.Data{
+            bytes:
+              Base.decode16!(
+                "BB46942F642BF0733E07C0FBCE6394D870C167A12BF7AEFF8B7E0BFAFF37F99F1FE8869D0000000000000000000000000000000000000000000000000000000000000002"
+              )
+          }
+        )
+
+      assert false == TransactionView.value_transfer?(transaction)
+    end
+
+    test "test case from GitHub issue" do
+      transaction =
+        insert(:transaction,
+          input: %Explorer.Chain.Data{bytes: Base.decode16!("00")}
+        )
+
+      assert true == TransactionView.value_transfer?(transaction)
+    end
+  end
 end

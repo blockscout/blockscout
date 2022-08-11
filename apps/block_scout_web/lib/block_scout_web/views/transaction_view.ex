@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.TransactionView do
   def block_timestamp(%Transaction{block: %Block{timestamp: time}}), do: time
   def block_timestamp(%Reward{block: %Block{timestamp: time}}), do: time
 
-  def value_transfer?(%Transaction{input: %{bytes: bytes}}) when bytes in [<<>>, nil] do
+  def value_transfer?(%Transaction{input: %{bytes: bytes}}) when bytes in [<<>>, nil, <<0>>] do
     true
   end
 
