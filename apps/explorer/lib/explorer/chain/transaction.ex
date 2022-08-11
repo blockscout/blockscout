@@ -435,6 +435,17 @@ defmodule Explorer.Chain.Transaction do
     |> unique_constraint(:hash)
   end
 
+  def update_cosmos_hash(hash, cosmos_hash) do
+    case Hash.Full.cast(hash) do
+      {:ok, tx_hash} ->
+        Repo.get_by(Transaction, hash: tx_hash)
+        |> change(%{cosmos_hash: cosmos_hash})
+        |> Repo.update()
+      _ ->
+        {:error, nil}
+    end
+  end
+
   def preload_token_transfers(query, address_hash) do
     token_transfers_query =
       from(

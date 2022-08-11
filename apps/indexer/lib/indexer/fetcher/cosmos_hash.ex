@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   alias HTTPoison.{Error, Response}
   alias Explorer.Chain
+  alias Explorer.Chain.{Transaction}
   alias Indexer.{BufferedTask, Tracer}
 
   @behaviour BufferedTask
@@ -68,7 +69,7 @@ defmodule Indexer.Fetcher.CosmosHash do
   end
 
   defp fetch_and_import_cosmos_hash(block_number) do
-    block_number = 454981
+    #block_number = 454981
     case http_request(block_info_url() <> Integer.to_string(block_number)) do
       {:error, reason} ->
         Logger.error("failed to fetch block info via api node: ", inspect(reason))
@@ -77,8 +78,8 @@ defmodule Indexer.Fetcher.CosmosHash do
           nil -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [] -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [_|_] ->
-            params = hash_cosmos_hash_mapping_list_params(result["block"]["data"]["txs"])
-            map_params(params)
+            list_params = hash_cosmos_hash_mapping_list_params(result["block"]["data"]["txs"])
+            update_transactions(list_params)
         end
     end
   end
@@ -86,27 +87,26 @@ defmodule Indexer.Fetcher.CosmosHash do
   defp hash_cosmos_hash_mapping_list_params(txs) do
     list_params = for tx <- txs, into: [] do
       cosmos_hash = raw_txn_to_cosmos_hash(tx)
-      param = case http_request(txn_info_url() <> cosmos_hash) do
+      case http_request(txn_info_url() <> cosmos_hash) do
         {:error, reason} ->
           Logger.error("failed to fetch txn info via api node: ", inspect(reason))
         {:ok, result} ->
           tx_messages = result["tx"]["body"]["messages"]
           mapping = for %{"hash" => hash, "@type" => type} when type == "/ethermint.evm.v1.MsgEthereumTx"
                         <- tx_messages do
-            #result |> Enum.map(& Map.put(&1, :cosmos_hash, cosmos_hash))
             %{hash: hash, cosmos_hash: cosmos_hash}
           end
           mapping
       end
-      param
     end
     unique_list_params = Enum.uniq(list_params)
     unique_list_params
   end
 
-  defp map_params(list_params) when is_list(list_params) do
-    Logger.info("CHECK!!!")
-    Logger.info(list_params)
+  defp update_transactions(list_params) when is_list(list_params) do
+    Enum.each(list_params, fn(param) ->
+      Transaction.update_cosmos_hash(Enum.at(param, 0)[:hash], Enum.at(param, 0)[:cosmos_hash])
+    end)
   end
 
   @spec base_api_url :: String.t()
