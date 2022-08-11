@@ -42,9 +42,7 @@ defmodule BlockScoutWeb.TransactionView do
     true
   end
 
-  def value_transfer?(_) do
-    false
-  end
+  def value_transfer?(_), do: false
 
   def token_transfer_type(transaction) do
     transaction_with_transfers = Repo.preload(transaction, token_transfers: :token)
