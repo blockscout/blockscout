@@ -99,10 +99,6 @@ config :explorer, Explorer.Tracer,
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
 
-config :explorer, Explorer.SmartContract.RustVerifierInterface,
-  service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
-  enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
-
 config :logger, :explorer,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",

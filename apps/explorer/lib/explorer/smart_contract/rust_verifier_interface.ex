@@ -6,6 +6,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   require Logger
 
   @post_timeout :infinity
+  @request_error_msg "Error while sending request to verification microservice"
 
   def verify_multi_part(
         %{
@@ -50,7 +51,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
           ]
         end)
 
-        {:error, "Error while sending request to verification microservice"}
+        {:error, @request_error_msg}
     end
   end
 
@@ -70,7 +71,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
           ]
         end)
 
-        {:error, "Error while sending request to verification microservice"}
+        {:error, @request_error_msg}
     end
   end
 
@@ -100,11 +101,13 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def proccess_verifier_response(other), do: {:error, other}
 
-  def multiple_files_verification_url, do: "#{base_url()}" <> "/api/v1/solidity/verify/multiple-files"
+  def multiple_files_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/multiple-files"
 
-  def standard_json_input_verification_url, do: "#{base_url()}" <> "/api/v1/solidity/verify/standard-json"
+  def standard_json_input_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/standard-json"
 
-  def versions_list_url, do: "#{base_url()}" <> "/api/v1/solidity/versions"
+  def versions_list_url, do: "#{base_api_url()}" <> "/solidity/versions"
+
+  def base_api_url, do: "#{base_url()}" <> "/api/v1"
 
   def base_url do
     url = Application.get_env(:explorer, __MODULE__)[:service_url]

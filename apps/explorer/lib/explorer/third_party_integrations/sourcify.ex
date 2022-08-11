@@ -365,7 +365,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp verify_url_rust_microservice do
-    "#{RustVerifierInterface.base_url()}" <> "/api/v1/sourcify/verify"
+    "#{RustVerifierInterface.base_api_url()}" <> "/sourcify/verify"
   end
 
   defp check_by_address_url do
