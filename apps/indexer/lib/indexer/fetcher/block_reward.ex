@@ -28,7 +28,7 @@ defmodule Indexer.Fetcher.BlockReward do
   @defaults [
     flush_interval: :timer.seconds(3),
     max_batch_size: 10,
-    max_concurrency: 4,
+    max_concurrency: 2,
     task_supervisor: Indexer.Fetcher.BlockReward.TaskSupervisor,
     metadata: [fetcher: :block_reward]
   ]
