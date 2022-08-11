@@ -1050,6 +1050,47 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
     end
 
+    test "pagination works past page 3", %{conn: conn} do
+      address = insert(:address)
+
+      [insert(:block), insert(:block)]
+      |> Enum.each(fn block ->
+        15
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        # page size
+        "offset" => "5"
+      }
+
+      for p <- 1..6 do
+        assert response =
+                 conn
+                 |> get("/api", Map.put(params, "page", p))
+                 |> json_response(200)
+
+        assert Enum.count(response["result"]) == 5
+        assert response["status"] == "1"
+        assert response["message"] == "OK"
+        assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
+      end
+
+      assert response =
+               conn
+               |> get("/api", Map.put(params, "page", 7))
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No transactions found"
+      assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
+    end
+
     test "with startblock and endblock params", %{conn: conn} do
       blocks = [_, second_block, third_block, _] = insert_list(4, :block)
       address = insert(:address)

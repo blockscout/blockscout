@@ -101,8 +101,12 @@ defmodule BlockScoutWeb.Chain do
 
     items_count =
       if current_items_count_str do
-        {current_items_count, _} = Integer.parse(current_items_count_str)
-        current_items_count + Enum.count(list)
+        try do
+          {current_items_count, _} = Integer.parse(current_items_count_str)
+          current_items_count + Enum.count(list)
+        rescue
+          _ -> Enum.count(list)
+        end
       else
         Enum.count(list)
       end

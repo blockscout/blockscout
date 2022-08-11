@@ -80,6 +80,7 @@ defmodule Explorer.Chain.CeloElectionRewards do
         account_hash: rewards.account_hash,
         amount: rewards.amount,
         associated_account_name: acc.name,
+        associated_account_hash: rewards.associated_account_hash,
         block_number: rewards.block_number,
         date: rewards.block_timestamp,
         epoch_number: fragment("? / 17280", rewards.block_number),
@@ -182,6 +183,7 @@ defmodule Explorer.Chain.CeloElectionRewards do
           account_hash: reward.account_hash,
           amount: reward.amount,
           associated_account_name: acc.name,
+          associated_account_hash: reward.associated_account_hash,
           block_number: reward.block_number,
           date: reward.block_timestamp,
           reward_type: reward.reward_type

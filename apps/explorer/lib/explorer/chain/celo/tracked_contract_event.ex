@@ -4,15 +4,10 @@ defmodule Explorer.Chain.Celo.TrackedContractEvent do
   """
   require Logger
 
-  alias __MODULE__
   alias Explorer.Chain.Celo.ContractEventTracking
   alias Explorer.Chain.{Hash, Log, SmartContract, Transaction}
-  alias Explorer.Chain.Hash.Address
-  alias Explorer.Repo
-  alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   use Explorer.Schema
-  import Ecto.Query
 
   @type t :: %__MODULE__{
           block_number: integer(),
@@ -71,6 +66,6 @@ defmodule Explorer.Chain.Celo.TrackedContractEvent do
   def changeset(%__MODULE__{} = item, attrs) do
     item
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@required)
   end
 end

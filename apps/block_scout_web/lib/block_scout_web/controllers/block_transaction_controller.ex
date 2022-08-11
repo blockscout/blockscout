@@ -7,7 +7,11 @@ defmodule BlockScoutWeb.BlockTransactionController do
   import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2, string_to_block_hash: 1]
 
   alias BlockScoutWeb.{Controller, TransactionView}
+
+  alias Explorer.Celo.{AccountReader, EpochUtil}
   alias Explorer.Chain
+  alias Explorer.Chain.{CeloElectionRewards, CeloEpochRewards}
+
   alias Phoenix.View
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
@@ -111,12 +115,15 @@ defmodule BlockScoutWeb.BlockTransactionController do
       {:ok, block} ->
         block_transaction_count = Chain.block_to_transaction_count(block.hash)
 
+        epoch_rewards = CeloEpochRewards.get_celo_epoch_rewards_for_block(block.number)
+
         render(
           conn,
           "index.html",
           block: block,
           block_transaction_count: block_transaction_count,
-          current_path: Controller.current_full_path(conn)
+          current_path: Controller.current_full_path(conn),
+          epoch_transaction_count: EpochUtil.calculate_epoch_transaction_count_for_block(block.number, epoch_rewards)
         )
 
       {:error, {:invalid, :hash}} ->

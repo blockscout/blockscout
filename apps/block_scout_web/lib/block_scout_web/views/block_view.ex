@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.BlockView do
 
   import Math.Enum, only: [mean: 1]
 
+  alias BlockScoutWeb.AccessHelpers
+
   alias Explorer.Celo.EpochUtil
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Wei}

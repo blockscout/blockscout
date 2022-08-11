@@ -14,10 +14,8 @@ defmodule Explorer.Application do
     BlockCount,
     BlockNumber,
     Blocks,
-    GasUsage,
     MinMissingBlockNumber,
     NetVersion,
-    TransactionCount,
     Transactions,
     Uncles
   }
