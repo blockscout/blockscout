@@ -4,7 +4,7 @@
       <div class="bs-label black-hole mb-1"><%= tag %></div>
     <% end %>
   </td>
-  <td><%= String.replace(@public_tags_request.addresses, ";", "\n") %></td>
+  <td><%= Enum.join(@public_tags_request.addresses, "\n") %></td>
   <td><%= Calendar.strftime(@public_tags_request.inserted_at, "%b %d, %Y") %></td>
   <td>
     <%= link (render BlockScoutWeb.CommonComponentsView, "_svg_pen.html"), to: public_tags_request_path(@conn, :edit, @public_tags_request.id) %>

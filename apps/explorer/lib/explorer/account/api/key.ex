@@ -31,7 +31,7 @@ defmodule Explorer.Account.Api.Key do
   def changeset(%__MODULE__{} = api_key, attrs \\ %{}) do
     api_key
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 255)
     |> unique_constraint(:value, message: "API key already exists")
     |> foreign_key_constraint(:identity_id, message: "User not found")
