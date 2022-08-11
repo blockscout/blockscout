@@ -1433,20 +1433,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  def update_cosmos_hash_into_transaction(hash, cosmos_hash) do
-    case Chain.string_to_transaction_hash(hash) do
-      {:ok, tx_hash} ->
-        query =
-          from(transaction in Transaction,
-            where: transaction.hash == ^tx_hash,
-            update: [set: [cosmos_hash: ^cosmos_hash]]
-          )
-        Repo.update(query)
-      _ ->
-        {:error, nil}
-    end
-  end
-
   def search_tx(term) do
     case Chain.string_to_transaction_hash(term) do
       {:ok, tx_hash} ->
