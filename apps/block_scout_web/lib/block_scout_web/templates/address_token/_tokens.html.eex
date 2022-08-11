@@ -27,10 +27,18 @@
     <% end %>
   </td>
   <td class="stakes-td">
-    <%= @token.type  %>
+    <%= @token_balance.token_type  %>
   </td>
   <td class="stakes-td">
-    <%= format_according_to_decimals(@token_balance.value, @token.decimals)  %>
+    <%= if @token_balance.token_type == "ERC-1155" && !is_nil(@token_balance.token_id) do %>
+      <%= @token_balance.value %> <%= token_symbol(@token_balance.token) %>
+    <% end %>
+    <%= if is_nil(@token_balance.token_id) do %>
+      <%= format_according_to_decimals(@token_balance.value, @token.decimals) %> <%= token_symbol(@token_balance.token) %>
+    <% end %>
+    <%= if (@token_balance.token_type == "ERC-721" && !is_nil(@token_balance.token_id)) or @token_balance.token_type == "ERC-1155" do %>
+      <%= " TokenID " <> to_string(@token_balance.token_id) %>
+    <% end %>
   </td>
   <td class="stakes-td">
     <%= @token.symbol %>
