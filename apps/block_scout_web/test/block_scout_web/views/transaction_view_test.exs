@@ -297,7 +297,6 @@ defmodule BlockScoutWeb.TransactionViewTest do
   end
 
   describe "value_transfer/1" do
-    @tag :tx_input_test
     test "base case" do
       transaction =
         insert(:transaction,
@@ -307,38 +306,34 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert true == TransactionView.value_transfer?(transaction)
     end
 
-    @tag :tx_input_test
     test "read input of sample" do
       transaction =
         insert(:transaction,
           input: %Explorer.Chain.Data{bytes: Base.decode16!("9DCA362F")}
         )
 
-      IO.inspect(transaction)
-
       assert false == TransactionView.value_transfer?(transaction)
     end
 
-    @tag :tx_input_test
     test "read input of sample 2" do
       transaction =
         insert(:transaction,
-          input: %Explorer.Chain.Data{bytes: Base.decode16!("BB46942F642BF0733E07C0FBCE6394D870C167A12BF7AEFF8B7E0BFAFF37F99F1FE8869D0000000000000000000000000000000000000000000000000000000000000002")}
+          input: %Explorer.Chain.Data{
+            bytes:
+              Base.decode16!(
+                "BB46942F642BF0733E07C0FBCE6394D870C167A12BF7AEFF8B7E0BFAFF37F99F1FE8869D0000000000000000000000000000000000000000000000000000000000000002"
+              )
+          }
         )
-
-      IO.inspect(transaction)
 
       assert false == TransactionView.value_transfer?(transaction)
     end
 
-    @tag :tx_input_test
     test "test case from GitHub issue" do
       transaction =
         insert(:transaction,
           input: %Explorer.Chain.Data{bytes: Base.decode16!("00")}
         )
-
-      IO.inspect(transaction)
 
       assert true == TransactionView.value_transfer?(transaction)
     end
