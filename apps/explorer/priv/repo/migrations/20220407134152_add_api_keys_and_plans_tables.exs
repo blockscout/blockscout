@@ -28,7 +28,6 @@ defmodule Explorer.Repo.Migrations.AddApiKeysAndPlansTables do
       add(:plan_id, references(:account_api_plans, column: :id), default: 1)
     end
 
-    create(unique_index(:account_api_keys, [:value]))
     create(index(:account_api_keys, [:identity_id]))
   end
 end
