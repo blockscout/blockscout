@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.TransactionView do
     true
   end
 
-  def value_transfer?(_tx) do
+  def value_transfer?(_) do
     false
   end
 
