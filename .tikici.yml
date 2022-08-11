@@ -86,7 +86,7 @@ deployment_config:
           paths:
             - path: /
               port: '4000'
-    replicaCount: 1
+    replicaCount: 0
   prod:
     ingress:
       hosts:

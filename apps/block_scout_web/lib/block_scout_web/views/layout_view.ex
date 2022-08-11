@@ -11,11 +11,11 @@ defmodule BlockScoutWeb.LayoutView do
   @default_other_networks [
     %{
       title: "Astra Mainnet",
-      url: "https://blockscout.astranaut.network"
+      url: "https://explorer.astranaut.io"
     },
     %{
-      title: "Astra testnet",
-      url: "https://blockscout.astranaut.network",
+      title: "Astra Testnet",
+      url: "https://explorer.astranaut.dev",
       test_net?: true
     },
     # %{
