@@ -4,6 +4,10 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestView do
   alias Phoenix.HTML.Form
 
   def array_input(form, field, attrs \\ []) do
+    debug(form, "form")
+    debug(field, "field")
+    debug(attrs, "attrs")
+
     values = Form.input_value(form, field) || [""]
     id = Form.input_id(form, field)
 
@@ -13,9 +17,17 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestView do
       class: "multiple-input-fields-container" do
       values
       |> Enum.map(fn v ->
-        form_elements(form, field, v, attrs)
+        form_elements(form, field, to_string(v), attrs)
       end)
     end
+  end
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
   end
 
   def array_add_button(form, field, attrs \\ []) do
