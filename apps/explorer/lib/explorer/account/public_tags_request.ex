@@ -48,28 +48,17 @@ defmodule Explorer.Account.PublicTagsRequest do
     request |> Map.from_struct() |> Map.drop(waste_fields) |> Map.put(:network, network)
   end
 
-  def join_addresses_array_to_string(%{addresses: addresses} = request) do
-    Map.put(request, :addresses, Enum.join(addresses, ";")) |> debug("1231231231")
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   @attrs ~w(company website description remove_reason request_id)a
   @required_attrs ~w(full_name email tags addresses additional_comment request_type is_owner identity_id)a
 
   def changeset(%__MODULE__{} = public_tags_request, attrs \\ %{}) do
     public_tags_request
-    |> cast(attrs, @attrs ++ @required_attrs)
+    |> cast(trim_empty_addresses(attrs), @attrs ++ @required_attrs)
     |> validate_tags()
     |> validate_required(@required_attrs, message: "Required")
     |> validate_format(:email, ~r/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i, message: "is invalid")
     |> validate_length(:addresses, min: 1, max: @max_addresses_per_request)
+    |> extract_and_validate_addresses()
     |> foreign_key_constraint(:identity_id)
   end
 
@@ -97,32 +86,24 @@ defmodule Explorer.Account.PublicTagsRequest do
     end
   end
 
-  # defp extract_and_validate_addresses(%Changeset{} = changeset) do
-  #   with {:fetch, {_src, addresses}} <- {:fetch, fetch_field(changeset, :addresses_array)},
-  #        false <- is_nil(addresses),
-  #        {:filter_empty, [_ | _] = filtered_addresses} <-
-  #          {:filter_empty, Enum.filter(addresses, fn addr -> addr != "" end)},
-  #        {:validate, false} <-
-  #          {:validate, Enum.any?(filtered_addresses, fn addr -> !match?({:ok, _}, Hash.Address.cast(addr)) end)},
-  #        {:uniqueness, true} <-
-  #          {:uniqueness,
-  #           Enum.count(Enum.uniq_by(filtered_addresses, &String.downcase(&1))) == Enum.count(filtered_addresses)},
-  #        trimmed_address_list <- Enum.take(filtered_addresses, @max_addresses_per_request) do
-  #     put_change(changeset, :addresses, Enum.join(trimmed_address_list, ";"))
-  #   else
-  #     {:uniqueness, false} ->
-  #       add_error(changeset, :addresses_array, "All addresses should be unique")
+  defp trim_empty_addresses(%{addresses: addresses} = attrs) do
+    filtered_addresses = Enum.filter(addresses, fn addr -> addr != "" end)
+    Map.put(attrs, :addresses, if(filtered_addresses == [], do: [""], else: filtered_addresses))
+  end
 
-  #     {:filter_empty, _} ->
-  #       add_error(changeset, :addresses_array, "All addresses are empty strings")
+  defp extract_and_validate_addresses(%Changeset{} = changeset) do
+    with {:fetch, {_src, addresses}} <- {:fetch, fetch_field(changeset, :addresses)},
+         false <- is_nil(addresses),
+         {:uniqueness, true} <- {:uniqueness, Enum.count(Enum.uniq(addresses)) == Enum.count(addresses)} do
+      changeset
+    else
+      {:uniqueness, false} ->
+        add_error(changeset, :addresses, "All addresses should be unique")
 
-  #     {:validate, _} ->
-  #       add_error(changeset, :addresses_array, "All addresses should be valid")
-
-  #     _ ->
-  #       add_error(changeset, :addresses_array, "No addresses")
-  #   end
-  # end
+      _ ->
+        add_error(changeset, :addresses, "No addresses")
+    end
+  end
 
   defp validate_tags(%Changeset{} = changeset) do
     with {:fetch, {_src, tags}} <- {:fetch, fetch_field(changeset, :tags)},
