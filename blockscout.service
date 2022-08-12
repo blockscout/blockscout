@@ -1,0 +1,18 @@
+[Unit]
+  Description=blockscout
+
+[Service]
+  Restart=always
+  RestartSec=10s
+  WorkingDirectory=/data/blockscout
+  ExecStartPre=
+  EnvironmentFile=-/data/blockscout/common-blockscout-testnet.env
+  ExecStart=/usr/bin/mix phx.server
+  Type=simple
+  User=ubuntu
+  TimeoutStopSec=120
+  LimitNOFILE=65535
+  LimitNPROC=65535
+
+[Install]
+  WantedBy=multi-user.target
