@@ -167,18 +167,18 @@ config :explorer,
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
-  realtime_events_sender:
-    if(disable_webapp != "true",
-      do: Explorer.Chain.Events.SimpleSender,
-      else: Explorer.Chain.Events.DBSender
-    )
+  realtime_events_sender: Explorer.Chain.Events.DBSender
 
-config :explorer, Explorer.Chain.Events.Listener,
-  enabled:
-    if(disable_webapp == "true" && disable_indexer == "true",
-      do: false,
-      else: true
-    )
+# if(disable_webapp != "true",
+#  do: Explorer.Chain.Events.SimpleSender,
+#  else: Explorer.Chain.Events.DBSender
+# )
+
+config :explorer, Explorer.Chain.Events.Listener, enabled: true
+# if(disable_webapp == "true" && disable_indexer == "true",
+#  do: false,
+#  else: true
+# )
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
@@ -362,6 +362,7 @@ coin_balance_on_demand_fetcher_threshold =
 config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on_demand_fetcher_threshold
 
 config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
+
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"
 
