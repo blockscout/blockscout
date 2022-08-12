@@ -2452,7 +2452,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/transaction/overview.html.eex:322
 #, elixir-autogen, elixir-format
-msgid "Value sent in the native token (and USD) if applicable."
+msgid "Value sent in the native token (and VND) if applicable."
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract/index.html.eex:82

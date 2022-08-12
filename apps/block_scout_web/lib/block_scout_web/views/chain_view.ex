@@ -28,13 +28,13 @@ defmodule BlockScoutWeb.ChainView do
 
   def format_usd_value(value) do
     if Decimal.is_decimal(value) do
-      "#{format_currency_value(Decimal.to_float(value))} USD"
+      "#{format_currency_value(Decimal.to_float(value))} ₫"
     else
-      "#{format_currency_value(value)} USD"
+      "#{format_currency_value(value)} ₫"
     end
   end
 
-  def format_currency_value(value, symbol \\ "$")
+  def format_currency_value(value, symbol \\ "₫")
 
   def format_currency_value(nil, _symbol), do: ""
 
