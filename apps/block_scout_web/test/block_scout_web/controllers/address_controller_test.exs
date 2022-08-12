@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
 
       conn = get(conn, "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
 
-      assert redirected_to(conn) =~ "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed/transactions"
+      assert html_response(conn, 200)
     end
   end
 
@@ -85,7 +85,13 @@ defmodule BlockScoutWeb.AddressControllerTest do
       assert conn.status == 200
       {:ok, response} = Jason.decode(conn.resp_body)
 
-      assert %{"transaction_count" => 0, "validation_count" => 0, "gas_usage_count" => 0} == response
+      assert %{
+               "transaction_count" => 0,
+               "token_transfer_count" => 0,
+               "validation_count" => 0,
+               "gas_usage_count" => 0
+             } ==
+               response
     end
   end
 end

@@ -1,5 +1,5 @@
 function getTokenIconUrl (chainID, addressHash) {
-  var chainName = null
+  let chainName = null
   switch (chainID) {
     case '1':
       chainName = 'ethereum'
@@ -21,21 +21,17 @@ function getTokenIconUrl (chainID, addressHash) {
   }
 }
 
-function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons, size) {
+function appendTokenIcon ($tokenIconContainer, chainID, addressHash, displayTokenIcons, size) {
   const iconSize = size || 20
-  var tokenIconURL = null
-  if (foreignChainID) {
-    tokenIconURL = getTokenIconUrl(foreignChainID.toString(), foreignAddressHash)
-  } else if (chainID) {
-    tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
-  }
+  const tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
   if (displayTokenIcons) {
     checkLink(tokenIconURL)
       .then(checkTokenIconLink => {
         if (checkTokenIconLink) {
           if ($tokenIconContainer) {
-            var img = new Image(iconSize, iconSize)
+            const img = new Image(iconSize, iconSize)
             img.src = tokenIconURL
+            img.className = 'mr-1'
             $tokenIconContainer.append(img)
           }
         }

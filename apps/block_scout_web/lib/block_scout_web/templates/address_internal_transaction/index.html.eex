@@ -6,7 +6,7 @@
   <section data-page="address-internal-transactions">
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
-      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
         <div data-selector="channel-batching-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-info">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More internal transactions have come in" %></a>

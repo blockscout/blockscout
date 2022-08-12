@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
     ratio = Chain.indexed_ratio()
 
     finished? =
-      case Decimal.cmp(ratio, 1) do
+      case Decimal.compare(ratio, 1) do
         :lt -> false
         _ -> Chain.finished_indexing?()
       end

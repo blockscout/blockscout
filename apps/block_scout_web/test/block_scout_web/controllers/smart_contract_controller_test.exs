@@ -241,6 +241,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
           Address.checksum(smart_contract.address_hash),
           function_name: "get",
           method_id: "6d4ce63c",
+          args_count: 0,
           args: []
         )
 

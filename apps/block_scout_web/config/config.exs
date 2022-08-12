@@ -1,64 +1,23 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
+# and its dependencies with the aid of the Config module.
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-use Mix.Config
+import Config
 
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo],
-  version: System.get_env("BLOCKSCOUT_VERSION"),
-  release_link: System.get_env("RELEASE_LINK"),
-  decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
-  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true),
-  checksum_address_hashes: if(System.get_env("CHECKSUM_ADDRESS_HASHES", "true") == "false", do: false, else: true)
-
-config :block_scout_web, BlockScoutWeb.Chain,
-  network: System.get_env("NETWORK"),
-  subnetwork: System.get_env("SUBNETWORK"),
-  network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO"),
-  logo_footer: System.get_env("LOGO_FOOTER"),
-  logo_text: System.get_env("LOGO_TEXT") || 'ASTRA',
-  has_emission_funds: false,
-  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
-  staking_enabled_in_menu: System.get_env("ENABLE_POS_STAKING_IN_MENU", "false") == "true",
-  show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
-  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
-  # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
-  staking_pool_list_refresh_interval: 5
+  ecto_repos: [Explorer.Repo]
 
 config :block_scout_web,
-  link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
-  other_explorers: System.get_env("OTHER_EXPLORERS"),
-  other_networks: System.get_env("SUPPORTED_CHAINS"),
-  webapp_url: System.get_env("WEBAPP_URL"),
-  api_url: System.get_env("API_URL"),
-  apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
-  external_apps: System.get_env("EXTERNAL_APPS"),
-  eth_omni_bridge_mediator: System.get_env("ETH_OMNI_BRIDGE_MEDIATOR"),
-  bsc_omni_bridge_mediator: System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"),
-  amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
-  foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
-  gas_price: System.get_env("GAS_PRICE", nil),
-  restricted_list: System.get_env("RESTRICTED_LIST", nil),
-  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
-  dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
-  dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
-  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
-  test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN"),
-  max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50")),
-  max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040")
+  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   url: [
-    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
-    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
     path: System.get_env("NETWORK_PATH") || "/",
     api_path: System.get_env("API_PATH") || "/"
   ],
@@ -79,31 +38,9 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
 
-# Configures History
-price_chart_config =
-  if System.get_env("SHOW_PRICE_CHART", "true") != "false" do
-    %{market: [:price, :market_cap]}
-  else
-    %{}
-  end
-
-tx_chart_config =
-  if System.get_env("SHOW_TXS_CHART", "false") == "true" do
-    %{transactions: [:transactions_per_day]}
-  else
-    %{}
-  end
-
-config :block_scout_web,
-  chart_config: Map.merge(price_chart_config, tx_chart_config)
-
 config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
   # days
   history_size: 30
-
-config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
-  # days
-  coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
 
 config :ex_cldr,
   default_locale: "en",
@@ -141,6 +78,9 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
+import_config "#{config_env()}.exs"
