@@ -11,6 +11,9 @@
         <%= if @epoch_transaction.type == "community" do%>
           <%= gettext("Community Fund") %>
         <% end %>
+        <%= if @epoch_transaction.type == "reserve-bolster" do%>
+          <%= gettext("Reserve bolster") %>
+        <% end %>
       </span>
       <span class="tile-status-label ml-2 ml-md-0" data-epoch-transaction-type="Success">Success</span>
     </div>

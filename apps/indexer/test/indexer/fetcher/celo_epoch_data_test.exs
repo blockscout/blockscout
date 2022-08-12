@@ -7,6 +7,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
   import Explorer.Factory
   import Mox
 
+  alias Explorer.Celo.ContractEvents.Common.TransferEvent
   alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
   alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent
   alias Explorer.Chain.{Address, Block, CeloElectionRewards, CeloEpochRewards, CeloPendingEpochOperation, Wei}
@@ -250,6 +251,82 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     end
   end
 
+  describe "get_epoch_rewards with reserve bolster event" do
+    setup [:save_reserve_bolster_events, :setup_epoch_mox]
+
+    test "it fetches data with reserve bolster", %{block: %{number: block_number, hash: block_hash}} do
+      assert CeloEpochDataFetcher.get_epoch_rewards(%{block_number: block_number, block_hash: block_hash}) == %{
+               block_hash: block_hash,
+               block_number: block_number,
+               epoch_rewards: %{
+                 block_hash: block_hash,
+                 block_number: block_number,
+                 carbon_offsetting_target_epoch_rewards: 62_225_632_760_255_012_269,
+                 community_target_epoch_rewards: 15_556_408_190_063_753_067_479,
+                 electable_validators_max: 110,
+                 epoch_number: 10,
+                 gold_total_supply: 600_363_049_982_598_326_620_386_513,
+                 reserve_bolster: 18_173_469_592_702_214_806_939,
+                 reserve_gold_balance: 115_255_226_249_038_379_930_471_272,
+                 rewards_multiplier: 1_000_741_854_737_500_000_000_000,
+                 rewards_multiplier_max: 2_000_000_000_000_000_000_000_000,
+                 rewards_multiplier_over: 5_000_000_000_000_000_000_000_000,
+                 rewards_multiplier_under: 500_000_000_000_000_000_000_000,
+                 stable_usd_total_supply: 5_182_985_086_049_091_467_996_121,
+                 target_total_supply: 601_017_204_041_941_484_863_859_293,
+                 target_voting_fraction: 500_000_000_000_000_000_000_000,
+                 target_voting_yield: 160_000_000_000_000_000_000,
+                 target_voting_yield_adjustment_factor: 0,
+                 target_voting_yield_max: 500_000_000_000_000_000_000,
+                 total_locked_gold: 316_279_462_377_767_975_674_883_803,
+                 total_non_voting: 22_643_903_944_557_354_402_445_358,
+                 total_votes: 293_635_558_433_210_621_272_438_445,
+                 validator_target_epoch_rewards: 205_631_887_959_760_273_971,
+                 voter_target_epoch_rewards: 26_043_810_141_454_976_793_003,
+                 voting_fraction: 410_303_431_329_291_024_629_586
+               }
+             }
+    end
+  end
+
+  describe "get_epoch_rewards without reserve bolster event" do
+    setup [:save_epoch_block, :setup_epoch_mox]
+
+    test "it fetches data without reserve bolster", %{block: %{number: block_number, hash: block_hash}} do
+      assert CeloEpochDataFetcher.get_epoch_rewards(%{block_number: block_number, block_hash: block_hash}) == %{
+               block_hash: block_hash,
+               block_number: block_number,
+               epoch_rewards: %{
+                 block_hash: block_hash,
+                 block_number: block_number,
+                 carbon_offsetting_target_epoch_rewards: 62_225_632_760_255_012_269,
+                 community_target_epoch_rewards: 15_556_408_190_063_753_067_479,
+                 electable_validators_max: 110,
+                 epoch_number: 10,
+                 gold_total_supply: 600_363_049_982_598_326_620_386_513,
+                 reserve_bolster: 0,
+                 reserve_gold_balance: 115_255_226_249_038_379_930_471_272,
+                 rewards_multiplier: 1_000_741_854_737_500_000_000_000,
+                 rewards_multiplier_max: 2_000_000_000_000_000_000_000_000,
+                 rewards_multiplier_over: 5_000_000_000_000_000_000_000_000,
+                 rewards_multiplier_under: 500_000_000_000_000_000_000_000,
+                 stable_usd_total_supply: 5_182_985_086_049_091_467_996_121,
+                 target_total_supply: 601_017_204_041_941_484_863_859_293,
+                 target_voting_fraction: 500_000_000_000_000_000_000_000,
+                 target_voting_yield: 160_000_000_000_000_000_000,
+                 target_voting_yield_adjustment_factor: 0,
+                 target_voting_yield_max: 500_000_000_000_000_000_000,
+                 total_locked_gold: 316_279_462_377_767_975_674_883_803,
+                 total_non_voting: 22_643_903_944_557_354_402_445_358,
+                 total_votes: 293_635_558_433_210_621_272_438_445,
+                 validator_target_epoch_rewards: 205_631_887_959_760_273_971,
+                 voter_target_epoch_rewards: 26_043_810_141_454_976_793_003,
+                 voting_fraction: 410_303_431_329_291_024_629_586
+               }
+             }
+    end
+  end
+
   describe "import_items/1" do
     test "saves rewards" do
       %Address{hash: voter_hash} = insert(:address)
@@ -287,7 +364,8 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
           total_votes: 293_635_558_433_210_621_272_438_445,
           validator_target_epoch_rewards: 205_631_887_959_760_273_971,
           voter_target_epoch_rewards: 26_043_810_141_454_976_793_003,
-          voting_fraction: 410_303_431_329_291_024_629_586
+          voting_fraction: 410_303_431_329_291_024_629_586,
+          reserve_bolster: 123_456_789
         },
         voter_rewards: [
           %{
@@ -434,6 +512,52 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       group_hash: group_hash,
       validator_1_hash: validator_1_hash,
       validator_2_hash: validator_2_hash
+    })
+  end
+
+  def save_reserve_bolster_events(context) do
+    gold_token_address = "0x471ece3750da237f93b8e339c536989b8978a438"
+    reserve_address = "0x9380fa34fd9e4fd14c06305fd7b6199089ed4eb9"
+
+    insert(
+      :core_contract,
+      address_hash: gold_token_address,
+      name: "GoldToken"
+    )
+
+    insert(
+      :core_contract,
+      address_hash: reserve_address,
+      name: "Reserve"
+    )
+
+    block = insert(:block, number: 172_800)
+    log = insert(:log, block: block)
+
+    insert(:celo_pending_epoch_operations, block_number: block.number)
+
+    insert(:contract_event, %{
+      event: %TransferEvent{
+        __block_number: block.number,
+        __contract_address_hash: gold_token_address,
+        __log_index: log.index,
+        value: 18_173_469_592_702_214_806_939,
+        from: "0x0000000000000000000000000000000000000000",
+        to: reserve_address
+      }
+    })
+
+    Map.merge(context, %{
+      block: block
+    })
+  end
+
+  def save_epoch_block(context) do
+    block = insert(:block, number: 172_800)
+    insert(:celo_pending_epoch_operations, block_number: block.number)
+
+    Map.merge(context, %{
+      block: block
     })
   end
 

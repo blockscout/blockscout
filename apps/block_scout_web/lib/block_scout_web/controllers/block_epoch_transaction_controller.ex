@@ -13,6 +13,9 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
   alias Explorer.Chain.{CeloElectionRewards, CeloEpochRewards, Wei}
   alias Phoenix.View
 
+  alias Explorer.Celo.ContractEvents.Common.TransferEvent
+  alias Explorer.Celo.CoreContracts
+
   # The community fund address never changes, so it's ok to hard-code it.
   @community_fund_address "0xD533Ca259b330c7A88f74E000a3FaEa2d63B7972"
 
@@ -79,10 +82,10 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
           {:ok, carbon_fund_address_hash} = string_to_address_hash(address_string)
           {:ok, carbon_fund_address} = hash_to_address(carbon_fund_address_hash)
           carbon_fund_address
-
-        :error ->
-          :error
       end
+
+    {:ok, reserve_address_hash} = string_to_address_hash(CoreContracts.contract_address("Reserve"))
+    {:ok, reserve_address} = hash_to_address(reserve_address_hash)
 
     {:ok, community_fund_address_hash} = string_to_address_hash(@community_fund_address)
     {:ok, community_fund_address} = hash_to_address(community_fund_address_hash)
@@ -117,6 +120,30 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
         epoch_transaction: community_epoch_transaction
       )
 
+    items = [community_transaction_json, carbon_transaction_json]
+
+    items_with_rewards_bolster =
+      if Decimal.cmp(epoch_rewards.reserve_bolster.value, 0) == :gt do
+        reserve_bolster_epoch_transaction = %{
+          address: reserve_address,
+          amount: get_reserve_bolster_amount(epoch_rewards),
+          block_number: block.number,
+          date: block.timestamp,
+          type: "reserve-bolster"
+        }
+
+        reserve_bolster_transaction_json =
+          View.render_to_string(
+            EpochTransactionView,
+            "_epoch_tile.html",
+            epoch_transaction: reserve_bolster_epoch_transaction
+          )
+
+        [reserve_bolster_transaction_json | items]
+      else
+        items
+      end
+
     epoch_transactions_json =
       Enum.map(epoch_transactions, fn epoch_transaction ->
         View.render_to_string(
@@ -126,7 +153,7 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
         )
       end)
 
-    [community_transaction_json, carbon_transaction_json] ++ epoch_transactions_json
+    items_with_rewards_bolster ++ epoch_transactions_json
   end
 
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
@@ -215,5 +242,12 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
   defp get_community_fund_amount(epoch_rewards) do
     {:ok, zero_wei} = Wei.cast(0)
     epoch_rewards.community_target_epoch_rewards || zero_wei
+  end
+
+  defp get_reserve_bolster_amount(nil), do: nil
+
+  defp get_reserve_bolster_amount(epoch_rewards) do
+    {:ok, zero_wei} = Wei.cast(0)
+    epoch_rewards.reserve_bolster || zero_wei
   end
 end

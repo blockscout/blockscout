@@ -12,7 +12,8 @@ defmodule Explorer.Chain.CeloEpochRewards do
       from: 2
     ]
 
-  alias Explorer.Chain.{Block, Hash, Wei}
+  alias Explorer.Celo.ContractEvents.EventMap
+  alias Explorer.Chain.{Block, CeloContractEvent, CeloCoreContract, Hash, Wei}
   alias Explorer.Repo
 
   @typedoc """
@@ -43,10 +44,11 @@ defmodule Explorer.Chain.CeloEpochRewards do
           electable_validators_max: non_neg_integer(),
           reserve_gold_balance: Wei.t(),
           gold_total_supply: Wei.t(),
-          stable_usd_total_supply: Wei.t()
+          stable_usd_total_supply: Wei.t(),
+          reserve_bolster: Wei.t()
         }
 
-  @attrs ~w( block_hash block_number epoch_number validator_target_epoch_rewards voter_target_epoch_rewards community_target_epoch_rewards carbon_offsetting_target_epoch_rewards target_total_supply rewards_multiplier rewards_multiplier_max rewards_multiplier_under rewards_multiplier_over target_voting_yield target_voting_yield_max target_voting_yield_adjustment_factor target_voting_fraction voting_fraction total_locked_gold total_non_voting total_votes electable_validators_max reserve_gold_balance gold_total_supply stable_usd_total_supply )a
+  @attrs ~w( block_hash block_number epoch_number validator_target_epoch_rewards voter_target_epoch_rewards community_target_epoch_rewards carbon_offsetting_target_epoch_rewards target_total_supply rewards_multiplier rewards_multiplier_max rewards_multiplier_under rewards_multiplier_over target_voting_yield target_voting_yield_max target_voting_yield_adjustment_factor target_voting_fraction voting_fraction total_locked_gold total_non_voting total_votes electable_validators_max reserve_gold_balance gold_total_supply stable_usd_total_supply reserve_bolster)a
 
   @required_attrs ~w( block_hash )a
 
@@ -74,6 +76,7 @@ defmodule Explorer.Chain.CeloEpochRewards do
     field(:reserve_gold_balance, Wei)
     field(:gold_total_supply, Wei)
     field(:stable_usd_total_supply, Wei)
+    field(:reserve_bolster, Wei)
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
@@ -94,5 +97,31 @@ defmodule Explorer.Chain.CeloEpochRewards do
 
   def get_celo_epoch_rewards_for_block(block_number) do
     Repo.one(from(rewards in __MODULE__, where: rewards.block_number == ^block_number))
+  end
+
+  def reserve_bolster_value(epoch_block_number) do
+    query =
+      from(
+        cce in CeloContractEvent,
+        join: ccc_to in CeloCoreContract,
+        on: fragment("?::bytea = cast(?->>'to' AS bytea)", ccc_to.address_hash, cce.params),
+        join: celo_token in CeloCoreContract,
+        on: celo_token.address_hash == cce.contract_address_hash,
+        where: cce.name == "Transfer",
+        where: ccc_to.name == "Reserve",
+        where: celo_token.name == "GoldToken",
+        where: fragment("?->>'from' = '\\x0000000000000000000000000000000000000000'", cce.params),
+        where: cce.block_number == ^epoch_block_number
+      )
+
+    event = Repo.one(query)
+
+    if is_nil(event) do
+      0
+    else
+      transfer_event = EventMap.celo_contract_event_to_concrete_event(event)
+
+      transfer_event.value
+    end
   end
 end
