@@ -40,6 +40,8 @@ ARG SUBNETWORK
 ARG COIN_NAME
 ARG COIN
 
+ENV BLOCKSCOUT_VERSION=$(date)
+
 # Cache elixir deps
 ADD mix.exs mix.lock ./
 ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
