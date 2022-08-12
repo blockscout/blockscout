@@ -91,6 +91,8 @@ defmodule Explorer.Account.PublicTagsRequest do
     Map.put(attrs, :addresses, if(filtered_addresses == [], do: [""], else: filtered_addresses))
   end
 
+  defp trim_empty_addresses(attrs), do: attrs
+
   defp extract_and_validate_addresses(%Changeset{} = changeset) do
     with {:fetch, {_src, addresses}} <- {:fetch, fetch_field(changeset, :addresses)},
          false <- is_nil(addresses),
