@@ -1179,6 +1179,7 @@ defmodule Explorer.Chain do
       select: %{
         address_hash: token.contract_address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
+        cosmos_hash: ^nil,
         block_hash: fragment("CAST(NULL AS bytea)"),
         foreign_token_hash: bridged.foreign_token_contract_address_hash,
         foreign_chain_id: bridged.foreign_chain_id,
@@ -1200,6 +1201,7 @@ defmodule Explorer.Chain do
       select: %{
         address_hash: smart_contract.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
+        cosmos_hash: ^nil,
         block_hash: fragment("CAST(NULL AS bytea)"),
         foreign_token_hash: fragment("CAST(NULL AS bytea)"),
         foreign_chain_id: ^nil,
@@ -1223,6 +1225,7 @@ defmodule Explorer.Chain do
           select: %{
             address_hash: address.hash,
             tx_hash: fragment("CAST(NULL AS bytea)"),
+            cosmos_hash: ^nil,
             block_hash: fragment("CAST(NULL AS bytea)"),
             foreign_token_hash: fragment("CAST(NULL AS bytea)"),
             foreign_chain_id: ^nil,
@@ -1245,9 +1248,11 @@ defmodule Explorer.Chain do
       {:ok, tx_hash} ->
         from(transaction in Transaction,
           where: transaction.hash == ^tx_hash,
+          or_where: transaction.cosmos_hash == ^tx_hash,
           select: %{
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: transaction.hash,
+            cosmos_hash: transaction.cosmos_hash,
             block_hash: fragment("CAST(NULL AS bytea)"),
             foreign_token_hash: fragment("CAST(NULL AS bytea)"),
             foreign_chain_id: ^nil,
@@ -1273,6 +1278,7 @@ defmodule Explorer.Chain do
           select: %{
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: fragment("CAST(NULL AS bytea)"),
+            cosmos_hash: ^nil,
             block_hash: block.hash,
             foreign_token_hash: fragment("CAST(NULL AS bytea)"),
             foreign_chain_id: ^nil,
@@ -1293,6 +1299,7 @@ defmodule Explorer.Chain do
               select: %{
                 address_hash: fragment("CAST(NULL AS bytea)"),
                 tx_hash: fragment("CAST(NULL AS bytea)"),
+                cosmos_hash: ^nil,
                 block_hash: block.hash,
                 foreign_token_hash: fragment("CAST(NULL AS bytea)"),
                 foreign_chain_id: ^nil,
