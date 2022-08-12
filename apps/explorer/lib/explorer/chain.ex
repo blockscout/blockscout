@@ -1244,11 +1244,34 @@ defmodule Explorer.Chain do
   end
 
   defp search_tx_query(term) do
-    case Chain.string_to_transaction_hash(term) do
-      {:ok, tx_hash} ->
+    cond do
+      is_eth_tx(term) == true ->
+        case Chain.string_to_transaction_hash(term) do
+          {:ok, tx_hash} ->
+            from(transaction in Transaction,
+              where: transaction.hash == ^tx_hash,
+              select: %{
+                address_hash: fragment("CAST(NULL AS bytea)"),
+                tx_hash: transaction.hash,
+                cosmos_hash: transaction.cosmos_hash,
+                block_hash: fragment("CAST(NULL AS bytea)"),
+                foreign_token_hash: fragment("CAST(NULL AS bytea)"),
+                foreign_chain_id: ^nil,
+                type: "transaction",
+                name: ^nil,
+                symbol: ^nil,
+                holder_count: ^nil,
+                inserted_at: transaction.inserted_at,
+                block_number: 0
+              }
+            )
+
+          _ ->
+            nil
+        end
+      is_cosmos_tx(term) == true ->
         from(transaction in Transaction,
-          where: transaction.hash == ^tx_hash,
-          or_where: transaction.cosmos_hash == ^tx_hash,
+          where: transaction.cosmos_hash == ^term,
           select: %{
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: transaction.hash,
@@ -1264,9 +1287,6 @@ defmodule Explorer.Chain do
             block_number: 0
           }
         )
-
-      _ ->
-        nil
     end
   end
 
@@ -1441,20 +1461,33 @@ defmodule Explorer.Chain do
   end
 
   def search_tx(term) do
-    case Chain.string_to_transaction_hash(term) do
-      {:ok, tx_hash} ->
+    cond do
+      is_eth_tx(term) == true ->
+        case Chain.string_to_transaction_hash(term) do
+          {:ok, tx_hash} ->
+            query =
+              from(transaction in Transaction,
+                where: transaction.hash == ^tx_hash,
+                select: %{
+                  link: transaction.hash,
+                  type: "transaction"
+                }
+              )
+            Repo.all(query)
+
+          _ ->
+            []
+        end
+      is_cosmos_tx(term) == true ->
         query =
           from(transaction in Transaction,
-            where: transaction.hash == ^tx_hash,
+            where: transaction.cosmos_hash == ^term,
             select: %{
               link: transaction.hash,
               type: "transaction"
             }
           )
         Repo.all(query)
-
-      _ ->
-        []
     end
   end
 
@@ -3340,9 +3373,32 @@ defmodule Explorer.Chain do
       :error
 
   """
-  @spec string_to_transaction_hash(String.t()) :: {:ok, Hash.t()} | :error
   def string_to_transaction_hash(string) when is_binary(string) do
-    Hash.Full.cast(string)
+    case is_eth_tx(string) do
+      true ->
+        Hash.Full.cast(string)
+      false ->
+        case is_cosmos_tx(string) do
+          true ->
+            %{ok: string}
+          false ->
+            :error
+        end
+    end
+  end
+
+  @spec is_eth_tx(String.t()) :: true | false
+  defp is_eth_tx(string) do
+    String.starts_with?(string, "0x")
+  end
+
+  @spec is_cosmos_tx(String.t()) :: true | false
+  defp is_cosmos_tx(string) do
+    if String.length(string) == 64 and String.match?(string, ~r/^[A-Z0-9]/) == true do
+      true
+    else
+      false
+    end
   end
 
   @doc """
