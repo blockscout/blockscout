@@ -36,7 +36,7 @@ defmodule Explorer.Counters.AverageBlockTimeDurationFormat do
       "1.1 minutes"
   """
   @spec format(Duration.t()) :: String.t() | {:error, term}
-  def format(%Duration{} = duration), do: lformat(duration, Translator.default_locale())
+  def format(%Duration{} = duration), do: lformat(duration, Translator.current_locale())
   def format(_), do: {:error, :invalid_duration}
 
   @doc """
