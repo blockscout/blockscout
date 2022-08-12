@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
   #     |> insert()
   #     |> with_block(block)
 
-  #     assert Decimal.cmp(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
+  #     assert Decimal.compare(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
 
   #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
 
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
   #     |> insert()
   #     |> with_block(block)
 
-  #     assert Decimal.cmp(Explorer.Chain.indexed_ratio(), 1) == :eq
+  #     assert Decimal.compare(Explorer.Chain.indexed_ratio(), 1) == :eq
 
   #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
 
@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     BlocksIndexedCounter.calculate_blocks_indexed()
 
-  #     assert Decimal.cmp(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
+  #     assert Decimal.compare(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
 
   #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
 
@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     BlocksIndexedCounter.calculate_blocks_indexed()
 
-  #     assert Decimal.cmp(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.9)) == :eq
+  #     assert Decimal.compare(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.9)) == :eq
 
   #     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
 
@@ -125,7 +125,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     BlocksIndexedCounter.calculate_blocks_indexed()
 
-  #     assert Decimal.cmp(Explorer.Chain.indexed_ratio(), 1) == :eq
+  #     assert Decimal.compare(Explorer.Chain.indexed_ratio(), 1) == :eq
 
   #     session
   #     |> AppPage.visit_page()

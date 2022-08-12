@@ -41,7 +41,7 @@ function getTextAdData () {
               const ind = getRandomInt(0, customAds.length)
               const inHouse = true
               adjustPaddingForTextAd(displayAd, true)
-              resolve({ data: customAds[ind], inHouse: inHouse })
+              resolve({ data: customAds[ind], inHouse })
             } catch (_e) {
               adjustPaddingForTextAd(displayAd, false)
               resolve({ data: null, inHouse: null })
@@ -53,7 +53,7 @@ function getTextAdData () {
         } else {
           const inHouse = false
           adjustPaddingForTextAd(displayAd, true)
-          resolve({ data: data, inHouse: inHouse })
+          resolve({ data, inHouse })
         }
       })
     } else {

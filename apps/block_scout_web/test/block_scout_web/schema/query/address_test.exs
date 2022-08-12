@@ -326,6 +326,68 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
       assert Enum.all?(transactions, &(&1["node"]["block_number"] == third_block.number))
     end
 
+    test "transactions are ordered by ascending block and index", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      query = """
+      query ($hash: AddressHash!, $first: Int!) {
+        address(hash: $hash) {
+          transactions(first: $first, order: ASC) {
+            edges {
+              node {
+                hash
+                block_number
+                index
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables = %{
+        "hash" => to_string(address.hash),
+        "first" => 3
+      }
+
+      conn = post(conn, "/graphql", query: query, variables: variables)
+
+      %{
+        "data" => %{
+          "address" => %{
+            "transactions" => %{
+              "edges" => transactions
+            }
+          }
+        }
+      } = json_response(conn, 200)
+
+      block_number_and_index_order =
+        Enum.map(transactions, fn transaction ->
+          {transaction["node"]["block_number"], transaction["node"]["index"]}
+        end)
+
+      assert block_number_and_index_order == Enum.sort(block_number_and_index_order, &(&1 < &2))
+      assert length(transactions) == 3
+      assert Enum.all?(transactions, &(&1["node"]["block_number"] == first_block.number))
+    end
+
     test "complexity correlates to 'first' or 'last' arguments", %{conn: conn} do
       address = build(:address)
 

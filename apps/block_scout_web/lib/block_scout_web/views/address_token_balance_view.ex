@@ -1,7 +1,9 @@
 defmodule BlockScoutWeb.AddressTokenBalanceView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.AccessHelpers
   alias Explorer.Chain
+  alias Explorer.Chain.Address
   alias Explorer.Counters.AddressTokenUsdSum
 
   def tokens_count_title(token_balances) do
@@ -27,12 +29,12 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
   """
   def sort_by_usd_value_and_name(token_balances) do
     token_balances
-    |> Enum.sort(fn {token_balance1, _}, {token_balance2, _} ->
+    |> Enum.sort(fn {token_balance1, token1}, {token_balance2, token2} ->
       usd_value1 = token_balance1.token.usd_value
       usd_value2 = token_balance2.token.usd_value
 
-      token_name1 = token_balance1.token.name
-      token_name2 = token_balance2.token.name
+      token_name1 = token1.name
+      token_name2 = token2.name
 
       sort_by_name = sort_2_tokens_by_name(token_name1, token_name2)
 
@@ -58,7 +60,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
 
   defp sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
        when not is_nil(usd_value1) and not is_nil(usd_value2) do
-    case Decimal.cmp(Chain.balance_in_usd(token_balance1), Chain.balance_in_usd(token_balance2)) do
+    case Decimal.compare(Chain.balance_in_usd(token_balance1), Chain.balance_in_usd(token_balance2)) do
       :gt ->
         true
 

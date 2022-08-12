@@ -3,6 +3,9 @@ defmodule Explorer.SmartContract.Helper do
   SmartContract helper functions
   """
 
+  alias Explorer.Chain
+  alias Phoenix.HTML
+
   def queriable_method?(method) do
     method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"
   end
@@ -35,5 +38,47 @@ defmodule Explorer.SmartContract.Helper do
     else
       false
     end
+  end
+
+  def add_contract_code_md5(%{address_hash: address_hash_string} = attrs) when is_binary(address_hash_string) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      contract_code_md5 = contract_code_md5(address.contract_code.bytes)
+
+      attrs
+      |> Map.put_new(:contract_code_md5, contract_code_md5)
+    else
+      _ -> attrs
+    end
+  end
+
+  def add_contract_code_md5(%{address_hash: address_hash} = attrs) do
+    case Chain.hash_to_address(address_hash) do
+      {:ok, address} ->
+        contract_code_md5 = contract_code_md5(address.contract_code.bytes)
+
+        attrs
+        |> Map.put_new(:contract_code_md5, contract_code_md5)
+
+      _ ->
+        attrs
+    end
+  end
+
+  def add_contract_code_md5(attrs), do: attrs
+
+  def contract_code_md5(bytes) do
+    :md5
+    |> :crypto.hash(bytes)
+    |> Base.encode16(case: :lower)
+  end
+
+  def sanitize_input(nil), do: nil
+
+  def sanitize_input(input) do
+    input
+    |> HTML.html_escape()
+    |> HTML.safe_to_string()
+    |> String.trim()
   end
 end

@@ -1,18 +1,18 @@
-defmodule Explorer.SmartContract.Publisher do
+defmodule Explorer.SmartContract.Solidity.Publisher do
   @moduledoc """
   Module responsible to control the contract verification.
   """
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.Solidity.CompilerVersion
-  alias Explorer.SmartContract.Verifier
+  alias Explorer.SmartContract.{CompilerVersion, Helper}
+  alias Explorer.SmartContract.Solidity.Verifier
 
   @doc """
   Evaluates smart contract authenticity and saves its details.
 
   ## Examples
-      Explorer.SmartContract.Publisher.publish(
+      Explorer.SmartContract.Solidity.Publisher.publish(
         "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
         %{
           "compiler_version" => "0.4.24",
@@ -42,6 +42,34 @@ defmodule Explorer.SmartContract.Publisher do
 
       {:error, error, error_message} ->
         {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error, error_message)}
+
+      _ ->
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, "Unexpected error", nil)}
+    end
+  end
+
+  def publish_with_standard_json_input(%{"address_hash" => address_hash} = params, json_input) do
+    case Verifier.evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
+      {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
+        params_with_constructor_arguments =
+          params
+          |> Map.put("constructor_arguments", constructor_arguments)
+          |> Map.merge(additional_params)
+
+        publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
+
+      {:ok, %{abi: abi}, additional_params} ->
+        merged_params = Map.merge(params, additional_params)
+        publish_smart_contract(address_hash, merged_params, abi)
+
+      {:error, error} ->
+        {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
+
+      {:error, error, error_message} ->
+        {:error, unverified_smart_contract(address_hash, params, error, error_message, true)}
+
+      _ ->
+        {:error, unverified_smart_contract(address_hash, params, "Failed to verify", nil, true)}
     end
   end
 
@@ -65,15 +93,19 @@ defmodule Explorer.SmartContract.Publisher do
     end
   end
 
-  defp unverified_smart_contract(address_hash, params, error, error_message) do
-    attrs = attributes(address_hash, params)
+  defp unverified_smart_contract(address_hash, params, error, error_message, json_verification \\ false) do
+    attrs =
+      address_hash
+      |> attributes(params)
+      |> Helper.add_contract_code_md5()
 
     changeset =
       SmartContract.invalid_contract_changeset(
         %SmartContract{address_hash: address_hash},
         attrs,
         error,
-        error_message
+        error_message,
+        json_verification
       )
 
     %{changeset | action: :insert}
@@ -95,11 +127,12 @@ defmodule Explorer.SmartContract.Publisher do
 
     prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
 
-    compiler_version = CompilerVersion.get_strict_compiler_version(params["compiler_version"])
+    compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
 
     %{
       address_hash: address_hash,
       name: params["name"],
+      file_path: params["file_path"],
       compiler_version: compiler_version,
       evm_version: params["evm_version"],
       optimization_runs: params["optimization_runs"],
@@ -110,7 +143,9 @@ defmodule Explorer.SmartContract.Publisher do
       secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: params["verified_via_sourcify"],
-      partially_verified: params["partially_verified"]
+      partially_verified: params["partially_verified"],
+      is_vyper_contract: false,
+      autodetect_constructor_args: params["autodetect_constructor_args"]
     }
   end
 

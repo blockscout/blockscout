@@ -147,7 +147,7 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
 
       result = OverviewView.total_supply_usd(token)
 
-      assert Decimal.cmp(result, Decimal.new(200)) == :eq
+      assert Decimal.compare(result, Decimal.new(200)) == :eq
     end
 
     test "takes decimals into account" do
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
 
       result = OverviewView.total_supply_usd(token)
 
-      assert Decimal.cmp(result, Decimal.new(20)) == :eq
+      assert Decimal.compare(result, Decimal.new(20)) == :eq
     end
   end
 end

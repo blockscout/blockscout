@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Application do
 
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.{RealtimeEventHandler, StakingEventHandler}
+  alias BlockScoutWeb.RealtimeEventHandler
 
   def start(_type, _args) do
     import Supervisor
@@ -22,11 +22,10 @@ defmodule BlockScoutWeb.Application do
       child_spec(Endpoint, []),
       {Absinthe.Subscription, Endpoint},
       {RealtimeEventHandler, name: RealtimeEventHandler},
-      {StakingEventHandler, name: StakingEventHandler},
       {BlocksIndexedCounter, name: BlocksIndexedCounter}
     ]
 
-    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor]
+    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
     Supervisor.start_link(children, opts)
   end
 
