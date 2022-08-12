@@ -88,13 +88,17 @@ defmodule Explorer.Counters.AverageBlockTimeDurationFormat do
     truncated = trunc(decimal_value)
 
     # remove any trailing `.0`
-    formatted_value =
-      if decimal_value == truncated do
-        truncated
-      else
-        Float.round(decimal_value, 1)
-      end
+    if decimal_value == truncated do
+      Translator.translate_plural(locale, "units", "%{count} #{singular}", "%{count} #{singular}s", truncated)
+    else
+      value =
+        decimal_value
+        |> Float.round(1)
+        |> :erlang.float_to_binary(decimals: 1)
 
-    Translator.translate_plural(locale, "units", "%{count} #{singular}", "%{count} #{singular}s", formatted_value)
+      locale
+      |> Translator.translate_plural("units", "%{count} #{singular}", "%{count} #{singular}s", 5)
+      |> String.replace("5", value)
+    end
   end
 end
