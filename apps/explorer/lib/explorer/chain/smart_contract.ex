@@ -449,8 +449,8 @@ defmodule Explorer.Chain.SmartContract do
         %__MODULE__{is_vyper_contract: true} = twin_contract,
         %Changeset{} = changeset
       ) do
-    twin_contract
-    |> changeset(%{})
+    %__MODULE__{}
+    |> changeset(Map.from_struct(twin_contract))
     |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
   end
 
