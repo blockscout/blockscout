@@ -62,7 +62,7 @@ RUN if [ "$COIN" != "" ]; then \
     fi
 
 # Run forderground build and phoenix digest
-RUN mix deps.get, compile && npm install npm@latest
+RUN mix compile && npm install npm@latest
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
