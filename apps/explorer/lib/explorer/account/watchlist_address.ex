@@ -72,6 +72,7 @@ defmodule Explorer.Account.WatchlistAddress do
       when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
     __MODULE__
     |> where([wl_address], wl_address.watchlist_id == ^watchlist_id and wl_address.id == ^watchlist_address_id)
+    |> order_by([wl_address], desc: wl_address.id)
   end
 
   def watchlist_address_by_id_and_watchlist_id_query(_, _), do: nil
