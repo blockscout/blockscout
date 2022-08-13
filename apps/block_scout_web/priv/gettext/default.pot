@@ -3124,7 +3124,7 @@ msgstr ""
 msgid "true"
 msgstr ""
 
-#, elixir-format
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:24
+#, elixir-autogen, elixir-format
 msgid "Please select what types of notifications you will receive:"
 msgstr ""
