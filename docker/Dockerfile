@@ -10,7 +10,7 @@ ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     MIX_ENV="prod" \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5" \
     PATH="$HOME/.cargo/bin:${PATH}" \
-    RUSTFLAGS="-C target-feature=-crt-static" \
+    RUSTFLAGS="-C target-feature=-crt-static"
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -78,6 +78,8 @@ RUN mix phx.digest
 RUN mkdir -p /opt/release \
   && mix release blockscout \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
+
+ENTRYPOINT ["/bin/bash", "-c", "mix do ecto.create, ecto.migrate; mix phx.server"]
 
 ##############################################################
 FROM bitwalker/alpine-elixir-phoenix:1.13
