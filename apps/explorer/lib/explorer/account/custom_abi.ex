@@ -148,6 +148,7 @@ defmodule Explorer.Account.CustomABI do
   def custom_abis_by_identity_id_query(id) when not is_nil(id) do
     __MODULE__
     |> where([abi], abi.identity_id == ^id)
+    |> order_by([abi], desc: abi.id)
   end
 
   def custom_abis_by_identity_id_query(_), do: nil

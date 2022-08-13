@@ -139,7 +139,7 @@ defmodule Explorer.Account.PublicTagsRequest do
       [request],
       request.identity_id == ^id and request.request_type != "delete" and not is_nil(request.request_id)
     )
-    |> order_by([request], request.id)
+    |> order_by([request], desc: request.id)
   end
 
   def public_tags_requests_by_identity_id_query(_), do: nil

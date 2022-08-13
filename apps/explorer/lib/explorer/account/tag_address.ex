@@ -56,6 +56,7 @@ defmodule Explorer.Account.TagAddress do
   def tags_address_by_identity_id_query(id) when not is_nil(id) do
     __MODULE__
     |> where([tag], tag.identity_id == ^id)
+    |> order_by([tag], desc: tag.id)
   end
 
   def tags_address_by_identity_id_query(_), do: nil

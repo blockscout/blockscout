@@ -65,6 +65,7 @@ defmodule Explorer.Account.Api.Key do
   def api_keys_by_identity_id_query(id) when not is_nil(id) do
     __MODULE__
     |> where([api_key], api_key.identity_id == ^id)
+    |> order_by([api_key], desc: api_key.inserted_at)
   end
 
   def api_keys_by_identity_id_query(_), do: nil
