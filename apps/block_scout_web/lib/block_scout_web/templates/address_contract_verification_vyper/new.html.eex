@@ -56,5 +56,4 @@
         </div>
       <% end %>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
 </section>
