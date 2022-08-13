@@ -10,7 +10,8 @@ ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     MIX_ENV="prod" \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5" \
     PATH="$HOME/.cargo/bin:${PATH}" \
-    RUSTFLAGS="-C target-feature=-crt-static"
+    RUSTFLAGS="-C target-feature=-crt-static" \
+    BLOCKSCOUT_VERSION=$(date "+%Y-%m-%d")
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
@@ -40,8 +41,6 @@ ARG SUBNETWORK
 ARG COIN_NAME
 ARG COIN
 
-ENV BLOCKSCOUT_VERSION=$(date)
-
 # Cache elixir deps
 ADD mix.exs mix.lock ./
 ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
@@ -64,7 +63,7 @@ RUN if [ "$COIN" != "" ]; then \
     fi
 
 # Run forderground build and phoenix digest
-RUN mix compile && npm install npm@latest
+RUN mix deps.get, compile && npm install npm@latest
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
