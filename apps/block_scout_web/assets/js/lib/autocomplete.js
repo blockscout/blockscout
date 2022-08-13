@@ -52,11 +52,12 @@ const searchEngine = (query, record) => {
       (record.symbol && record.symbol.toLowerCase().includes(query.toLowerCase())) ||
       (record.address_hash && record.address_hash.toLowerCase().includes(query.toLowerCase())) ||
       (record.tx_hash && record.tx_hash.toLowerCase().includes(query.toLowerCase())) ||
+      (record.cosmos_hash && record.cosmos_hash.toLowerCase().includes(query.toLowerCase())) ||
       (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
   )
   ) {
     var searchResult = '<div>'
-    searchResult += `<div>${record.address_hash || record.tx_hash || record.block_hash}</div>`
+    searchResult += `<div>${record.address_hash || record.tx_hash || record.cosmos_hash || record.block_hash}</div>`
 
     if (record.type === 'label') {
       searchResult += `<div class="fontawesome-icon tag"></div><span> <b>${record.name}</b></span>`

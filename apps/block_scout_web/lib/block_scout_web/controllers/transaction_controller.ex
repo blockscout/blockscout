@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.TransactionController do
   alias Explorer.Chain
   alias Phoenix.View
 
+  require Logger
+
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
 
@@ -66,7 +68,8 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def show(conn, %{"id" => id}) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
+    with :false <- Chain.is_cosmos_tx(id),
+         {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         redirect(conn, to: AccessHelpers.get_path(conn, :transaction_token_transfer_path, :index, id))
@@ -79,6 +82,19 @@ defmodule BlockScoutWeb.TransactionController do
 
       :not_found ->
         set_not_found_view(conn, id)
+
+      :true ->
+        tx_hash = Chain.search_tx_hash_by_cosmos_hash(id)
+        if (tx_hash != nil) do
+          tx_hash_string = Chain.Hash.to_string(tx_hash)
+          if Chain.transaction_has_token_transfers?(tx_hash) do
+            redirect(conn, to: AccessHelpers.get_path(conn, :transaction_token_transfer_path, :index, tx_hash_string))
+          else
+            redirect(conn, to: AccessHelpers.get_path(conn, :transaction_internal_transaction_path, :index, tx_hash_string))
+          end
+        else
+          set_not_found_view(conn, id)
+        end
     end
   end
 

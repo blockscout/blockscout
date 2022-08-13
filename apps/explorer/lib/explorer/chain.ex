@@ -1179,7 +1179,7 @@ defmodule Explorer.Chain do
       select: %{
         address_hash: token.contract_address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
-        cosmos_hash: ^nil,
+        cosmos_hash: fragment("NULL"),
         block_hash: fragment("CAST(NULL AS bytea)"),
         foreign_token_hash: bridged.foreign_token_contract_address_hash,
         foreign_chain_id: bridged.foreign_chain_id,
@@ -1201,7 +1201,7 @@ defmodule Explorer.Chain do
       select: %{
         address_hash: smart_contract.address_hash,
         tx_hash: fragment("CAST(NULL AS bytea)"),
-        cosmos_hash: ^nil,
+        cosmos_hash: fragment("NULL"),
         block_hash: fragment("CAST(NULL AS bytea)"),
         foreign_token_hash: fragment("CAST(NULL AS bytea)"),
         foreign_chain_id: ^nil,
@@ -1225,7 +1225,7 @@ defmodule Explorer.Chain do
           select: %{
             address_hash: address.hash,
             tx_hash: fragment("CAST(NULL AS bytea)"),
-            cosmos_hash: ^nil,
+            cosmos_hash: fragment("NULL"),
             block_hash: fragment("CAST(NULL AS bytea)"),
             foreign_token_hash: fragment("CAST(NULL AS bytea)"),
             foreign_chain_id: ^nil,
@@ -1298,7 +1298,7 @@ defmodule Explorer.Chain do
           select: %{
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: fragment("CAST(NULL AS bytea)"),
-            cosmos_hash: ^nil,
+            cosmos_hash: fragment("NULL"),
             block_hash: block.hash,
             foreign_token_hash: fragment("CAST(NULL AS bytea)"),
             foreign_chain_id: ^nil,
@@ -1319,7 +1319,7 @@ defmodule Explorer.Chain do
               select: %{
                 address_hash: fragment("CAST(NULL AS bytea)"),
                 tx_hash: fragment("CAST(NULL AS bytea)"),
-                cosmos_hash: ^nil,
+                cosmos_hash: fragment("NULL"),
                 block_hash: block.hash,
                 foreign_token_hash: fragment("CAST(NULL AS bytea)"),
                 foreign_chain_id: ^nil,
@@ -1457,6 +1457,20 @@ defmodule Explorer.Chain do
 
       _ ->
         []
+    end
+  end
+
+  @spec search_tx_hash_by_cosmos_hash(String.t()) :: Hash.Transaction.t() | nil
+  def search_tx_hash_by_cosmos_hash(cosmos_hash) do
+    if is_cosmos_tx(cosmos_hash) == true do
+      query =
+        from(transaction in Transaction,
+          where: transaction.cosmos_hash == ^cosmos_hash,
+          select: transaction.hash
+        )
+      Repo.one(query)
+    else
+      nil
     end
   end
 
@@ -3388,12 +3402,12 @@ defmodule Explorer.Chain do
   end
 
   @spec is_eth_tx(String.t()) :: true | false
-  defp is_eth_tx(string) do
+  def is_eth_tx(string) do
     String.starts_with?(string, "0x")
   end
 
   @spec is_cosmos_tx(String.t()) :: true | false
-  defp is_cosmos_tx(string) do
+  def is_cosmos_tx(string) do
     if String.length(string) == 64 and String.match?(string, ~r/^[A-Z0-9]/) == true do
       true
     else

@@ -755,16 +755,6 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Builds an `Ecto.Query` to fetch transaction with cosmos hash
-  """
-  def transaction_with_cosmos_hash(cosmos_hash) do
-    from(
-      t in Transaction,
-      where: t.cosmos_hash == ^cosmos_hash
-    )
-  end
-
-  @doc """
   Builds an `Ecto.Query` to fetch the last nonce from the given address hash.
 
   The last nonce value means the total of transactions that the given address has sent through the
