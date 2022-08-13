@@ -11,7 +11,6 @@ ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5" \
     PATH="$HOME/.cargo/bin:${PATH}" \
     RUSTFLAGS="-C target-feature=-crt-static" \
-    BLOCKSCOUT_VERSION=$(date "+%Y-%m-%d")
 
 RUN set -ex && \
     apk --update add libstdc++ curl ca-certificates && \
