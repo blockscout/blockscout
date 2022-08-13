@@ -61,7 +61,7 @@ defmodule Explorer.Mixfile do
       {:benchee, "~> 0.99.0", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 1.0.0", only: :test},
-      {:bypass, "~> 1.0", only: :test},
+      {:bypass, "~> 2.1", only: :test},
       {:briefly, "~> 0.4", github: "CargoSense/briefly"},
       {:comeonin, "~> 4.0"},
       {:credo, "~> 1.5", only: :test, runtime: false},
