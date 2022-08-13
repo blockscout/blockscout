@@ -65,7 +65,7 @@ defmodule EthereumJsonrpc.MixProject do
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 1.6"},
       # Decode/Encode JSON for JSONRPC
-      {:jason, "~> 1.2.2"},
+      {:jason, "~> 1.3"},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
