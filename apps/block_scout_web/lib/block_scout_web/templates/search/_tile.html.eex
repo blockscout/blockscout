@@ -82,6 +82,10 @@
             <%= render BlockScoutWeb.TransactionView,
             "_link.html",
             transaction_hash: "0x" <> Base.encode16(@result.tx_hash, case: :lower) %>
+        <% "transaction_cosmos" -> %>
+            <%= render BlockScoutWeb.TransactionView,
+            "_link.html",
+            transaction_hash: @result.cosmos_hash %>
         <% "block" -> %>
             <%= link(
                 "0x" <> Base.encode16(@result.block_hash, case: :lower),

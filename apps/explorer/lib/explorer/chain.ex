@@ -1279,7 +1279,7 @@ defmodule Explorer.Chain do
             block_hash: fragment("CAST(NULL AS bytea)"),
             foreign_token_hash: fragment("CAST(NULL AS bytea)"),
             foreign_chain_id: ^nil,
-            type: "transaction",
+            type: "transaction_cosmos",
             name: ^nil,
             symbol: ^nil,
             holder_count: ^nil,
@@ -1287,6 +1287,8 @@ defmodule Explorer.Chain do
             block_number: 0
           }
         )
+      true ->
+        nil
     end
   end
 
@@ -1497,8 +1499,8 @@ defmodule Explorer.Chain do
           from(transaction in Transaction,
             where: transaction.cosmos_hash == ^term,
             select: %{
-              link: transaction.hash,
-              type: "transaction"
+              link: transaction.cosmos_hash,
+              type: "transaction_cosmos"
             }
           )
         Repo.all(query)

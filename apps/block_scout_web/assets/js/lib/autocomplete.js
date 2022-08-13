@@ -51,8 +51,8 @@ const searchEngine = (query, record) => {
     (record.name && record.name.toLowerCase().includes(query.toLowerCase())) ||
       (record.symbol && record.symbol.toLowerCase().includes(query.toLowerCase())) ||
       (record.address_hash && record.address_hash.toLowerCase().includes(query.toLowerCase())) ||
+      (record.cosmos_hash && record.cosmos_hash.includes(query)) ||
       (record.tx_hash && record.tx_hash.toLowerCase().includes(query.toLowerCase())) ||
-      (record.cosmos_hash && record.cosmos_hash.toLowerCase().includes(query.toLowerCase())) ||
       (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
   )
   ) {
@@ -151,6 +151,8 @@ const selection = (event) => {
     window.location = `/tokens/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'transaction') {
     window.location = `/tx/${selectionValue.tx_hash}`
+  } else if (selectionValue.type === 'transaction_cosmos') {
+    window.location = `/tx/${selectionValue.cosmos_hash}`  
   } else if (selectionValue.type === 'block') {
     window.location = `/blocks/${selectionValue.block_hash}`
   }
