@@ -12,7 +12,9 @@ defmodule Explorer.Account.PublicTagsRequest do
 
   import Ecto.Changeset
 
-  @max_public_tags_request_per_account 10
+  @distance_between_same_addresses 24 * 3600
+
+  @max_public_tags_request_per_account 15
   @max_addresses_per_request 10
   @max_tags_per_request 2
   @max_tag_length 35
@@ -62,6 +64,7 @@ defmodule Explorer.Account.PublicTagsRequest do
     |> extract_and_validate_addresses()
     |> foreign_key_constraint(:identity_id)
     |> public_tags_request_count_constraint()
+    |> public_tags_request_time_interval_uniqueness()
   end
 
   def changeset_without_constraints(%__MODULE__{} = public_tags_request \\ %__MODULE__{}, attrs \\ %{}) do
@@ -108,6 +111,33 @@ defmodule Explorer.Account.PublicTagsRequest do
   end
 
   def public_tags_request_count_constraint(changeset), do: changeset
+
+  defp public_tags_request_time_interval_uniqueness(%Changeset{changes: %{addresses: addresses}} = request) do
+    public_tags_request =
+      request
+      |> fetch_field!(:identity_id)
+      |> public_tags_requests_by_identity_id_query()
+      |> where(
+        [public_tags_request],
+        fragment("? && ?", public_tags_request.addresses, ^Enum.map(addresses, fn x -> x.bytes end))
+      )
+      |> limit(1)
+      |> Repo.one()
+
+    now = DateTime.utc_now()
+
+    if !is_nil(public_tags_request) &&
+         public_tags_request.inserted_at
+         |> DateTime.add(@distance_between_same_addresses, :second)
+         |> DateTime.compare(now) == :gt |> debug("compare") do
+      request
+      |> add_error(:addresses, "You have already submitted the same public tag address in the last 24 hours")
+    else
+      request
+    end
+  end
+
+  defp public_tags_request_time_interval_uniqueness(changeset), do: changeset
 
   defp extract_and_validate_addresses(%Changeset{} = changeset) do
     with {:fetch, {_src, addresses}} <- {:fetch, fetch_field(changeset, :addresses)},
