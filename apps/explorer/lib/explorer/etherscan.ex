@@ -21,8 +21,6 @@ defmodule Explorer.Etherscan do
     end_timestamp: nil
   }
 
-  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
-
   @doc """
   Returns the maximum allowed page size number.
 

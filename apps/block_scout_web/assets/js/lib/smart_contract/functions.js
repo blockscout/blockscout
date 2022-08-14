@@ -48,6 +48,30 @@ const loadFunctions = (element) => {
     })
 }
 
+function showConnectedToElements ($connect, $connectTo, $connectedTo, account) {
+  $connectTo.addClass('hidden')
+  $connect.removeClass('hidden')
+  $connectedTo.removeClass('hidden')
+  setConnectToAddress(account)
+}
+
+function setConnectToAddress (account) {
+  const $connectedToAddress = $('[connected-to-address]')
+  $connectedToAddress.html(`<a href='/address/${account}'>${account}</a>`)
+}
+
+function showConnectElements ($connect, $connectTo, $connectedTo) {
+  $connectTo.removeClass('hidden')
+  $connect.removeClass('hidden')
+  $connectedTo.addClass('hidden')
+}
+
+function hideConnectButton ($connect, $connectTo, $connectedTo) {
+  $connectTo.removeClass('hidden')
+  $connect.addClass('hidden')
+  $connectedTo.addClass('hidden')
+}
+
 const readWriteFunction = (element) => {
   const $element = $(element)
   const $form = $element.find('[data-function-form]')

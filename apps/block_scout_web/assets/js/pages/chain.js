@@ -52,7 +52,6 @@ function baseReducer (state = initialState, action) {
         if (state.blocks.length < BLOCKS_PER_PAGE) {
           pastBlocks = state.blocks
         } else {
-          $('.miner-address-tooltip').tooltip('hide')
           pastBlocks = state.blocks.slice(0, -1)
         }
         return Object.assign({}, state, {
