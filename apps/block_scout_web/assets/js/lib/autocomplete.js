@@ -57,12 +57,10 @@ const searchEngine = (query, record) => {
   )
   ) {
     var searchResult = '<div>'
-    searchResult += `<div>${record.address_hash || record.block_hash}</div>`
+    searchResult += `<div>${record.address_hash || record.block_hash || record.tx_hash}</div>`
+
     if (record.type === 'transaction_cosmos') {
-      searchResult += `<div>${record.cosmos_hash}</div>`
-    }
-    if (record.type === 'transaction') {
-      searchResult += `<div>${record.tx_hash}</div>`
+      searchResult = `<div>${record.cosmos_hash}</div>`
     }
 
     if (record.type === 'label') {
