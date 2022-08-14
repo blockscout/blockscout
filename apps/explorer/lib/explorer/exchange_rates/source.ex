@@ -2,17 +2,19 @@ defmodule Explorer.ExchangeRates.Source do
   @moduledoc """
   Behaviour for fetching exchange rates from external sources.
   """
-  alias Explorer.ExchangeRates.Source.CoinGecko
+  alias Explorer.ExchangeRates.Source.{CoinGecko, TikiExchange}
   alias Explorer.ExchangeRates.Token
   alias HTTPoison.{Error, Response}
+
+  require Logger
 
   @doc """
   Fetches exchange rates for currencies/tokens.
   """
   @spec fetch_exchange_rates(module) :: {:ok, [Token.t()]} | {:error, any}
-  def fetch_exchange_rates(source \\ exchange_rates_source()) do
-    source_url = source.source_url()
-    fetch_exchange_rates_request(source, source_url, source.headers())
+  def fetch_exchange_rates(_source \\ exchange_rates_source()) do
+    source_url = TikiExchange.source_url()
+    fetch_exchange_rates_request(TikiExchange, source_url, TikiExchange.headers())
   end
 
   @spec fetch_exchange_rates_for_token(String.t()) :: {:ok, [Token.t()]} | {:error, any}

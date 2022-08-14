@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
              end)
     end
 
-    test "includes VND exchange rate value for address in assigns", %{conn: conn} do
+    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       address = insert(:address)
 
       conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)))

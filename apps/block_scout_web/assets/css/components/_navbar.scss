@@ -253,8 +253,12 @@ $navbar-logo-width: 100% !default;
   margin-left: 5px;
   line-height: 28px;
 
-  &.footer {
+  &.in-footer {
     color: #fff;
+  }
+
+  &.no-logo {
+    margin-left: 0px;
   }
 }
 

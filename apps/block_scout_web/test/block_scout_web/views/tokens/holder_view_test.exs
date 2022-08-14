@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Tokens.HolderViewTest do
       token = build(:token, type: "ERC-721")
       token_balance = build(:token_balance, value: 1)
 
-      assert HolderView.format_token_balance_value(token_balance.value, token) == 1
+      assert HolderView.format_token_balance_value(token_balance.value, nil, token) == 1
     end
   end
 end

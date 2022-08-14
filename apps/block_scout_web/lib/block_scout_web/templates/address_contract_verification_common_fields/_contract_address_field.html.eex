@@ -1,0 +1,10 @@
+<div class="smart-contract-form-group">
+    <div class="smart-contract-form-group-inner-wrapper">
+    <%= label @f, :address_hash, gettext("Contract Address") %>
+    <div class="center-column">
+        <%= text_input @f, :address_hash, class: "form-control border-rounded", id: "smart_contract_address_hash", "aria-describedby": "contract-address-help-block", readonly: true %>
+        <%= error_tag @f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
+    </div>
+    <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
+    </div>
+</div>

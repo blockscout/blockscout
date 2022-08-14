@@ -1,0 +1,5 @@
+<div data-selector="channel-disconnected-message" style="display: none;">
+  <div data-selector="reload-button" class="alert alert-danger" style="padding: 0.75rem 0rem; cursor: pointer;">
+    <span href="#" class="alert alert-danger"><%= @text %></span>
+  </div>
+</div>

@@ -2257,7 +2257,8 @@ defmodule Explorer.Chain.ImportTest do
                        address_hash: address_hash,
                        token_contract_address_hash: token_contract_address_hash,
                        block_number: block_number,
-                       value: value_after
+                       value: value_after,
+                       token_type: "ERC-20"
                      }
                    ]
                  },
