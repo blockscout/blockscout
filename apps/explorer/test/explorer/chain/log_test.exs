@@ -1,6 +1,8 @@
 defmodule Explorer.Chain.LogTest do
   use Explorer.DataCase
 
+  import Mox
+
   alias Ecto.Changeset
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
@@ -73,7 +75,8 @@ defmodule Explorer.Chain.LogTest do
             "type" => "event"
           }
         ],
-        address_hash: to_address.hash
+        address_hash: to_address.hash,
+        contract_code_md5: "123"
       )
 
       topic1_bytes = ExKeccak.hash_256("WantsPets(string,uint256,bool)")
@@ -98,6 +101,10 @@ defmodule Explorer.Chain.LogTest do
           fourth_topic: nil,
           data: data
         )
+
+      blockchain_get_code_mock()
+
+      get_eip1967_implementation()
 
       assert Log.decode(log, transaction) ==
                {:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",

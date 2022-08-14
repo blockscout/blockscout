@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, ExchangeRates}
+  alias Explorer.{Chain, Etherscan, ExchangeRates}
   alias Explorer.Chain.Cache.{AddressSum, AddressSumMinusBurnt}
   alias Explorer.Chain.Wei
 
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
   def totalfees(conn, params) do
     case Map.fetch(params, "date") do
       {:ok, date} ->
-        case Chain.get_total_fees_per_day(date) do
+        case Etherscan.get_total_fees_per_day(date) do
           {:ok, total_fees} -> render(conn, "totalfees.json", total_fees: total_fees)
           {:error, error} -> render(conn, :error, error: error)
         end

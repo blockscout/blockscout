@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.Chain
-
   alias Explorer.Chain.Transaction
 
   def gettxinfo(conn, params) do
@@ -13,16 +12,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
          {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
            transaction_from_hash(transaction_hash),
          paging_options <- paging_options(params) do
-      logs = Chain.transaction_to_logs(transaction_hash, paging_options)
+      from_api = true
+      logs = Chain.transaction_to_logs(transaction_hash, from_api, paging_options)
       {logs, next_page} = split_list_by_page(logs)
 
       transaction_updated =
-        if error == "Reverted" do
-          if revert_reason == nil do
-            %Transaction{transaction | revert_reason: Chain.fetch_tx_revert_reason(transaction)}
-          else
-            transaction
-          end
+        if (error == "Reverted" || error == "execution reverted") && !revert_reason do
+          %Transaction{transaction | revert_reason: Chain.fetch_tx_revert_reason(transaction)}
         else
           transaction
         end

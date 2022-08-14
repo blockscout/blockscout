@@ -39,7 +39,7 @@ defmodule Explorer.ExchangeRates.Source do
           result_formatted =
             result
             |> source.format_data()
-            
+
           {:ok, result_formatted}
         else
           resp

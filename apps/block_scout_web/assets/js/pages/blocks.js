@@ -1,10 +1,10 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
-import last from 'lodash/last'
-import min from 'lodash/min'
-import max from 'lodash/max'
-import keys from 'lodash/keys'
-import rangeRight from 'lodash/rangeRight'
+import omit from 'lodash.omit'
+import last from 'lodash.last'
+import min from 'lodash.min'
+import max from 'lodash.max'
+import keys from 'lodash.keys'
+import rangeRight from 'lodash.rangeright'
 import humps from 'humps'
 import socket from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
@@ -47,7 +47,7 @@ function baseReducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   }
 }
@@ -83,6 +83,10 @@ const $blockListPage = $('[data-page="block-list"]')
 const $uncleListPage = $('[data-page="uncle-list"]')
 const $reorgListPage = $('[data-page="reorg-list"]')
 if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const blockType = $blockListPage.length ? 'block' : $uncleListPage.length ? 'uncle' : 'reorg'
 
   const store = createAsyncLoadStore(

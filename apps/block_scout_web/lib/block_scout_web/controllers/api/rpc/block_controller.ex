@@ -25,11 +25,13 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
   end
 
   def getblocknobytime(conn, params) do
+    from_api = true
+
     with {:timestamp_param, {:ok, unsafe_timestamp}} <- {:timestamp_param, Map.fetch(params, "timestamp")},
          {:closest_param, {:ok, unsafe_closest}} <- {:closest_param, Map.fetch(params, "closest")},
          {:ok, timestamp} <- ChainWeb.param_to_block_timestamp(unsafe_timestamp),
          {:ok, closest} <- ChainWeb.param_to_block_closest(unsafe_closest),
-         {:ok, block_number} <- Chain.timestamp_to_block_number(timestamp, closest) do
+         {:ok, block_number} <- Chain.timestamp_to_block_number(timestamp, closest, from_api) do
       render(conn, block_number: block_number)
     else
       {:timestamp_param, :error} ->

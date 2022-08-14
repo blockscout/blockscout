@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import omit from 'lodash.omit'
 import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
@@ -89,7 +89,7 @@ export function reducer (state, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
   '[data-test="filter_dropdown"]': {
@@ -118,6 +118,10 @@ const elements = {
 }
 
 if ($('[data-page="address-transactions"]').length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
@@ -168,7 +172,7 @@ if ($('[data-page="address-transactions"]').length) {
 }
 
 function loadTransactions (store) {
-  const path = $('[class="card-body"]')[1].dataset.asyncListing
+  const path = $('[class="card-body"]')[0].dataset.asyncListing
   store.dispatch({ type: 'START_TRANSACTIONS_FETCH' })
   $.getJSON(path, { type: 'JSON' })
     .done(response => store.dispatch({ type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response) }))

@@ -1,4 +1,4 @@
-defmodule Explorer.SmartContract.PublisherWorker do
+defmodule Explorer.SmartContract.Vyper.PublisherWorker do
   @moduledoc """
   Background smart contract verification worker.
   """
@@ -6,11 +6,11 @@ defmodule Explorer.SmartContract.PublisherWorker do
   use Que.Worker, concurrency: 5
 
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
-  alias Explorer.SmartContract.Publisher
+  alias Explorer.SmartContract.Vyper.Publisher
 
-  def perform({address_hash, params, external_libraries, conn}) do
+  def perform({address_hash, params, conn}) do
     result =
-      case Publisher.publish(address_hash, params, external_libraries) do
+      case Publisher.publish(address_hash, params) do
         {:ok, _contract} = result ->
           result
 

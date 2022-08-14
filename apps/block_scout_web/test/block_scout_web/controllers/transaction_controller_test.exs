@@ -91,7 +91,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
       conn = get(conn, transaction_path(conn, :index, %{"type" => "JSON"}))
 
-      assert conn |> json_response(200) |> Map.get("next_page_path")
+      assert conn |> json_response(200) |> Map.get("next_page_params")
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

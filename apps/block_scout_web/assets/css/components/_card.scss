@@ -285,7 +285,6 @@ $card-tab-icon-color-active: #fff !default;
 
 .connect-container {
   display: flex;
-  height: 36px;
   line-height: 36px;
 }
 
@@ -293,7 +292,6 @@ $card-tab-icon-color-active: #fff !default;
   padding: 6px 8px !important;
   height: 31px !important;
   font-size: 11px;
-  margin-left: 20px;
 }
 
 .contract-plus-btn-container {
@@ -324,4 +322,8 @@ $card-tab-icon-color-active: #fff !default;
   @media (min-width: 992px) {
     float: right;
   }
+}
+
+.function-output {
+  margin-left: -1rem;
 }

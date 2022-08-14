@@ -29,8 +29,7 @@ $navbar-logo-width: 100% !default;
       align-items: center;
       color: $header-links-color;
       display: flex;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 14px;
       position: relative;
       transition: $transition-cont;
 
@@ -280,7 +279,7 @@ $navbar-logo-width: 100% !default;
 }
 
 .navbar-container, .navbar-primary {
-  @include media-breakpoint-up(xl) {
+  @media (min-width: 992px) {
     padding-right: 0;
   }
 }

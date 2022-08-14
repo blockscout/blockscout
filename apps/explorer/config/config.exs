@@ -8,21 +8,7 @@ import Config
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
-  coin: "ASA",
-  coingecko_coin_id: System.get_env("COINGECKO_COIN_ID"),
-  token_functions_reader_max_retries: 3,
-  allowed_evm_versions:
-    System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,default",
-  include_uncles_in_average_block_time:
-    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
-  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
-  realtime_events_sender:
-    if(System.get_env("DISABLE_WEBAPP") != "true",
-      do: Explorer.Chain.Events.SimpleSender,
-      else: Explorer.Chain.Events.DBSender
-    ),
-  enabled_1559_support: System.get_env("ENABLE_1559_SUPPORT") == "true"
+  token_functions_reader_max_retries: 3
 
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,

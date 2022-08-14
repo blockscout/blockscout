@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import omit from 'lodash.omit'
 import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../../socket'
@@ -49,7 +49,7 @@ export function reducer (state, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
   '[data-test="filter_dropdown"]': {
@@ -70,6 +70,10 @@ const elements = {
 }
 
 if ($('[data-page="address-token-transfers"]').length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))

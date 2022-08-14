@@ -28,9 +28,9 @@ defmodule BlockScoutWeb.ChainView do
 
   def format_usd_value(value) do
     if Decimal.is_decimal(value) do
-      "#{format_currency_value(Decimal.to_float(value))} ₫"
+      "#{format_currency_value(Decimal.to_float(value))} VND"
     else
-      "#{format_currency_value(value)} ₫"
+      "#{format_currency_value(value)} VND"
     end
   end
 

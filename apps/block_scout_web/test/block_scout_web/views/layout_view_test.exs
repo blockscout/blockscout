@@ -14,14 +14,14 @@ defmodule BlockScoutWeb.LayoutViewTest do
   end
 
   describe "logo/0" do
-    test "use the enviroment logo when it's configured" do
+    test "use the environment logo when it's configured" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, logo: "custom/logo.png")
 
       assert LayoutView.logo() == "custom/logo.png"
     end
 
-    test "use the default logo when there is no env configured for it" do
-      assert LayoutView.logo() == "/images/blockscout_logo.svg"
+    test "logo is nil when there is no env configured for it" do
+      assert LayoutView.logo() == nil
     end
   end
 
