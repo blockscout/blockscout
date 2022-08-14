@@ -1464,7 +1464,7 @@ defmodule Explorer.Chain do
             tx_hash: transaction.hash,
             cosmos_hash: transaction.cosmos_hash,
             block_hash: fragment("CAST(NULL AS bytea)"),
-            type: "transaction",
+            type: "transaction_cosmos",
             name: ^nil,
             symbol: ^nil,
             holder_count: ^nil,
