@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.Account.TagTransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.Account.TagTransactionView
+  alias Explorer.Account.TagTransaction
 end

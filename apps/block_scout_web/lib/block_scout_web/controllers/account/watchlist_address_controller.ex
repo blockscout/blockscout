@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
     redirect(conn, to: watchlist_path(conn, :show))
   end
 
-  defp empty_watchlist_address, do: WatchlistAddress.changeset(%WatchlistAddress{}, %{})
+  defp empty_watchlist_address, do: WatchlistAddress.changeset()
 
   defp params_to_attributes(
          %{

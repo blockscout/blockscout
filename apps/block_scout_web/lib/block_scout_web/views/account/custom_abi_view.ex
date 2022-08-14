@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Account.CustomABIView do
   use BlockScoutWeb, :view
 
   alias Ecto.Changeset
+  alias Explorer.Account.CustomABI
 
   def format_abi(custom_abi) do
     with {_type, abi} <- Changeset.fetch_field(custom_abi, :abi),

@@ -213,4 +213,6 @@ defmodule Explorer.Account.CustomABI do
         {:error, %{reason: :item_not_found}}
     end
   end
+
+  def get_max_custom_abis_count, do: @max_abis_per_account
 end

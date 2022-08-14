@@ -1,4 +1,3 @@
-<% max_api_key_count = 3 %>
 <section class="container">
   <div class="row">
     <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :api_keys %>
@@ -7,7 +6,7 @@
         <div class="card-body">
           <h1 class="card-title list-title-description header-account"><%= gettext "API keys" %> </h1>
           <br>
-          <%= if Enum.count(@api_keys) < max_api_key_count do %>
+          <%= if Enum.count(@api_keys) < Key.get_max_api_keys_count() do %>
             <div style="min-width: 100%;">
               <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
                 <%= gettext "Create an API key to use with your RPC и EthRPC API requests." %> <a href="https://docs.blockscout.com/for-users/api"> <%= gettext "Learn more" %></a>
@@ -41,7 +40,7 @@
               <% end %>
             </div>
           </div>
-          <%= if Enum.count(@api_keys) < max_api_key_count do %>
+          <%= if Enum.count(@api_keys) < Key.get_max_api_keys_count() do %>
             <a class="button button-primary button-sm" href="<%= api_key_path(@conn, :new) %>"><%= gettext "Add API key" %></a>
           <% end %>
         </div>

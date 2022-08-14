@@ -12,6 +12,8 @@ defmodule Explorer.Account.TagAddress do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
 
+  @max_tag_address_per_account 15
+
   schema "account_tag_addresses" do
     field(:name, :string)
     belongs_to(:identity, Identity)
@@ -27,6 +29,11 @@ defmodule Explorer.Account.TagAddress do
 
   @attrs ~w(name identity_id address_hash)a
 
+  def changeset do
+    %__MODULE__{}
+    |> cast(%{}, @attrs)
+  end
+
   @doc false
   def changeset(tag, attrs) do
     tag
@@ -36,6 +43,7 @@ defmodule Explorer.Account.TagAddress do
     |> unique_constraint([:identity_id, :address_hash], message: "Address tag already exists")
     |> check_existance_or_create_address()
     |> foreign_key_constraint(:address_hash, message: "")
+    |> tag_address_count_constraint()
   end
 
   def create(attrs) do
@@ -52,6 +60,20 @@ defmodule Explorer.Account.TagAddress do
   end
 
   defp check_existance_or_create_address(changeset), do: changeset
+
+  def tag_address_count_constraint(%Changeset{changes: %{identity_id: identity_id}} = tag_address) do
+    if identity_id
+       |> tags_address_by_identity_id_query()
+       |> limit(@max_tag_address_per_account)
+       |> Repo.aggregate(:count, :id) >= @max_tag_address_per_account do
+      tag_address
+      |> add_error(:name, "Max #{@max_tag_address_per_account} tags per account")
+    else
+      tag_address
+    end
+  end
+
+  def tag_address_count_constraint(changeset), do: changeset
 
   def tags_address_by_identity_id_query(id) when not is_nil(id) do
     __MODULE__
@@ -120,4 +142,6 @@ defmodule Explorer.Account.TagAddress do
         {:error, %{reason: :item_not_found}}
     end
   end
+
+  def get_max_tags_count, do: @max_tag_address_per_account
 end

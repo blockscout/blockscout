@@ -24,6 +24,6 @@
     </span>
   </td>
   <td>
-    <%= link("Edit", to: watchlist_address_path(@conn, :edit, @watchlist_address.id)) %>
+    <%= link(gettext("Edit"), to: watchlist_address_path(@conn, :edit, @watchlist_address.id)) %>
   </td>
 </tr>

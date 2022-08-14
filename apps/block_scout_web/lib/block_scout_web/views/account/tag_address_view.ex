@@ -3,5 +3,5 @@ defmodule BlockScoutWeb.Account.TagAddressView do
 
   import BlockScoutWeb.AddressView, only: [trimmed_hash: 1]
 
-  alias BlockScoutWeb.Account.TagAddressView
+  alias Explorer.Account.TagAddress
 end

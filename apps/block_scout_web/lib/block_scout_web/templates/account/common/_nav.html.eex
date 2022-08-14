@@ -4,7 +4,7 @@
       <a class="<%= nav_class(@active_item, :profile) %>" aria-current="page" href="<%= auth_path(@conn, :profile) %>"><%= gettext "Profile" %></a>
     </li>
     <li class="nav-item account">
-      <a class="<%= nav_class(@active_item, :watchlist) %>" href="<%= watchlist_path(@conn, :show) %>"><%= gettext "Watchlist" %></a>
+      <a class="<%= nav_class(@active_item, :watchlist) %>" href="<%= watchlist_path(@conn, :show) %>"><%= gettext "Watch list" %></a>
     </li>
     <li class="nav-item account">
       <a class="<%= nav_class(@active_item, :address_tags) %>" href="<%= tag_address_path(@conn, :index) %>"><%= gettext "Address Tags" %></a>

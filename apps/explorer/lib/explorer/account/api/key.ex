@@ -124,4 +124,6 @@ defmodule Explorer.Account.Api.Key do
   end
 
   def api_key_with_plan_by_value(_), do: nil
+
+  def get_max_api_keys_count, do: @max_key_per_account
 end
