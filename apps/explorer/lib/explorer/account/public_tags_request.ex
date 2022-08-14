@@ -129,7 +129,7 @@ defmodule Explorer.Account.PublicTagsRequest do
     if !is_nil(public_tags_request) &&
          public_tags_request.inserted_at
          |> DateTime.add(@distance_between_same_addresses, :second)
-         |> DateTime.compare(now) == :gt |> debug("compare") do
+         |> DateTime.compare(now) == :gt do
       request
       |> add_error(:addresses, "You have already submitted the same public tag address in the last 24 hours")
     else
