@@ -92,7 +92,9 @@ defmodule Indexer.Fetcher.CosmosHash do
           tx_messages = result["tx"]["body"]["messages"]
           for %{"hash" => hash, "@type" => type} when type == "/ethermint.evm.v1.MsgEthereumTx"
                         <- tx_messages do
-            Transaction.update_cosmos_hash(hash, cosmos_hash)
+            if hash != nil do
+              Transaction.update_cosmos_hash(hash, cosmos_hash)
+            end
           end
       end
     end
