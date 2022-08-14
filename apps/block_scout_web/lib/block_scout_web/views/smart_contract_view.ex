@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.SmartContract.Helper
 
@@ -25,6 +25,15 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def outputs?(outputs) when is_nil(outputs), do: false
+
+  def error?(outputs) when not is_nil(outputs) do
+    case outputs do
+      {:error, _} -> true
+      _ -> false
+    end
+  end
+
+  def error?(outputs) when is_nil(outputs), do: false
 
   def address?(type), do: type in ["address", "address payable"]
   def int?(type), do: String.contains?(type, "int") && !String.contains?(type, "[")
@@ -54,16 +63,14 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
@@ -96,13 +103,13 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, "string", names, index, _components),
-    do: render_type_value("string", value, fetch_name(names, index))
+    do: render_type_value("string", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, :string, names, index, _components),
-    do: render_type_value("string", value, fetch_name(names, index))
+    do: render_type_value("string", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, :bytes, names, index, _components),
-    do: render_type_value("bytes", value, fetch_name(names, index))
+    do: render_type_value("bytes", value |> Helper.sanitize_input(), fetch_name(names, index))
 
   def values_with_type(value, "bool", names, index, _components),
     do: render_type_value("bool", to_string(value), fetch_name(names, index))
@@ -113,7 +120,7 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, type, names, index, _components),
     do: render_type_value(type, binary_to_utf_string(value), fetch_name(names, index))
 
-  def values_with_type(value, :error, _components), do: render_type_value("error", value, nil)
+  def values_with_type(value, :error, _components), do: render_type_value("error", value, "error")
 
   defp fetch_name(nil, _index), do: nil
 
@@ -127,95 +134,22 @@ defmodule BlockScoutWeb.SmartContractView do
     name
   end
 
-  def values_only(value, type, components) when is_list(value) do
-    max_size = Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
-    is_too_long = length(value) > max_size
-
-    cond do
-      String.starts_with?(type, "tuple") ->
-        tuple_types =
-          type
-          |> String.slice(0..-3)
-          |> supplement_type_with_components(components)
-
-        values =
-          value
-          |> tuple_array_to_array(tuple_types)
-          |> Enum.join(", ")
-
-        wrap_output(render_array_value(values), is_too_long)
-
-      String.starts_with?(type, "address") ->
-        values =
-          value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
-
-        wrap_output(render_array_value(values), is_too_long)
-
-      String.starts_with?(type, "bytes") ->
-        values =
-          value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
-
-        wrap_output(render_array_value(values), is_too_long)
-
-      true ->
-        values =
-          value
-          |> Enum.join(", ")
-
-        wrap_output(render_array_value(values), is_too_long)
-    end
-  end
-
-  def values_only(value, type, _components) when is_tuple(value) do
-    values =
-      value
-      |> tuple_to_array(type)
-      |> Enum.join(", ")
-
-    max_size = Enum.at(Tuple.to_list(Application.get_env(:block_scout_web, :max_size_to_show_array_as_is)), 0)
-
-    wrap_output(values, tuple_size(value) > max_size)
-  end
-
-  def values_only(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = HashAddress.cast(value)
-    wrap_output(to_string(address))
-  end
-
-  def values_only(value, "string", _components), do: wrap_output(value)
-
-  def values_only(value, :string, _components), do: wrap_output(value)
-
-  def values_only(value, :bytes, _components), do: wrap_output(value)
-
-  def values_only(value, "bool", _components), do: wrap_output(to_string(value))
-
-  def values_only(value, :bool, _components), do: wrap_output(to_string(value))
-
-  def values_only(value, _type, _components) do
-    wrap_output(binary_to_utf_string(value))
-  end
-
   def wrap_output(value, is_too_long \\ false) do
     if is_too_long do
       "<details class=\"py-2 word-break-all\"><summary>Click to view</summary>#{value}</details>"
     else
-      "<div class=\"py-2 word-break-all\">#{value}</div>"
+      "<span class=\"word-break-all\" style=\"line-height: 3;\">#{value}</span>"
     end
   end
 
-  defp tuple_array_to_array(value, type, names \\ []) do
+  defp tuple_array_to_array(value, type, names) do
     value
     |> Enum.map(fn item ->
       tuple_to_array(item, type, names)
     end)
   end
 
-  defp tuple_to_array(value, type, names \\ []) do
+  defp tuple_to_array(value, type, names) do
     types_string =
       type
       |> String.slice(6..-2)
@@ -304,11 +238,11 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp render_type_value(type, value, type) do
-    "<div style=\"padding-left: 20px\">(#{type}) : #{value}</div>"
+    "<div class=\"pl-3\"><i>(#{type})</i> : #{value}</div>"
   end
 
   defp render_type_value(type, value, name) do
-    "<div style=\"padding-left: 20px\"><span style=\"color: black\">#{name}</span> (#{type}) : #{value}</div>"
+    "<div class=\"pl-3\"><i><span style=\"color: black\">#{name}</span> (#{type})</i> : #{value}</div>"
   end
 
   defp render_array_type_value(type, values, name) do
@@ -317,24 +251,38 @@ defmodule BlockScoutWeb.SmartContractView do
     render_type_value(type, value_to_display, name)
   end
 
-  defp render_array_value(values) do
-    value_to_display = "[" <> values <> "]"
-
-    value_to_display
-  end
-
   defp supplement_type_with_components(type, components) do
     if type == "tuple" && components do
       types =
         components
-        |> Enum.map(fn component ->
+        |> Enum.map_join(",", fn component ->
           Map.get(component, "type")
         end)
-        |> Enum.join(",")
 
       "tuple[" <> types <> "]"
     else
       type
     end
   end
+
+  def decode_revert_reason(to_address, revert_reason) do
+    smart_contract = Chain.address_hash_to_smart_contract(to_address)
+
+    Transaction.decoded_revert_reason(
+      %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},
+      revert_reason
+    )
+  end
+
+  def decode_hex_revert_reason(hex_revert_reason) do
+    case Integer.parse(hex_revert_reason, 16) do
+      {number, ""} ->
+        :binary.encode_unsigned(number)
+
+      _ ->
+        hex_revert_reason
+    end
+  end
+
+  def not_last_element?(length, index), do: length > 1 and index < length - 1
 end

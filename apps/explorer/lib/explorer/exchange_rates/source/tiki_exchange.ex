@@ -3,8 +3,6 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
   Adapter for fetching exchange rates from https://api.tiki.vn.
   """
 
-  require Logger
-
   alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
@@ -16,7 +14,7 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
   def format_data(json_data) do
     last_updated = get_last_updated(json_data)
     current_price = get_current_price(json_data)
-    id = "ASTRA"
+    id = "ASA"
     btc_value = 0
     circulating_supply_data = Enum.at(get_supply(), 0)
     total_supply_data = 0
@@ -39,9 +37,14 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
     ]
   end
 
+  @impl Source
+  def headers do
+    []
+  end
+
   defp get_supply() do
     url = base_api_url() <> "cosmos/bank/v1beta1/supply"
-    case Source.http_request(url) do
+    case Source.http_request(url, headers()) do
       {:error, reason} ->
         Logger.error("failed to get supply: ", inspect(reason))
       {:ok, result} ->
@@ -141,7 +144,7 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
 
       symbol_downcase = String.downcase(symbol)
 
-      case Source.http_request(url) do
+      case Source.http_request(url, headers()) do
         {:ok, data} = resp ->
           if is_list(data) do
             symbol_data =

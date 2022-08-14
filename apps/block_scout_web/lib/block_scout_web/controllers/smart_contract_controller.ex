@@ -18,8 +18,10 @@ defmodule BlockScoutWeb.SmartContractController do
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       implementation_address_hash_string =
         if contract_type == "proxy" do
-          Chain.get_implementation_address_hash(address.hash, address.smart_contract.abi) ||
-            @burn_address
+          address.hash
+          |> Chain.get_implementation_address_hash(address.smart_contract.abi)
+          |> Tuple.to_list()
+          |> List.first() || @burn_address
         else
           @burn_address
         end
@@ -103,23 +105,28 @@ defmodule BlockScoutWeb.SmartContractController do
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
          {:ok, _address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      contract_type = if params["method_id"] == "proxy", do: :proxy, else: :regular
+      contract_type = if params["type"] == "proxy", do: :proxy, else: :regular
+
+      {args_count, _} = Integer.parse(params["args_count"])
+
+      args =
+        if args_count < 1,
+          do: [],
+          else: for(x <- 0..(args_count - 1), do: params["arg_" <> to_string(x)] |> convert_map_to_array())
 
       %{output: outputs, names: names} =
         if params["from"] do
           Reader.query_function_with_names(
             address_hash,
-            %{method_id: params["method_id"], args: params["args"]},
+            %{method_id: params["method_id"], args: args},
             contract_type,
-            params["function_name"],
             params["from"]
           )
         else
           Reader.query_function_with_names(
             address_hash,
-            %{method_id: params["method_id"], args: params["args"]},
-            contract_type,
-            params["function_name"]
+            %{method_id: params["method_id"], args: args},
+            contract_type
           )
         end
 
@@ -131,7 +138,8 @@ defmodule BlockScoutWeb.SmartContractController do
         function_name: params["function_name"],
         method_id: params["method_id"],
         outputs: outputs,
-        names: names
+        names: names,
+        smart_contract_address: address_hash
       )
     else
       :error ->
@@ -144,4 +152,38 @@ defmodule BlockScoutWeb.SmartContractController do
         not_found(conn)
     end
   end
+
+  defp convert_map_to_array(map) do
+    if is_turned_out_array?(map) do
+      map |> Map.values() |> try_to_map_elements()
+    else
+      try_to_map_elements(map)
+    end
+  end
+
+  defp try_to_map_elements(values) do
+    if Enumerable.impl_for(values) do
+      Enum.map(values, &convert_map_to_array/1)
+    else
+      values
+    end
+  end
+
+  defp is_turned_out_array?(map) when is_map(map), do: Enum.all?(Map.keys(map), &is_integer?/1)
+
+  defp is_turned_out_array?(_), do: false
+
+  defp is_integer?(string) when is_binary(string) do
+    case string |> String.trim() |> Integer.parse() do
+      {_, ""} ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp is_integer?(integer) when is_integer(integer), do: true
+
+  defp is_integer?(_), do: false
 end

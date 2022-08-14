@@ -3,10 +3,18 @@ defmodule BlockScoutWeb.AddressController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AccessHelpers, AddressView, Controller}
-  alias Explorer.Counters.{AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
+  alias BlockScoutWeb.{
+    AccessHelpers,
+    AddressTransactionController,
+    AddressView,
+    Controller
+  }
+
+  alias Explorer.Counters.{AddressTokenTransfersCounter, AddressTransactionsCounter, AddressTransactionsGasUsageCounter}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Wei
   alias Explorer.ExchangeRates.Token
+  alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -77,48 +85,108 @@ defmodule BlockScoutWeb.AddressController do
     )
   end
 
-  def show(conn, %{"id" => id}) do
-    redirect(conn, to: AccessHelpers.get_path(conn, :address_transaction_path, :index, id))
+  def show(conn, %{"id" => address_hash_string, "type" => "JSON"} = params) do
+    AddressTransactionController.index(conn, Map.put(params, "address_id", address_hash_string))
+  end
+
+  def show(conn, %{"id" => address_hash_string} = params) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      render(
+        conn,
+        "_show_address_transactions.html",
+        address: address,
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        filter: params["filter"],
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+        current_path: Controller.current_full_path(conn)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:restricted_access, _} ->
+        not_found(conn)
+
+      {:error, :not_found} ->
+        {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+
+        address = %Chain.Address{
+          hash: address_hash,
+          smart_contract: nil,
+          token: nil,
+          fetched_coin_balance: %Wei{value: Decimal.new(0)}
+        }
+
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            render(
+              conn,
+              "_show_address_transactions.html",
+              address: address,
+              coin_balance_status: nil,
+              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              filter: params["filter"],
+              counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+              current_path: Controller.current_full_path(conn)
+            )
+
+          _ ->
+            not_found(conn)
+        end
+    end
   end
 
   def address_counters(conn, %{"id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {transaction_count, gas_usage_count, validation_count} = transaction_and_validation_count(address)
+      {validation_count} = address_counters(address)
+
+      transactions_from_db = address.transactions_count || 0
+      token_transfers_from_db = address.token_transfers_count || 0
+      address_gas_usage_from_db = address.gas_used || 0
 
       json(conn, %{
-        transaction_count: transaction_count,
-        gas_usage_count: gas_usage_count,
+        transaction_count: transactions_from_db,
+        token_transfer_count: token_transfers_from_db,
+        gas_usage_count: address_gas_usage_from_db,
         validation_count: validation_count
       })
     else
       _ ->
         json(conn, %{
           transaction_count: 0,
+          token_transfer_count: 0,
           gas_usage_count: 0,
           validation_count: 0
         })
     end
   end
 
-  defp transaction_and_validation_count(address) do
-    transaction_count_task =
-      Task.async(fn ->
-        transaction_count(address)
-      end)
-
-    gas_usage_count_task =
-      Task.async(fn ->
-        gas_usage_count(address)
-      end)
-
+  defp address_counters(address) do
     validation_count_task =
       Task.async(fn ->
         validation_count(address)
       end)
 
-    [transaction_count_task, gas_usage_count_task, validation_count_task]
-    |> Task.yield_many(:timer.seconds(60))
+    Task.start_link(fn ->
+      transaction_count(address)
+    end)
+
+    Task.start_link(fn ->
+      token_transfers_count(address)
+    end)
+
+    Task.start_link(fn ->
+      gas_usage_count(address)
+    end)
+
+    [
+      validation_count_task
+    ]
+    |> Task.yield_many(:infinity)
     |> Enum.map(fn {_task, res} ->
       case res do
         {:ok, result} ->
@@ -136,6 +204,10 @@ defmodule BlockScoutWeb.AddressController do
 
   def transaction_count(address) do
     AddressTransactionsCounter.fetch(address)
+  end
+
+  def token_transfers_count(address) do
+    AddressTokenTransfersCounter.fetch(address)
   end
 
   def gas_usage_count(address) do

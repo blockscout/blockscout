@@ -21,7 +21,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []}, false)
 
       assert %{"6d4ce63c" => {:ok, [0]}} == response
     end
@@ -44,7 +44,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       string_argument = %{"a50e1860" => ["abc"]}
 
-      response = Reader.query_contract(contract_address_hash, [int_function_abi], string_argument)
+      response = Reader.query_contract(contract_address_hash, [int_function_abi], string_argument, false)
 
       assert %{"a50e1860" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}} = response
     end
@@ -62,7 +62,7 @@ defmodule Explorer.SmartContract.ReaderTest do
         end
       )
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []}, false)
 
       assert %{"6d4ce63c" => {:error, "(12345) Error message"}} = response
     end
@@ -80,7 +80,7 @@ defmodule Explorer.SmartContract.ReaderTest do
         end
       )
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []}, false)
 
       assert %{"6d4ce63c" => {:error, "Bad gateway"}} = response
     end
@@ -98,7 +98,7 @@ defmodule Explorer.SmartContract.ReaderTest do
         end
       )
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []}, false)
 
       assert %{"6d4ce63c" => {:error, "no function clause matches"}} = response
     end
@@ -113,7 +113,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      assert Reader.query_verified_contract(hash, %{"6d4ce63c" => []}) == %{"6d4ce63c" => {:ok, [0]}}
+      assert Reader.query_verified_contract(hash, %{"6d4ce63c" => []}, false) == %{"6d4ce63c" => {:ok, [0]}}
     end
   end
 
@@ -190,7 +190,8 @@ defmodule Explorer.SmartContract.ReaderTest do
               "inputs" => [],
               "constant" => true
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       implementation_contract_address = insert(:contract_address)
@@ -216,7 +217,8 @@ defmodule Explorer.SmartContract.ReaderTest do
             "stateMutability" => "view",
             "type" => "function"
           }
-        ]
+        ],
+        contract_code_md5: "123"
       )
 
       implementation_contract_address_hash_string =
@@ -255,7 +257,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   describe "query_function/3" do
     test "given the arguments, fetches the function value from the blockchain" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
 
@@ -264,11 +266,11 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "type" => "uint256",
                  "value" => 0
                }
-             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: []}, :regular)
+             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: []}, :regular, false)
     end
 
     test "nil arguments is treated as []" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
 
@@ -277,18 +279,19 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "type" => "uint256",
                  "value" => 0
                }
-             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: nil}, :regular)
+             ] =
+               Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: nil}, :regular, false)
     end
   end
 
   describe "normalize_args/1" do
     test "converts argument when is a number" do
-      assert ["0x00"] = Reader.normalize_args(["0"])
+      assert [0] = Reader.normalize_args(["0"])
 
       assert ["0x798465571ae21a184a272f044f991ad1d5f87a3f"] =
                Reader.normalize_args(["0x798465571ae21a184a272f044f991ad1d5f87a3f"])
 
-      assert ["0x7b"] = Reader.normalize_args(["123"])
+      assert [123] = Reader.normalize_args(["123"])
     end
 
     test "converts argument when is a boolean" do
@@ -362,6 +365,41 @@ defmodule Explorer.SmartContract.ReaderTest do
       blockchain_values = %{"check" => {:error, "Reverted"}}
 
       assert {:error, "Reverted"} == Reader.link_outputs_and_values(blockchain_values, [], "check")
+    end
+  end
+
+  describe "get_abi_with_method_id" do
+    test "add method_id to the ABI method" do
+      method = %{
+        "constant" => true,
+        "inputs" => [%{"name" => "_message", "type" => "bytes32"}],
+        "name" => "numMessagesSigned",
+        "outputs" => [%{"name" => "", "type" => "uint256"}],
+        "payable" => false,
+        "stateMutability" => "view",
+        "type" => "function"
+      }
+
+      abi = [method]
+      method_with_id = Map.put(method, "method_id", "0cbf0601")
+      assert [^method_with_id] = Reader.get_abi_with_method_id(abi)
+    end
+
+    test "do not crash in some corner cases" do
+      abi = [
+        %{"payable" => true, "stateMutability" => "payable", "type" => "fallback"},
+        %{
+          "anonymous" => false,
+          "inputs" => [
+            %{"indexed" => false, "name" => "recipient", "type" => "address"},
+            %{"indexed" => false, "name" => "value", "type" => "uint256"}
+          ],
+          "name" => "UserRequestForSignature",
+          "type" => "event"
+        }
+      ]
+
+      assert ^abi = Reader.get_abi_with_method_id(abi)
     end
   end
 

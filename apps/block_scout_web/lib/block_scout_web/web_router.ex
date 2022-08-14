@@ -48,10 +48,6 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/uncles", BlockController, :uncle, as: :uncle)
 
-    get("/validators", StakesController, :index, as: :validators, assigns: %{filter: :validator})
-    get("/active-pools", StakesController, :index, as: :active_pools, assigns: %{filter: :active})
-    get("/inactive-pools", StakesController, :index, as: :inactive_pools, assigns: %{filter: :inactive})
-
     resources("/pending-transactions", PendingTransactionController, only: [:index])
 
     resources("/recent-transactions", RecentTransactionsController, only: [:index])
@@ -84,8 +80,6 @@ defmodule BlockScoutWeb.WebRouter do
     resources("/accounts", AddressController, only: [:index])
 
     resources("/tokens", TokensController, only: [:index])
-
-    resources("/bridged-tokens", BridgedTokensController, only: [:index, :show])
 
     resources "/address", AddressController, only: [:show] do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
@@ -132,22 +126,6 @@ defmodule BlockScoutWeb.WebRouter do
         as: :verify_contract
       )
 
-      # if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
-      #   resources(
-      #     "/contract_verifications",
-      #     AddressContractVerificationController,
-      #     only: [:new],
-      #     as: :verify_contract
-      #   )
-      # else
-      #   resources(
-      #     "/contract_verifications",
-      #     AddressContractVerificationViaFlattenedCodeController,
-      #     only: [:new],
-      #     as: :verify_contract
-      #   )
-      # end
-
       resources(
         "/verify-via-flattened-code",
         AddressContractVerificationViaFlattenedCodeController,
@@ -156,10 +134,24 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
-        "/verify-via-json",
+        "/verify-via-metadata-json",
         AddressContractVerificationViaJsonController,
         only: [:new],
         as: :verify_contract_via_json
+      )
+
+      resources(
+        "/verify-via-standard-json-input",
+        AddressContractVerificationViaStandardJsonInputController,
+        only: [:new],
+        as: :verify_contract_via_standard_json_input
+      )
+
+      resources(
+        "/verify-vyper-contract",
+        AddressContractVerificationVyperController,
+        only: [:new],
+        as: :verify_vyper_contract
       )
 
       resources(
@@ -238,9 +230,30 @@ defmodule BlockScoutWeb.WebRouter do
 
       resources(
         "/read-contract",
-        Tokens.ReadContractController,
+        Tokens.ContractController,
         only: [:index],
         as: :read_contract
+      )
+
+      resources(
+        "/write-contract",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_contract
+      )
+
+      resources(
+        "/read-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_proxy
       )
 
       resources(
@@ -275,6 +288,13 @@ defmodule BlockScoutWeb.WebRouter do
           Tokens.Instance.MetadataController,
           only: [:index],
           as: :metadata
+        )
+
+        resources(
+          "/token-holders",
+          Tokens.Instance.HolderController,
+          only: [:index],
+          as: :holder
         )
       end
     end
@@ -289,9 +309,30 @@ defmodule BlockScoutWeb.WebRouter do
 
       resources(
         "/read-contract",
-        Tokens.ReadContractController,
+        Tokens.ContractController,
         only: [:index],
         as: :read_contract
+      )
+
+      resources(
+        "/write-contract",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_contract
+      )
+
+      resources(
+        "/read-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_proxy
       )
 
       resources(
@@ -326,6 +367,13 @@ defmodule BlockScoutWeb.WebRouter do
           Tokens.Instance.MetadataController,
           only: [:index],
           as: :metadata
+        )
+
+        resources(
+          "/token-holders",
+          Tokens.Instance.HolderController,
+          only: [:index],
+          as: :holder
         )
       end
     end
@@ -345,7 +393,19 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-results", SearchController, :search_results)
 
+    get("/csv-export", CsvExportController, :index)
+
+    post("/captcha", CaptchaController, :index)
+
+    get("/transactions-csv", AddressTransactionController, :transactions_csv)
+
     get("/token-autocomplete", ChainController, :token_autocomplete)
+
+    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
+
+    get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
+
+    get("/logs-csv", AddressTransactionController, :logs_csv)
 
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)
 

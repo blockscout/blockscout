@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -7,31 +7,7 @@ use Mix.Config
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 
-port =
-  case System.get_env("PORT") && Integer.parse(System.get_env("PORT")) do
-    {port, _} -> port
-    :error -> nil
-    nil -> nil
-  end
-
 config :block_scout_web, BlockScoutWeb.Endpoint,
-  secret_key_base:
-    System.get_env("SECRET_KEY_BASE") || "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5",
-  http: [
-    port: port || 4000
-  ],
-  url: [
-    scheme: "http",
-    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
-    path: System.get_env("NETWORK_PATH") || "/",
-    api_path: System.get_env("API_PATH") || "/"
-  ],
-  https: [
-    port: (port && port + 1) || 4001,
-    cipher_suite: :strong,
-    certfile: System.get_env("CERTFILE") || "priv/cert/selfsigned.pem",
-    keyfile: System.get_env("KEYFILE") || "priv/cert/selfsigned_key.pem"
-  ],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -77,6 +53,11 @@ config :block_scout_web, BlockScoutWeb.Tracer, env: "dev", disabled?: true
 config :logger, :block_scout_web,
   level: :debug,
   path: Path.absname("logs/dev/block_scout_web.log")
+
+config :logger, :api,
+  level: :debug,
+  path: Path.absname("logs/dev/api.log"),
+  metadata_filter: [fetcher: :api]
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

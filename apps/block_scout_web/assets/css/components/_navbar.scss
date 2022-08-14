@@ -10,8 +10,8 @@ $header-textfield-text-color: $header-links-color !default;
 $header-textfield-background-color: #f5f6fa !default;
 $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
-$navbar-logo-height: 28px !default;
-$navbar-logo-width: auto !default;
+$navbar-logo-height: auto !default;
+$navbar-logo-width: 100% !default;
 
 .navbar.navbar-primary {
   background-color: $header-background-color;
@@ -29,8 +29,7 @@ $navbar-logo-width: auto !default;
       align-items: center;
       color: $header-links-color;
       display: flex;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 14px;
       position: relative;
       transition: $transition-cont;
 
@@ -243,7 +242,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-logo {
-  height: $navbar-logo-height;
+  max-height: $navbar-logo-height;
   width: $navbar-logo-width;
 }
 
@@ -254,8 +253,12 @@ $navbar-logo-width: auto !default;
   margin-left: 5px;
   line-height: 28px;
 
-  &.footer {
+  &.in-footer {
     color: #fff;
+  }
+
+  &.no-logo {
+    margin-left: 0px;
   }
 }
 
@@ -280,7 +283,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-container, .navbar-primary {
-  @include media-breakpoint-up(xl) {
+  @media (min-width: 992px) {
     padding-right: 0;
   }
 }

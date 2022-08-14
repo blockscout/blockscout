@@ -6,6 +6,7 @@
 <% base_fee_per_gas = if block, do: block.base_fee_per_gas, else: nil %>
 <% max_priority_fee_per_gas = @transaction.max_priority_fee_per_gas %>
 <% max_fee_per_gas = @transaction.max_fee_per_gas %>
+
 <% priority_fee_per_gas = if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas), do: nil, else: Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x -> Wei.to(x, :wei) end) %>
 <% priority_fee = if is_nil(priority_fee_per_gas), do: nil, else: Wei.mult(priority_fee_per_gas, @transaction.gas_used) %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
@@ -15,7 +16,7 @@
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-<section class="transaction-details" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
+<section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
       <!-- Transaction Details -->
@@ -117,7 +118,7 @@
                   <% else %>
                     <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
-
+                
                 <%= if confirmations > 0 do %>
                   <span class="bs-label large ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= " " <> confirmations_ds_name(confirmations) %></span>
                 <% end %>
@@ -125,14 +126,26 @@
             </dd>
           </dl>
           <!-- Revert reason -->
-          <%= if status == {:error, "Reverted"} do %>
+          <%= if status == {:error, "Reverted"} || status == {:error, "execution reverted"} do %>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("The revert reason of the transaction.") %>
               <%= gettext "Revert reason" %> </dt>
             <dd class="col-sm-9 col-lg-10">
-              <%= BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) %>
+              <%= case BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) do %>
+                <% {:error, _contract_not_verified, candidates} when candidates != [] -> %>
+                  <% {:ok, method_id, text, mapping} = Enum.at(candidates, 0) %>
+                  <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% {:ok, method_id, text, mapping} -> %>
+                  <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% _ -> %>
+                  <% hex = BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %>
+                  <% utf8 = BlockScoutWeb.TransactionView.decoded_revert_reason(@transaction) %>
+                  <div class="tile tile-muted">
+                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
+                  </div>
+              <% end %>
             </dd>
           </dl>
           <% end %>
@@ -163,7 +176,7 @@
                 <%= gettext "Timestamp" %>
               </dt>
               <dd class="col-sm-9 col-lg-10" data-selector="block-timestamp">
-                <i class="far fa-clock"></i>
+                <i class="fa-regular fa-clock"></i>
                 <span>
                   <span data-from-now="<%= block.timestamp %>"></span>
                 </span>
@@ -216,7 +229,7 @@
                   <%= link(
                     recipient_address_hash,
                     to: address_path(@conn, :show, recipient_address_hash)
-                  ) %>
+                  ) %> 
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
@@ -395,7 +408,8 @@
               </dt>
               <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(priority_fee, :ether) %> </dd>
             </dl>
-          <% end %>
+          <% end %> 
+
           <!-- Gas Used by Transaction -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">

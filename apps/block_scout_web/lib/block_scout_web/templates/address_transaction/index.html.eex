@@ -4,15 +4,11 @@
 
   <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
 
-  <section data-page="address-transactions">
+  <section data-page="address-transactions" id="txs">
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
-        <div data-selector="channel-disconnected-message" class="d-none">
-          <div data-selector="reload-button" class="alert alert-danger">
-            <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost, click to load newer transactions") %>
         <div class="clearfix">
           <h2 class="card-title float-left"><%= gettext "Transactions" %></h2>
           <div class="top-pagination-outer-container float-right">
@@ -65,6 +61,7 @@
         </div>
 
         <div class="transaction-bottom-panel">
+          <%= render BlockScoutWeb.CommonComponentsView, "_csv_export_button.html", address: Address.checksum(@address.hash), type: "transactions", conn: @conn %>
           <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
         </div>
 

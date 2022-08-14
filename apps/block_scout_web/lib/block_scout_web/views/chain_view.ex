@@ -1,10 +1,11 @@
 defmodule BlockScoutWeb.ChainView do
   use BlockScoutWeb, :view
 
-  import Number.Currency, only: [number_to_currency: 1, number_to_currency: 2]
+  require Decimal
+  import Number.Currency, only: [number_to_currency: 2]
 
   alias BlockScoutWeb.LayoutView
-  alias Explorer.Chain.Supply.TokenBridge
+  alias Explorer.Chain.Cache.GasPriceOracle
 
   defp market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
        when is_nil(available_supply) or is_nil(usd_value) do
@@ -23,41 +24,65 @@ defmodule BlockScoutWeb.ChainView do
     module.market_cap(exchange_rate)
   end
 
-  defp total_market_cap_from_token_bridge(%{usd_value: usd_value}) do
-    TokenBridge.token_bridge_market_cap(%{usd_value: usd_value})
-  end
-
-  defp total_market_cap_from_omni_bridge do
-    TokenBridge.total_market_cap_from_omni_bridge()
-  end
-
-  defp token_bridge_supply? do
-    if System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false
-  end
+  def format_usd_value(nil), do: ""
 
   def format_usd_value(value) do
-    "#{format_currency_value(value)} ₫"
+    if Decimal.is_decimal(value) do
+      "#{format_currency_value(Decimal.to_float(value))} VND"
+    else
+      "#{format_currency_value(value)} VND"
+    end
   end
 
-  defp format_currency_value(value, symbol \\ "₫")
+  def format_currency_value(value, symbol \\ "₫")
 
-  defp format_currency_value(value, symbol) when value < 0 do
-    "#{symbol}0.000000"
+  def format_currency_value(nil, _symbol), do: ""
+
+  def format_currency_value(%Decimal{} = value, symbol) do
+    value
+    |> Decimal.to_float()
+    |> format_currency_value(symbol)
   end
 
-  defp format_currency_value(value, symbol) when value < 0.000001 do
+  def format_currency_value(value, _symbol) when not is_float(value) do
+    "N/A"
+  end
+
+  def format_currency_value(value, symbol) when is_float(value) and value < 0 do
+    "#{symbol}0.00"
+  end
+
+  def format_currency_value(value, symbol) when is_float(value) and value < 0.000001 do
     "Less than #{symbol}0.000001"
   end
 
-  defp format_currency_value(value, _symbol) when value < 1 do
-    "#{number_to_currency(value, precision: 6)}"
+  def format_currency_value(value, symbol) when is_float(value) and value < 1 do
+    "#{number_to_currency(value, unit: symbol, precision: 6)}"
   end
 
-  defp format_currency_value(value, _symbol) when value < 100_000 do
-    "#{number_to_currency(value)}"
+  def format_currency_value(value, symbol) when is_float(value) and value < 100_000 do
+    "#{number_to_currency(value, unit: symbol)}"
   end
 
-  defp format_currency_value(value, _symbol) do
-    "#{number_to_currency(value, precision: 0)}"
+  def format_currency_value(value, _symbol) when value >= 1_000_000 and value <= 999_000_000 do
+    {:ok, value} = Cldr.Number.to_string(value, format: :short, currency: :USD, fractional_digits: 2)
+    value
+  end
+
+  def format_currency_value(value, symbol) when is_float(value) do
+    "#{number_to_currency(value, unit: symbol, precision: 0)}"
+  end
+
+  defp gas_prices do
+    case GasPriceOracle.get_gas_prices() do
+      {:ok, gas_prices} ->
+        gas_prices
+
+      nil ->
+        nil
+
+      _ ->
+        nil
+    end
   end
 end

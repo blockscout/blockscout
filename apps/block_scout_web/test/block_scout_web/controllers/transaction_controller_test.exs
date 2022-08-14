@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
   import BlockScoutWeb.WebRouter.Helpers,
-    only: [transaction_path: 3, transaction_internal_transaction_path: 3, transaction_token_transfer_path: 3]
+    only: [transaction_path: 3]
 
   alias Explorer.Chain.Transaction
 
@@ -91,7 +91,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
       conn = get(conn, transaction_path(conn, :index, %{"type" => "JSON"}))
 
-      assert conn |> json_response(200) |> Map.get("next_page_path")
+      assert conn |> json_response(200) |> Map.get("next_page_params")
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
@@ -127,21 +127,11 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       assert html_response(conn, 422)
     end
 
-    test "redirects to transactions/:transaction_id/token-transfers when there are token transfers", %{conn: conn} do
-      transaction = insert(:transaction)
-      insert(:token_transfer, transaction: transaction)
-      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
-
-      assert redirected_to(conn) =~ transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction)
-    end
-
-    test "redirects to transactions/:transaction_id/internal-transactions when there are no token transfers", %{
-      conn: conn
-    } do
+    test "no redirect from tx page", %{conn: conn} do
       transaction = insert(:transaction)
       conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
 
-      assert redirected_to(conn) =~ transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction)
+      assert html_response(conn, 200)
     end
   end
 end

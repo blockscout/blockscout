@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import omit from 'lodash.omit'
 import humps from 'humps'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
@@ -65,13 +65,13 @@ if ($('[data-page="address-logs"]').length) {
 
   store.dispatch({
     type: 'PAGE_LOAD',
-    addressHash: addressHash
+    addressHash
   })
 
   $element.on('click', '[data-search-button]', (_event) => {
     store.dispatch({
       type: 'START_SEARCH',
-      addressHash: addressHash
+      addressHash
     })
     const topic = $('[data-search-field]').val()
     const addressHashPlain = store.getState().addressHash

@@ -16,6 +16,19 @@ defmodule Explorer.ReleaseTasks do
 
   @repos Application.compile_env(:blockscout, :ecto_repos, [Explorer.Repo])
 
+  def create_and_migrate do
+    start_services()
+
+    create()
+    run_migrations()
+
+    stop_services()
+  end
+
+  def create do
+    Enum.each(@repos, &create_db_for/1)
+  end
+
   def migrate(_argv) do
     start_services()
 
@@ -43,12 +56,22 @@ defmodule Explorer.ReleaseTasks do
     IO.puts("Starting repos..")
 
     # Switch pool_size to 2 for ecto > 3.0
-    Enum.each(@repos, & &1.start_link(pool_size: 1))
+    Enum.each(@repos, & &1.start_link(pool_size: 2))
   end
 
   defp stop_services do
     IO.puts("Success!")
     :init.stop()
+  end
+
+  defp create_db_for(repo) do
+    IO.puts("Create #{inspect(repo)} database if it doesn't exist")
+
+    case repo.__adapter__.storage_up(repo.config) do
+      :ok -> :ok
+      {:error, :already_up} -> :ok
+      {:error, term} -> {:error, term}
+    end
   end
 
   defp run_migrations do

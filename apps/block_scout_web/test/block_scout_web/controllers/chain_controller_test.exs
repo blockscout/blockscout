@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
 
     test "finds verified contract" do
-      insert(:smart_contract, name: "SuperToken")
+      insert(:smart_contract, name: "SuperToken", contract_code_md5: "123")
 
       conn =
         build_conn()
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
 
     test "finds verified contract and token" do
-      insert(:smart_contract, name: "MagicContract")
+      insert(:smart_contract, name: "MagicContract", contract_code_md5: "123")
       insert(:token, name: "magicToken")
 
       conn =
@@ -115,10 +115,10 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
 
     test "finds verified contracts and tokens" do
-      insert(:smart_contract, name: "something")
-      insert(:smart_contract, name: "MagicContract")
+      insert(:smart_contract, name: "something", contract_code_md5: "123")
+      insert(:smart_contract, name: "MagicContract", contract_code_md5: "123")
       insert(:token, name: "Magic3")
-      insert(:smart_contract, name: "magicContract2")
+      insert(:smart_contract, name: "magicContract2", contract_code_md5: "123")
       insert(:token, name: "magicToken")
       insert(:token, name: "OneMoreToken")
 
@@ -142,7 +142,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
     test "find by empty query" do
       insert(:token, name: "MaGiCt0k3n")
-      insert(:smart_contract, name: "MagicContract")
+      insert(:smart_contract, name: "MagicContract", contract_code_md5: "123")
 
       conn =
         build_conn()
@@ -205,21 +205,21 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
       "0x" <> non_prefix_hash = to_string(transaction.hash)
 
-      conn = get(conn, "search?q=#{to_string(non_prefix_hash)}")
+      conn = get(conn, "/search?q=#{to_string(non_prefix_hash)}")
 
       assert redirected_to(conn) == transaction_path(conn, :show, transaction)
     end
 
     test "finds an address by hash", %{conn: conn} do
       address = insert(:address)
-      conn = get(conn, "search?q=#{to_string(address.hash)}")
+      conn = get(conn, "/search?q=#{to_string(address.hash)}")
 
       assert redirected_to(conn) == address_path(conn, :show, address)
     end
 
     test "finds an address by hash when there are extra spaces", %{conn: conn} do
       address = insert(:address)
-      conn = get(conn, "search?q=#{to_string(address.hash)}")
+      conn = get(conn, "/search?q=#{to_string(address.hash)}")
 
       assert redirected_to(conn) == address_path(conn, :show, address)
     end
@@ -228,13 +228,13 @@ defmodule BlockScoutWeb.ChainControllerTest do
       address = insert(:address)
       "0x" <> non_prefix_hash = to_string(address.hash)
 
-      conn = get(conn, "search?q=#{to_string(non_prefix_hash)}")
+      conn = get(conn, "/search?q=#{to_string(non_prefix_hash)}")
 
       assert redirected_to(conn) == address_path(conn, :show, address)
     end
 
     test "redirects to result page when it finds nothing", %{conn: conn} do
-      conn = get(conn, "search?q=zaphod")
+      conn = get(conn, "/search?q=zaphod")
       assert conn.status == 302
     end
   end

@@ -20,13 +20,16 @@ defmodule BlockScoutWeb.TransactionLogController do
         Keyword.merge(
           [
             necessity_by_association: %{
+              [address: :names] => :optional,
+              [address: :smart_contract] => :optional,
               address: :optional
             }
           ],
           paging_options(params)
         )
 
-      logs_plus_one = Chain.transaction_to_logs(transaction_hash, full_options)
+      from_api = false
+      logs_plus_one = Chain.transaction_to_logs(transaction_hash, from_api, full_options)
 
       {logs, next_page} = split_list_by_page(logs_plus_one)
 

@@ -6,10 +6,10 @@
 >
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
-    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
 	  <h1 class="card-title list-title-description"><%= gettext "Tokens" %></h1>
 
-	<div class="list-top-pagination-container-wrapper tokens-list-search-input-outer-container" style="display: flex; float: right;">
+	<div class="list-top-pagination-container-wrapper tokens-list-search-input-outer-container d-flex" style="float: right;">
 		<label class="tokens-list-search-input-container tokens mr-3">
 			<input data-search-field="" class="form-control tokens-list-search-input search-input" type="text" name="filter" placeholder="Token name or symbol" id="search-text-input" />
 		</label>
@@ -24,6 +24,9 @@
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">&nbsp;</div>
 	      </th>
+		  <th class="stakes-table-th">
+			<div>&nbsp;</div>
+		  </th>
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">Token</div>
 	      </th>
@@ -43,7 +46,7 @@
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-tokens-list">
-	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_tokens_table: true %>
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 6 %>
 	  </tbody>
 	</table>
       </div>

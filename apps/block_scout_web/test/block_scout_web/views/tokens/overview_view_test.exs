@@ -94,7 +94,8 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
               "stateMutability" => "view",
               "type" => "function"
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       address = insert(:address, smart_contract: smart_contract)
@@ -118,7 +119,8 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
               "stateMutability" => "nonpayable",
               "type" => "function"
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       address = insert(:address, smart_contract: smart_contract)
@@ -147,7 +149,7 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
 
       result = OverviewView.total_supply_usd(token)
 
-      assert Decimal.cmp(result, Decimal.new(200)) == :eq
+      assert Decimal.compare(result, Decimal.new(200)) == :eq
     end
 
     test "takes decimals into account" do
@@ -159,7 +161,7 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
 
       result = OverviewView.total_supply_usd(token)
 
-      assert Decimal.cmp(result, Decimal.new(20)) == :eq
+      assert Decimal.compare(result, Decimal.new(20)) == :eq
     end
   end
 end

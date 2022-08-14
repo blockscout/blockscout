@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
       assert Enum.count(items) == 1
     end
 
-    test "includes VND exchange rate value for address in assigns", %{conn: conn} do
+    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
         {:ok, "100"}

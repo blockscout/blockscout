@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Etherscan.{Addresses, Blocks}
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def listaccounts(conn, params) do
@@ -24,7 +25,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:block_param, {:ok, block}} <- {:block_param, fetch_block_param(params)},
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:balance, {:ok, balance}} <- {:balance, Chain.get_balance_as_of_block(address_hash, block)} do
+         {:balance, {:ok, balance}} <- {:balance, Blocks.get_balance_as_of_block(address_hash, block)} do
       render(conn, :eth_get_balance, %{balance: Wei.hex_format(balance)})
     else
       {:address_param, :error} ->
@@ -99,6 +100,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
          {:ok, transactions} <- list_transactions(address_hash, options) do
       render(conn, :txlist, %{transactions: transactions})
     else
@@ -112,7 +114,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         |> put_status(200)
         |> render(:error, error: "Invalid address format")
 
-      {:error, :not_found} ->
+      {_, :not_found} ->
         render(conn, :error, error: "No transactions found", data: [])
     end
   end
@@ -147,13 +149,14 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     options = optional_params(params)
 
     with {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
          {:ok, internal_transactions} <- list_internal_transactions(address_hash, options) do
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     else
       {:format, :error} ->
         render(conn, :error, error: "Invalid address format")
 
-      {:error, :not_found} ->
+      {_, :not_found} ->
         render(conn, :error, error: "No internal transactions found", data: [])
     end
   end
@@ -164,6 +167,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
          {:contract_address, {:ok, contract_address_hash}} <- to_contract_address_hash(params["contractaddress"]),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
          {:ok, token_transfers} <- list_token_transfers(address_hash, contract_address_hash, options) do
       render(conn, :tokentx, %{token_transfers: token_transfers})
     else
@@ -176,7 +180,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       {:contract_address, :error} ->
         render(conn, :error, error: "Invalid contract address format")
 
-      {:error, :not_found} ->
+      {_, :not_found} ->
         render(conn, :error, error: "No token transfers found", data: [])
     end
   end
@@ -201,6 +205,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def tokenlist(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
          {:ok, token_list} <- list_tokens(address_hash) do
       render(conn, :token_list, %{token_list: token_list})
     else
@@ -210,7 +215,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       {:format, :error} ->
         render(conn, :error, error: "Invalid address format")
 
-      {:error, :not_found} ->
+      {_, :not_found} ->
         render(conn, :error, error: "No tokens found", data: [])
     end
   end
@@ -220,6 +225,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
          {:ok, blocks} <- list_blocks(address_hash, options) do
       render(conn, :getminedblocks, %{blocks: blocks})
     else
@@ -229,7 +235,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       {:format, :error} ->
         render(conn, :error, error: "Invalid address format")
 
-      {:error, :not_found} ->
+      {_, :not_found} ->
         render(conn, :error, error: "No blocks found", data: [])
     end
   end
@@ -347,7 +353,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
     # limit is just page_size
     offset
-    |> Chain.list_ordered_addresses(page_size)
+    |> Addresses.list_ordered_addresses(page_size)
     |> trigger_balances_and_add_status()
   end
 
@@ -494,8 +500,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
-  defp list_internal_transactions(transaction_hash, options) do
-    case Etherscan.list_internal_transactions(transaction_hash, options) do
+  defp list_internal_transactions(address_hash, options) do
+    case Etherscan.list_internal_transactions(address_hash, options) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
     end
