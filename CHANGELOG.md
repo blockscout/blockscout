@@ -4,11 +4,12 @@
 
 ### Fixes
 - [#5904](https://github.com/blockscout/blockscout/pull/5904) - Enhance health API endpoint: better parsing HEALTHY_BLOCKS_PERIOD and use it in the response
-- [#5809](https://github.com/blockscout/blockscout/pull/5809) - Fix 404 on `/metadata` page
-- [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
-- [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
-- [#5887](https://github.com/blockscout/blockscout/pull/5887) - Added missing environment variables to Makefile container params
 - [#5903](https://github.com/blockscout/blockscout/pull/5903) - Disable compile env validation
+- [#5887](https://github.com/blockscout/blockscout/pull/5887) - Added missing environment variables to Makefile container params
+- [#5850](https://github.com/blockscout/blockscout/pull/5850) - Fix too large postgres notifications
+- [#5809](https://github.com/blockscout/blockscout/pull/5809) - Fix 404 on `/metadata` page
+- [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
+- [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 
 ### Chore
 - [#5845](https://github.com/blockscout/blockscout/pull/5845) - Bump autoprefixer from 10.4.2 to 10.4.8 in /apps/block_scout_web/assets
