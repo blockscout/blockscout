@@ -6,8 +6,6 @@ defmodule Explorer.ExchangeRates.Source do
   alias Explorer.ExchangeRates.Token
   alias HTTPoison.{Error, Response}
 
-  require Logger
-
   @doc """
   Fetches exchange rates for currencies/tokens.
   """
