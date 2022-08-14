@@ -4,14 +4,14 @@
     <div class="col-md">
       <div class="card">
         <div class="card-body" >
-          <h1 class="card-title list-title-description header-account">Address Tags</h1>
+          <h1 class="card-title list-title-description header-account"><%= gettext "Address Tags" %></h1>
           <br>
           <div class="col-sm">
             <div class="mb-3 row o-flow-x">
               <%= if @address_tags == [] do %>
               <div style="min-width: 100%;">
                 <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
-                  You don't have address tags yet
+                  <%= gettext "You don't have address tags yet" %>
                 </div>
               </div>
                 <h2></h2>
@@ -19,21 +19,23 @@
                 <table class="table mb-3 table-watchlist">
                   <thead style="font-size: 14px; color: #6c757d" >
                     <tr>
-                      <th scope="col">Name</th>
-                      <th scope="col">Address</th>
-                      <th scope="col">Action</th>
+                      <th scope="col"><%= gettext "Name" %></th>
+                      <th scope="col"><%= gettext "Address" %></th>
+                      <th scope="col"><%= gettext "Action" %></th>
                     </tr>
                   </thead>
                   <tbody style="font-size: 15px; color: #6c757d" >
                     <%= Enum.map(@address_tags, fn at ->
-                      render(TagAddressView, "row.html", address_tag: at, conn: @conn)
+                      render("row.html", address_tag: at, conn: @conn)
                       end) %>
                   </tbody>
                 </table>
               <% end %>
             </div>
           </div>
-          <a class="button button-primary button-sm" href="<%= tag_address_path(@conn, :new) %>">Add address tag</a>
+          <%= if Enum.count(@address_tags) < TagAddress.get_max_tags_count() do %>
+            <a class="button button-primary button-sm" href="<%= tag_address_path(@conn, :new) %>"><%= gettext "Add address tag" %></a>
+          <% end %>
         </div>
       </div>
 </section>

@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Account.PublicTagsRequestView do
   use BlockScoutWeb, :view
   use Phoenix.HTML
+
+  alias Explorer.Account.PublicTagsRequest
   alias Phoenix.HTML.Form
 
   def array_input(form, field, attrs \\ []) do

@@ -131,6 +131,8 @@ msgstr ""
 msgid "APIs"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/tag_address/index.html.eex:24
+#: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:24
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:69
 #, elixir-autogen, elixir-format
 msgid "Action"
@@ -146,32 +148,31 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:45
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "Add API key"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:45
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:44
 #, elixir-autogen, elixir-format
 msgid "Add Custom ABI"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/tag_address/form.html.eex:7
+#: lib/block_scout_web/templates/account/tag_address/index.html.eex:37
 #, elixir-autogen, elixir-format
 msgid "Add address tag"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
-#, elixir-autogen, elixir-format
-msgid "Add address to the Watchlist"
-msgstr ""
-
 #: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:7
+#: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:37
 #, elixir-autogen, elixir-format
 msgid "Add transaction tag"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/tag_address/form.html.eex:11
+#: lib/block_scout_web/templates/account/tag_address/index.html.eex:23
+#: lib/block_scout_web/templates/account/watchlist/show.html.eex:23
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:12
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
@@ -559,7 +560,7 @@ msgid "Contract ABI"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:18
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:30
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:29
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_contract_address_field.html.eex:3
 #: lib/block_scout_web/views/address_view.ex:105
 #, elixir-autogen, elixir-format
@@ -763,12 +764,12 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:13
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:12
 #, elixir-autogen, elixir-format
 msgid "Create a Custom ABI to interact with contracts."
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:13
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:12
 #, elixir-autogen, elixir-format
 msgid "Create an API key to use with your RPC и EthRPC API requests."
 msgstr ""
@@ -802,7 +803,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:19
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:8
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:7
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:182
 #, elixir-autogen, elixir-format
 msgid "Custom ABI"
@@ -1002,13 +1003,9 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/row.html.eex:16
 #: lib/block_scout_web/templates/account/custom_abi/row.html.eex:16
+#: lib/block_scout_web/templates/account/watchlist_address/row.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "Edit"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
-#, elixir-autogen, elixir-format
-msgid "Edit Watchlist address"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:71
@@ -1381,8 +1378,8 @@ msgstr ""
 msgid "Last Balance Update"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:13
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:19
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:12
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:18
 #, elixir-autogen, elixir-format
 msgid "Learn more"
 msgstr ""
@@ -1582,11 +1579,14 @@ msgid "N/A bytes"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/form.html.eex:19
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:29
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:28
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:13
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:29
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:28
 #: lib/block_scout_web/templates/account/tag_address/form.html.eex:18
+#: lib/block_scout_web/templates/account/tag_address/index.html.eex:22
 #: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:18
+#: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:22
+#: lib/block_scout_web/templates/account/watchlist/show.html.eex:22
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:19
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
@@ -1919,7 +1919,7 @@ msgstr ""
 msgid "Request a public tag/label"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:36
+#: lib/block_scout_web/templates/account/public_tags_request/index.html.eex:37
 #, elixir-autogen, elixir-format
 msgid "Request to add public tag"
 msgstr ""
@@ -2567,6 +2567,7 @@ msgid "Total transactions"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:11
+#: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:19
 #: lib/block_scout_web/views/transaction_view.ex:461
 #, elixir-autogen, elixir-format
@@ -2902,14 +2903,11 @@ msgstr ""
 msgid "Warning! Contract bytecode has been changed and doesn't match the verified one. Therefore, interaction with this smart contract may be risky."
 msgstr ""
 
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:7
+#: lib/block_scout_web/templates/account/watchlist/show.html.eex:7
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:178
 #, elixir-autogen, elixir-format
 msgid "Watch list"
-msgstr ""
-
-#: lib/block_scout_web/templates/account/common/_nav.html.eex:7
-#, elixir-autogen, elixir-format
-msgid "Watchlist"
 msgstr ""
 
 #: lib/block_scout_web/views/wei_helpers.ex:76
@@ -2944,12 +2942,12 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: lib/block_scout_web/templates/account/api_key/index.html.eex:19
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:18
 #, elixir-autogen, elixir-format
 msgid "You can create 3 API keys per account."
 msgstr ""
 
-#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:19
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:18
 #, elixir-autogen, elixir-format
 msgid "You can create up to 15 Custom ABIs per account."
 msgstr ""
@@ -3166,4 +3164,49 @@ msgstr ""
 #: lib/block_scout_web/templates/page_not_found/index.html.eex:8
 #, elixir-autogen, elixir-format
 msgid "The requested path was not found on BlockScout."
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist/show.html.eex:25
+#, elixir-autogen, elixir-format
+msgid "Actions"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist/show.html.eex:38
+#, elixir-autogen, elixir-format
+msgid "Add address"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Add address to the Watch list"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:81
+#, elixir-autogen, elixir-format
+msgid "Back to Watch list (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Edit Watch list address"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:77
+#, elixir-autogen, elixir-format
+msgid "Remove from Watch list"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_address/index.html.eex:14
+#, elixir-autogen, elixir-format
+msgid "You don't have address tags yet"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist/show.html.eex:14
+#, elixir-autogen, elixir-format
+msgid "You don't have addresses on you watchlist yet"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:14
+#, elixir-autogen, elixir-format
+msgid "You don't have transaction tags yet"
 msgstr ""

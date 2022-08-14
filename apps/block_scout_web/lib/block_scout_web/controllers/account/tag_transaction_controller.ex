@@ -45,5 +45,5 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
     redirect(conn, to: tag_transaction_path(conn, :index))
   end
 
-  defp new_tag, do: TagTransaction.changeset(%TagTransaction{}, %{})
+  defp new_tag, do: TagTransaction.changeset()
 end
