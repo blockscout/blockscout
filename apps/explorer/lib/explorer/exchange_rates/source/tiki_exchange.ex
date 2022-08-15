@@ -8,6 +8,8 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
 
   import Source, only: [to_decimal: 1]
 
+  require Logger
+
   @behaviour Source
 
   @impl Source
