@@ -61,6 +61,18 @@ defmodule BlockScoutWeb.Account.AuthController do
     end
   end
 
+  def api_logout(conn, _params) do
+    if match?(["Bearer " <> _token], get_req_header(conn, "authorization")) do
+      ["Bearer " <> token] = get_req_header(conn, "authorization")
+      Guardian.revoke(token)
+    end
+
+    logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
+
+    conn
+    |> redirect(external: logout_url)
+  end
+
   # for importing in other controllers
   def authenticate!(conn) do
     current_user(conn) || redirect(conn, to: root())

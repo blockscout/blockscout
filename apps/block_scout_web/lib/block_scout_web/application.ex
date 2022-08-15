@@ -22,7 +22,8 @@ defmodule BlockScoutWeb.Application do
       child_spec(Endpoint, []),
       {Absinthe.Subscription, Endpoint},
       {RealtimeEventHandler, name: RealtimeEventHandler},
-      {BlocksIndexedCounter, name: BlocksIndexedCounter}
+      {BlocksIndexedCounter, name: BlocksIndexedCounter},
+      {Guardian.DB.Token.SweeperServer, []}
     ]
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
