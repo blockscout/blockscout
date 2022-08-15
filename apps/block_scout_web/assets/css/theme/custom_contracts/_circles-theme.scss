@@ -711,6 +711,7 @@ $c-dark-text-color: #8a8dba;
 	color: $c-primary;
   }
   
-.circles-theme-applied.dark-theme-applied a:hover, a:focus {
+.circles-theme-applied.dark-theme-applied a:hover,
+.circles-theme-applied.dark-theme-applied a:focus {
 	color: $c-primary;
 }

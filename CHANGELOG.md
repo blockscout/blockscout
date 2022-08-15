@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#5860](https://github.com/blockscout/blockscout/pull/5860) - Integrate rust verifier micro-service ([blockscout-rs/verifier](https://github.com/blockscout/blockscout-rs/tree/main/verification))
 
 ### Fixes
 - [#5904](https://github.com/blockscout/blockscout/pull/5904) - Enhance health API endpoint: better parsing HEALTHY_BLOCKS_PERIOD and use it in the response
