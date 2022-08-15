@@ -73,7 +73,7 @@ defmodule Indexer.Block.Fetcher do
   # DO NOT use them directly in the code.  Get options from `state`.
 
   @receipts_batch_size 250
-  @receipts_concurrency 10
+  @receipts_concurrency 4
 
   @doc false
   def default_receipts_batch_size, do: @receipts_batch_size
