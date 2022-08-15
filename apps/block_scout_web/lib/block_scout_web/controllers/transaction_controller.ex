@@ -122,21 +122,33 @@ defmodule BlockScoutWeb.TransactionController do
     )
   end
 
-  def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
-    case Chain.string_to_transaction_hash(transaction_hash_string) do
-      {:ok, transaction_hash} ->
-        if Chain.transaction_has_token_transfers?(transaction_hash) do
-          TransactionTokenTransferController.index(conn, %{
-            "transaction_id" => transaction_hash_string,
-            "type" => "JSON"
-          })
-        else
-          TransactionInternalTransactionController.index(conn, %{
-            "transaction_id" => transaction_hash_string,
-            "type" => "JSON"
-          })
-        end
+  defp index_transaction(transaction_hash, transaction_hash_string, conn) do
+    if Chain.transaction_has_token_transfers?(transaction_hash) do
+      TransactionTokenTransferController.index(conn, %{
+        "transaction_id" => transaction_hash_string,
+        "type" => "JSON"
+      })
+    else
+      TransactionInternalTransactionController.index(conn, %{
+        "transaction_id" => transaction_hash_string,
+        "type" => "JSON"
+      })
+    end
+  end
 
+  def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
+    with :false <- Chain.is_cosmos_tx(transaction_hash_string),
+         {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
+         :ok <- Chain.check_transaction_exists(transaction_hash) do
+        index_transaction(transaction_hash, transaction_hash_string, conn)
+    else
+      :true ->
+        tx_hash = Chain.search_tx_hash_by_cosmos_hash(transaction_hash_string)
+        if (tx_hash != nil) do
+          index_transaction(tx_hash, to_string(tx_hash), conn)
+        else
+          set_not_found_view(conn, transaction_hash_string)
+        end
       :error ->
         set_not_found_view(conn, transaction_hash_string)
     end
