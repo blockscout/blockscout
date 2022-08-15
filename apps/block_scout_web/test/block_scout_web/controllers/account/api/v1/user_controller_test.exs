@@ -345,7 +345,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
           "/api/account/v1/user/watchlist",
           watchlist_address_map
         )
-        |> doc(description: "Add address to watchlist")
+        |> doc(description: "Add address to watch list")
         |> json_response(200)
 
       assert post_watchlist_address_response["notification_settings"] == watchlist_address_map["notification_settings"]
@@ -376,10 +376,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> get("/api/account/v1/user/watchlist")
         |> doc(description: "Get addresses from watchlists")
         |> json_response(200)
-        |> Enum.at(0)
+        |> Enum.at(1)
 
       get_watchlist_address_response_1_1 =
-        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(1)
+        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
 
       assert get_watchlist_address_response_1_0 == get_watchlist_address_response
 
@@ -430,10 +430,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> json_response(200)
 
       get_watchlist_address_response_1_0 =
-        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
+        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(1)
 
       get_watchlist_address_response_1_1 =
-        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(1)
+        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
 
       assert get_watchlist_address_response_1_0 == get_watchlist_address_response
 
@@ -526,7 +526,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
                watchlist_address_map
              )
              |> doc(description: "Example of error on creating watchlist address")
-             |> json_response(422) == %{"errors" => %{"watchlist_id" => ["Address already added to the watchlist"]}}
+             |> json_response(422) == %{"errors" => %{"watchlist_id" => ["Address already added to the watch list"]}}
 
       new_watchlist_address_map = build(:watchlist_address)
 
@@ -544,7 +544,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
                watchlist_address_map
              )
              |> doc(description: "Example of error on editing watchlist address")
-             |> json_response(422) == %{"errors" => %{"watchlist_id" => ["Address already added to the watchlist"]}}
+             |> json_response(422) == %{"errors" => %{"watchlist_id" => ["Address already added to the watch list"]}}
     end
 
     test "post api key", %{conn: conn} do
@@ -770,7 +770,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_public_tasg_request_response["tags"] == public_tags_request["tags"]
       assert post_public_tasg_request_response["website"] == public_tags_request["website"]
       assert post_public_tasg_request_response["additional_comment"] == public_tags_request["additional_comment"]
-      assert post_public_tasg_request_response["addresses"] == Enum.join(public_tags_request["addresses_array"], ";")
+      assert post_public_tasg_request_response["addresses"] == public_tags_request["addresses"]
       assert post_public_tasg_request_response["company"] == public_tags_request["company"]
       assert post_public_tasg_request_response["is_owner"] == public_tags_request["is_owner"]
       assert post_public_tasg_request_response["id"]
@@ -792,7 +792,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_public_tasg_request_response["tags"] == public_tags_request["tags"]
       assert post_public_tasg_request_response["website"] == public_tags_request["website"]
       assert post_public_tasg_request_response["additional_comment"] == public_tags_request["additional_comment"]
-      assert post_public_tasg_request_response["addresses"] == Enum.join(public_tags_request["addresses_array"], ";")
+      assert post_public_tasg_request_response["addresses"] == public_tags_request["addresses"]
       assert post_public_tasg_request_response["company"] == public_tags_request["company"]
       assert post_public_tasg_request_response["is_owner"] == public_tags_request["is_owner"]
       assert post_public_tasg_request_response["id"]
@@ -806,7 +806,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       public_tags_list = build_list(10, :public_tags_request)
 
       final_list =
-        Enum.map(public_tags_list, fn request ->
+        public_tags_list
+        |> Enum.map(fn request ->
           response =
             conn
             |> post(
@@ -820,13 +821,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
           assert response["tags"] == request["tags"]
           assert response["website"] == request["website"]
           assert response["additional_comment"] == request["additional_comment"]
-          assert response["addresses"] == Enum.join(request["addresses_array"], ";")
+          assert response["addresses"] == request["addresses"]
           assert response["company"] == request["company"]
           assert response["is_owner"] == request["is_owner"]
           assert response["id"]
 
           response
         end)
+        |> Enum.reverse()
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
@@ -867,7 +869,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_public_tasg_request_response["tags"] == public_tags_request["tags"]
       assert post_public_tasg_request_response["website"] == public_tags_request["website"]
       assert post_public_tasg_request_response["additional_comment"] == public_tags_request["additional_comment"]
-      assert post_public_tasg_request_response["addresses"] == Enum.join(public_tags_request["addresses_array"], ";")
+      assert post_public_tasg_request_response["addresses"] == public_tags_request["addresses"]
       assert post_public_tasg_request_response["company"] == public_tags_request["company"]
       assert post_public_tasg_request_response["is_owner"] == public_tags_request["is_owner"]
       assert post_public_tasg_request_response["id"]
@@ -892,7 +894,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert put_public_tasg_request_response["tags"] == new_public_tags_request["tags"]
       assert put_public_tasg_request_response["website"] == new_public_tags_request["website"]
       assert put_public_tasg_request_response["additional_comment"] == new_public_tags_request["additional_comment"]
-      assert put_public_tasg_request_response["addresses"] == Enum.join(new_public_tags_request["addresses_array"], ";")
+      assert put_public_tasg_request_response["addresses"] == new_public_tags_request["addresses"]
       assert put_public_tasg_request_response["company"] == new_public_tags_request["company"]
       assert put_public_tasg_request_response["is_owner"] == new_public_tags_request["is_owner"]
       assert put_public_tasg_request_response["id"] == post_public_tasg_request_response["id"]

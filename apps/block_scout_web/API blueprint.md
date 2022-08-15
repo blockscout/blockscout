@@ -22,6 +22,28 @@
             {"auth_token":"..."}
 
 
+# Group BlockScoutWeb.Account.Api.V1.AuthController
+## BlockScoutWeb.Account.Api.V1.AuthController [/auth/api/logout]
+### BlockScoutWeb.Account.Api.V1.AuthController info [GET /auth/api/logout]
+
+
+
+
+
++ Logout
+**GET**&nbsp;&nbsp;`/auth/api/logout`
+
+    + Headers
+    
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNmY5MjFmOGQtNjBiNC00ODE5LTk4MGEtNzFmZjcwYTAyMGNkIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.yX_VbSJf6VKnszqXQXxm7JdkHlxxzmlQYUAF-1HWwoS9tVoWxiEcuo9DDOfVP6xmOSXp_pfabbX10y9XX7rQLw
+
++ Response 200
+
+    + Body
+    
+            OK
+
+
 # Group BlockScoutWeb.Account.Api.V1.UserController
 ## BlockScoutWeb.Account.Api.V1.UserController [/api/account/v1/user/info]
 ### BlockScoutWeb.Account.Api.V1.UserController info [GET /api/account/v1/user/info]
@@ -35,7 +57,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNDI5NDBiMGUtY2I1Ny00YzQ5LWJjMmUtMTIxZjBmZGNkMGIzIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE5IiwidHlwIjoiYWNjZXNzIn0.1v4u5r5o0f8FBGr4eZ0U3_rF9hJmL8PxNnDZLMxi6EtO6SlmM5FiUdC0AmPYjdMhOSvrTF-hJUHy6u3PztMNUQ
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNmY5MjFmOGQtNjBiNC00ODE5LTk4MGEtNzFmZjcwYTAyMGNkIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.yX_VbSJf6VKnszqXQXxm7JdkHlxxzmlQYUAF-1HWwoS9tVoWxiEcuo9DDOfVP6xmOSXp_pfabbX10y9XX7rQLw
 
 + Response 200
 
@@ -43,17 +65,17 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9OSIm67azAAABJB
+            x-request-id: FwuQnPvkXpQ_AFwAABPB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
-              "nickname": "test_user19",
-              "name": "User Test19",
-              "email": "test_user-19@blockscout.com",
-              "avatar": "https://example.com/avatar/test_user19"
+              "nickname": "test_user5",
+              "name": "User Test5",
+              "email": "test_user-5@blockscout.com",
+              "avatar": "https://example.com/avatar/test_user5"
             }
 ### BlockScoutWeb.Account.Api.V1.UserController create_tag_address [POST /api/account/v1/user/tags/address]
 
@@ -66,7 +88,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMGRkMWFhNmQtNTNlYy00ODUwLTlhNjMtYTQ0ZDEzMzI4NzYxIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.Y358pcM31Tr8trpa-YQ4Gw7V-o8MafjUtrWcIvPvQpg-N50uxCWfuJ82mp6tAtuPzaSY_r2-YqZnUavQdm3Pvw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiN2ZkYjczZWEtYjRhOC00NjQ1LWJiZTMtZDU2OWQyYTM3ODY2IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE3IiwidHlwIjoiYWNjZXNzIn0.hWPDoWz6sjih4_W6d0_dGJzUBDaX8391rX2DhQ_PNo8JhsQ2NlQzGSk8fZ_09GNhGHvoKuZXnyJSHoIu-yt7XQ
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -81,15 +103,15 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8nMFI1lqPkAAAuh
+            x-request-id: FwuQnQulkfs31PUAAB7B
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "name": "MyName",
-              "id": 127,
+              "id": 186,
               "address_hash": "0x3e9ac8f16c92bc4f093357933b5befbf1e16987b"
             }
 
@@ -110,7 +132,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMGRkMWFhNmQtNTNlYy00ODUwLTlhNjMtYTQ0ZDEzMzI4NzYxIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.Y358pcM31Tr8trpa-YQ4Gw7V-o8MafjUtrWcIvPvQpg-N50uxCWfuJ82mp6tAtuPzaSY_r2-YqZnUavQdm3Pvw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiN2ZkYjczZWEtYjRhOC00NjQ1LWJiZTMtZDU2OWQyYTM3ODY2IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE3IiwidHlwIjoiYWNjZXNzIn0.hWPDoWz6sjih4_W6d0_dGJzUBDaX8391rX2DhQ_PNo8JhsQ2NlQzGSk8fZ_09GNhGHvoKuZXnyJSHoIu-yt7XQ
 
 + Response 200
 
@@ -118,10 +140,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8oI7GZlqPkAAAvB
+            x-request-id: FwuQnQvZW8s31PUAAB7h
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -137,29 +159,29 @@
             }
 
 # Group BlockScoutWeb.Account.Api.V1.UserController
-## BlockScoutWeb.Account.Api.V1.UserController [/api/account/v1/user/tags/address/128]
+## BlockScoutWeb.Account.Api.V1.UserController [/api/account/v1/user/tags/address/187]
 ### BlockScoutWeb.Account.Api.V1.UserController update_tag_address [PUT /api/account/v1/user/tags/address/{id}]
 
 
  
 
 + Parameters
-    + id: `128`
-            id: 128
+    + id: `187`
+            id: 187
 
 
 + Request Edit private address tag
-**PUT**&nbsp;&nbsp;`/api/account/v1/user/tags/address/128`
+**PUT**&nbsp;&nbsp;`/api/account/v1/user/tags/address/187`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMGQxNTAyMTAtYjMxNy00MjgzLWI0NjAtZDIzNmQ2MGZkMzlmIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIwIiwidHlwIjoiYWNjZXNzIn0.JdHdw1NwwHTzZqCZ0WjiMG6gnTOVspvXFL7M9FhSkJiwLvmyhcBxo410Z3MlqqKEnuP93nQua6i6AIynuHr2Kw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMzMwMzNmZTgtZTcwOS00YmU3LWI5Y2MtMzRhOTdjMGM0NzIyIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDI0IiwidHlwIjoiYWNjZXNzIn0.9X0Kzbgoz9dO4NF390Umo4m_iqJbzDbssIl2Rm9WzEL3Q2bkAqtM1Pt_M3-uRTlATOCrlyNCN0LV1UYMPmEQAQ
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
               "name": "name3",
-              "address_hash": "0x000000000000000000000000000000000000002f"
+              "address_hash": "0x0000000000000000000000000000000000000087"
             }
 
 + Response 200
@@ -168,16 +190,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9P_gHp-3AQAABMh
+            x-request-id: FwuQnRItprfUTWIAACPB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "name": "name3",
-              "id": 128,
-              "address_hash": "0x000000000000000000000000000000000000002f"
+              "id": 187,
+              "address_hash": "0x0000000000000000000000000000000000000087"
             }
 ### BlockScoutWeb.Account.Api.V1.UserController tags_address [GET /api/account/v1/user/tags/address]
 
@@ -190,7 +212,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMjVmZTUyNWMtNGIzNi00NDJjLWEwM2QtOGM2MTgwOWEyOTdkIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEiLCJ0eXAiOiJhY2Nlc3MifQ.lbGj3MpBlPgOwlfoaIWqzsQrFz8XhGZAwFJNd7b5xrdEjhehdQNCCsLyAdr3OOenldwsXHKefkcsMtPrllbwfw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMDY2MzY5MmEtOGIyMC00NGYwLWExNzItYWJlYmM2OWU5YjQ3IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEyIiwidHlwIjoiYWNjZXNzIn0.48A1cvh2LlJSNm5R-gpJOE5DzikztneJ0BA04Q6vpyjinzWYuI43-L9dQ0zju_OFx_GSQZ2jiVbvMS1qRqW2WA
 
 + Response 200
 
@@ -198,27 +220,27 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8a8MMUw_lsAAAah
+            x-request-id: FwuQnQXweZ7Vod4AABrB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             [
               {
-                "name": "name0",
-                "id": 124,
-                "address_hash": "0x0000000000000000000000000000000000000003"
+                "name": "name2",
+                "id": 185,
+                "address_hash": "0x000000000000000000000000000000000000005f"
               },
               {
                 "name": "name1",
-                "id": 125,
-                "address_hash": "0x0000000000000000000000000000000000000004"
+                "id": 184,
+                "address_hash": "0x000000000000000000000000000000000000005e"
               },
               {
-                "name": "name2",
-                "id": 126,
-                "address_hash": "0x0000000000000000000000000000000000000005"
+                "name": "name0",
+                "id": 183,
+                "address_hash": "0x000000000000000000000000000000000000005d"
               }
             ]
 ### BlockScoutWeb.Account.Api.V1.UserController delete_tag_address [DELETE /api/account/v1/user/tags/address/{id}]
@@ -227,16 +249,16 @@
  
 
 + Parameters
-    + id: `129`
-            id: 129
+    + id: `180`
+            id: 180
 
 
 + Request Delete private address tag
-**DELETE**&nbsp;&nbsp;`/api/account/v1/user/tags/address/129`
+**DELETE**&nbsp;&nbsp;`/api/account/v1/user/tags/address/180`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZDBkNGU0N2UtYzE3OS00OWFjLThlMzQtZWJjNmMwZWYyYWZhIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIzIiwidHlwIjoiYWNjZXNzIn0.EFn5CLnK97TZjHHdyqZfboDWuSRvgmaBZQSe9TgPejixPrg_dMRIOpXiGNkM64flduFmSGKcsmLYKSaZ-LHO0Q
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMGRmZDM5OWItYzI2My00Mjg2LWFjYzEtN2JhYzdlNzk3ODcwIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEiLCJ0eXAiOiJhY2Nlc3MifQ.S6enBZxXhYvL5JrJolfuYYDHn_oW36UpHUdyKVi6FHpH5wUZGTeOQ4Gj_9HaNcvm-wC7HNqU5OLTT6epq8rjuw
 
 + Response 200
 
@@ -244,10 +266,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9f16PR-c2IAAAuC
+            x-request-id: FwuQnPYnRIrQD4QAAAHE
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -264,12 +286,12 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTc0NzA5ODktN2MxYi00MjBlLTk0YzQtMDQ5NjZlYzdjZDM3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.7qv6zbqlLEWzwpztNfXshGLDHLL95FOghZIu_9Cl_lj7_mYkEjbky14RI0Ro5Y0cK817FmPq0CSYX-ZCxmpESg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZWY0ZjZkZDItMmRkMC00ZjliLWFjZDYtYzkwODk4Yjc0Y2FlIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.z81pOVwr8GyKW_uw51OfwKm4m5Tt3URf8Aoymnb_wy6OfatVTUrdYQ75TwyHsBbnt6-isJYI6ZxeAE-OnKydfA
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
+              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000006",
               "name": "MyName"
             }
 
@@ -279,16 +301,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9FrA4SXFKIAAAYi
+            x-request-id: FwuQnQl3iGVb82YAAB1B
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
-              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
+              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000006",
               "name": "MyName",
-              "id": 149
+              "id": 209
             }
 
 
@@ -297,12 +319,12 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTc0NzA5ODktN2MxYi00MjBlLTk0YzQtMDQ5NjZlYzdjZDM3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.7qv6zbqlLEWzwpztNfXshGLDHLL95FOghZIu_9Cl_lj7_mYkEjbky14RI0Ro5Y0cK817FmPq0CSYX-ZCxmpESg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZWY0ZjZkZDItMmRkMC00ZjliLWFjZDYtYzkwODk4Yjc0Y2FlIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.z81pOVwr8GyKW_uw51OfwKm4m5Tt3URf8Aoymnb_wy6OfatVTUrdYQ75TwyHsBbnt6-isJYI6ZxeAE-OnKydfA
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000008",
+              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000005",
               "name": "MyName"
             }
 
@@ -312,10 +334,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9EuXVCXFKIAAA-B
+            x-request-id: FwuQnQlK1bBb82YAAB0h
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -327,23 +349,23 @@
             }
 
 # Group BlockScoutWeb.Account.Api.V1.TagsController
-## BlockScoutWeb.Account.Api.V1.TagsController [/api/account/v1/tags/transaction/0x0000000000000000000000000000000000000000000000000000000000000009]
+## BlockScoutWeb.Account.Api.V1.TagsController [/api/account/v1/tags/transaction/0x0000000000000000000000000000000000000000000000000000000000000006]
 ### BlockScoutWeb.Account.Api.V1.TagsController tags_transaction [GET /api/account/v1/tags/transaction/{transaction_hash}]
 
 
  
 
 + Parameters
-    + transaction_hash: `0x0000000000000000000000000000000000000000000000000000000000000009`
-            transaction_hash: 0x0000000000000000000000000000000000000000000000000000000000000009
+    + transaction_hash: `0x0000000000000000000000000000000000000000000000000000000000000006`
+            transaction_hash: 0x0000000000000000000000000000000000000000000000000000000000000006
 
 
 + Request Get tags for transaction
-**GET**&nbsp;&nbsp;`/api/account/v1/tags/transaction/0x0000000000000000000000000000000000000000000000000000000000000009`
+**GET**&nbsp;&nbsp;`/api/account/v1/tags/transaction/0x0000000000000000000000000000000000000000000000000000000000000006`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTc0NzA5ODktN2MxYi00MjBlLTk0YzQtMDQ5NjZlYzdjZDM3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.7qv6zbqlLEWzwpztNfXshGLDHLL95FOghZIu_9Cl_lj7_mYkEjbky14RI0Ro5Y0cK817FmPq0CSYX-ZCxmpESg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZWY0ZjZkZDItMmRkMC00ZjliLWFjZDYtYzkwODk4Yjc0Y2FlIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.z81pOVwr8GyKW_uw51OfwKm4m5Tt3URf8Aoymnb_wy6OfatVTUrdYQ75TwyHsBbnt6-isJYI6ZxeAE-OnKydfA
 
 + Response 200
 
@@ -351,10 +373,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9F50_-XFKIAAA-h
+            x-request-id: FwuQnQmM88tb82YAAB1h
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -367,28 +389,28 @@
             }
 
 # Group BlockScoutWeb.Account.Api.V1.UserController
-## BlockScoutWeb.Account.Api.V1.UserController [/api/account/v1/user/tags/transaction/144]
+## BlockScoutWeb.Account.Api.V1.UserController [/api/account/v1/user/tags/transaction/204]
 ### BlockScoutWeb.Account.Api.V1.UserController update_tag_transaction [PUT /api/account/v1/user/tags/transaction/{id}]
 
 
  
 
 + Parameters
-    + id: `144`
-            id: 144
+    + id: `204`
+            id: 204
 
 
 + Request Edit private transaction tag
-**PUT**&nbsp;&nbsp;`/api/account/v1/user/tags/transaction/144`
+**PUT**&nbsp;&nbsp;`/api/account/v1/user/tags/transaction/204`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMTBhMGYyYTItNzc3MC00Y2Y2LTgxMzgtNDcwZjI2ZmNhOWZiIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDExIiwidHlwIjoiYWNjZXNzIn0.IxHBdrhZjcVbN9DKUBAcxdlL8UJDqK-4Vcu5vTbmnvZPgqYuRfqMlkDDL6z9Uvs613_7bAWXP1QLFJB3k0JdSQ
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODRkMGU4ZGEtY2JjMi00NjVmLWE2MzgtM2Q3ZjYzY2FjZTdiIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEwIiwidHlwIjoiYWNjZXNzIn0.h6ACZ8fDDQp-XGwcG7mw3-B-kNrM0gdcAVFFTFJPH8p7Yh8c0kN_pSNBfZog1efajV6jZhJlf-XpSaekXDi3KQ
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000004",
+              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
               "name": "name1"
             }
 
@@ -398,16 +420,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H85G2H7pPTUAAAQi
+            x-request-id: FwuQnQNlh9q_YHIAABiB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
-              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000004",
+              "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
               "name": "name1",
-              "id": 144
+              "id": 204
             }
 ### BlockScoutWeb.Account.Api.V1.UserController tags_transaction [GET /api/account/v1/user/tags/transaction]
 
@@ -420,7 +442,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYWVkMjFiNGEtZGVlZC00NzMzLWJhNWQtZWZhMzc4MWQ0Y2JmIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDYiLCJ0eXAiOiJhY2Nlc3MifQ.IZ0bV7ZpzlQLrWcvuDI5gLkiHO4Tlb4gHWYp0BPko67c65i1Go4CGQla48PGrV4tmAtB52No9EJOPIx5BFi3HA
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMTAwZGRiNjUtYzlkYi00NjA5LWIwZTktNzc3OGQ3Y2FjNDU2IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIyIiwidHlwIjoiYWNjZXNzIn0.CykUrkOmwHt_1jl3eu54NXtMzx-v0sbPCPTBilbQf82mTjhXLvNT9Qr8AV9mFm9Yseb8LNVlAfBMhyNs4zbywQ
 
 + Response 200
 
@@ -428,27 +450,27 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8vIbEt0TAgAAAiD
+            x-request-id: FwuQnRER4BGMdJQAAAni
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             [
               {
-                "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-                "name": "name0",
-                "id": 141
-              },
-              {
-                "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
-                "name": "name1",
-                "id": 142
-              },
-              {
-                "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
+                "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
                 "name": "name2",
-                "id": 143
+                "id": 212
+              },
+              {
+                "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000008",
+                "name": "name1",
+                "id": 211
+              },
+              {
+                "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000007",
+                "name": "name0",
+                "id": 210
               }
             ]
 ### BlockScoutWeb.Account.Api.V1.UserController delete_tag_transaction [DELETE /api/account/v1/user/tags/transaction/{id}]
@@ -457,16 +479,16 @@
  
 
 + Parameters
-    + id: `145`
-            id: 145
+    + id: `205`
+            id: 205
 
 
 + Request Delete private transaction tag
-**DELETE**&nbsp;&nbsp;`/api/account/v1/user/tags/transaction/145`
+**DELETE**&nbsp;&nbsp;`/api/account/v1/user/tags/transaction/205`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOWMzMmNhMDYtZWQ1MS00N2FkLThhOGUtNjQ3ZDQ1YjA2Yzc1IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEyIiwidHlwIjoiYWNjZXNzIn0.zoyPtivvXWSp-bmco0TZk23SaEDkExrePwwUELiJmpLROmayNTbAat2iWPwjS5aoi4vrJ5i3TovSnkgyto2FPw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODNmODk3ZjktMGYwOS00YmE4LTk2NjItYTkwNTgyMjg4YjU4IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEzIiwidHlwIjoiYWNjZXNzIn0.F0g8CraaDyRHqI3wEZRMPMpg-mvyMBT2kExHmdG0Kh0iM7qs0vuHghXKBGZbnRaF_g6ebHj3sqkXNIZqgaHgRw
 
 + Response 200
 
@@ -474,10 +496,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8_XjGhcVs8AAAUC
+            x-request-id: FwuQnQf2NAcAeg4AAAZC
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -489,12 +511,12 @@
  
 
 
-+ Request Add address to watchlist
++ Request Add address to watch list
 **POST**&nbsp;&nbsp;`/api/account/v1/user/watchlist`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiY2JkNThlMmYtNTlmNy00MWMxLTgzNGQtYzZhNzg1NWFhNTMwIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIxIiwidHlwIjoiYWNjZXNzIn0.ugSCWLPiRXd8nrldXQae9s-O93Y9jMyGSrqAIVNycbE303ws06ZJC4OELTs3z5qJE4Vu2gT430f7JU9diO4hwQ
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNjY2MWJiZDMtZjE5Yy00NGI0LTk1MmYtN2M3N2NmYmU1YjE3IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDciLCJ0eXAiOiJhY2Nlc3MifQ.W1hndEZ1_BeNMjTRi_NFnsRDrkbZ6odl2kHotJKownHzFqy_aStjwwnvMUDf0eSDbaH41EWVejYkU-e0t3Jb7A
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -502,10 +524,10 @@
               "notification_settings": {
                 "native": {
                   "outcoming": false,
-                  "incoming": true
+                  "incoming": false
                 },
                 "ERC-721": {
-                  "outcoming": true,
+                  "outcoming": false,
                   "incoming": false
                 },
                 "ERC-20": {
@@ -514,10 +536,10 @@
                 }
               },
               "notification_methods": {
-                "email": true
+                "email": false
               },
-              "name": "test10",
-              "address_hash": "0x0000000000000000000000000000000000000030"
+              "name": "test18",
+              "address_hash": "0x0000000000000000000000000000000000000053"
             }
 
 + Response 200
@@ -526,20 +548,20 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9RGF0el_skAAAhi
+            x-request-id: FwuQnP-UqzU3wm8AABXB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "notification_settings": {
                 "native": {
                   "outcoming": false,
-                  "incoming": true
+                  "incoming": false
                 },
                 "ERC-721": {
-                  "outcoming": true,
+                  "outcoming": false,
                   "incoming": false
                 },
                 "ERC-20": {
@@ -548,12 +570,12 @@
                 }
               },
               "notification_methods": {
-                "email": true
+                "email": false
               },
-              "name": "test10",
-              "id": 143,
+              "name": "test18",
+              "id": 210,
               "exchange_rate": null,
-              "address_hash": "0x0000000000000000000000000000000000000030",
+              "address_hash": "0x0000000000000000000000000000000000000053",
               "address_balance": null
             }
 ### BlockScoutWeb.Account.Api.V1.UserController watchlist [GET /api/account/v1/user/watchlist]
@@ -567,7 +589,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiY2JkNThlMmYtNTlmNy00MWMxLTgzNGQtYzZhNzg1NWFhNTMwIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIxIiwidHlwIjoiYWNjZXNzIn0.ugSCWLPiRXd8nrldXQae9s-O93Y9jMyGSrqAIVNycbE303ws06ZJC4OELTs3z5qJE4Vu2gT430f7JU9diO4hwQ
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNjY2MWJiZDMtZjE5Yy00NGI0LTk1MmYtN2M3N2NmYmU1YjE3IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDciLCJ0eXAiOiJhY2Nlc3MifQ.W1hndEZ1_BeNMjTRi_NFnsRDrkbZ6odl2kHotJKownHzFqy_aStjwwnvMUDf0eSDbaH41EWVejYkU-e0t3Jb7A
 
 + Response 200
 
@@ -575,10 +597,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9TRT0Cl_skAAAjC
+            x-request-id: FwuQnQCLxGQ3wm8AABZB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             [
@@ -589,45 +611,45 @@
                     "incoming": true
                   },
                   "ERC-721": {
-                    "outcoming": true,
+                    "outcoming": false,
                     "incoming": false
                   },
                   "ERC-20": {
                     "outcoming": false,
-                    "incoming": false
-                  }
-                },
-                "notification_methods": {
-                  "email": true
-                },
-                "name": "test10",
-                "id": 143,
-                "exchange_rate": null,
-                "address_hash": "0x0000000000000000000000000000000000000030",
-                "address_balance": null
-              },
-              {
-                "notification_settings": {
-                  "native": {
-                    "outcoming": false,
-                    "incoming": true
-                  },
-                  "ERC-721": {
-                    "outcoming": true,
-                    "incoming": true
-                  },
-                  "ERC-20": {
-                    "outcoming": true,
                     "incoming": false
                   }
                 },
                 "notification_methods": {
                   "email": false
                 },
-                "name": "test11",
-                "id": 144,
+                "name": "test19",
+                "id": 211,
                 "exchange_rate": null,
-                "address_hash": "0x0000000000000000000000000000000000000031",
+                "address_hash": "0x0000000000000000000000000000000000000054",
+                "address_balance": null
+              },
+              {
+                "notification_settings": {
+                  "native": {
+                    "outcoming": false,
+                    "incoming": false
+                  },
+                  "ERC-721": {
+                    "outcoming": false,
+                    "incoming": false
+                  },
+                  "ERC-20": {
+                    "outcoming": false,
+                    "incoming": false
+                  }
+                },
+                "notification_methods": {
+                  "email": false
+                },
+                "name": "test18",
+                "id": 210,
+                "exchange_rate": null,
+                "address_hash": "0x0000000000000000000000000000000000000053",
                 "address_balance": null
               }
             ]
@@ -637,16 +659,16 @@
  
 
 + Parameters
-    + id: `141`
-            id: 141
+    + id: `214`
+            id: 214
 
 
 + Request Delete address from watchlist by id
-**DELETE**&nbsp;&nbsp;`/api/account/v1/user/watchlist/141`
+**DELETE**&nbsp;&nbsp;`/api/account/v1/user/watchlist/214`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOTBjOTk3NWMtMmFlNC00ZjA2LWJmOTktYjZhNGM3NzAxMTgyIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDMiLCJ0eXAiOiJhY2Nlc3MifQ.0L0xwmjeU1spzJuJpHXOhOhmdui3ftU14ALdGsVdevRg2HLdjY34XTgdfS6oDquXOT3DXJmKwUYOQL2YVXT5zw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOGNiMDRmYjgtMjA1Mi00NjNkLTk4NTYtZWFlNjc5MzBlZjkwIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE5IiwidHlwIjoiYWNjZXNzIn0.Z7mQYkFDdcMSc851qemRQR3Q-IBqA-fIWjmRMZtkvWdskeW1_bbjfOI8DHHaM59wRyzqdbUpihdLaOjF7hxpxw
 
 + Response 200
 
@@ -654,10 +676,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8iY6XaB5iEAAAmh
+            x-request-id: FwuQnQ6IcAyZMSkAAAkC
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -669,23 +691,23 @@
  
 
 + Parameters
-    + id: `142`
-            id: 142
+    + id: `212`
+            id: 212
 
 
 + Request Edit watchlist address
-**PUT**&nbsp;&nbsp;`/api/account/v1/user/watchlist/142`
+**PUT**&nbsp;&nbsp;`/api/account/v1/user/watchlist/212`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMGU2NDNjZDYtZWY3NC00ZjNlLWJkM2QtMmRkMzQ3YzViMWYwIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE3IiwidHlwIjoiYWNjZXNzIn0.2C8xUsb-p8dJlgvKFBW8EGIwXDRNkAOG5Mi-1iWogolLpVqmgCkVgS-UknGNb2IfPChRhI9J5AqF_pQ9QVZoHw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTBkNmQ5ZTItNGE2MC00ZDczLWIxZTgtYzRlZDYxYzMwZTk5IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDExIiwidHlwIjoiYWNjZXNzIn0.YRkIi1DrDYXsUBJaAda80uK9zZ5c5q_bMovYS_sVzfZsTWNtVgODi4dHsnwTeMGJb97RU8L12SuiiaEUGB9BNA
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
               "notification_settings": {
                 "native": {
-                  "outcoming": true,
+                  "outcoming": false,
                   "incoming": true
                 },
                 "ERC-721": {
@@ -694,14 +716,14 @@
                 },
                 "ERC-20": {
                   "outcoming": false,
-                  "incoming": true
+                  "incoming": false
                 }
               },
               "notification_methods": {
                 "email": true
               },
-              "name": "test9",
-              "address_hash": "0x000000000000000000000000000000000000002d"
+              "name": "test23",
+              "address_hash": "0x000000000000000000000000000000000000005c"
             }
 
 + Response 200
@@ -710,16 +732,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9LfJ0ItKUsAABFh
+            x-request-id: FwuQnQQmuI8HFF0AABlh
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "notification_settings": {
                 "native": {
-                  "outcoming": true,
+                  "outcoming": false,
                   "incoming": true
                 },
                 "ERC-721": {
@@ -728,16 +750,16 @@
                 },
                 "ERC-20": {
                   "outcoming": false,
-                  "incoming": true
+                  "incoming": false
                 }
               },
               "notification_methods": {
                 "email": true
               },
-              "name": "test9",
-              "id": 142,
+              "name": "test23",
+              "id": 212,
               "exchange_rate": null,
-              "address_hash": "0x000000000000000000000000000000000000002d",
+              "address_hash": "0x000000000000000000000000000000000000005c",
               "address_balance": null
             }
 ### BlockScoutWeb.Account.Api.V1.UserController create_watchlist [POST /api/account/v1/user/watchlist]
@@ -751,7 +773,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYTY2M2JlNzMtOTFjMy00ZWRjLWE2YmQtMWJjOGE1MmM4NTk3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDAiLCJ0eXAiOiJhY2Nlc3MifQ.zFABFWiAkeaeXzDL2Oc_DjwxYEq0ZfZCjUemzPIfgU5S3rpw2kZKRhWhpGPAB9NbeX2LEiX71nvPd6Kr1ZqkTw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOTVhOTk1N2ItNjAyMS00MDVhLTk2NTAtYTc5YWIyY2ZkNTllIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDQiLCJ0eXAiOiJhY2Nlc3MifQ.7Oj-gf_a43Lv_7Lw5NWpbsO-pSyIzQXEsuLTnHGyz9OMsaZgmRulXrTezMGjeX1FQ-jdFTFIcNx1_B2hRt1tJQ
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -762,19 +784,19 @@
                   "incoming": true
                 },
                 "ERC-721": {
-                  "outcoming": false,
+                  "outcoming": true,
                   "incoming": true
                 },
                 "ERC-20": {
-                  "outcoming": false,
+                  "outcoming": true,
                   "incoming": false
                 }
               },
               "notification_methods": {
-                "email": true
+                "email": false
               },
-              "name": "test0",
-              "address_hash": "0x0000000000000000000000000000000000000001"
+              "name": "test16",
+              "address_hash": "0x0000000000000000000000000000000000000014"
             }
 
 + Response 422
@@ -783,16 +805,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8TH4IeSrmsAAATh
+            x-request-id: FwuQnPsF_80NBRoAABLB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "errors": {
                 "watchlist_id": [
-                  "Address already added to the watchlist"
+                  "Address already added to the watch list"
                 ]
               }
             }
@@ -802,16 +824,16 @@
  
 
 + Parameters
-    + id: `139`
-            id: 139
+    + id: `209`
+            id: 209
 
 
 + Request Example of error on editing watchlist address
-**PUT**&nbsp;&nbsp;`/api/account/v1/user/watchlist/139`
+**PUT**&nbsp;&nbsp;`/api/account/v1/user/watchlist/209`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYTY2M2JlNzMtOTFjMy00ZWRjLWE2YmQtMWJjOGE1MmM4NTk3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDAiLCJ0eXAiOiJhY2Nlc3MifQ.zFABFWiAkeaeXzDL2Oc_DjwxYEq0ZfZCjUemzPIfgU5S3rpw2kZKRhWhpGPAB9NbeX2LEiX71nvPd6Kr1ZqkTw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOTVhOTk1N2ItNjAyMS00MDVhLTk2NTAtYTc5YWIyY2ZkNTllIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDQiLCJ0eXAiOiJhY2Nlc3MifQ.7Oj-gf_a43Lv_7Lw5NWpbsO-pSyIzQXEsuLTnHGyz9OMsaZgmRulXrTezMGjeX1FQ-jdFTFIcNx1_B2hRt1tJQ
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -822,19 +844,19 @@
                   "incoming": true
                 },
                 "ERC-721": {
-                  "outcoming": false,
+                  "outcoming": true,
                   "incoming": true
                 },
                 "ERC-20": {
-                  "outcoming": false,
+                  "outcoming": true,
                   "incoming": false
                 }
               },
               "notification_methods": {
-                "email": true
+                "email": false
               },
-              "name": "test0",
-              "address_hash": "0x0000000000000000000000000000000000000001"
+              "name": "test16",
+              "address_hash": "0x0000000000000000000000000000000000000014"
             }
 
 + Response 422
@@ -843,16 +865,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8U3jEKSrmsAAAUh
+            x-request-id: FwuQnPtn2b0NBRoAABMB
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "errors": {
                 "watchlist_id": [
-                  "Address already added to the watchlist"
+                  "Address already added to the watch list"
                 ]
               }
             }
@@ -867,7 +889,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNzFjYmRkNWMtMDBiZC00MjY4LTliNmYtZDc1MDhlOWI2YjcxIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDgiLCJ0eXAiOiJhY2Nlc3MifQ.V0HIqp8ynSybsSfvdHpkywR4rgszPMpUKXrHNz1RfW1QibT-lJDtE0YGB_SWcClQPlTPB8kF2vOXgnuqm2dc8A
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYWYyYzYyY2QtMmYwNC00OTU3LTljZDAtMWM5OWNkYzhmYjA2IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.6Mgi8a_whFYSD51Z-nkRQOehblhx7HbyPy6n35wxjVANsA7ZL3aiKDdF7p2sNzYkw1dPmAx8LzrZDehVdu_v1g
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -881,15 +903,15 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8yY1najgTYAAAxh
+            x-request-id: FwuQnQIzqZt_3TEAAAXi
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "name": "test",
-              "api_key": "ca9398ae-224c-4935-8e51-975c0e646487"
+              "api_key": "fef20f61-10b0-4a0c-8e95-4866a4889b6c"
             }
 
 
@@ -898,7 +920,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZGJiYjZhMDItZTE4YS00YjU4LWFlODItZGZhMTIxZTUyOTZmIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.vcwFRHpmSCegFqYEpJmxc7TS11f8gZgIbDZZj3S9UmXYdOkqs3RC6J6X0tz0C8hVhkz9ttA9wW1R6uwekFkQhA
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNDBiODFkZWQtZjY5Yi00MjAxLWI3NmEtYzM4YWFiYzkzYzhmIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE4IiwidHlwIjoiYWNjZXNzIn0.iL8cSQTiKO9VN4jpUIunL0HYIe8W1OjlpH0kJXWPjq1xzLs_9_r6La3Uup_ALfEhq7BEt2s7wr1jaVPko99W7g
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -912,10 +934,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9Ics3lTy1EAABCh
+            x-request-id: FwuQnQzjbeMxzQ0AAB_B
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -936,7 +958,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZGJiYjZhMDItZTE4YS00YjU4LWFlODItZGZhMTIxZTUyOTZmIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.vcwFRHpmSCegFqYEpJmxc7TS11f8gZgIbDZZj3S9UmXYdOkqs3RC6J6X0tz0C8hVhkz9ttA9wW1R6uwekFkQhA
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNDBiODFkZWQtZjY5Yi00MjAxLWI3NmEtYzM4YWFiYzkzYzhmIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE4IiwidHlwIjoiYWNjZXNzIn0.iL8cSQTiKO9VN4jpUIunL0HYIe8W1OjlpH0kJXWPjq1xzLs_9_r6La3Uup_ALfEhq7BEt2s7wr1jaVPko99W7g
 
 + Response 200
 
@@ -944,24 +966,24 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9IonHZTy1EAAAZC
+            x-request-id: FwuQnQ0avJQxzQ0AAB_h
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             [
               {
                 "name": "test",
-                "api_key": "3ebadf72-dbbf-4f13-8480-0461f69de56d"
+                "api_key": "93614ffc-1676-4d57-9a62-7d0b125e489a"
               },
               {
                 "name": "test",
-                "api_key": "e12f940b-4387-487b-b4c1-fbea90892fd9"
+                "api_key": "b45de683-41eb-462d-b284-02e6ad3bd5e9"
               },
               {
                 "name": "test",
-                "api_key": "5aef562b-6849-4e9e-93bd-6ad6c9aef33f"
+                "api_key": "6e696004-25c1-4950-bb18-4c19ae0c6cc7"
               }
             ]
 ### BlockScoutWeb.Account.Api.V1.UserController update_api_key [PUT /api/account/v1/user/api_keys/{api_key}]
@@ -970,16 +992,16 @@
  
 
 + Parameters
-    + api_key: `6b315305-56ef-441a-9d2e-ff4e6451c095`
-            api_key: 6b315305-56ef-441a-9d2e-ff4e6451c095
+    + api_key: `cb4cf42c-c366-4c89-99e4-13000f6f3c67`
+            api_key: cb4cf42c-c366-4c89-99e4-13000f6f3c67
 
 
 + Request Edit api key
-**PUT**&nbsp;&nbsp;`/api/account/v1/user/api_keys/6b315305-56ef-441a-9d2e-ff4e6451c095`
+**PUT**&nbsp;&nbsp;`/api/account/v1/user/api_keys/cb4cf42c-c366-4c89-99e4-13000f6f3c67`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZjBiNDFjZTItMDQzZS00M2VjLTk5OWUtY2I5ZWU0ZmM1Y2Q0IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE4IiwidHlwIjoiYWNjZXNzIn0.ICMIz3WqHqn1ZhaSrBOp9y4ZyK4rzfArPGlyYcaP4dcKDVkCXE-QIp7bQivHmnfbiCW3JecHllxHanWl23RWwg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYWU1NjhhY2ItZGVhYy00YWZhLTkwODUtOGU4OGMxZDFiODdkIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIiLCJ0eXAiOiJhY2Nlc3MifQ.cfYSCi18vPBf4rXf4VI9RbtFaYjZVWhiNKxnNB26_SBl-1uEdtGwYXcvC9FDkGBNk_M2XDehKxFF8EK5egy9hw
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -993,15 +1015,15 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9NExhFvvqoAABHh
+            x-request-id: FwuQnPdqSzQmvRQAAAPD
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
               "name": "test_1",
-              "api_key": "6b315305-56ef-441a-9d2e-ff4e6451c095"
+              "api_key": "cb4cf42c-c366-4c89-99e4-13000f6f3c67"
             }
 ### BlockScoutWeb.Account.Api.V1.UserController delete_api_key [DELETE /api/account/v1/user/api_keys/{api_key}]
 
@@ -1009,16 +1031,16 @@
  
 
 + Parameters
-    + api_key: `2cfe3ea9-0608-4086-9d51-a053166e2fb4`
-            api_key: 2cfe3ea9-0608-4086-9d51-a053166e2fb4
+    + api_key: `0b952302-aab3-4347-9f2d-2de817fef0d3`
+            api_key: 0b952302-aab3-4347-9f2d-2de817fef0d3
 
 
 + Request Delete api key
-**DELETE**&nbsp;&nbsp;`/api/account/v1/user/api_keys/2cfe3ea9-0608-4086-9d51-a053166e2fb4`
+**DELETE**&nbsp;&nbsp;`/api/account/v1/user/api_keys/0b952302-aab3-4347-9f2d-2de817fef0d3`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMDYxOTg4MTQtOTc4Ny00MTY1LWE2ZjYtMTc5MzI0N2QzMDI5IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEzIiwidHlwIjoiYWNjZXNzIn0.hi7Xo5QAmbXBm-uFt3AgfyB8AzVicdNT1DkOMNVFhFHuLw3RfxP9hslNp97TL7wTR1dMIb8vaf9xjiKAlrnzvQ
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYjI4MDFkYmMtMjZiNi00MTk4LWJkNGEtZWNkMzgyZjZiNDcxIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDAiLCJ0eXAiOiJhY2Nlc3MifQ.sDgN3J5doqMhMePUiIKldbvwPmn9fk4Xt00-t-qYI05Oc06wYctim2r5Gbdzbb4AhAW3iPPnHo_0--fhiV8aUw
 
 + Response 200
 
@@ -1026,10 +1048,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9DOzZvGWf4AAAXC
+            x-request-id: FwuQnPEXjB3HPBMAABCh
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -1046,13 +1068,13 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODNiY2Q3NDMtNzU5Ni00OGUzLTg3Y2YtZTFmY2E4YWZmNTUzIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEwIiwidHlwIjoiYWNjZXNzIn0.dxOxJcXiSioauyKGh8WQBSuLd3XOpWUOf2M5cBmNQM81i6u9GEpMLCcVJ0So308PWE3Np7GGUCjQEZtb0YaWnw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNWRmM2Y3MmItODM1NS00MjIyLWFmYjgtNTE0MWUxMTM0YmY4IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.t_1KQfANUi8bymIC3rl_GKwpF8pmHFWaV6AZBJrXMartT_hge4aAVE_MHNq133hDq_r24AN2U9bWJmNTj0u01A
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "name": "test7",
-              "contract_address_hash": "0x0000000000000000000000000000000000000016",
+              "name": "test24",
+              "contract_address_hash": "0x000000000000000000000000000000000000006a",
               "abi": [
                 {
                   "type": "function",
@@ -1091,16 +1113,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8119RH5E60AAA0B
+            x-request-id: FwuQnQo0o9tYelIAAB2B
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
-              "name": "test7",
-              "id": 309,
-              "contract_address_hash": "0x0000000000000000000000000000000000000016",
+              "name": "test24",
+              "id": 449,
+              "contract_address_hash": "0x000000000000000000000000000000000000006a",
               "abi": [
                 {
                   "type": "function",
@@ -1139,13 +1161,13 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODczYzM2NjktY2JlZS00YWFiLTllNTAtZjgyYjAyODJlNDQxIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDI0IiwidHlwIjoiYWNjZXNzIn0.p0a8FOIu6VV7QAwtiERZ5WanI42oz8GkyoU3Tz0mz8kQlTpH1mZZgsPWb__epnNm61_rhHaelYLug0OtTvTRag
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMmNkYjIzZWQtNjg5ZS00M2ZiLWJhY2UtMThkNmI1ZjA2MmJhIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDMiLCJ0eXAiOiJhY2Nlc3MifQ.JZLbq5J8ZoqANBHDXX3hkZUOS8fdRZrOUdIq1uULZBe4Mb2gnVPY2ug0O4zLKLxCvIj4t6DXqUfAq9Afsm5_9Q
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "name": "test27",
-              "contract_address_hash": "0x0000000000000000000000000000000000000078",
+              "name": "test15",
+              "contract_address_hash": "0x0000000000000000000000000000000000000013",
               "abi": [
                 {
                   "type": "function",
@@ -1184,10 +1206,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9pawu1W-8kAAAyC
+            x-request-id: FwuQnPoF3xt_aCMAAAaj
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -1208,7 +1230,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODczYzM2NjktY2JlZS00YWFiLTllNTAtZjgyYjAyODJlNDQxIiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDI0IiwidHlwIjoiYWNjZXNzIn0.p0a8FOIu6VV7QAwtiERZ5WanI42oz8GkyoU3Tz0mz8kQlTpH1mZZgsPWb__epnNm61_rhHaelYLug0OtTvTRag
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMmNkYjIzZWQtNjg5ZS00M2ZiLWJhY2UtMThkNmI1ZjA2MmJhIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDMiLCJ0eXAiOiJhY2Nlc3MifQ.JZLbq5J8ZoqANBHDXX3hkZUOS8fdRZrOUdIq1uULZBe4Mb2gnVPY2ug0O4zLKLxCvIj4t6DXqUfAq9Afsm5_9Q
 
 + Response 200
 
@@ -1216,17 +1238,17 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9ptd6pW-8kAAAxj
+            x-request-id: FwuQnPocnyl_aCMAAAbD
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             [
               {
-                "name": "test12",
-                "id": 310,
-                "contract_address_hash": "0x0000000000000000000000000000000000000069",
+                "name": "test14",
+                "id": 447,
+                "contract_address_hash": "0x0000000000000000000000000000000000000012",
                 "abi": [
                   {
                     "type": "function",
@@ -1260,8 +1282,8 @@
               },
               {
                 "name": "test13",
-                "id": 311,
-                "contract_address_hash": "0x000000000000000000000000000000000000006a",
+                "id": 446,
+                "contract_address_hash": "0x0000000000000000000000000000000000000011",
                 "abi": [
                   {
                     "type": "function",
@@ -1294,9 +1316,9 @@
                 ]
               },
               {
-                "name": "test14",
-                "id": 312,
-                "contract_address_hash": "0x000000000000000000000000000000000000006b",
+                "name": "test12",
+                "id": 445,
+                "contract_address_hash": "0x0000000000000000000000000000000000000010",
                 "abi": [
                   {
                     "type": "function",
@@ -1329,9 +1351,9 @@
                 ]
               },
               {
-                "name": "test15",
-                "id": 313,
-                "contract_address_hash": "0x000000000000000000000000000000000000006c",
+                "name": "test11",
+                "id": 444,
+                "contract_address_hash": "0x000000000000000000000000000000000000000f",
                 "abi": [
                   {
                     "type": "function",
@@ -1364,9 +1386,9 @@
                 ]
               },
               {
-                "name": "test16",
-                "id": 314,
-                "contract_address_hash": "0x000000000000000000000000000000000000006d",
+                "name": "test10",
+                "id": 443,
+                "contract_address_hash": "0x000000000000000000000000000000000000000e",
                 "abi": [
                   {
                     "type": "function",
@@ -1399,9 +1421,9 @@
                 ]
               },
               {
-                "name": "test17",
-                "id": 315,
-                "contract_address_hash": "0x000000000000000000000000000000000000006e",
+                "name": "test9",
+                "id": 442,
+                "contract_address_hash": "0x000000000000000000000000000000000000000d",
                 "abi": [
                   {
                     "type": "function",
@@ -1434,9 +1456,9 @@
                 ]
               },
               {
-                "name": "test18",
-                "id": 316,
-                "contract_address_hash": "0x000000000000000000000000000000000000006f",
+                "name": "test8",
+                "id": 441,
+                "contract_address_hash": "0x000000000000000000000000000000000000000c",
                 "abi": [
                   {
                     "type": "function",
@@ -1469,9 +1491,9 @@
                 ]
               },
               {
-                "name": "test19",
-                "id": 317,
-                "contract_address_hash": "0x0000000000000000000000000000000000000070",
+                "name": "test7",
+                "id": 440,
+                "contract_address_hash": "0x000000000000000000000000000000000000000b",
                 "abi": [
                   {
                     "type": "function",
@@ -1504,9 +1526,9 @@
                 ]
               },
               {
-                "name": "test20",
-                "id": 318,
-                "contract_address_hash": "0x0000000000000000000000000000000000000071",
+                "name": "test6",
+                "id": 439,
+                "contract_address_hash": "0x000000000000000000000000000000000000000a",
                 "abi": [
                   {
                     "type": "function",
@@ -1539,9 +1561,9 @@
                 ]
               },
               {
-                "name": "test21",
-                "id": 319,
-                "contract_address_hash": "0x0000000000000000000000000000000000000072",
+                "name": "test5",
+                "id": 438,
+                "contract_address_hash": "0x0000000000000000000000000000000000000009",
                 "abi": [
                   {
                     "type": "function",
@@ -1574,9 +1596,9 @@
                 ]
               },
               {
-                "name": "test22",
-                "id": 320,
-                "contract_address_hash": "0x0000000000000000000000000000000000000073",
+                "name": "test4",
+                "id": 437,
+                "contract_address_hash": "0x0000000000000000000000000000000000000008",
                 "abi": [
                   {
                     "type": "function",
@@ -1609,9 +1631,9 @@
                 ]
               },
               {
-                "name": "test23",
-                "id": 321,
-                "contract_address_hash": "0x0000000000000000000000000000000000000074",
+                "name": "test3",
+                "id": 436,
+                "contract_address_hash": "0x0000000000000000000000000000000000000007",
                 "abi": [
                   {
                     "type": "function",
@@ -1644,9 +1666,9 @@
                 ]
               },
               {
-                "name": "test24",
-                "id": 322,
-                "contract_address_hash": "0x0000000000000000000000000000000000000075",
+                "name": "test2",
+                "id": 435,
+                "contract_address_hash": "0x0000000000000000000000000000000000000006",
                 "abi": [
                   {
                     "type": "function",
@@ -1679,9 +1701,9 @@
                 ]
               },
               {
-                "name": "test25",
-                "id": 323,
-                "contract_address_hash": "0x0000000000000000000000000000000000000076",
+                "name": "test1",
+                "id": 434,
+                "contract_address_hash": "0x0000000000000000000000000000000000000005",
                 "abi": [
                   {
                     "type": "function",
@@ -1714,9 +1736,9 @@
                 ]
               },
               {
-                "name": "test26",
-                "id": 324,
-                "contract_address_hash": "0x0000000000000000000000000000000000000077",
+                "name": "test0",
+                "id": 433,
+                "contract_address_hash": "0x0000000000000000000000000000000000000004",
                 "abi": [
                   {
                     "type": "function",
@@ -1755,22 +1777,22 @@
  
 
 + Parameters
-    + id: `308`
-            id: 308
+    + id: `448`
+            id: 448
 
 
 + Request Edit custom abi
-**PUT**&nbsp;&nbsp;`/api/account/v1/user/custom_abis/308`
+**PUT**&nbsp;&nbsp;`/api/account/v1/user/custom_abis/448`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTc2ZWEzNWItMGQ1Ni00MTAzLTg1ODQtMjcyOGRhZjUxYTI4IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDQiLCJ0eXAiOiJhY2Nlc3MifQ.NzbgShjGRIfZ6-HC7lXBJm602CqznDDRgxyTXZa-Kdkx2XTYErC93KBcZKgyZ7lo7u5olkavIEOnoxXc65sOxg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNjg4MWVmYjQtOTZlNy00MTU2LTg2YWUtNmVlNDQ2MWZhNzAzIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDgiLCJ0eXAiOiJhY2Nlc3MifQ.zKX_W91W5X7Vvf-YRnk26wCgu8aFTOBkpYcsH5XrQ-5XBMFwH68dWcRtnJD09zlB-FnU6ycG4C9vlFk02KiJrg
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "name": "test6",
-              "contract_address_hash": "0x000000000000000000000000000000000000000a",
+              "name": "test21",
+              "contract_address_hash": "0x0000000000000000000000000000000000000056",
               "abi": [
                 {
                   "type": "function",
@@ -1809,16 +1831,16 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8lVhnTsvpkAAArB
+            x-request-id: FwuQnQGu3MsFRCAAAAVC
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
-              "name": "test6",
-              "id": 308,
-              "contract_address_hash": "0x000000000000000000000000000000000000000a",
+              "name": "test21",
+              "id": 448,
+              "contract_address_hash": "0x0000000000000000000000000000000000000056",
               "abi": [
                 {
                   "type": "function",
@@ -1856,16 +1878,16 @@
  
 
 + Parameters
-    + id: `307`
-            id: 307
+    + id: `450`
+            id: 450
 
 
 + Request Delete custom abi
-**DELETE**&nbsp;&nbsp;`/api/account/v1/user/custom_abis/307`
+**DELETE**&nbsp;&nbsp;`/api/account/v1/user/custom_abis/450`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiY2YxODg0ODAtZGQ3My00ZDNmLTg2NDYtOTc2ZTRjMDJkMmE4IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIiLCJ0eXAiOiJhY2Nlc3MifQ.U23Zp-kENBQofisxQVrVAB9-JpBriWlxXJ9HZi_z9h_SV6psP6LhO0cLfnQsQkNWUOoO1LPQiWqVzP-zpGb7Sw
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiN2JmOWVlY2EtZDkzMy00YmFkLWIzMDEtYmFkOTBiYzdiNjY2IiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE2IiwidHlwIjoiYWNjZXNzIn0.7t1rm0x4t5HCE1IhRENVWG_Iq1AUuGoHkezenu4jgiDB96rdQbC9TRASZnLDjjPPuH468IRhsCil7iy8pYxe8A
 
 + Response 200
 
@@ -1873,10 +1895,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H8dnChNmonIAAAgB
+            x-request-id: FwuQnQs0IM3_0WMAAAfC
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -1893,27 +1915,22 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMmY2ZTM4N2QtMmI0ZC00Mjk4LWI5OWQtY2ZiYzMwOWU1NzM0IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDE2IiwidHlwIjoiYWNjZXNzIn0.iLsnG2BBUIU3ENtV4GpDU82fThV3gcD-HJL1SGFM7C0n7cM7l09V4Mu6493ZpzjWBBnom8xexPH99kTvo_-aQg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTcyOTA2ZWEtOGI3OS00Zjk3LWIzZmUtMmU3NDk4MDkxYjAzIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIxIiwidHlwIjoiYWNjZXNzIn0.Hq_Fbau0LFELf4Oer6WQXj05jJWRSTedBkAwz3x2HNlFxDzsNtgmmpvWkA9qvr8usmRxye-_jz3tZgD1VElhqg
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "website": "website3",
-              "tags": "Tag4;Tag5",
-              "is_owner": false,
-              "full_name": "full name3",
-              "email": "email3",
-              "company": "company3",
-              "addresses_array": [
-                "0x0000000000000000000000000000000000000025",
-                "0x0000000000000000000000000000000000000026",
-                "0x0000000000000000000000000000000000000027",
-                "0x0000000000000000000000000000000000000028",
-                "0x0000000000000000000000000000000000000029",
-                "0x000000000000000000000000000000000000002a",
-                "0x000000000000000000000000000000000000002b"
+              "website": "website11",
+              "tags": "Tag17;Tag18",
+              "is_owner": true,
+              "full_name": "full name11",
+              "email": "test_user-33@blockscout.com",
+              "company": "company11",
+              "addresses": [
+                "0x0000000000000000000000000000000000000070",
+                "0x0000000000000000000000000000000000000071"
               ],
-              "additional_comment": "additional_comment3"
+              "additional_comment": "additional_comment11"
             }
 
 + Response 200
@@ -1922,22 +1939,25 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9JM-GieXwUAABEB
+            x-request-id: FwuQnQ9l-uQIRYYAAAmi
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
-              "website": "website3",
-              "tags": "Tag4;Tag5",
-              "is_owner": false,
-              "id": 99,
-              "full_name": "full name3",
-              "email": "email3",
-              "company": "company3",
-              "addresses": "0x0000000000000000000000000000000000000025;0x0000000000000000000000000000000000000026;0x0000000000000000000000000000000000000027;0x0000000000000000000000000000000000000028;0x0000000000000000000000000000000000000029;0x000000000000000000000000000000000000002a;0x000000000000000000000000000000000000002b",
-              "additional_comment": "additional_comment3"
+              "website": "website11",
+              "tags": "Tag17;Tag18",
+              "is_owner": true,
+              "id": 180,
+              "full_name": "full name11",
+              "email": "test_user-33@blockscout.com",
+              "company": "company11",
+              "addresses": [
+                "0x0000000000000000000000000000000000000070",
+                "0x0000000000000000000000000000000000000071"
+              ],
+              "additional_comment": "additional_comment11"
             }
 ### BlockScoutWeb.Account.Api.V1.UserController public_tags_requests [GET /api/account/v1/user/public_tags]
 
@@ -1950,7 +1970,7 @@
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiN2ZlZjQ1MDMtMjk0My00NGJmLTk1MWItMGUxMjY2M2ZlZTg3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIyIiwidHlwIjoiYWNjZXNzIn0.AYEifMqZAXmZINrKt5pNtno7rb7UH32vsADul_Sgslt-kKIiiMiVzdAe7BeCOBMecr1L8j4KMRNl-qi4Deipwg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMWZkMTljNWItZjQzNS00MGI0LTllOWQtMTc5OTllNDhmOTdlIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDYiLCJ0eXAiOiJhY2Nlc3MifQ.wj5e8pYhIOE_XWoQolj-ghI1R3pzEyKTNudIJDN3zcQFa33wO_slJpJxsZaZq_NChLLslMoBmnCKJthZfhYBIA
 
 + Response 200
 
@@ -1958,122 +1978,193 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9X-t7yrO6UAABRh
+            x-request-id: FwuQnP3ZDj9rrjAAAAjj
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             [
               {
-                "website": "website4",
-                "tags": "Tag6;Tag7",
-                "is_owner": false,
-                "id": 100,
-                "full_name": "full name4",
-                "email": "email4",
-                "company": "company4",
-                "addresses": "0x0000000000000000000000000000000000000032;0x0000000000000000000000000000000000000033;0x0000000000000000000000000000000000000034;0x0000000000000000000000000000000000000035;0x0000000000000000000000000000000000000036;0x0000000000000000000000000000000000000037",
-                "additional_comment": "additional_comment4"
-              },
-              {
-                "website": "website5",
-                "tags": "Tag8;Tag9",
-                "is_owner": false,
-                "id": 101,
-                "full_name": "full name5",
-                "email": "email5",
-                "company": "company5",
-                "addresses": "0x0000000000000000000000000000000000000038",
-                "additional_comment": "additional_comment5"
-              },
-              {
-                "website": "website6",
-                "tags": "Tag10",
-                "is_owner": false,
-                "id": 102,
-                "full_name": "full name6",
-                "email": "email6",
-                "company": "company6",
-                "addresses": "0x0000000000000000000000000000000000000039;0x000000000000000000000000000000000000003a;0x000000000000000000000000000000000000003b;0x000000000000000000000000000000000000003c;0x000000000000000000000000000000000000003d;0x000000000000000000000000000000000000003e;0x000000000000000000000000000000000000003f;0x0000000000000000000000000000000000000040;0x0000000000000000000000000000000000000041;0x0000000000000000000000000000000000000042",
-                "additional_comment": "additional_comment6"
-              },
-              {
-                "website": "website7",
-                "tags": "Tag11",
-                "is_owner": false,
-                "id": 103,
-                "full_name": "full name7",
-                "email": "email7",
-                "company": "company7",
-                "addresses": "0x0000000000000000000000000000000000000043;0x0000000000000000000000000000000000000044;0x0000000000000000000000000000000000000045;0x0000000000000000000000000000000000000046;0x0000000000000000000000000000000000000047;0x0000000000000000000000000000000000000048",
-                "additional_comment": "additional_comment7"
-              },
-              {
-                "website": "website8",
-                "tags": "Tag12;Tag13",
-                "is_owner": false,
-                "id": 104,
-                "full_name": "full name8",
-                "email": "email8",
-                "company": "company8",
-                "addresses": "0x0000000000000000000000000000000000000049;0x000000000000000000000000000000000000004a;0x000000000000000000000000000000000000004b;0x000000000000000000000000000000000000004c;0x000000000000000000000000000000000000004d",
-                "additional_comment": "additional_comment8"
-              },
-              {
                 "website": "website9",
-                "tags": "Tag14",
+                "tags": "Tag14;Tag15",
                 "is_owner": true,
-                "id": 105,
+                "id": 178,
                 "full_name": "full name9",
-                "email": "email9",
+                "email": "test_user-16@blockscout.com",
                 "company": "company9",
-                "addresses": "0x000000000000000000000000000000000000004e;0x000000000000000000000000000000000000004f;0x0000000000000000000000000000000000000050",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000052"
+                ],
                 "additional_comment": "additional_comment9"
               },
               {
-                "website": "website10",
-                "tags": "Tag15",
-                "is_owner": true,
-                "id": 106,
-                "full_name": "full name10",
-                "email": "email10",
-                "company": "company10",
-                "addresses": "0x0000000000000000000000000000000000000051;0x0000000000000000000000000000000000000052",
-                "additional_comment": "additional_comment10"
-              },
-              {
-                "website": "website11",
-                "tags": "Tag16",
-                "is_owner": true,
-                "id": 107,
-                "full_name": "full name11",
-                "email": "email11",
-                "company": "company11",
-                "addresses": "0x0000000000000000000000000000000000000053;0x0000000000000000000000000000000000000054;0x0000000000000000000000000000000000000055;0x0000000000000000000000000000000000000056;0x0000000000000000000000000000000000000057;0x0000000000000000000000000000000000000058;0x0000000000000000000000000000000000000059;0x000000000000000000000000000000000000005a;0x000000000000000000000000000000000000005b;0x000000000000000000000000000000000000005c",
-                "additional_comment": "additional_comment11"
-              },
-              {
-                "website": "website12",
-                "tags": "Tag17;Tag18",
-                "is_owner": true,
-                "id": 108,
-                "full_name": "full name12",
-                "email": "email12",
-                "company": "company12",
-                "addresses": "0x000000000000000000000000000000000000005d;0x000000000000000000000000000000000000005e;0x000000000000000000000000000000000000005f;0x0000000000000000000000000000000000000060",
-                "additional_comment": "additional_comment12"
-              },
-              {
-                "website": "website13",
-                "tags": "Tag19",
+                "website": "website8",
+                "tags": "Tag13",
                 "is_owner": false,
-                "id": 109,
-                "full_name": "full name13",
-                "email": "email13",
-                "company": "company13",
-                "addresses": "0x0000000000000000000000000000000000000061;0x0000000000000000000000000000000000000062;0x0000000000000000000000000000000000000063;0x0000000000000000000000000000000000000064;0x0000000000000000000000000000000000000065",
-                "additional_comment": "additional_comment13"
+                "id": 177,
+                "full_name": "full name8",
+                "email": "test_user-15@blockscout.com",
+                "company": "company8",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000048",
+                  "0x0000000000000000000000000000000000000049",
+                  "0x000000000000000000000000000000000000004a",
+                  "0x000000000000000000000000000000000000004b",
+                  "0x000000000000000000000000000000000000004c",
+                  "0x000000000000000000000000000000000000004d",
+                  "0x000000000000000000000000000000000000004e",
+                  "0x000000000000000000000000000000000000004f",
+                  "0x0000000000000000000000000000000000000050",
+                  "0x0000000000000000000000000000000000000051"
+                ],
+                "additional_comment": "additional_comment8"
+              },
+              {
+                "website": "website7",
+                "tags": "Tag11;Tag12",
+                "is_owner": true,
+                "id": 176,
+                "full_name": "full name7",
+                "email": "test_user-14@blockscout.com",
+                "company": "company7",
+                "addresses": [
+                  "0x000000000000000000000000000000000000003e",
+                  "0x000000000000000000000000000000000000003f",
+                  "0x0000000000000000000000000000000000000040",
+                  "0x0000000000000000000000000000000000000041",
+                  "0x0000000000000000000000000000000000000042",
+                  "0x0000000000000000000000000000000000000043",
+                  "0x0000000000000000000000000000000000000044",
+                  "0x0000000000000000000000000000000000000045",
+                  "0x0000000000000000000000000000000000000046",
+                  "0x0000000000000000000000000000000000000047"
+                ],
+                "additional_comment": "additional_comment7"
+              },
+              {
+                "website": "website6",
+                "tags": "Tag9;Tag10",
+                "is_owner": false,
+                "id": 175,
+                "full_name": "full name6",
+                "email": "test_user-13@blockscout.com",
+                "company": "company6",
+                "addresses": [
+                  "0x000000000000000000000000000000000000003a",
+                  "0x000000000000000000000000000000000000003b",
+                  "0x000000000000000000000000000000000000003c",
+                  "0x000000000000000000000000000000000000003d"
+                ],
+                "additional_comment": "additional_comment6"
+              },
+              {
+                "website": "website5",
+                "tags": "Tag8",
+                "is_owner": true,
+                "id": 174,
+                "full_name": "full name5",
+                "email": "test_user-12@blockscout.com",
+                "company": "company5",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000033",
+                  "0x0000000000000000000000000000000000000034",
+                  "0x0000000000000000000000000000000000000035",
+                  "0x0000000000000000000000000000000000000036",
+                  "0x0000000000000000000000000000000000000037",
+                  "0x0000000000000000000000000000000000000038",
+                  "0x0000000000000000000000000000000000000039"
+                ],
+                "additional_comment": "additional_comment5"
+              },
+              {
+                "website": "website4",
+                "tags": "Tag6;Tag7",
+                "is_owner": true,
+                "id": 173,
+                "full_name": "full name4",
+                "email": "test_user-11@blockscout.com",
+                "company": "company4",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000031",
+                  "0x0000000000000000000000000000000000000032"
+                ],
+                "additional_comment": "additional_comment4"
+              },
+              {
+                "website": "website3",
+                "tags": "Tag5",
+                "is_owner": false,
+                "id": 172,
+                "full_name": "full name3",
+                "email": "test_user-10@blockscout.com",
+                "company": "company3",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000028",
+                  "0x0000000000000000000000000000000000000029",
+                  "0x000000000000000000000000000000000000002a",
+                  "0x000000000000000000000000000000000000002b",
+                  "0x000000000000000000000000000000000000002c",
+                  "0x000000000000000000000000000000000000002d",
+                  "0x000000000000000000000000000000000000002e",
+                  "0x000000000000000000000000000000000000002f",
+                  "0x0000000000000000000000000000000000000030"
+                ],
+                "additional_comment": "additional_comment3"
+              },
+              {
+                "website": "website2",
+                "tags": "Tag4",
+                "is_owner": false,
+                "id": 171,
+                "full_name": "full name2",
+                "email": "test_user-9@blockscout.com",
+                "company": "company2",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000020",
+                  "0x0000000000000000000000000000000000000021",
+                  "0x0000000000000000000000000000000000000022",
+                  "0x0000000000000000000000000000000000000023",
+                  "0x0000000000000000000000000000000000000024",
+                  "0x0000000000000000000000000000000000000025",
+                  "0x0000000000000000000000000000000000000026",
+                  "0x0000000000000000000000000000000000000027"
+                ],
+                "additional_comment": "additional_comment2"
+              },
+              {
+                "website": "website1",
+                "tags": "Tag2;Tag3",
+                "is_owner": true,
+                "id": 170,
+                "full_name": "full name1",
+                "email": "test_user-8@blockscout.com",
+                "company": "company1",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000019",
+                  "0x000000000000000000000000000000000000001a",
+                  "0x000000000000000000000000000000000000001b",
+                  "0x000000000000000000000000000000000000001c",
+                  "0x000000000000000000000000000000000000001d",
+                  "0x000000000000000000000000000000000000001e",
+                  "0x000000000000000000000000000000000000001f"
+                ],
+                "additional_comment": "additional_comment1"
+              },
+              {
+                "website": "website0",
+                "tags": "Tag0;Tag1",
+                "is_owner": true,
+                "id": 169,
+                "full_name": "full name0",
+                "email": "test_user-7@blockscout.com",
+                "company": "company0",
+                "addresses": [
+                  "0x0000000000000000000000000000000000000016",
+                  "0x0000000000000000000000000000000000000017",
+                  "0x0000000000000000000000000000000000000018"
+                ],
+                "additional_comment": "additional_comment0"
               }
             ]
 ### BlockScoutWeb.Account.Api.V1.UserController delete_public_tags_request [DELETE /api/account/v1/user/public_tags/{id}]
@@ -2082,16 +2173,16 @@
  
 
 + Parameters
-    + id: `100`
-            id: 100
+    + id: `178`
+            id: 178
 
 
 + Request Delete public tags request
-**DELETE**&nbsp;&nbsp;`/api/account/v1/user/public_tags/100`
+**DELETE**&nbsp;&nbsp;`/api/account/v1/user/public_tags/178`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiN2ZlZjQ1MDMtMjk0My00NGJmLTk1MWItMGUxMjY2M2ZlZTg3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIyIiwidHlwIjoiYWNjZXNzIn0.AYEifMqZAXmZINrKt5pNtno7rb7UH32vsADul_Sgslt-kKIiiMiVzdAe7BeCOBMecr1L8j4KMRNl-qi4Deipwg
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMWZkMTljNWItZjQzNS00MGI0LTllOWQtMTc5OTllNDhmOTdlIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDYiLCJ0eXAiOiJhY2Nlc3MifQ.wj5e8pYhIOE_XWoQolj-ghI1R3pzEyKTNudIJDN3zcQFa33wO_slJpJxsZaZq_NChLLslMoBmnCKJthZfhYBIA
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
@@ -2105,10 +2196,10 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H9YQm9CrO6UAABSB
+            x-request-id: FwuQnP3w4p5rrjAAAAkj
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
@@ -2120,30 +2211,35 @@
  
 
 + Parameters
-    + id: `98`
-            id: 98
+    + id: `181`
+            id: 181
 
 
 + Request Edit request to add a public tag
-**PUT**&nbsp;&nbsp;`/api/account/v1/user/public_tags/98`
+**PUT**&nbsp;&nbsp;`/api/account/v1/user/public_tags/181`
 
     + Headers
     
-            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjE0Mjk1NTAsImlhdCI6MTY1OTAxMDM1MCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODIxNWFhMjQtZWIzYS00MjhhLTlkZWMtNTQwMjkwZWExM2E3IiwibmJmIjoxNjU5MDEwMzQ5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.xY6RWMzDzBNhZpdrA6-sJ41xWnSM8n_uxmlbWxcBVXdIG6NJJi-_1ZARRmPdtquK0eosX81Q_OvML2NTp684kQ
+            authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkwOTEsImlhdCI6MTY2MDU3OTg5MSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZmRjNDRmOTAtYzViMy00MjJjLTk4MGQtZjE5MWQzMDEzYmUxIiwibmJmIjoxNjYwNTc5ODkwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIzIiwidHlwIjoiYWNjZXNzIn0.TxgamYKfzZqUXdVA4RsbFJ4_ozJfQzz4wVRBIyFLgrMGWi-7tZe5Lh3Oe_2LCKuf4Q4uZ9GQM5bD0V5WWk-YZw
             content-type: multipart/mixed; boundary=plug_conn_test
     + Body
     
             {
-              "website": "website2",
-              "tags": "Tag3",
-              "is_owner": true,
-              "full_name": "full name2",
-              "email": "email2",
-              "company": "company2",
-              "addresses_array": [
-                "0x0000000000000000000000000000000000000015"
+              "website": "website13",
+              "tags": "Tag20;Tag21",
+              "is_owner": false,
+              "full_name": "full name13",
+              "email": "test_user-37@blockscout.com",
+              "company": "company13",
+              "addresses": [
+                "0x0000000000000000000000000000000000000080",
+                "0x0000000000000000000000000000000000000081",
+                "0x0000000000000000000000000000000000000082",
+                "0x0000000000000000000000000000000000000083",
+                "0x0000000000000000000000000000000000000084",
+                "0x0000000000000000000000000000000000000085"
               ],
-              "additional_comment": "additional_comment2"
+              "additional_comment": "additional_comment13"
             }
 
 + Response 200
@@ -2152,21 +2248,28 @@
     
             content-type: application/json; charset=utf-8
             cache-control: max-age=0, private, must-revalidate
-            x-request-id: FwX9H80jCquTUzMAAAKC
+            x-request-id: FwuQnRGPAcIPFzIAAApC
+            access-control-allow-credentials: true
             access-control-allow-origin: *
             access-control-expose-headers: 
-            access-control-allow-credentials: true
     + Body
     
             {
-              "website": "website2",
-              "tags": "Tag3",
-              "is_owner": true,
-              "id": 98,
-              "full_name": "full name2",
-              "email": "email2",
-              "company": "company2",
-              "addresses": "0x0000000000000000000000000000000000000015",
-              "additional_comment": "additional_comment2"
+              "website": "website13",
+              "tags": "Tag20;Tag21",
+              "is_owner": false,
+              "id": 181,
+              "full_name": "full name13",
+              "email": "test_user-37@blockscout.com",
+              "company": "company13",
+              "addresses": [
+                "0x0000000000000000000000000000000000000080",
+                "0x0000000000000000000000000000000000000081",
+                "0x0000000000000000000000000000000000000082",
+                "0x0000000000000000000000000000000000000083",
+                "0x0000000000000000000000000000000000000084",
+                "0x0000000000000000000000000000000000000085"
+              ],
+              "additional_comment": "additional_comment13"
             }
 

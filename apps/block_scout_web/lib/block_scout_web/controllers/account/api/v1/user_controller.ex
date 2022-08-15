@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Account.Api.V1.UserController do
   use BlockScoutWeb, :controller
 
+  import Ecto.Query, only: [from: 2]
+
   alias BlockScoutWeb.Guardian
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.Api.Key, as: ApiKey
@@ -29,7 +31,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
-         watchlist_with_addresses <- Repo.preload(watchlist, watchlist_addresses: :address) do
+         watchlist_with_addresses <-
+           Repo.preload(watchlist,
+             watchlist_addresses: {from(wa in WatchlistAddress, order_by: [desc: wa.id]), [:address]}
+           ) do
       conn
       |> put_status(200)
       |> render(:watchlist_addresses, %{
@@ -433,7 +438,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
              tags: params["tags"],
              website: params["website"],
              additional_comment: params["additional_comment"],
-             addresses_array: params["addresses_array"],
+             addresses: params["addresses"],
              company: params["company"],
              is_owner: params["is_owner"],
              identity_id: identity.id
@@ -462,7 +467,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
                tags: params["tags"],
                website: params["website"],
                additional_comment: params["additional_comment"],
-               addresses_array: params["addresses_array"],
+               addresses: params["addresses"],
                company: params["company"],
                is_owner: params["is_owner"],
                identity_id: identity.id
