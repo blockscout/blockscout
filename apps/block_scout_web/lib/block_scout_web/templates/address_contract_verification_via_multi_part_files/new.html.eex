@@ -1,7 +1,5 @@
 <% metadata_for_verification = if assigns[:retrying], do: nil, else: Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
 <% changeset = (if assigns[:retrying], do: @changeset, else: SmartContract.merge_twin_contract_with_changeset(metadata_for_verification, @changeset)) |> SmartContract.address_to_checksum_address() %>
-<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: changeset.changes.autodetect_constructor_args %>
-<% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
   <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
@@ -10,12 +8,10 @@
 
       <%= form_for changeset,
           address_contract_verification_path(@conn, :create),
-          [],
+          [id: "multi-part-dropzone-form"],
           fn f -> %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
-
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: gettext "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name." %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
@@ -63,20 +59,18 @@
           </div>
         </div>
 
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :contract_source_code, gettext("Enter the Solidity Contract Code") %>
-            <div class="center-column">
-              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
-              <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger form-error", "data-test": "contract-source-code-error" %>
+       <div class="smart-contract-form-group-inner-wrapper">
+        <label for="smart_contract_multi_part_files"><%= gettext("Sources *.sol files") %></label>
+          <div class="center-column">
+            <div class="dropzone-1 dropzone-previews" style="display: flex; margin: 0 auto;", id="dropzone-previews">
+              <div style="text-align: center;">
+                <span class="dz-message btn-full-primary" id="dz-button-message"><%= gettext("Drop sources or click here") %></span>
+                <%= error_tag f, :file, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
+              </div>
             </div>
-            <div class="smart-contract-form-group-tooltip"><%= gettext "We recommend using flattened code. This is necessary if your code utilizes a library or inherits dependencies. Use the" %> <a href="https://github.com/poanetwork/solidity-flattener" target="_blank"><%= gettext "POA solidity flattener or the" %> <a href="https://www.npmjs.com/package/truffle-flattener" target="_blank"><%= gettext "truffle flattener" %></a>.</div>
           </div>
+          <div class="smart-contract-form-group-tooltip"><%= gettext "Drop all Solidity contract source files into the drop zone." %></div>
         </div>
-
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_fetch_constructor_args.html", f: f %>
-
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: display_constructor_arguments_text_area %>
 
         <div class="add-contract-libraries-wrapper">
           <span class="btn-line js-btn-add-contract-libraries"><%= gettext "Add Contract Libraries" %></span>
@@ -138,7 +132,9 @@
           >
             <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
           </button>
-          <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation", "data-submit-button": "" %>
+          <%#= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation", "data-submit-button": "" %>
+          <%# verify-via-multi-part-files-submit %>
+          <button id="verify-via-metadata-json-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
           <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
           <%=
             link(
