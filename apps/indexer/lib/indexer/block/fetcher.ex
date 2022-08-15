@@ -281,9 +281,17 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_created_contract_codes(_), do: :ok
 
-  def async_import_cosmos_hashes(%{blocks: blocks}) do
-    blocks
-    |> Enum.map(fn %Block{number: block_number} -> block_number end)
+  def async_import_cosmos_hashes(%{transactions: transactions}) do
+    transaction_fields = transactions|> Enum.flat_map(fn
+      %Transaction{
+        block_number: block_number,
+        hash: hash,
+        cosmos_hash: nil
+      } ->
+        [%{block_number: block_number, hash: hash}]
+    end)
+    transaction_fields
+    |> Enum.map(fn %{block_number: block_number} -> block_number end)
     |> CosmosHash.async_fetch(10_000)
   end
 
