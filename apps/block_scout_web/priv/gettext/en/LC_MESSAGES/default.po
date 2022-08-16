@@ -408,8 +408,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:6
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:14
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:84
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:92
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:79
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:87
 #, elixir-autogen, elixir-format
 msgid "Close"
 msgstr ""
@@ -1369,7 +1369,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:196
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:151
 #, elixir-autogen, elixir-format
 msgid "Metadata"
 msgstr ""
@@ -1649,7 +1649,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_btn_qr_code.html.eex:10
 #: lib/block_scout_web/templates/common_components/_modal_qr_code.html.eex:5
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:83
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:78
 #, elixir-autogen, elixir-format
 msgid "QR Code"
 msgstr ""
@@ -2204,7 +2204,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:363
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:195
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:150
 #: lib/block_scout_web/views/tokens/overview_view.ex:39
 #: lib/block_scout_web/views/transaction_view.ex:511
 #, elixir-autogen, elixir-format

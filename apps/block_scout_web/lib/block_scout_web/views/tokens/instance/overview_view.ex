@@ -53,51 +53,6 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     end
   end
 
-  def media_type(media_src) when not is_nil(media_src) do
-    ext = media_src |> Path.extname() |> String.trim()
-
-    mime_type =
-      if ext == "" do
-        case HTTPoison.get(media_src) do
-          {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-            {:ok, path} = Briefly.create()
-
-            File.write!(path, body)
-
-            case FileInfo.get_info([path]) do
-              %{^path => %FileInfo.Mime{subtype: subtype}} ->
-                subtype
-                |> MIME.type()
-
-              _ ->
-                nil
-            end
-
-          _ ->
-            nil
-        end
-      else
-        ext_with_dot =
-          media_src
-          |> Path.extname()
-
-        "." <> ext = ext_with_dot
-
-        ext
-        |> MIME.type()
-      end
-
-    if mime_type do
-      basic_mime_type = mime_type |> String.split("/") |> Enum.at(0)
-
-      basic_mime_type
-    else
-      nil
-    end
-  end
-
-  def media_type(nil), do: nil
-
   def external_url(nil), do: nil
 
   def external_url(instance) do
