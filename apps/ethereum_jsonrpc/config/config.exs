@@ -27,13 +27,13 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout:
 
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
        rolling_window_opts: [
-         window_count: 6,
+         window_count: 4,
          duration: :timer.minutes(1),
          table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
        ],
-       wait_per_timeout: :timer.seconds(6),
+       wait_per_timeout: :timer.seconds(3),
        max_jitter: :timer.seconds(1),
-       throttle_rate_limit: 10000,
+       throttle_rate_limit: 1000,
        throttle_rolling_window_opts: [
          window_count: 3,
          duration: :timer.seconds(3),
