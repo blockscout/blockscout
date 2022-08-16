@@ -75,7 +75,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BRANCHES: |
-        production-aox-stg
         production-core-stg
         production-eth-stg
         production-harmony-mainnet-shard-0-stg
