@@ -13,6 +13,9 @@
 - [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 
 ### Chore
+- [#5869](https://github.com/blockscout/blockscout/pull/5869) - Bump reduce-reducers from 0.4.3 to 1.0.4 in /apps/block_scout_web/assets
+- [#5919](https://github.com/blockscout/blockscout/pull/5919) - Bump floki from 0.32.1 to 0.33.1
+- [#5930](https://github.com/blockscout/blockscout/pull/5930) - Bump eslint from 8.21.0 to 8.22.0 in /apps/block_scout_web/assets
 - [#5845](https://github.com/blockscout/blockscout/pull/5845) - Bump autoprefixer from 10.4.2 to 10.4.8 in /apps/block_scout_web/assets
 - [#5877](https://github.com/blockscout/blockscout/pull/5877) - Bump eslint from 8.17.0 to 8.21.0 in /apps/block_scout_web/assets
 - [#5875](https://github.com/blockscout/blockscout/pull/5875) - Bump sass from 1.49.8 to 1.54.3 in /apps/block_scout_web/assets
