@@ -14,7 +14,7 @@ defmodule Explorer.Repo.Migrations.MigratePublicTagsAddressesToArray do
       BEGIN
         FOREACH x IN ARRAY $1
         LOOP
-          s := array_append(s, decode(ltrim(x, '0x'), 'hex'));
+          s := array_append(s, decode(replace(x, '0x', ''), 'hex'));
         END LOOP;
         RETURN s;
       END;
