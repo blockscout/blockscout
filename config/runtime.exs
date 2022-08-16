@@ -8,7 +8,7 @@ indexer_memory_limit =
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> 1
+    _ -> 2
   end
 
 config :indexer,
@@ -18,10 +18,10 @@ indexer_empty_blocks_sanitizer_batch_size =
   if System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE") do
     case Integer.parse(System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE")) do
       {integer, ""} -> integer
-      _ -> 100
+      _ -> 50
     end
   else
-    100
+    50
   end
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty_blocks_sanitizer_batch_size
