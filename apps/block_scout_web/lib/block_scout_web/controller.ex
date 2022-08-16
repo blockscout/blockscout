@@ -35,6 +35,10 @@ defmodule BlockScoutWeb.Controller do
     end
   end
 
+  def current_path(conn) do
+    current_full_path(conn)
+  end
+
   def current_full_path(conn) do
     current_path = current_path(conn)
 
