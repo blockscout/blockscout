@@ -1,16 +1,15 @@
-SYSTEM := $(shell uname -s)
-HOST := host.docker.internal
-DOCKER_REPO := blockscout
-APP_NAME := blockscout
-BS_CONTAINER_IMAGE := $(DOCKER_REPO)/$(APP_NAME)
-BS_CONTAINER_NAME := blockscout
-PG_CONTAINER_IMAGE := postgres:13.6
-PG_CONTAINER_NAME := db
+HOST_SYSTEM ?= '$(shell uname -s)'
+HOST = host.docker.internal
+DB_USERNAME = postgres
+DB_PASSWORD = 
+DB_PORT = 5432
+DOCKER_IMAGE = blockscout_prod
+BS_CONTAINER_NAME = blockscout
+PG_CONTAINER_NAME = postgres
+PG_CONTAINER_IMAGE = postgres:13.6
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
-TAG := $(RELEASE_VERSION)-prerelease-$(shell git log -1 --pretty=format:"%h")
-STABLE_TAG := $(RELEASE_VERSION)
 
-ifeq ($(SYSTEM), Linux)
+ifeq ($(HOST_SYSTEM), Linux)
 	HOST=localhost
 endif
 
@@ -389,21 +388,21 @@ ifdef FETCH_REWARDS_WAY
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'FETCH_REWARDS_WAY=$(FETCH_REWARDS_WAY)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
-build:
-	@echo "==> Checking for blockscout image $(BS_CONTAINER_IMAGE)"
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
+build: 
+	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
-	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
+	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
 else
-	@echo "==> No image found, trying to build one..."
-	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
+	@echo "==> No image found trying to build one..."
+	@docker build --build-arg COIN="$(COIN)" --build-arg GITHUB_TOKEN="$(GITHUB_TOKEN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 endif
 
 migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
@@ -412,10 +411,6 @@ PG_EXIST := $(shell docker ps -a --no-trunc --filter name=^/${PG_CONTAINER_NAME}
 PG_STARTED := $(shell docker ps --no-trunc --filter name=^/${PG_CONTAINER_NAME}$ | grep ${PG_CONTAINER_NAME})
 
 postgres:
-ifdef DATABASE_URL
-	@echo "==> DATABASE_URL of external DB provided. There is no need to start a container for DB."
-	@$(MAKE) -f $(THIS_FILE) migrate_only
-else
 ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"
 ifdef PG_STARTED
@@ -428,7 +423,7 @@ else
 endif
 else
 	@echo "==> Creating new PostgreSQL container"
-	@docker run -d --name $(PG_CONTAINER_NAME) \
+	@docker run -d --restart unless-stopped --name $(PG_CONTAINER_NAME) \
 					-e POSTGRES_PASSWORD="" \
 					-e POSTGRES_USER="postgres" \
 					-e POSTGRES_HOST_AUTH_METHOD="trust" \
@@ -437,85 +432,18 @@ else
 	@sleep 1
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
-endif
 
-start: build postgres
+start: build postgres 
 	@echo "==> Starting blockscout"
-	@docker run --rm --name $(BS_CONTAINER_NAME) \
+	@docker run -d --restart unless-stopped --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
-
-BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
-stop:
-ifdef BS_STARTED
-	@echo "==> Stopping BlockScout container."
-	@docker stop $(BS_CONTAINER_NAME)
-	@echo "==> BlockScout container stopped."
-else
-	@echo "==> BlockScout container already stopped before."
-endif
-ifdef PG_STARTED
-	@echo "==> Stopping Postgres container."
-	@docker stop $(PG_CONTAINER_NAME)
-	@echo "==> Postgres container stopped."
-else
-	@echo "==> Postgres container already stopped before."
-endif
+					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
 
 run: start
 
-docker-login: ## login to DockerHub with credentials found in env
-	docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
-
-# Docker release - build, tag and push the container
-pre-release: build publish ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to hub
-release: build publish-stable ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to hub
-
-# Docker publish
-publish: docker-login publish-latest publish-version ## publish the `{version}` ans `latest` tagged containers to hub
-publish-stable: docker-login publish-latest publish-stable-version ## publish the `{version}` ans `latest` tagged containers to hub
-
-publish-latest: tag-latest ## publish the `latest` tagged container to hub
-	@echo 'publish latest to $(DOCKER_REPO)'
-	docker push $(BS_CONTAINER_IMAGE):latest
-
-publish-version: tag-version ## publish the `{version}` tagged container to hub
-	@echo 'publish $(TAG) to $(DOCKER_REPO)'
-	docker push $(BS_CONTAINER_IMAGE):$(TAG)
-
-publish-stable-version: tag-stable-version ## publish the `{version}` tagged container to hub
-	@echo 'publish $(STABLE_TAG) to $(DOCKER_REPO)'
-	docker push $(BS_CONTAINER_IMAGE):$(STABLE_TAG)
-
-# Docker tagging
-tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
-tag-stable: tag-latest tag-stable-version ## Generate container tags for the `{version}` ans `latest` tags
-
-tag-latest: ## Generate container `latest` tag
-	@echo 'create latest tag'
-	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):latest
-
-tag-version: ## Generate container `{version}` tag
-	@echo 'create tag $(TAG)'
-	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):$(TAG)
-
-tag-stable-version: ## Generate container `{version}` tag
-	@echo 'create tag $(STABLE_TAG)'
-	docker tag $(BS_CONTAINER_IMAGE) $(BS_CONTAINER_IMAGE):$(STABLE_TAG)
-
 .PHONY: build \
-				migrate \
-				start \
-				stop \
-				postgres \
-				run \
-				docker-login \
-				release \
-				publish \
-				publish-latest \
-				publish-version \
-				tag \
-				tag-latest \
-				tag-version
-
+	    migrate \
+	    start \
+		postgres \
+		run
