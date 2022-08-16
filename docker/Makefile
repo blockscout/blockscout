@@ -7,7 +7,10 @@ DOCKER_IMAGE = blockscout_prod
 BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
 PG_CONTAINER_IMAGE = postgres:13.6
+PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
+TAG := $(RELEASE_VERSION)-prerelease-$(shell git log -1 --pretty=format:"%h")
+STABLE_TAG := $(RELEASE_VERSION)
 
 ifeq ($(HOST_SYSTEM), Linux)
 	HOST=localhost
@@ -411,6 +414,10 @@ PG_EXIST := $(shell docker ps -a --no-trunc --filter name=^/${PG_CONTAINER_NAME}
 PG_STARTED := $(shell docker ps --no-trunc --filter name=^/${PG_CONTAINER_NAME}$ | grep ${PG_CONTAINER_NAME})
 
 postgres:
+ifdef DATABASE_URL
+	@echo "==> DATABASE_URL of external DB provided. There is no need to start a container for DB."
+	@$(MAKE) -f $(THIS_FILE) migrate_only
+else
 ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"
 ifdef PG_STARTED
@@ -423,7 +430,7 @@ else
 endif
 else
 	@echo "==> Creating new PostgreSQL container"
-	@docker run -d --restart unless-stopped --name $(PG_CONTAINER_NAME) \
+	@docker run -d --name $(PG_CONTAINER_NAME) \
 					-e POSTGRES_PASSWORD="" \
 					-e POSTGRES_USER="postgres" \
 					-e POSTGRES_HOST_AUTH_METHOD="trust" \
@@ -432,18 +439,46 @@ else
 	@sleep 1
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
+endif
 
-start: build postgres 
+start: build postgres
 	@echo "==> Starting blockscout"
-	@docker run -d --restart unless-stopped --name $(BS_CONTAINER_NAME) \
+	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
 					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
 
+BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
+stop:
+ifdef BS_STARTED
+	@echo "==> Stopping BlockScout container."
+	@docker stop $(BS_CONTAINER_NAME)
+	@echo "==> BlockScout container stopped."
+else
+	@echo "==> BlockScout container already stopped before."
+endif
+ifdef PG_STARTED
+	@echo "==> Stopping Postgres container."
+	@docker stop $(PG_CONTAINER_NAME)
+	@echo "==> Postgres container stopped."
+else
+	@echo "==> Postgres container already stopped before."
+endif
+
 run: start
 
 .PHONY: build \
-	    migrate \
-	    start \
-		postgres \
-		run
+				migrate \
+				start \
+				stop \
+				postgres \
+				run \
+				docker-login \
+				release \
+				publish \
+				publish-latest \
+				publish-version \
+				tag \
+				tag-latest \
+				tag-version
+
