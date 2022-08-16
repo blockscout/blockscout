@@ -53,8 +53,6 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.NEXT_RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
@@ -72,7 +70,7 @@ jobs:
             SOCKET_ROOT=
             CHAIN_ID=
             JSON_RPC=
-            COIN_NAME=
+            COIN_NAME=ASA
             SUBNETWORK=
   tests:
     needs: push_to_registry

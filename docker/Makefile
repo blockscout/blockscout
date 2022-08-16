@@ -4,7 +4,7 @@ DOCKER_REPO := blockscout
 APP_NAME := blockscout
 BS_CONTAINER_IMAGE := $(DOCKER_REPO)/$(APP_NAME)
 BS_CONTAINER_NAME := blockscout
-PG_CONTAINER_IMAGE := postgres:14
+PG_CONTAINER_IMAGE := postgres:13.6
 PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 TAG := $(RELEASE_VERSION)-prerelease-$(shell git log -1 --pretty=format:"%h")
@@ -472,7 +472,7 @@ migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && ./bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\""
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only

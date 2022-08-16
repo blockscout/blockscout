@@ -38,7 +38,6 @@ ARG CHAIN_ID
 ARG JSON_RPC
 ARG SUBNETWORK
 ARG COIN_NAME
-ARG COIN
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -53,6 +52,7 @@ ADD . .
 
 COPY . .
 
+ARG COIN
 RUN if [ "$COIN" != "" ]; then \
         sed -i s/"ASA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
         sed -i "/msgid \"Ether\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/default.pot; \
@@ -79,8 +79,6 @@ RUN mkdir -p /opt/release \
   && mix release blockscout \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
-ENTRYPOINT ["/bin/bash", "-c", "mix do ecto.create, ecto.migrate; mix phx.server"]
-
 ##############################################################
 FROM bitwalker/alpine-elixir-phoenix:1.13
 
@@ -88,3 +86,5 @@ WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/apps/explorer/node_modules ./node_modules
+
+
