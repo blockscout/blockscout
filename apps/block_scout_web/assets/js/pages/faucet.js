@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import Swal from 'sweetalert2'
 import { walletEnabled, connectToWallet, shouldHideConnectButton } from '../lib/smart_contract/connect.js'
-import { getCurrentAccount, compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
+import { getCurrentAccountPromise, compareChainIDs, formatError } from '../lib/smart_contract/common_helpers'
 import { uuidv4 } from '../lib/keys_helpers'
 import { getCookie, setCookie } from '../lib/cookies_helpers'
 import Web3 from 'web3'
@@ -273,7 +273,7 @@ async function donateCoins (event) {
   const { chainId: walletChainIdHex } = window.ethereum
   compareChainIDs(btn.data('chainId'), walletChainIdHex)
     .then(async () => {
-      const currentAccount = await getCurrentAccount()
+      const currentAccount = await getCurrentAccountPromise()
       const faucetDonateValue = $('#faucetDonateValue').val() || '100'
       const txParams = {
         from: currentAccount,
