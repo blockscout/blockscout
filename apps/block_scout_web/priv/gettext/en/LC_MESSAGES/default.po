@@ -3368,3 +3368,13 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
 msgid "receive"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:165
+msgid "Address balance in"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address/overview.html.eex:165
+msgid "doesn't include ERC20, ERC721, ERC1155 tokens)."
+msgstr ""

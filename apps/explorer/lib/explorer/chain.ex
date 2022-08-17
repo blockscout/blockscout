@@ -2506,17 +2506,6 @@ defmodule Explorer.Chain do
     Decimal.mult(tokens, price)
   end
 
-  def address_tokens_usd_sum(token_balances) do
-    token_balances
-    |> Enum.reduce(Decimal.new(0), fn {token_balance, _, _}, acc ->
-      if token_balance.value && token_balance.token.usd_value do
-        Decimal.add(acc, balance_in_usd(token_balance))
-      else
-        acc
-      end
-    end)
-  end
-
   defp contract?(%{contract_code: nil}), do: false
 
   defp contract?(%{contract_code: _}), do: true
@@ -2987,10 +2976,14 @@ defmodule Explorer.Chain do
         right_join:
           missing_range in fragment(
             """
-              (SELECT distinct b1.number
+            (
+              SELECT distinct b1.number
               FROM generate_series((?)::integer, (?)::integer) AS b1(number)
               WHERE NOT EXISTS
-                (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
+                (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
+              ORDER BY b1.number DESC
+              LIMIT 500000
+            )
             """,
             ^range_min,
             ^range_max
