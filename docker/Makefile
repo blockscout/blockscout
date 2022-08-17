@@ -1,18 +1,14 @@
-HOST_SYSTEM ?= '$(shell uname -s)'
+SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
-DB_USERNAME = postgres
-DB_PASSWORD = 
-DB_PORT = 5432
-DOCKER_IMAGE = blockscout_prod
-BS_CONTAINER_NAME = blockscout
-PG_CONTAINER_NAME = postgres
+BS_CONTAINER_IMAGE = blockscout_prod
+BS_CONTAINER_NAME = blockscout_prod
 PG_CONTAINER_IMAGE = postgres:13.6
-PG_CONTAINER_NAME := db
+PG_CONTAINER_NAME = db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 TAG := $(RELEASE_VERSION)-prerelease-$(shell git log -1 --pretty=format:"%h")
 STABLE_TAG := $(RELEASE_VERSION)
 
-ifeq ($(HOST_SYSTEM), Linux)
+ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
@@ -391,21 +387,21 @@ ifdef FETCH_REWARDS_WAY
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'FETCH_REWARDS_WAY=$(FETCH_REWARDS_WAY)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
-build: 
-	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
+build:
+	@echo "==> Checking for blockscout image $(BS_CONTAINER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
-	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
+	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
 else
-	@echo "==> No image found trying to build one..."
-	@docker build --build-arg COIN="$(COIN)" --build-arg GITHUB_TOKEN="$(GITHUB_TOKEN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
+	@echo "==> No image found, trying to build one..."
+	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
 endif
 
 migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
@@ -416,10 +412,11 @@ PG_STARTED := $(shell docker ps --no-trunc --filter name=^/${PG_CONTAINER_NAME}$
 postgres:
 ifdef DATABASE_URL
 	@echo "==> DATABASE_URL of external DB provided. There is no need to start a container for DB."
+	@echo $(DATABASE_URL)
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 else
 ifdef PG_EXIST
-	@echo "==> Checking PostrgeSQL container"
+	@echo "==> Checking PostgesSQL container"
 ifdef PG_STARTED
 	@echo "==> PostgreSQL Already started"
 	@$(MAKE) -f $(THIS_FILE) migrate_only
@@ -446,7 +443,7 @@ start: build postgres
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
-					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
 
 BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
 stop:

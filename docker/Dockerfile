@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix:1.13
+FROM bitwalker/alpine-elixir-phoenix:1.13 AS builder
 
 WORKDIR /app
 
@@ -53,13 +53,16 @@ ADD . .
 COPY . .
 
 ARG COIN
-# ARG GITHUB_TOKEN
-RUN if [ "$COIN" != "" ]; then sed -i s/"ASA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
+RUN if [ "$COIN" != "" ]; then \
+        sed -i s/"ASA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
+        sed -i "/msgid \"Ether\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/default.pot; \
+        sed -i "/msgid \"Ether\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
+        sed -i "/msgid \"ETH\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/default.pot; \
+        sed -i "/msgid \"ETH\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
+    fi
 
 # Run forderground build and phoenix digest
-RUN mix compile && npm install -g npm@latest
-# RUN npm config set "@astraprotocol:registry" "https://npm.pkg.github.com"
-# RUN npm config set "//npm.pkg.github.com/:_authToken" "${GITHUB_TOKEN}"
+RUN mix compile && npm install npm@latest
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
