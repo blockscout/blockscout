@@ -13,10 +13,13 @@ export LOGO_TEXT=Astra
 export LINK_TO_OTHER_EXPLORERS=false
 export NETWORK=Devnet
 export SHOW_ADDRESS_MARKETCAP_PERCENTAGE=false
-export CHAIN_ID=11115
-
+export CHAIN_ID=astra_11115-1
+export INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=true
+export INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER=true
+export INDEXER_DISABLE_BLOCK_REWARD_FETCHER=true
+export ECTO_USE_SSL=true
+export MIX_ENV=prod
 export HOST_SYSTEM=${HOST_SYSTEM:-$(uname -s)}
 
-# cd .. && mix phx.server
 make build
 make start
