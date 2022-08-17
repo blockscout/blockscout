@@ -15,7 +15,7 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.10",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -24,7 +24,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "0.0.1"
+      version: "4.1.7"
     ]
   end
 
@@ -58,10 +58,10 @@ defmodule Explorer.Mixfile do
     [
       {:bcrypt_elixir, "~> 1.0"},
       # benchmark optimizations
-      {:benchee, "~> 0.13.1", only: :test},
+      {:benchee, "~> 1.1.0", only: :test},
       # CSV output for benchee
-      {:benchee_csv, "~> 0.8.0", only: :test},
-      {:bypass, "~> 1.0", only: :test},
+      {:benchee_csv, "~> 1.0.0", only: :test},
+      {:bypass, "~> 2.1", only: :test},
       {:briefly, "~> 0.4", github: "CargoSense/briefly"},
       {:comeonin, "~> 4.0"},
       {:credo, "~> 1.5", only: :test, runtime: false},
@@ -83,11 +83,11 @@ defmodule Explorer.Mixfile do
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
-      {:math, "~> 0.3.0"},
+      {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:mox, "~> 0.4", only: [:test]},
+      {:mox, "~> 1.0", only: [:test]},
       {:phoenix_html, "== 3.0.4"},
-      {:poison, "~> 4.0.1"},
+      {:poison, "~> 5.0.0"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
@@ -103,13 +103,13 @@ defmodule Explorer.Mixfile do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
       # `:spandex` tracing of `:ecto`
-      {:spandex_ecto, "~> 0.6.2"},
+      {:spandex_ecto, "~> 0.7.0"},
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 0.4.3"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.3.3"},
+      {:tesla, "~> 1.4.4"},
       {:cbor, "~> 1.0"}
     ]
   end
@@ -136,7 +136,7 @@ defmodule Explorer.Mixfile do
 
   defp package do
     [
-      maintainers: ["POA Networks Ltd."],
+      maintainers: ["Blockscout"],
       licenses: ["GPL 3.0"],
       links: %{"GitHub" => "https://github.com/blockscout/blockscout"}
     ]
