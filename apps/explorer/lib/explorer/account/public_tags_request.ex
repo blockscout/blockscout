@@ -101,13 +101,16 @@ defmodule Explorer.Account.PublicTagsRequest do
   def public_tags_request_count_constraint(changeset), do: changeset
 
   defp public_tags_request_time_interval_uniqueness(%Changeset{changes: %{addresses: addresses}} = request) do
+    prepared_addresses =
+      if request.data && request.data.addresses, do: addresses -- request.data.addresses, else: addresses
+
     public_tags_request =
       request
       |> fetch_field!(:identity_id)
       |> public_tags_requests_by_identity_id_query()
       |> where(
         [public_tags_request],
-        fragment("? && ?", public_tags_request.addresses, ^Enum.map(addresses, fn x -> x.bytes end))
+        fragment("? && ?", public_tags_request.addresses, ^Enum.map(prepared_addresses, fn x -> x.bytes end))
       )
       |> limit(1)
       |> Repo.one()
