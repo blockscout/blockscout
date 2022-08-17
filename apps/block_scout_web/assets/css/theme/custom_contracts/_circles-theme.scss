@@ -707,11 +707,10 @@ $c-dark-text-color: #8a8dba;
 		}
 	}
 
-.circles-theme-applied.dark-theme-applied a {
-	color: $c-primary;
-  }
-  
-.circles-theme-applied.dark-theme-applied a:hover,
-.circles-theme-applied.dark-theme-applied a:focus {
-	color: $c-primary;
+	.tile .tile-body a,
+	.tile a:hover,
+	.tile span[data-address-hash],
+	.tile a[data-test=token_link] {
+		color: $c-primary !important;
+	}
 }
