@@ -80,6 +80,7 @@ jobs:
         production-harmony-mainnet-shard-0-stg
         production-lukso-stg
         production-optimism-goerli-stg
+        production-optimism-mainnet-stg
         production-optimism-stg
         production-rsk-stg
         production-sokol-stg
