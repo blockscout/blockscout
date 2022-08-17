@@ -233,6 +233,7 @@ $navbar-logo-width: 100% !default;
 }
 
 .navbar-brand {
+  align-items: center !important;
   margin-left: 0;
   flex-shrink: 1;
   display: inline-flex;
