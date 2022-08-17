@@ -12,12 +12,9 @@ ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
-ifdef DATABASE_URL
-	DB_URL = $(DATABASE_URL)
-else
-	DB_URL = postgresql://postgres:@$(HOST):5432/blockscout?ssl=false
-	ECTO_USE_SSL = 'false'
-endif
+
+DB_URL = $(DATABASE_URL)
+
 BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
 															 -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
