@@ -443,7 +443,7 @@ start: build postgres
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "mix phx.server"
 
 BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
 stop:
