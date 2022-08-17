@@ -4,6 +4,7 @@
 - [#5860](https://github.com/blockscout/blockscout/pull/5860) - Integrate rust verifier micro-service ([blockscout-rs/verifier](https://github.com/blockscout/blockscout-rs/tree/main/verification))
 
 ### Fixes
+- [#5942](https://github.com/blockscout/blockscout/pull/5942), [#5945](https://github.com/blockscout/blockscout/pull/5945) - Fix nightly solidity versions filtering UX
 - [#5904](https://github.com/blockscout/blockscout/pull/5904) - Enhance health API endpoint: better parsing HEALTHY_BLOCKS_PERIOD and use it in the response
 - [#5903](https://github.com/blockscout/blockscout/pull/5903) - Disable compile env validation
 - [#5887](https://github.com/blockscout/blockscout/pull/5887) - Added missing environment variables to Makefile container params
