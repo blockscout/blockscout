@@ -9,6 +9,7 @@ export ENABLE_TXS_STATS=true
 export ETHEREUM_JSONRPC_HTTP_URL=${HTTP_URL:-http://localhost:8545/}
 export ETHEREUM_JSONRPC_WS_URL=${WS_URL:-ws://localhost:8546/}
 export ETHEREUM_JSONRPC_TRACE_URL=${HTTP_URL:-http://localhost:8545/}
+export DATABASE_URL=postgresql://postgres:password@localhost:5432/blockscout
 export LOGO_TEXT=Astra
 export LINK_TO_OTHER_EXPLORERS=false
 export NETWORK=Devnet
