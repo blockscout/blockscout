@@ -79,8 +79,8 @@ defmodule Explorer.Account.PublicTagsRequest do
     |> AirTable.submit()
   end
 
-  defp trim_empty_addresses(%{addresses: addresses} = attrs) do
-    filtered_addresses = Enum.filter(addresses, fn addr -> addr != "" end)
+  defp trim_empty_addresses(%{addresses: addresses} = attrs) when is_list(addresses) do
+    filtered_addresses = Enum.filter(addresses, fn addr -> addr != "" and !is_nil(addr) end)
     Map.put(attrs, :addresses, if(filtered_addresses == [], do: [""], else: filtered_addresses))
   end
 
