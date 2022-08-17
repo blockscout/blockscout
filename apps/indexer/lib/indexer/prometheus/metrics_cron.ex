@@ -73,8 +73,8 @@ defmodule Indexer.Prometheus.MetricsCron do
   def handle_info({:DOWN, _, _, _, :normal}, state), do: {:noreply, state}
 
   def pending_transactions do
-    pending_transactions_list_from_db = Chain.pending_transactions_list()
-    :telemetry.execute([:indexer, :transactions, :pending], %{value: Enum.count(pending_transactions_list_from_db)})
+    pending_transactions_count = Chain.pending_transactions_count()
+    :telemetry.execute([:indexer, :transactions, :pending], %{value: pending_transactions_count})
   end
 
   def average_block_time do

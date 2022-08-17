@@ -2150,7 +2150,7 @@ defmodule Explorer.Chain do
           """
           SELECT
           COUNT(*) AS last_n_blocks_count,
-          EXTRACT(EPOCH FROM (DATE_TRUNC('second', NOW()::timestamp) - MAX(timestamp))) AS last_block_age,
+          CAST(EXTRACT(EPOCH FROM (DATE_TRUNC('second', NOW()::timestamp) - MAX(timestamp))) AS INTEGER) AS last_block_age,
           AVG((gas_used/gas_limit)*100) AS average_gas_used
           FROM blocks
           WHERE number BETWEEN $1 AND $2;
@@ -3534,12 +3534,16 @@ defmodule Explorer.Chain do
 
   def pending_transactions_list do
     query =
-      from(transaction in Transaction,
-        where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
-      )
+      Transaction
+      |> pending_transactions_query()
+      |> Repo.all(timeout: :infinity)
+  end
 
-    query
-    |> Repo.all(timeout: :infinity)
+  def pending_transactions_count do
+    query =
+      Transaction
+      |> pending_transactions_query()
+      |> Repo.aggregate(:count, :hash)
   end
 
   @doc """
