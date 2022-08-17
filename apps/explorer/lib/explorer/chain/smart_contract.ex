@@ -410,7 +410,11 @@ defmodule Explorer.Chain.SmartContract do
 
   defp error_message(:unknown_error), do: "Unable to verify: unknown error."
   defp error_message(:deployed_bytecode), do: "Deployed bytecode does not correspond to contract creation code."
+
+  defp error_message(string) when is_binary(string), do: string
+
   defp error_message(_), do: "There was an error validating your contract, please try again."
+
   defp error_message(:compilation, error_message), do: "There was an error compiling your contract: #{error_message}"
 
   defp select_error_field(:no_creation_data), do: :address_hash
@@ -445,8 +449,8 @@ defmodule Explorer.Chain.SmartContract do
         %__MODULE__{is_vyper_contract: true} = twin_contract,
         %Changeset{} = changeset
       ) do
-    twin_contract
-    |> changeset(%{})
+    %__MODULE__{}
+    |> changeset(Map.from_struct(twin_contract))
     |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
   end
 

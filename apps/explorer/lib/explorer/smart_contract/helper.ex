@@ -81,4 +81,24 @@ defmodule Explorer.SmartContract.Helper do
     |> HTML.safe_to_string()
     |> String.trim()
   end
+
+  def sol_file?(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "sol" ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  def json_file?(filename) do
+    case List.last(String.split(String.downcase(filename), ".")) do
+      "json" ->
+        true
+
+      _ ->
+        false
+    end
+  end
 end
