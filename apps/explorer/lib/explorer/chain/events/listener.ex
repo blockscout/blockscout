@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Events.Listener do
 
   use GenServer
 
+  alias Explorer.Repo
+  alias Explorer.Utility.EventNotification
   alias Postgrex.Notifications
 
   def start_link(_) do
@@ -24,10 +26,18 @@ defmodule Explorer.Chain.Events.Listener do
 
   def handle_info({:notification, _pid, _ref, _topic, payload}, state) do
     payload
+    |> expand_payload()
     |> decode_payload!()
     |> broadcast()
 
     {:noreply, state}
+  end
+
+  defp expand_payload(payload) do
+    case Integer.parse(payload) do
+      {event_notification_id, ""} -> fetch_and_delete_event_notification(event_notification_id)
+      _ -> payload
+    end
   end
 
   # sobelow_skip ["Misc.BinToTerm"]
@@ -51,5 +61,16 @@ defmodule Explorer.Chain.Events.Listener do
         send(pid, event)
       end
     end)
+  end
+
+  defp fetch_and_delete_event_notification(id) do
+    case Repo.get(EventNotification, id) do
+      nil ->
+        nil
+
+      %{data: data} = notification ->
+        Repo.delete(notification)
+        data
+    end
   end
 end

@@ -216,6 +216,12 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout:
 disable_indexer = System.get_env("DISABLE_INDEXER")
 disable_webapp = System.get_env("DISABLE_WEBAPP")
 
+healthy_blocks_period =
+  System.get_env("HEALTHY_BLOCKS_PERIOD", "5")
+  |> Integer.parse()
+  |> elem(0)
+  |> :timer.minutes()
+
 config :explorer,
   coin: System.get_env("COIN") || "POA",
   coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "POA",
@@ -224,7 +230,7 @@ config :explorer,
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
-  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
+  healthy_blocks_period: healthy_blocks_period,
   realtime_events_sender:
     if(disable_webapp != "true",
       do: Explorer.Chain.Events.SimpleSender,
@@ -386,6 +392,10 @@ config :explorer, Explorer.Accounts,
     sender: System.get_env("SENDGRID_SENDER"),
     template: System.get_env("SENDGRID_TEMPLATE")
   ]
+
+config :explorer, Explorer.SmartContract.RustVerifierInterface,
+  service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
+  enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
 
 ###############
 ### Indexer ###
