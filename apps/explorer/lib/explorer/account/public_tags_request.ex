@@ -147,10 +147,12 @@ defmodule Explorer.Account.PublicTagsRequest do
          trimmed_tags <- String.trim(tags),
          tags_list <- String.split(trimmed_tags, ";"),
          {:filter_empty, [_ | _] = filtered_tags} <- {:filter_empty, Enum.filter(tags_list, fn tag -> tag != "" end)},
+         trimmed_spaces_tags <- Enum.map(filtered_tags, fn tag -> String.trim(tag) end),
          {:validate, false} <- {:validate, Enum.any?(tags_list, fn tag -> String.length(tag) > @max_tag_length end)},
          {:uniqueness, true} <-
-           {:uniqueness, Enum.count(Enum.uniq_by(filtered_tags, &String.downcase(&1))) == Enum.count(filtered_tags)},
-         trimmed_tags_list <- Enum.take(filtered_tags, @max_tags_per_request) do
+           {:uniqueness,
+            Enum.count(Enum.uniq_by(trimmed_spaces_tags, &String.downcase(&1))) == Enum.count(trimmed_spaces_tags)},
+         trimmed_tags_list <- Enum.take(trimmed_spaces_tags, @max_tags_per_request) do
       force_change(changeset, :tags, Enum.join(trimmed_tags_list, ";"))
     else
       {:uniqueness, false} ->

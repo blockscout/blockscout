@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestController do
            is_owner: public_tags_request["is_owner"],
            identity_id: current_user.id
          }) do
-      {:error, %Changeset{}} = public_tags_request ->
+      {:error, %Changeset{} = public_tags_request} ->
         render(conn, "form.html", method: :update, public_tags_request: public_tags_request)
 
       _ ->
