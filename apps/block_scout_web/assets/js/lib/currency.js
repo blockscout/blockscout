@@ -16,14 +16,14 @@ function formatTokenUsdValue (value) {
 }
 
 function formatCurrencyValue (value, symbol) {
-  symbol = symbol || '₫'
+  symbol = symbol || ''
   if (isNaN(value)) return 'N/A'
   if (value === 0 || value === '0') return `${symbol}0.00`
   if (value < 0.000001) return `${window.localized['Less than']} ${symbol}0.000001`
   if (value < 1) return `${symbol}${numeral(value).format('0.000000')}`
   if (value < 100000) return `${symbol}${numeral(value).format('0,0')}`
   if (value > 1000000000000) return `${symbol}${numeral(value).format('0.000e+0')}`
-  return `${symbol}${numeral(value).format('0,0')}`
+  return `${numeral(value).format('0,0')} ${symbol}`
 }
 
 function weiToEther (wei) {

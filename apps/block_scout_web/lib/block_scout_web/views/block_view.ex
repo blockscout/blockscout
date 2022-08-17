@@ -58,12 +58,12 @@ defmodule BlockScoutWeb.BlockView do
       %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(block_miner_address)
 
       if beneficiary_address == block_miner_payout_address do
-        gettext("Miner Reward")
+        gettext("Proposer Reward")
       else
         gettext("Chore Reward")
       end
     else
-      gettext("Miner Reward")
+      gettext("Proposer Reward")
     end
   end
 

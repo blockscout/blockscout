@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
 
     test "displays miner primary address names" do
-      miner_name = "POA Miner Pool"
+      miner_name = "ASA Proposer Pool"
       %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
 
       insert(:block, miner: miner_address, miner_hash: nil)
