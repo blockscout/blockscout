@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
   @chunk_size 50
 
   # milliseconds
-  @default_interval 1_000
+  @default_interval 2_000
 
   defstruct interval: @default_interval,
             json_rpc_named_arguments: [],
