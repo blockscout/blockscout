@@ -400,8 +400,8 @@ endif
 migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
-					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+				$(BLOCKSCOUT_CONTAINER_PARAMS) \
+				$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
@@ -416,7 +416,7 @@ ifdef DATABASE_URL
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 else
 ifdef PG_EXIST
-	@echo "==> Checking PostgesSQL container"
+	@echo "==> Checking PostgreSQL container"
 ifdef PG_STARTED
 	@echo "==> PostgreSQL Already started"
 	@$(MAKE) -f $(THIS_FILE) migrate_only
@@ -465,17 +465,17 @@ endif
 run: start
 
 .PHONY: build \
-				migrate \
-				start \
-				stop \
-				postgres \
-				run \
-				docker-login \
-				release \
-				publish \
-				publish-latest \
-				publish-version \
-				tag \
-				tag-latest \
-				tag-version
+		migrate \
+		start \
+		stop \
+		postgres \
+		run \
+		docker-login \
+		release \
+		publish \
+		publish-latest \
+		publish-version \
+		tag \
+		tag-latest \
+		tag-version
 
