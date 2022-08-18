@@ -85,9 +85,8 @@ $dark-primary-alternate: $dark-primary;
 		background-image: none;
 		background-color: $dark-bg;
 	}
-	.dashboard-banner-network-plain-container,
 	.dashboard-banner-network-plain-container::after {
-		background-color: $dark-light-bg;
+		background-color: rgba(255,255,255,0.6);
 	}
 	.dashboard-banner-network-stats-label,
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
