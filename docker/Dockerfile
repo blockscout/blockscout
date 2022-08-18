@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix:latest AS builder
+FROM bitwalker/alpine-elixir-phoenix:1.13 AS builder
 
 WORKDIR /app
 
@@ -80,9 +80,11 @@ RUN mkdir -p /opt/release \
     && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM bitwalker/alpine-elixir-phoenix:latest
+FROM bitwalker/alpine-elixir-phoenix:1.13
 
 WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/apps/explorer/node_modules ./node_modules
+
+CMD ["mix", "phx.server"]
