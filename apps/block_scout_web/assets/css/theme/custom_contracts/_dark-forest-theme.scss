@@ -83,7 +83,7 @@ $dark-primary-alternate: $dark-primary;
 
 	.layout-container .dashboard-banner-container {
 		background-image: none;
-		background-color: $dark-bg;
+		background-color: transparent;
 	}
 	.dashboard-banner-network-plain-container::after {
 		background-color: rgba(255,255,255,0.6);

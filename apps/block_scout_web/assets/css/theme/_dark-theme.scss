@@ -98,7 +98,7 @@ $dark-stakes-banned-background: #3e314c;
 
 	.layout-container .dashboard-banner-container {
 		background-image: none;
-		// background-color: $dark-bg !important;
+		background-color: transparent !important;
 	}
 	.dashboard-banner-network-plain-container::after {
 		background-color: rgba(255,255,255,0.6);
