@@ -79,7 +79,7 @@ RUN mkdir -p /opt/release \
     && mix release blockscout \
     && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
-# CMD ["mix", "phx.server"]
+CMD ["mix", "phx.server"]
 
 # # ##############################################################
 # FROM bitwalker/alpine-elixir-phoenix:1.13
