@@ -100,18 +100,17 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @spec base_api_url :: String.t()
   defp base_api_url() do
-    configured_url = Application.get_env(:indexer, __MODULE__, [])[:base_api_url]
-    configured_url || "https://api.astranaut.dev/"
+    configured_url = System.get_env("API_NODE_URL") || "https://api.astranaut.dev"
   end
 
   @spec block_info_url :: String.t()
   defp block_info_url() do
-    base_api_url() <> "cosmos/base/tendermint/v1beta1/blocks/"
+    base_api_url() <> "/cosmos/base/tendermint/v1beta1/blocks/"
   end
 
   @spec txn_info_url :: String.t()
   defp txn_info_url() do
-    base_api_url() <> "cosmos/tx/v1beta1/txs/"
+    base_api_url() <> "/cosmos/tx/v1beta1/txs/"
   end
 
   defp raw_txn_to_cosmos_hash(raw_txn) do
