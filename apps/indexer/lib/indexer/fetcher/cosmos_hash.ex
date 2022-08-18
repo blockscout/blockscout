@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @behaviour BufferedTask
 
-  @max_batch_size 10
+  @max_batch_size 50
   @max_concurrency 2
   @defaults [
     flush_interval: :timer.seconds(3),
