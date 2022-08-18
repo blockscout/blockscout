@@ -78,6 +78,9 @@ kubernetes:
         memory: 3Gi
     service:
       istio: false
+      metrics:
+        port: "4000"
+        path: "/metrics"
       healthcheck:
         initialDelaySeconds: 300
         interval: 10
