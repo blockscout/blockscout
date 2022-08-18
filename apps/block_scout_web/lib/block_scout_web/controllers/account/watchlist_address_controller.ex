@@ -1,108 +1,92 @@
 defmodule BlockScoutWeb.Account.WatchlistAddressController do
   use BlockScoutWeb, :controller
 
-  alias Ecto.Changeset
-  alias Explorer.Repo
-  alias Explorer.Accounts.{WatchlistAddress, WatchlistAddressForm}
+  alias Explorer.Account.WatchlistAddress
 
   import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
 
   def new(conn, _params) do
     authenticate!(conn)
 
-    render(conn, "new.html", watchlist_address: new_address())
+    render(conn, "form.html", method: :create, watchlist_address: empty_watchlist_address())
   end
 
-  def create(conn, %{"watchlist_address_form" => wa_params}) do
+  def create(conn, %{"watchlist_address" => wa_params}) do
     current_user = authenticate!(conn)
 
-    case AddWatchlistAddress.call(current_user.watchlist_id, wa_params) do
+    case WatchlistAddress.create(params_to_attributes(wa_params, current_user.watchlist_id)) do
       {:ok, _watchlist_address} ->
-        conn
-        # |> put_flash(:info, "Address created!")
-        |> redirect(to: watchlist_path(conn, :show))
+        redirect(conn, to: watchlist_path(conn, :show))
 
-      {:error, message = message} ->
-        conn
-        # |> put_flash(:error, message)
-        |> render("new.html", watchlist_address: changeset_with_error(wa_params, message))
+      {:error, changeset} ->
+        render(conn, "form.html", method: :create, watchlist_address: changeset)
     end
-  end
-
-  def show(conn, _params) do
-    current_user = authenticate!(conn)
-
-    render(
-      conn,
-      "show.html",
-      watchlist: watchlist(current_user)
-    )
   end
 
   def edit(conn, %{"id" => id}) do
-    authenticate!(conn)
+    current_user = authenticate!(conn)
 
-    case get_watchlist_address!(conn, id) do
+    case WatchlistAddress.get_watchlist_address_by_id_and_watchlist_id(id, current_user.watchlist_id) do
       nil ->
         not_found(conn)
 
-      %WatchlistAddress{} = wla ->
-        form = WatchlistAddress.to_form(wla)
-        changeset = WatchlistAddressForm.changeset(form, %{})
-
-        render(conn, "edit.html", watchlist_address_id: wla, changeset: changeset)
+      %WatchlistAddress{} = watchlist_address ->
+        render(conn, "form.html", method: :update, watchlist_address: WatchlistAddress.changeset(watchlist_address))
     end
   end
 
-  def update(conn, %{"id" => id, "watchlist_address_form" => wa_params}) do
-    authenticate!(conn)
+  def update(conn, %{"id" => id, "watchlist_address" => wa_params}) do
+    current_user = authenticate!(conn)
 
-    wla = get_watchlist_address!(conn, id)
-
-    case UpdateWatchlistAddress.call(wla, wa_params) do
+    case wa_params
+         |> params_to_attributes(current_user.watchlist_id)
+         |> Map.put(:id, id)
+         |> WatchlistAddress.update() do
       {:ok, _watchlist_address} ->
-        conn
-        # |> put_flash(:info, "Address updated")
-        |> redirect(to: watchlist_path(conn, :show))
+        redirect(conn, to: watchlist_path(conn, :show))
 
-      {:error, message = message} ->
-        conn
-        # |> put_flash(:error, message)
-        |> render("edit.html", watchlist_address: changeset_with_error(wa_params, message))
+      {:error, changeset} ->
+        render(conn, "form.html", method: :update, watchlist_address: changeset)
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    authenticate!(conn)
+    current_user = authenticate!(conn)
 
-    wla = get_watchlist_address!(conn, id)
-    Repo.delete(wla)
+    WatchlistAddress.delete(id, current_user.watchlist_id)
 
-    conn
-    # |> put_flash(:info, "Watchlist Address removed successfully.")
-    |> redirect(to: watchlist_path(conn, :show))
+    redirect(conn, to: watchlist_path(conn, :show))
   end
 
-  defp changeset(params) do
-    WatchlistAddressForm.changeset(%WatchlistAddressForm{}, params)
-  end
+  defp empty_watchlist_address, do: WatchlistAddress.changeset(%WatchlistAddress{}, %{})
 
-  defp changeset_with_error(params, message) do
-    %{changeset(params) | action: :insert}
-    |> Changeset.add_error(:address_hash, message)
-  end
-
-  defp new_address, do: WatchlistAddressForm.changeset(%WatchlistAddressForm{}, %{})
-
-  defp watchlist(user) do
-    Watchlist
-    |> Repo.get(user.watchlist_id)
-    |> Repo.preload(watchlist_addresses: :address)
-  end
-
-  defp get_watchlist_address!(conn, id) do
-    WatchlistAddress
-    |> Repo.get_by(id: id, watchlist_id: authenticate!(conn).watchlist_id)
-    |> Repo.preload(:address)
+  defp params_to_attributes(
+         %{
+           "address_hash" => address_hash,
+           "name" => name,
+           "watch_coin_input" => watch_coin_input,
+           "watch_coin_output" => watch_coin_output,
+           "watch_erc_20_input" => watch_erc_20_input,
+           "watch_erc_20_output" => watch_erc_20_output,
+           "watch_erc_721_input" => watch_nft_input,
+           "watch_erc_721_output" => watch_nft_output,
+           "notify_email" => notify_email
+         },
+         watchlist_id
+       ) do
+    %{
+      address_hash: address_hash,
+      name: name,
+      watch_coin_input: watch_coin_input,
+      watch_coin_output: watch_coin_output,
+      watch_erc_20_input: watch_erc_20_input,
+      watch_erc_20_output: watch_erc_20_output,
+      watch_erc_721_input: watch_nft_input,
+      watch_erc_721_output: watch_nft_output,
+      watch_erc_1155_input: watch_nft_input,
+      watch_erc_1155_output: watch_nft_output,
+      notify_email: notify_email,
+      watchlist_id: watchlist_id
+    }
   end
 end

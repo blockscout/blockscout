@@ -1,8 +1,9 @@
 defmodule UserFromAuthTest do
   use Explorer.DataCase
 
-  alias Explorer.Accounts.Identity
-  alias Explorer.Accounts.Watchlist
+  alias BlockScoutWeb.Models.UserFromAuth
+  alias Explorer.Account.Identity
+  alias Explorer.Account.Watchlist
   alias Explorer.Repo
   alias Ueberauth.Auth
   alias Ueberauth.Auth.Info
@@ -40,7 +41,7 @@ defmodule UserFromAuthTest do
 
       %{
         id: watchlist_id,
-        identity_id: identity_id,
+        identity_id: ^identity_id,
         name: "default"
       } = Watchlist |> first |> Repo.one()
 
@@ -48,11 +49,11 @@ defmodule UserFromAuthTest do
               %{
                 avatar: "https://avatars.githubusercontent.com/u/666666=4",
                 email: "john@blockscout.com",
-                id: identity_id,
+                id: ^identity_id,
                 name: "John Snow",
                 nickname: "johnnny",
                 uid: "github|666666",
-                watchlist_id: watchlist_id
+                watchlist_id: ^watchlist_id
               }} = user_data
     end
 
@@ -87,7 +88,7 @@ defmodule UserFromAuthTest do
 
       %{
         id: watchlist_id,
-        identity_id: identity_id,
+        identity_id: ^identity_id,
         name: "default"
       } = Watchlist |> first |> Repo.one()
 
@@ -95,11 +96,11 @@ defmodule UserFromAuthTest do
               %{
                 avatar: "https://lh3.googleusercontent.com/a/xxx666-yyy777=s99-c",
                 email: "john@blockscout.com",
-                id: identity_id,
+                id: ^identity_id,
                 name: "John Snow",
                 nickname: "johnnny",
                 uid: "google-oauth2|666666",
-                watchlist_id: watchlist_id
+                watchlist_id: ^watchlist_id
               }} = user_data
     end
   end

@@ -24,7 +24,9 @@ defmodule BlockScoutWeb.WebRouter do
     get("/profile", Account.AuthController, :profile)
     get("/logout", Account.AuthController, :logout)
     get("/:provider", Account.AuthController, :request)
+    get("/:provider/api_callback", Account.AuthController, :api_callback)
     get("/:provider/callback", Account.AuthController, :callback)
+    get("/api/logout", Account.AuthController, :api_logout)
   end
 
   scope "/account", BlockScoutWeb do

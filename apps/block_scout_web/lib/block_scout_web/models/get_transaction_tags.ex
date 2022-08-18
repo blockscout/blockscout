@@ -1,17 +1,15 @@
-defmodule GetTransactionTags do
+defmodule BlockScoutWeb.Models.GetTransactionTags do
   @moduledoc """
   Get various types of tags associated with the transaction
   """
 
-  # import Ecto.Query, only: [from: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2, get_tags_on_address: 1]
 
-  import GetAddressTags, only: [get_address_tags: 2, get_tags_on_address: 1]
-
-  alias Explorer.Accounts.TagTransaction
+  alias Explorer.Account.TagTransaction
   alias Explorer.Chain.Transaction
   alias Explorer.Repo
 
-  def get_transaction_with_addresess_tags(
+  def get_transaction_with_addresses_tags(
         %Transaction{} = transaction,
         %{id: identity_id, watchlist_id: watchlist_id}
       ) do
@@ -20,7 +18,7 @@ defmodule GetTransactionTags do
     Map.put(addresses_tags, :personal_tx_tag, tx_tag)
   end
 
-  def get_transaction_with_addresess_tags(%Transaction{} = transaction, _),
+  def get_transaction_with_addresses_tags(%Transaction{} = transaction, _),
     do: %{
       common_tags: get_tags_on_address(transaction.to_address_hash),
       personal_tags: [],

@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.TransactionController do
       split_list_by_page: 1
     ]
 
-  import GetAddressTags, only: [get_address_tags: 2]
-  import GetTransactionTags, only: [get_transaction_with_addresess_tags: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
+  import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
 
   alias BlockScoutWeb.{
     AccessHelpers,
@@ -170,7 +170,7 @@ defmodule BlockScoutWeb.TransactionController do
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
             tx_tags:
-              get_transaction_with_addresess_tags(
+              get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
               )
@@ -208,7 +208,7 @@ defmodule BlockScoutWeb.TransactionController do
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
             tx_tags:
-              get_transaction_with_addresess_tags(
+              get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
               )

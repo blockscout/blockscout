@@ -203,6 +203,33 @@ msgstr ""
 msgid "Add Custom ABI"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:45
+#, elixir-autogen, elixir-format
+msgid "Add API key"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/index.html.eex:45
+#, elixir-autogen, elixir-format
+msgid "Add Custom ABI"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Add address tag"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Add address to the Watchlist"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Add transaction tag"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:11
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:12
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20 lib/block_scout_web/views/address_view.ex:116
 msgid "Address"
@@ -226,6 +253,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:149
 msgid "Address of the token contract"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/public_tags_request/address_field.html.eex:2
+#, elixir-autogen, elixir-format
+msgid "Address*"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/index.html.eex:5
@@ -1077,6 +1109,11 @@ msgstr ""
 msgid "During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it."
 msgstr ""
 
+#: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:27
+#, elixir-autogen, elixir-format
+msgid "E-mail*"
+msgstr ""
+
 #: lib/block_scout_web/templates/common_components/_minimal_proxy_pattern.html.eex:6
 #, elixir-autogen, elixir-format
 msgid "EIP-1167"
@@ -1095,6 +1132,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:215
 msgid "ERC-721 "
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:53
+#, elixir-autogen, elixir-format
+msgid "ERC-721, ERC-1155 tokens (NFT) (beta)"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_token/overview.html.eex:1
@@ -1937,6 +1979,13 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:84
 msgid "Other Explorers"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:35
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:48
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:61
+#, elixir-autogen, elixir-format
+msgid "Outgoing"
 msgstr ""
 
 #: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:24

@@ -128,6 +128,20 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   tracer: Explorer.Tracer,
   otp_app: :explorer
 
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  table_url: System.get_env("PUBLIC_TAGS_AIRTABLE_URL"),
+  api_key: System.get_env("PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("SENDGRID_API_KEY")
+
+config :explorer, Explorer.Account,
+  sendgrid: [
+    sender: System.get_env("SENDGRID_SENDER"),
+    template: System.get_env("SENDGRID_TEMPLATE")
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

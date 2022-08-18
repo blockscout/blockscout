@@ -1,86 +1,49 @@
 defmodule BlockScoutWeb.Account.TagAddressController do
   use BlockScoutWeb, :controller
 
-  alias Ecto.Changeset
-  alias Explorer.Accounts.TagAddress
-  alias Explorer.Repo
+  alias Explorer.Account.TagAddress
 
-  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1, current_user: 1]
-  import Ecto.Query, only: [from: 2]
+  import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
 
   def index(conn, _params) do
-    case current_user(conn) do
-      nil ->
-        conn
-        # |> put_flash(:info, "Sign in to see address tags")
-        |> redirect(to: root())
+    current_user = authenticate!(conn)
 
-      %{} = user ->
-        render(
-          conn,
-          "index.html",
-          address_tags: address_tags(user)
-        )
-    end
+    render(conn, "index.html", address_tags: TagAddress.get_tags_address_by_identity_id(current_user.id))
   end
 
   def new(conn, _params) do
     authenticate!(conn)
 
-    render(conn, "new.html", new_tag: new_tag())
+    render(conn, "form.html", tag_address: new_tag())
   end
 
-  def create(conn, %{"tag_address" => params}) do
+  def create(conn, %{"tag_address" => tag_address}) do
     current_user = authenticate!(conn)
 
-    case AddTagAddress.call(current_user.id, params) do
-      {:ok, _tag_address} ->
-        conn
-        # |> put_flash(:info, "Tag Address created!")
-        |> redirect(to: tag_address_path(conn, :index))
+    case TagAddress.create(%{
+           name: tag_address["name"],
+           address_hash: tag_address["address_hash"],
+           identity_id: current_user.id
+         }) do
+      {:ok, _} ->
+        redirect(conn, to: tag_address_path(conn, :index))
 
-      {:error, message = message} ->
-        conn
-        # |> put_flash(:error, message)
-        |> render("new.html", new_tag: changeset_with_error(params, message))
+      {:error, invalid_tag_address} ->
+        render(conn, "form.html", tag_address: invalid_tag_address)
     end
+  end
+
+  def create(conn, _) do
+    redirect(conn, to: tag_address_path(conn, :index))
   end
 
   def delete(conn, %{"id" => id}) do
     current_user = authenticate!(conn)
 
-    TagAddress
-    |> Repo.get_by(id: id, identity_id: current_user.id)
-    |> Repo.delete()
+    TagAddress.delete(id, current_user.id)
 
-    conn
-    # |> put_flash(:info, "Tag Address removed successfully.")
-    |> redirect(to: tag_address_path(conn, :index))
-  end
-
-  def address_tags(user) do
-    query =
-      from(ta in TagAddress,
-        where: ta.identity_id == ^user.id
-      )
-
-    query
-    |> Repo.all()
-    |> Repo.preload(:address)
+    redirect(conn, to: tag_address_path(conn, :index))
   end
 
   defp new_tag, do: TagAddress.changeset(%TagAddress{}, %{})
-
-  defp changeset_with_error(params, message) do
-    %{changeset(params) | action: :insert}
-    |> Changeset.add_error(:address_hash, message)
-  end
-
-  defp changeset(params) do
-    TagAddress.changeset(%TagAddress{}, params)
-  end
-
-  defp root do
-    System.get_env("NETWORK_PATH") || "/"
-  end
 end

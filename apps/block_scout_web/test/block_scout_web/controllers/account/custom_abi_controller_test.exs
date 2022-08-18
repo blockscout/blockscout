@@ -1,49 +1,28 @@
 defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Ueberauth.Strategy.Auth0
-  alias Explorer.Accounts
-  alias Ueberauth.Auth.Info
-  alias Ueberauth.Auth
+  alias BlockScoutWeb.Models.UserFromAuth
 
   @custom_abi "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true}]"
 
-  setup do
-    auth = %Auth{
-      info: %Info{
-        birthday: nil,
-        description: nil,
-        email: "john@blockscout.com",
-        first_name: nil,
-        image: "https://avatars.githubusercontent.com/u/666666=4",
-        last_name: nil,
-        location: nil,
-        name: "John Snow",
-        nickname: "johnnny",
-        phone: nil,
-        urls: %{profile: nil, website: nil}
-      },
-      provider: :auth0,
-      strategy: Auth0,
-      uid: "github|666666"
-    }
+  setup %{conn: conn} do
+    auth = build(:auth)
 
     {:ok, user} = UserFromAuth.find_or_create(auth)
 
-    {:ok, account_session_params: user}
+    {:ok, conn: Plug.Test.init_test_session(conn, current_user: user)}
   end
 
   describe "test custom ABI functionality" do
-    test "custom ABI page opens correctly", %{conn: conn, account_session_params: account_session_params} do
+    test "custom ABI page opens correctly", %{conn: conn} do
       result_conn =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> get(custom_abi_path(conn, :index))
 
       assert html_response(result_conn, 200) =~ "Create a Custom ABI to interact with contracts."
     end
 
-    test "do not add custom ABI with wrong ABI", %{conn: conn, account_session_params: account_session_params} do
+    test "do not add custom ABI with wrong ABI", %{conn: conn} do
       contract_address = insert(:address, contract_code: "0x0102")
 
       custom_abi = %{
@@ -54,7 +33,6 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
 
       assert html_response(result_conn, 200) =~ "Add Custom ABI"
@@ -63,7 +41,6 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn_1 =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> post(custom_abi_path(conn, :create, %{"custom_abi" => Map.put(custom_abi, "abi", "123")}))
 
       assert html_response(result_conn_1, 200) =~ "Add Custom ABI"
@@ -72,17 +49,13 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn_2 =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> get(custom_abi_path(conn, :index))
 
       assert html_response(result_conn_2, 200) =~ "Create a Custom ABI to interact with contracts."
       refute html_response(result_conn_2, 200) =~ to_string(contract_address.hash)
     end
 
-    test "add one custom abi and do not allow to create duplicates", %{
-      conn: conn,
-      account_session_params: account_session_params
-    } do
+    test "add one custom abi and do not allow to create duplicates", %{conn: conn} do
       contract_address = insert(:contract_address, contract_code: "0x0102")
 
       custom_abi = %{
@@ -93,7 +66,6 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
 
       assert redirected_to(result_conn) == custom_abi_path(conn, :index)
@@ -104,7 +76,6 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn_1 =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
 
       assert html_response(result_conn_1, 200) =~ "Add Custom ABI"
@@ -112,10 +83,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
       assert html_response(result_conn_1, 200) =~ "Custom ABI for this address has already been added before"
     end
 
-    test "show error on address which is not smart contract", %{
-      conn: conn,
-      account_session_params: account_session_params
-    } do
+    test "show error on address which is not smart contract", %{conn: conn} do
       contract_address = insert(:address)
 
       custom_abi = %{
@@ -126,7 +94,6 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
 
       assert html_response(result_conn, 200) =~ "Add Custom ABI"
@@ -134,14 +101,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
       assert html_response(result_conn, 200) =~ "Address is not a smart contract"
     end
 
-    test "user can add up to 15 custom ABIs", %{
-      conn: conn,
-      account_session_params: account_session_params
-    } do
-      prepared_conn =
-        conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
-
+    test "user can add up to 15 custom ABIs", %{conn: conn} do
       addresses =
         Enum.map(1..15, fn _x ->
           address = insert(:contract_address, contract_code: "0x0102")
@@ -152,7 +112,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
             "abi" => @custom_abi
           }
 
-          assert prepared_conn
+          assert conn
                  |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
                  |> redirected_to() == custom_abi_path(conn, :index)
 
@@ -160,7 +120,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
         end)
 
       assert abi_list =
-               prepared_conn
+               conn
                |> get(custom_abi_path(conn, :index))
                |> html_response(200)
 
@@ -175,7 +135,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
       }
 
       assert error_form =
-               prepared_conn
+               conn
                |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
                |> html_response(200)
 
@@ -184,7 +144,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
       assert error_form =~ to_string(address.hash)
 
       assert abi_list_new =
-               prepared_conn
+               conn
                |> get(custom_abi_path(conn, :index))
                |> html_response(200)
 
@@ -194,10 +154,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
       assert abi_list_new =~ "You can create up to 15 Custom ABIs per account."
     end
 
-    test "after adding custom ABI on address page appear Read/Write Contract tab", %{
-      conn: conn,
-      account_session_params: account_session_params
-    } do
+    test "after adding custom ABI on address page appear Read/Write Contract tab", %{conn: conn} do
       contract_address = insert(:contract_address, contract_code: "0x0102")
 
       custom_abi = %{
@@ -209,7 +166,6 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn =
         conn
-        |> Plug.Test.init_test_session(current_user: account_session_params)
         |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
 
       assert redirected_to(result_conn) == custom_abi_path(conn, :index)

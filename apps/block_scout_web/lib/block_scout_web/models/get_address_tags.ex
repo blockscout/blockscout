@@ -1,17 +1,14 @@
-defmodule GetAddressTags do
+defmodule BlockScoutWeb.Models.GetAddressTags do
   @moduledoc """
   Get various types of tags associated with the address
   """
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Accounts.{TagAddress, WatchlistAddress}
+  alias Explorer.Account.{TagAddress, WatchlistAddress}
   alias Explorer.Chain.Hash
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
-
-  def get_address_tags(nil, nil),
-    do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
   def get_address_tags(%Hash{} = address_hash, current_user) do
     %{
@@ -21,8 +18,13 @@ defmodule GetAddressTags do
     }
   end
 
-  def get_address_tags(address_hash, _),
-    do: %{common_tags: get_tags_on_address(address_hash), personal_tags: [], watchlist_names: []}
+  def get_address_tags(_, _), do: %{common_tags: [], personal_tags: [], watchlist_names: []}
+
+  def get_public_tags(%Hash{} = address_hash) do
+    %{
+      common_tags: get_tags_on_address(address_hash)
+    }
+  end
 
   def get_tags_on_address(%Hash{} = address_hash) do
     query =
@@ -32,7 +34,7 @@ defmodule GetAddressTags do
         on: tt.id == att.tag_id,
         where: att.address_hash == ^address_hash,
         where: tt.label != ^"validator",
-        select: %{label: tt.label, display_name: tt.display_name}
+        select: %{label: tt.label, display_name: tt.display_name, address_hash: att.address_hash}
       )
 
     Repo.all(query)
@@ -46,7 +48,7 @@ defmodule GetAddressTags do
         ta in TagAddress,
         where: ta.address_hash == ^address_hash,
         where: ta.identity_id == ^id,
-        select: %{label: ta.name, display_name: ta.name}
+        select: %{label: ta.name, display_name: ta.name, address_hash: ta.address_hash}
       )
 
     Repo.all(query)

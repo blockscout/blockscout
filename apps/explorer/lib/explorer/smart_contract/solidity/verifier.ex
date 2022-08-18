@@ -95,20 +95,24 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     all_versions_extra = all_versions ++ [evm_version]
 
-    Enum.reduce_while(all_versions_extra, false, fn version, acc ->
-      case acc do
-        {:ok, _} = result ->
-          {:cont, result}
+    result =
+      Enum.reduce_while(all_versions_extra, false, fn version, acc ->
+        case acc do
+          {:ok, _} = result ->
+            {:cont, result}
 
-        {:error, error}
-        when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
-          {:halt, acc}
+          {:error, error}
+          when error in [:name, :no_creation_data, :deployed_bytecode, :compiler_version, :constructor_arguments] ->
+            {:halt, acc}
 
-        _ ->
-          cur_params = Map.put(params, "evm_version", version)
-          {:cont, verify(address_hash, cur_params)}
-      end
-    end)
+          _ ->
+            cur_params = Map.put(params, "evm_version", version)
+            {:cont, verify(address_hash, cur_params)}
+        end
+      end)
+
+    debug_contract_verification_with_sentry(result, params, address_hash)
+    result
   end
 
   defp prepare_optimization_runs(false_, _) when false_ in [false, "false"], do: nil
@@ -125,12 +129,16 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   def evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
     try do
-      evaluate_authenticity_via_standard_json_input_inner(
-        RustVerifierInterface.enabled?(),
-        address_hash,
-        params,
-        json_input
-      )
+      result =
+        evaluate_authenticity_via_standard_json_input_inner(
+          RustVerifierInterface.enabled?(),
+          address_hash,
+          params,
+          json_input
+        )
+
+      debug_contract_json_verification_with_sentry(result, params, address_hash, json_input)
+      result
     rescue
       exception ->
         Logger.error(fn ->

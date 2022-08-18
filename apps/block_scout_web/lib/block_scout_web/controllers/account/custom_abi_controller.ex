@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Account.CustomABIController do
   def create(conn, %{"custom_abi" => custom_abi}) do
     current_user = authenticate!(conn)
 
-    case CustomABI.create_new_custom_abi(%CustomABI{}, %{
+    case CustomABI.create(%{
            name: custom_abi["name"],
            address_hash: custom_abi["address_hash"],
            abi: custom_abi["abi"],
@@ -54,14 +54,14 @@ defmodule BlockScoutWeb.Account.CustomABIController do
   def update(conn, %{"id" => id, "custom_abi" => %{"abi" => abi, "name" => name, "address_hash" => address_hash}}) do
     current_user = authenticate!(conn)
 
-    case CustomABI.update_custom_abi(%{
+    case CustomABI.update(%{
            id: id,
            name: name,
            address_hash: address_hash,
            abi: abi,
            identity_id: current_user.id
          }) do
-      %Changeset{} = custom_abi ->
+      {:error, %Changeset{} = custom_abi} ->
         render(conn, "form.html", method: :update, custom_abi: custom_abi)
 
       _ ->
@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.Account.CustomABIController do
   def delete(conn, %{"id" => id}) do
     current_user = authenticate!(conn)
 
-    CustomABI.delete_custom_abi(current_user.id, id)
+    CustomABI.delete(id, current_user.id)
 
     redirect(conn, to: custom_abi_path(conn, :index))
   end

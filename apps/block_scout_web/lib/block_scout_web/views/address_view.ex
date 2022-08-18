@@ -576,7 +576,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def fetch_custom_abi(conn, address_hash) do
     if current_user = current_user(conn) do
-      CustomABI.get_custom_abi_by_identity_id_and_address_hash(current_user.id, address_hash)
+      CustomABI.get_custom_abi_by_identity_id_and_address_hash(address_hash, current_user.id)
     end
   end
 

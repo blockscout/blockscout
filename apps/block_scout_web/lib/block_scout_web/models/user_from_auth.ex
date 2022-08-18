@@ -1,44 +1,61 @@
-defmodule UserFromAuth do
+defmodule BlockScoutWeb.Models.UserFromAuth do
   @moduledoc """
   Retrieve the user information from an auth request
   """
   require Logger
   require Poison
 
-  alias Explorer.Accounts.Identity
+  alias Explorer.Account.Identity
   alias Explorer.Repo
   alias Ueberauth.Auth
 
   import Ecto.Query, only: [from: 2]
 
-  def find_or_create(%Auth{} = auth) do
+  def find_or_create(%Auth{} = auth, api_call? \\ false) do
     case find_identity(auth) do
       [] ->
         case create_identity(auth) do
-          %{} = basic_info ->
-            {:ok, basic_info}
+          %Identity{} = identity ->
+            {:ok, return_value(identity, auth, api_call?)}
 
           {:error, changeset} ->
             {:error, changeset}
         end
 
       [%{} = identity | _] ->
-        {:ok, basic_info(auth, identity)}
+        update_identity(identity, update_identity_map(auth))
+        {:ok, return_value(identity, auth, api_call?)}
     end
+  end
+
+  defp return_value(identity, _auth, true) do
+    identity
+  end
+
+  defp return_value(identity, auth, false) do
+    basic_info(auth, identity)
   end
 
   defp create_identity(auth) do
     with {:ok, %Identity{} = identity} <- Repo.insert(new_identity(auth)),
          {:ok, _watchlist} <- add_watchlist(identity) do
-      basic_info(auth, identity)
+      identity
     end
+  end
+
+  defp update_identity(identity, attrs) do
+    identity
+    |> Identity.changeset(attrs)
+    |> Repo.update()
   end
 
   defp new_identity(auth) do
     %Identity{
       uid: auth.uid,
       email: email_from_auth(auth),
-      name: name_from_auth(auth)
+      name: name_from_auth(auth),
+      nickname: nickname_from_auth(auth),
+      avatar: avatar_from_auth(auth)
     }
   end
 
@@ -49,12 +66,16 @@ defmodule UserFromAuth do
          do: {:ok, identity}
   end
 
-  defp find_identity(auth) do
-    Repo.all(query_identity(auth))
+  def find_identity(auth_or_uid) do
+    Repo.all(query_identity(auth_or_uid))
   end
 
-  defp query_identity(auth) do
+  def query_identity(%Auth{} = auth) do
     from(i in Identity, where: i.uid == ^auth.uid)
+  end
+
+  def query_identity(uid) do
+    from(i in Identity, where: i.uid == ^uid)
   end
 
   defp basic_info(auth, identity) do
@@ -68,6 +89,15 @@ defmodule UserFromAuth do
       nickname: nickname_from_auth(auth),
       avatar: avatar_from_auth(auth),
       watchlist_id: watchlist.id
+    }
+  end
+
+  defp update_identity_map(auth) do
+    %{
+      email: email_from_auth(auth),
+      name: name_from_auth(auth),
+      nickname: nickname_from_auth(auth),
+      avatar: avatar_from_auth(auth)
     }
   end
 

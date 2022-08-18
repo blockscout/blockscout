@@ -1,7 +1,7 @@
 <% status = transaction_status(@transaction) %>
 <% error_in_internal_tx = @transaction.has_error_in_internal_txs %>
 <% current_user = AuthController.current_user(@conn) %>
-<% tx_tags = GetTransactionTags.get_transaction_with_addresess_tags(@transaction, current_user) %>
+<% tx_tags = BlockScoutWeb.Models.GetTransactionTags.get_transaction_with_addresses_tags(@transaction, current_user) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
     <!-- Color Block -->

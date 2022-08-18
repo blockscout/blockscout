@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.AddressValidationController do
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  import GetAddressTags, only: [get_address_tags: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, BlockView, Controller}
   alias Explorer.ExchangeRates.Token

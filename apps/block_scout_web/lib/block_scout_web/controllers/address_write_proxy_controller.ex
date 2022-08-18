@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressWriteProxyController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import GetAddressTags, only: [get_address_tags: 2]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.AccessHelpers
   alias Explorer.{Chain, Market}

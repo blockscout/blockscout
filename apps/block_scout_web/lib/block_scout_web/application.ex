@@ -23,7 +23,8 @@ defmodule BlockScoutWeb.Application do
       {Absinthe.Subscription, Endpoint},
       {RealtimeEventHandler, name: RealtimeEventHandler},
       {StakingEventHandler, name: StakingEventHandler},
-      {BlocksIndexedCounter, name: BlocksIndexedCounter}
+      {BlocksIndexedCounter, name: BlocksIndexedCounter},
+      {Guardian.DB.Token.SweeperServer, []}
     ]
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]

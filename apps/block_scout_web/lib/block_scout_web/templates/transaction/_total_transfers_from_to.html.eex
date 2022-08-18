@@ -1,7 +1,7 @@
 <%= with {:ok, from_address} <- Chain.hash_to_address(@transfer.from_address_hash),
 {:ok, to_address} <- Chain.hash_to_address(@transfer.to_address_hash) do %>
-<%  from_tags = GetAddressTags.get_address_tags(@transfer.from_address_hash, @current_user) %>
-<%  to_tags = GetAddressTags.get_address_tags(@transfer.to_address_hash, @current_user) %>
+<%  from_tags = BlockScoutWeb.Models.GetAddressTags.get_address_tags(@transfer.from_address_hash, @current_user) %>
+<%  to_tags = BlockScoutWeb.Models.GetAddressTags.get_address_tags(@transfer.to_address_hash, @current_user) %>
 <tr>
   <td style="width: 1%;">
     <b style="margin-right: 15px;">From</b>

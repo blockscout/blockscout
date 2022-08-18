@@ -1,11 +1,11 @@
-defmodule Explorer.Accounts.Notifier.Summary do
+defmodule Explorer.Account.Notifier.Summary do
   @moduledoc """
     Compose a summary from transactions
   """
 
   require Logger
 
-  alias Explorer.Accounts.Notifier.Summary
+  alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Wei
 
@@ -90,7 +90,7 @@ defmodule Explorer.Accounts.Notifier.Summary do
       block_number: transaction.block_number,
       amount: amount(transaction),
       tx_fee: fee(transaction),
-      name: Application.get_env(:explorer, :coin),
+      name: Application.get_env(:explorer, :coin_name),
       subject: "Coin transaction",
       type: "COIN"
     }
@@ -105,7 +105,7 @@ defmodule Explorer.Accounts.Notifier.Summary do
       block_number: transaction.block_number,
       amount: amount(transaction),
       tx_fee: fee(transaction),
-      name: Application.get_env(:explorer, :coin),
+      name: Application.get_env(:explorer, :coin_name),
       subject: "Contract creation",
       type: "COIN"
     }
