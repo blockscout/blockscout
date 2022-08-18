@@ -100,7 +100,7 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @spec base_api_url :: String.t()
   defp base_api_url() do
-    configured_url = System.get_env("API_NODE_URL") || "https://api.astranaut.dev"
+    configured_url = System.get_env("API_NODE_URL")
   end
 
   @spec block_info_url :: String.t()
