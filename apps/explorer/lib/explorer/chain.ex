@@ -1458,7 +1458,7 @@ defmodule Explorer.Chain do
         end
       is_cosmos_tx(term) == true ->
         from(transaction in Transaction,
-          where: transaction.hash == ^search_tx_hash_by_cosmos_hash(term),
+          where: transaction.cosmos_hash == ^term,
           select: %{
             address_hash: fragment("CAST(NULL AS bytea)"),
             tx_hash: transaction.hash,
