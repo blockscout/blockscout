@@ -89,4 +89,4 @@ WORKDIR /app
 COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/apps/explorer/node_modules ./node_modules
 
-CMD ["/bin/blockscout", "start"]
+CMD ["/blockscout/bin/blockscout", "start"]
