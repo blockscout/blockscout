@@ -45,7 +45,7 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
   end
 
   defp get_supply() do
-    url = base_api_url() <> "cosmos/bank/v1beta1/supply"
+    url = base_api_url() <> "/cosmos/bank/v1beta1/supply"
     case Source.http_request(url, headers()) do
       {:error, reason} ->
         Logger.error("failed to get supply: ", inspect(reason))
@@ -118,8 +118,7 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
 
   @spec base_api_url :: String.t()
   defp base_api_url() do
-    configured_url = Application.get_env(:explorer, __MODULE__, [])[:base_api_url]
-    configured_url || "https://api.astranaut.dev/"
+    configured_url = System.get_env("API_NODE_URL")
   end
 
   defp base_url do
