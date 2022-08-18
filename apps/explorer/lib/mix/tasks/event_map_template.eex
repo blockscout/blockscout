@@ -26,8 +26,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
 
   @doc "Filter out log entries that do not come from celo core contracts"
   def filter_celo_contract_logs(logs) do
-   logs
-   |> Enum.filter(fn %{address_hash: contract_address} -> AddressCache.is_core_contract_address?(contract_address) end)
+     logs
+     |> Enum.filter(fn %{address_hash: contract_address} -> AddressCache.is_core_contract_address?(contract_address) end)
   end
 
   @doc "Filter out log entries that don't come from celo core contracts and convert them into celo contract event changeset params"
@@ -74,7 +74,7 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
 
   @topic_to_event %{
   <%= for module <- @modules do %>  "<%= module.topic %>" =>
-    <%= module %>,
+      <%= module %>,
   <% end %>}
 
   def event_for_topic(topic), do: Map.get(@topic_to_event, topic)

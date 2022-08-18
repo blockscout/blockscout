@@ -83,6 +83,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Reserve.SpenderAddedEvent,
     "0xa6e2c5a23bb917ba0a584c4b250257ddad698685829b66a8813c004b39934fe4" =>
       Elixir.Explorer.Celo.ContractEvents.Accounts.AccountNameSetEvent,
+    "0xf8324c8592dfd9991ee3e717351afe0a964605257959e3d99b0eb3d45bff9422" =>
+      Elixir.Explorer.Celo.ContractEvents.Sortedoracles.TokenReportExpirySetEvent,
     "0x954fa47fa6f4e8017b99f93c73f4fbe599d786f9f5da73fe9086ab473fb455d8" =>
       Elixir.Explorer.Celo.ContractEvents.Attestations.SelectIssuersWaitBlocksSetEvent,
     "0x60c5b4756af49d7b071b00dbf0f87af605cce11896ecd3b760d19f0f9d3fbcef" =>
@@ -127,6 +129,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Accounts.AccountCreatedEvent,
     "0x1b76e38f3fdd1f284ed4d47c9d50ff407748c516ff9761616ff638c233107625" =>
       Elixir.Explorer.Celo.ContractEvents.Epochrewards.TargetVotingYieldParametersSetEvent,
+    "0x6dc84b66cc948d847632b9d829f7cb1cb904fbf2c084554a9bc22ad9d8453340" =>
+      Elixir.Explorer.Celo.ContractEvents.Sortedoracles.OracleRemovedEvent,
     "0x28ec9e38ba73636ceb2f6c1574136f83bd46284a3c74734b711bf45e12f8d929" =>
       Elixir.Explorer.Celo.ContractEvents.Governance.ProposalApprovedEvent,
     "0xe21a44017b6fa1658d84e937d56ff408501facdb4ff7427c479ac460d76f7893" =>
@@ -169,6 +173,8 @@ defmodule Explorer.Celo.ContractEvents.EventMap do
       Elixir.Explorer.Celo.ContractEvents.Common.StableTokenSetEvent,
     "0xe5d4e30fb8364e57bc4d662a07d0cf36f4c34552004c4c3624620a2c1d1c03dc" =>
       Elixir.Explorer.Celo.ContractEvents.Common.TransferCommentEvent,
+    "0xc68a9b88effd8a11611ff410efbc83569f0031b7bc70dd455b61344c7f0a042f" =>
+      Elixir.Explorer.Celo.ContractEvents.Sortedoracles.ReportExpirySetEvent,
     "0xd09501348473474a20c772c79c653e1fd7e8b437e418fe235d277d2c88853251" =>
       Elixir.Explorer.Celo.ContractEvents.Validators.ValidatorRegisteredEvent,
     "0x91ef92227057e201e406c3451698dd780fe7672ad74328591c88d281af31581d" =>
