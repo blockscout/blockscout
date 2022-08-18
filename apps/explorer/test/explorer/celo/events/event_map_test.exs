@@ -121,7 +121,7 @@ defmodule Explorer.Celo.ContractEvents.EventMapTest do
         # only for test suite - not a real event
         |> MapSet.delete(Explorer.Test.TestParamCollisionEvent.topic())
 
-      assert MapSet.subset?(contract_events_topic_set, event_map_topic_set)
+      assert MapSet.difference(contract_events_topic_set, event_map_topic_set) == MapSet.new()
     end
   end
 end
