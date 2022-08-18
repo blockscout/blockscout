@@ -79,7 +79,6 @@ RUN mkdir -p /opt/release \
     && mix release blockscout \
     && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
-RUN mix phx.server
 CMD ["mix", "phx.server"]
 
 # ##############################################################
