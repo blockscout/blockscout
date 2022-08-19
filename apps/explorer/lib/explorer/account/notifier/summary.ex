@@ -33,14 +33,6 @@ defmodule Explorer.Account.Notifier.Summary do
 
     transaction_summary = fetch_summary(transaction)
 
-    if transaction_summary != :nothing do
-      Logger.debug("--- transaction summary", fetcher: :account)
-      Logger.debug(transaction_summary, fetcher: :account)
-    end
-
-    Logger.debug("--- transfers summaries", fetcher: :account)
-    Logger.debug(transfers_summaries, fetcher: :account)
-
     [transaction_summary | transfers_summaries]
     |> Enum.filter(fn summary ->
       not (is_nil(summary) or
@@ -56,8 +48,6 @@ defmodule Explorer.Account.Notifier.Summary do
     summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
 
     if summary != :nothing do
-      Logger.debug("--- transfer summary", fetcher: :account)
-      Logger.debug(summary, fetcher: :account)
       [summary]
     else
       []
@@ -74,7 +64,6 @@ defmodule Explorer.Account.Notifier.Summary do
       fn transfer ->
         transaction
         |> fetch_summary(transfer)
-        |> tap(&Logger.info(&1, fetcher: :account))
       end
     )
   end

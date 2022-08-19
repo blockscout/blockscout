@@ -70,8 +70,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timestamps: timestamps
       )
 
-    Notify.async(inserted)
-
     {:ok, inserted}
   end
 
