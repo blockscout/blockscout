@@ -21,6 +21,9 @@ export INDEXER_DISABLE_BLOCK_REWARD_FETCHER=true
 export ECTO_USE_SSL=true
 export MIX_ENV=prod
 export HOST_SYSTEM=${HOST_SYSTEM:-$(uname -s)}
+export API_NODE_URL=
+export DISABLE_INDEXER=false
+export FIRST_BLOCK=1
 
 make build
 make start
