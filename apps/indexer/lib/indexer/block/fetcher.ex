@@ -131,13 +131,15 @@ defmodule Indexer.Block.Fetcher do
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          blocks = TransformBlocks.transform_blocks(blocks_params),
+         cosmos_hash_params = CosmosHash.get_cosmos_hash_params_by_range(range),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
-         transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
+         transactions_without_cosmos_hashes = Receipts.put(transactions_params_without_receipts, receipts),
+         transactions_with_cosmos_hashes = CosmosHash.put(transactions_without_cosmos_hashes, cosmos_hash_params),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
-           fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
+           fetch_beneficiaries(blocks, transactions_with_cosmos_hashes, json_rpc_named_arguments),
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -145,14 +147,14 @@ defmodule Indexer.Block.Fetcher do
              logs: logs,
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
-             transactions: transactions_with_receipts
+             transactions: transactions_with_cosmos_hashes
            }),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
-             transactions_params: transactions_with_receipts
+             transactions_params: transactions_with_cosmos_hashes
            }
            |> AddressCoinBalances.params_set(),
          coin_balances_params_daily_set =
@@ -162,7 +164,7 @@ defmodule Indexer.Block.Fetcher do
            }
            |> AddressCoinBalancesDaily.params_set(),
          beneficiaries_with_gas_payment =
-           beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
+           beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_cosmos_hashes),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -178,7 +180,7 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
+               transactions: %{params: transactions_with_cosmos_hashes}
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
@@ -282,16 +284,20 @@ defmodule Indexer.Block.Fetcher do
   def async_import_created_contract_codes(_), do: :ok
 
   def async_import_cosmos_hashes(%{transactions: transactions}) do
-    transaction_fields = transactions|> Enum.flat_map(fn
+    transaction_fields = transactions |> Enum.flat_map(fn
       %Transaction{
         block_number: block_number,
         hash: hash,
-        cosmos_hash: nil
+        cosmos_hash: cosmos_hash
       } ->
-        [%{block_number: block_number, hash: hash}]
+        [%{block_number: block_number, hash: hash, cosmos_hash: cosmos_hash}]
     end)
     transaction_fields
-    |> Enum.map(fn %{block_number: block_number} -> block_number end)
+    |> Enum.map(fn %{block_number: block_number, cosmos_hash: cosmos_hash} ->
+      if is_nil(cosmos_hash) do
+        block_number
+      end
+    end)
     |> CosmosHash.async_fetch(10_000)
   end
 

@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @behaviour BufferedTask
 
-  @max_batch_size 50
+  @max_batch_size 25
   @max_concurrency 4
   @defaults [
     flush_interval: :timer.seconds(3),
@@ -68,6 +68,67 @@ defmodule Indexer.Fetcher.CosmosHash do
     Enum.each(unique_numbers, &fetch_and_import_cosmos_hash/1)
   end
 
+  def get_cosmos_hash_params_by_range(range) do
+    block_numbers = Enum.map(range, fn(number) -> number end)
+    for block_number <- block_numbers do
+      %{block_number => get_cosmos_hash_tx_list_mapping(block_number)}
+    end
+  end
+
+  def put(transactions_without_cosmos_hashes, cosmos_hash_params) when is_list(transactions_without_cosmos_hashes)
+                                                                  when is_list(cosmos_hash_params) do
+    Enum.map(transactions_without_cosmos_hashes, fn transaction_params ->
+      block_number = transaction_params[:block_number]
+      cosmos_hash_params = Enum.find(cosmos_hash_params, fn param ->
+        param[block_number] != nil
+      end) |> Enum.at(0)
+      #Logger.info(IEx.Info.info(cosmos_hash_params))
+      tx_hash = transaction_params[:hash]
+      params = elem(cosmos_hash_params, 1)
+
+      param_cosmos = Enum.find(params, fn param ->
+        param[:hash] == tx_hash
+      end)
+
+      if param_cosmos != nil do
+        Map.put_new(transaction_params, :cosmos_hash, param_cosmos[:cosmos_hash])
+      else
+        Map.put_new(transaction_params, :cosmos_hash, nil)
+      end
+    end)
+  end
+
+  defp get_cosmos_hash_tx_list_mapping(block_number) do
+    case http_request(block_info_url() <> Integer.to_string(block_number)) do
+      {:error, reason} ->
+        Logger.error("failed to fetch block info via api node: ", inspect(reason))
+        nil
+      {:ok, result} ->
+        case result["block"]["data"]["txs"] do
+          nil ->
+            Logger.debug("block_number: #{block_number} does not have any transactions")
+            nil
+          [] ->
+            Logger.debug("block_number: #{block_number} does not have any transactions")
+            nil
+          [_|_] ->
+            cosmos_hashes = for tx <- result["block"]["data"]["txs"] do
+              raw_txn_to_cosmos_hash(tx)
+            end
+            for cosmos_hash <- cosmos_hashes |> Enum.slice(0, 40) do
+              case http_request(txn_info_url() <> cosmos_hash) do
+                {:error, reason} ->
+                  Logger.error("failed to fetch txn info via api node: ", inspect(reason))
+                  nil
+                {:ok, result} ->
+                  tx_message = Enum.at(result["tx"]["body"]["messages"], 0)
+                  %{hash: tx_message["hash"], cosmos_hash: cosmos_hash}
+              end
+            end
+        end
+    end
+  end
+
   defp fetch_and_import_cosmos_hash(block_number) do
     case http_request(block_info_url() <> Integer.to_string(block_number)) do
       {:error, reason} ->
@@ -77,12 +138,12 @@ defmodule Indexer.Fetcher.CosmosHash do
           nil -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [] -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [_|_] ->
-            hash_cosmos_hash_mapping_list_params(result["block"]["data"]["txs"])
+            update_cosmos_hash(result["block"]["data"]["txs"] |> Enum.slice(0, 80))
         end
     end
   end
 
-  defp hash_cosmos_hash_mapping_list_params(txs) do
+  defp update_cosmos_hash(txs) do
     for tx <- txs do
       cosmos_hash = raw_txn_to_cosmos_hash(tx)
       case http_request(txn_info_url() <> cosmos_hash) do
@@ -100,7 +161,7 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @spec base_api_url :: String.t()
   defp base_api_url() do
-    configured_url = System.get_env("API_NODE_URL")
+    System.get_env("API_NODE_URL")
   end
 
   @spec block_info_url :: String.t()
