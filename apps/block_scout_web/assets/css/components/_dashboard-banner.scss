@@ -232,7 +232,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   }
 
   &::after {
-    background-color: $dashboard-banner-network-plain-container-background-color;
+    background-color: rgba(255, 255, 255, 0.6);
     bottom: 0;
     content: "";
     display: block;
