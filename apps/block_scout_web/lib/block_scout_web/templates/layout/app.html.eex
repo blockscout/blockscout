@@ -27,11 +27,11 @@
     <%= render_existing(@view_module, "styles.html", assigns) %>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
-    <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">
-    <link rel="icon" type="image/png" sizes="16x16" href="<%= static_path(@conn, "/images/favicon-16x16.png") %>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/astra.svg") %>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<%= static_path(@conn, "/images/astra.svg") %>">
     <link rel="manifest" href="<%= static_path(@conn, "/manifest.webmanifest") %>">
     <link rel="mask-icon" href="<%= static_path(@conn, "/safari-pinned-tab.svg") %>" color="#5bbad5">
-    <link rel="shortcut icon" type='image/x-icon' href="<%= static_path(@conn, "/images/favicon.ico") %>">
+    <link rel="shortcut icon" type='image/x-icon' href="<%= static_path(@conn, "/images/astra.svg") %>">
     <meta name="msapplication-TileColor" content="#7dd79f">
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
