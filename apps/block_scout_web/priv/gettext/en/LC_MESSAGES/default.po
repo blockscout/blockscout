@@ -76,7 +76,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:223
+#: lib/block_scout_web/templates/layout/app.html.eex:224
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -87,6 +87,7 @@ msgid "64-bit hash of value verifying proof-of-work (note: null for POA chains).
 msgstr ""
 
 #: lib/block_scout_web/templates/block/overview.html.eex:97
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:22
 #, elixir-autogen, elixir-format
 msgid "A block producer who successfully included the block onto the blockchain."
 msgstr ""
@@ -226,6 +227,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:12
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:29
 #: lib/block_scout_web/views/address_view.ex:107
 #, elixir-autogen, elixir-format
 msgid "Address"
@@ -1637,6 +1639,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/_tile.html.eex:41
 #: lib/block_scout_web/templates/block/overview.html.eex:98
 #: lib/block_scout_web/templates/chain/_block.html.eex:16
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:23
 #, elixir-autogen, elixir-format
 msgid "Miner"
 msgstr ""
@@ -2245,6 +2248,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/index.html.eex:25
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:15
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:8
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:14
 #, elixir-autogen, elixir-format
 msgid "Something went wrong, click to reload."
@@ -3285,4 +3289,46 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
 #, elixir-autogen, elixir-format
 msgid "truffle flattener"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "Address used in token mintings and burnings."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:35
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Balance after"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:32
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Balance before"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_state/_state_change.html.eex:9
+#, elixir-autogen, elixir-format
+msgid "Burn address"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:38
+#, elixir-autogen, elixir-format
+msgid "Change"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:29
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:6
+#: lib/block_scout_web/views/transaction_view.ex:516
+#, elixir-autogen, elixir-format
+msgid "State changes"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:13
+#, elixir-autogen, elixir-format
+msgid "The changes from this transaction have not yet happened since the transaction is still pending."
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:17
+#, elixir-autogen, elixir-format
+msgid "This transaction hasn't changed state."
 msgstr ""
