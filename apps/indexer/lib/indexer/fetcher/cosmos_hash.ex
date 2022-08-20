@@ -82,7 +82,6 @@ defmodule Indexer.Fetcher.CosmosHash do
       cosmos_hash_params = Enum.find(cosmos_hash_params, fn param ->
         param[block_number] != nil
       end) |> Enum.at(0)
-      #Logger.info(IEx.Info.info(cosmos_hash_params))
       tx_hash = transaction_params[:hash]
       params = elem(cosmos_hash_params, 1)
 
@@ -112,10 +111,11 @@ defmodule Indexer.Fetcher.CosmosHash do
             Logger.debug("block_number: #{block_number} does not have any transactions")
             nil
           [_|_] ->
-            cosmos_hashes = for tx <- result["block"]["data"]["txs"] do
+            # realtime fetcher handle maximum 50 txs/block
+            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 50) do
               raw_txn_to_cosmos_hash(tx)
             end
-            for cosmos_hash <- cosmos_hashes |> Enum.slice(0, 40) do
+            for cosmos_hash <- cosmos_hashes do
               case http_request(txn_info_url() <> cosmos_hash) do
                 {:error, reason} ->
                   Logger.error("failed to fetch txn info via api node: ", inspect(reason))
@@ -138,24 +138,26 @@ defmodule Indexer.Fetcher.CosmosHash do
           nil -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [] -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [_|_] ->
-            update_cosmos_hash(result["block"]["data"]["txs"] |> Enum.slice(0, 80))
-        end
-    end
-  end
+            tx_hashes = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
+                        |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end)
 
-  defp update_cosmos_hash(txs) do
-    for tx <- txs do
-      cosmos_hash = raw_txn_to_cosmos_hash(tx)
-      case http_request(txn_info_url() <> cosmos_hash) do
-        {:error, reason} ->
-          Logger.error("failed to fetch txn info via api node: ", inspect(reason))
-        {:ok, result} ->
-          tx_messages = result["tx"]["body"]["messages"]
-          for %{"hash" => hash, "@type" => type} when type == "/ethermint.evm.v1.MsgEthereumTx"
-                        <- tx_messages do
-            Transaction.update_cosmos_hash(hash, cosmos_hash)
-          end
-      end
+            for cosmos_raw_tx <- result["block"]["data"]["txs"] do
+              cosmos_hash = raw_txn_to_cosmos_hash(cosmos_raw_tx)
+              case http_request(txn_info_url() <> cosmos_hash) do
+                {:error, reason} ->
+                  Logger.error("failed to fetch txn info via api node: ", inspect(reason))
+                {:ok, result} ->
+                  tx_messages = result["tx"]["body"]["messages"]
+                  #TODO: need improve using update by batch
+                  for %{"hash" => hash, "@type" => type} when type == "/ethermint.evm.v1.MsgEthereumTx"
+                      <- tx_messages do
+                    if Enum.member?(tx_hashes, hash) do
+                      Transaction.update_cosmos_hash(hash, cosmos_hash)
+                    end
+                  end
+              end
+            end
+        end
     end
   end
 
