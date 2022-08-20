@@ -26,7 +26,7 @@ kubernetes:
       provider: gcpsm
     imageRepoName: blockscout
     kind: deployment
-    replicas: 3
+    replicas: 2
     # hpa:
     #   antiAffinity:
     #     type: required
@@ -37,6 +37,10 @@ kubernetes:
     #   minReplicas: 1
     #   targetCPUUtilizationPercentage: 50
     envs:
+    - name: POOL_SIZE
+      value: '15'
+    - name: POOL_SIZE_API
+      value: '15'
     - name: ETHEREUM_JSONRPC_WS_URL
       value: ws://35.215.217.3:9945
     - name: ETHEREUM_JSONRPC_HTTP_URL
