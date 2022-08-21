@@ -1545,7 +1545,6 @@ defmodule Explorer.Chain do
             tx_query ->
               basic_query
               |> union(^tx_query)
-              |> union(^block_query)
 
             block_query ->
               basic_query
