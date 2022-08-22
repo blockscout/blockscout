@@ -306,8 +306,6 @@ defmodule Explorer.Chain.Import do
         Keyword.delete(options, :for)
       )
 
-    Notify.async(inserted)
-
     {:ok, inserted}
   end
 
