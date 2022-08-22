@@ -17,8 +17,8 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @behaviour BufferedTask
 
-  @max_batch_size 25
-  @max_concurrency 4
+  @max_batch_size 10
+  @max_concurrency 2
   @defaults [
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
@@ -111,8 +111,8 @@ defmodule Indexer.Fetcher.CosmosHash do
             Logger.debug("block_number: #{block_number} does not have any transactions")
             nil
           [_|_] ->
-            # realtime fetcher handle maximum 50 txs/block
-            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 50) do
+            # realtime fetcher handle maximum 20 txs/block
+            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 20) do
               raw_txn_to_cosmos_hash(tx)
             end
             for cosmos_hash <- cosmos_hashes do
