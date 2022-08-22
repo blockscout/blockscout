@@ -6,7 +6,7 @@ defmodule Explorer.Factory do
   import Ecto.Query
   import Kernel, except: [+: 2]
 
-  alias Comeonin.Bcrypt
+  alias Bcrypt
 
   alias Explorer.Account.{
     Identity,
@@ -884,7 +884,7 @@ defmodule Explorer.Factory do
 
     %User{
       username: username,
-      password_hash: Bcrypt.hashpwsalt("password"),
+      password_hash: Bcrypt.hash_pwd_salt("password"),
       contacts: [
         %UserContact{
           email: "#{username}@blockscout",

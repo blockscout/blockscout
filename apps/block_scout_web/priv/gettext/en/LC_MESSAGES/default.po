@@ -840,7 +840,7 @@ msgstr ""
 msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
 
-#: lib/block_scout_web/templates/csv_export/index.html.eex:25
+#: lib/block_scout_web/templates/csv_export/index.html.eex:24
 #, elixir-autogen, elixir-format
 msgid "Download"
 msgstr ""

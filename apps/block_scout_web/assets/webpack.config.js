@@ -77,8 +77,8 @@ const appJs =
       'search-results': './js/pages/search-results/search.js',
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js',
       'modal': './js/pages/modal.js',
+      'csv-download': './js/lib/csv_download.js',
       'dropzone': './js/lib/dropzone.js',
       'delete-item-handler': './js/pages/account/delete_item_handler.js',
       'public-tags-request-form': './js/lib/public_tags_request_form.js'

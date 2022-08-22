@@ -51,7 +51,6 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
       |> Keyword.put(:to_block, to_block)
 
     transactions = Chain.address_to_transactions_without_rewards(address_hash, options)
-
     new_acc = transactions ++ acc
 
     case Enum.split(transactions, @page_size) do

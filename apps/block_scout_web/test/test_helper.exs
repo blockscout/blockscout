@@ -29,3 +29,5 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
 Absinthe.Test.prime(BlockScoutWeb.Schema)
 
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
+
+Mox.defmock(BlockScoutWeb.TestCaptchaHelper, for: BlockScoutWeb.CaptchaHelper)
