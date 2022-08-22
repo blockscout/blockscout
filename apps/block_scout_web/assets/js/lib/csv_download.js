@@ -1,6 +1,7 @@
 import * as Pikaday from 'pikaday'
 import moment from 'moment'
 import $ from 'jquery'
+import Cookies from 'js-cookie'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
@@ -27,38 +28,33 @@ const _instance2 = new Pikaday({
 })
 
 $button.on('click', () => {
-  $button.addClass('spinner')
   // eslint-disable-next-line
-  const resp = grecaptcha.getResponse()
-  if (resp) {
-    $.ajax({
-      url: './captcha?type=JSON',
-      type: 'POST',
-      headers: {
-        'x-csrf-token': $('[name=_csrf_token]').val()
-      },
-      data: {
-        type: 'JSON',
-        captchaResponse: resp
+  const recaptchaResponse = grecaptcha.getResponse()
+  if (recaptchaResponse) {
+    $button.addClass('spinner')
+    $button.prop('disabled', true)
+    const downloadUrl = `${$button.data('link')}&recaptcha_response=${recaptchaResponse}`
+
+    $('body').append($('<iframe id="csv-iframe" style="display: none;"></iframe>'))
+    $('#csv-iframe').attr('src', downloadUrl)
+
+    const interval = setInterval(handleCSVDownloaded, 1000)
+    setTimeout(resetDownload, 60000)
+
+    function handleCSVDownloaded () {
+      if (Cookies.get('csv-downloaded') === 'true') {
+        resetDownload()
       }
-    })
-      .done(function (data) {
-        // eslint-disable-next-line
-        grecaptcha.reset()
-        const dataJson = JSON.parse(data)
-        if (dataJson.success) {
-          $button.removeClass('spinner')
-          location.href = $button.data('link')
-        } else {
-          $button.removeClass('spinner')
-          return false
-        }
-      })
-      .fail(function (_jqXHR, textStatus) {
-        $button.removeClass('spinner')
-      })
-  } else {
-    $button.removeClass('spinner')
+    }
+
+    function resetDownload () {
+      $button.removeClass('spinner')
+      $button.prop('disabled', false)
+      clearInterval(interval)
+      Cookies.remove('csv-downloaded')
+      // eslint-disable-next-line
+      grecaptcha.reset()
+    }
   }
 })
 

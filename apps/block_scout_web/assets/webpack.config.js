@@ -74,7 +74,7 @@ const appJs =
       'search-results': './js/pages/search-results/search.js',
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js',
+      'csv-download': './js/lib/csv_download.js',
       'dropzone': './js/lib/dropzone.js'
     },
     output: {
