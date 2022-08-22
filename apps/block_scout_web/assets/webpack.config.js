@@ -63,7 +63,6 @@ const appJs =
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js',
       'main-page': './css/main-page.scss',
       'tokens': './js/pages/token/search.js',
       'faucet': './js/pages/faucet.js',
