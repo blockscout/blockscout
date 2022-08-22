@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestController do
            tags: public_tags_request["tags"],
            website: public_tags_request["website"],
            additional_comment: public_tags_request["additional_comment"],
-           addresses_array: public_tags_request["addresses_array"],
+           addresses: public_tags_request["addresses"],
            company: public_tags_request["company"],
            is_owner: public_tags_request["is_owner"],
            identity_id: current_user.id
@@ -81,12 +81,12 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestController do
            tags: public_tags_request["tags"],
            website: public_tags_request["website"],
            additional_comment: public_tags_request["additional_comment"],
-           addresses_array: public_tags_request["addresses_array"],
+           addresses: public_tags_request["addresses"],
            company: public_tags_request["company"],
            is_owner: public_tags_request["is_owner"],
            identity_id: current_user.id
          }) do
-      {:error, %Changeset{}} = public_tags_request ->
+      {:error, %Changeset{} = public_tags_request} ->
         render(conn, "form.html", method: :update, public_tags_request: public_tags_request)
 
       _ ->

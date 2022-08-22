@@ -12,6 +12,9 @@ defmodule Explorer.Account.PublicTagsRequest do
 
   import Ecto.Changeset
 
+  @distance_between_same_addresses 24 * 3600
+
+  @max_public_tags_request_per_account 15
   @max_addresses_per_request 10
   @max_tags_per_request 2
   @max_tag_length 35
@@ -22,21 +25,20 @@ defmodule Explorer.Account.PublicTagsRequest do
     field(:company, :string)
     field(:website, :string)
     field(:tags, :string)
-    field(:addresses, :string)
+    field(:addresses, {:array, Hash.Address})
     field(:description, :string)
     field(:additional_comment, :string)
     field(:request_type, :string)
     field(:is_owner, :boolean, default: true)
     field(:remove_reason, :string)
     field(:request_id, :string)
-    field(:addresses_array, {:array, :string}, virtual: true)
 
     belongs_to(:identity, Identity)
 
     timestamps()
   end
 
-  @local_fields [:__meta__, :inserted_at, :updated_at, :addresses_array, :id, :request_id]
+  @local_fields [:__meta__, :inserted_at, :updated_at, :id, :request_id]
 
   def to_map(%__MODULE__{} = request) do
     association_fields = request.__struct__.__schema__(:associations)
@@ -49,22 +51,25 @@ defmodule Explorer.Account.PublicTagsRequest do
     request |> Map.from_struct() |> Map.drop(waste_fields) |> Map.put(:network, network)
   end
 
-  @attrs ~w(company website description remove_reason request_id addresses_array)a
+  @attrs ~w(company website description remove_reason request_id)a
   @required_attrs ~w(full_name email tags addresses additional_comment request_type is_owner identity_id)a
 
   def changeset(%__MODULE__{} = public_tags_request, attrs \\ %{}) do
     public_tags_request
-    |> cast(attrs, @attrs ++ @required_attrs)
-    |> extract_and_validate_addresses()
+    |> cast(trim_empty_addresses(attrs), @attrs ++ @required_attrs)
     |> validate_tags()
     |> validate_required(@required_attrs, message: "Required")
+    |> validate_format(:email, ~r/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i, message: "is invalid")
+    |> validate_length(:addresses, min: 1, max: @max_addresses_per_request)
+    |> extract_and_validate_addresses()
     |> foreign_key_constraint(:identity_id)
+    |> public_tags_request_count_constraint()
+    |> public_tags_request_time_interval_uniqueness()
   end
 
   def changeset_without_constraints(%__MODULE__{} = public_tags_request \\ %__MODULE__{}, attrs \\ %{}) do
     public_tags_request
     |> cast(attrs, @attrs ++ @required_attrs)
-    |> extract_addresses_array()
   end
 
   def create(attrs) do
@@ -74,41 +79,68 @@ defmodule Explorer.Account.PublicTagsRequest do
     |> AirTable.submit()
   end
 
-  defp extract_addresses_array(%Changeset{} = changeset) do
-    with {:fetch, {_src, addresses}} <- {:fetch, fetch_field(changeset, :addresses)},
-         false <- is_nil(addresses),
-         addresses_array <- String.split(addresses, ";") do
-      put_change(changeset, :addresses_array, addresses_array)
+  defp trim_empty_addresses(%{addresses: addresses} = attrs) when is_list(addresses) do
+    filtered_addresses = Enum.filter(addresses, fn addr -> addr != "" and !is_nil(addr) end)
+    Map.put(attrs, :addresses, if(filtered_addresses == [], do: [""], else: filtered_addresses))
+  end
+
+  defp trim_empty_addresses(attrs), do: attrs
+
+  def public_tags_request_count_constraint(%Changeset{changes: %{identity_id: identity_id}} = request) do
+    if identity_id
+       |> public_tags_requests_by_identity_id_query()
+       |> limit(@max_public_tags_request_per_account)
+       |> Repo.aggregate(:count, :id) >= @max_public_tags_request_per_account do
+      request
+      |> add_error(:tags, "Max #{@max_public_tags_request_per_account} public tags requests per account")
     else
-      _ ->
-        changeset
+      request
     end
   end
 
+  def public_tags_request_count_constraint(changeset), do: changeset
+
+  defp public_tags_request_time_interval_uniqueness(%Changeset{changes: %{addresses: addresses}} = request) do
+    prepared_addresses =
+      if request.data && request.data.addresses, do: addresses -- request.data.addresses, else: addresses
+
+    public_tags_request =
+      request
+      |> fetch_field!(:identity_id)
+      |> public_tags_requests_by_identity_id_query()
+      |> where(
+        [public_tags_request],
+        fragment("? && ?", public_tags_request.addresses, ^Enum.map(prepared_addresses, fn x -> x.bytes end))
+      )
+      |> limit(1)
+      |> Repo.one()
+
+    now = DateTime.utc_now()
+
+    if !is_nil(public_tags_request) &&
+         public_tags_request.inserted_at
+         |> DateTime.add(@distance_between_same_addresses, :second)
+         |> DateTime.compare(now) == :gt do
+      request
+      |> add_error(:addresses, "You have already submitted the same public tag address in the last 24 hours")
+    else
+      request
+    end
+  end
+
+  defp public_tags_request_time_interval_uniqueness(changeset), do: changeset
+
   defp extract_and_validate_addresses(%Changeset{} = changeset) do
-    with {:fetch, {_src, addresses}} <- {:fetch, fetch_field(changeset, :addresses_array)},
+    with {:fetch, {_src, addresses}} <- {:fetch, fetch_field(changeset, :addresses)},
          false <- is_nil(addresses),
-         {:filter_empty, [_ | _] = filtered_addresses} <-
-           {:filter_empty, Enum.filter(addresses, fn addr -> addr != "" end)},
-         {:validate, false} <-
-           {:validate, Enum.any?(filtered_addresses, fn addr -> !match?({:ok, _}, Hash.Address.cast(addr)) end)},
-         {:uniqueness, true} <-
-           {:uniqueness,
-            Enum.count(Enum.uniq_by(filtered_addresses, &String.downcase(&1))) == Enum.count(filtered_addresses)},
-         trimmed_address_list <- Enum.take(filtered_addresses, @max_addresses_per_request) do
-      put_change(changeset, :addresses, Enum.join(trimmed_address_list, ";"))
+         {:uniqueness, true} <- {:uniqueness, Enum.count(Enum.uniq(addresses)) == Enum.count(addresses)} do
+      changeset
     else
       {:uniqueness, false} ->
-        add_error(changeset, :addresses_array, "All addresses should be unique")
-
-      {:filter_empty, _} ->
-        add_error(changeset, :addresses_array, "All addresses are empty strings")
-
-      {:validate, _} ->
-        add_error(changeset, :addresses_array, "All addresses should be valid")
+        add_error(changeset, :addresses, "All addresses should be unique")
 
       _ ->
-        add_error(changeset, :addresses_array, "No addresses")
+        add_error(changeset, :addresses, "No addresses")
     end
   end
 
@@ -118,10 +150,12 @@ defmodule Explorer.Account.PublicTagsRequest do
          trimmed_tags <- String.trim(tags),
          tags_list <- String.split(trimmed_tags, ";"),
          {:filter_empty, [_ | _] = filtered_tags} <- {:filter_empty, Enum.filter(tags_list, fn tag -> tag != "" end)},
+         trimmed_spaces_tags <- Enum.map(filtered_tags, fn tag -> String.trim(tag) end),
          {:validate, false} <- {:validate, Enum.any?(tags_list, fn tag -> String.length(tag) > @max_tag_length end)},
          {:uniqueness, true} <-
-           {:uniqueness, Enum.count(Enum.uniq_by(filtered_tags, &String.downcase(&1))) == Enum.count(filtered_tags)},
-         trimmed_tags_list <- Enum.take(filtered_tags, @max_tags_per_request) do
+           {:uniqueness,
+            Enum.count(Enum.uniq_by(trimmed_spaces_tags, &String.downcase(&1))) == Enum.count(trimmed_spaces_tags)},
+         trimmed_tags_list <- Enum.take(trimmed_spaces_tags, @max_tags_per_request) do
       force_change(changeset, :tags, Enum.join(trimmed_tags_list, ";"))
     else
       {:uniqueness, false} ->
@@ -144,7 +178,7 @@ defmodule Explorer.Account.PublicTagsRequest do
       [request],
       request.identity_id == ^id and request.request_type != "delete" and not is_nil(request.request_id)
     )
-    |> order_by([request], request.id)
+    |> order_by([request], desc: request.id)
   end
 
   def public_tags_requests_by_identity_id_query(_), do: nil
@@ -215,4 +249,6 @@ defmodule Explorer.Account.PublicTagsRequest do
         false
     end
   end
+
+  def get_max_public_tags_request_count, do: @max_public_tags_request_per_account
 end

@@ -45,5 +45,5 @@ defmodule BlockScoutWeb.Account.TagAddressController do
     redirect(conn, to: tag_address_path(conn, :index))
   end
 
-  defp new_tag, do: TagAddress.changeset(%TagAddress{}, %{})
+  defp new_tag, do: TagAddress.changeset()
 end

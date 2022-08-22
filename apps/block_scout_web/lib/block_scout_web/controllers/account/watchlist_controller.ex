@@ -2,8 +2,9 @@ defmodule BlockScoutWeb.Account.WatchlistController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
+  import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Account.Watchlist
+  alias Explorer.Account.{Watchlist, WatchlistAddress}
   alias Explorer.Repo
 
   def show(conn, _params) do
@@ -19,6 +20,6 @@ defmodule BlockScoutWeb.Account.WatchlistController do
   defp watchlist_with_addresses(user) do
     Watchlist
     |> Repo.get(user.watchlist_id)
-    |> Repo.preload(watchlist_addresses: :address)
+    |> Repo.preload(watchlist_addresses: {from(wa in WatchlistAddress, order_by: [desc: wa.id]), [:address]})
   end
 end

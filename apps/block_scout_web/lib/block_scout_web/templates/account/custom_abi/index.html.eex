@@ -1,13 +1,12 @@
-<% max_custom_abi_count = 15 %>
 <section class="container">
   <div class="row">
     <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :custom_abis %>
     <div class="col-md-10">
       <div class="card">
         <div class="card-body">
-          <h1 class="card-title list-title-description header-account"><%= gettext "Custom ABI" %> </h1>
+          <h1 class="card-title list-title-description header-account"><%= gettext "Custom ABI" %></h1>
           <br>
-          <%= if Enum.count(@custom_abis) < max_custom_abi_count do %>
+          <%= if Enum.count(@custom_abis) < CustomABI.get_max_custom_abis_count() do %>
             <div style="min-width: 100%;">
               <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
                 <%= gettext "Create a Custom ABI to interact with contracts." %>
@@ -41,7 +40,7 @@
               <% end %>
             </div>
           </div>
-          <%= if Enum.count(@custom_abis) < max_custom_abi_count do %>
+          <%= if Enum.count(@custom_abis) < CustomABI.get_max_custom_abis_count() do %>
             <a class="button button-primary button-sm" href="<%= custom_abi_path(@conn, :new) %>"><%= gettext "Add Custom ABI" %></a>
           <% end %>
         </div>

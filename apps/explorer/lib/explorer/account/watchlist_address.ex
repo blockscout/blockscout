@@ -13,6 +13,8 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
 
+  @max_watchlist_addresses_per_account 10
+
   schema "account_watchlist_addresses" do
     field(:name, :string)
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
@@ -36,15 +38,21 @@ defmodule Explorer.Account.WatchlistAddress do
 
   @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
 
+  def changeset do
+    %__MODULE__{}
+    |> cast(%{}, @attrs)
+  end
+
   @doc false
   def changeset(watchlist_address, attrs \\ %{}) do
     watchlist_address
     |> cast(attrs, @attrs)
     |> validate_length(:name, min: 1, max: 35)
     |> validate_required([:name, :address_hash, :watchlist_id], message: "Required")
-    |> unique_constraint([:watchlist_id, :address_hash], message: "Address already added to the watchlist")
+    |> unique_constraint([:watchlist_id, :address_hash], message: "Address already added to the watch list")
     |> check_address()
     |> foreign_key_constraint(:address_hash, message: "")
+    |> watchlist_address_count_constraint()
   end
 
   def create(attrs) do
@@ -52,6 +60,20 @@ defmodule Explorer.Account.WatchlistAddress do
     |> changeset(attrs)
     |> Repo.insert()
   end
+
+  def watchlist_address_count_constraint(%Changeset{changes: %{watchlist_id: watchlist_id}} = watchlist_address) do
+    if watchlist_id
+       |> watchlist_addresses_by_watchlist_id_query()
+       |> limit(@max_watchlist_addresses_per_account)
+       |> Repo.aggregate(:count, :id) >= @max_watchlist_addresses_per_account do
+      watchlist_address
+      |> add_error(:name, "Max #{@max_watchlist_addresses_per_account} watch list addresses per account")
+    else
+      watchlist_address
+    end
+  end
+
+  def watchlist_address_count_constraint(changeset), do: changeset
 
   defp check_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do
     with {:ok, address_hash} <- ForbiddenAddress.check(address_hash),
@@ -67,6 +89,13 @@ defmodule Explorer.Account.WatchlistAddress do
   end
 
   defp check_address(changeset), do: changeset
+
+  def watchlist_addresses_by_watchlist_id_query(watchlist_id) when not is_nil(watchlist_id) do
+    __MODULE__
+    |> where([wl_address], wl_address.watchlist_id == ^watchlist_id)
+  end
+
+  def watchlist_addresses_by_watchlist_id_query(_), do: nil
 
   def watchlist_address_by_id_and_watchlist_id_query(watchlist_address_id, watchlist_id)
       when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
@@ -105,4 +134,6 @@ defmodule Explorer.Account.WatchlistAddress do
         {:error, %{reason: :item_not_found}}
     end
   end
+
+  def get_max_watchlist_addresses_count, do: @max_watchlist_addresses_per_account
 end
