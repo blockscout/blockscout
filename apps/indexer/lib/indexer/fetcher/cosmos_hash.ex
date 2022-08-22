@@ -12,7 +12,6 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   alias HTTPoison.{Error, Response}
   alias Explorer.Chain
-  alias Explorer.Chain.{Transaction}
   alias Indexer.{BufferedTask, Tracer}
 
   @behaviour BufferedTask
@@ -97,6 +96,23 @@ defmodule Indexer.Fetcher.CosmosHash do
     end)
   end
 
+  @spec async_mapping_tx_hash_to_cosmos_hash([String.t()]) :: [%{}]
+  defp async_mapping_tx_hash_to_cosmos_hash(list_cosmos_hashes) when is_list(list_cosmos_hashes) do
+    stream = Task.async_stream(list_cosmos_hashes, fn cosmos_hash ->
+      case http_request(txn_info_url() <> cosmos_hash) do
+        {:error, reason} ->
+          Logger.error("failed to fetch txn info via api node: ", inspect(reason))
+          nil
+        {:ok, result} ->
+          tx_message = Enum.at(result["tx"]["body"]["messages"], 0)
+          %{hash: tx_message["hash"], cosmos_hash: cosmos_hash}
+        end
+      end, max_concurrency: 10) |> Enum.to_list
+    for tuple when elem(tuple, 0) == :ok <- stream do
+      elem(tuple, 1)
+    end
+  end
+
   defp get_cosmos_hash_tx_list_mapping(block_number) do
     case http_request(block_info_url() <> Integer.to_string(block_number)) do
       {:error, reason} ->
@@ -111,20 +127,11 @@ defmodule Indexer.Fetcher.CosmosHash do
             Logger.debug("block_number: #{block_number} does not have any transactions")
             nil
           [_|_] ->
-            # realtime fetcher handle maximum 20 txs/block
-            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 20) do
+            # realtime fetcher handle maximum 100 txs/block
+            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 100) do
               raw_txn_to_cosmos_hash(tx)
             end
-            for cosmos_hash <- cosmos_hashes do
-              case http_request(txn_info_url() <> cosmos_hash) do
-                {:error, reason} ->
-                  Logger.error("failed to fetch txn info via api node: ", inspect(reason))
-                  nil
-                {:ok, result} ->
-                  tx_message = Enum.at(result["tx"]["body"]["messages"], 0)
-                  %{hash: tx_message["hash"], cosmos_hash: cosmos_hash}
-              end
-            end
+            async_mapping_tx_hash_to_cosmos_hash(cosmos_hashes)
         end
     end
   end
@@ -138,25 +145,26 @@ defmodule Indexer.Fetcher.CosmosHash do
           nil -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [] -> Logger.debug("block_number: #{block_number} does not have any transactions")
           [_|_] ->
-            tx_hashes = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
-                        |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end)
+            tx_hashes_string = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
+                               |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end) |> Enum.sort
+            #tx_hashes = tx_hashes_string |> Enum.map(fn tx -> "\\" <> String.slice(tx, 1..-1) end)
 
-            for cosmos_raw_tx <- result["block"]["data"]["txs"] do
-              cosmos_hash = raw_txn_to_cosmos_hash(cosmos_raw_tx)
-              case http_request(txn_info_url() <> cosmos_hash) do
-                {:error, reason} ->
-                  Logger.error("failed to fetch txn info via api node: ", inspect(reason))
-                {:ok, result} ->
-                  tx_messages = result["tx"]["body"]["messages"]
-                  #TODO: need improve using update by batch
-                  for %{"hash" => hash, "@type" => type} when type == "/ethermint.evm.v1.MsgEthereumTx"
-                      <- tx_messages do
-                    if Enum.member?(tx_hashes, hash) do
-                      Transaction.update_cosmos_hash(hash, cosmos_hash)
-                    end
-                  end
-              end
+            tx_cosmos_hashes = for tx <- result["block"]["data"]["txs"] do
+              raw_txn_to_cosmos_hash(tx)
             end
+
+            list_mapping = async_mapping_tx_hash_to_cosmos_hash(tx_cosmos_hashes)
+            list_tuple = for %{cosmos_hash: cosmos_hash, hash: hash} when is_nil(hash) == false <- list_mapping do
+              {hash, cosmos_hash}
+            end |> Enum.sort_by(fn {x, _} -> x end)
+
+            cosmos_hashes = for {tx_hash, cosmos_hash} <- list_tuple do
+              with :true <- Enum.member?(tx_hashes_string, tx_hash) do
+                cosmos_hash
+              end
+            end |> Enum.filter(fn elem -> elem != false end)
+
+            Chain.update_transactions_cosmos_hashes_by_batch(tx_hashes_string, cosmos_hashes)
         end
     end
   end

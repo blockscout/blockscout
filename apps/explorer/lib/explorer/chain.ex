@@ -2403,8 +2403,22 @@ defmodule Explorer.Chain do
     from(transaction in Transaction,
       where: transaction.block_number == ^block_number and is_nil(transaction.cosmos_hash),
       select: transaction.hash,
-      limit: 100
+      limit: 500
     ) |> Repo.all()
+  end
+
+  def update_transactions_cosmos_hashes_by_batch(tx_hashes, cosmos_hashes) when is_list(tx_hashes)
+                                                                           when is_list(cosmos_hashes) do
+    sql = """
+      UPDATE transactions
+      SET cosmos_hash = $2
+      WHERE hash = $1
+    """
+    #TODO: need to update transactions by batch
+    tx_hashes |> Enum.with_index |> Enum.each(fn({x, i}) ->
+      Transaction.update_cosmos_hash(x, Enum.at(cosmos_hashes, i))
+      #Ecto.Adapters.SQL.query(Repo, sql, [x, Enum.at(cosmos_hashes, i)])
+    end)
   end
 
   @doc """
