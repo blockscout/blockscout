@@ -67,7 +67,6 @@ const appJs =
       'main-page': './css/main-page.scss',
       'staking': './css/stakes.scss',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js',
       'tokens': './js/pages/token/search.js',
       'add-to-mm': './js/pages/token/add_to_mm.js',
       'text-ad': './js/lib/text_ad.js',
