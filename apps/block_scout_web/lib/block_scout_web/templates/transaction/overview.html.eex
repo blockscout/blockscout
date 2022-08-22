@@ -14,6 +14,7 @@
 <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
 <% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
+<% ping_pub_url = System.get_env("PING_PUB_URL") %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
 <section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
@@ -79,7 +80,12 @@
               <%= gettext "Transaction Cosmos" %>
             </dt>
             <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
-              <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction.cosmos_hash %> </span>
+              <% ping_pub_external_link = "#{ping_pub_url}/astra/tx/#{@transaction.cosmos_hash}" %>
+              <span class="transaction-details-address" data-test="transaction_detail_hash"> <%= link(
+                    @transaction.cosmos_hash,
+                    to: URI.parse("#{ping_pub_external_link}")
+                  ) %> </span>
+
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @transaction.cosmos_hash,
