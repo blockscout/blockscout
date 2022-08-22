@@ -9,7 +9,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Account.Notify
   alias Explorer.Chain.{Import, TokenTransfer}
 
   @behaviour Import.Runner
@@ -70,8 +69,6 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         timeout: timeout,
         timestamps: timestamps
       )
-
-    Notify.async(inserted)
 
     {:ok, inserted}
   end

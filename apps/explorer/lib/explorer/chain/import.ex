@@ -129,6 +129,7 @@ defmodule Explorer.Chain.Import do
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
+      Notify.async(data[:transactions])
       Publisher.broadcast(data, Map.get(options, :broadcast, false))
       {:ok, data}
     end
@@ -304,8 +305,6 @@ defmodule Explorer.Chain.Import do
         timestamped_changes_list,
         Keyword.delete(options, :for)
       )
-
-    Notify.async(inserted)
 
     {:ok, inserted}
   end
