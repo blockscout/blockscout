@@ -24,6 +24,7 @@ export HOST_SYSTEM=${HOST_SYSTEM:-$(uname -s)}
 export API_NODE_URL=
 export DISABLE_INDEXER=false
 export FIRST_BLOCK=1
+export PING_PUB_URL=
 
 make build
 make start
