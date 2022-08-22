@@ -9,6 +9,8 @@ defmodule Explorer.Chain.Celo.TrackedContractEvent do
 
   use Explorer.Schema
 
+  import Ecto.Query
+
   @type t :: %__MODULE__{
           block_number: integer(),
           log_index: integer(),
@@ -67,5 +69,30 @@ defmodule Explorer.Chain.Celo.TrackedContractEvent do
     item
     |> cast(attrs, @attrs)
     |> validate_required(@required)
+  end
+
+  def conflict_target, do: [:block_number, :log_index]
+
+  def default_upsert do
+    from(tce in __MODULE__,
+      update: [
+        set: [
+          name: fragment("EXCLUDED.name"),
+          topic: fragment("EXCLUDED.topic"),
+          params: fragment("EXCLUDED.params"),
+          contract_address_hash: fragment("EXCLUDED.contract_address_hash"),
+          transaction_hash: fragment("EXCLUDED.transaction_hash")
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.topic, EXCLUDED.params, EXCLUDED.contract_address_hash, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          tce.name,
+          tce.topic,
+          tce.params,
+          tce.contract_address_hash,
+          tce.transaction_hash
+        )
+    )
   end
 end

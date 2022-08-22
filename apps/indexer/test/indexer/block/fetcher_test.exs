@@ -12,6 +12,7 @@ defmodule Indexer.Block.FetcherTest do
   alias Explorer.Chain.{Address, CeloPendingEpochOperation, CeloUnlocked, Log, Transaction, Wei}
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
+  alias Indexer.Celo.TrackedEventCache
 
   alias Indexer.Fetcher.{
     CoinBalance,
@@ -21,6 +22,7 @@ defmodule Indexer.Block.FetcherTest do
     Token,
     TokenBalance,
     UncleBlock,
+    EventProcessor,
     CeloAccount,
     CeloValidator,
     CeloValidatorHistory,
@@ -69,6 +71,8 @@ defmodule Indexer.Block.FetcherTest do
       CeloVoters.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloEpochData.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
+      start_supervised!({TrackedEventCache, [%{}, []]})
+      EventProcessor.Supervisor.Case.start_supervised!()
 
       UncleBlock.Supervisor.Case.start_supervised!(
         block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}

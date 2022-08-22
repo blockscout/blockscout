@@ -79,6 +79,7 @@ defmodule Explorer.Chain.Celo.ContractEventTracking do
     event_tracking
     |> cast(attrs, @attrs)
     |> validate_required(@attrs)
+    |> unique_constraint(:unique_event_topic_on_smart_contract, name: :smart_contract_id_topic)
   end
 
   def changeset(%__MODULE__{} = event_tracking, %{smart_contract: sc} = attrs) do

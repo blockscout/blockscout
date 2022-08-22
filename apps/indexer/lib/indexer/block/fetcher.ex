@@ -31,6 +31,7 @@ defmodule Indexer.Block.Fetcher do
     CeloVoters,
     CoinBalance,
     ContractCode,
+    EventProcessor,
     InternalTransaction,
     ReplacedTransaction,
     Token,
@@ -388,6 +389,9 @@ defmodule Indexer.Block.Fetcher do
       update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
+
+      process_events(inserted[:logs])
+
       result
     else
       {step, {:error, reason}} ->
@@ -400,6 +404,9 @@ defmodule Indexer.Block.Fetcher do
         {:error, {step, failed_value, changes_so_far}}
     end
   end
+
+  defp process_events([]), do: :ok
+  defp process_events(events), do: EventProcessor.enqueue_logs(events)
 
   defp update_block_cache([]), do: :ok
 
