@@ -2402,8 +2402,7 @@ defmodule Explorer.Chain do
   def get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number) do
     from(transaction in Transaction,
       where: transaction.block_number == ^block_number and is_nil(transaction.cosmos_hash),
-      select: transaction.hash,
-      limit: 100
+      select: transaction.hash
     ) |> Repo.all()
   end
 

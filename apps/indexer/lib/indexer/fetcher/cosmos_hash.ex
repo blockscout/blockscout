@@ -96,23 +96,6 @@ defmodule Indexer.Fetcher.CosmosHash do
     end)
   end
 
-  @spec async_mapping_tx_hash_to_cosmos_hash([String.t()]) :: [%{}]
-  defp async_mapping_tx_hash_to_cosmos_hash(list_cosmos_hashes) when is_list(list_cosmos_hashes) do
-    stream = Task.async_stream(list_cosmos_hashes, fn cosmos_hash ->
-      case http_request(txn_info_url() <> cosmos_hash) do
-        {:error, reason} ->
-          Logger.error("failed to fetch txn info via api node: ", inspect(reason))
-          nil
-        {:ok, result} ->
-          tx_message = Enum.at(result["tx"]["body"]["messages"], 0)
-          %{hash: tx_message["hash"], cosmos_hash: cosmos_hash}
-        end
-      end, max_concurrency: 2) |> Enum.to_list
-    for tuple when elem(tuple, 0) == :ok <- stream do
-      elem(tuple, 1)
-    end
-  end
-
   defp get_cosmos_hash_tx_list_mapping(block_number) do
     case http_request(block_info_url() <> Integer.to_string(block_number)) do
       {:error, reason} ->
@@ -127,11 +110,11 @@ defmodule Indexer.Fetcher.CosmosHash do
             Logger.debug("block_number: #{block_number} does not have any transactions")
             nil
           [_|_] ->
-            # realtime fetcher handle maximum 20 txs/block
-            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 20) do
-              raw_txn_to_cosmos_hash(tx)
+            for tx <- result["block"]["data"]["txs"] do
+              cosmos_hash = raw_txn_to_cosmos_hash(tx)
+              ethermint_hash = raw_txn_to_ethermint_hash(tx)
+              %{hash: ethermint_hash, cosmos_hash: cosmos_hash}
             end
-            async_mapping_tx_hash_to_cosmos_hash(cosmos_hashes)
         end
     end
   end
@@ -147,14 +130,14 @@ defmodule Indexer.Fetcher.CosmosHash do
           [_|_] ->
             tx_hashes_string = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
                                |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end) |> Enum.sort
-            #tx_hashes = tx_hashes_string |> Enum.map(fn tx -> "\\" <> String.slice(tx, 1..-1) end)
 
-            tx_cosmos_hashes = for tx <- result["block"]["data"]["txs"] do
-              raw_txn_to_cosmos_hash(tx)
+            list_mapping = for tx <- result["block"]["data"]["txs"] do
+              ethermint_hash = raw_txn_to_ethermint_hash(tx)
+              cosmos_hash = raw_txn_to_cosmos_hash(tx)
+              %{hash: ethermint_hash, cosmos_hash: cosmos_hash}
             end
 
-            list_mapping = async_mapping_tx_hash_to_cosmos_hash(tx_cosmos_hashes)
-            list_tuple = for %{cosmos_hash: cosmos_hash, hash: hash} when is_nil(hash) == false <- list_mapping do
+            list_tuple = for %{hash: hash, cosmos_hash: cosmos_hash} when is_nil(hash) == false <- list_mapping do
               {hash, cosmos_hash}
             end |> Enum.sort_by(fn {x, _} -> x end)
 
@@ -179,13 +162,31 @@ defmodule Indexer.Fetcher.CosmosHash do
     base_api_url() <> "/cosmos/base/tendermint/v1beta1/blocks/"
   end
 
-  @spec txn_info_url :: String.t()
-  defp txn_info_url() do
-    base_api_url() <> "/cosmos/tx/v1beta1/txs/"
-  end
-
   defp raw_txn_to_cosmos_hash(raw_txn) do
     Base.encode16(:crypto.hash(:sha256, elem(Base.decode64(raw_txn), 1)))
+  end
+
+  defp raw_binary_to_string(raw) do
+    codepoints = String.codepoints(raw)
+    Enum.reduce(codepoints,
+      fn(w, result) ->
+        cond do
+          String.valid?(w) ->
+            result <> w
+          true ->
+            << parsed :: 8>> = w
+            result <>   << parsed :: utf8 >>
+        end
+      end)
+  end
+
+  defp raw_txn_to_ethermint_hash(raw_txn) do
+    string = raw_binary_to_string(Base.decode64!(raw_txn))
+    if String.contains?(string, "/ethermint.evm.v1.MsgEthereumTx") do
+      Regex.scan(~r/0x[0-9a-f]{64}/, string) |> Enum.at(0) |> Enum.at(0)
+    else
+      nil
+    end
   end
 
   defp headers do
