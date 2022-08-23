@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - account
-      - np-separate-account-separate-db
+      - np-separate-account-encrypt-db-1
 
 env:
   MIX_ENV: test
