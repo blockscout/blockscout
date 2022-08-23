@@ -97,22 +97,16 @@ defmodule BlockScoutWeb.Chain do
 
   def next_page_params(_, list, params) do
     next_page_params = Map.merge(params, paging_params(List.last(list)))
-    current_items_count_str = Map.get(next_page_params, "items_count")
-
-    items_count =
-      if current_items_count_str do
-        try do
-          {current_items_count, _} = Integer.parse(current_items_count_str)
-          current_items_count + Enum.count(list)
-        rescue
-          _ -> Enum.count(list)
-        end
-      else
-        Enum.count(list)
-      end
-
-    Map.put(next_page_params, "items_count", items_count)
+    Map.put(next_page_params, "items_count", items_count(next_page_params) + Enum.count(list))
   end
+
+  defp items_count(%{items_count: it}) when is_binary(it) do
+      case Integer.parse(it) do
+          {items_count, _} -> items_count
+          :error -> 0
+      end
+  end
+  defp items_count(_), do: 0
 
   def paging_options(%{"hash" => hash, "fetched_coin_balance" => fetched_coin_balance}) do
     with {coin_balance, ""} <- Integer.parse(fetched_coin_balance),
