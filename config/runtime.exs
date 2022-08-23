@@ -321,6 +321,20 @@ config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
 
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  table_url: System.get_env("PUBLIC_TAGS_AIRTABLE_URL"),
+  api_key: System.get_env("PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("SENDGRID_API_KEY")
+
+config :explorer, Explorer.Account,
+  sendgrid: [
+    sender: System.get_env("SENDGRID_SENDER"),
+    template: System.get_env("SENDGRID_TEMPLATE")
+  ]
+
 ###############
 ### Indexer ###
 ###############
