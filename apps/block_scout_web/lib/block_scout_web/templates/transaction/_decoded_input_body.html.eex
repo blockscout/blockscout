@@ -1,11 +1,13 @@
 <div class="table-responsive text-center">
   <table style="color: black;" summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered">
+  <%= if !assigns[:error] do %>
+    <tr>
+    <td><%= gettext "Method Id" %></td>
+    <td colspan="3"><code>0x<%= @method_id %></code></td>
+    </tr>
+  <% end %>
   <tr>
-  <td><%= gettext "Method Id" %></td>
-  <td colspan="3"><code>0x<%= @method_id %></code></td>
-  </tr>
-  <tr>
-  <td>Call</td>
+  <td><%= if assigns[:error], do: gettext("Error"), else: gettext("Call") %></td>
   <td colspan="3"><code><%= @text %></code></td>
   </tr>
   </table>

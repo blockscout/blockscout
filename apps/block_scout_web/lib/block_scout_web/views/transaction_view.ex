@@ -301,9 +301,6 @@ defmodule BlockScoutWeb.TransactionView do
 
   def contract_creation?(_), do: false
 
-  #  def utf8_encode() do
-  #  end
-
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
     value
@@ -332,8 +329,12 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def transaction_revert_reason(transaction) do
-    Chain.transaction_to_revert_reason(transaction)
+    transaction |> Chain.transaction_to_revert_reason() |> decoded_revert_reason(transaction)
   end
+
+  def get_pure_transaction_revert_reason(nil), do: nil
+
+  def get_pure_transaction_revert_reason(transaction), do: Chain.transaction_to_revert_reason(transaction)
 
   def empty_exchange_rate?(exchange_rate) do
     Token.null?(exchange_rate)
@@ -373,6 +374,10 @@ defmodule BlockScoutWeb.TransactionView do
 
   def decoded_input_data(transaction) do
     Transaction.decoded_input_data(transaction)
+  end
+
+  def decoded_revert_reason(revert_reason, transaction) do
+    Transaction.decoded_revert_reason(transaction, revert_reason)
   end
 
   @doc """
@@ -575,5 +580,36 @@ defmodule BlockScoutWeb.TransactionView do
 
   defp template_to_string(template) when is_tuple(template) do
     safe_to_string(template)
+  end
+
+  @doc """
+  Decodes revert reason of the transaction.
+  """
+  @spec decoded_revert_reason(%Transaction{} | nil) :: binary() | nil
+  def decoded_revert_reason(transaction) do
+    revert_reason = get_pure_transaction_revert_reason(transaction)
+
+    case revert_reason do
+      "0x" <> hex_part ->
+        process_hex_revert_reason(hex_part)
+
+      hex_part ->
+        process_hex_revert_reason(hex_part)
+    end
+  end
+
+  # Function converts hex revert reason to the binary
+  @spec process_hex_revert_reason(nil) :: nil
+  defp process_hex_revert_reason(nil), do: nil
+
+  @spec process_hex_revert_reason(binary()) :: binary()
+  defp process_hex_revert_reason(hex_revert_reason) do
+    case Integer.parse(hex_revert_reason, 16) do
+      {number, ""} ->
+        :binary.encode_unsigned(number)
+
+      _ ->
+        hex_revert_reason
+    end
   end
 end

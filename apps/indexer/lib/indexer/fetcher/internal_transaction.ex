@@ -227,7 +227,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp check_db(0, _used_gas), do: {:error, :block_not_indexed_properly}
-  defp check_db(_tx_count, 0), do: {:error, :block_not_indexed_properly}
+  defp check_db(_tx_count, %Decimal{coef: 0}), do: {:error, :block_not_indexed_properly}
   defp check_db(_tx_count, _used_gas), do: {:ok}
 
   # block_hash is required for TokenTransfers.parse_itx
