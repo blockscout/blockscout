@@ -127,8 +127,8 @@ defmodule Indexer.Fetcher.CosmosHash do
             Logger.debug("block_number: #{block_number} does not have any transactions")
             nil
           [_|_] ->
-            # realtime fetcher handle maximum 100 txs/block
-            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 100) do
+            # realtime fetcher handle maximum 50 txs/block
+            cosmos_hashes = for tx <- result["block"]["data"]["txs"] |> Enum.slice(0, 50) do
               raw_txn_to_cosmos_hash(tx)
             end
             async_mapping_tx_hash_to_cosmos_hash(cosmos_hashes)
