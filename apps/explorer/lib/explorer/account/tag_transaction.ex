@@ -121,7 +121,7 @@ defmodule Explorer.Account.TagTransaction do
     |> Repo.account_repo().one()
   end
 
-  def get_tag transaction_by_transaction_hash_and_identity_id(_, _), do: nil
+  def get_tag_transaction_by_transaction_hash_and_identity_id(_, _), do: nil
 
   def tag_transaction_by_id_and_identity_id_query(tag_id, identity_id)
       when not is_nil(tag_id) and not is_nil(identity_id) do
