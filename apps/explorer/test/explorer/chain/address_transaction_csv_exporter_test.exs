@@ -96,6 +96,22 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       end)
       |> Enum.count()
 
+      1..200
+      |> Enum.map(fn _ ->
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+      end)
+      |> Enum.count()
+
+      1..200
+      |> Enum.map(fn _ ->
+        :transaction
+        |> insert(created_contract_address: address)
+        |> with_block()
+      end)
+      |> Enum.count()
+
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
@@ -105,7 +121,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
         |> Enum.to_list()
         |> Enum.drop(1)
 
-      assert Enum.count(result) == 200
+      assert Enum.count(result) == 600
     end
   end
 end

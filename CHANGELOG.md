@@ -5,6 +5,7 @@
 - [#5860](https://github.com/blockscout/blockscout/pull/5860) - Integrate rust verifier micro-service ([blockscout-rs/verifier](https://github.com/blockscout/blockscout-rs/tree/main/verification))
 
 ### Fixes
+- [#5975](https://github.com/blockscout/blockscout/pull/5975) - Fix CSV export of internal transactions
 - [#5957](https://github.com/blockscout/blockscout/pull/5957) - Server-side reCAPTCHA check for CSV export
 - [#5954](https://github.com/blockscout/blockscout/pull/5954) - Fix ace editor appearance
 - [#5942](https://github.com/blockscout/blockscout/pull/5942), [#5945](https://github.com/blockscout/blockscout/pull/5945) - Fix nightly solidity versions filtering UX
