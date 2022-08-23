@@ -136,6 +136,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "index" => to_string(internal_transaction.index),
       "input" => "#{internal_transaction.input}",
       "type" => "#{internal_transaction.type}",
+      "callType" => "#{internal_transaction.call_type}",
       "gas" => "#{internal_transaction.gas}",
       "gasUsed" => "#{internal_transaction.gas_used}",
       "isError" => if(internal_transaction.error, do: "1", else: "0"),

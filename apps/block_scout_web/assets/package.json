@@ -73,7 +73,7 @@
     "redux": "^4.2.0",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.1.1",
-    "sweetalert2": "^11.4.28",
+    "sweetalert2": "^11.4.29",
     "urijs": "^1.19.11",
     "url": "^0.11.0",
     "util": "^0.12.3",
@@ -82,7 +82,7 @@
     "xss": "^1.0.14"
   },
   "devDependencies": {
-    "@babel/core": "^7.18.10",
+    "@babel/core": "^7.18.13",
     "@babel/preset-env": "^7.18.10",
     "autoprefixer": "^10.4.8",
     "babel-loader": "^8.2.5",
@@ -100,7 +100,7 @@
     "mini-css-extract-plugin": "^2.6.1",
     "postcss": "^8.4.16",
     "postcss-loader": "^7.0.1",
-    "sass": "^1.54.4",
+    "sass": "^1.54.5",
     "sass-loader": "^13.0.2",
     "style-loader": "^3.3.1",
     "webpack": "^5.74.0",
