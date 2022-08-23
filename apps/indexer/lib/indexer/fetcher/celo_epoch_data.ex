@@ -35,8 +35,9 @@ defmodule Indexer.Fetcher.CeloEpochData do
     init_options_with_polling =
       init_options
       |> Keyword.put(:poll, true)
-      |> Keyword.put(:poll_interval, :timer.minutes(60))
-      |> Keyword.put(:max_batch_size, 10)
+      |> Keyword.put(:poll_interval, :timer.minutes(5))
+      # We have just one such block a day and it's quite a heavy operation
+      |> Keyword.put(:max_batch_size, 1)
 
     Util.default_child_spec(init_options_with_polling, gen_server_options, __MODULE__)
   end
