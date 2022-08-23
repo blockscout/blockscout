@@ -107,7 +107,7 @@ defmodule Indexer.Fetcher.CosmosHash do
           tx_message = Enum.at(result["tx"]["body"]["messages"], 0)
           %{hash: tx_message["hash"], cosmos_hash: cosmos_hash}
         end
-      end, max_concurrency: 10) |> Enum.to_list
+      end, max_concurrency: 5) |> Enum.to_list
     for tuple when elem(tuple, 0) == :ok <- stream do
       elem(tuple, 1)
     end
