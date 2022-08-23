@@ -176,6 +176,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         block_number: transaction.block_number
       )
 
+
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 

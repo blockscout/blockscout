@@ -4,7 +4,11 @@
   <div class="row">
     <div class="col-md-12 mb-2">
       <!-- Block Details -->
+<<<<<<< HEAD
       <div class="card mb-2">
+=======
+      <div class="card js-ad-dependant-mb-2">
+>>>>>>> eaadac2fccd5cb44cd6db0de8a8f4ed38efeacb8
         <div class="card-body fs-14" style="line-height: 32px;">
           <dl class="pagination-container">
             <h1 class="card-title" data-test="detail_type">
@@ -73,7 +77,7 @@
               <%= gettext("Transactions") %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
-              <a href="#txs" class="page-link bs-label large btn-no-border-transactions">
+              <a href="#txs" class="page-link bs-label large btn-no-border-link-to-tems">
                 <%= if @block_transaction_count == 1 do %>
                   <%= gettext "%{count} Transaction", count: @block_transaction_count %>
                 <% else %>
