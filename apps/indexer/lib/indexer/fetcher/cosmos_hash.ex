@@ -79,7 +79,7 @@ defmodule Indexer.Fetcher.CosmosHash do
     Enum.map(transactions_without_cosmos_hashes, fn transaction_params ->
       block_number = transaction_params[:block_number]
       cosmos_hash_params = Enum.find(cosmos_hash_params, fn param ->
-        param[block_number] != nil
+        is_nil(param[block_number]) == false
       end) |> Enum.at(0)
       tx_hash = transaction_params[:hash]
       params = elem(cosmos_hash_params, 1)
@@ -88,7 +88,7 @@ defmodule Indexer.Fetcher.CosmosHash do
         param[:hash] == tx_hash
       end)
 
-      if param_cosmos != nil do
+      if is_nil(param_cosmos) == false do
         Map.put_new(transaction_params, :cosmos_hash, param_cosmos[:cosmos_hash])
       else
         Map.put_new(transaction_params, :cosmos_hash, nil)
