@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :indexer, Indexer.Tracer, disabled?: false
 
