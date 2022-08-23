@@ -111,8 +111,8 @@ defmodule Indexer.Fetcher.CosmosHash do
             nil
           [_|_] ->
             for tx <- result["block"]["data"]["txs"] do
-              cosmos_hash = raw_txn_to_cosmos_hash(tx)
               ethermint_hash = raw_txn_to_ethermint_hash(tx)
+              cosmos_hash = raw_txn_to_cosmos_hash(tx)
               %{hash: ethermint_hash, cosmos_hash: cosmos_hash}
             end
         end
@@ -120,36 +120,20 @@ defmodule Indexer.Fetcher.CosmosHash do
   end
 
   defp fetch_and_import_cosmos_hash(block_number) do
-    case http_request(block_info_url() <> Integer.to_string(block_number)) do
-      {:error, reason} ->
-        Logger.error("failed to fetch block info via api node: ", inspect(reason))
-      {:ok, result} ->
-        case result["block"]["data"]["txs"] do
-          nil -> Logger.debug("block_number: #{block_number} does not have any transactions")
-          [] -> Logger.debug("block_number: #{block_number} does not have any transactions")
-          [_|_] ->
-            tx_hashes_string = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
-                               |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end) |> Enum.sort
+    tx_hashes_string = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
+                       |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end) |> Enum.sort
+    list_mapping = get_cosmos_hash_tx_list_mapping(block_number)
 
-            list_mapping = for tx <- result["block"]["data"]["txs"] do
-              ethermint_hash = raw_txn_to_ethermint_hash(tx)
-              cosmos_hash = raw_txn_to_cosmos_hash(tx)
-              %{hash: ethermint_hash, cosmos_hash: cosmos_hash}
-            end
+    list_tuple = for %{hash: hash, cosmos_hash: cosmos_hash} when is_nil(hash) == false <- list_mapping do
+      {hash, cosmos_hash}
+    end |> Enum.sort_by(fn {x, _} -> x end)
+    cosmos_hashes = for {tx_hash, cosmos_hash} <- list_tuple do
+      with :true <- Enum.member?(tx_hashes_string, tx_hash) do
+        cosmos_hash
+      end
+    end |> Enum.filter(fn elem -> elem != false end)
 
-            list_tuple = for %{hash: hash, cosmos_hash: cosmos_hash} when is_nil(hash) == false <- list_mapping do
-              {hash, cosmos_hash}
-            end |> Enum.sort_by(fn {x, _} -> x end)
-
-            cosmos_hashes = for {tx_hash, cosmos_hash} <- list_tuple do
-              with :true <- Enum.member?(tx_hashes_string, tx_hash) do
-                cosmos_hash
-              end
-            end |> Enum.filter(fn elem -> elem != false end)
-
-            Chain.update_transactions_cosmos_hashes_by_batch(tx_hashes_string, cosmos_hashes)
-        end
-    end
+    Chain.update_transactions_cosmos_hashes_by_batch(list_mapping, cosmos_hashes)
   end
 
   @spec base_api_url :: String.t()
