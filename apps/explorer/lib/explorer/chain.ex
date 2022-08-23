@@ -2403,7 +2403,7 @@ defmodule Explorer.Chain do
     from(transaction in Transaction,
       where: transaction.block_number == ^block_number and is_nil(transaction.cosmos_hash),
       select: transaction.hash,
-      limit: 200
+      limit: 100
     ) |> Repo.all()
   end
 
