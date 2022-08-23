@@ -31,7 +31,7 @@ defmodule Explorer.Account.Api.Key do
   def changeset(%__MODULE__{} = api_key, attrs \\ %{}) do
     api_key
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 255)
     |> unique_constraint(:value, message: "API key already exists")
     |> foreign_key_constraint(:identity_id, message: "User not found")
@@ -65,6 +65,7 @@ defmodule Explorer.Account.Api.Key do
   def api_keys_by_identity_id_query(id) when not is_nil(id) do
     __MODULE__
     |> where([api_key], api_key.identity_id == ^id)
+    |> order_by([api_key], desc: api_key.inserted_at)
   end
 
   def api_keys_by_identity_id_query(_), do: nil
@@ -123,4 +124,6 @@ defmodule Explorer.Account.Api.Key do
   end
 
   def api_key_with_plan_by_value(_), do: nil
+
+  def get_max_api_keys_count, do: @max_key_per_account
 end

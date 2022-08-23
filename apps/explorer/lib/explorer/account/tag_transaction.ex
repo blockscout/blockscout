@@ -7,9 +7,12 @@ defmodule Explorer.Account.TagTransaction do
 
   import Ecto.Changeset
 
+  alias Ecto.Changeset
   alias Explorer.Account.Identity
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Repo
+
+  @max_tag_transaction_per_account 15
 
   schema "account_tag_transactions" do
     field(:name, :string)
@@ -26,6 +29,11 @@ defmodule Explorer.Account.TagTransaction do
 
   @attrs ~w(name identity_id tx_hash)a
 
+  def changeset do
+    %__MODULE__{}
+    |> cast(%{}, @attrs)
+  end
+
   @doc false
   def changeset(tag, attrs) do
     tag
@@ -34,6 +42,7 @@ defmodule Explorer.Account.TagTransaction do
     |> validate_length(:name, min: 1, max: 35)
     |> unique_constraint([:identity_id, :tx_hash], message: "Transaction tag already exists")
     |> foreign_key_constraint(:tx_hash, message: "Transaction does not exist")
+    |> tag_transaction_count_constraint()
   end
 
   def create(attrs) do
@@ -42,9 +51,24 @@ defmodule Explorer.Account.TagTransaction do
     |> Repo.insert()
   end
 
+  def tag_transaction_count_constraint(%Changeset{changes: %{identity_id: identity_id}} = tag_transaction) do
+    if identity_id
+       |> tags_transaction_by_identity_id_query()
+       |> limit(@max_tag_transaction_per_account)
+       |> Repo.aggregate(:count, :id) >= @max_tag_transaction_per_account do
+      tag_transaction
+      |> add_error(:name, "Max #{@max_tag_transaction_per_account} tags per account")
+    else
+      tag_transaction
+    end
+  end
+
+  def tag_transaction_count_constraint(changeset), do: changeset
+
   def tags_transaction_by_identity_id_query(id) when not is_nil(id) do
     __MODULE__
     |> where([tag], tag.identity_id == ^id)
+    |> order_by([tag], desc: tag.id)
   end
 
   def tags_transaction_by_identity_id_query(_), do: nil
@@ -108,4 +132,6 @@ defmodule Explorer.Account.TagTransaction do
         {:error, %{reason: :item_not_found}}
     end
   end
+
+  def get_max_tags_count, do: @max_tag_transaction_per_account
 end

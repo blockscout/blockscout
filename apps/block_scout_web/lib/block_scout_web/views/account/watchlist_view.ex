@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Account.WatchlistView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.Account.WatchlistAddressView
+  alias Explorer.Account.WatchlistAddress
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
   alias Indexer.Fetcher.CoinBalanceOnDemand

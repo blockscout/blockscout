@@ -12,7 +12,6 @@ defmodule Explorer.Repo.Migrations.AddCustomAbisTable do
       timestamps()
     end
 
-    create(unique_index(:account_custom_abis, [:id]))
     create(unique_index(:account_custom_abis, [:identity_id, :address_hash]))
     create(index(:account_custom_abis, [:identity_id]))
   end

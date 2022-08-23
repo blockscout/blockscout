@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Account.PublicTagsRequestView do
   use BlockScoutWeb, :view
   use Phoenix.HTML
+
+  alias Explorer.Account.PublicTagsRequest
   alias Phoenix.HTML.Form
 
   def array_input(form, field, attrs \\ []) do
@@ -13,7 +15,7 @@ defmodule BlockScoutWeb.Account.PublicTagsRequestView do
       class: "multiple-input-fields-container" do
       values
       |> Enum.map(fn v ->
-        form_elements(form, field, v, attrs)
+        form_elements(form, field, to_string(v), attrs)
       end)
     end
   end
