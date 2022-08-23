@@ -101,11 +101,12 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp items_count(%{items_count: it}) when is_binary(it) do
-      case Integer.parse(it) do
-          {items_count, _} -> items_count
-          :error -> 0
-      end
+    case Integer.parse(it) do
+      {items_count, _} -> items_count
+      :error -> 0
+    end
   end
+
   defp items_count(_), do: 0
 
   def paging_options(%{"hash" => hash, "fetched_coin_balance" => fetched_coin_balance}) do
