@@ -121,19 +121,22 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   defp fetch_and_import_cosmos_hash(block_number) do
     tx_hashes_string = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
-                       |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end) |> Enum.sort
+                       |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end)
     list_mapping = get_cosmos_hash_tx_list_mapping(block_number)
 
-    list_tuple = for %{hash: hash, cosmos_hash: cosmos_hash} when is_nil(hash) == false <- list_mapping do
-      {hash, cosmos_hash}
-    end |> Enum.sort_by(fn {x, _} -> x end)
-    cosmos_hashes = for {tx_hash, cosmos_hash} <- list_tuple do
-      with :true <- Enum.member?(tx_hashes_string, tx_hash) do
-        cosmos_hash
+    params = for %{hash: hash, cosmos_hash: cosmos_hash} when is_nil(hash) == false <- list_mapping do
+      if Enum.member?(tx_hashes_string, hash) do
+        %{hash: hash, cosmos_hash: cosmos_hash}
+      else
+        nil
       end
-    end |> Enum.filter(fn elem -> elem != false end)
-
-    Chain.update_transactions_cosmos_hashes_by_batch(list_mapping, cosmos_hashes)
+    end |> Enum.filter(fn elem -> is_nil(elem) == false end)
+    
+    list_params = for %{hash: hash, cosmos_hash: cosmos_hash} <- params do
+      {:ok, tx_hash} = Chain.string_to_transaction_hash(hash)
+      %{hash: tx_hash, cosmos_hash: cosmos_hash}
+    end
+    Chain.update_transactions_cosmos_hashes_by_batch(list_params)
   end
 
   @spec base_api_url :: String.t()

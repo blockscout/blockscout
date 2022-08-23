@@ -2406,17 +2406,17 @@ defmodule Explorer.Chain do
     ) |> Repo.all()
   end
 
-  def update_transactions_cosmos_hashes_by_batch(tx_hashes, cosmos_hashes) when is_list(tx_hashes)
-                                                                           when is_list(cosmos_hashes) do
-    sql = """
-      UPDATE transactions
-      SET cosmos_hash = $2
-      WHERE hash = $1
-    """
-    #TODO: need to update transactions by batch
-    tx_hashes |> Enum.with_index |> Enum.each(fn({x, i}) ->
-      Transaction.update_cosmos_hash(x, Enum.at(cosmos_hashes, i))
-      #Ecto.Adapters.SQL.query(Repo, sql, [x, Enum.at(cosmos_hashes, i)])
+  def update_transactions_cosmos_hashes_by_batch(list_params) when is_list(list_params) do
+    Ecto.Multi.new()
+    |> update_cosmos_hashes_by_batch(list_params)
+    |> Repo.transaction()
+  end
+
+  defp update_cosmos_hashes_by_batch(multi, params) do
+    Enum.reduce(params, multi, fn param, multi ->
+      transaction = Explorer.Repo.get!(Transaction, param[:hash])
+      changeset = Ecto.Changeset.change(transaction, cosmos_hash: param[:cosmos_hash])
+      Ecto.Multi.update(multi, {:cosmos_hash, param[:cosmos_hash]}, changeset)
     end)
   end
 
