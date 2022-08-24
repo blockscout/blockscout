@@ -70,7 +70,6 @@ function filterNightlyBuilds (filter, selectFirstNonNightly_) {
   let selectFirstNonNightly = selectFirstNonNightly_
 
   for (const option of options) {
-    console.log(option)
     const txtValue = option.textContent || option.innerText
     if (filter) {
       if (txtValue.toLowerCase().indexOf('nightly') > -1) {

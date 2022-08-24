@@ -66,10 +66,12 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     GenServer.start_link(__MODULE__, json_rpc_named_arguments, server_opts)
   end
 
+  @impl true
   def init(json_rpc_named_arguments) do
     {:ok, %{json_rpc_named_arguments: json_rpc_named_arguments}}
   end
 
+  @impl true
   def handle_cast({:fetch_and_update, block_number, address}, state) do
     result = fetch_and_update(block_number, address, state.json_rpc_named_arguments)
 
@@ -80,15 +82,27 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     {:noreply, state}
   end
 
+  @impl true
   def handle_cast({:fetch_and_import, block_number, address}, state) do
     fetch_and_import(block_number, address, state.json_rpc_named_arguments)
 
     {:noreply, state}
   end
 
+  @impl true
   def handle_cast({:fetch_and_import_daily_balances, block_number, address}, state) do
     fetch_and_import_daily_balances(block_number, address, state.json_rpc_named_arguments)
 
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _, :process, _, _}, state) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({_ref, _}, state) do
     {:noreply, state}
   end
 
