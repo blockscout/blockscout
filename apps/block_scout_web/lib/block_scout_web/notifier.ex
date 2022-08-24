@@ -6,6 +6,9 @@ defmodule BlockScoutWeb.Notifier do
   alias Absinthe.Subscription
 
   alias BlockScoutWeb.{
+    AddressContractVerificationViaFlattenedCodeView,
+    AddressContractVerificationViaJsonView,
+    AddressContractVerificationVyperView,
     ChangesetView,
     Endpoint
   }
@@ -16,6 +19,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
+  alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
@@ -44,12 +48,32 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
+    verification_from_json_upload? = Map.has_key?(conn.params, "file")
+    verification_from_flattened_source? = Map.has_key?(conn.params, "external_libraries")
+    compiler = if verification_from_flattened_source?, do: :solc, else: :vyper
+
     contract_verification_result =
       case contract_verification_result do
         {:ok, _} = result ->
           result
 
         {:error, changeset} ->
+          compiler_versions =
+            case CompilerVersion.fetch_versions(compiler) do
+              {:ok, compiler_versions} ->
+                compiler_versions
+
+              {:error, _} ->
+                []
+            end
+
+          view =
+            cond do
+              verification_from_json_upload? -> AddressContractVerificationViaJsonView
+              verification_from_flattened_source? -> AddressContractVerificationViaFlattenedCodeView
+              true -> AddressContractVerificationVyperView
+            end
+
           result =
             ChangesetView
             |> View.render_to_string("error.json",

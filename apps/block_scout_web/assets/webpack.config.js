@@ -99,7 +99,7 @@ const appJs =
       'token-overview': './js/pages/token/overview.js',
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
-      'stats': './js/pages/stats.js',
+      'stats': './js/pages/stats.js'
     },
     output: {
       filename: '[name].js',
