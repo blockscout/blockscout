@@ -77,7 +77,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     # delete current token balances with nil token_id. Those current balances are obsolete.
     # ERC-20 tokens have token_id = 1 in address_current_token_balances table now
     stale_current_token_balances
-    |> Enum.map(fn {stale_current_token_balance, _, _} -> stale_current_token_balance end)
+    |> Enum.map(fn {stale_current_token_balance, _} -> stale_current_token_balance end)
     |> Enum.filter(fn current_token_balance ->
       !current_token_balance.token_id
     end)
