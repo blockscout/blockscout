@@ -133,6 +133,44 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
       end)
       |> Enum.count()
 
+      1..200
+      |> Enum.map(fn index ->
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:internal_transaction,
+          index: index,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end)
+      |> Enum.count()
+
+      1..200
+      |> Enum.map(fn index ->
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:internal_transaction,
+          index: index,
+          transaction: transaction,
+          created_contract_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end)
+      |> Enum.count()
+
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
@@ -142,7 +180,7 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
         |> Enum.to_list()
         |> Enum.drop(1)
 
-      assert Enum.count(result) == 200
+      assert Enum.count(result) == 600
     end
   end
 end
