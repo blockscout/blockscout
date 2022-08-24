@@ -2141,7 +2141,7 @@ defmodule Explorer.Chain do
         Decimal.new(0)
 
       _ ->
-        result = Decimal.div(max - min + 1, max + 1)
+        result = Decimal.div(max - min + 1, max)
 
         Decimal.round(result, 2, :down)
     end
