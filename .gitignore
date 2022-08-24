@@ -51,3 +51,5 @@ screenshots/
 
 .idea/
 *.iml
+
+.vscode

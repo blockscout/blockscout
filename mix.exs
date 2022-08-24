@@ -11,7 +11,7 @@ defmodule BlockScout.Mixfile do
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       preferred_cli_env: [
         credo: :test,
         dialyzer: :test
@@ -25,7 +25,8 @@ defmodule BlockScout.Mixfile do
             explorer: :permanent,
             indexer: :permanent
           ],
-          steps: [:assemble, &copy_prod_runtime_config/1]
+          steps: [:assemble, &copy_prod_runtime_config/1],
+          validate_compile_env: false
         ]
       ]
     ]
@@ -92,7 +93,7 @@ defmodule BlockScout.Mixfile do
   defp deps do
     [
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
-      {:tesla, "~> 1.3.3"},
+      {:tesla, "~> 1.4.4"},
       # Documentation
       {:ex_doc, "~> 0.28.2", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}

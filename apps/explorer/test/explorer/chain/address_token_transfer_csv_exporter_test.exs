@@ -72,5 +72,50 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
       assert result.timestamp == to_string(transaction.block.timestamp)
       assert result.type == "OUT"
     end
+
+    test "fetches all token transfers" do
+      address = insert(:address)
+
+      1..200
+      |> Enum.map(fn _ ->
+        transaction =
+          :transaction
+          |> insert(from_address: address)
+          |> with_block()
+
+        insert(:token_transfer,
+          transaction: transaction,
+          from_address: address,
+          block_number: transaction.block_number
+        )
+      end)
+      |> Enum.count()
+
+      1..200
+      |> Enum.map(fn _ ->
+        transaction =
+          :transaction
+          |> insert(to_address: address)
+          |> with_block()
+
+        insert(:token_transfer,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number
+        )
+      end)
+      |> Enum.count()
+
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+
+      result =
+        address
+        |> AddressTokenTransferCsvExporter.export(from_period, to_period)
+        |> Enum.to_list()
+        |> Enum.drop(1)
+
+      assert Enum.count(result) == 400
+    end
   end
 end
