@@ -2798,11 +2798,6 @@ msgid "ERC-1155 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:11
-msgid "Not unique Token"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:10
 msgid "Error"
 msgstr ""
