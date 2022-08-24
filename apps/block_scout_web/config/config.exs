@@ -1,9 +1,9 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
+# and its dependencies with the aid of the Config module.
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-use Mix.Config
+import Config
 
 alias BlockScoutWeb.LoggerBackend
 
@@ -166,8 +166,8 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
+config :prometheus, BlockScoutWeb.Prometheus.Exporter, path: "/metrics/web"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
-
-config :prometheus, BlockScoutWeb.Prometheus.Exporter, path: "/metrics/web"
+import_config "#{config_env()}.exs"

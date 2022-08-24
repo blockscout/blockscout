@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
@@ -46,4 +46,4 @@ config :ethereum_jsonrpc, :internal_transaction_timeout, "900s"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
+import_config "#{config_env()}.exs"

@@ -47,8 +47,10 @@
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
+
 - [#4735](https://github.com/blockscout/blockscout/pull/4735) - Code clean up: Remove clauses for outdated ganache bugs
 - [#4726](https://github.com/blockscout/blockscout/pull/4726) - Update chart.js
+- [#5369](https://github.com/blockscout/blockscout/pull/5369) - Manage indexer memory limit
 - [#4707](https://github.com/blockscout/blockscout/pull/4707) - Top navigation: Move Accounts tab to Tokens
 - [#4704](https://github.com/blockscout/blockscout/pull/4704) - Update to Erlang/OTP 24
 - [#4682](https://github.com/blockscout/blockscout/pull/4682) - Update all possible outdated mix dependencies
