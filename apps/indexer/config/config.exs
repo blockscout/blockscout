@@ -1,8 +1,6 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-use Mix.Config
-
-import Bitwise
+# and its dependencies with the aid of the Config module.
+import Config
 
 alias Indexer.LoggerBackend
 
@@ -43,8 +41,6 @@ config :indexer,
   ecto_repos: [Explorer.Repo],
   metadata_updater_seconds_interval:
     String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{10 * 60 * 60}"),
-  # bytes
-  memory_limit: 1 <<< 30,
   health_check_port: port || 4001,
   first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || "",
@@ -98,10 +94,6 @@ config :indexer, Indexer.Block.Fetcher, enable_gold_token: true
 config :indexer, Indexer.Prometheus.MetricsCron, metrics_fetcher_blocks_count: 1000
 config :indexer, Indexer.Prometheus.MetricsCron, metrics_cron_interval: System.get_env("METRICS_CRON_INTERVAL") || "2"
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
-
 config :prometheus, Indexer.Prometheus.Exporter,
   path: "/metrics/indexer",
   format: :text,
@@ -121,3 +113,7 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER", "false") == "true"
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty_blocks_sanitizer_batch_size
+
+# Import environment specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "#{config_env()}.exs"

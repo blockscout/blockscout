@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Tracer, env: "production", disabled?: true
 

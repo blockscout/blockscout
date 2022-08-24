@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # Configures the database
 config :explorer, Explorer.Repo,
