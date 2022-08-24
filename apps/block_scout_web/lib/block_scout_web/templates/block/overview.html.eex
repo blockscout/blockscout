@@ -73,7 +73,7 @@
               <%= gettext("Transactions") %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
-              <a href="#txs" class="page-link bs-label large btn-no-border-transactions">
+              <a href="#txs" class="page-link bs-label large btn-no-border-link-to-tems">
                 <%= if @block_transaction_count == 1 do %>
                   <%= gettext "%{count} Transaction", count: @block_transaction_count %>
                 <% else %>
