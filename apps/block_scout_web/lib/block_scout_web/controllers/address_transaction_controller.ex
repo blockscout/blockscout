@@ -22,6 +22,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
+  alias Plug.Conn
+
   @transaction_necessity_by_association [
     necessity_by_association: %{
       [created_contract_address: :names] => :optional,
@@ -167,13 +169,16 @@ defmodule BlockScoutWeb.AddressTransactionController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       address
-      |> AddressTokenTransferCsvExporter.export(from_period, to_period)
-      |> Enum.into(
-        conn
-        |> put_resp_content_type("application/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=token_transfers.csv")
-        |> send_chunked(200)
-      )
+      |> csv_export_module.export(from_period, to_period)
+      |> Enum.reduce_while(put_resp_params(conn, file_name), fn chunk, conn ->
+        case Conn.chunk(conn, chunk) do
+          {:ok, conn} ->
+            {:cont, conn}
+
+          {:error, :closed} ->
+            {:halt, conn}
+        end
+      end)
     else
       :error ->
         unprocessable_entity(conn)

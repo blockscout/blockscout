@@ -18,6 +18,7 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
 
     address.hash
     |> fetch_all_internal_transactions(from_block, to_block, @paging_options)
+    |> Enum.sort_by(&{&1.block_number, &1.index, &1.transaction_index}, :desc)
     |> to_csv_format()
     |> dump_to_stream()
   end
