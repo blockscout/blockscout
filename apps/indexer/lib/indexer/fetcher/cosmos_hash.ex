@@ -75,32 +75,42 @@ defmodule Indexer.Fetcher.CosmosHash do
   end
 
   def get_cosmos_hash_params_by_range(range) do
-    block_numbers = Enum.map(range, fn(number) -> number end)
-    for block_number <- block_numbers do
-      %{block_number => get_cosmos_hash_tx_list_mapping(block_number)}
+    case range do
+      nil ->
+        Logger.info("range is nil")
+        nil
+      _ ->
+        block_numbers = Enum.map(range, fn(number) -> number end)
+        for block_number <- block_numbers do
+          %{block_number => get_cosmos_hash_tx_list_mapping(block_number)}
+        end
     end
   end
 
-  def put(transactions_without_cosmos_hashes, cosmos_hash_params) when is_list(transactions_without_cosmos_hashes)
-                                                                  when is_list(cosmos_hash_params) do
-    Enum.map(transactions_without_cosmos_hashes, fn transaction_params ->
-      block_number = transaction_params[:block_number]
-      cosmos_hash_params = Enum.find(cosmos_hash_params, fn param ->
-        is_nil(param[block_number]) == false
-      end) |> Enum.at(0)
-      tx_hash = transaction_params[:hash]
-      params = elem(cosmos_hash_params, 1)
+  def put(transactions_without_cosmos_hashes, params) when is_list(transactions_without_cosmos_hashes) do
+    case params do
+      [_|_] ->
+        Enum.map(transactions_without_cosmos_hashes, fn transaction_params ->
+          block_number = transaction_params[:block_number]
+          cosmos_hash_params = Enum.find(params, fn param ->
+            is_nil(param[block_number]) == false
+          end) |> Enum.at(0) |> elem(1)
 
-      param_cosmos = Enum.find(params, fn param ->
-        param[:hash] == tx_hash
-      end)
+          param_cosmos = Enum.find(cosmos_hash_params, fn param ->
+            param[:hash] == transaction_params[:hash]
+          end)
 
-      if is_nil(param_cosmos) == false do
-        Map.put_new(transaction_params, :cosmos_hash, param_cosmos[:cosmos_hash])
-      else
-        Map.put_new(transaction_params, :cosmos_hash, nil)
-      end
-    end)
+          if is_nil(param_cosmos) == false do
+            Map.put_new(transaction_params, :cosmos_hash, param_cosmos[:cosmos_hash])
+          else
+            Map.put_new(transaction_params, :cosmos_hash, nil)
+          end
+        end)
+      _ ->
+        Enum.map(transactions_without_cosmos_hashes, fn transaction_params ->
+          Map.put_new(transaction_params, :cosmos_hash, nil)
+        end)
+    end
   end
 
   defp get_cosmos_hash_tx_list_mapping(block_number) do
