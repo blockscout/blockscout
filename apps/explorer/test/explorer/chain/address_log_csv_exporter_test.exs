@@ -35,25 +35,25 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
         |> Enum.to_list()
         |> Enum.drop(1)
         |> Enum.map(fn [
-                         transaction_hash,
+                         [[], transaction_hash],
                          _,
-                         index,
+                         [[], index],
                          _,
-                         block_number,
+                         [[], block_number],
                          _,
-                         block_hash,
+                         [[], block_hash],
                          _,
-                         address,
+                         [[], address],
                          _,
-                         data,
+                         [[], data],
                          _,
-                         first_topic,
+                         [[], first_topic],
                          _,
-                         second_topic,
+                         [[], second_topic],
                          _,
-                         third_topic,
+                         [[], third_topic],
                          _,
-                         fourth_topic,
+                         [[], fourth_topic],
                          _
                        ] ->
           %{
