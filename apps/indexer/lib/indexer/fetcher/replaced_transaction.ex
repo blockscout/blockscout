@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.ReplacedTransaction.Supervisor, as: ReplacedTransactionSupervisor
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @max_batch_size 10
   @max_concurrency 4

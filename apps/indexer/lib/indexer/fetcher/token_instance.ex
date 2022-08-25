@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   use Indexer.Fetcher
   use Spandex.Decorators
+  use BufferedTask
 
   require Logger
 
@@ -12,7 +13,6 @@ defmodule Indexer.Fetcher.TokenInstance do
   alias Explorer.Token.InstanceMetadataRetriever
   alias Indexer.BufferedTask
 
-  @behaviour BufferedTask
 
   @defaults [
     flush_interval: 300,
