@@ -66,10 +66,8 @@ defmodule Indexer.Fetcher.CosmosHash do
     Logger.debug("fetching cosmos hashes for transactions")
     case unique_numbers do
       [nil] ->
-        Logger.info("block_numbers is nil")
         {:retry, block_numbers}
       [] ->
-        Logger.info("block_numbers is empty")
         {:retry, block_numbers}
       [_|_] ->
         Enum.each(unique_numbers, &fetch_and_import_cosmos_hash/1)
