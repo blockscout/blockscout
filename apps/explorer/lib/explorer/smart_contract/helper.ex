@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Helper do
   """
 
   alias Explorer.Chain
+  alias Phoenix.HTML
 
   def queriable_method?(method) do
     method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"

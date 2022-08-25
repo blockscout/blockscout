@@ -46,3 +46,9 @@
 .pre-wrap {
   white-space: pre-wrap;
 }
+
+.mb-2-desktop {
+  @include media-breakpoint-up(sm) {
+    margin-bottom: .5rem !important;
+  }
+}

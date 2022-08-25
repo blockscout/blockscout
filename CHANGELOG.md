@@ -95,8 +95,9 @@
 - [#5783](https://github.com/blockscout/blockscout/pull/5783) - Allow to setup multiple ranges of blocks to index
 
 ### Fixes
-- [#5797](https://github.com/blockscout/blockscout/pull/5797) - Fix flickering token tooltip
+- [#5799](https://github.com/blockscout/blockscout/pull/5799) - Fix address_tokens_usd_sum function
 - [#5798](https://github.com/blockscout/blockscout/pull/5798) - Copy explorer node_modules to result image
+- [#5797](https://github.com/blockscout/blockscout/pull/5797) - Fix flickering token tooltip
 
 ### Chore
 - [#5796](https://github.com/blockscout/blockscout/pull/5796) - Add job for e2e tests on every push to master + fix job "Merge 'master' to specific branch after release"
@@ -157,6 +158,7 @@
 - [#5656](https://github.com/blockscout/blockscout/pull/5656) - Gas price oracle
 - [#5613](https://github.com/blockscout/blockscout/pull/5613) - Exchange rates CoinMarketCap source module
 - [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
+- [#5560](https://github.com/blockscout/blockscout/pull/5560) - Manual fetch benefeciaries
 - [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 

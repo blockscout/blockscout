@@ -36,6 +36,7 @@
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
     "jquery": "^3.4.0",
+    "js-cookie": "^3.0.1",
     "lodash.debounce": "^4.0.8",
     "lodash.differenceby": "^4.8.0",
     "lodash.find": "^4.6.0",

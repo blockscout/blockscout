@@ -26,7 +26,7 @@
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title lg-card-title mb-2">
+          <h1 class="card-title lg-card-title mb-2-desktop">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
