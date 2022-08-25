@@ -34,7 +34,7 @@ defmodule Indexer.BufferedTaskTest do
   end
 
   defmodule CounterTask do
-    @behaviour BufferedTask
+    use BufferedTask
 
     def initial_collection, do: for(i <- 1..11, do: "#{i}")
 
@@ -49,7 +49,20 @@ defmodule Indexer.BufferedTaskTest do
   end
 
   defmodule EmptyTask do
-    @behaviour BufferedTask
+    use BufferedTask
+
+    def init(initial, _reducer, _state) do
+      initial
+    end
+
+    def run(batch, _state) do
+      send(__MODULE__, {:run, batch})
+      :ok
+    end
+  end
+
+  defmodule CustomDedupTask do
+    use BufferedTask
 
     def init(initial, _reducer, _state) do
       initial
@@ -185,21 +198,25 @@ defmodule Indexer.BufferedTaskTest do
     |> expect(:init, fn initial, reducer, _ ->
       Enum.reduce([2, 3, 4], initial, reducer)
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [2] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {0, batch}})
       :ok
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [3] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {1, batch}})
       :ok
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [4] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {2, batch}})
       :ok
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [1] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {3, batch}})
