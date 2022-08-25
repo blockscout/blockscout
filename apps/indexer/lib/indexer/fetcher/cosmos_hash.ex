@@ -64,7 +64,11 @@ defmodule Indexer.Fetcher.CosmosHash do
   def run(block_numbers, _) do
     unique_numbers = Enum.uniq(block_numbers)
     Logger.debug("fetching cosmos hashes for transactions")
-    Enum.each(unique_numbers, &fetch_and_import_cosmos_hash/1)
+    if length(block_numbers) > 0 do
+      Enum.each(unique_numbers, &fetch_and_import_cosmos_hash/1)
+    else
+      Logger.debug("block_numbers is nil")
+    end
   end
 
   def get_cosmos_hash_params_by_range(range) do
