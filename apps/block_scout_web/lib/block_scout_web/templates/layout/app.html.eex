@@ -46,7 +46,7 @@
         'Less than': '<%= gettext("Less than") %>',
         'Market Cap': '<%= gettext("Market Cap") %>',
         'Price': '<%= gettext("Price") %>',
-        'Ether': '<%= gettext("Ether") %>',
+        'Astra': '<%= gettext("Astra") %>',
         'Tx/day': '<%= gettext("Tx/day") %>'
       }
     </script>
