@@ -1,6 +1,8 @@
 ## Current
 
 ### Features
+- [#4777](https://github.com/blockscout/blockscout/pull/4777) - Added decoding revert reason
+- [#4776](https://github.com/blockscout/blockscout/pull/4776) - Added view for unsuccessfully fetched values from read functions
 - [#4761](https://github.com/blockscout/blockscout/pull/4761) - ERC-1155 support
 - [#4739](https://github.com/blockscout/blockscout/pull/4739) - Improve logs and inputs decoding
 - [#4747](https://github.com/blockscout/blockscout/pull/4747) - Advanced CSV export
@@ -21,6 +23,8 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
+- [#4778](https://github.com/blockscout/blockscout/pull/4778) - Migrate :optimization_runs field type: `int4 -> int8` in `smart_contracts` table
 - [#4768](https://github.com/blockscout/blockscout/pull/4768) - Block Details page: handle zero division
 - [#4751](https://github.com/blockscout/blockscout/pull/4751) - Change text and link for `trade STAKE` button
 - [#4746](https://github.com/blockscout/blockscout/pull/4746) - Fix comparison of decimal value
