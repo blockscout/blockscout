@@ -3918,7 +3918,7 @@ defmodule Explorer.Chain do
     formatted_revert_reason
   end
 
-  defp format_revert_reason_message(revert_reason) do
+  def format_revert_reason_message(revert_reason) do
     message =
       case revert_reason do
         @revert_msg_prefix_1 <> rest ->
