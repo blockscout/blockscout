@@ -556,14 +556,12 @@ defmodule Indexer.BufferedTask do
       def dedup_entries(%BufferedTask{dedup_entries: false}, entries), do: entries
 
       def dedup_entries(
-            %BufferedTask{dedup_entries: true, task_ref_to_batch: task_ref_to_batch, bound_queue: bound_queue},
+            %BufferedTask{dedup_entries: true, task_ref_to_batch: task_ref_to_batch, bound_queue: bound_queue} = task,
             entries
           ) do
         running_entries =
-          task_ref_to_batch
-          |> Map.values()
-          |> List.flatten()
-          |> Enum.uniq()
+          task
+          |> currently_processed_items()
           |> MapSet.new()
 
         queued_entries = MapSet.new(bound_queue)
@@ -573,6 +571,13 @@ defmodule Indexer.BufferedTask do
         |> MapSet.difference(running_entries)
         |> MapSet.difference(queued_entries)
         |> MapSet.to_list()
+      end
+
+      def currently_processed_items(%BufferedTask{task_ref_to_batch: task_ref_to_batch}) do
+        task_ref_to_batch
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.uniq()
       end
 
       defoverridable dedup_entries: 2

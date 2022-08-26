@@ -74,6 +74,41 @@ defmodule Indexer.BufferedTaskTest do
     end
   end
 
+  defmodule DedupCustomImplementation do
+    use BufferedTask
+
+    def init(initial, _reducer, _state) do
+      initial
+    end
+
+    def run(batch, _state) do
+      send(__MODULE__, {:run, batch})
+      :ok
+    end
+
+    @impl BufferedTask
+    def dedup_entries(
+              %BufferedTask{dedup_entries: true, bound_queue: bound_queue} = task,
+              entries
+            ) do
+
+      get_second_element = fn {_, e, _} -> e end
+
+      running_entries =
+        task
+        |> currently_processed_items()
+        |> List.merge(bound_queue)
+        |> Enum.map(get_second_element)
+        |> MapSet.new()
+
+      entries
+      |> Enum.uniq_by(get_second_element)
+      |> Enum.filter(fn i ->
+        MapSet.member?(running_entries, get_second_element.(i)) == false
+      end)
+    end
+  end
+
   test "init buffers initial entries then executes on-demand entries" do
     Process.register(self(), CounterTask)
     {:ok, buffer} = start_buffer(CounterTask)
@@ -255,6 +290,26 @@ defmodule Indexer.BufferedTaskTest do
     Process.sleep(@assert_receive_timeout)
 
     refute_receive _
+  end
+
+  test "custom dedup_entries implementation performs deduplication when specified" do
+    Process.register(self(), DedupCustomImplementation)
+
+    batch_size = 1
+    {:ok, buffer} = start_buffer(DedupCustomImplementation, batch_size)
+
+    entries = [{1,1,1}, {1,2,1},{77,2,77}, {88,2,88}, {99,1,99}]
+
+    BufferedTask.buffer(buffer, entries)
+
+    assert_receive {:run, [{1,1,1}]}, @assert_receive_timeout
+    assert_receive {:run, [{1,2,1}]}, @assert_receive_timeout
+
+    #it should deduplicate based on the custom implementation and remove duplicate instances of the second element in the tuple
+    refute_receive {:run, [{77,2,77}]}, @assert_receive_timeout
+    refute_receive {:run, [{88,2,88}]}, @assert_receive_timeout
+    refute_receive {:run, [{99,1,99}]}, @assert_receive_timeout
+
   end
 
   describe "handle_info(:flush, state)" do
