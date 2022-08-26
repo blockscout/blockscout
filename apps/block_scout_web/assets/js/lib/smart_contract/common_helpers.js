@@ -78,12 +78,16 @@ export const formatTitleAndError = (error) => {
   let { message } = error
   var title = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
   title = title && title.split('{').length > 1 ? title.split('{')[0].replace(':', '') : title
+  var txHash = ''
+  var errorMap = ''
   try {
-    message = message && message.indexOf('{') >= 0 ? JSON.parse(message && message.slice(message.indexOf('{'))).error : ''
+    errorMap = message && message.indexOf('{') >= 0 ? JSON.parse(message && message.slice(message.indexOf('{'))) : ''
+    message = errorMap.error || ''
+    txHash = errorMap.transactionHash || ''
   } catch (exception) {
     message = ''
   }
-  return { title: title, message: message }
+  return { title: title, message: message, txHash: txHash }
 }
 
 export const getCurrentAccount = () => {

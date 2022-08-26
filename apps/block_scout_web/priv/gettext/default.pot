@@ -2119,7 +2119,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:53
-#: lib/block_scout_web/templates/chain/_block.html.eex:26 lib/block_scout_web/views/internal_transaction_view.ex:28
+#: lib/block_scout_web/templates/chain/_block.html.eex:27 lib/block_scout_web/views/internal_transaction_view.ex:28
 msgid "Reward"
 msgstr ""
 
@@ -3579,4 +3579,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_token/overview.html.eex:66
 msgid "Shows the total CRC balance in the address."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_function_response.html.eex:3
+msgid "method Response"
 msgstr ""

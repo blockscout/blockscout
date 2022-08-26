@@ -40,8 +40,10 @@ defmodule EthereumJSONRPC.Contract do
   """
   @type call_result :: {:ok, term()} | {:error, String.t()}
 
-  @spec execute_contract_functions([call()], [map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [call_result()]
-  def execute_contract_functions(requests, abi, json_rpc_named_arguments) do
+  @spec execute_contract_functions([call()], [map()], EthereumJSONRPC.json_rpc_named_arguments(), true | false) :: [
+          call_result()
+        ]
+  def execute_contract_functions(requests, abi, json_rpc_named_arguments, leave_error_as_map \\ false) do
     parsed_abi =
       abi
       |> ABI.parse_specification()
@@ -82,7 +84,7 @@ defmodule EthereumJSONRPC.Contract do
         response ->
           selectors = define_selectors(parsed_abi, method_id)
 
-          {^index, result} = Encoder.decode_result(response, selectors)
+          {^index, result} = Encoder.decode_result(response, selectors, leave_error_as_map)
           result
       end
     end)
