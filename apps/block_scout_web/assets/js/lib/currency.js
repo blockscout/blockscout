@@ -7,7 +7,7 @@ export function formatUsdValue (value) {
   if (formattedValue === 'N/A') {
     return formattedValue
   } else {
-    return `${formattedValue} vn₫`
+    return `${formattedValue} VND`
   }
 }
 
@@ -22,8 +22,8 @@ function formatCurrencyValue (value, symbol) {
   if (value < 0.000001) return `${window.localized['Less than']} 0.000001 ${symbol}`
   if (value < 1000) return `${numeral(value).format('0,0')} ${symbol}`
   if (value < 1000000) return `${numeral(value).format('0,0')} ${symbol}`
-  if (value < 1000000000) return `${numeral(value / (10 ** 6)).format('0,0')} million ${symbol}`
-  if (value > 1000000000) return `${numeral(value / (10 ** 9)).format('0,0')} billion ${symbol}`
+  if (value < 1000000000) return `${numeral(value / (10 ** 6)).format('0,0')} Million ${symbol}`
+  if (value > 1000000000) return `${numeral(value / (10 ** 9)).format('0,0')} Billion ${symbol}`
   return `${numeral(value).format('0,0')} ${symbol}`
 }
 
