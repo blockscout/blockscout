@@ -2187,7 +2187,7 @@ msgid "Search network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:50
+#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:47
 msgid "Search tokens"
 msgstr ""
 
@@ -3554,3 +3554,13 @@ msgstr "CELO"
 # From templates/tokens/overview/details.html.eex#
 msgid "Celo Gold"
 msgstr "CELO"
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_token/overview.html.eex:65
+msgid "CRC Worth"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address_token/overview.html.eex:66
+msgid "Shows the total CRC balance in the address."
+msgstr ""

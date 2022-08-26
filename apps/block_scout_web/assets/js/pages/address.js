@@ -49,6 +49,7 @@ export function reducer (state = initialState, action) {
         tokenTransferCount: action.tokenTransferCount,
         gasUsageCount: action.gasUsageCount,
         validationCount: action.validationCount,
+        crcTotalWorth: action.crcTotalWorth,
         countersFetched: true
       })
     }
@@ -181,6 +182,24 @@ const elements = {
         $('.address-validation-count-item').removeAttr('style')
       } else {
         $('.address-validation-count-item').css('display', 'none')
+      }
+    }
+  },
+  '[data-test="address-tokens-panel-crc-total-worth"]': {
+    load ($el) {
+      return { countersFetched: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (state.countersFetched && state.crcTotalWorth) {
+        if (oldState.crcTotalWorth === state.crcTotalWorth) return
+        $el.empty().append(`${state.crcTotalWorth} CRC`)
+        if (state.crcTotalWorth !== '0') {
+          $('[data-test="address-tokens-panel-crc-total-worth-container"]').removeClass('d-none')
+        } else {
+          $('[data-test="address-tokens-panel-crc-total-worth-container"]').addClass('d-none')
+        }
+      } else {
+        $('[data-test="address-tokens-panel-crc-total-worth-container"]').addClass('d-none')
       }
     }
   }
