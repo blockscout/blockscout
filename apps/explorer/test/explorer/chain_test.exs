@@ -5927,6 +5927,18 @@ defmodule Explorer.ChainTest do
 
       assert implementation_abi == @implementation_abi
     end
+
+    test "get_total_staked_and_ordered should return just nil in case of invalid input and some response otherwise" do
+      assert Chain.get_total_staked_and_ordered(nil) == nil
+      assert Chain.get_total_staked_and_ordered(%{}) == nil
+      assert Chain.get_total_staked_and_ordered("") == nil
+      assert Chain.get_total_staked_and_ordered([]) == nil
+
+      assert Chain.get_total_staked_and_ordered("0x3f7c51ef174ee8a62e3fcfb0947aa90c97bd2784") == %{
+               stake_amount: Decimal.new(0),
+               ordered_withdraw: Decimal.new(0)
+             }
+    end
   end
 
   describe "fetch_sum_celo_unlocked/0" do

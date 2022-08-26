@@ -3563,3 +3563,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token/overview.html.eex:66
 msgid "Shows the total CRC balance in the address."
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:110
+msgid "N/A bytes"
+msgstr ""

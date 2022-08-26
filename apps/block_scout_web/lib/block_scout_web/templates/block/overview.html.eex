@@ -121,7 +121,7 @@
               text: gettext("Size of the block in bytes.") %>
               <%= gettext("Size") %>
             </dt>
-            <dd class="col-sm-9 col-lg-10"><%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %></dd>
+            <dd class="col-sm-9 col-lg-10"><%= if !is_nil(@block.size), do: (Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!()), else: gettext("N/A bytes") %></dd>
           </dl>
           <!-- Hash -->
           <dl class="row">

@@ -23,6 +23,9 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4812](https://github.com/blockscout/blockscout/pull/4812), [#4815](https://github.com/blockscout/blockscout/pull/4815) - Check if exists custom_cap property of extended token object before access it
+- [#4810](https://github.com/blockscout/blockscout/pull/4810) - Show `nil` block.size as `N/A bytes`
+- [#4801](https://github.com/blockscout/blockscout/pull/4801) - Added clauses and tests for get_total_staked_and_ordered/1
 - [#4798](https://github.com/blockscout/blockscout/pull/4798) - Token instance View contract icon Safari fix
 - [#4796](https://github.com/blockscout/blockscout/pull/4796) - Fix nil.timestamp issue
 - [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments

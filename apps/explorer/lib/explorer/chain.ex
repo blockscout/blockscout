@@ -6644,7 +6644,9 @@ defmodule Explorer.Chain do
     )
   end
 
-  def get_total_staked_and_ordered(address_hash) do
+  def get_total_staked_and_ordered(""), do: nil
+
+  def get_total_staked_and_ordered(address_hash) when is_binary(address_hash) do
     StakingPoolsDelegator
     |> where([delegator], delegator.address_hash == ^address_hash and not delegator.is_deleted)
     |> select([delegator], %{
@@ -6653,6 +6655,8 @@ defmodule Explorer.Chain do
     })
     |> Repo.one()
   end
+
+  def get_total_staked_and_ordered(_), do: nil
 
   def bump_pending_blocks(pending_numbers) do
     update_query =
