@@ -18,7 +18,8 @@
             "_link.html",
             address: BlockScoutWeb.BlockView.block_miner(@block),
             contract: false,
-            use_custom_tooltip: false %>
+            use_custom_tooltip: false,
+            custom_classes_tooltip: ["miner-address-tooltip"] %>
         </div>
       <% end %>
       <%= if BlockScoutWeb.BlockView.show_reward?(@block.rewards) do %>

@@ -61,4 +61,13 @@
         data_test: "address-tokens-panel-tokens-worth",
         classes: ["fs-14"]
     %>
+    <%= render BlockScoutWeb.AddressTokenView, "overview_item.html",
+        title: gettext("CRC Worth"),
+        tooltip: gettext("Shows the total CRC balance in the address."),
+        value: "0 CRC",
+        data_test: "address-tokens-panel-crc-total-worth",
+        data_test_container: "address-tokens-panel-crc-total-worth-container",
+        classes: ["fs-14"],
+        container_classes: ["d-none"]
+    %>
 </div>

@@ -1,11 +1,13 @@
 ## Current
 
 ### Features
+- [#4777](https://github.com/blockscout/blockscout/pull/4777), [#4791](https://github.com/blockscout/blockscout/pull/4791), [#4799](https://github.com/blockscout/blockscout/pull/4799) - Added decoding revert reason
+- [#4776](https://github.com/blockscout/blockscout/pull/4776) - Added view for unsuccessfully fetched values from read functions
 - [#4761](https://github.com/blockscout/blockscout/pull/4761) - ERC-1155 support
 - [#4739](https://github.com/blockscout/blockscout/pull/4739) - Improve logs and inputs decoding
 - [#4747](https://github.com/blockscout/blockscout/pull/4747) - Advanced CSV export
 - [#4745](https://github.com/blockscout/blockscout/pull/4745) - Vyper contracts verification
-- [#4699](https://github.com/blockscout/blockscout/pull/4699) - Address page facelifting
+- [#4699](https://github.com/blockscout/blockscout/pull/4699), [#4793](https://github.com/blockscout/blockscout/pull/4793), [#4820](https://github.com/blockscout/blockscout/pull/4820), [#4827](https://github.com/blockscout/blockscout/pull/4827) - Address page facelifting
 - [#4667](https://github.com/blockscout/blockscout/pull/4667) - Transaction Page: Add expand/collapse button for long contract method data
 - [#4641](https://github.com/blockscout/blockscout/pull/4641), [#4733](https://github.com/blockscout/blockscout/pull/4733) - Improve Read Contract page logic
 - [#4660](https://github.com/blockscout/blockscout/pull/4660) - Save Sourcify path instead of filename
@@ -21,12 +23,24 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4835](https://github.com/blockscout/blockscout/pull/4835) - Fix view for broken token icons
+- [#4818](https://github.com/blockscout/blockscout/pull/4818) - Fix for extract_omni_bridged_token_metadata_wrapper method
+- [#4812](https://github.com/blockscout/blockscout/pull/4812), [#4815](https://github.com/blockscout/blockscout/pull/4815) - Check if exists custom_cap property of extended token object before access it
+- [#4810](https://github.com/blockscout/blockscout/pull/4810) - Show `nil` block.size as `N/A bytes`
+- [#4806](https://github.com/blockscout/blockscout/pull/4806) - Get token type for token balance update if it is empty
+- [#4802](https://github.com/blockscout/blockscout/pull/4802) - Fix floating tooltip on the main page
+- [#4801](https://github.com/blockscout/blockscout/pull/4801) - Added clauses and tests for get_total_staked_and_ordered/1
+- [#4798](https://github.com/blockscout/blockscout/pull/4798) - Token instance View contract icon Safari fix
+- [#4796](https://github.com/blockscout/blockscout/pull/4796) - Fix nil.timestamp issue
+- [#4764](https://github.com/blockscout/blockscout/pull/4764) - Add cleaning of substrings of `require` messages from parsed constructor arguments
+- [#4778](https://github.com/blockscout/blockscout/pull/4778) - Migrate :optimization_runs field type: `int4 -> int8` in `smart_contracts` table
 - [#4768](https://github.com/blockscout/blockscout/pull/4768) - Block Details page: handle zero division
 - [#4751](https://github.com/blockscout/blockscout/pull/4751) - Change text and link for `trade STAKE` button
 - [#4746](https://github.com/blockscout/blockscout/pull/4746) - Fix comparison of decimal value
 - [#4711](https://github.com/blockscout/blockscout/pull/4711) - Add trimming to the contract functions inputs
 - [#4729](https://github.com/blockscout/blockscout/pull/4729) - Fix bugs with fees in cases of txs with `gas price = 0`
 - [#4725](https://github.com/blockscout/blockscout/pull/4725) - Fix hardcoded coin name on transaction's and block's page
+- [#4724](https://github.com/blockscout/blockscout/pull/4724) - An empty blocks sanitizer
 - [#4717](https://github.com/blockscout/blockscout/pull/4717) - Contract verification fix: check only success creation tx
 - [#4713](https://github.com/blockscout/blockscout/pull/4713) - Search input field: sanitize input
 - [#4703](https://github.com/blockscout/blockscout/pull/4703) - Block Details page: Fix pagination on the Transactions tab
@@ -47,10 +61,12 @@
 - [#4582](https://github.com/blockscout/blockscout/pull/4582) - Fix NaN input on write contract page
 
 ### Chore
-
+- [#4828](https://github.com/blockscout/blockscout/pull/4828) - Logging for txs/day chart
+- [#4823](https://github.com/blockscout/blockscout/pull/4823) - Various error handlers with unresponsive JSON RPC endpoint
+- [#4821](https://github.com/blockscout/blockscout/pull/4821) - Block Details page: Remove crossing at the Burnt Fee line
+- [#4819](https://github.com/blockscout/blockscout/pull/4819) - Add config for GasUsage Cache
 - [#4735](https://github.com/blockscout/blockscout/pull/4735) - Code clean up: Remove clauses for outdated ganache bugs
 - [#4726](https://github.com/blockscout/blockscout/pull/4726) - Update chart.js
-- [#5369](https://github.com/blockscout/blockscout/pull/5369) - Manage indexer memory limit
 - [#4707](https://github.com/blockscout/blockscout/pull/4707) - Top navigation: Move Accounts tab to Tokens
 - [#4704](https://github.com/blockscout/blockscout/pull/4704) - Update to Erlang/OTP 24
 - [#4682](https://github.com/blockscout/blockscout/pull/4682) - Update all possible outdated mix dependencies

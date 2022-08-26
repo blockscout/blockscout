@@ -48,9 +48,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
 
   def fetch(address) do
     if cache_expired?(address) do
-      Task.start_link(fn ->
-        update_cache(address)
-      end)
+      update_cache(address)
     end
 
     address_hash_string = get_address_hash_string(address)

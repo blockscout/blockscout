@@ -47,17 +47,27 @@ defmodule EthereumJSONRPC.Encoder do
   @doc """
   Given a result from the blockchain, and the function selector, returns the result decoded.
   """
+  def decode_result(_, _, leave_error_as_map \\ false)
+
   @spec decode_result(map(), %ABI.FunctionSelector{} | [%ABI.FunctionSelector{}]) ::
           {String.t(), {:ok, any()} | {:error, String.t() | :invalid_data}}
-  def decode_result(%{error: %{code: code, data: data, message: message}, id: id}, _selector) do
-    {id, {:error, "(#{code}) #{message} (#{data})"}}
+  def decode_result(%{error: %{code: code, data: data, message: message}, id: id}, _selector, leave_error_as_map) do
+    if leave_error_as_map do
+      {id, {:error, %{code: code, message: message, data: data}}}
+    else
+      {id, {:error, "(#{code}) #{message} (#{data})"}}
+    end
   end
 
-  def decode_result(%{error: %{code: code, message: message}, id: id}, _selector) do
-    {id, {:error, "(#{code}) #{message}"}}
+  def decode_result(%{error: %{code: code, message: message}, id: id}, _selector, leave_error_as_map) do
+    if leave_error_as_map do
+      {id, {:error, %{code: code, message: message}}}
+    else
+      {id, {:error, "(#{code}) #{message}"}}
+    end
   end
 
-  def decode_result(result, selectors) when is_list(selectors) do
+  def decode_result(result, selectors, _leave_error_as_map) when is_list(selectors) do
     selectors
     |> Enum.map(fn selector ->
       try do
@@ -74,7 +84,7 @@ defmodule EthereumJSONRPC.Encoder do
     end)
   end
 
-  def decode_result(%{id: id, result: result}, function_selector) do
+  def decode_result(%{id: id, result: result}, function_selector, _leave_error_as_map) do
     types_list = List.wrap(function_selector.returns)
 
     decoded_data =

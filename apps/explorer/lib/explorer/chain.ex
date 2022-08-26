@@ -3918,7 +3918,7 @@ defmodule Explorer.Chain do
     formatted_revert_reason
   end
 
-  defp format_revert_reason_message(revert_reason) do
+  def format_revert_reason_message(revert_reason) do
     message =
       case revert_reason do
         @revert_msg_prefix_1 <> rest ->
@@ -5133,6 +5133,8 @@ defmodule Explorer.Chain do
       else
         {:ok, false}
       end
+    else
+      {:ok, false}
     end
   end
 
@@ -6644,7 +6646,9 @@ defmodule Explorer.Chain do
     )
   end
 
-  def get_total_staked_and_ordered(address_hash) do
+  def get_total_staked_and_ordered(""), do: nil
+
+  def get_total_staked_and_ordered(address_hash) when is_binary(address_hash) do
     StakingPoolsDelegator
     |> where([delegator], delegator.address_hash == ^address_hash and not delegator.is_deleted)
     |> select([delegator], %{
@@ -6653,6 +6657,8 @@ defmodule Explorer.Chain do
     })
     |> Repo.one()
   end
+
+  def get_total_staked_and_ordered(_), do: nil
 
   def bump_pending_blocks(pending_numbers) do
     update_query =
@@ -7051,6 +7057,17 @@ defmodule Explorer.Chain do
     params
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
+  end
+
+  def get_token_type(hash) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash == ^hash,
+        select: token.type
+      )
+
+    Repo.one(query)
   end
 
   @doc """
@@ -7959,13 +7976,7 @@ defmodule Explorer.Chain do
       try_url =
         "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/#{chain_name}/assets/#{address_hash}/logo.png"
 
-      %HTTPoison.Response{status_code: status_code} = HTTPoison.get!(try_url)
-
-      if status_code == 200 do
-        try_url
-      else
-        nil
-      end
+      try_url
     else
       nil
     end
