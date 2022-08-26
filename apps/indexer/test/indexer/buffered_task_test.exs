@@ -86,7 +86,6 @@ defmodule Indexer.BufferedTaskTest do
       :ok
     end
 
-    @impl BufferedTask
     def dedup_entries(
               %BufferedTask{dedup_entries: true, bound_queue: bound_queue} = task,
               entries
@@ -97,7 +96,7 @@ defmodule Indexer.BufferedTaskTest do
       running_entries =
         task
         |> currently_processed_items()
-        |> List.merge(bound_queue)
+        |> then(&(&1 ++ bound_queue))
         |> Enum.map(get_second_element)
         |> MapSet.new()
 
@@ -295,8 +294,21 @@ defmodule Indexer.BufferedTaskTest do
   test "custom dedup_entries implementation performs deduplication when specified" do
     Process.register(self(), DedupCustomImplementation)
 
-    batch_size = 1
-    {:ok, buffer} = start_buffer(DedupCustomImplementation, batch_size)
+    start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+    {:ok, buffer} =
+      start_supervised(
+        {BufferedTask,
+          [
+            {DedupCustomImplementation,
+              state: nil,
+              task_supervisor: BufferedTaskSup,
+              flush_interval: @flush_interval,
+              dedup_entries: true,
+              max_batch_size: 1,
+              max_concurrency: 1}
+          ]}
+      )
 
     entries = [{1,1,1}, {1,2,1},{77,2,77}, {88,2,88}, {99,1,99}]
 
