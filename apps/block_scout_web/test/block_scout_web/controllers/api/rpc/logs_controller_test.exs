@@ -280,7 +280,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         |> insert(to_address: contract_address)
         |> with_block()
 
-      log = insert(:log, address: contract_address, transaction: transaction)
+      log = insert(:log, address: contract_address, transaction: transaction, block_number: transaction.block_number)
 
       params = %{
         "module" => "logs",
@@ -334,8 +334,17 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         |> insert(to_address: contract_address)
         |> with_block(second_block)
 
-      insert(:log, address: contract_address, transaction: transaction_block1)
-      insert(:log, address: contract_address, transaction: transaction_block2)
+      insert(:log,
+        address: contract_address,
+        transaction: transaction_block1,
+        block_number: transaction_block1.block_number
+      )
+
+      insert(:log,
+        address: contract_address,
+        transaction: transaction_block2,
+        block_number: transaction_block2.block_number
+      )
 
       params = %{
         "module" => "logs",
@@ -378,8 +387,17 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         |> insert(to_address: contract_address)
         |> with_block(second_block)
 
-      insert(:log, address: contract_address, transaction: transaction_block1)
-      insert(:log, address: contract_address, transaction: transaction_block2)
+      insert(:log,
+        address: contract_address,
+        transaction: transaction_block1,
+        block_number: transaction_block1.block_number
+      )
+
+      insert(:log,
+        address: contract_address,
+        transaction: transaction_block2,
+        block_number: transaction_block2.block_number
+      )
 
       params = %{
         "module" => "logs",
