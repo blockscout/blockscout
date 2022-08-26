@@ -26,47 +26,50 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
-      [result] =
+      res =
         address
         |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
+
+      [result] =
+        res
         |> Enum.map(fn [
-                         transaction_hash,
+                         [[], transaction_hash],
                          _,
-                         index,
+                         [[], index],
                          _,
-                         block_number,
+                         [[], block_number],
                          _,
-                         block_hash,
+                         [[], block_hash],
                          _,
-                         block_index,
+                         [[], block_index],
                          _,
-                         transaction_index,
+                         [[], transaction_index],
                          _,
-                         timestamp,
+                         [[], timestamp],
                          _,
-                         from_address_hash,
+                         [[], from_address_hash],
                          _,
-                         to_address_hash,
+                         [[], to_address_hash],
                          _,
-                         created_contract_address_hash,
+                         [[], created_contract_address_hash],
                          _,
-                         type,
+                         [[], type],
                          _,
-                         call_type,
+                         [[], call_type],
                          _,
-                         gas,
+                         [[], gas],
                          _,
-                         gas_used,
+                         [[], gas_used],
                          _,
-                         value,
+                         [[], value],
                          _,
-                         input,
+                         [[], input],
                          _,
-                         output,
+                         [[], output],
                          _,
-                         error,
+                         [[], error],
                          _
                        ] ->
           %{
@@ -133,6 +136,44 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
       end)
       |> Enum.count()
 
+      1..200
+      |> Enum.map(fn index ->
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:internal_transaction,
+          index: index,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end)
+      |> Enum.count()
+
+      1..200
+      |> Enum.map(fn index ->
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:internal_transaction,
+          index: index,
+          transaction: transaction,
+          created_contract_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end)
+      |> Enum.count()
+
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
 
@@ -142,7 +183,7 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
         |> Enum.to_list()
         |> Enum.drop(1)
 
-      assert Enum.count(result) == 200
+      assert Enum.count(result) == 600
     end
   end
 end
