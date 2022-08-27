@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   end
 
   defp transaction_from_hash(transaction_hash) do
-    case Chain.hash_to_transaction(transaction_hash, necessity_by_association: %{block: :required}) do
+    case Chain.hash_to_transaction(transaction_hash) do
       {:error, :not_found} -> {:transaction, :error}
       {:ok, transaction} -> {:transaction, {:ok, transaction}}
     end

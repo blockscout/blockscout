@@ -110,6 +110,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           block_hash: fragment("EXCLUDED.block_hash"),
           old_block_hash: transaction.block_hash,
           block_number: fragment("EXCLUDED.block_number"),
+          block_consensus: fragment("EXCLUDED.block_consensus"),
+          block_timestamp: fragment("EXCLUDED.block_timestamp"),
           created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
           created_contract_code_indexed_at: fragment("EXCLUDED.created_contract_code_indexed_at"),
           cumulative_gas_used: fragment("EXCLUDED.cumulative_gas_used"),
@@ -139,9 +141,11 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.block_consensus, EXCLUDED.block_timestamp, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
+          transaction.block_consensus,
+          transaction.block_timestamp,
           transaction.created_contract_address_hash,
           transaction.created_contract_code_indexed_at,
           transaction.cumulative_gas_used,
@@ -197,13 +201,19 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           ),
         on: transaction.hash == new_transaction.hash,
         where: transaction.block_hash != new_transaction.block_hash,
-        select: transaction.block_hash
+        select: %{hash: transaction.hash, block_hash: transaction.block_hash}
       )
 
     block_hashes =
       blocks_with_recollated_transactions
       |> repo.all()
+      |> Enum.map(fn %{block_hash: block_hash} -> block_hash end)
       |> Enum.uniq()
+
+    transaction_hashes =
+      blocks_with_recollated_transactions
+      |> repo.all()
+      |> Enum.map(fn %{hash: hash} -> hash end)
 
     if Enum.empty?(block_hashes) do
       Logger.info("### Transactions run discard_blocks_for_recollated_transactions empty array ###")
@@ -246,6 +256,33 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       rescue
         postgrex_error in Postgrex.Error ->
           {:error, %{exception: postgrex_error, block_hashes: block_hashes}}
+      end
+    end
+
+    if Enum.empty?(transaction_hashes) do
+      {:ok, []}
+    else
+      query =
+        from(
+          transaction in Transaction,
+          where: transaction.hash in ^transaction_hashes,
+          # Enforce Block ShareLocks order (see docs: sharelocks.md)
+          order_by: [asc: transaction.hash],
+          lock: "FOR UPDATE"
+        )
+
+      try do
+        {_, result} =
+          repo.update_all(
+            from(transaction in Transaction, join: s in subquery(query), on: transaction.hash == s.hash),
+            [set: [block_consensus: false, updated_at: updated_at]],
+            timeout: timeout
+          )
+
+        {:ok, result}
+      rescue
+        postgrex_error in Postgrex.Error ->
+          {:error, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
       end
     end
   end

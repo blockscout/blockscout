@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.Notifier do
     |> Stream.map(
       &(InternalTransaction.where_nonpending_block()
         |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
-        |> Repo.preload([:from_address, :to_address, transaction: :block]))
+        |> Repo.preload([:from_address, :to_address, :transaction]))
     )
     |> Enum.each(&broadcast_internal_transaction/1)
   end
@@ -154,7 +154,7 @@ defmodule BlockScoutWeb.Notifier do
               token_contract_address_hash: &1.token_contract_address_hash,
               log_index: &1.log_index
             )
-            |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
+            |> Repo.preload([:from_address, :to_address, :token, :transaction]))
         )
 
       token_transfers_full
@@ -167,7 +167,6 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.map(& &1.hash)
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
-        :block => :optional,
         [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
         [to_address: :names] => :optional

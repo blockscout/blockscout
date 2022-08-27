@@ -88,7 +88,7 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
           internal_transaction.block_hash,
           internal_transaction.block_index,
           internal_transaction.transaction_index,
-          internal_transaction.transaction.block.timestamp,
+          internal_transaction.transaction.block_timestamp,
           to_string(internal_transaction.from_address_hash),
           to_string(internal_transaction.to_address_hash),
           to_string(internal_transaction.created_contract_address_hash),

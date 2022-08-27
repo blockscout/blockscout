@@ -54,13 +54,13 @@ defmodule Explorer.EthRPC do
       action: :eth_get_logs,
       notes: """
       Will never return more than 1000 log entries.\n
-      For this reason, you can use pagination options to request the next page. Pagination options params: {"logIndex": "3D", "blockNumber": "6423AC", "transactionIndex": 53} which include parameters from the last log received from the previous request. These three parameters are required for pagination.
+      For this reason, you can use pagination options to request the next page. Pagination options params: {"logIndex": "3D", "blockNumber": "6423AC"} which include parameters from the last log received from the previous request. These three parameters are required for pagination.
       """,
       example: """
       {"id": 0, "jsonrpc": "2.0", "method": "eth_getLogs",
        "params": [
         {"address": "0xc78Be425090Dbd437532594D12267C5934Cc6c6f",
-         "paging_options": {"logIndex": "3D", "blockNumber": "6423AC", "transactionIndex": 53},
+         "paging_options": {"logIndex": "3D", "blockNumber": "6423AC"},
          "fromBlock": "earliest",
          "toBlock": "latest",
          "topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}]}
@@ -296,17 +296,14 @@ defmodule Explorer.EthRPC do
   defp paging_options(%{
          "paging_options" => %{
            "logIndex" => log_index,
-           "transactionIndex" => transaction_index,
            "blockNumber" => block_number
          }
-       })
-       when is_integer(transaction_index) do
+       }) do
     with {:ok, parsed_block_number} <- to_number(block_number, "invalid block number"),
          {:ok, parsed_log_index} <- to_number(log_index, "invalid log index") do
       {:ok,
        %{
          log_index: parsed_log_index,
-         transaction_index: transaction_index,
          block_number: parsed_block_number
        }}
     end

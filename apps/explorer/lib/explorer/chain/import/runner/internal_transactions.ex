@@ -231,11 +231,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     query =
       from(
-        b in Block,
-        where: b.number in ^block_numbers and b.consensus,
-        select: b.hash,
+        block in Block,
+        where: block.number in ^block_numbers and block.consensus == true,
+        select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
-        order_by: [asc: b.hash],
+        order_by: [asc: block.hash],
         lock: "FOR UPDATE"
       )
 
@@ -618,18 +618,28 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     minimal_block = EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
 
     if Enum.count(invalid_block_numbers) > 0 do
-      update_query =
+      update_block_query =
         from(
-          b in Block,
-          where: b.number in ^invalid_block_numbers and b.consensus,
-          where: b.number > ^minimal_block,
-          select: b.hash,
+          block in Block,
+          where: block.number in ^invalid_block_numbers and block.consensus == true,
+          where: block.number > ^minimal_block,
+          select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
           update: [set: [consensus: false]]
         )
 
+      update_transaction_query =
+        from(
+          transaction in Transaction,
+          where: transaction.block_number in ^invalid_block_numbers and transaction.block_consensus,
+          where: transaction.block_number > ^minimal_block,
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [block_consensus: false]]
+        )
+
       try do
-        {_num, result} = repo.update_all(update_query, [])
+        {_num, result} = repo.update_all(update_block_query, [])
+        {_num, _result} = repo.update_all(update_transaction_query, [])
 
         Logger.debug(fn ->
           [

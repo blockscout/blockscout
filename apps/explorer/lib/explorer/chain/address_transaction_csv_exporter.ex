@@ -22,8 +22,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
       [token_transfers: :token] => :optional,
       [token_transfers: :to_address] => :optional,
       [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
+      [token_transfers: :token_contract_address] => :optional
     }
   ]
 
@@ -89,12 +88,12 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     transaction_lists =
       transactions
       |> Stream.map(fn transaction ->
-        {opening_price, closing_price} = price_at_date(transaction.block.timestamp)
+        {opening_price, closing_price} = price_at_date(transaction.block_timestamp)
 
         [
           to_string(transaction.hash),
           transaction.block_number,
-          transaction.block.timestamp,
+          transaction.block_timestamp,
           to_string(transaction.from_address),
           to_string(transaction.to_address),
           to_string(transaction.created_contract_address),

@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.Chain.Transaction.{Fork, Status}
 
-  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
+  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number block_consensus block_timestamp created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status to_address_hash revert_reason type has_error_in_internal_txs)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
@@ -80,6 +80,8 @@ defmodule Explorer.Chain.Transaction do
      `uncles` in one of the `forks`.
    * `block_number` - Denormalized `block` `number`. `nil` when transaction is pending or has only been collated into
      one of the `uncles` in one of the `forks`.
+   * `block_consensus` - consensus of the block where transaction collated.
+   * `block_timestamp` - timestamp of the block where transaction collated.
    * `created_contract_address` - belongs_to association to `address` corresponding to `created_contract_address_hash`.
    * `created_contract_address_hash` - Denormalized `internal_transaction` `created_contract_address_hash`
      populated only when `to_address_hash` is nil.
@@ -140,6 +142,8 @@ defmodule Explorer.Chain.Transaction do
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
           block_hash: Hash.t() | nil,
           block_number: Block.block_number() | nil,
+          block_consensus: boolean(),
+          block_timestamp: DateTime.t() | nil,
           created_contract_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           created_contract_address_hash: Hash.Address.t() | nil,
           created_contract_code_indexed_at: DateTime.t() | nil,
@@ -176,6 +180,7 @@ defmodule Explorer.Chain.Transaction do
   @derive {Poison.Encoder,
            only: [
              :block_number,
+             :block_timestamp,
              :cumulative_gas_used,
              :error,
              :gas,
@@ -196,6 +201,7 @@ defmodule Explorer.Chain.Transaction do
   @derive {Jason.Encoder,
            only: [
              :block_number,
+             :block_timestamp,
              :cumulative_gas_used,
              :error,
              :gas,
@@ -216,6 +222,8 @@ defmodule Explorer.Chain.Transaction do
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:block_number, :integer)
+    field(:block_consensus, :boolean)
+    field(:block_timestamp, :utc_datetime_usec)
     field(:cumulative_gas_used, :decimal)
     field(:earliest_processing_start, :utc_datetime_usec)
     field(:error, :string)
@@ -709,7 +717,7 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in subquery(query),
       order_by: [desc: t.block_number, desc: t.index],
-      preload: [:from_address, :to_address, :created_contract_address, :block]
+      preload: [:from_address, :to_address, :created_contract_address]
     )
   end
 
@@ -730,7 +738,7 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in subquery(query),
       order_by: [desc: t.block_number, desc: t.index],
-      preload: [:from_address, :to_address, :created_contract_address, :block]
+      preload: [:from_address, :to_address, :created_contract_address]
     )
   end
 

@@ -69,7 +69,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
         [
           to_string(token_transfer.transaction_hash),
           token_transfer.transaction.block_number,
-          token_transfer.transaction.block.timestamp,
+          token_transfer.transaction.block_timestamp,
           token_transfer.from_address_hash |> to_string() |> String.downcase(),
           token_transfer.to_address_hash |> to_string() |> String.downcase(),
           token_transfer.token_contract_address_hash |> to_string() |> String.downcase(),
