@@ -123,6 +123,11 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           to_address_hash: fragment("EXCLUDED.to_address_hash"),
           v: fragment("EXCLUDED.v"),
           value: fragment("EXCLUDED.value"),
+          earliest_processing_start: fragment("EXCLUDED.earliest_processing_start"),
+          revert_reason: fragment("EXCLUDED.revert_reason"),
+          max_priority_fee_per_gas: fragment("EXCLUDED.max_priority_fee_per_gas"),
+          max_fee_per_gas: fragment("EXCLUDED.max_fee_per_gas"),
+          type: fragment("EXCLUDED.type"),
           # Don't update `hash` as it is part of the primary key and used for the conflict target
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
@@ -130,7 +135,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.gateway_fee, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.gateway_fee, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value, EXCLUDED.earliest_processing_start, EXCLUDED.revert_reason, EXCLUDED.max_priority_fee_per_gas, EXCLUDED.max_fee_per_gas, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
           transaction.created_contract_address_hash,
@@ -151,7 +156,12 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           transaction.status,
           transaction.to_address_hash,
           transaction.v,
-          transaction.value
+          transaction.value,
+          transaction.earliest_processing_start,
+          transaction.revert_reason,
+          transaction.max_priority_fee_per_gas,
+          transaction.max_fee_per_gas,
+          transaction.type
         )
     )
   end
