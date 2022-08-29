@@ -230,7 +230,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     block_numbers =
       changes_list
       |> Enum.map(& &1.block_number)
-      |> Enum.dedup()
+      |> Enum.uniq()
 
     query =
       from(
