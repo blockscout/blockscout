@@ -58,26 +58,27 @@ defmodule Indexer.Fetcher.EventBackfill do
   end
 
   def missing_events_query({contract_address, topic}, {block_number, log_index} \\ {0,0}) do
-    Log
-    |> from(
-      inner_join: ccc in "celo_core_contracts",
-      on: ccc.address_hash == l.address_hash,
-      select: %{
-        first_topic: l.first_topic,
-        second_topic: l.second_topic,
-        third_topic: l.third_topic,
-        fourth_topic: l.fourth_topic,
-        data: l.data,
-        address_hash: l.address_hash,
-        transaction_hash: l.transaction_hash,
-        block_number: l.block_number,
-        index: l.index
-      },
-      where: l.first_topic == ^topic and {l.block_number, l.index} > {^block_number, ^index},
-      order_by: [asc: l.block_number, asc: l.index],
-      limit: @batch_size
-    )
+#    Log
+#    |> from(
+#      inner_join: ccc in "celo_core_contracts",
+#      on: ccc.address_hash == l.address_hash,
+#      select: %{
+#        first_topic: l.first_topic,
+#        second_topic: l.second_topic,
+#        third_topic: l.third_topic,
+#        fourth_topic: l.fourth_topic,
+#        data: l.data,
+#        address_hash: l.address_hash,
+#        transaction_hash: l.transaction_hash,
+#        block_number: l.block_number,
+#        index: l.index
+#      },
+#      where: l.first_topic == ^topic and {l.block_number, l.index} > {^block_number, ^index},
+#      order_by: [asc: l.block_number, asc: l.index],
+#      limit: @batch_size
+#    )
 
+  nil
   end
 end
 
