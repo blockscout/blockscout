@@ -124,7 +124,7 @@
                   <% else %>
                     <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
                   <% end %>
-                
+
                 <%= if confirmations > 0 do %>
                   <span class="bs-label large ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= " " <> confirmations_ds_name(confirmations) %></span>
                 <% end %>
@@ -149,7 +149,7 @@
                   <% hex = BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %>
                   <% utf8 = BlockScoutWeb.TransactionView.decoded_revert_reason(@transaction) %>
                   <div class="tile tile-muted">
-                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
+                      <pre class="pre-scrollable pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
                   </div>
               <% end %>
             </dd>
@@ -235,7 +235,7 @@
                   <%= link(
                     recipient_address_hash,
                     to: address_path(@conn, :show, recipient_address_hash)
-                  ) %> 
+                  ) %>
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
@@ -414,7 +414,7 @@
               </dt>
               <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(priority_fee, :ether) %> </dd>
             </dl>
-          <% end %> 
+          <% end %>
 
           <!-- Gas Used by Transaction -->
           <dl class="row">

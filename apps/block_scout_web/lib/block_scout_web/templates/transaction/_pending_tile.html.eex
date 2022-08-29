@@ -17,7 +17,7 @@
         <% end %>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
-        <span class="tile-title"><%= BlockScoutWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %></span>
+        <span class="tile-title"><%= BlockScoutWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Astra" %></span>
         <span class="ml-0 ml-md-1 text-nowrap"> <%= BlockScoutWeb.TransactionView.formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %></span>
       </span>
     </div>
