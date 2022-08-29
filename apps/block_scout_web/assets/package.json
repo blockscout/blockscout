@@ -55,7 +55,7 @@
     "lodash.omit": "^4.5.0",
     "lodash.rangeright": "^4.2.0",
     "lodash.reduce": "^4.6.0",
-    "luxon": "^3.0.1",
+    "luxon": "^3.0.3",
     "moment": "^2.29.4",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",
