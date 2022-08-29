@@ -74,7 +74,7 @@
     "url": "^0.11.0",
     "util": "^0.12.3",
     "web3": "^1.7.0",
-    "web3modal": "^1.9.8",
+    "web3modal": "^1.9.9",
     "xss": "^1.0.14"
   },
   "devDependencies": {
