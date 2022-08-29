@@ -1,5 +1,8 @@
 defmodule Explorer.Vault do
-  use Cloak.Vault, otp_app: :my_app
+  @moduledoc """
+    Module responsible for encrypt/decrypt GenServer initialization
+  """
+  use Cloak.Vault, otp_app: :explorer
 
   @impl GenServer
   def init(config) do

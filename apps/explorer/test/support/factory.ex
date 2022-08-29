@@ -4,6 +4,7 @@ defmodule Explorer.Factory do
   require Ecto.Query
 
   import Ecto.Query
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Kernel, except: [+: 2]
 
   alias Comeonin.Bcrypt
@@ -145,6 +146,7 @@ defmodule Explorer.Factory do
       name: "wallet",
       watchlist: build(:account_watchlist),
       address_hash: hash,
+      address_hash_hash: hash_to_lower_case_string(hash),
       watch_coin_input: true,
       watch_coin_output: true,
       watch_erc_20_input: true,

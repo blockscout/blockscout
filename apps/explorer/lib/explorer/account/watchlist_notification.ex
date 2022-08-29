@@ -9,7 +9,8 @@ defmodule Explorer.Account.WatchlistNotification do
   import Ecto.Changeset
 
   alias Explorer.Account.WatchlistAddress
-  alias Explorer.Chain.Hash
+
+  # alias Explorer.Chain.Hash
 
   schema "account_watchlist_notifications" do
     field(:amount, :decimal)

@@ -1,6 +1,6 @@
 defmodule Explorer.Encrypted.Types.TransactionHash do
   @moduledoc """
-    An `Ecto.Type` to encrypt address_hash fields.
+    An `Ecto.Type` to encrypt transaction_hash fields.
   """
 
   @doc false
@@ -18,8 +18,8 @@ defmodule Explorer.Encrypted.Types.TransactionHash do
       def after_decrypt(""), do: nil
 
       def after_decrypt(value) do
-        {:ok, address_hash} = Explorer.Chain.Hash.Full.cast(value)
-        address_hash
+        {:ok, transaction_hash} = Explorer.Chain.Hash.Full.cast(value)
+        transaction_hash
       end
     end
   end

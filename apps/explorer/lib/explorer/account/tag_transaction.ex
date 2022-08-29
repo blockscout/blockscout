@@ -10,7 +10,7 @@ defmodule Explorer.Account.TagTransaction do
   alias Ecto.Changeset
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Hash
+  # alias Explorer.Chain.Hash
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   @max_tag_transaction_per_account 15

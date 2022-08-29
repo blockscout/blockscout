@@ -5,11 +5,10 @@ defmodule Explorer.Account.CustomABI do
   use Explorer.Schema
 
   alias ABI.FunctionSelector
-  alias Cloak.Ecto.SHA256
   alias Ecto.Changeset
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Hash
+  # alias Explorer.Chain.Hash
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Ecto.Changeset

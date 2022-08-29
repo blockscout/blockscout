@@ -11,7 +11,8 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.{Address, Wei}
+  # , Hash
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
@@ -64,7 +65,7 @@ defmodule Explorer.Account.WatchlistAddress do
     |> put_hashed_fields()
     |> unique_constraint([:watchlist_id, :address_hash_hash],
       name: "unique_watchlist_id_address_hash_hash_index",
-      message: "Address already added to the watchlist"
+      message: "Address already added to the watch list"
     )
     |> check_address()
     |> watchlist_address_count_constraint()
