@@ -130,12 +130,11 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.gateway_fee, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.gateway_fee, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
           transaction.created_contract_address_hash,
           transaction.created_contract_code_indexed_at,
-          transaction.cumulative_gas_used,
           transaction.cumulative_gas_used,
           transaction.from_address_hash,
           transaction.gas,
