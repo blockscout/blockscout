@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#4931](https://github.com/blockscout/blockscout/pull/4931) - Web3 modal with Wallet Connect for Write contract page and Staking Dapp
 
 ### Fixes
 - [#4888](https://github.com/blockscout/blockscout/pull/4888) - Fix fetch_top_tokens method: add nulls last for token holders desc order

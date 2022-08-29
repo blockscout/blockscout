@@ -23,6 +23,7 @@
     "analytics": "^0.8.1",
     "@fortawesome/fontawesome-free": "^5.15.4",
     "@tarekraafat/autocomplete.js": "^10.2.6",
+    "@walletconnect/web3-provider": "^1.6.6",
     "assert": "^2.0.0",
     "awesomplete": "^1.1.5",
     "bignumber.js": "^9.0.2",
@@ -60,6 +61,7 @@
     "url": "^0.11.0",
     "util": "^0.12.4",
     "web3": "^1.7.1",
+    "web3modal": "^1.9.4",
     "xss": "^1.0.11"
   },
   "devDependencies": {
