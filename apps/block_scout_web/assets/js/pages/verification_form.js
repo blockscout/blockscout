@@ -197,6 +197,17 @@ if ($contractVerificationPage.length) {
           file.status = Dropzone.QUEUED
         }
       })
+
+      $('#verify-via-json-submit').on('click', function (e) {
+        e.preventDefault()
+
+        if (dropzone.files.length === 0) {
+          return
+        }
+
+        updateFormState(true)
+        dropzone.processQueue()
+      })
     }
 
     function changeVisibilityOfVerifyButton (filesLength) {
@@ -209,17 +220,6 @@ if ($contractVerificationPage.length) {
       $('.js-smart-contract-libraries-wrapper').hide()
       $('.js-btn-add-contract-libraries').show()
       $('.js-add-contract-library-wrapper').show()
-    })
-
-    $('#verify-via-json-submit').on('click', function (e) {
-      e.preventDefault()
-
-      if (dropzone.files.length === 0) {
-        return
-      }
-
-      updateFormState(true)
-      dropzone.processQueue()
     })
   })
 } else if ($contractVerificationChooseTypePage.length) {
