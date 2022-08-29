@@ -1,7 +1,8 @@
 ## Current
 
 ### Features
-- [#4777](https://github.com/blockscout/blockscout/pull/4777), [#4791](https://github.com/blockscout/blockscout/pull/4791), [#4799](https://github.com/blockscout/blockscout/pull/4799) - Added decoding revert reason
+- [#4807](https://github.com/blockscout/blockscout/pull/4807) - Added support for BeaconProxy pattern
+- [#4777](https://github.com/blockscout/blockscout/pull/4777), [#4791](https://github.com/blockscout/blockscout/pull/4791), [#4799](https://github.com/blockscout/blockscout/pull/4799), [#4847](https://github.com/blockscout/blockscout/pull/4847) - Added decoding revert reason
 - [#4776](https://github.com/blockscout/blockscout/pull/4776) - Added view for unsuccessfully fetched values from read functions
 - [#4761](https://github.com/blockscout/blockscout/pull/4761) - ERC-1155 support
 - [#4739](https://github.com/blockscout/blockscout/pull/4739) - Improve logs and inputs decoding
@@ -23,6 +24,8 @@
 - [#4579](https://github.com/blockscout/blockscout/pull/4579) - Write contract page: Resize inputs; Improve multiplier selector
 
 ### Fixes
+- [#4854](https://github.com/blockscout/blockscout/pull/4854) - Fix infinite gas usage count loading
+- [#4853](https://github.com/blockscout/blockscout/pull/4853) - Allow custom optimizations runs for contract verifications via API
 - [#4840](https://github.com/blockscout/blockscout/pull/4840) - Replace Enum.dedup with Enum.uniq where actually uniq items are expected
 - [#4835](https://github.com/blockscout/blockscout/pull/4835) - Fix view for broken token icons
 - [#4830](https://github.com/blockscout/blockscout/pull/4830) - Speed up txs per day chart data collection
