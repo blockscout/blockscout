@@ -44,6 +44,8 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
     |> integer_to_hex()
   end
 
+  defp datetime_to_hex(nil), do: nil
+
   defp datetime_to_hex(datetime) do
     datetime
     |> DateTime.to_unix()
