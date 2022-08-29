@@ -169,7 +169,7 @@ if ($contractVerificationPage.length) {
 
   $(function () {
     if ($('#metadata-json-dropzone').length) {
-      var dropzone = new Dropzone('#metadata-json-dropzone', {
+      const dropzone = new Dropzone('#metadata-json-dropzone', {
         autoProcessQueue: false,
         acceptedFiles: 'text/plain,application/json,.sol,.json',
         parallelUploads: 100,

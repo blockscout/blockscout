@@ -115,7 +115,7 @@ function getReferrerPath () {
 // returns relevant entity ID: Address, Transaction, Block, or Search Parameter
 function getEntityId () {
   const pathSegments = window.location.pathname.split('/')
-  for (var i = 0; i < pathSegments.length; i++) {
+  for (let i = 0; i < pathSegments.length; i++) {
     if (pathSegments[i].includes('search')) {
       return window.location.search.slice(3)
     } else if (pathSegments[i] === 'blocks' && pathSegments[i + 1]) {
@@ -145,7 +145,7 @@ function getNetwork () {
 
 // returns timezone offset
 function getTimezoneOffset () {
-  var d = new Date()
+  const d = new Date()
   return d.getTimezoneOffset()
 }
 
