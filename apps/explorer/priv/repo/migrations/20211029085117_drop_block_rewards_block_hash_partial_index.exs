@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Migrations.DropBlockRewardsBlockHashPartialIndex do
   def change do
     drop_if_exists(
       index(
-        :block_rewadrs,
+        :block_rewards,
         ~w(block_hash)a,
         name: :block_rewards_block_hash_partial_index,
         where: "address_type='validator'"
