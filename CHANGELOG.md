@@ -5,6 +5,7 @@
 - [#5860](https://github.com/blockscout/blockscout/pull/5860) - Integrate rust verifier micro-service ([blockscout-rs/verifier](https://github.com/blockscout/blockscout-rs/tree/main/verification))
 
 ### Fixes
+- [#6012](https://github.com/blockscout/blockscout/pull/6012) - Fix display of estimated addresses counter on the main page
 - [#5978](https://github.com/blockscout/blockscout/pull/5978) - Allow timestamp param in the log of eth_getTransactionReceipt method
 - [#5977](https://github.com/blockscout/blockscout/pull/5977) - Fix address overview.html.eex in case of nil implementation address hash
 - [#5975](https://github.com/blockscout/blockscout/pull/5975) - Fix CSV export of internal transactions
