@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:14
+    image: postgres:13.6
     restart: always
     container_name: 'postgres'
     environment:
@@ -15,7 +15,7 @@ services:
   blockscout:
     depends_on:
       - db
-    image: local/blockscout:latest
+    image: 996995275645.dkr.ecr.eu-central-1.amazonaws.com/edexa-universe:edexa-explorer-latest-final
     restart: always
     container_name: 'blockscout'
     links:
