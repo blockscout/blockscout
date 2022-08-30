@@ -10,6 +10,7 @@
 - [#5887](https://github.com/blockscout/blockscout/pull/5887) - Added missing environment variables to Makefile container params
 
 ### Chore
+- [#6018](https://github.com/blockscout/blockscout/pull/6018) - Update chromedriver version
 - [#5845](https://github.com/blockscout/blockscout/pull/5845) - Bump autoprefixer from 10.4.2 to 10.4.8 in /apps/block_scout_web/assets
 - [#5877](https://github.com/blockscout/blockscout/pull/5877) - Bump eslint from 8.17.0 to 8.21.0 in /apps/block_scout_web/assets
 - [#5875](https://github.com/blockscout/blockscout/pull/5875) - Bump sass from 1.49.8 to 1.54.3 in /apps/block_scout_web/assets
