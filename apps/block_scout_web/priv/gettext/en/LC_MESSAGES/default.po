@@ -433,7 +433,7 @@ msgid "Block number containing the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:278
+#: lib/block_scout_web/templates/address/overview.html.eex:282
 msgid "Block number in which the address was updated."
 msgstr ""
 
@@ -460,7 +460,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:56
-#: lib/block_scout_web/templates/address/overview.html.eex:295 lib/block_scout_web/templates/address_validation/index.html.eex:15
+#: lib/block_scout_web/templates/address/overview.html.eex:299 lib/block_scout_web/templates/address_validation/index.html.eex:15
 #: lib/block_scout_web/views/address_view.ex:422
 msgid "Blocks Validated"
 msgstr ""
@@ -1483,7 +1483,7 @@ msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:279
+#: lib/block_scout_web/templates/address/overview.html.eex:283
 msgid "Last Balance Update"
 msgstr ""
 
@@ -1808,7 +1808,7 @@ msgid "Not unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:294
+#: lib/block_scout_web/templates/address/overview.html.eex:298
 msgid "Number of blocks validated."
 msgstr ""
 
@@ -3551,7 +3551,7 @@ msgid "CRC Worth"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:269
+#: lib/block_scout_web/templates/address/overview.html.eex:272
 msgid "Fetching gas used..."
 msgstr ""
 

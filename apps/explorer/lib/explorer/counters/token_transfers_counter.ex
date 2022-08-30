@@ -53,7 +53,7 @@ defmodule Explorer.Counters.TokenTransfersCounter do
       end)
     end
 
-    address_hash_string = get_address_hash_string(address_hash)
+    address_hash_string = to_string(address_hash)
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
@@ -61,7 +61,7 @@ defmodule Explorer.Counters.TokenTransfersCounter do
 
   defp cache_expired?(address_hash) do
     cache_period = token_transfers_counter_cache_period()
-    address_hash_string = get_address_hash_string(address_hash)
+    address_hash_string = to_string(address_hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -72,7 +72,7 @@ defmodule Explorer.Counters.TokenTransfersCounter do
   end
 
   defp update_cache(address_hash) do
-    address_hash_string = get_address_hash_string(address_hash)
+    address_hash_string = to_string(address_hash)
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
     new_data = Chain.count_token_transfers_from_token_hash(address_hash)
     put_into_cache("hash_#{address_hash_string}", new_data)
@@ -90,10 +90,6 @@ defmodule Explorer.Counters.TokenTransfersCounter do
 
   defp put_into_cache(key, value) do
     :ets.insert(@cache_name, {key, value})
-  end
-
-  defp get_address_hash_string(address_hash) do
-    Base.encode16(address_hash.bytes, case: :lower)
   end
 
   defp current_time do

@@ -354,6 +354,35 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @token_bridgedtokenlist_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "foreignChainId" => "1",
+        "foreignTokenContractAddressHash" => "0x0ae055097c6d159879521c384f1d2123d1f195e6",
+        "homeContractAddressHash" => "0xb7d311e2eb55f2f68a9440da38e7989210b9a05e",
+        "homeDecimals" => "18",
+        "homeHolderCount" => 393,
+        "homeName" => "STAKE on xDai",
+        "homeSymbol" => "STAKE",
+        "homeTotalSupply" => "1484374.775044204093387391",
+        "homeUsdValue" => "18807028.39981006586321824397"
+      },
+      %{
+        "foreignChainId" => "1",
+        "foreignTokenContractAddressHash" => "0xf5581dfefd8fb0e4aec526be659cfab1f8c781da",
+        "homeContractAddressHash" => "0xd057604a14982fe8d88c5fc25aac3267ea142a08",
+        "homeDecimals" => "18",
+        "homeHolderCount" => 73,
+        "homeName" => "HOPR Token on xDai",
+        "homeSymbol" => "HOPR",
+        "homeTotalSupply" => "26600449.86076749062791602",
+        "homeUsdValue" => "6638727.472651464170990256943"
+      }
+    ]
+  }
+
   @stats_tokensupply_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -832,6 +861,12 @@ defmodule BlockScoutWeb.Etherscan do
     enum_interpretation: %{"0" => "error", "1" => "ok"}
   }
 
+  @success_status_type %{
+    type: "status",
+    enum: ~s(["1"]),
+    enum_interpretation: %{"1" => "ok"}
+  }
+
   @jsonrpc_version_type %{
     type: "string",
     example: ~s("2.0")
@@ -987,6 +1022,37 @@ defmodule BlockScoutWeb.Etherscan do
         type: "value",
         definition: "A nonnegative number used to identify the balance of the target token.",
         example: ~s("1000000000000000000")
+      }
+    }
+  }
+
+  @bridged_token_details %{
+    name: "Bridged Token Detail",
+    fields: %{
+      foreignChainId: %{
+        type: "value",
+        definition: "Chain ID of the chain where original token exists.",
+        example: ~s("1")
+      },
+      foreignTokenContractAddressHash: @address_hash_type,
+      homeContractAddressHash: @address_hash_type,
+      homeDecimals: @token_decimal_type,
+      homeHolderCount: %{
+        type: "value",
+        definition: "Token holders count.",
+        example: ~s("393")
+      },
+      homeName: @token_name_type,
+      homeSymbol: @token_symbol_type,
+      homeTotalSupply: %{
+        type: "value",
+        definition: "Total supply of the token on the home side (where token was bridged).",
+        example: ~s("1484374.775044204093387391")
+      },
+      homeUsdValue: %{
+        type: "value",
+        definition: "Total supply of the token on the home side (where token was bridged) in USD.",
+        example: ~s("6638727.472651464170990256943")
       }
     }
   }
@@ -2424,6 +2490,49 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @token_bridgedtokenlist_action %{
+    name: "bridgedTokenList",
+    description: "Get bridged tokens list.",
+    required_params: [],
+    optional_params: [
+      %{
+        key: "chainid",
+        type: "integer",
+        description: "A nonnegative integer that represents the chain id, where original token exists."
+      },
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@token_bridgedtokenlist_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @success_status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @bridged_token_details
+            }
+          }
+        }
+      }
+    ]
+  }
+
   @stats_tokensupply_action %{
     name: "tokensupply",
     description:
@@ -3490,7 +3599,8 @@ defmodule BlockScoutWeb.Etherscan do
     actions: [
       @token_gettoken_action,
       @token_gettokenholders_action,
-      @token_tokentx_action
+      @token_tokentx_action,
+      @token_bridgedtokenlist_action
     ]
   }
 
