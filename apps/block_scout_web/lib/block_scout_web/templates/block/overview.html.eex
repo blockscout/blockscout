@@ -264,6 +264,7 @@
             <% end %>
           <% end %>
         </div>
+        <img src="http://localhost:8081/block/<%= @block.number %>">
       </div>
     </div>
 </section>
