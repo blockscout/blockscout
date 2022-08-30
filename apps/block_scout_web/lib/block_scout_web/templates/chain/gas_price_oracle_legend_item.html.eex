@@ -8,7 +8,7 @@
         <span class="dashboard-banner-chart-legend-value inline">
             <div>
             <div class="d-flex flex-row" style="height: 20px; line-height: 20px;">
-                <div class="flex-column"><%= "#{gas_prices_from_oracle["average"]}" <> " " %><%= gettext "MicroAstra" %></div>
+                <div class="flex-column"><%= "#{gas_prices_from_oracle["average"]}" <> " " %><%= gettext "NanoAstra" %></div>
                 <span
                 data-toggle="tooltip"
                 data-placement="top"
@@ -17,9 +17,9 @@
                 title="
                 <div class='custom-tooltip header'><%= gettext "Gas tracker" %></div>
                 <div>
-                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Slow" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["slow"] %> <%= gettext "MicroAstra" %></span></div>
-                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Average" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["average"] %> <%= gettext "MicroAstra" %></span></div>
-                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Fast" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["fast"] %> <%= gettext "MicroAstra" %></span></div>
+                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Slow" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["slow"] %> <%= gettext "NanoAstra" %></span></div>
+                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Average" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["average"] %> <%= gettext "NanoAstra" %></span></div>
+                    <div class='custom-tooltip description left d-flex'><span><%= gettext "Fast" %></span><span class='custom-tooltip description right'><%= gas_prices_from_oracle["fast"] %> <%= gettext "NanoAstra" %></span></div>
                 </div>
                 "
                 >

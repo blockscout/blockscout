@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.BlockView do
       |> Kernel.||(0)
       |> BlockScoutWeb.Cldr.Number.to_string!()
 
-    unit_text = gettext("MicroAstra")
+    unit_text = gettext("NanoAstra")
 
     "#{average} #{unit_text}"
   end
