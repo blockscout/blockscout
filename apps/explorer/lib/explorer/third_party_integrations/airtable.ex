@@ -2,6 +2,7 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
   @moduledoc """
     Module is responsible for submitting requests for public tags to AirTable
   """
+  require Logger
 
   alias Ecto.Changeset
   alias Explorer.Account.PublicTagsRequest
