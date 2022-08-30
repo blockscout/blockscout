@@ -8,7 +8,7 @@ defmodule Explorer.Account.CustomABI do
   alias Ecto.Changeset
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
-  # alias Explorer.Chain.Hash
+  alias Explorer.Chain.Hash
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Ecto.Changeset
@@ -20,16 +20,16 @@ defmodule Explorer.Account.CustomABI do
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
 
-    # field(:name, :string)
-    # field(:address_hash, Hash.Address, null: false)
+    field(:name, :string)
+    field(:address_hash, Hash.Address, null: false)
 
-    # field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
-    # field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:encrypted_name, Explorer.Encrypted.Binary)
 
     field(:address_hash_hash, Cloak.Ecto.SHA256)
 
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
-    field(:name, Explorer.Encrypted.Binary)
+    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    # field(:name, Explorer.Encrypted.Binary)
 
     belongs_to(:identity, Identity)
 

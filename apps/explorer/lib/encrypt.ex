@@ -3,7 +3,17 @@ defmodule Mix.Tasks.Encrypt do
   use Mix.Task
 
   alias Ecto.Changeset
-  alias Explorer.Account.{CustomABI, Identity, TagAddress, TagTransaction, WatchlistAddress, WatchlistNotification}
+
+  alias Explorer.Account.{
+    CustomABI,
+    Identity,
+    PublicTagsRequest,
+    TagAddress,
+    TagTransaction,
+    WatchlistAddress,
+    WatchlistNotification
+  }
+
   alias Explorer.Repo.Account
   alias Mix.Task
 
@@ -88,6 +98,17 @@ defmodule Mix.Tasks.Encrypt do
         to_address_hash_hash: element.to_address_hash |> to_string() |> String.downcase(),
         transaction_hash_hash: element.transaction_hash |> to_string() |> String.downcase(),
         subject_hash: element.subject
+      })
+      |> Account.update!()
+    end)
+
+    PublicTagsRequest
+    |> Account.all()
+    |> Enum.each(fn element ->
+      element
+      |> Changeset.change(%{
+        encrypted_full_name: element.full_name,
+        encrypted_email: element.email
       })
       |> Account.update!()
     end)
