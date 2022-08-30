@@ -394,6 +394,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               or_where(acc, [it], it.transaction_hash == ^transaction_hash and it.index == ^index)
             end)
 
+          unless File.exists?("/tmp/internal_tx_query") do
+            sql = Ecto.Adapters.SQL.to_sql(:all, Explorer.Repo, delete_query)
+            r = File.write("/tmp/internal_tx_query", sql)
+            Logger.info("!!!!!!  wrote itx #{inspect(r)}")
+          end
+
           # ShareLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
           {count, result} = repo.delete_all(delete_query, [])
 
