@@ -80,12 +80,12 @@ defmodule Explorer.Account.Notifier.Notify do
     from(wn in WatchlistNotification,
       where:
         wn.watchlist_address_id == ^watchlist_address.id and
-          wn.from_address_hash == ^notification.from_address_hash and
-          wn.to_address_hash == ^notification.to_address_hash and
-          wn.transaction_hash == ^notification.transaction_hash and
+          wn.from_address_hash_hash == ^notification.from_address_hash and
+          wn.to_address_hash_hash == ^notification.to_address_hash and
+          wn.transaction_hash_hash == ^notification.transaction_hash and
           wn.block_number == ^notification.block_number and
           wn.direction == ^notification.direction and
-          wn.subject == ^notification.subject and
+          wn.subject_hash == ^notification.subject and
           wn.amount == ^notification.amount
     )
   end
