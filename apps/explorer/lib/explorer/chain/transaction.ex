@@ -178,7 +178,7 @@ defmodule Explorer.Chain.Transaction do
           uncles: %Ecto.Association.NotLoaded{} | [Block.t()],
           v: v(),
           value: Wei.t(),
-          revert_reason: String.t(),
+          revert_reason: String.t() | nil,
           max_priority_fee_per_gas: wei_per_gas | nil,
           max_fee_per_gas: wei_per_gas | nil,
           type: non_neg_integer() | nil

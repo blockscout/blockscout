@@ -13,7 +13,7 @@ defmodule Explorer.GraphQLTest do
         |> insert()
         |> Map.get(:hash)
         |> GraphQL.address_to_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       assert result == []
     end
@@ -26,7 +26,7 @@ defmodule Explorer.GraphQLTest do
       [found_transaction] =
         address_hash
         |> GraphQL.address_to_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       assert found_transaction.hash == transaction.hash
     end
@@ -39,7 +39,7 @@ defmodule Explorer.GraphQLTest do
       [found_transaction] =
         address_hash
         |> GraphQL.address_to_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       assert found_transaction.hash == transaction.hash
     end
@@ -52,7 +52,7 @@ defmodule Explorer.GraphQLTest do
       [found_transaction] =
         address_hash
         |> GraphQL.address_to_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       assert found_transaction.hash == transaction.hash
     end
@@ -79,7 +79,7 @@ defmodule Explorer.GraphQLTest do
       found_transactions =
         address_hash
         |> GraphQL.address_to_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       block_number_and_index_order =
         Enum.map(found_transactions, fn transaction ->
@@ -144,7 +144,7 @@ defmodule Explorer.GraphQLTest do
       [found_internal_transaction] =
         transaction1
         |> GraphQL.transaction_to_internal_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       assert found_internal_transaction.transaction_hash == transaction1.hash
       assert found_internal_transaction.index == internal_transaction.index
@@ -173,7 +173,7 @@ defmodule Explorer.GraphQLTest do
       found_internal_transactions =
         transaction1
         |> GraphQL.transaction_to_internal_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       assert length(found_internal_transactions) == 3
 
@@ -209,7 +209,7 @@ defmodule Explorer.GraphQLTest do
       found_internal_transactions =
         transaction
         |> GraphQL.transaction_to_internal_transactions_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       index_order = Enum.map(found_internal_transactions, & &1.index)
 
@@ -261,7 +261,7 @@ defmodule Explorer.GraphQLTest do
         |> insert()
         |> Map.get(:hash)
         |> GraphQL.list_token_transfers_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       assert result == []
     end
@@ -274,7 +274,7 @@ defmodule Explorer.GraphQLTest do
       [found_token_transfer] =
         token_transfer.token_contract_address_hash
         |> GraphQL.list_token_transfers_query()
-        |> Repo.all()
+        |> Repo.replica().all()
 
       expected_fields = ~w(
         amount
@@ -341,8 +341,8 @@ defmodule Explorer.GraphQLTest do
       found_token_transfers =
         token_address.hash
         |> GraphQL.list_token_transfers_query()
-        |> Repo.all()
-        |> Repo.preload(:transaction)
+        |> Repo.replica().all()
+        |> Repo.replica().preload(:transaction)
 
       block_number_order = Enum.map(found_token_transfers, & &1.block_number)
 

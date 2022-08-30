@@ -143,7 +143,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
         }
       ]
 
-      token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, options)
+      from_api = true
+      token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, from_api, options)
       render(conn, "gettokenholders.json", %{token_holders: token_holders})
     else
       {:contractaddress_param, :error} ->
@@ -176,7 +177,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
       }
     ]
 
-    bridged_tokens = Chain.list_top_bridged_tokens(destination, nil, options)
+    from_api = true
+    bridged_tokens = Chain.list_top_bridged_tokens(destination, nil, from_api, options)
     render(conn, "bridgedtokenlist.json", %{bridged_tokens: bridged_tokens})
   end
 

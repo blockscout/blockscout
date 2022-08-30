@@ -129,7 +129,7 @@ defmodule Explorer.Etherscan.Logs do
     |> where_consensus_match(prepared_filter)
     |> order_by([_, log], asc: log.index)
     |> page_logs(paging_options)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp where_address_match(query, %{address_hash: address_hash}) when not is_nil(address_hash) do
