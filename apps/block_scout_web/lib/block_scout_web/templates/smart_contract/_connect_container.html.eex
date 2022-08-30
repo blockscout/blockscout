@@ -3,11 +3,14 @@
       <%= render BlockScoutWeb.IconsView, "_inactive_icon.html" %>
     </span>
      <h2 style="margin-top: -2px;">Disconnected</h2>
-    <button connect-metamask class="button btn-line ml-4">Connect to Metamask</button>
+    <button connect-wallet class="button btn-line ml-4">Connect wallet</button>
 </div>
-<div connected-to class="connect-container hidden">
-    <span style="margin-top: -2px;" class="mr-2">
-      <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
-    </span>
-    <h2 style="margin-top: -2px;">Connected to</h2><h3 connected-to-address class="ml-2"></h3>
+<div connected-to class="connect-container row hidden">
+    <div class="d-flex ml-3">
+      <span style="margin-top: -2px;" class="mr-2">
+        <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
+      </span>
+      <h2 style="margin-top: -2px; min-width: 104px;" class="mr-2">Connected to</h2><h3 connected-to-address></h3>
+    </div>
+    <button disconnect-wallet class="button btn-line ml-3">Disconnect wallet</button>
 </div>

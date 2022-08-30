@@ -40,7 +40,7 @@ export function prepareMethodArgs ($functionInputs, inputs) {
           const sanitizedInputValueElements = inputValueElements.map(elementValue => {
             const elementInputType = inputType.split('[')[0]
 
-            var sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
+            let sanitizedElementValue = replaceDoubleQuotes(elementValue, elementInputType)
             sanitizedElementValue = replaceSpaces(sanitizedElementValue, elementInputType)
 
             if (isBoolInputType(elementInputType)) {
@@ -76,10 +76,10 @@ export const formatError = (error) => {
 
 export const formatTitleAndError = (error) => {
   let { message } = error
-  var title = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
+  let title = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
   title = title && title.split('{').length > 1 ? title.split('{')[0].replace(':', '') : title
-  var txHash = ''
-  var errorMap = ''
+  let txHash = ''
+  let errorMap = ''
   try {
     errorMap = message && message.indexOf('{') >= 0 ? JSON.parse(message && message.slice(message.indexOf('{'))) : ''
     message = errorMap.error || ''
