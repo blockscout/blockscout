@@ -37,5 +37,11 @@ config :logger, :block_scout_web,
   path: Path.absname("logs/prod/block_scout_web.log"),
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
+config :logger, :api,
+  level: :debug,
+  path: Path.absname("logs/prod/api.log"),
+  metadata_filter: [fetcher: :api],
+  rotate: %{max_bytes: 52_428_800, keep: 19}
+
 config :explorer, Explorer.ExchangeRates,
   enabled: if(System.get_env("DISABLE_EXCHANGE_RATES", "false") == "false", do: false, else: true)

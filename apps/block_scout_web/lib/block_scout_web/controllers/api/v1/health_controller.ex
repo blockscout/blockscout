@@ -1,9 +1,13 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
   use BlockScoutWeb, :controller
 
+  require APILogger
+
   alias Explorer.{Chain, Health}
 
   def health(conn, _) do
+    APILogger.log(conn)
+
     with {:ok, number, timestamp} <- Chain.last_db_block_status(),
          {:ok, cache_number, cache_timestamp} <- Chain.last_cache_block_status() do
       send_resp(conn, :ok, result(number, timestamp, cache_number, cache_timestamp))
