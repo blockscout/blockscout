@@ -37,7 +37,9 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
 
           input
 
-        _ ->
+        error ->
+          Logger.error(fn -> ["Error while submitting AirTable entry", inspect(error)] end)
+
           {:error,
            %{
              (%PublicTagsRequest{}

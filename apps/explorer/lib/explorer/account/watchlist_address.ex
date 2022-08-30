@@ -11,23 +11,22 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Wei}
-  # , Hash
+  alias Explorer.Chain.{Address, Wei, Hash}
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   @max_watchlist_addresses_per_account 10
 
   schema "account_watchlist_addresses" do
-    # field(:name, :string)
-    # field(:address_hash, Hash.Address, null: false)
-    # field(:encrypted_name, Explorer.Encrypted.Binary)
-    # field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:name, :string)
+    field(:address_hash, Hash.Address, null: false)
+    field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
 
     field(:address_hash_hash, Cloak.Ecto.SHA256)
 
-    field(:name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    # field(:name, Explorer.Encrypted.Binary)
+    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
 
     belongs_to(:watchlist, Watchlist)
 

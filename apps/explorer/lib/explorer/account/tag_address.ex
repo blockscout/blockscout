@@ -17,15 +17,15 @@ defmodule Explorer.Account.TagAddress do
   @max_tag_address_per_account 15
 
   schema "account_tag_addresses" do
-    # field(:name, :string)
-    # field(:address_hash, Hash.Address, null: false)
-    # field(:encrypted_name, Explorer.Encrypted.Binary)
-    # field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:name, :string)
+    field(:address_hash, Hash.Address, null: false)
+    field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
 
     field(:address_hash_hash, Cloak.Ecto.SHA256)
 
-    field(:name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    # field(:name, Explorer.Encrypted.Binary)
+    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
 
     belongs_to(:identity, Identity)
 
