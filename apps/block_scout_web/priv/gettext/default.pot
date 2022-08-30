@@ -136,7 +136,7 @@ msgstr ""
 msgid "Actual gas amount used by the transaction."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+#: lib/block_scout_web/templates/layout/_add_chain_to_mm.html.eex:11
 #, elixir-autogen, elixir-format
 msgid "Add"
 msgstr ""
@@ -1329,7 +1329,7 @@ msgstr ""
 msgid "Logs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:52
+#: lib/block_scout_web/templates/layout/_footer.html.eex:50
 #, elixir-autogen, elixir-format
 msgid "Main Networks"
 msgstr ""
@@ -1548,7 +1548,7 @@ msgstr ""
 msgid "Optimization runs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:76
+#: lib/block_scout_web/templates/layout/_footer.html.eex:74
 #, elixir-autogen, elixir-format
 msgid "Other Explorers"
 msgstr ""
@@ -1911,7 +1911,7 @@ msgstr ""
 msgid "Telegram"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:65
+#: lib/block_scout_web/templates/layout/_footer.html.eex:63
 #, elixir-autogen, elixir-format
 msgid "Test Networks"
 msgstr ""
@@ -2543,7 +2543,7 @@ msgstr ""
 msgid "Verify the contract "
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:91
+#: lib/block_scout_web/templates/layout/_footer.html.eex:89
 #, elixir-autogen, elixir-format
 msgid "Version"
 msgstr ""
