@@ -16,8 +16,8 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   @behaviour BufferedTask
 
-  @max_batch_size System.get_env("MAX_BATCH_SIZE_COSMOS_HASH") || 10
-  @max_concurrency System.get_env("MAX_CONCURRENCY_COSMOS_HASH") || 2
+  @max_batch_size Indexer.Fetcher.parse_env("MAX_BATCH_SIZE_COSMOS_HASH") || 10
+  @max_concurrency Indexer.Fetcher.parse_env("MAX_CONCURRENCY_COSMOS_HASH") || 2
   @defaults [
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
@@ -252,5 +252,4 @@ defmodule Indexer.Fetcher.CosmosHash do
         {:error, "Source unknown response"}
     end
   end
-
 end

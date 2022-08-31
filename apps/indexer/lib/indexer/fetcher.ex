@@ -74,4 +74,13 @@ defmodule Indexer.Fetcher do
       )
     end
   end
+
+  def parse_env(env) when is_binary(env) do
+    case System.get_env(env) do
+      nil ->
+        nil
+      _ ->
+        Integer.parse(System.get_env(env)) |> elem(0)
+    end
+  end
 end

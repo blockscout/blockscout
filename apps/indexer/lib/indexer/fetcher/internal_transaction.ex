@@ -21,8 +21,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @behaviour BufferedTask
 
-  @max_batch_size System.get_env("MAX_BATCH_SIZE_INTERNAL_TRANSACTION") || 10
-  @max_concurrency System.get_env("MAX_CONCURRENCY_INTERNAL_TRANSACTION") || 2
+  @max_batch_size Indexer.Fetcher.parse_env("MAX_BATCH_SIZE_INTERNAL_TRANSACTION") || 10
+  @max_concurrency Indexer.Fetcher.parse_env("MAX_CONCURRENCY_INTERNAL_TRANSACTION") || 2
   @defaults [
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
