@@ -65,10 +65,6 @@ jobs:
             ADMIN_PANEL_ENABLED=""
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=""
             SOCKET_ROOT=""
-            CHAIN_ID=""
-            JSON_RPC=""
-            SUBNETWORK=""
-            COIN_NAME=""
 
   merge-master-after-release:
     name: Merge 'master' to specific branch after release

@@ -15,7 +15,6 @@ services:
   blockscout:
     depends_on:
       - db
-    image: blockscout/blockscout:${DOCKER_TAG:-latest}
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
@@ -28,6 +27,8 @@ services:
         DISABLE_WEBAPP: "false"
         DISABLE_WRITE_API: "false"
         CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
+        CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
+        SOCKET_ROOT: "/"
         WOBSERVER_ENABLED: "false"
         ADMIN_PANEL_ENABLED: ""
     restart: always
