@@ -11,6 +11,7 @@ defmodule Explorer.Account.Notifier.Notify do
   require Logger
 
   import Ecto.Query, only: [from: 2]
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   def call(nil), do: nil
   def call([]), do: nil
@@ -123,7 +124,11 @@ defmodule Explorer.Account.Notifier.Notify do
         subject: summary.subject,
         tx_fee: summary.tx_fee,
         name: summary.name,
-        type: summary.type
+        type: summary.type,
+        from_address_hash_hash: hash_to_lower_case_string(summary.from_address_hash),
+        to_address_hash_hash: hash_to_lower_case_string(summary.to_address_hash),
+        transaction_hash_hash: hash_to_lower_case_string(summary.transaction_hash),
+        subject_hash: summary.subject
       }
     end
   end
