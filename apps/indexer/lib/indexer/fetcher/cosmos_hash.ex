@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.CosmosHash do
   alias HTTPoison.{Error, Response}
   alias Explorer.Chain
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Fetcher.CosmosHash.Supervisor, as: CosmosHashSupervisor
 
   @behaviour BufferedTask
 
@@ -32,7 +33,11 @@ defmodule Indexer.Fetcher.CosmosHash do
   """
   @spec async_fetch([Block.block_number()]) :: :ok
   def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
-    BufferedTask.buffer(__MODULE__, block_numbers, timeout)
+    if CosmosHashSupervisor.disabled?() do
+      :ok
+    else
+      BufferedTask.buffer(__MODULE__, block_numbers, timeout)
+    end
   end
 
   @doc false
