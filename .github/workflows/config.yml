@@ -16,7 +16,7 @@ env:
 jobs:
   build-and-cache:
     name: Build and Cache deps
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: erlef/setup-beam@v1
@@ -81,7 +81,7 @@ jobs:
 
   credo:
     name: Credo
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
@@ -105,7 +105,7 @@ jobs:
 
   check_formatted:
     name: Code formatting checks
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
@@ -128,7 +128,7 @@ jobs:
       - run: mix format --check-formatted
   dialyzer:
     name: Dialyzer static analysis
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
@@ -168,7 +168,7 @@ jobs:
 
   gettext:
     name: Missing translation keys check
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
@@ -194,7 +194,7 @@ jobs:
         working-directory: "apps/block_scout_web"
   sobelow:
     name: Sobelow security analysis
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
@@ -222,7 +222,7 @@ jobs:
         working-directory: "apps/block_scout_web"
   eslint:
     name: ESLint
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
@@ -268,7 +268,7 @@ jobs:
         working-directory: apps/block_scout_web/assets
   jest:
     name: JS Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     steps:
       - uses: actions/checkout@v2
@@ -306,7 +306,7 @@ jobs:
 
   test_parity_mox_ethereum_jsonrpc:
     name: EthereumJSONRPC Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     services:
       postgres:
@@ -362,7 +362,7 @@ jobs:
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   test_parity_mox_explorer:
     name: Explorer Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     services:
       postgres:
@@ -429,7 +429,7 @@ jobs:
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
   test_parity_mox_indexer:
     name: Indexer Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     services:
       postgres:
@@ -490,7 +490,7 @@ jobs:
 
   test_parity_mox_block_scout_web:
     name: Blockscout Web Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-cache
     services:
       postgres:
