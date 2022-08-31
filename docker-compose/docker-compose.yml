@@ -15,6 +15,7 @@ services:
   blockscout:
     depends_on:
       - db
+    image: blockscout/blockscout:${DOCKER_TAG:-latest}
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
