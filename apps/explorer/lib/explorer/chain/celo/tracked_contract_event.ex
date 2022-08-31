@@ -81,7 +81,8 @@ defmodule Explorer.Chain.Celo.TrackedContractEvent do
           topic: fragment("EXCLUDED.topic"),
           params: fragment("EXCLUDED.params"),
           contract_address_hash: fragment("EXCLUDED.contract_address_hash"),
-          transaction_hash: fragment("EXCLUDED.transaction_hash")
+          transaction_hash: fragment("EXCLUDED.transaction_hash"),
+          updated_at: fragment("EXCLUDED.updated_at")
         ]
       ],
       where:
