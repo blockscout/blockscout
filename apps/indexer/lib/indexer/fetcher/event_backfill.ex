@@ -7,12 +7,15 @@ defmodule Indexer.Fetcher.EventBackfill do
   alias Explorer.Celo.Events.Transformer
   alias Explorer.Celo.Telemetry
   alias Explorer.Chain
+  alias Explorer.Chain.Celo.ContractEventTracking
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Log
   alias Explorer.Repo
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.Util
+
+  require Telemetry
 
   use BufferedTask
   import Ecto.Query
@@ -25,7 +28,7 @@ defmodule Indexer.Fetcher.EventBackfill do
     task_supervisor: Indexer.Fetcher.EventBackfill.TaskSupervisor,
     metadata: [fetcher: :event_backfill],
     state: %{
-      page_size: 10,
+      page_size: 1000,
       throttle_time: 100
     }
   ]
@@ -33,9 +36,9 @@ defmodule Indexer.Fetcher.EventBackfill do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_events_to_backfill(initial, fn {address, event_topic}, acc ->
+      Chain.stream_events_to_backfill(initial, fn {address, event_topic, tracking_id}, acc ->
         #start backfill from {block_number, log_index} = {0,0}
-        {address, event_topic, {0,0}}
+        {address, event_topic, {0,0}, tracking_id}
         |> reducer.(acc)
       end)
 
@@ -52,7 +55,7 @@ defmodule Indexer.Fetcher.EventBackfill do
   #deduplicates entries based on the contract address and topic
   @impl BufferedTask
   def dedup_entries( %BufferedTask{dedup_entries: true, bound_queue: bound_queue} = task, entries) do
-    contract_address_and_topic = fn {address, topic, _progress} -> {address, topic} end
+    contract_address_and_topic = fn {_address, _topic, _progress, tracking_id} -> tracking_id end
 
     running_entries =
       task
@@ -69,24 +72,30 @@ defmodule Indexer.Fetcher.EventBackfill do
   end
 
   @impl BufferedTask
-  def run([{address, topic, from}] , options) do
+  def run([{address, topic, from, tracking_id}] , %{page_size: page_size, throttle_time: throttle}) do
+    events = get_page_of_events(address, topic, from, page_size)
+    Indexer.Fetcher.EventProcessor.enqueue_logs(events)
 
-    require IEx; IEx.pry
-    events = get_page_of_events(address, topic, from, 10)
+    Process.sleep(throttle)
 
+    if length(events) < page_size do
+      Logger.info("Completed backfill of event #{topic} on contract #{address |> to_string()}")
+      mark_backfill_complete(tracking_id)
+      :ok
+    else
+      %Log{block_number: max_bn, index: max_i} = events |> Enum.max_by(fn %Log{block_number: bn, index: i} -> {bn, i} end)
 
-    #Indexer.Fetcher.EventProcessor.enqueue_logs(events)
-#    Indexer.Fetcher.EventProcessor.enqueue_logs()
-#    cond do
-#      length(events) < 1000 ->
-#        #finished
-#
-#    end
-    # enqueue logs
-    # sleep (throttle)
-    # if empty then batch is done
-    # if less than page size then batch is done
-    # otherwise get the max block_number and log index of the result set and return new entries
+      Logger.info("Backfilled page size #{page_size} of event #{topic} on contract #{address |> to_string()} - block_number:#{max_bn} index:#{max_i}")
+      {:retry, [{address, topic, {max_bn, max_i}, tracking_id}]}
+    end
+  end
+
+  def mark_backfill_complete(tracking_id) do
+    tracking_record = Repo.get_by(ContractEventTracking, id: tracking_id)
+
+    tracking_record
+    |> ContractEventTracking.changeset(%{backfilled: true, smart_contract_id: tracking_record.smart_contract_id})
+    |> Repo.update()
   end
 
   @backfill_query """
@@ -103,9 +112,12 @@ defmodule Indexer.Fetcher.EventBackfill do
   """
   def get_page_of_events(%Hash{} = contract_address, topic, {from_block_number, from_log_index}, page_size) do
     {:ok,address_bytes} = contract_address |> Address.dump()
-    {:ok, result} = Ecto.Adapters.SQL.query(Repo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size ])
+    {:ok, result} = Telemetry.wrap(:backfill_page_fetch,
+      Ecto.Adapters.SQL.query(Repo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size])
+    )
 
     #map raw results back into Explorer.Chain.Log structs
+
     result.rows
     |> Enum.map(&Repo.load(Log, {result.columns, &1}))
   end

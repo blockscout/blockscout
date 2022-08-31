@@ -2857,7 +2857,7 @@ defmodule Explorer.Chain do
         on: sc.id == cet.smart_contract_id,
         where: cet.backfilled == false,
         where: cet.enabled == true,
-        select: {sc.address_hash, cet.topic}
+        select: {sc.address_hash, cet.topic, cet.id}
       )
 
     Repo.stream_reduce(query, initial, reducer)
