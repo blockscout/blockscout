@@ -66,8 +66,8 @@ $dark-stakes-banned-background: #3e314c;
 		}
 	}
 	.navbar.navbar-primary .form-control {
-		background-color: $dark-bg;
-		border-color: $dark-bg;
+		background-color: #171717;
+		border-color: #171717;
 		color: #fff;
 		&::placeholder {
 			color: $labels-dark;
@@ -101,7 +101,7 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: transparent !important;
 	}
 	.dashboard-banner-network-plain-container::after {
-		background-color: rgba(255,255,255,0.6);
+		background-color: rgba(255,255,255,0.1);
 	}
 	.dashboard-banner-network-stats-label,
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
@@ -1045,7 +1045,7 @@ $dark-stakes-banned-background: #3e314c;
 		  }
 	}
 	.main-search-autocomplete {
-		background-color: $dark-bg !important;
+		background-color: #171717 !important;
 		color: #fff !important;
 	}
 	.autocomplete-category {
