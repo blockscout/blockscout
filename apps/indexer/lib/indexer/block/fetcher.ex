@@ -304,7 +304,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_cosmos_hashes(_), do: :ok
 
   def async_import_internal_transactions(%{blocks: blocks}) do
-    timeout = Integer.parse(System.get_env("IMPORT_INTERNAL_TRANSACTIONS_TIMEOUT")) |> elem(0) || 10_000
+    timeout = Indexer.Fetcher.parse_env("IMPORT_INTERNAL_TRANSACTIONS_TIMEOUT") || 10_000
     blocks
     |> Enum.map(fn %Block{number: block_number} -> block_number end)
     |> InternalTransaction.async_fetch(timeout)
