@@ -86,6 +86,7 @@ defmodule Explorer.Chain do
     Uncles
   }
 
+  alias Explorer.Chain.Celo.{TrackedContractEvent, ContractEventTracking}
   alias Explorer.Chain.Celo.TransactionStats, as: CeloTxStats
 
   alias Explorer.Chain.Import.Runner
@@ -2843,6 +2844,20 @@ defmodule Explorer.Chain do
         where: celo_pending_ops.fetch_epoch_data,
         select: %{block_hash: b.hash, block_number: b.number, block_timestamp: b.timestamp},
         order_by: [asc: b.number]
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  def stream_events_to_backfill(initial, reducer) do
+    query =
+      from(
+        cet in ContractEventTracking,
+        join: sc in SmartContract,
+        on: sc.id == cet.smart_contract_id,
+        where: cet.backfilled == false,
+        where: cet.enabled == true,
+        select: {sc.address_hash, cet.topic}
       )
 
     Repo.stream_reduce(query, initial, reducer)
