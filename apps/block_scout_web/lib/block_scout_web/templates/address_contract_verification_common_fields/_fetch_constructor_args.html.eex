@@ -1,0 +1,20 @@
+<div class="smart-contract-form-group">
+    <div class="smart-contract-form-group-inner-wrapper">
+        <%= label @f, "Try to fetch constructor arguments automatically" %>
+        <div class="center-column">
+            <div class="form-radios-group">
+                <div class="radio-big">
+                  <%= radio_button @f, :autodetect_constructor_args, false, checked: !@fetch_constructor_arguments_automatically, class: "form-check-input autodetectfalse" %>
+                <div class="radio-icon"></div>
+                    <%= label :autodetect_constructor_args, :false, gettext("No"), class: "radio-text" %>
+                </div>
+                <div class="radio-big">
+                    <%= radio_button @f, :autodetect_constructor_args, true, checked: @fetch_constructor_arguments_automatically, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_constructor_args-help-block" %>
+                <div class="radio-icon"></div>
+                    <%= label :autodetect_constructor_args, :true, gettext("Yes"), class: "radio-text" %>
+                </div>
+            </div>
+            <%= error_tag @f, :autodetect_constructor_args, id: "autodetect_constructor_args-help-block", class: "text-danger form-error" %>
+        </div>
+    </div>
+</div>

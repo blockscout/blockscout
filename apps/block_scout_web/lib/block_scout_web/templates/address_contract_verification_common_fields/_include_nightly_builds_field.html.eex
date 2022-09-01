@@ -1,0 +1,21 @@
+<div class="smart-contract-form-group">
+    <div class="smart-contract-form-group-inner-wrapper">
+        <%= label @f, "Include nightly builds" %>
+        <div class="center-column">
+            <div class="form-radios-group">
+                <div class="radio-big">
+                    <%= radio_button @f, :nightly_builds, false, checked: true, class: "form-check-input nightly-builds-false" %>
+                    <div class="radio-icon"></div>
+                        <%= label :nightly_builds, :false, gettext("No"), class: "radio-text" %>
+                    </div>
+                    <div class="radio-big">
+                        <%= radio_button @f, :nightly_builds, true, class: "form-check-input nightly-builds-true", "aria-describedby": "nightly_builds-help-block" %>
+                    <div class="radio-icon"></div>
+                    <%= label :nightly_builds, :true, gettext("Yes"), class: "radio-text" %>
+                </div>
+            </div>
+            <%= error_tag @f, :nightly_builds, id: "nightly_builds-help-block", class: "text-danger form-error" %>
+        </div>
+        <div class="smart-contract-form-group-tooltip">Select yes if you want to show nightly builds.</div>
+    </div>
+</div>

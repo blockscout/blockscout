@@ -30,6 +30,10 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     RPCView.render("show.json", data: prepare_source_code_contract(contract))
   end
 
+  def render("show.json", %{result: result}) do
+    RPCView.render("show.json", data: result)
+  end
+
   defp prepare_source_code_contract(nil) do
     %{
       "Address" => "",
