@@ -4889,10 +4889,10 @@ defmodule Explorer.Chain do
         left_join: instance in Instance,
         on:
           tt.token_contract_address_hash == instance.token_contract_address_hash and
-            (tt.token_id == instance.token_id or instance.token_id in tt.token_ids),
+            (tt.token_id == instance.token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, instance.token_id)),
         where:
           tt.token_contract_address_hash == ^token_contract_address and
-            (tt.token_id == ^token_id or ^token_id in tt.token_ids),
+            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, ^token_id)),
         limit: 1,
         select: %{tt | instance: instance}
       )
@@ -5659,7 +5659,9 @@ defmodule Explorer.Chain do
   def erc721_or_erc1155_token_instance_exist?(token_id, hash) do
     query =
       from(tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^hash and (tt.token_id == ^token_id or ^token_id in tt.token_ids)
+        where:
+          tt.token_contract_address_hash == ^hash and
+            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, ^token_id))
       )
 
     Repo.exists?(query)
