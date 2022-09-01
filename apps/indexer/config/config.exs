@@ -44,7 +44,9 @@ config :indexer,
   health_check_port: port || 4001,
   first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || "",
-  metrics_enabled: System.get_env("METRICS_ENABLED") || false
+  metrics_enabled: System.get_env("METRICS_ENABLED") || false,
+  trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
+  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu"
