@@ -27,6 +27,7 @@
 
 ### Chore
 
+- [#6035](https://github.com/blockscout/blockscout/pull/6035) - Hide copy btn if no raw trace
 - [#6034](https://github.com/blockscout/blockscout/pull/6034) - Suppress empty sections in supported chain dropdown
 - [#5939](https://github.com/blockscout/blockscout/pull/5939) - Bump sweetalert2 from 11.4.26 to 11.4.27 in /apps/block_scout_web/assets
 - [#5938](https://github.com/blockscout/blockscout/pull/5938) - Bump xss from 1.0.13 to 1.0.14 in /apps/block_scout_web/assets

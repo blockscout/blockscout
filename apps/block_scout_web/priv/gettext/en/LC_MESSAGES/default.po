@@ -229,6 +229,7 @@ msgstr ""
 msgid "Average block time"
 msgstr ""
 
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:9
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:30
 #, elixir-autogen, elixir-format
 msgid "Back Home"
@@ -634,7 +635,7 @@ msgstr ""
 msgid "Copy Parent Hash"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:15
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "Copy Raw Trace"
 msgstr ""
@@ -2858,4 +2859,19 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
 #, elixir-autogen, elixir-format
 msgid "truffle flattener"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:29
+#, elixir-autogen, elixir-format
+msgid "No trace entries found."
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Page not found"
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "The requested path was not found on BlockScout."
 msgstr ""
