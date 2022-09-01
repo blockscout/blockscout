@@ -4904,10 +4904,10 @@ defmodule Explorer.Chain do
         left_join: instance in Instance,
         on:
           tt.token_contract_address_hash == instance.token_contract_address_hash and
-            (tt.token_id == instance.token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, instance.token_id)),
+            (tt.token_id == instance.token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, instance.token_id)),
         where:
           tt.token_contract_address_hash == ^token_contract_address and
-            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, ^token_id)),
+            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id))),
         limit: 1,
         select: %{tt | instance: instance}
       )
@@ -5676,7 +5676,7 @@ defmodule Explorer.Chain do
       from(tt in TokenTransfer,
         where:
           tt.token_contract_address_hash == ^hash and
-            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, ^token_id))
+            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)))
       )
 
     Repo.exists?(query)
