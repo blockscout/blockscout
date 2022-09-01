@@ -11,7 +11,7 @@ defmodule Explorer.Etherscan.Contracts do
     ]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.{Address, Hash, ProxyContract, SmartContract}
 
   @spec address_hash_to_address_with_source_code(Hash.Address.t()) :: Address.t() | nil
   def address_hash_to_address_with_source_code(address_hash) do
@@ -60,7 +60,7 @@ defmodule Explorer.Etherscan.Contracts do
       )
 
     query
-    |> Repo.replica.one()
+    |> Repo.replica().one()
     |> case do
       nil -> {:error, :not_found}
       proxy_contract -> {:ok, proxy_contract.implementation_address}

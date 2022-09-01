@@ -20,12 +20,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
       assert LayoutView.logo() == "custom/logo.png"
     end
 
-    test "use the default logo when there is no env configured for it" do
-      assert LayoutView.logo() == "/images/celo_logo.svg"
-    end
-
     test "logo is nil when there is no env configured for it" do
-      Application.delete_env(:block_scout_web, BlockScoutWeb.Chain, :logo)
       assert LayoutView.logo() == nil
     end
   end

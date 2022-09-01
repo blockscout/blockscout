@@ -3301,7 +3301,8 @@ defmodule Explorer.ChainTest do
       assert second_page_indexes ==
                transaction.hash
                |> Chain.transaction_to_logs(
-                 false, paging_options: %PagingOptions{key: {log.block_number, log.index}, page_size: 50}
+                 false,
+                 paging_options: %PagingOptions{key: {log.block_number, log.index}, page_size: 50}
                )
                |> Enum.map(& &1.index)
     end

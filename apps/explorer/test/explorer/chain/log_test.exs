@@ -2,8 +2,6 @@ defmodule Explorer.Chain.LogTest do
   use Explorer.DataCase
   import Mox
 
-  import Mox
-
   alias Ecto.Changeset
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
@@ -96,10 +94,6 @@ defmodule Explorer.Chain.LogTest do
         |> insert(to_address: to_address)
         |> Repo.preload(to_address: :smart_contract)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn _, _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-
       log =
         insert(:log,
           address: to_address,
@@ -112,6 +106,8 @@ defmodule Explorer.Chain.LogTest do
         )
 
       blockchain_get_code_mock()
+
+      get_eip1967_implementation()
 
       assert Log.decode(log, transaction) ==
                {:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
@@ -190,5 +186,45 @@ defmodule Explorer.Chain.LogTest do
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
       end
     )
+  end
+
+  def get_eip1967_implementation do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
   end
 end
