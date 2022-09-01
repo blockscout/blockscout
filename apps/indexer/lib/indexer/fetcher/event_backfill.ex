@@ -4,6 +4,7 @@ defmodule Indexer.Fetcher.EventBackfill do
   use Indexer.Fetcher
   require Logger
 
+  alias Ecto.Adapters.SQL
   alias Explorer.Celo.Events.Transformer
   alias Explorer.Celo.Telemetry
   alias Explorer.Chain
@@ -13,7 +14,7 @@ defmodule Indexer.Fetcher.EventBackfill do
   alias Explorer.Chain.Log
   alias Explorer.Repo
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.Util
+  alias Indexer.Fetcher.{EventProcessor,Util}
 
   require Telemetry
 
@@ -76,7 +77,7 @@ defmodule Indexer.Fetcher.EventBackfill do
   @impl BufferedTask
   def run([{address, topic, from, tracking_id}] , %{page_size: page_size, throttle_time: throttle}) do
     events = get_page_of_events(address, topic, from, page_size)
-    Indexer.Fetcher.EventProcessor.enqueue_logs(events)
+    EventProcessor.enqueue_logs(events)
 
     Process.sleep(throttle)
 
@@ -87,7 +88,7 @@ defmodule Indexer.Fetcher.EventBackfill do
     else
       %Log{block_number: max_bn, index: max_i} = events |> Enum.max_by(fn %Log{block_number: bn, index: i} -> {bn, i} end)
 
-      Logger.info("Backfilled page size #{page_size} of event #{topic} on contract #{address |> to_string()} - block_number:#{max_bn} index:#{max_i}")
+      Logger.debug("Backfilled page size #{page_size} of event #{topic} on contract #{address |> to_string()} - block_number:#{max_bn} index:#{max_i}")
       {:retry, [{address, topic, {max_bn, max_i}, tracking_id}]}
     end
   end
@@ -115,11 +116,10 @@ defmodule Indexer.Fetcher.EventBackfill do
   def get_page_of_events(%Hash{} = contract_address, topic, {from_block_number, from_log_index}, page_size) do
     {:ok,address_bytes} = contract_address |> Address.dump()
     {:ok, result} = Telemetry.wrap(:backfill_page_fetch,
-      Ecto.Adapters.SQL.query(Repo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size])
+      SQL.query(Repo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size])
     )
 
     #map raw results back into Explorer.Chain.Log structs
-
     result.rows
     |> Enum.map(&Repo.load(Log, {result.columns, &1}))
   end
