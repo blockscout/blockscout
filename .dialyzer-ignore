@@ -22,14 +22,14 @@ lib/block_scout_web/views/layout_view.ex:237: The call 'Elixir.Poison.Parser':'p
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:20
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/explorer/smart_contract/reader.ex:436
-lib/explorer/smart_contract/reader.ex:440
+lib/explorer/smart_contract/reader.ex:490
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:110
 lib/explorer/exchange_rates/source.ex:113
 lib/explorer/smart_contract/verifier.ex:89
 lib/explorer/smart_contract/solidity/verifier.ex:89
-lib/block_scout_web/templates/address_contract/index.html.eex:156
-lib/block_scout_web/templates/address_contract/index.html.eex:199
+lib/block_scout_web/templates/address_contract/index.html.eex:168
+lib/block_scout_web/templates/address_contract/index.html.eex:205
 lib/explorer/staking/stake_snapshotting.ex:15: Function do_snapshotting/7 has no local return
 lib/explorer/staking/stake_snapshotting.ex:147
 lib/explorer/third_party_integrations/sourcify.ex:110
@@ -41,7 +41,6 @@ lib/block_scout_web/templates/address_contract/index.html.eex:168
 lib/block_scout_web/templates/address_contract/index.html.eex:211
 lib/explorer/smart_contract/reader.ex:379
 lib/explorer/smart_contract/reader.ex:478
-
 lib/indexer/buffered_task.ex:402
 lib/indexer/buffered_task.ex:451
 lib/indexer/memory/monitor.ex:160

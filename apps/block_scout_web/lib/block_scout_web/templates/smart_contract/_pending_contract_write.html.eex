@@ -1,14 +1,11 @@
-<div id="pending-contract-write" class="modal modal-fullwidth-xs fade" tabindex="-1" role="dialog" aria-hidden="true">
+<div id="pending-contract-write" class="modal modal-fullwidth-xs fade" tabindex="-1" style="right: 0; width: auto; margin: 1rem;" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-stake" role="document">
     <div class="modal-content">
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
-      <div class="modal-stake-two-cols">
+      <div>
         <div class="modal-header">
           <div class="modal-header-group">
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
+            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html" %>
             <h5 class="modal-title centered"><%= gettext("Waiting for transaction's confirmation...") %></h5>
           </div>
         </div>

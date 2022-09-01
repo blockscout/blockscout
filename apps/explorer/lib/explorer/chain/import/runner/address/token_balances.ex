@@ -176,6 +176,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         set: [
           value: fragment("EXCLUDED.value"),
           value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+          token_type: fragment("EXCLUDED.token_type"),
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
           updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at)
         ]

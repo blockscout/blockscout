@@ -5,6 +5,8 @@ import _ from 'lodash'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
+import { showHideDisconnectButton } from '../lib/smart_contract/common_helpers'
+import { connectToProvider, disconnect, fetchAccountData, web3ModalInit } from '../lib/smart_contract/connect'
 import Queue from '../lib/queue'
 import Web3 from 'web3'
 import { openPoolInfoModal } from './stakes/validator_info'
@@ -21,6 +23,8 @@ import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
 import constants from './stakes/constants'
 
 const stakesPageSelector = '[data-page="stakes"]'
+
+let provider = null
 
 if (localStorage.getItem('stakes-alert-read') === 'true') {
   $('.js-stakes-welcome-alert').hide()
@@ -163,6 +167,16 @@ const elements = {
 const $stakesPage = $(stakesPageSelector)
 const $stakesTop = $('[data-selector="stakes-top"]')
 const $refreshInformer = $('.refresh-informer', $stakesPage)
+
+const observer = new MutationObserver(function (mutationsList) {
+  mutationsList.forEach(function (mutation) {
+    mutation.addedNodes.forEach(function (addedNode) {
+      if (addedNode.className === 'stakes-top') {
+        showHideDisconnectButton()
+      }
+    })
+  })
+})
 
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
@@ -333,7 +347,17 @@ if ($stakesPage.length) {
     .on('change', '[pool-filter-banned]', () => updateFilters(store, 'banned'))
     .on('change', '[pool-filter-my]', () => updateFilters(store, 'my'))
 
-  initialize(store)
+  web3ModalInit(connectToWallet, store)
+
+  $stakesTop.on('click', '[data-selector="login-button"]', async (_event) => {
+    login(store)
+  })
+
+  $stakesTop.on('click', '[disconnect-wallet]', async (_event) => {
+    disconnectWalletFromStakingDapp(store)
+  })
+
+  observer.observe(document.querySelector('[data-selector="stakes-top"]'), { subtree: false, childList: true })
 }
 
 function accountChanged (account, state) {
@@ -352,16 +376,21 @@ async function getAccounts () {
 }
 
 async function getNetId (web3) {
-  let netId = window.ethereum.chainId
-  if (!netId) {
-    netId = await window.ethereum.request({ method: 'eth_chainId' })
-  }
-  if (!netId) {
-    console.error(`Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`)
+  if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.wc) {
+    return window.web3.currentProvider.chainId
   } else {
-    netId = web3.utils.isHex(netId) ? web3.utils.hexToNumber(netId) : netId
+    let netId = window.ethereum.chainId
+    if (!netId) {
+      netId = await window.ethereum.request({ method: 'eth_chainId' })
+    }
+    if (!netId) {
+      const msg = `Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`
+      console.error(msg)
+    } else {
+      netId = web3.utils.isHex(netId) ? web3.utils.hexToNumber(netId) : netId
+    }
+    return netId
   }
-  return netId
 }
 
 function hideCurrentModal () {
@@ -369,33 +398,48 @@ function hideCurrentModal () {
   if ($modal) $modal.modal('hide')
 }
 
-function initialize (store) {
-  if (window.ethereum) {
-    const web3 = new Web3(window.ethereum)
-    if (window.ethereum.autoRefreshOnNetworkChange) {
-      window.ethereum.autoRefreshOnNetworkChange = false
-    }
-    store.dispatch({ type: 'WEB3_DETECTED', web3 })
+async function disconnectWalletFromStakingDapp (store) {
+  await disconnect()
 
-    initNetworkAndAccount(store, web3)
+  provider = null
 
-    window.ethereum.on('chainChanged', async (chainId) => {
-      const newNetId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
-      setNetwork(newNetId, store, true)
-    })
-
-    window.ethereum.on('accountsChanged', async (accs) => {
-      const newAccount = accs && accs.length > 0 ? accs[0].toLowerCase() : null
-      if (accountChanged(newAccount, store.getState())) {
-        await setAccount(newAccount, store)
-      }
-    })
-
-    $stakesTop.on('click', '[data-selector="login-button"]', loginByMetamask)
-  } else {
-    // We do the first load immediately if the latest version of MetaMask is not installed
-    refreshPageWrapper(store)
+  if (accountChanged(null, store.getState())) {
+    await setAccount(null, store)
   }
+}
+
+async function connectToWallet (store) {
+  provider = await connectToProvider()
+
+  provider.on('chainChanged', async (chainId) => {
+    const newNetId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
+    setNetwork(newNetId, store, true)
+  })
+
+  provider.on('accountsChanged', async (accs) => {
+    const newAccount = accs && accs.length > 0 ? accs[0].toLowerCase() : null
+    if (!newAccount) {
+      await disconnectWalletFromStakingDapp(store)
+    }
+
+    if (accountChanged(newAccount, store.getState())) {
+      await setAccount(newAccount, store)
+    }
+  })
+
+  provider.on('disconnect', async () => {
+    await disconnectWalletFromStakingDapp(store)
+  })
+
+  const web3 = new Web3(provider)
+  if (provider.autoRefreshOnNetworkChange) {
+    provider.autoRefreshOnNetworkChange = false
+  }
+  store.dispatch({ type: 'WEB3_DETECTED', web3 })
+
+  initNetworkAndAccount(store, web3)
+
+  await fetchAccountData(setAccount, [store])
 }
 
 async function initNetworkAndAccount (store, web3) {
@@ -418,18 +462,10 @@ async function initNetworkAndAccount (store, web3) {
   }
 }
 
-async function loginByMetamask () {
+async function login (store) {
   event.stopPropagation()
   event.preventDefault()
-  try {
-    await window.ethereum.request({ method: 'eth_requestAccounts' })
-  } catch (e) {
-    console.log(e)
-    if (e.code !== 4001) {
-      console.error(`eth_requestAccounts failed. ${constants.METAMASK_VERSION_WARNING}`)
-      openErrorModal(`Request account access', 'Cannot request access to your account in MetaMask. ${constants.METAMASK_VERSION_WARNING}`)
-    }
-  }
+  connectToWallet(store)
 }
 
 async function refreshPageWrapper (store) {
@@ -475,6 +511,7 @@ function setAccount (account, store) {
     store.dispatch({ type: 'ACCOUNT_UPDATED', account })
     if (!account) {
       resetFilterMy(store)
+      resolve(true)
     }
 
     const errorMsg = 'Cannot properly set account due to connection loss. Please, reload the page.'

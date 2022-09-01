@@ -151,6 +151,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
           token_contract_address_hash: to_string(token_balance.token_contract_address_hash),
           token_id: nil,
           value: nil,
+          token_type: nil,
           value_fetched_at: nil
         }
       ]

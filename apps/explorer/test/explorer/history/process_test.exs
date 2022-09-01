@@ -52,7 +52,7 @@ defmodule Explorer.History.ProcessTest do
     record = %{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}
 
     TestHistorian
-    |> expect(:compile_records, fn 1 -> {:ok, [record]} end)
+    |> expect(:compile_records, fn 2 -> {:ok, [record]} end)
     |> expect(:save_records, fn _ -> :ok end)
 
     state = %{historian: TestHistorian}
@@ -66,10 +66,10 @@ defmodule Explorer.History.ProcessTest do
     assert {:noreply, state} == HistoryProcess.handle_info({nil, {1, 0, {:ok, [record]}}}, state)
 
     # Message isn't sent before interval is up
-    refute_receive {:compile_historical_records, 1}, history_fetch_interval - 1
+    refute_receive {:compile_historical_records, 2}, history_fetch_interval - 1
 
     # Now message is sent
-    assert_receive {:compile_historical_records, 1}
+    assert_receive {:compile_historical_records, 2}
   end
 
   test "handle_info with failed task" do

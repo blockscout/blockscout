@@ -86,7 +86,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def query_contract(contract_address_hash, contract_functions, abi) do
-    Reader.query_contract(contract_address_hash, abi, contract_functions)
+    Reader.query_contract(contract_address_hash, abi, contract_functions, false)
   end
 
   def fetch_json(uri) when uri in [%{@token_uri => {:ok, [""]}}, %{@uri => {:ok, [""]}}] do

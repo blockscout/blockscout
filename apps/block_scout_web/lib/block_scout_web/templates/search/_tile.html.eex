@@ -15,11 +15,12 @@
             <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
                 <% chain_id_for_token_icon = if @result.foreign_chain_id, do: @result.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
                 <% address_hash = if @result.foreign_token_hash, do: @result.foreign_token_hash, else: @result.address_hash %>
-                <% token_icon_url = Chain.get_token_icon_url_by(chain_id_for_token_icon, address_hash) %>
-
-                <%= if token_icon_url do %>
-                    <img heigth=15 width=15 src="<%= token_icon_url %>" style="margin-top: -2px;"/>
-                <% end %>
+                <%=
+                    render BlockScoutWeb.TokensView,
+                    "_token_icon.html",
+                    chain_id: chain_id_for_token_icon,
+                    address: address_hash
+                %>
             <% end %>
             </span>
             <% res = @result.name <> " (" <> @result.symbol <> ")" %>
