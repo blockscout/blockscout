@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#6037](https://github.com/blockscout/blockscout/pull/6037) - Fix order of results in txlistinternal API endpoint
 - [#6036](https://github.com/blockscout/blockscout/pull/6036) - Fix address checksum on transaction page
 - [#6032](https://github.com/blockscout/blockscout/pull/6032) - Sort by address.hash column in accountlist API endpoint
 - [#6017](https://github.com/blockscout/blockscout/pull/6017), [#6028](https://github.com/blockscout/blockscout/pull/6028) - Move "contract interaction" and "Add chain to MM" env vars to runtime
