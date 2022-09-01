@@ -177,7 +177,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash,
-        where: tt.token_id == ^token_id or ^token_id in tt.token_ids,
+        where: tt.token_id == ^token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, ^token_id),
         where: not is_nil(tt.block_number),
         preload: [:transaction, :token, :from_address, :to_address],
         order_by: [desc: tt.block_number]
@@ -208,7 +208,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         where:
           tt.token_contract_address_hash == ^token_address_hash and
-            (tt.token_id == ^token_id or ^token_id in tt.token_ids),
+            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::numeric]", tt.token_ids, ^token_id)),
         select: fragment("COUNT(*)")
       )
 
