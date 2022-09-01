@@ -18,11 +18,7 @@
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <div data-selector="channel-disconnected-message" class="d-none">
-        <div data-selector="reload-button" class="alert alert-danger">
-          <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
-        </div>
-      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost, click to load newer transactions") %>
 
       <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
         <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>

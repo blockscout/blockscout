@@ -37,8 +37,6 @@ defmodule Explorer.Chain.Transaction do
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
-  @required_attrs_for_1559 ~w(type)a
-
   @typedoc """
   X coordinate module n in
   [Elliptic Curve Digital Signature Algorithm](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm)
