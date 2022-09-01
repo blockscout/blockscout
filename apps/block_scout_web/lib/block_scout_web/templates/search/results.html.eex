@@ -24,6 +24,9 @@
                                 <div class="stakes-table-th-content">&nbsp;</div>
                             </th>
                             <th class="stakes-table-th">
+			                    <div>&nbsp;</div>
+		                    </th>
+                            <th class="stakes-table-th">
                                 <div class="stakes-table-th-content">Search Result</div>
                             </th>
                             <th class="stakes-table-th">
@@ -35,7 +38,7 @@
                         </tr>
                     </thead>
                     <tbody data-items data-selector="search-results-list">
-                        <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 4 %>
+                        <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 5 %>
                     </tbody>
                 </table>
             </div>

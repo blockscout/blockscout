@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals'
 import { compareChainIDs, formatError, formatTitleAndError, getContractABI, getCurrentAccountPromise, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import BigNumber from 'bignumber.js'
 
 export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer) => {
   let data = {
@@ -104,13 +105,9 @@ function onTransactionHash (txHash, $element, functionName) {
   const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
 }
 
+const ethStrToWeiBn = ethStr => BigNumber(ethStr).multipliedBy(10 ** 18)
+
 function getTxValue ($functionInputs) {
-  const WEI_MULTIPLIER = 10 ** 18
-  const $txValue = $functionInputs.filter('[tx-value]:first')
-  const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
-  let txValueStr = txValue && txValue.toString(16)
-  if (!txValueStr) {
-    txValueStr = '0'
-  }
-  return '0x' + txValueStr
+  const txValueEth = $functionInputs.filter('[tx-value]:first')?.val() || '0'
+  return `0x${ethStrToWeiBn(txValueEth).toString(16)}`
 }

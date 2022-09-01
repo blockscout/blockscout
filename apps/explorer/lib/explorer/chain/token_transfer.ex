@@ -225,6 +225,14 @@ defmodule Explorer.Chain.TokenTransfer do
     where(query, [tt], tt.token_id < ^token_id)
   end
 
+  def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}, asc_order: true}) do
+    where(
+      query,
+      [tt],
+      tt.block_number > ^block_number or (tt.block_number == ^block_number and tt.log_index > ^log_index)
+    )
+  end
+
   def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}}) do
     where(
       query,

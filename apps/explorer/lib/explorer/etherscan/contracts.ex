@@ -53,6 +53,20 @@ defmodule Explorer.Etherscan.Contracts do
     end
   end
 
+  def get_proxied_address(address_hash) do
+    query =
+      from(contract in ProxyContract,
+        where: contract.proxy_address == ^address_hash
+      )
+
+    query
+    |> Repo.replica.one()
+    |> case do
+      nil -> {:error, :not_found}
+      proxy_contract -> {:ok, proxy_contract.implementation_address}
+    end
+  end
+
   def list_verified_contracts(limit, offset) do
     query =
       from(

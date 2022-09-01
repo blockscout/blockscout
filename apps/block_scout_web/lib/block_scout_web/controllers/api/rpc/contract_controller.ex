@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           Logger.debug("Not checking if contract is proxied")
           Contracts.address_hash_to_address_with_source_code(address_hash)
         else
-          case Chain.get_proxied_address(address_hash) do
+          case Contracts.get_proxied_address(address_hash) do
             {:ok, proxy_contract} ->
               Logger.debug("Implementation address found in proxy table")
               Contracts.address_hash_to_address_with_source_code(proxy_contract)
