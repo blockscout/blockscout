@@ -409,20 +409,18 @@ defmodule Indexer.BufferedTask do
     GenServer.call(pid, {:push_back, entries})
   end
 
-  defp push_back(
-         %BufferedTask{bound_queue: bound_queue, callback_module: callback_module, dedup_entries: dedup} = state,
-         entries
-       )
+  defp push_back(%BufferedTask{callback_module: callback_module, dedup_entries: true} = state, entries)
        when is_list(entries) do
-    entries_to_push =
-      if dedup do
-        callback_module.dedup_entries(state, entries)
-      else
-        entries
-      end
+    state
+    |> callback_module.dedup_entries(entries)
+    |> then(&_push_back(state, &1))
+  end
 
+  defp push_back(%BufferedTask{} = state, entries) when is_list(entries), do: _push_back(state, entries)
+
+  defp _push_back(%BufferedTask{bound_queue: bound_queue, callback_module: callback_module} = state, entries) do
     new_bound_queue =
-      case BoundQueue.push_back_until_maximum_size(bound_queue, entries_to_push) do
+      case BoundQueue.push_back_until_maximum_size(bound_queue, entries) do
         {new_bound_queue, []} ->
           new_bound_queue
 
