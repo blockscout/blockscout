@@ -7,7 +7,7 @@ defmodule Explorer.Repo.Migrations.LogsContractTopicLogIndexIndex do
   def change do
     create_if_not_exists(index(:logs, [:address_hash, :first_topic, :block_number], concurrently: true))
 
-    #above index obsoletes existing address_hash index
-    drop_if_exists(index(:logs,[:address_hash], concurrently: true))
+    # above index obsoletes existing address_hash index
+    drop_if_exists(index(:logs, [:address_hash], concurrently: true))
   end
 end

@@ -7,14 +7,12 @@ defmodule Indexer.Fetcher.EventBackfill do
   alias Ecto.Adapters.SQL
   alias Explorer.Celo.Events.Transformer
   alias Explorer.Celo.Telemetry
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Celo.ContractEventTracking
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Log}
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Chain.Log
-  alias Explorer.Repo
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.{EventProcessor,Util}
+  alias Indexer.Fetcher.{EventProcessor, Util}
 
   require Telemetry
 
@@ -40,8 +38,8 @@ defmodule Indexer.Fetcher.EventBackfill do
   def init(initial, reducer, _) do
     {:ok, final} =
       Chain.stream_events_to_backfill(initial, fn {address, event_topic, tracking_id}, acc ->
-        #start backfill from {block_number, log_index} = {0,0}
-        {address, event_topic, {0,0}, tracking_id}
+        # start backfill from {block_number, log_index} = {0,0}
+        {address, event_topic, {0, 0}, tracking_id}
         |> reducer.(acc)
       end)
 
@@ -55,9 +53,9 @@ defmodule Indexer.Fetcher.EventBackfill do
     |> Util.default_child_spec(gen_server_options, __MODULE__)
   end
 
-  #deduplicates entries based on the contract address and topic
+  # deduplicates entries based on the contract address and topic
   @impl BufferedTask
-  def dedup_entries( %BufferedTask{dedup_entries: true, bound_queue: bound_queue} = task, entries) do
+  def dedup_entries(%BufferedTask{dedup_entries: true, bound_queue: bound_queue} = task, entries) do
     contract_address_and_topic = fn {_address, _topic, _progress, tracking_id} -> tracking_id end
 
     running_entries =
@@ -75,7 +73,7 @@ defmodule Indexer.Fetcher.EventBackfill do
   end
 
   @impl BufferedTask
-  def run([{address, topic, from, tracking_id}] , %{page_size: page_size, throttle_time: throttle}) do
+  def run([{address, topic, from, tracking_id}], %{page_size: page_size, throttle_time: throttle}) do
     events = get_page_of_events(address, topic, from, page_size)
     EventProcessor.enqueue_logs(events)
 
@@ -86,9 +84,13 @@ defmodule Indexer.Fetcher.EventBackfill do
       mark_backfill_complete(tracking_id)
       :ok
     else
-      %Log{block_number: max_bn, index: max_i} = events |> Enum.max_by(fn %Log{block_number: bn, index: i} -> {bn, i} end)
+      %Log{block_number: max_bn, index: max_i} =
+        events |> Enum.max_by(fn %Log{block_number: bn, index: i} -> {bn, i} end)
 
-      Logger.debug("Backfilled page size #{page_size} of event #{topic} on contract #{address |> to_string()} - block_number:#{max_bn} index:#{max_i}")
+      Logger.debug(
+        "Backfilled page size #{page_size} of event #{topic} on contract #{address |> to_string()} - block_number:#{max_bn} index:#{max_i}"
+      )
+
       {:retry, [{address, topic, {max_bn, max_i}, tracking_id}]}
     end
   end
@@ -114,14 +116,16 @@ defmodule Indexer.Fetcher.EventBackfill do
            left join logs lg on lg.block_number = s.block_number and lg.index = s.index order by block_number, index;
   """
   def get_page_of_events(%Hash{} = contract_address, topic, {from_block_number, from_log_index}, page_size) do
-    {:ok,address_bytes} = contract_address |> Address.dump()
-    {:ok, result} = Telemetry.wrap(:backfill_page_fetch,
-      SQL.query(Repo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size])
-    )
+    {:ok, address_bytes} = contract_address |> Address.dump()
 
-    #map raw results back into Explorer.Chain.Log structs
+    {:ok, result} =
+      Telemetry.wrap(
+        :backfill_page_fetch,
+        SQL.query(Repo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size])
+      )
+
+    # map raw results back into Explorer.Chain.Log structs
     result.rows
     |> Enum.map(&Repo.load(Log, {result.columns, &1}))
   end
 end
-

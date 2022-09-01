@@ -141,7 +141,7 @@ defmodule Indexer.Supervisor do
       {TokenUpdater.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
 
-#      # Out-of-band fetchers
+      #      # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
       {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
