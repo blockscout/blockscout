@@ -86,7 +86,7 @@ defmodule Explorer.Chain do
     Uncles
   }
 
-  alias Explorer.Chain.Celo.{TrackedContractEvent, ContractEventTracking}
+  alias Explorer.Chain.Celo.ContractEventTracking
   alias Explorer.Chain.Celo.TransactionStats, as: CeloTxStats
 
   alias Explorer.Chain.Import.Runner

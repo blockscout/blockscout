@@ -25,6 +25,8 @@ defmodule Indexer.Fetcher.EventBackfill do
     max_batch_size: 1,
     max_concurrency: 1,
     dedup_entries: true,
+    poll: true,
+    poll_interval: :timer.minutes(3),
     task_supervisor: Indexer.Fetcher.EventBackfill.TaskSupervisor,
     metadata: [fetcher: :event_backfill],
     state: %{
