@@ -121,7 +121,7 @@ msgstr ""
 msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:92
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:95
 #, elixir-autogen, elixir-format
 msgid "APIs"
 msgstr ""
@@ -176,7 +176,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:28
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:22
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:74
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:77
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:11
 #: lib/block_scout_web/views/address_token_transfer_view.ex:11
 #: lib/block_scout_web/views/address_transaction_view.ex:11
@@ -214,7 +214,7 @@ msgstr ""
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:120
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:123
 #, elixir-autogen, elixir-format
 msgid "Apps"
 msgstr ""
@@ -326,8 +326,8 @@ msgid "BlockScout provides analytics data, API, and Smart Contract tools for the
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:153
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:26
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:30
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:29
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:33
 #, elixir-autogen, elixir-format
 msgid "Blocks"
 msgstr ""
@@ -937,7 +937,7 @@ msgstr ""
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:109
 #, elixir-autogen, elixir-format
 msgid "Eth RPC"
 msgstr ""
@@ -947,7 +947,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:181
 #: lib/block_scout_web/templates/block/overview.html.eex:215
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:24
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:79
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:82
 #: lib/block_scout_web/templates/layout/app.html.eex:48
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:43
@@ -1033,7 +1033,7 @@ msgstr ""
 msgid "For any existing contracts in the database, insert all ABI entries into the contract_methods table. Use this in case you have verified smart contracts before early March 2019 and you want other contracts with the same functions to show those ABI's as candidate matches."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:36
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:39
 #, elixir-autogen, elixir-format
 msgid "Forked Blocks (Reorgs)"
 msgstr ""
@@ -1109,7 +1109,7 @@ msgstr ""
 msgid "Go to"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:96
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:99
 #, elixir-autogen, elixir-format
 msgid "GraphQL"
 msgstr ""
@@ -1580,7 +1580,7 @@ msgstr ""
 msgid "Parent Hash"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:57
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:60
 #: lib/block_scout_web/views/transaction_view.ex:348
 #: lib/block_scout_web/views/transaction_view.ex:386
 #, elixir-autogen, elixir-format
@@ -1659,7 +1659,7 @@ msgstr ""
 msgid "Query"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:101
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:104
 #, elixir-autogen, elixir-format
 msgid "RPC"
 msgstr ""
@@ -1869,7 +1869,7 @@ msgstr ""
 msgid "Sources and Metadata JSON"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:122
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:125
 #, elixir-autogen, elixir-format
 msgid "Stakes"
 msgstr ""
@@ -2138,7 +2138,7 @@ msgstr ""
 msgid "To see accurate decoded input data, the contract must be verified."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:15
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:18
 #, elixir-autogen, elixir-format
 msgid "Toggle navigation"
 msgstr ""
@@ -2225,7 +2225,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:193
 #: lib/block_scout_web/templates/address_token/overview.html.eex:58
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:13
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:70
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:73
 #: lib/block_scout_web/templates/tokens/index.html.eex:10
 #: lib/block_scout_web/views/address_view.ex:360
 #, elixir-autogen, elixir-format
@@ -2373,7 +2373,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:80
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:213
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:45
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:48
 #: lib/block_scout_web/views/address_view.ex:362
 #, elixir-autogen, elixir-format
 msgid "Transactions"
@@ -2436,7 +2436,7 @@ msgid "Uncle Reward"
 msgstr ""
 
 #: lib/block_scout_web/templates/block/overview.html.eex:250
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:33
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:36
 #, elixir-autogen, elixir-format
 msgid "Uncles"
 msgstr ""
@@ -2471,7 +2471,7 @@ msgstr ""
 msgid "User-defined tips sent to validator for transaction priority/inclusion."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:52
 #, elixir-autogen, elixir-format
 msgid "Validated"
 msgstr ""
