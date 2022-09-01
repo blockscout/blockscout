@@ -122,76 +122,81 @@ defmodule Indexer.Block.Fetcher do
         _.._ = range
       )
       when callback_module != nil do
-    with {:blocks,
-          {:ok,
-           %Blocks{
-             blocks_params: blocks_params,
-             transactions_params: transactions_params_without_receipts,
-             block_second_degree_relations_params: block_second_degree_relations_params,
-             errors: blocks_errors
-           }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
-         blocks = TransformBlocks.transform_blocks(blocks_params),
-         cosmos_hash_params = CosmosHash.get_cosmos_hash_params_by_range(range),
-         {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
-         %{logs: logs, receipts: receipts} = receipt_params,
-         transactions_without_cosmos_hashes = Receipts.put(transactions_params_without_receipts, receipts),
-         transactions_with_cosmos_hashes = CosmosHash.put(transactions_without_cosmos_hashes, cosmos_hash_params),
-         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
-         %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
-         %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
-           fetch_beneficiaries(blocks, transactions_with_cosmos_hashes, json_rpc_named_arguments),
-         addresses =
-           Addresses.extract_addresses(%{
-             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
-             blocks: blocks,
-             logs: logs,
-             mint_transfers: mint_transfers,
-             token_transfers: token_transfers,
-             transactions: transactions_with_cosmos_hashes
-           }),
-         coin_balances_params_set =
-           %{
-             beneficiary_params: MapSet.to_list(beneficiary_params_set),
-             blocks_params: blocks,
-             logs_params: logs,
-             transactions_params: transactions_with_cosmos_hashes
-           }
-           |> AddressCoinBalances.params_set(),
-         coin_balances_params_daily_set =
-           %{
-             coin_balances_params: coin_balances_params_set,
-             blocks: blocks
-           }
-           |> AddressCoinBalancesDaily.params_set(),
-         beneficiaries_with_gas_payment =
-           beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_cosmos_hashes),
-         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
-         {:ok, inserted} <-
-           __MODULE__.import(
-             state,
-             %{
-               addresses: %{params: addresses},
-               address_coin_balances: %{params: coin_balances_params_set},
-               address_coin_balances_daily: %{params: coin_balances_params_daily_set},
-               address_token_balances: %{params: address_token_balances},
-               blocks: %{params: blocks},
-               block_second_degree_relations: %{params: block_second_degree_relations_params},
-               block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
-               logs: %{params: logs},
-               token_transfers: %{params: token_transfers},
-               tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_cosmos_hashes}
-             }
-           ) do
-      result = {:ok, %{inserted: inserted, errors: blocks_errors}}
-      update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions])
-      update_addresses_cache(inserted[:addresses])
-      update_uncles_cache(inserted[:block_second_degree_relations])
-      result
-    else
-      {step, {:error, reason}} -> {:error, {step, reason}}
-      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+    case System.get_env("INDEXER_DISABLE_REAL_TIME_FETCHER") do
+      "true" ->
+        {:ok, %{inserted: %{}, errors: []}}
+      _ ->
+        with {:blocks,
+              {:ok,
+              %Blocks{
+                blocks_params: blocks_params,
+                transactions_params: transactions_params_without_receipts,
+                block_second_degree_relations_params: block_second_degree_relations_params,
+                errors: blocks_errors
+              }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
+            blocks = TransformBlocks.transform_blocks(blocks_params),
+            cosmos_hash_params = CosmosHash.get_cosmos_hash_params_by_range(range),
+            {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
+            %{logs: logs, receipts: receipts} = receipt_params,
+            transactions_without_cosmos_hashes = Receipts.put(transactions_params_without_receipts, receipts),
+            transactions_with_cosmos_hashes = CosmosHash.put(transactions_without_cosmos_hashes, cosmos_hash_params),
+            %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
+            %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
+            %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
+              fetch_beneficiaries(blocks, transactions_with_cosmos_hashes, json_rpc_named_arguments),
+            addresses =
+              Addresses.extract_addresses(%{
+                block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
+                blocks: blocks,
+                logs: logs,
+                mint_transfers: mint_transfers,
+                token_transfers: token_transfers,
+                transactions: transactions_with_cosmos_hashes
+              }),
+            coin_balances_params_set =
+              %{
+                beneficiary_params: MapSet.to_list(beneficiary_params_set),
+                blocks_params: blocks,
+                logs_params: logs,
+                transactions_params: transactions_with_cosmos_hashes
+              }
+              |> AddressCoinBalances.params_set(),
+            coin_balances_params_daily_set =
+              %{
+                coin_balances_params: coin_balances_params_set,
+                blocks: blocks
+              }
+              |> AddressCoinBalancesDaily.params_set(),
+            beneficiaries_with_gas_payment =
+              beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_cosmos_hashes),
+            address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+            {:ok, inserted} <-
+              __MODULE__.import(
+                state,
+                %{
+                  addresses: %{params: addresses},
+                  address_coin_balances: %{params: coin_balances_params_set},
+                  address_coin_balances_daily: %{params: coin_balances_params_daily_set},
+                  address_token_balances: %{params: address_token_balances},
+                  blocks: %{params: blocks},
+                  block_second_degree_relations: %{params: block_second_degree_relations_params},
+                  block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
+                  logs: %{params: logs},
+                  token_transfers: %{params: token_transfers},
+                  tokens: %{on_conflict: :nothing, params: tokens},
+                  transactions: %{params: transactions_with_cosmos_hashes}
+                }
+              ) do
+          result = {:ok, %{inserted: inserted, errors: blocks_errors}}
+          update_block_cache(inserted[:blocks])
+          update_transactions_cache(inserted[:transactions])
+          update_addresses_cache(inserted[:addresses])
+          update_uncles_cache(inserted[:block_second_degree_relations])
+          result
+        else
+          {step, {:error, reason}} -> {:error, {step, reason}}
+          {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+        end
     end
   end
 

@@ -198,7 +198,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         } = options
       ) do
     case System.get_env("INDEXER_DISABLE_REAL_TIME_FETCHER") do
-      true ->
+      "true" ->
         {:ok, []}
       _ ->
         with {:balances,
