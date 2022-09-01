@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_transaction(transaction) do
     %{
       "blockNumber" => "#{transaction.block_number}",
-      "timeStamp" => "#{DateTime.to_unix(transaction.block_timestamp)}",
+      "timeStamp" => (transaction.block_timestamp && DateTime.to_unix(transaction.block_timestamp)) || "",
       "hash" => "#{transaction.hash}",
       "nonce" => "#{transaction.nonce}",
       "blockHash" => "#{transaction.block_hash}",
@@ -127,7 +127,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_internal_transaction(internal_transaction) do
     %{
       "blockNumber" => "#{internal_transaction.block_number}",
-      "timeStamp" => "#{DateTime.to_unix(internal_transaction.block_timestamp)}",
+      "timeStamp" =>
+        (internal_transaction.block_timestamp && DateTime.to_unix(internal_transaction.block_timestamp)) || "",
       "from" => "#{internal_transaction.from_address_hash}",
       "to" => "#{internal_transaction.to_address_hash}",
       "value" => "#{internal_transaction.value.value}",
@@ -147,7 +148,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_common_token_transfer(token_transfer) do
     %{
       "blockNumber" => to_string(token_transfer.block_number),
-      "timeStamp" => to_string(DateTime.to_unix(token_transfer.block_timestamp)),
+      "timeStamp" =>
+        (token_transfer.block_timestamp && to_string(DateTime.to_unix(token_transfer.block_timestamp))) || "",
       "hash" => to_string(token_transfer.transaction_hash),
       "nonce" => to_string(token_transfer.transaction_nonce),
       "blockHash" => to_string(token_transfer.block_hash),
