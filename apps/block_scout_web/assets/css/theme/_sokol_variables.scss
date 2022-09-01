@@ -10,7 +10,6 @@ $footer-background-color: $primary;
 $footer-title-color: #fff;
 $footer-text-color: $additional-font;
 $footer-item-disc-color: $additional-font;
-.footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
@@ -78,4 +77,4 @@ $badge-neutral-background-color: rgba($tertiary, .1);
 // Dark theme
 $dark-primary: #40bfb2;
 $dark-secondary: #25c9ff;
-$dark-primary-alternate: #1c9f90; 
+$dark-primary-alternate: #1c9f90;
