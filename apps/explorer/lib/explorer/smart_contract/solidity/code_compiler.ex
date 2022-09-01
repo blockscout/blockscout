@@ -9,6 +9,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   @new_contract_name "New.sol"
 
+  @required_standard_input_fields ~w(language sources settings)
+
+  @default_output_selection %{"*" => %{"*" => ["*"]}}
+
   @doc """
   Compiles a code in the solidity command line.
 
@@ -132,24 +136,24 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     path = SolcDownloader.ensure_exists(compiler_version)
 
     if path do
-      {response, _status} =
-        System.cmd(
-          "node",
-          [
-            Application.app_dir(:explorer, "priv/compile_solc_standard_json_input.js"),
-            create_source_file(json_input),
-            path
-          ]
-        )
-
-      with {:ok, decoded} <- Jason.decode(response),
+      with {:ok, valid_json} <- tune_json(json_input),
+           {response, _status} <-
+             System.cmd(
+               "node",
+               [
+                 Application.app_dir(:explorer, "priv/compile_solc_standard_json_input.js"),
+                 create_source_file(valid_json),
+                 path
+               ]
+             ),
+           {:ok, decoded} <- Jason.decode(response),
            {:ok, contracts} <- get_contracts_standard_input_verification(decoded) do
         fetch_candidates(contracts, name)
       else
         {:error, %Jason.DecodeError{}} ->
           {:error, :compilation}
 
-        {:error, reason} when reason in [:name, :compilation] ->
+        {:error, reason} when reason in [:name, :compilation, :json] ->
           {:error, reason}
 
         error ->
@@ -163,6 +167,27 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       {:error, :compilation}
     end
   end
+
+  defp tune_json(json_input) when is_binary(json_input) do
+    case Jason.decode(json_input) do
+      {:ok, map_input} ->
+        map_set_input_keys = map_input |> Map.keys() |> MapSet.new()
+        map_set_required_keys = MapSet.new(@required_standard_input_fields)
+
+        if MapSet.subset?(map_set_required_keys, map_set_input_keys) do
+          settings = Map.fetch!(map_input, "settings")
+          new_settings = Map.put(settings, "outputSelection", @default_output_selection)
+          map_input |> Map.replace("settings", new_settings) |> Jason.encode()
+        else
+          {:error, :json}
+        end
+
+      _ ->
+        {:error, :json}
+    end
+  end
+
+  defp tune_json(_json_input), do: {:error, :json}
 
   defp fetch_candidates(contracts, "") when is_map(contracts) do
     candidates =
