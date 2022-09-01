@@ -1,11 +1,7 @@
-// tracer allows Geth's `debug_traceTransaction` to mimic the output of Parity's `trace_replayTransaction`
 {
-    // The call stack of the EVM execution.
     callStack: [{}],
 
-    // step is invoked for every opcode that the VM executes.
     step(log, db) {
-        // Capture any errors immediately
         const error = log.getError();
 
         if (error !== undefined) {
@@ -15,9 +11,7 @@
         }
     },
 
-    // fault is invoked when the actual execution of an opcode fails.
     fault(log, db) {
-        // If the topmost call already reverted, don't handle the additional fault again
         if (this.topCall().error === undefined) {
             this.putError(log);
         }
@@ -32,7 +26,6 @@
     },
 
     putErrorInTopCall(log) {
-        // Pop off the just failed call
         const call = this.callStack.pop();
         this.putErrorInCall(log, call);
         this.pushChildCall(call);
@@ -46,7 +39,6 @@
     putErrorInCall(log, call) {
         call.error = log.getError();
 
-        // Consume all available gas and clean any leftovers
         if (call.gasBigInt !== undefined) {
             call.gasUsedBigInt = call.gasBigInt;
         }
@@ -110,21 +102,10 @@
     },
 
     beforeOp(log, db) {
-        /**
-         * Depths
-         * 0 - `ctx`.  Never shows up in `log.getDepth()`
-         * 1 - first level of `log.getDepth()`
-         *
-         * callStack indexes
-         *
-         * 0 - pseudo-call stand-in for `ctx` in initializer (`callStack: [{}]`)
-         * 1 - first callOp inside of `ctx`
-         */
         const logDepth = log.getDepth();
         const callStackDepth = this.callStack.length;
 
         if (logDepth < callStackDepth) {
-            // Pop off the last call and get the execution results
             const call = this.callStack.pop();
 
             const ret = log.stack.peek(0);
@@ -196,7 +177,6 @@
     callOp(log, op) {
         const to = toAddress(log.stack.peek(1).toString(16));
 
-        // Skip any pre-compile invocations, those are just fancy opcodes
         if (!isPrecompiled(to)) {
             this.callCustomOp(log, op, to);
         }
@@ -225,10 +205,8 @@
                 call.valueBigInt = bigInt(log.stack.peek(2));
                 break;
             case 'DELEGATECALL':
-                // value inherited from scope during call sequencing
                 break;
             case 'STATICCALL':
-                // by definition static calls transfer no value
                 call.valueBigInt = bigInt.zero;
                 break;
             default:
@@ -242,8 +220,6 @@
         this.topCall().error = 'execution reverted';
     },
 
-    // result is invoked when all the opcodes have been iterated over and returns
-    // the final result of the tracing.
     result(ctx, db) {
         const result = this.ctxToResult(ctx, db);
         const filtered = this.filterNotUndefined(result);
@@ -388,7 +364,6 @@
         return call;
     },
 
-    // sequence converts the finalized calls from a call tree to a call sequence
     sequence(call, callSequence, availableValueBigInt, traceAddress) {
         const subcalls = call.calls;
         delete call.calls;
