@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
          {:ok, token_transfer} <-
-           Chain.erc721_token_instance_from_token_id_and_token_address(token_id, hash) do
+           Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
       render(
         conn,
         "index.html",
