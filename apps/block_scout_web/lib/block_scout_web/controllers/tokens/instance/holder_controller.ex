@@ -56,12 +56,12 @@ defmodule BlockScoutWeb.Tokens.Instance.HolderController do
 
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
-         {:ok, token_transfer} <-
-           Chain.erc721_token_instance_from_token_id_and_token_address(token_id, hash) do
+         {:ok, token_instance} <-
+           Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
       render(
         conn,
         "index.html",
-        token_instance: token_transfer,
+        token_instance: %{instance: token_instance, token_id: Decimal.new(token_id)},
         current_path: Controller.current_full_path(conn),
         token: Market.add_price(token),
         total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
