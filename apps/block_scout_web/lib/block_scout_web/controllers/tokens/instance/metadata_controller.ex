@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.Tokens.Instance.MetadataController do
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
          {:ok, token_instance} <-
            Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
-      if token_instance && token_instance.metadata do
+      if token_instance.metadata do
         render(
           conn,
           "index.html",
