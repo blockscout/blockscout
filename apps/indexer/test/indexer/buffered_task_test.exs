@@ -34,7 +34,7 @@ defmodule Indexer.BufferedTaskTest do
   end
 
   defmodule CounterTask do
-    @behaviour BufferedTask
+    use BufferedTask
 
     def initial_collection, do: for(i <- 1..11, do: "#{i}")
 
@@ -49,7 +49,7 @@ defmodule Indexer.BufferedTaskTest do
   end
 
   defmodule EmptyTask do
-    @behaviour BufferedTask
+    use BufferedTask
 
     def init(initial, _reducer, _state) do
       initial
@@ -58,6 +58,52 @@ defmodule Indexer.BufferedTaskTest do
     def run(batch, _state) do
       send(__MODULE__, {:run, batch})
       :ok
+    end
+  end
+
+  defmodule CustomDedupTask do
+    use BufferedTask
+
+    def init(initial, _reducer, _state) do
+      initial
+    end
+
+    def run(batch, _state) do
+      send(__MODULE__, {:run, batch})
+      :ok
+    end
+  end
+
+  defmodule DedupCustomImplementation do
+    use BufferedTask
+
+    def init(initial, _reducer, _state) do
+      initial
+    end
+
+    def run(batch, _state) do
+      send(__MODULE__, {:run, batch})
+      :ok
+    end
+
+    def dedup_entries(
+          %BufferedTask{dedup_entries: true, bound_queue: bound_queue} = task,
+          entries
+        ) do
+      get_second_element = fn {_, e, _} -> e end
+
+      running_entries =
+        task
+        |> currently_processed_items()
+        |> then(&(&1 ++ bound_queue))
+        |> Enum.map(get_second_element)
+        |> MapSet.new()
+
+      entries
+      |> Enum.uniq_by(get_second_element)
+      |> Enum.filter(fn i ->
+        MapSet.member?(running_entries, get_second_element.(i)) == false
+      end)
     end
   end
 
@@ -185,21 +231,25 @@ defmodule Indexer.BufferedTaskTest do
     |> expect(:init, fn initial, reducer, _ ->
       Enum.reduce([2, 3, 4], initial, reducer)
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [2] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {0, batch}})
       :ok
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [3] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {1, batch}})
       :ok
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [4] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {2, batch}})
       :ok
     end)
+    |> expect(:dedup_entries, &CustomDedupTask.dedup_entries/2)
     |> expect(:run, fn [1] = batch, _state ->
       :timer.sleep(@flush_interval)
       send(RetryableTask, {:run, {3, batch}})
@@ -238,6 +288,38 @@ defmodule Indexer.BufferedTaskTest do
     Process.sleep(@assert_receive_timeout)
 
     refute_receive _
+  end
+
+  test "custom dedup_entries implementation performs deduplication when specified" do
+    Process.register(self(), DedupCustomImplementation)
+
+    start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+    {:ok, buffer} =
+      start_supervised(
+        {BufferedTask,
+         [
+           {DedupCustomImplementation,
+            state: nil,
+            task_supervisor: BufferedTaskSup,
+            flush_interval: @flush_interval,
+            dedup_entries: true,
+            max_batch_size: 1,
+            max_concurrency: 1}
+         ]}
+      )
+
+    entries = [{1, 1, 1}, {1, 2, 1}, {77, 2, 77}, {88, 2, 88}, {99, 1, 99}]
+
+    BufferedTask.buffer(buffer, entries)
+
+    assert_receive {:run, [{1, 1, 1}]}, @assert_receive_timeout
+    assert_receive {:run, [{1, 2, 1}]}, @assert_receive_timeout
+
+    # it should deduplicate based on the custom implementation and remove duplicate instances of the second element in the tuple
+    refute_receive {:run, [{77, 2, 77}]}, @assert_receive_timeout
+    refute_receive {:run, [{88, 2, 88}]}, @assert_receive_timeout
+    refute_receive {:run, [{99, 1, 99}]}, @assert_receive_timeout
   end
 
   describe "handle_info(:flush, state)" do

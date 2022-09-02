@@ -23,6 +23,10 @@ defmodule Explorer.Chain.Celo.ContractEventTracking do
         }
 
   @attrs ~w(
+          abi name topic smart_contract_id backfilled enabled
+        )a
+
+  @required ~w(
           abi name topic smart_contract_id
         )a
 
@@ -78,7 +82,7 @@ defmodule Explorer.Chain.Celo.ContractEventTracking do
   def changeset(%__MODULE__{} = event_tracking, %{smart_contract_id: _scid} = attrs) do
     event_tracking
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@required)
     |> unique_constraint(:unique_event_topic_on_smart_contract, name: :smart_contract_id_topic)
   end
 

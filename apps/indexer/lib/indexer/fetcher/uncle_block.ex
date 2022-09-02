@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   alias Indexer.Transform.Addresses
 
   @behaviour Block.Fetcher
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: :timer.seconds(3),

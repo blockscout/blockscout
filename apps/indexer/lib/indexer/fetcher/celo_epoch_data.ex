@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @spec async_fetch([%{block_number: Block.block_number()}]) :: :ok
   def async_fetch(blocks) when is_list(blocks) do

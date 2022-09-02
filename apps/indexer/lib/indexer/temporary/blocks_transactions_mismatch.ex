@@ -18,7 +18,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   alias Explorer.Repo
   alias Indexer.BufferedTask
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: :timer.seconds(3),
