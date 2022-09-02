@@ -16,8 +16,10 @@ defmodule Explorer.Account.Identity do
     field(:name, :string)
     field(:nickname, :string)
     field(:avatar, :string)
+
     has_many(:tag_addresses, TagAddress)
     has_many(:watchlists, Watchlist)
+
     belongs_to(:plan, Plan)
 
     timestamps()

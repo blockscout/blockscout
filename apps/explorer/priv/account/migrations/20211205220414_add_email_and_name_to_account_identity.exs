@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddEmailToAccountIdentity do
+defmodule Explorer.Repo.Account.Migrations.AddEmailToAccountIdentity do
   use Ecto.Migration
 
   def change do

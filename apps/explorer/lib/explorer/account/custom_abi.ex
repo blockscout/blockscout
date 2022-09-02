@@ -8,7 +8,7 @@ defmodule Explorer.Account.CustomABI do
   alias Ecto.Changeset
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Hash
 
   import Ecto.Changeset
 
@@ -19,8 +19,9 @@ defmodule Explorer.Account.CustomABI do
     field(:abi, {:array, :map})
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
+    field(:address_hash, Hash.Address, null: false)
+
     belongs_to(:identity, Identity)
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 
     timestamps()
   end
@@ -34,7 +35,6 @@ defmodule Explorer.Account.CustomABI do
     |> validate_custom_abi()
     |> check_smart_contract_address()
     |> foreign_key_constraint(:identity_id, message: "User not found")
-    |> foreign_key_constraint(:address_hash, message: "Address not found")
     |> unique_constraint([:identity_id, :address_hash],
       message: "Custom ABI for this address has already been added before"
     )
@@ -48,22 +48,22 @@ defmodule Explorer.Account.CustomABI do
   end
 
   defp check_smart_contract_address(%Changeset{changes: %{address_hash: address_hash}} = custom_abi) do
-    if Chain.is_address_hash_is_smart_contract?(address_hash) do
-      custom_abi
-    else
-      add_error(custom_abi, :address_hash, "Address is not a smart contract")
-    end
+    check_smart_contract_address_inner(custom_abi, address_hash)
   end
 
   defp check_smart_contract_address(%Changeset{data: %{address_hash: address_hash}} = custom_abi) do
-    if Chain.is_address_hash_is_smart_contract?(address_hash) do
-      custom_abi
-    else
-      add_error(custom_abi, :address_hash, "Address is not a smart contract")
-    end
+    check_smart_contract_address_inner(custom_abi, address_hash)
   end
 
   defp check_smart_contract_address(custom_abi), do: custom_abi
+
+  defp check_smart_contract_address_inner(changeset, address_hash) do
+    if Chain.is_address_hash_is_smart_contract?(address_hash) do
+      changeset
+    else
+      add_error(changeset, :address_hash, "Address is not a smart contract")
+    end
+  end
 
   defp validate_custom_abi(%Changeset{changes: %{given_abi: given_abi, abi_validating_error: error}} = custom_abi) do
     custom_abi
@@ -130,7 +130,7 @@ defmodule Explorer.Account.CustomABI do
     if identity_id
        |> custom_abis_by_identity_id_query()
        |> limit(@max_abis_per_account)
-       |> Repo.aggregate(:count, :id) >= @max_abis_per_account do
+       |> Repo.account_repo().aggregate(:count, :id) >= @max_abis_per_account do
       add_error(custom_abi, :name, "Max #{@max_abis_per_account} ABIs per account")
     else
       custom_abi
@@ -142,7 +142,7 @@ defmodule Explorer.Account.CustomABI do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> Repo.insert()
+    |> Repo.account_repo().insert()
   end
 
   def custom_abis_by_identity_id_query(id) when not is_nil(id) do
@@ -173,7 +173,7 @@ defmodule Explorer.Account.CustomABI do
       when not is_nil(identity_id) and not is_nil(address_hash) do
     address_hash
     |> custom_abi_by_identity_id_and_address_hash_query(identity_id)
-    |> Repo.one()
+    |> Repo.account_repo().one()
   end
 
   def get_custom_abi_by_identity_id_and_address_hash(_, _), do: nil
@@ -181,7 +181,7 @@ defmodule Explorer.Account.CustomABI do
   def get_custom_abi_by_id_and_identity_id(id, identity_id) when not is_nil(id) and not is_nil(identity_id) do
     id
     |> custom_abi_by_id_and_identity_id_query(identity_id)
-    |> Repo.one()
+    |> Repo.account_repo().one()
   end
 
   def get_custom_abi_by_id_and_identity_id(_, _), do: nil
@@ -189,7 +189,7 @@ defmodule Explorer.Account.CustomABI do
   def get_custom_abis_by_identity_id(id) when not is_nil(id) do
     id
     |> custom_abis_by_identity_id_query()
-    |> Repo.all()
+    |> Repo.account_repo().all()
   end
 
   def get_custom_abis_by_identity_id(_), do: nil
@@ -197,7 +197,7 @@ defmodule Explorer.Account.CustomABI do
   def delete(id, identity_id) when not is_nil(id) and not is_nil(identity_id) do
     id
     |> custom_abi_by_id_and_identity_id_query(identity_id)
-    |> Repo.delete_all()
+    |> Repo.account_repo().delete_all()
   end
 
   def delete(_, _), do: nil
@@ -207,7 +207,7 @@ defmodule Explorer.Account.CustomABI do
          false <- is_nil(custom_abi) do
       custom_abi
       |> changeset(attrs)
-      |> Repo.update()
+      |> Repo.account_repo().update()
     else
       true ->
         {:error, %{reason: :item_not_found}}

@@ -17,7 +17,8 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
         uid = Plug.current_claims(conn)["sub"]
 
         with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
-             {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
+             {:watchlist, %{watchlists: [watchlist | _]}} <-
+               {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
              {:address_hash, {:ok, address_hash}} <- {:address_hash, Address.cast(address_hash)} do
           GetAddressTags.get_address_tags(address_hash, %{id: identity.id, watchlist_id: watchlist.id})
         else
@@ -57,7 +58,8 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
         uid = Plug.current_claims(conn)["sub"]
 
         with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
-             {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
+             {:watchlist, %{watchlists: [watchlist | _]}} <-
+               {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
              false <- is_nil(transaction) do
           GetTransactionTags.get_transaction_with_addresses_tags(transaction, %{
             id: identity.id,

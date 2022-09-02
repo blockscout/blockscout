@@ -37,9 +37,11 @@ defmodule BlockScoutWeb.ConnCase do
   @dialyzer {:nowarn_function, __ex_unit_setup_0: 1}
   setup tags do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Account)
 
     unless tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, {:shared, self()})
     end
 
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())

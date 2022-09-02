@@ -19,7 +19,8 @@ defmodule BlockScoutWeb.Account.WatchlistController do
 
   defp watchlist_with_addresses(user) do
     Watchlist
-    |> Repo.get(user.watchlist_id)
-    |> Repo.preload(watchlist_addresses: {from(wa in WatchlistAddress, order_by: [desc: wa.id]), [:address]})
+    |> Repo.account_repo().get(user.watchlist_id)
+    |> Repo.account_repo().preload(watchlist_addresses: from(wa in WatchlistAddress, order_by: [desc: wa.id]))
+    |> WatchlistAddress.preload_address_fetched_coin_balance()
   end
 end

@@ -30,11 +30,9 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     uid = Plug.current_claims(conn)["sub"]
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
-         {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
-         watchlist_with_addresses <-
-           Repo.preload(watchlist,
-             watchlist_addresses: {from(wa in WatchlistAddress, order_by: [desc: wa.id]), [:address]}
-           ) do
+         {:watchlist, %{watchlists: [watchlist | _]}} <-
+           {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
+         watchlist_with_addresses <- preload_watchlist_address_fetched_coin_balance(watchlist) do
       conn
       |> put_status(200)
       |> render(:watchlist_addresses, %{
@@ -48,7 +46,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     uid = Plug.current_claims(conn)["sub"]
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
-         {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
+         {:watchlist, %{watchlists: [watchlist | _]}} <-
+           {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {count, _} <- WatchlistAddress.delete(watchlist_address_id, watchlist.id),
          {:watchlist_delete, true} <- {:watchlist_delete, count > 0} do
       conn
@@ -100,10 +99,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     }
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
-         {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
+         {:watchlist, %{watchlists: [watchlist | _]}} <-
+           {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
            WatchlistAddress.create(Map.put(watchlist_params, :watchlist_id, watchlist.id)),
-         watchlist_address_preloaded <- Repo.preload(watchlist_address, :address) do
+         watchlist_address_preloaded <- WatchlistAddress.preload_address_fetched_coin_balance(watchlist_address) do
       conn
       |> put_status(200)
       |> render(:watchlist_address, %{
@@ -158,10 +158,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     }
 
     with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
-         {:watchlist, %{watchlists: [watchlist | _]}} <- {:watchlist, Repo.preload(identity, :watchlists)},
+         {:watchlist, %{watchlists: [watchlist | _]}} <-
+           {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
            WatchlistAddress.update(Map.put(watchlist_params, :watchlist_id, watchlist.id)),
-         watchlist_address_preloaded <- Repo.preload(watchlist_address, :address) do
+         watchlist_address_preloaded <- WatchlistAddress.preload_address_fetched_coin_balance(watchlist_address) do
       conn
       |> put_status(200)
       |> render(:watchlist_address, %{
@@ -481,5 +482,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
   defp reject_nil_map_values(map) when is_map(map) do
     Map.reject(map, fn {_k, v} -> is_nil(v) end)
+  end
+
+  defp preload_watchlist_address_fetched_coin_balance(watchlist) do
+    watchlist
+    |> Repo.account_repo().preload(watchlist_addresses: from(wa in WatchlistAddress, order_by: [desc: wa.id]))
+    |> WatchlistAddress.preload_address_fetched_coin_balance()
   end
 end

@@ -128,7 +128,6 @@ defmodule Explorer.Factory do
 
   def account_watchlist_factory do
     %Watchlist{
-      name: "default",
       identity: build(:account_identity)
     }
   end
@@ -142,10 +141,12 @@ defmodule Explorer.Factory do
   end
 
   def account_watchlist_address_factory do
+    hash = build(:address).hash
+
     %WatchlistAddress{
       name: "wallet",
       watchlist: build(:account_watchlist),
-      address: build(:address),
+      address_hash: hash,
       watch_coin_input: true,
       watch_coin_output: true,
       watch_erc_20_input: true,

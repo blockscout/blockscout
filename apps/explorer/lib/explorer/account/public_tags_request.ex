@@ -75,7 +75,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(Map.put(attrs, :request_type, "add"))
-    |> Repo.insert()
+    |> Repo.account_repo().insert()
     |> AirTable.submit()
   end
 
@@ -90,7 +90,7 @@ defmodule Explorer.Account.PublicTagsRequest do
     if identity_id
        |> public_tags_requests_by_identity_id_query()
        |> limit(@max_public_tags_request_per_account)
-       |> Repo.aggregate(:count, :id) >= @max_public_tags_request_per_account do
+       |> Repo.account_repo().aggregate(:count, :id) >= @max_public_tags_request_per_account do
       request
       |> add_error(:tags, "Max #{@max_public_tags_request_per_account} public tags requests per account")
     else
@@ -113,7 +113,7 @@ defmodule Explorer.Account.PublicTagsRequest do
         fragment("? && ?", public_tags_request.addresses, ^Enum.map(prepared_addresses, fn x -> x.bytes end))
       )
       |> limit(1)
-      |> Repo.one()
+      |> Repo.account_repo().one()
 
     now = DateTime.utc_now()
 
@@ -192,7 +192,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   def public_tags_request_by_id_and_identity_id_query(_, _), do: nil
 
   def get_public_tags_request_by_id_and_identity_id(id, identity_id) when not is_nil(id) and not is_nil(identity_id) do
-    id |> public_tags_request_by_id_and_identity_id_query(identity_id) |> Repo.one()
+    id |> public_tags_request_by_id_and_identity_id_query(identity_id) |> Repo.account_repo().one()
   end
 
   def get_public_tags_request_by_id_and_identity_id(_, _), do: nil
@@ -200,7 +200,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   def get_public_tags_requests_by_identity_id(id) when not is_nil(id) do
     id
     |> public_tags_requests_by_identity_id_query()
-    |> Repo.all()
+    |> Repo.account_repo().all()
   end
 
   def get_public_tags_requests_by_identity_id(_), do: nil
@@ -208,7 +208,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   def delete_public_tags_request(identity_id, id) when not is_nil(id) and not is_nil(identity_id) do
     id
     |> public_tags_request_by_id_and_identity_id_query(identity_id)
-    |> Repo.delete_all()
+    |> Repo.account_repo().delete_all()
   end
 
   def delete_public_tags_request(_, _), do: nil
@@ -216,7 +216,8 @@ defmodule Explorer.Account.PublicTagsRequest do
   def update(%{id: id, identity_id: identity_id} = attrs) do
     with public_tags_request <- get_public_tags_request_by_id_and_identity_id(id, identity_id),
          false <- is_nil(public_tags_request),
-         {:ok, changeset} <- public_tags_request |> changeset(Map.put(attrs, :request_type, "edit")) |> Repo.update() do
+         {:ok, changeset} <-
+           public_tags_request |> changeset(Map.put(attrs, :request_type, "edit")) |> Repo.account_repo().update() do
       AirTable.submit({:ok, changeset})
     else
       true ->
@@ -233,7 +234,7 @@ defmodule Explorer.Account.PublicTagsRequest do
          {:ok, changeset} <-
            public_tags_request
            |> changeset_without_constraints(%{request_type: "delete", remove_reason: remove_reason})
-           |> Repo.update() do
+           |> Repo.account_repo().update() do
       case AirTable.submit({:ok, changeset}) do
         {:error, changeset} ->
           changeset

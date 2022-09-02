@@ -41,14 +41,14 @@ defmodule Explorer.Account.Api.Key do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(Map.put(attrs, :value, generate_api_key()))
-    |> Repo.insert()
+    |> Repo.account_repo().insert()
   end
 
   def api_key_count_constraint(%Changeset{changes: %{identity_id: identity_id}} = api_key) do
     if identity_id
        |> api_keys_by_identity_id_query()
        |> limit(@max_key_per_account)
-       |> Repo.aggregate(:count, :value) >= @max_key_per_account do
+       |> Repo.account_repo().aggregate(:count, :value) >= @max_key_per_account do
       api_key
       |> add_error(:name, "Max #{@max_key_per_account} keys per account")
     else
@@ -81,7 +81,7 @@ defmodule Explorer.Account.Api.Key do
   def get_api_key_by_value_and_identity_id(value, identity_id) when not is_nil(value) and not is_nil(identity_id) do
     value
     |> api_key_by_value_and_identity_id_query(identity_id)
-    |> Repo.one()
+    |> Repo.account_repo().one()
   end
 
   def get_api_key_by_value_and_identity_id(_, _), do: nil
@@ -89,7 +89,7 @@ defmodule Explorer.Account.Api.Key do
   def update(%{value: api_key_value, identity_id: identity_id} = attrs) do
     with api_key <- get_api_key_by_value_and_identity_id(api_key_value, identity_id),
          false <- is_nil(api_key) do
-      api_key |> changeset(attrs) |> Repo.update()
+      api_key |> changeset(attrs) |> Repo.account_repo().update()
     else
       true ->
         {:error, %{reason: :item_not_found}}
@@ -99,7 +99,7 @@ defmodule Explorer.Account.Api.Key do
   def delete(api_key_value, identity_id) when not is_nil(api_key_value) and not is_nil(identity_id) do
     api_key_value
     |> api_key_by_value_and_identity_id_query(identity_id)
-    |> Repo.delete_all()
+    |> Repo.account_repo().delete_all()
   end
 
   def delete(_, _), do: nil
@@ -107,7 +107,7 @@ defmodule Explorer.Account.Api.Key do
   def get_api_keys_by_identity_id(id) when not is_nil(id) do
     id
     |> api_keys_by_identity_id_query()
-    |> Repo.all()
+    |> Repo.account_repo().all()
   end
 
   def get_api_keys_by_identity_id(_), do: nil
@@ -116,8 +116,8 @@ defmodule Explorer.Account.Api.Key do
     if match?({:ok, _casted_api_key}, UUID.cast(api_key_value)) do
       __MODULE__
       |> where([api_key], api_key.value == ^api_key_value)
-      |> Repo.one()
-      |> Repo.preload(identity: :plan)
+      |> Repo.account_repo().one()
+      |> Repo.account_repo().preload(identity: :plan)
     else
       nil
     end

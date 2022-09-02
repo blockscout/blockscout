@@ -85,9 +85,9 @@ defmodule Explorer.Account.Notifier.Email do
        do: name
 
   defp address_hash_string(%WatchlistNotification{
-         watchlist_address: %WatchlistAddress{address: address}
+         watchlist_address: %WatchlistAddress{address_hash: address_hash}
        }),
-       do: hash_string(address.hash)
+       do: hash_string(address_hash)
 
   defp hash_string(hash) do
     "0x" <> Base.encode16(hash.bytes, case: :lower)
@@ -114,7 +114,7 @@ defmodule Explorer.Account.Notifier.Email do
   end
 
   defp preload(notification) do
-    Repo.preload(notification, watchlist_address: [:address, watchlist: :identity])
+    Repo.account_repo().preload(notification, watchlist_address: [watchlist: :identity])
   end
 
   defp address_url(address_hash) do

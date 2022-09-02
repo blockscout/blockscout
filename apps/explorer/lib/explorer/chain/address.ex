@@ -273,6 +273,12 @@ defmodule Explorer.Chain.Address do
     )
   end
 
+  def fetched_coin_balance(address_hash) when not is_nil(address_hash) do
+    Address
+    |> where([address], address.hash == ^address_hash)
+    |> select([address], address.fetched_coin_balance)
+  end
+
   defimpl String.Chars do
     @doc """
     Uses `hash` as string representation, formatting it according to the eip-55 specification

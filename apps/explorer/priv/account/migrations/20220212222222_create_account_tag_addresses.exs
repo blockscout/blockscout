@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateAccountTagAddresses do
+defmodule Explorer.Repo.Account.Migrations.CreateAccountTagAddresses do
   use Ecto.Migration
 
   def change do
@@ -6,10 +6,7 @@ defmodule Explorer.Repo.Migrations.CreateAccountTagAddresses do
       add(:name, :string)
       add(:identity_id, references(:account_identities, on_delete: :delete_all))
 
-      add(
-        :address_hash,
-        references(:addresses, column: :hash, type: :bytea, on_delete: :delete_all)
-      )
+      add(:address_hash, :bytea, null: false)
 
       timestamps()
     end

@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   end
 
   defp create_identity(auth) do
-    with {:ok, %Identity{} = identity} <- Repo.insert(new_identity(auth)),
+    with {:ok, %Identity{} = identity} <- Repo.account_repo().insert(new_identity(auth)),
          {:ok, _watchlist} <- add_watchlist(identity) do
       identity
     end
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   defp update_identity(identity, attrs) do
     identity
     |> Identity.changeset(attrs)
-    |> Repo.update()
+    |> Repo.account_repo().update()
   end
 
   defp new_identity(auth) do
@@ -62,12 +62,12 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   defp add_watchlist(identity) do
     watchlist = Ecto.build_assoc(identity, :watchlists, %{})
 
-    with {:ok, _} <- Repo.insert(watchlist),
+    with {:ok, _} <- Repo.account_repo().insert(watchlist),
          do: {:ok, identity}
   end
 
   def find_identity(auth_or_uid) do
-    Repo.all(query_identity(auth_or_uid))
+    Repo.account_repo().all(query_identity(auth_or_uid))
   end
 
   def query_identity(%Auth{} = auth) do
@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
   end
 
   defp basic_info(auth, identity) do
-    %{watchlists: [watchlist | _]} = Repo.preload(identity, :watchlists)
+    %{watchlists: [watchlist | _]} = Repo.account_repo().preload(identity, :watchlists)
 
     %{
       id: identity.id,

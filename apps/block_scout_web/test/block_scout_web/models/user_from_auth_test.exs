@@ -37,13 +37,13 @@ defmodule UserFromAuthTest do
         email: "john@blockscout.com",
         name: "John Snow",
         uid: "github|666666"
-      } = Identity |> first |> Repo.one()
+      } = Identity |> first |> Repo.account_repo().one()
 
       %{
         id: watchlist_id,
         identity_id: ^identity_id,
         name: "default"
-      } = Watchlist |> first |> Repo.one()
+      } = Watchlist |> first |> Repo.account_repo().one()
 
       assert {:ok,
               %{
@@ -84,13 +84,13 @@ defmodule UserFromAuthTest do
         email: "john@blockscout.com",
         name: "John Snow",
         uid: "google-oauth2|666666"
-      } = Identity |> first |> Repo.one()
+      } = Identity |> first |> Repo.account_repo().one()
 
       %{
         id: watchlist_id,
         identity_id: ^identity_id,
         name: "default"
-      } = Watchlist |> first |> Repo.one()
+      } = Watchlist |> first |> Repo.account_repo().one()
 
       assert {:ok,
               %{
