@@ -9,12 +9,7 @@ defmodule Explorer.Account.WatchlistNotification do
   import Ecto.Changeset
 
   alias Explorer.Account.WatchlistAddress
-
-  alias Explorer.Chain.{
-    Address,
-    Hash,
-    Transaction
-  }
+  alias Explorer.Chain.Hash
 
   schema "account_watchlist_notifications" do
     field(:amount, :decimal)
@@ -29,27 +24,9 @@ defmodule Explorer.Account.WatchlistNotification do
 
     belongs_to(:watchlist_address, WatchlistAddress)
 
-    belongs_to(
-      :from_address,
-      Address,
-      foreign_key: :from_address_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
-    belongs_to(
-      :to_address,
-      Address,
-      foreign_key: :to_address_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
-    belongs_to(:transaction, Transaction,
-      foreign_key: :transaction_hash,
-      references: :hash,
-      type: Hash.Full
-    )
+    field(:from_address_hash, Hash.Address)
+    field(:to_address_hash, Hash.Address)
+    field(:transaction_hash, Hash.Full)
 
     timestamps()
   end

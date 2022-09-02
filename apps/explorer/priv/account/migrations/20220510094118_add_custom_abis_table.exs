@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddCustomAbisTable do
+defmodule Explorer.Repo.Account.Migrations.AddCustomAbisTable do
   use Ecto.Migration
 
   def change do
@@ -6,7 +6,7 @@ defmodule Explorer.Repo.Migrations.AddCustomAbisTable do
       add(:id, :serial, null: false, primary_key: true)
       add(:identity_id, references(:account_identities, column: :id, on_delete: :delete_all), null: false)
       add(:name, :string, null: false)
-      add(:address_hash, references(:addresses, column: :hash, type: :bytea, on_delete: :delete_all), null: false)
+      add(:address_hash, :bytea, null: false)
       add(:abi, :jsonb, null: false)
 
       timestamps()

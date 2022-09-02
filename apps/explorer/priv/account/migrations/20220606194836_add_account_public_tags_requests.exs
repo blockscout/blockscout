@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddAccountPublicTagsRequests do
+defmodule Explorer.Repo.Account.Migrations.AddAccountPublicTagsRequests do
   use Ecto.Migration
 
   def change do

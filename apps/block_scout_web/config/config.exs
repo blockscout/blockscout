@@ -8,7 +8,7 @@ import Config
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo]
+  ecto_repos: [Explorer.Repo, Explorer.Repo.Account]
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
@@ -97,7 +97,7 @@ config :hammer,
 config :block_scout_web, BlockScoutWeb.Guardian, issuer: "block_scout_web"
 
 config :guardian, Guardian.DB,
-  repo: Explorer.Repo,
+  repo: Explorer.Repo.Account,
   schema_name: "guardian_tokens",
   sweep_interval: 60
 

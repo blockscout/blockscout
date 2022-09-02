@@ -9,20 +9,16 @@ defmodule Explorer.Account.TagTransaction do
 
   alias Ecto.Changeset
   alias Explorer.Account.Identity
-  alias Explorer.Chain.{Hash, Transaction}
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Hash
 
   @max_tag_transaction_per_account 15
 
   schema "account_tag_transactions" do
     field(:name, :string)
-    belongs_to(:identity, Identity)
+    field(:tx_hash, Hash.Full, null: false)
 
-    belongs_to(:transaction, Transaction,
-      foreign_key: :tx_hash,
-      references: :hash,
-      type: Hash.Full
-    )
+    belongs_to(:identity, Identity)
 
     timestamps()
   end
@@ -41,21 +37,37 @@ defmodule Explorer.Account.TagTransaction do
     |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
     |> unique_constraint([:identity_id, :tx_hash], message: "Transaction tag already exists")
-    |> foreign_key_constraint(:tx_hash, message: "Transaction does not exist")
     |> tag_transaction_count_constraint()
+    |> check_transaction_existance()
   end
 
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> Repo.insert()
+    |> Repo.account_repo().insert()
+  end
+
+  defp check_transaction_existance(%Changeset{changes: %{tx_hash: tx_hash}} = changeset) do
+    check_transaction_existance_inner(changeset, tx_hash)
+  end
+
+  defp check_transaction_existance(%Changeset{data: %{tx_hash: tx_hash}} = changeset) do
+    check_transaction_existance_inner(changeset, tx_hash)
+  end
+
+  defp check_transaction_existance_inner(changeset, tx_hash) do
+    if match?({:ok, _}, Chain.hash_to_transaction(tx_hash)) do
+      changeset
+    else
+      add_error(changeset, :tx_hash, "Transaction does not exist")
+    end
   end
 
   def tag_transaction_count_constraint(%Changeset{changes: %{identity_id: identity_id}} = tag_transaction) do
     if identity_id
        |> tags_transaction_by_identity_id_query()
        |> limit(@max_tag_transaction_per_account)
-       |> Repo.aggregate(:count, :id) >= @max_tag_transaction_per_account do
+       |> Repo.account_repo().aggregate(:count, :id) >= @max_tag_transaction_per_account do
       tag_transaction
       |> add_error(:name, "Max #{@max_tag_transaction_per_account} tags per account")
     else
@@ -76,7 +88,7 @@ defmodule Explorer.Account.TagTransaction do
   def get_tags_transaction_by_identity_id(id) when not is_nil(id) do
     id
     |> tags_transaction_by_identity_id_query()
-    |> Repo.all()
+    |> Repo.account_repo().all()
   end
 
   def get_tags_transaction_by_identity_id(_), do: nil
@@ -93,7 +105,7 @@ defmodule Explorer.Account.TagTransaction do
       when not is_nil(address_hash) and not is_nil(identity_id) do
     address_hash
     |> tag_transaction_by_address_hash_and_identity_id_query(identity_id)
-    |> Repo.one()
+    |> Repo.account_repo().one()
   end
 
   def get_tag_transaction_by_address_hash_and_identity_id(_, _), do: nil
@@ -110,7 +122,7 @@ defmodule Explorer.Account.TagTransaction do
       when not is_nil(tag_id) and not is_nil(identity_id) do
     tag_id
     |> tag_transaction_by_id_and_identity_id_query(identity_id)
-    |> Repo.one()
+    |> Repo.account_repo().one()
   end
 
   def get_tag_transaction_by_id_and_identity_id_query(_, _), do: nil
@@ -118,7 +130,7 @@ defmodule Explorer.Account.TagTransaction do
   def delete(tag_id, identity_id) when not is_nil(tag_id) and not is_nil(identity_id) do
     tag_id
     |> tag_transaction_by_id_and_identity_id_query(identity_id)
-    |> Repo.delete_all()
+    |> Repo.account_repo().delete_all()
   end
 
   def delete(_, _), do: nil
@@ -126,7 +138,7 @@ defmodule Explorer.Account.TagTransaction do
   def update(%{id: tag_id, identity_id: identity_id} = attrs) do
     with tag <- get_tag_transaction_by_id_and_identity_id_query(tag_id, identity_id),
          false <- is_nil(tag) do
-      tag |> changeset(attrs) |> Repo.update()
+      tag |> changeset(attrs) |> Repo.account_repo().update()
     else
       true ->
         {:error, %{reason: :item_not_found}}

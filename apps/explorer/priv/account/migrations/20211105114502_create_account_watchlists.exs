@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateAccountWatchlists do
+defmodule Explorer.Repo.Account.Migrations.CreateAccountWatchlists do
   use Ecto.Migration
 
   def change do

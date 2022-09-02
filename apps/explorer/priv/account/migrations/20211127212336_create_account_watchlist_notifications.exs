@@ -1,15 +1,15 @@
-defmodule Explorer.Repo.Migrations.CreateAccountWatchlistNotifications do
+defmodule Explorer.Repo.Account.Migrations.CreateAccountWatchlistNotifications do
   use Ecto.Migration
 
   def change do
     create table(:account_watchlist_notifications) do
       add(:watchlist_address_id, references(:account_watchlist_addresses, on_delete: :delete_all))
 
-      add(:transaction_hash, references(:transactions, column: :hash, type: :bytea, on_delete: :delete_all))
+      add(:transaction_hash, :bytea)
 
-      add(:from_address_hash, references(:addresses, column: :hash, type: :bytea, on_delete: :delete_all))
+      add(:from_address_hash, :bytea)
 
-      add(:to_address_hash, references(:addresses, column: :hash, type: :bytea, on_delete: :delete_all))
+      add(:to_address_hash, :bytea)
 
       add(:direction, :string)
       add(:name, :string)

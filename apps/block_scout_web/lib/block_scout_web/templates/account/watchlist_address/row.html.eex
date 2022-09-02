@@ -8,12 +8,12 @@
     </div>
   </td>
   <td>
-    <%= balance_ether(@watchlist_address.address) %>
+    <%= balance_ether(@watchlist_address.fetched_coin_balance) %>
     <br>
 
     <span class="address-current-balance">
       (<span
-           data-wei-value="<%= if @watchlist_address.address.fetched_coin_balance, do: @watchlist_address.address.fetched_coin_balance.value %>"
+           data-wei-value="<%= if @watchlist_address.fetched_coin_balance, do: @watchlist_address.fetched_coin_balance.value %>"
            data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
            data-placement="top"
            data-toggle="tooltip"

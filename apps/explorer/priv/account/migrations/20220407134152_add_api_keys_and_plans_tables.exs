@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddApiKeysAndPlansTables do
+defmodule Explorer.Repo.Account.Migrations.AddApiKeysAndPlansTables do
   use Ecto.Migration
 
   def change do
