@@ -18,7 +18,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
         }
 
   # milliseconds
-  @block_interval 6_000
+  @block_interval 5_000
 
   @enforce_keys ~w(bound_interval fetcher)a
   defstruct bound_interval: nil,

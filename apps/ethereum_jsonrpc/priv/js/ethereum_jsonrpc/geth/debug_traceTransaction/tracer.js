@@ -442,6 +442,7 @@
     },
 
     putGas(call) {
+
         if (call.gasBigInt === undefined) {
             call.gas = '0x0';
         } else {
@@ -449,9 +450,11 @@
         }
 
         delete call.gasBigInt;
+
     },
 
     putGasUsed(call) {
+
         if (call.gasUsedBigInt === undefined) {
             call.gasUsed = '0x0';
         } else {

@@ -38,7 +38,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(2)
+  @minimum_safe_polling_period :timer.seconds(1)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -175,7 +175,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp schedule_polling do
     polling_period =
       case AverageBlockTime.average_block_time() do
-        {:error, :disabled} -> 6_000
+        {:error, :disabled} -> 2_000
         block_time -> round(Duration.to_milliseconds(block_time) / 2)
       end
 
@@ -197,43 +197,38 @@ defmodule Indexer.Block.Realtime.Fetcher do
           block_rewards: block_rewards
         } = options
       ) do
-    case System.get_env("INDEXER_DISABLE_REAL_TIME_FETCHER") do
-      "true" ->
-        {:ok, []}
-      _ ->
-        with {:balances,
-               {:ok,
-                 %{
-                   addresses_params: balances_addresses_params,
-                   balances_params: balances_params,
-                   balances_daily_params: balances_daily_params
-                 }}} <-
-               {:balances,
-                 balances(block_fetcher, %{
-                   address_hash_to_block_number: address_hash_to_block_number,
-                   addresses_params: addresses_params,
-                   balances_params: address_coin_balances_params,
-                   balances_daily_params: address_coin_balances_daily_params
-                 })},
-             {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
-             chain_import_options =
-               options
-               |> Map.drop(@import_options)
-               |> put_in([:addresses, :params], balances_addresses_params)
-               |> put_in([:blocks, :params, Access.all(), :consensus], true)
-               |> put_in([:block_rewards], chain_import_block_rewards)
-               |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
-               |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], balances_daily_params),
-             {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
-          async_import_remaining_block_data(
-            imported,
-            %{block_rewards: %{errors: block_reward_errors}}
-          )
+    with {:balances,
+          {:ok,
+           %{
+             addresses_params: balances_addresses_params,
+             balances_params: balances_params,
+             balances_daily_params: balances_daily_params
+           }}} <-
+           {:balances,
+            balances(block_fetcher, %{
+              address_hash_to_block_number: address_hash_to_block_number,
+              addresses_params: addresses_params,
+              balances_params: address_coin_balances_params,
+              balances_daily_params: address_coin_balances_daily_params
+            })},
+         {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
+         chain_import_options =
+           options
+           |> Map.drop(@import_options)
+           |> put_in([:addresses, :params], balances_addresses_params)
+           |> put_in([:blocks, :params, Access.all(), :consensus], true)
+           |> put_in([:block_rewards], chain_import_block_rewards)
+           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
+           |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], balances_daily_params),
+         {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
+      async_import_remaining_block_data(
+        imported,
+        %{block_rewards: %{errors: block_reward_errors}}
+      )
 
-          Accounts.drop(imported[:addresses])
+      Accounts.drop(imported[:addresses])
 
-          ok
-        end
+      ok
     end
   end
 
@@ -299,7 +294,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     {fetch_duration, result} =
       :timer.tc(fn -> fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) end)
-      #:timer.tc(fn -> fetch_and_import_range(block_fetcher, 1038260..1038261) end)
 
     case result do
       {:ok, %{inserted: inserted, errors: []}} ->

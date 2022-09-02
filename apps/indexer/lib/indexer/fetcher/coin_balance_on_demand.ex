@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
 
   If we have an unfetched coin balance for that address, it will be synchronously fetched.
   If not we will fetch the coin balance and created a fetched coin balance.
-  If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin baalnce.
+  If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin balance.
   """
 
   use GenServer
@@ -64,10 +64,12 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     GenServer.start_link(__MODULE__, json_rpc_named_arguments, server_opts)
   end
 
+  @impl true
   def init(json_rpc_named_arguments) do
     {:ok, %{json_rpc_named_arguments: json_rpc_named_arguments}}
   end
 
+  @impl true
   def handle_cast({:fetch_and_update, block_number, address}, state) do
     result = fetch_and_update(block_number, address, state.json_rpc_named_arguments)
 
@@ -78,15 +80,27 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     {:noreply, state}
   end
 
+  @impl true
   def handle_cast({:fetch_and_import, block_number, address}, state) do
     fetch_and_import(block_number, address, state.json_rpc_named_arguments)
 
     {:noreply, state}
   end
 
+  @impl true
   def handle_cast({:fetch_and_import_daily_balances, block_number, address}, state) do
     fetch_and_import_daily_balances(block_number, address, state.json_rpc_named_arguments)
 
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _, :process, _, _}, state) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({_ref, _}, state) do
     {:noreply, state}
   end
 
