@@ -17,7 +17,9 @@ This command uses by-default `docker-compose.yml`, which build the explorer into
 - and the BlockScout explorer at http://localhost:4000
 
 ## Configs for different Ethereum clients
+
 Also, the repo contains built-in configs for different clients without need to build the image
+
 - Ganache: `docker-compose -f docker-compose-no-build-ganache.yml up -d`
 - HardHat network: `docker-compose -f docker-compose-no-build-hardhat-network.yml up -d`
 - Geth: `docker-compose -f docker-compose-no-build-geth.yml up -d`
