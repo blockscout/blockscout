@@ -85,6 +85,49 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
              ] = response["result"]
     end
 
+    test "sort by hash", %{params: params, conn: conn} do
+      inserted_at = Timex.shift(Timex.now(), minutes: -10)
+
+      first_address =
+        insert(:address,
+          hash: "0x0000000000000000000000000000000000000001",
+          fetched_coin_balance: 10,
+          inserted_at: inserted_at
+        )
+
+      second_address =
+        insert(:address,
+          hash: "0x0000000000000000000000000000000000000002",
+          fetched_coin_balance: 100,
+          inserted_at: inserted_at
+        )
+
+      first_address_hash = to_string(first_address.hash)
+      second_address_hash = to_string(second_address.hash)
+
+      first_address_inserted_at = to_string(first_address.inserted_at)
+      second_address_inserted_at = to_string(second_address.inserted_at)
+
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      schema = listaccounts_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+
+      assert [
+               %{
+                 "address" => ^first_address_hash
+               },
+               %{
+                 "address" => ^second_address_hash
+               }
+             ] = response["result"]
+    end
+
     test "with a stale balance", %{conn: conn, params: params} do
       now = Timex.now()
 
