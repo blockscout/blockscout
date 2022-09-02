@@ -21,6 +21,7 @@
 - [#5807](https://github.com/blockscout/blockscout/pull/5807) - Update Makefile migrate command due to release build
 - [#5786](https://github.com/blockscout/blockscout/pull/5786) - Replace `current_path` with `Controller.current_full_path` in two controllers
 - [#5948](https://github.com/blockscout/blockscout/pull/5948) - Fix unexpected messages in `CoinBalanceOnDemand`
+- [#6013](https://github.com/blockscout/blockscout/pull/6013) - Fix ERC-1155 tokens fetching
 
 ### Chore
 - [#5836](https://github.com/blockscout/blockscout/pull/5836) - Bump comeonin from 4.1.2 to 5.3.3
