@@ -674,8 +674,8 @@ msgstr ""
 msgid "Copy Parent Hash"
 msgstr ""
 
-#, elixir-format
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:15
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:16
+#, elixir-autogen, elixir-format
 msgid "Copy Raw Trace"
 msgstr ""
 
@@ -723,8 +723,8 @@ msgstr ""
 
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:20
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:41
-#: lib/block_scout_web/templates/transaction/overview.html.eex:479
-#: lib/block_scout_web/templates/transaction/overview.html.eex:485
+#: lib/block_scout_web/templates/transaction/overview.html.eex:463
+#: lib/block_scout_web/templates/transaction/overview.html.eex:469
 #, elixir-autogen, elixir-format
 msgid "Copy Value"
 msgstr ""
@@ -2887,22 +2887,90 @@ msgstr ""
 msgid "true"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:9
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:92
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:86
 #, elixir-autogen, elixir-format
-msgid "Error in internal transactions"
+msgid "A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:21
-#, elixir-autogen, elixir-format
-msgid "Average"
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:82
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:76
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Add Contract Libraries"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/show.html.eex:69
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:127
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:121
 #, elixir-autogen, elixir-format
-msgid "Daily Transactions"
+msgid "Add Library"
 msgstr ""
 
-#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:20
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:72
 #, elixir-autogen, elixir-format
-msgid "Slow"
+msgid "Drop all Solidity contract source files into the drop zone."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:30
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:26
+#, elixir-autogen, elixir-format, fuzzy
+msgid "EVM version details"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:52
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:48
+#, elixir-autogen, elixir-format
+msgid "If you enabled optimization during compilation, select yes."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:18
+#, elixir-autogen, elixir-format
+msgid "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
+#, elixir-autogen, elixir-format
+msgid "POA solidity flattener or the"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:98
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:92
+#, elixir-autogen, elixir-format
+msgid "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:30
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:26
+#, elixir-autogen, elixir-format
+msgid "The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:22
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:18
+#, elixir-autogen, elixir-format
+msgid "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
+#, elixir-autogen, elixir-format
+msgid "We recommend using flattened code. This is necessary if your code utilizes a library or inherits dependencies. Use the"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
+#, elixir-autogen, elixir-format
+msgid "truffle flattener"
+msgstr ""
+
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:23
+#, elixir-autogen, elixir-format
+msgid "No trace entries found."
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Page not found"
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "The requested path was not found on BlockScout."
 msgstr ""

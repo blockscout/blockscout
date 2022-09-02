@@ -3628,7 +3628,7 @@ msgstr ""
 msgid "truffle flattener"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:29
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:23
 #, elixir-autogen, elixir-format
 msgid "No trace entries found."
 msgstr ""

@@ -33,6 +33,7 @@
 
 ### Chore
 
+- [#6045](https://github.com/blockscout/blockscout/pull/6045) - Re-use _btn_copy.html for raw trace page
 - [#6035](https://github.com/blockscout/blockscout/pull/6035) - Hide copy btn if no raw trace
 - [#6034](https://github.com/blockscout/blockscout/pull/6034) - Suppress empty sections in supported chain dropdown
 - [#5939](https://github.com/blockscout/blockscout/pull/5939) - Bump sweetalert2 from 11.4.26 to 11.4.27 in /apps/block_scout_web/assets
