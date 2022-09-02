@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.TokenInstance do
   alias Explorer.Token.InstanceMetadataRetriever
   alias Indexer.BufferedTask
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: 300,

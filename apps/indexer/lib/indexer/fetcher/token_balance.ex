@@ -22,7 +22,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   alias Explorer.Chain.Hash
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: 300,

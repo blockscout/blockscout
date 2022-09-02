@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.CoinBalance do
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: :timer.seconds(3),

@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.CeloValidator do
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @max_retries 3
 

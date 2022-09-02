@@ -19,7 +19,7 @@ defmodule Indexer.Temporary.UnclesWithoutIndex do
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.UncleBlock
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: :timer.seconds(3),

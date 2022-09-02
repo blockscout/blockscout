@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @max_batch_size 10
   @max_concurrency 4

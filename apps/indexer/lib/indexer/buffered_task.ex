@@ -155,6 +155,11 @@ defmodule Indexer.BufferedTask do
   @callback run(entries, state) :: :ok | :retry | {:retry, new_entries :: list}
 
   @doc """
+    A function used to remove duplicate entries from the buffer
+  """
+  @callback dedup_entries(%BufferedTask{}, entries) :: entries
+
+  @doc """
   Buffers list of entries for future async execution.
   """
   @spec buffer(GenServer.name(), entries(), timeout()) :: :ok
@@ -404,11 +409,18 @@ defmodule Indexer.BufferedTask do
     GenServer.call(pid, {:push_back, entries})
   end
 
-  defp push_back(%BufferedTask{bound_queue: bound_queue} = state, entries) when is_list(entries) do
-    entries_to_push = dedup_entries(state, entries)
+  defp push_back(%BufferedTask{callback_module: callback_module, dedup_entries: true} = state, entries)
+       when is_list(entries) do
+    state
+    |> callback_module.dedup_entries(entries)
+    |> then(&_push_back(state, &1))
+  end
 
+  defp push_back(%BufferedTask{} = state, entries) when is_list(entries), do: _push_back(state, entries)
+
+  defp _push_back(%BufferedTask{bound_queue: bound_queue, callback_module: callback_module} = state, entries) do
     new_bound_queue =
-      case BoundQueue.push_back_until_maximum_size(bound_queue, entries_to_push) do
+      case BoundQueue.push_back_until_maximum_size(bound_queue, entries) do
         {new_bound_queue, []} ->
           new_bound_queue
 
@@ -423,28 +435,6 @@ defmodule Indexer.BufferedTask do
       end
 
     %BufferedTask{state | bound_queue: new_bound_queue}
-  end
-
-  defp dedup_entries(%BufferedTask{dedup_entries: false}, entries), do: entries
-
-  defp dedup_entries(
-         %BufferedTask{dedup_entries: true, task_ref_to_batch: task_ref_to_batch, bound_queue: bound_queue},
-         entries
-       ) do
-    running_entries =
-      task_ref_to_batch
-      |> Map.values()
-      |> List.flatten()
-      |> Enum.uniq()
-      |> MapSet.new()
-
-    queued_entries = MapSet.new(bound_queue)
-
-    entries
-    |> MapSet.new()
-    |> MapSet.difference(running_entries)
-    |> MapSet.difference(queued_entries)
-    |> MapSet.to_list()
   end
 
   defp take_batch(%BufferedTask{bound_queue: bound_queue, max_batch_size: max_batch_size} = state) do
@@ -559,5 +549,40 @@ defmodule Indexer.BufferedTask do
     %BufferedTask{state | current_buffer: []}
     |> push_back(entries)
     |> flush()
+  end
+
+  defmacro __using__(_) do
+    quote do
+      @behaviour BufferedTask
+
+      def dedup_entries(%BufferedTask{dedup_entries: false}, entries), do: entries
+
+      def dedup_entries(
+            %BufferedTask{dedup_entries: true, task_ref_to_batch: task_ref_to_batch, bound_queue: bound_queue} = task,
+            entries
+          ) do
+        running_entries =
+          task
+          |> currently_processed_items()
+          |> MapSet.new()
+
+        queued_entries = MapSet.new(bound_queue)
+
+        entries
+        |> MapSet.new()
+        |> MapSet.difference(running_entries)
+        |> MapSet.difference(queued_entries)
+        |> MapSet.to_list()
+      end
+
+      def currently_processed_items(%BufferedTask{task_ref_to_batch: task_ref_to_batch}) do
+        task_ref_to_batch
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.uniq()
+      end
+
+      defoverridable dedup_entries: 2
+    end
   end
 end

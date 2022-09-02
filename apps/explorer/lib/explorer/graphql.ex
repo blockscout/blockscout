@@ -236,11 +236,6 @@ defmodule Explorer.GraphQL do
     query =
       token_txtransfers_query()
       |> where([t], t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash)
-
-    from(
-      t in subquery(query),
-      order_by: [desc: t.block_number, asc: t.nonce]
-    )
   end
 
   def celo_tx_transfers_query_by_txhash(tx_hash) do
@@ -338,7 +333,7 @@ defmodule Explorer.GraphQL do
       },
       distinct: [desc: tt.block_number, desc: tt.transaction_hash],
       # to get the ordering from distinct clause, something is needed here too
-      order_by: [desc: tt.from_address_hash, desc: tt.to_address_hash]
+      order_by: [asc: tx.nonce, desc: tt.from_address_hash, desc: tt.to_address_hash]
     )
   end
 

@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.CeloVoters do
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @max_retries 3
 
