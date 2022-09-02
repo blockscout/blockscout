@@ -11,13 +11,14 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Hash, Wei}
 
   @max_watchlist_addresses_per_account 10
 
   schema "account_watchlist_addresses" do
     field(:name, :string)
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
+    field(:address_hash, Hash.Address, null: false)
+
     belongs_to(:watchlist, Watchlist)
 
     field(:watch_coin_input, :boolean, default: true)
@@ -32,6 +33,8 @@ defmodule Explorer.Account.WatchlistAddress do
     field(:notify_epns, :boolean)
     field(:notify_feed, :boolean)
     field(:notify_inapp, :boolean)
+
+    field(:fetched_coin_balance, Wei, virtual: true)
 
     timestamps()
   end
@@ -51,21 +54,20 @@ defmodule Explorer.Account.WatchlistAddress do
     |> validate_required([:name, :address_hash, :watchlist_id], message: "Required")
     |> unique_constraint([:watchlist_id, :address_hash], message: "Address already added to the watch list")
     |> check_address()
-    |> foreign_key_constraint(:address_hash, message: "")
     |> watchlist_address_count_constraint()
   end
 
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> Repo.insert()
+    |> Repo.account_repo().insert()
   end
 
   def watchlist_address_count_constraint(%Changeset{changes: %{watchlist_id: watchlist_id}} = watchlist_address) do
     if watchlist_id
        |> watchlist_addresses_by_watchlist_id_query()
        |> limit(@max_watchlist_addresses_per_account)
-       |> Repo.aggregate(:count, :id) >= @max_watchlist_addresses_per_account do
+       |> Repo.account_repo().aggregate(:count, :id) >= @max_watchlist_addresses_per_account do
       watchlist_address
       |> add_error(:name, "Max #{@max_watchlist_addresses_per_account} watch list addresses per account")
     else
@@ -76,6 +78,16 @@ defmodule Explorer.Account.WatchlistAddress do
   def watchlist_address_count_constraint(changeset), do: changeset
 
   defp check_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do
+    check_address_inner(changeset, address_hash)
+  end
+
+  defp check_address(%Changeset{data: %{address_hash: address_hash}, valid?: true} = changeset) do
+    check_address_inner(changeset, address_hash)
+  end
+
+  defp check_address(changeset), do: changeset
+
+  defp check_address_inner(changeset, address_hash) do
     with {:ok, address_hash} <- ForbiddenAddress.check(address_hash),
          {:ok, %Address{}} <- Chain.find_or_insert_address_from_hash(address_hash, []) do
       changeset
@@ -87,8 +99,6 @@ defmodule Explorer.Account.WatchlistAddress do
         add_error(changeset, :address_hash, "Address error")
     end
   end
-
-  defp check_address(changeset), do: changeset
 
   def watchlist_addresses_by_watchlist_id_query(watchlist_id) when not is_nil(watchlist_id) do
     __MODULE__
@@ -109,7 +119,7 @@ defmodule Explorer.Account.WatchlistAddress do
       when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
     watchlist_address_id
     |> watchlist_address_by_id_and_watchlist_id_query(watchlist_id)
-    |> Repo.one()
+    |> Repo.account_repo().one()
   end
 
   def get_watchlist_address_by_id_and_watchlist_id(_, _), do: nil
@@ -118,7 +128,7 @@ defmodule Explorer.Account.WatchlistAddress do
       when not is_nil(watchlist_address_id) and not is_nil(watchlist_id) do
     watchlist_address_id
     |> watchlist_address_by_id_and_watchlist_id_query(watchlist_id)
-    |> Repo.delete_all()
+    |> Repo.account_repo().delete_all()
   end
 
   def delete(_, _), do: nil
@@ -128,7 +138,7 @@ defmodule Explorer.Account.WatchlistAddress do
          false <- is_nil(watchlist_address) do
       watchlist_address
       |> changeset(attrs)
-      |> Repo.update()
+      |> Repo.account_repo().update()
     else
       true ->
         {:error, %{reason: :item_not_found}}
@@ -136,4 +146,19 @@ defmodule Explorer.Account.WatchlistAddress do
   end
 
   def get_max_watchlist_addresses_count, do: @max_watchlist_addresses_per_account
+
+  def preload_address_fetched_coin_balance(%Watchlist{watchlist_addresses: watchlist_addresses} = watchlist) do
+    w_addresses =
+      Enum.map(watchlist_addresses, fn wa ->
+        preload_address_fetched_coin_balance(wa)
+      end)
+
+    %Watchlist{watchlist | watchlist_addresses: w_addresses}
+  end
+
+  def preload_address_fetched_coin_balance(%__MODULE__{address_hash: address_hash} = watchlist_address) do
+    %__MODULE__{watchlist_address | fetched_coin_balance: address_hash |> Address.fetched_coin_balance() |> Repo.one()}
+  end
+
+  def preload_address_fetched_coin_balance(watchlist), do: watchlist
 end

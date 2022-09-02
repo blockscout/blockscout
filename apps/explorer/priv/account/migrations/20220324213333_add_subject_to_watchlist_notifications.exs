@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddSubjectToWatchlistNotifications do
+defmodule Explorer.Repo.Account.Migrations.AddSubjectToWatchlistNotifications do
   use Ecto.Migration
 
   def change do

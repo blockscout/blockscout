@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddUniqueConstraints do
+defmodule Explorer.Repo.Account.Migrations.AddUniqueConstraints do
   use Ecto.Migration
 
   def change do

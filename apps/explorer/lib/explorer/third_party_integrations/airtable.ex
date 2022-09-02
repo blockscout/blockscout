@@ -12,7 +12,7 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
     if Mix.env() == :test do
       new_request
       |> PublicTagsRequest.changeset(%{request_id: "123"})
-      |> Repo.update()
+      |> Repo.account_repo().update()
 
       input
     else
@@ -33,7 +33,7 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
 
           new_request
           |> PublicTagsRequest.changeset(%{request_id: request_id})
-          |> Repo.update()
+          |> Repo.account_repo().update()
 
           input
 

@@ -46,7 +46,7 @@ defmodule Explorer.Account.Notify.NotifyTest do
       wn =
         WatchlistNotification
         |> first
-        |> Repo.one()
+        |> Repo.account_repo().one()
 
       assert notify == [[:ok]]
 
@@ -55,11 +55,11 @@ defmodule Explorer.Account.Notify.NotifyTest do
 
     test "when address apears in watchlist" do
       wa =
-        %WatchlistAddress{
-          address: address
-        } = insert(:account_watchlist_address)
+        %WatchlistAddress{address_hash: address_hash} =
+        build(:account_watchlist_address)
+        |> Repo.account_repo().insert!()
 
-      _watchlist_address = Repo.preload(wa, :address, watchlist: :identity)
+      _watchlist_address = Repo.preload(wa, watchlist: :identity)
 
       tx =
         %Transaction{
@@ -67,7 +67,7 @@ defmodule Explorer.Account.Notify.NotifyTest do
           to_address: _to_address,
           block_number: _block_number,
           hash: _tx_hash
-        } = with_block(insert(:transaction, to_address: address))
+        } = with_block(insert(:transaction, to_address: %Chain.Address{hash: address_hash}))
 
       {_, fee} = Chain.fee(tx, :gwei)
       amount = Wei.to(tx.value, :ether)
@@ -76,7 +76,7 @@ defmodule Explorer.Account.Notify.NotifyTest do
       wn =
         WatchlistNotification
         |> first
-        |> Repo.one()
+        |> Repo.account_repo().one()
 
       assert notify == [[:ok]]
 

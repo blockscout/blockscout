@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.MigratePublicTagsAddressesToArray do
+defmodule Explorer.Repo.Account.Migrations.MigratePublicTagsAddressesToArray do
   use Ecto.Migration
 
   def change do

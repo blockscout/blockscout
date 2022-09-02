@@ -60,7 +60,6 @@ defmodule Explorer.Account.Notify.EmailTest do
       watchlist_address = %WatchlistAddress{
         name: "wallet",
         watchlist: watchlist,
-        address: to_address,
         address_hash: to_hash,
         watch_coin_input: true,
         watch_coin_output: true,

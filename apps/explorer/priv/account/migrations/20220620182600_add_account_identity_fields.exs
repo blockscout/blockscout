@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddAccountIdentityFields do
+defmodule Explorer.Repo.Account.Migrations.AddAccountIdentityFields do
   use Ecto.Migration
 
   def change do

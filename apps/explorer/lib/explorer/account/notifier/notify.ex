@@ -64,7 +64,7 @@ defmodule Explorer.Account.Notifier.Notify do
                ) do
           notification
           |> query_notification(address)
-          |> Repo.all()
+          |> Repo.account_repo().all()
           |> case do
             [] -> save_and_send_notification(notification, address)
             _ -> :ok
@@ -91,7 +91,7 @@ defmodule Explorer.Account.Notifier.Notify do
   end
 
   defp save_and_send_notification(%WatchlistNotification{} = notification, %WatchlistAddress{} = address) do
-    Repo.insert(notification)
+    Repo.account_repo().insert(notification)
 
     email = Email.compose(notification, address)
 
@@ -143,6 +143,6 @@ defmodule Explorer.Account.Notifier.Notify do
 
   defp find_watchlists_addresses(%Explorer.Chain.Hash{} = address_hash) do
     query = from(wa in WatchlistAddress, where: wa.address_hash == ^address_hash)
-    Repo.all(query)
+    Repo.account_repo().all(query)
   end
 end

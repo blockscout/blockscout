@@ -49,6 +49,15 @@ config :explorer, Explorer.Repo.Replica1,
   pool_size: pool_size_api,
   ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
 
+database_account_url = System.get_env("DATABASE_ACCOUNT_URL")
+pool_size_account = String.to_integer(System.get_env("POOL_SIZE_ACCOUNT", "50"))
+
+# Configures Account database
+config :explorer, Explorer.Repo.Account,
+  url: database_account_url,
+  pool_size: pool_size_account,
+  ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"

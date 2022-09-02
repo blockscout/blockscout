@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateGuardianDBTokensTable do
+defmodule Explorer.Repo.Account.Migrations.CreateGuardianDBTokensTable do
   use Ecto.Migration
 
   def change do

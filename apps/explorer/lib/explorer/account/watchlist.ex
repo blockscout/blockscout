@@ -14,7 +14,6 @@ defmodule Explorer.Account.Watchlist do
     field(:name, :string)
     belongs_to(:identity, Identity)
     has_many(:watchlist_addresses, WatchlistAddress)
-    has_many(:addresses, through: [:watchlist_addresses, :address])
 
     timestamps()
   end

@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
         select: %{label: ta.name, display_name: ta.name, address_hash: ta.address_hash}
       )
 
-    Repo.all(query)
+    Repo.account_repo().all(query)
   end
 
   def get_personal_tags(_, _), do: []
@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
         select: %{label: wa.name, display_name: wa.name}
       )
 
-    Repo.all(query)
+    Repo.account_repo().all(query)
   end
 
   def get_watchlist_names_on_address(_, _), do: []
