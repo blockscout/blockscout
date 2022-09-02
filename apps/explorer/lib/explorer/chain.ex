@@ -7865,6 +7865,9 @@ defmodule Explorer.Chain do
         "100" ->
           "xdai"
 
+        "42220" ->
+          "celo"
+
         _ ->
           nil
       end
