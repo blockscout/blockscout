@@ -7,6 +7,7 @@
 
 ### Fixes
 
+- [#6038](https://github.com/blockscout/blockscout/pull/6038) - Extend token name from string to text type
 - [#6037](https://github.com/blockscout/blockscout/pull/6037) - Fix order of results in txlistinternal API endpoint
 - [#6036](https://github.com/blockscout/blockscout/pull/6036) - Fix address checksum on transaction page
 - [#6032](https://github.com/blockscout/blockscout/pull/6032) - Sort by address.hash column in accountlist API endpoint
