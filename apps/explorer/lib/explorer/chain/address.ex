@@ -263,16 +263,6 @@ defmodule Explorer.Chain.Address do
     )
   end
 
-  @doc """
-  Counts all the addresses.
-  """
-  def count do
-    from(
-      a in Address,
-      select: fragment("COUNT(*)")
-    )
-  end
-
   def fetched_coin_balance(address_hash) when not is_nil(address_hash) do
     Address
     |> where([address], address.hash == ^address_hash)

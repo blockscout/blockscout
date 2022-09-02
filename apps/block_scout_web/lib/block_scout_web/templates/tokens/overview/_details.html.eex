@@ -33,7 +33,7 @@
               <%= if token_name?(@token) do %>
                   <span
                     id="token-icon"
-                    data-chain-id="<%= System.get_env("CHAIN_ID") %>"
+                    data-chain-id="<%= Application.get_env(:block_scout_web, :chain_id) %>"
                     data-address-hash="<%= Address.checksum(@token.contract_address_hash) %>"
                     data-foreign-chain-id="<%= foreign_chain_id %>"
                     data-foreign-address-hash="<%= if Map.has_key?(@token, :foreign_token_contract_address_hash), do: Address.checksum(@token.foreign_token_contract_address_hash), else: "" %>"

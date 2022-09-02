@@ -5,9 +5,11 @@ import { compareChainIDs, formatError, showConnectElements, showConnectedToEleme
 import { openWarningModal } from '../modals'
 import * as Sentry from '@sentry/browser'
 
-const instanceChainId = process.env.CHAIN_ID ? parseInt(`${process.env.CHAIN_ID}`, 10) : 100
+const instanceChainIdStr = document.getElementById('js-chain-id').value
+const instanceChainId = parseInt(instanceChainIdStr, 10)
 const walletConnectOptions = { rpc: {}, chainId: instanceChainId }
-walletConnectOptions.rpc[instanceChainId] = process.env.JSON_RPC ? process.env.JSON_RPC : 'https://rpc.gnosischain.com/'
+const jsonRPC = document.getElementById('js-json-rpc').value
+walletConnectOptions.rpc[instanceChainId] = jsonRPC
 
 // Chosen wallet provider given by the dialog window
 let provider

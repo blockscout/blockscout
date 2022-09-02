@@ -22,7 +22,7 @@
           ) do %>
         <div class="row dropdown-row wh-sp">
           <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
-            <% chain_id_for_token_icon = if bridged_token && bridged_token.foreign_chain_id, do: bridged_token.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
+            <% chain_id_for_token_icon = if bridged_token && bridged_token.foreign_chain_id, do: bridged_token.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: Application.get_env(:block_scout_web, :chain_id) %>
             <% address_hash = if bridged_token && bridged_token.foreign_token_contract_address_hash, do: bridged_token.foreign_token_contract_address_hash, else: token.contract_address_hash %>
             <%=
               render BlockScoutWeb.TokensView,

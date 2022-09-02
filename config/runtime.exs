@@ -111,7 +111,9 @@ config :block_scout_web,
   chainlink_oracles: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
-  new_tags: System.get_env("NEW_TAGS")
+  new_tags: System.get_env("NEW_TAGS"),
+  chain_id: System.get_env("CHAIN_ID"),
+  json_rpc: System.get_env("JSON_RPC")
 
 config :block_scout_web, :gas_tracker,
   enabled: System.get_env("GAS_TRACKER_ENABLED", "false") == "true",
@@ -204,7 +206,8 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :ethereum_jsonrpc,
   rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
-  ipc_path: System.get_env("IPC_PATH")
+  ipc_path: System.get_env("IPC_PATH"),
+  disable_archive_balances?: System.get_env("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES", "false") == "true"
 
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s")
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout: debug_trace_transaction_timeout

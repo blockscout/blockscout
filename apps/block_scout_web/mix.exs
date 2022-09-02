@@ -124,7 +124,7 @@ defmodule BlockScoutWeb.Mixfile do
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 1.0"},
       {:timex, "~> 3.7.1"},
-      {:wallaby, "~> 0.28", only: :test, runtime: false},
+      {:wallaby, "~> 0.30", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:websocket_client, "~> 1.3"},
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
