@@ -23,6 +23,7 @@ defmodule BlockScoutWeb.ApiRouter do
     # plug(Guardian.Plug.VerifyHeader, module: BlockScoutWeb.Guardian, error_handler: BlockScoutWeb.GuardianErrorHandler)
     # plug(CheckAuth)
     plug(:fetch_session)
+    plug(:protect_from_forgery)
   end
 
   pipeline :tags_api do
@@ -33,6 +34,7 @@ defmodule BlockScoutWeb.ApiRouter do
     #   halt: false
     # )
     plug(:fetch_session)
+    plug(:protect_from_forgery)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
