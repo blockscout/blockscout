@@ -11,13 +11,13 @@ Application.put_env(:wallaby, :base_url, BlockScoutWeb.Endpoint.url())
 
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
-# Bureaucrat.start(
-#   writer: Bureaucrat.ApiBlueprintWriter,
-#   default_path: "API blueprint.md",
-#   env_var: "DOC"
-# )
+Bureaucrat.start(
+  writer: Bureaucrat.ApiBlueprintWriter,
+  default_path: "API blueprint.md",
+  env_var: "DOC"
+)
 
-Bureaucrat.start()
+# Bureaucrat.start()
 
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter])
 ExUnit.start()

@@ -9,9 +9,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
     {:ok, user} = UserFromAuth.find_or_create(auth)
 
-    {:ok, token, _} = Guardian.encode_and_sign(user)
-
-    {:ok, user: user, conn: Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> token)}
+    {:ok, user: user, conn: Plug.Test.init_test_session(conn, current_user: user)}
   end
 
   describe "Test account/api/v1/user" do
@@ -799,7 +797,16 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
-             |> json_response(200) == [post_public_tasg_request_response]
+             |> json_response(200)
+             |> Enum.map(fn request ->
+               {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
+               %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+             end) ==
+               [post_public_tasg_request_response]
+               |> Enum.map(fn request ->
+                 {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
+                 %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+               end)
     end
 
     test "get and delete several public tags requests", %{conn: conn} do
@@ -826,14 +833,19 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
           assert response["is_owner"] == request["is_owner"]
           assert response["id"]
 
-          response
+          {:ok, time, _} = DateTime.from_iso8601(response["submission_date"])
+          %{response | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
         end)
         |> Enum.reverse()
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
              |> doc(description: "Get list of requests to add a public tag")
-             |> json_response(200) == final_list
+             |> json_response(200)
+             |> Enum.map(fn request ->
+               {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
+               %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+             end) == final_list
 
       %{"id" => id} = Enum.at(final_list, 0)
 
@@ -876,7 +888,16 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
-             |> json_response(200) == [post_public_tasg_request_response]
+             |> json_response(200)
+             |> Enum.map(fn request ->
+               {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
+               %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+             end) ==
+               [post_public_tasg_request_response]
+               |> Enum.map(fn request ->
+                 {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
+                 %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+               end)
 
       new_public_tags_request = build(:public_tags_request)
 
@@ -901,7 +922,16 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert conn
              |> get("/api/account/v1/user/public_tags")
-             |> json_response(200) == [put_public_tasg_request_response]
+             |> json_response(200)
+             |> Enum.map(fn request ->
+               {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
+               %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+             end) ==
+               [put_public_tasg_request_response]
+               |> Enum.map(fn request ->
+                 {:ok, time, _} = DateTime.from_iso8601(request["submission_date"])
+                 %{request | "submission_date" => Calendar.strftime(time, "%b %d, %Y")}
+               end)
     end
   end
 end

@@ -134,7 +134,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
       "tags" => public_tags_request.tags,
       "addresses" => public_tags_request.addresses,
       "additional_comment" => public_tags_request.additional_comment,
-      "is_owner" => public_tags_request.is_owner
+      "is_owner" => public_tags_request.is_owner,
+      "submission_date" => public_tags_request.inserted_at
     }
   end
 end

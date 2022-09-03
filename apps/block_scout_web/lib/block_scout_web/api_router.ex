@@ -13,24 +13,26 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.Plug.CheckAuth
+  # alias BlockScoutWeb.Plug.CheckAuth
 
   pipeline :api do
     plug(:accepts, ["json"])
   end
 
   pipeline :account_api do
-    plug(Guardian.Plug.VerifyHeader, module: BlockScoutWeb.Guardian, error_handler: BlockScoutWeb.GuardianErrorHandler)
-    plug(CheckAuth)
+    # plug(Guardian.Plug.VerifyHeader, module: BlockScoutWeb.Guardian, error_handler: BlockScoutWeb.GuardianErrorHandler)
+    # plug(CheckAuth)
+    plug(:fetch_session)
   end
 
   pipeline :tags_api do
-    plug(Guardian.Plug.VerifyHeader,
-      module: BlockScoutWeb.Guardian,
-      error_handler: BlockScoutWeb.GuardianErrorHandler,
-      tolerant?: true,
-      halt: false
-    )
+    # plug(Guardian.Plug.VerifyHeader,
+    #   module: BlockScoutWeb.Guardian,
+    #   error_handler: BlockScoutWeb.GuardianErrorHandler,
+    #   tolerant?: true,
+    #   halt: false
+    # )
+    plug(:fetch_session)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}

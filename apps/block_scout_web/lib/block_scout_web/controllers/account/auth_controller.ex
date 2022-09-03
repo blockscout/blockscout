@@ -78,6 +78,14 @@ defmodule BlockScoutWeb.Account.AuthController do
     current_user(conn) || redirect(conn, to: root())
   end
 
+  def api_authenticate!(conn) do
+    current_user(conn) ||
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(401, Jason.encode!(%{message: "Unauthorized"}))
+      |> halt()
+  end
+
   def current_user(%{private: %{plug_session: %{"current_user" => _}}} = conn),
     do: get_session(conn, :current_user)
 
