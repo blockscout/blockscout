@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias BlockScoutWeb.Guardian
   alias BlockScoutWeb.Models.UserFromAuth
 
   setup %{conn: conn} do

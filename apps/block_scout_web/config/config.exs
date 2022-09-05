@@ -81,10 +81,6 @@ config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISAB
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth,
   providers: [
-    auth0_api: {
-      Ueberauth.Strategy.Auth0,
-      [callback_path: "/auth/auth0_api/api_callback"]
-    },
     auth0: {
       Ueberauth.Strategy.Auth0,
       [callback_path: "/auth/auth0/callback"]
@@ -93,13 +89,6 @@ config :ueberauth, Ueberauth,
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
-
-config :block_scout_web, BlockScoutWeb.Guardian, issuer: "block_scout_web"
-
-config :guardian, Guardian.DB,
-  repo: Explorer.Repo.Account,
-  schema_name: "guardian_tokens",
-  sweep_interval: 60
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

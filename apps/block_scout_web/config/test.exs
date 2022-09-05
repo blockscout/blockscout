@@ -31,5 +31,3 @@ config :ueberauth, Ueberauth,
       [callback_url: "example.com/callback"]
     }
   ]
-
-config :block_scout_web, BlockScoutWeb.Guardian, issuer: "block_scout_web"

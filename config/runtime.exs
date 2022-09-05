@@ -46,8 +46,6 @@ config :ueberauth, Ueberauth,
   logout_url: System.get_env("AUTH0_LOGOUT_URL"),
   logout_return_to_url: System.get_env("AUTH0_LOGOUT_RETURN_URL")
 
-config :block_scout_web, BlockScoutWeb.Guardian, secret_key: System.get_env("SECRET_KEY_GUARDIAN")
-
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
