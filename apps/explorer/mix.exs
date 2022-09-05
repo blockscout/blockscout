@@ -24,7 +24,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "8"
+      version: "4.1.8"
     ]
   end
 
