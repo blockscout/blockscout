@@ -2,6 +2,14 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+## 4.1.8-beta
+
+### Features
+
 - [#5968](https://github.com/blockscout/blockscout/pull/5968) - Add call type in the response of txlistinternal API method
 - [#5860](https://github.com/blockscout/blockscout/pull/5860) - Integrate rust verifier micro-service ([blockscout-rs/verifier](https://github.com/blockscout/blockscout-rs/tree/main/verification))
 - [#6001](https://github.com/blockscout/blockscout/pull/6001) - Add ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES env var that filters requests and query node only if the block quantity is "latest"
@@ -33,6 +41,9 @@
 
 ### Chore
 
+- [#5921](https://github.com/blockscout/blockscout/pull/5921) - Bump briefly from 25942fb to 1dd66ee
+- [#6033](https://github.com/blockscout/blockscout/pull/6033) - Bump sass from 1.54.7 to 1.54.8 in /apps/block_scout_web/assets
+- [#6046](https://github.com/blockscout/blockscout/pull/6046) - Bump credo from 1.6.6 to 1.6.7
 - [#6045](https://github.com/blockscout/blockscout/pull/6045) - Re-use _btn_copy.html for raw trace page
 - [#6035](https://github.com/blockscout/blockscout/pull/6035) - Hide copy btn if no raw trace
 - [#6034](https://github.com/blockscout/blockscout/pull/6034) - Suppress empty sections in supported chain dropdown
