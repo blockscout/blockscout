@@ -63,7 +63,8 @@ defmodule BlockScoutWeb.Endpoint do
     Plug.Session,
     store: :cookie,
     key: "_explorer_key",
-    signing_salt: "iC2ksJHS"
+    signing_salt: "iC2ksJHS",
+    same_site: "Lax"
   )
 
   use SpandexPhoenix
