@@ -17,7 +17,7 @@
               <div class="form-group">
                 <%= label f, :name, gettext("Name"), class: "control-label", style: "font-size: 14px" %>
                 <%= text_input f, :name, class: "form-control", placeholder: gettext("Name this transaction"), maxlength: 35 %>
-                <%= error_tag f, :name %>
+                <%= error_tag f, :name, class: "text-danger form-error" %>
               </div>
 
               <div class="form-group float-right form-input">

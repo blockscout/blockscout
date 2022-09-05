@@ -12,11 +12,21 @@ defmodule Explorer.Account.TagAddress do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
 
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
+
   @max_tag_address_per_account 15
 
   schema "account_tag_addresses" do
     field(:name, :string)
     field(:address_hash, Hash.Address, null: false)
+    field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+
+    field(:address_hash_hash, Cloak.Ecto.SHA256)
+
+    # field(:name, Explorer.Encrypted.Binary)
+    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+
     belongs_to(:identity, Identity)
 
     timestamps()
@@ -35,7 +45,8 @@ defmodule Explorer.Account.TagAddress do
     |> cast(attrs, @attrs)
     |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
-    |> unique_constraint([:identity_id, :address_hash], message: "Address tag already exists")
+    |> put_hashed_fields()
+    |> unique_constraint([:identity_id, :address_hash_hash], message: "Address tag already exists")
     |> check_existance_or_create_address()
     |> tag_address_count_constraint()
   end
@@ -46,11 +57,12 @@ defmodule Explorer.Account.TagAddress do
     |> Repo.account_repo().insert()
   end
 
-  defp check_existance_or_create_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do
-    check_existance_or_create_address_inner(changeset, address_hash)
+  defp put_hashed_fields(changeset) do
+    changeset
+    |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
-  defp check_existance_or_create_address(%Changeset{data: %{address_hash: address_hash}, valid?: true} = changeset) do
+  defp check_existance_or_create_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do
     check_existance_or_create_address_inner(changeset, address_hash)
   end
 
@@ -104,6 +116,7 @@ defmodule Explorer.Account.TagAddress do
   def get_tag_address_by_address_hash_and_identity_id(address_hash, identity_id)
       when not is_nil(address_hash) and not is_nil(identity_id) do
     address_hash
+    |> hash_to_lower_case_string()
     |> tag_address_by_address_hash_and_identity_id_query(identity_id)
     |> Repo.account_repo().one()
   end

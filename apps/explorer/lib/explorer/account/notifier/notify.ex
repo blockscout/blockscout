@@ -142,7 +142,7 @@ defmodule Explorer.Account.Notifier.Notify do
   end
 
   defp find_watchlists_addresses(%Explorer.Chain.Hash{} = address_hash) do
-    query = from(wa in WatchlistAddress, where: wa.address_hash == ^address_hash)
+    query = from(wa in WatchlistAddress, where: wa.address_hash_hash == ^address_hash)
     Repo.account_repo().all(query)
   end
 end

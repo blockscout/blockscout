@@ -11,13 +11,22 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.{Address, Wei, Hash}
+
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   @max_watchlist_addresses_per_account 10
 
   schema "account_watchlist_addresses" do
     field(:name, :string)
     field(:address_hash, Hash.Address, null: false)
+    field(:encrypted_name, Explorer.Encrypted.Binary)
+    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+
+    field(:address_hash_hash, Cloak.Ecto.SHA256)
+
+    # field(:name, Explorer.Encrypted.Binary)
+    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
 
     belongs_to(:watchlist, Watchlist)
 
@@ -52,9 +61,18 @@ defmodule Explorer.Account.WatchlistAddress do
     |> cast(attrs, @attrs)
     |> validate_length(:name, min: 1, max: 35)
     |> validate_required([:name, :address_hash, :watchlist_id], message: "Required")
-    |> unique_constraint([:watchlist_id, :address_hash], message: "Address already added to the watch list")
+    |> put_hashed_fields()
+    |> unique_constraint([:watchlist_id, :address_hash_hash],
+      name: "unique_watchlist_id_address_hash_hash_index",
+      message: "Address already added to the watch list"
+    )
     |> check_address()
     |> watchlist_address_count_constraint()
+  end
+
+  defp put_hashed_fields(changeset) do
+    changeset
+    |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
   def create(attrs) do

@@ -22,6 +22,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   schema("account_public_tags_requests") do
     field(:full_name, :string)
     field(:email, :string)
+
     field(:company, :string)
     field(:website, :string)
     field(:tags, :string)
@@ -32,6 +33,12 @@ defmodule Explorer.Account.PublicTagsRequest do
     field(:is_owner, :boolean, default: true)
     field(:remove_reason, :string)
     field(:request_id, :string)
+
+    field(:encrypted_full_name, Explorer.Encrypted.Binary)
+    field(:encrypted_email, Explorer.Encrypted.Binary)
+
+    # field(:full_name, Explorer.Encrypted.Binary)
+    # field(:email, Explorer.Encrypted.Binary)
 
     belongs_to(:identity, Identity)
 

@@ -10,16 +10,26 @@ defmodule Explorer.Account.CustomABI do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash
 
+  import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Ecto.Changeset
 
   @max_abis_per_account 15
 
   schema "account_custom_abis" do
-    field(:name, :string)
     field(:abi, {:array, :map})
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
+
+    field(:name, :string)
     field(:address_hash, Hash.Address, null: false)
+
+    field(:encrypted_address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:encrypted_name, Explorer.Encrypted.Binary)
+
+    field(:address_hash_hash, Cloak.Ecto.SHA256)
+
+    # field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    # field(:name, Explorer.Encrypted.Binary)
 
     belongs_to(:identity, Identity)
 
@@ -35,7 +45,8 @@ defmodule Explorer.Account.CustomABI do
     |> validate_custom_abi()
     |> check_smart_contract_address()
     |> foreign_key_constraint(:identity_id, message: "User not found")
-    |> unique_constraint([:identity_id, :address_hash],
+    |> put_hashed_fields()
+    |> unique_constraint([:identity_id, :address_hash_hash],
       message: "Custom ABI for this address has already been added before"
     )
     |> custom_abi_count_constraint()
@@ -45,6 +56,11 @@ defmodule Explorer.Account.CustomABI do
     custom_abi
     |> cast(attrs, [:id | @attrs])
     |> validate_required(@attrs, message: "Required")
+  end
+
+  defp put_hashed_fields(changeset) do
+    changeset
+    |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
   defp check_smart_contract_address(%Changeset{changes: %{address_hash: address_hash}} = custom_abi) do
@@ -164,7 +180,7 @@ defmodule Explorer.Account.CustomABI do
   def custom_abi_by_identity_id_and_address_hash_query(address_hash, identity_id)
       when not is_nil(identity_id) and not is_nil(address_hash) do
     __MODULE__
-    |> where([custom_abi], custom_abi.identity_id == ^identity_id and custom_abi.address_hash == ^address_hash)
+    |> where([custom_abi], custom_abi.identity_id == ^identity_id and custom_abi.address_hash_hash == ^address_hash)
   end
 
   def custom_abi_by_identity_id_and_address_hash_query(_, _), do: nil
@@ -172,6 +188,7 @@ defmodule Explorer.Account.CustomABI do
   def get_custom_abi_by_identity_id_and_address_hash(address_hash, identity_id)
       when not is_nil(identity_id) and not is_nil(address_hash) do
     address_hash
+    |> hash_to_lower_case_string()
     |> custom_abi_by_identity_id_and_address_hash_query(identity_id)
     |> Repo.account_repo().one()
   end

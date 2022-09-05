@@ -3,6 +3,8 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
     Module is responsible for submitting requests for public tags to AirTable
   """
 
+  require Logger
+
   alias Ecto.Changeset
   alias Explorer.Account.PublicTagsRequest
   alias Explorer.Repo
@@ -37,7 +39,9 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
 
           input
 
-        _ ->
+        error ->
+          Logger.error(fn -> ["Error while submitting AirTable entry", inspect(error)] end)
+
           {:error,
            %{
              (%PublicTagsRequest{}
