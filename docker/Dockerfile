@@ -71,14 +71,14 @@ RUN cd apps/block_scout_web/assets/ && \
 
 RUN mix phx.digest
 
-# RUN mkdir -p /opt/release \
-#   && mix release blockscout \
-#   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
+RUN mkdir -p /opt/release \
+  && mix release blockscout \
+  && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
-# ##############################################################
-# FROM bitwalker/alpine-elixir-phoenix:1.13
+##############################################################
+FROM bitwalker/alpine-elixir-phoenix:1.13
 
-# WORKDIR /app
+WORKDIR /app
 
-# COPY --from=builder /opt/release/blockscout .
-# COPY --from=builder /app/apps/explorer/node_modules ./node_modules
+COPY --from=builder /opt/release/blockscout .
+COPY --from=builder /app/apps/explorer/node_modules ./node_modules
