@@ -21,8 +21,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @behaviour BufferedTask
 
-  @max_batch_size 10
-  @max_concurrency 2
+  @max_batch_size 15
+  @max_concurrency 3
   @defaults [
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
@@ -85,8 +85,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
     final
   end
 
-  defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
+  defp params(%{block_number: block_number, hash: hash, index: index, input: input}) when is_integer(block_number) do
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index, input: Explorer.Chain.Data.to_string(input)}
   end
 
   @impl BufferedTask
@@ -163,13 +163,26 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
+  defp blank_input?(str) do
+    case str do
+      nil -> true
+      "0x" -> true
+      "" -> true
+      " " <> r -> blank_input?(r)
+      _ -> false
+    end
+  end
+
   defp fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments) do
     Enum.reduce(unique_numbers, {:ok, []}, fn
       block_number, {:ok, acc_list} ->
-        block_number
-        |> Chain.get_transactions_of_block_number()
-        |> Enum.map(&params(&1))
-        |> case do
+        transactions = block_number
+                       |> Chain.get_transactions_of_block_number()
+                       |> Enum.map(&params(&1))
+                       |> Enum.filter(fn param -> blank_input?(param[:input]) == false end)
+                       |> Enum.map(fn param ->
+          %{block_number: param[:block_number], hash_data: param[:hash_data], transaction_index: param[:transaction_index]} end)
+        case transactions do
           [] ->
             {:ok, []}
 

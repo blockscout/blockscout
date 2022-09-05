@@ -183,8 +183,8 @@ defmodule Indexer.Fetcher.CosmosHash do
           String.valid?(w) ->
             result <> w
           true ->
-            << parsed :: 8>> = w
-            result <>   << parsed :: utf8 >>
+            <<parsed::8>> = w
+            result <> <<parsed::utf8>>
         end
       end)
   end
