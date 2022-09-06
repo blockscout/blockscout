@@ -507,7 +507,6 @@ ifdef ACCOUNT_POOL_SIZE
 endif
 ifdef ACCOUNT_CLOAK_KEY
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ACCOUNT_CLOAK_KEY=$(ACCOUNT_CLOAK_KEY)'
-endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
 build:
