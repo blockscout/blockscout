@@ -98,7 +98,12 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
       end
 
     {:ok, community_fund_address_hash} = string_to_address_hash(@community_fund_address)
-    {:ok, community_fund_address} = hash_to_address(community_fund_address_hash)
+
+    community_fund_address =
+      case hash_to_address(community_fund_address_hash) do
+        {:ok, community_fund_address} -> community_fund_address
+        _ -> nil
+      end
 
     carbon_epoch_transaction = %{
       address: carbon_fund_address,
