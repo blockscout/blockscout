@@ -804,7 +804,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:19
 #: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
 #: lib/block_scout_web/templates/account/custom_abi/index.html.eex:7
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:182
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:18
 #, elixir-autogen, elixir-format
 msgid "Custom ABI"
 msgstr ""
@@ -1828,12 +1828,12 @@ msgid "Priority Fees"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:4
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:177
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "Profile"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:183
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:19
 #, elixir-autogen, elixir-format
 msgid "Public Tags"
 msgstr ""
@@ -2048,7 +2048,7 @@ msgstr ""
 msgid "Shows total assets held in the address"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:184
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:20
 #, elixir-autogen, elixir-format
 msgid "Sign out"
 msgstr ""
@@ -2905,7 +2905,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/common/_nav.html.eex:7
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:7
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:178
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:14
 #, elixir-autogen, elixir-format
 msgid "Watch list"
 msgstr ""

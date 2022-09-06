@@ -3,6 +3,7 @@ defmodule Explorer.Account.Notify do
     Interface for notifier, for import and call from other modules
   """
 
+  alias Explorer.Account
   alias Explorer.Account.Notifier.Notify
 
   require Logger
@@ -12,8 +13,10 @@ defmodule Explorer.Account.Notify do
   end
 
   defp process(transactions) do
-    check_envs()
-    Notify.call(transactions)
+    if Account.enabled?() do
+      check_envs()
+      Notify.call(transactions)
+    end
   rescue
     err ->
       Logger.info("--- Notifier error", fetcher: :account)

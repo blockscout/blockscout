@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Account.AuthController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Models.UserFromAuth
+  alias Explorer.Account
 
   plug(Ueberauth)
 
@@ -53,8 +54,13 @@ defmodule BlockScoutWeb.Account.AuthController do
     current_user(conn) || redirect(conn, to: root())
   end
 
-  def current_user(%{private: %{plug_session: %{"current_user" => _}}} = conn),
-    do: get_session(conn, :current_user)
+  def current_user(%{private: %{plug_session: %{"current_user" => _}}} = conn) do
+    if Account.enabled?() do
+      get_session(conn, :current_user)
+    else
+      nil
+    end
+  end
 
   def current_user(_), do: nil
 

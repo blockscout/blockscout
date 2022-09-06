@@ -328,6 +328,7 @@ config :explorer, Explorer.Mailer,
   api_key: System.get_env("ACCOUNT_SENDGRID_API_KEY")
 
 config :explorer, Explorer.Account,
+  enabled: System.get_env("ACCOUNT_ENABLED") == "true",
   sendgrid: [
     sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
     template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")

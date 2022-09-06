@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  alias BlockScoutWeb.Plug.CheckAccountAPI
 
   pipeline :api do
     plug(:accepts, ["json"])
@@ -21,6 +22,7 @@ defmodule BlockScoutWeb.ApiRouter do
   pipeline :account_api do
     plug(:fetch_session)
     plug(:protect_from_forgery)
+    plug(CheckAccountAPI)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
