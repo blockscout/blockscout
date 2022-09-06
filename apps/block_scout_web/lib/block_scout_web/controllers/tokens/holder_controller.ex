@@ -15,9 +15,11 @@ defmodule BlockScoutWeb.Tokens.HolderController do
     ]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
+    from_api = false
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
-         token_balances <- Chain.fetch_token_holders_from_token_hash(address_hash, paging_options(params)),
+         token_balances <- Chain.fetch_token_holders_from_token_hash(address_hash, from_api, paging_options(params)),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       {token_balances_paginated, next_page} = split_list_by_page(token_balances)
 

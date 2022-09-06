@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.EventProcessor do
   alias Indexer.Celo.TrackedEventCache
   alias Indexer.Fetcher.Util
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: :timer.seconds(3),

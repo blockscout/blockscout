@@ -36,6 +36,7 @@ defmodule Indexer.Supervisor do
     CoinBalanceOnDemand,
     ContractCode,
     EmptyBlocksSanitizer,
+    EventBackfill,
     EventProcessor,
     InternalTransaction,
     PendingTransaction,
@@ -165,6 +166,7 @@ defmodule Indexer.Supervisor do
       {CeloUnlocked.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {CeloVoters.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {EventProcessor.Supervisor, [[], []]},
+      {EventBackfill.Supervisor, [[], []]},
       {TrackedEventCache, [[], []]},
       {CeloMaterializedViewRefresh, [[], []]},
       {InternalTransactionCache, [[], []]}

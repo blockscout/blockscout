@@ -25,6 +25,9 @@
                             <div class="stakes-table-th-content">&nbsp;</div>
                         </th>
                         <th class="stakes-table-th">
+                            <div>&nbsp;</div>
+                        </th>
+                        <th class="stakes-table-th">
                             <div class="stakes-table-th-content">Asset</div>
                         </th>
                         <th class="stakes-table-th">
@@ -48,7 +51,7 @@
                     </tr>
                 </thead>
                 <tbody data-items data-selector="address-tokens-list">
-                    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 8 %>
+                    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 9 %>
                 </tbody>
             </table>
         </div>

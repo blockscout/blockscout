@@ -106,7 +106,7 @@ function updateFormState (locked) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
   '[data-page="contract-verification"]': {
@@ -259,6 +259,7 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').show()
       $('#verify_vyper_contract_button').hide()
+      $('#verify_via_standard_json_input').hide()
     }
   })
 
@@ -267,6 +268,16 @@ if ($contractVerificationPage.length) {
       $('#verify_via_flattened_code_button').hide()
       $('#verify_via_sourcify_button').hide()
       $('#verify_vyper_contract_button').show()
+      $('#verify_via_standard_json_input').hide()
+    }
+  })
+
+  $('.verify-via-standard-json-input').on('click', function () {
+    if ($(this).prop('checked')) {
+      $('#verify_via_flattened_code_button').hide()
+      $('#verify_via_sourcify_button').hide()
+      $('#verify_vyper_contract_button').hide()
+      $('#verify_via_standard_json_input').show()
     }
   })
 }

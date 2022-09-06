@@ -566,7 +566,7 @@ defmodule BlockScoutWeb.TransactionView do
 
     case Integer.parse(string_value) do
       {integer, ""} -> integer
-      _ -> 0
+      _ -> 2040
     end
   end
 

@@ -57,8 +57,9 @@ defmodule Explorer.Celo.Telemetry do
 
       start = Telemetry.start(:event_name)
       try do
-        call_function()
+        result = call_function()
         Telemetry.stop(:event_name, start)
+        result
       rescue
         e ->
           Telemetry.exception(:event_name, start, :exception, e, __STACKTRACE__)
@@ -70,8 +71,9 @@ defmodule Explorer.Celo.Telemetry do
       start_time = Telemetry.start(unquote(event_name))
 
       try do
-        unquote(call)
+        result = unquote(call)
         Telemetry.stop(unquote(event_name), start_time)
+        result
       rescue
         e ->
           Telemetry.exception(unquote(event_name), start_time, :exception, e, __STACKTRACE__)

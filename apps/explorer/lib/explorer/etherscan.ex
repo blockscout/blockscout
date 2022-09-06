@@ -8,7 +8,8 @@ defmodule Explorer.Etherscan do
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.{Block, CeloParams, Hash, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, CeloParams, Hash, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.Transaction.History.TransactionStats
 
   @default_options %{
     order_by_direction: :desc,
@@ -19,6 +20,8 @@ defmodule Explorer.Etherscan do
     start_timestamp: nil,
     end_timestamp: nil
   }
+
+  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
   @doc """
   Returns the maximum allowed page size number.
@@ -115,7 +118,7 @@ defmodule Explorer.Etherscan do
     |> Chain.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   @doc """
@@ -198,7 +201,7 @@ defmodule Explorer.Etherscan do
       query_to_address_hash_wrapped
       |> union(^query_from_address_hash_wrapped)
       |> union(^query_created_contract_address_hash_wrapped)
-      |> Repo.all()
+      |> Repo.replica().all()
     else
       query =
         from(
@@ -222,7 +225,7 @@ defmodule Explorer.Etherscan do
       |> where_start_block_match(options)
       |> where_end_block_match(options)
       |> InternalTransaction.where_nonpending_block()
-      |> Repo.all()
+      |> Repo.replica().all()
     end
   end
 
@@ -345,7 +348,7 @@ defmodule Explorer.Etherscan do
         }
       )
 
-    Repo.all(query)
+    Repo.replica().all(query)
   end
 
   @doc """
@@ -366,7 +369,7 @@ defmodule Explorer.Etherscan do
         select: ctb
       )
 
-    Repo.one(query)
+    Repo.replica().one(query)
   end
 
   @doc """
@@ -392,7 +395,7 @@ defmodule Explorer.Etherscan do
         }
       )
 
-    tokens = Repo.all(query)
+    tokens = Repo.replica().all(query)
 
     tokens
     |> Enum.map(fn item ->
@@ -451,7 +454,7 @@ defmodule Explorer.Etherscan do
     |> where_address_match(address_hash, options)
     |> Chain.pending_transactions_query()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp list_transactions(address_hash, max_block_number, options) do
@@ -498,7 +501,7 @@ defmodule Explorer.Etherscan do
     |> where_end_block_match(options)
     |> where_start_timestamp_match(options)
     |> where_end_timestamp_match(options)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp transaction_with_address_query(filter, address_hash, _max_block_number, options) do
@@ -606,7 +609,7 @@ defmodule Explorer.Etherscan do
     wrapped_query
     |> where_start_block_match(options)
     |> where_end_block_match(options)
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp where_start_block_match(query, %{start_block: nil}), do: query
@@ -672,4 +675,53 @@ defmodule Explorer.Etherscan do
   """
   @spec list_logs(map()) :: [map()]
   def list_logs(filter), do: Logs.list_logs(filter)
+
+  @spec fetch_sum_coin_total_supply() :: non_neg_integer
+  def fetch_sum_coin_total_supply do
+    query =
+      from(
+        a0 in Address,
+        select: fragment("SUM(a0.fetched_coin_balance)"),
+        where: a0.fetched_coin_balance > ^0
+      )
+
+    Repo.replica().one!(query, timeout: :infinity) || 0
+  end
+
+  @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
+  def fetch_sum_coin_total_supply_minus_burnt do
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
+
+    query =
+      from(
+        a0 in Address,
+        select: fragment("SUM(a0.fetched_coin_balance)"),
+        where: a0.hash != ^burn_address_hash,
+        where: a0.fetched_coin_balance > ^0
+      )
+
+    Repo.replica().one!(query, timeout: :infinity) || 0
+  end
+
+  @doc """
+  It is used by `totalfees` API endpoint of `stats` module for retrieving of total fee per day
+  """
+  @spec get_total_fees_per_day(String.t()) :: {:ok, non_neg_integer() | nil} | {:error, String.t()}
+  def get_total_fees_per_day(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, date} ->
+        query =
+          from(
+            tx_stats in TransactionStats,
+            where: tx_stats.date == ^date,
+            select: tx_stats.total_fee
+          )
+
+        total_fees = Repo.replica().one(query)
+        {:ok, total_fees}
+
+      _ ->
+        {:error, "An incorrect input date provided. It should be in ISO 8601 format (yyyy-mm-dd)."}
+    end
+  end
 end

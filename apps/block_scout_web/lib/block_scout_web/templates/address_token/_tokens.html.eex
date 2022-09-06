@@ -1,13 +1,7 @@
 <tr data-identifier-hash="<%= @token.contract_address_hash %>">
   <td class="stakes-td">
-      <!-- incremented number by order in the list -->
-      <span class="color-lighten">
-      </span>
   </td>
-  <td class="stakes-td">
-    <span
-        class="token-icon mr-1"
-    >
+  <td>
     <%= if System.get_env("DISPLAY_TOKEN_ICONS") === "true" do %>
       <% chain_id_for_token_icon = if @bridged_token && @bridged_token.foreign_chain_id, do: @bridged_token.foreign_chain_id |> Decimal.to_integer() |> to_string(), else: System.get_env("CHAIN_ID") %>
       <% address_hash = if @bridged_token && @bridged_token.foreign_token_contract_address_hash, do: @bridged_token.foreign_token_contract_address_hash, else: @token.contract_address_hash %>
@@ -18,7 +12,8 @@
         address: Address.checksum(address_hash)
       %>
     <% end %>
-    </span>
+  </td>
+  <td class="stakes-td">
     <%= link(
           to: address_token_transfers_path(@conn, :index, to_string(@address.hash), to_string(@token.contract_address_hash)),
           class: "tile-title-lg",

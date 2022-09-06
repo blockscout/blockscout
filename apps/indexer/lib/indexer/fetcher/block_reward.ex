@@ -23,7 +23,7 @@ defmodule Indexer.Fetcher.BlockReward do
   alias Indexer.Fetcher.CoinBalance
   alias Indexer.Transform.{AddressCoinBalances, AddressCoinBalancesDaily, Addresses}
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @defaults [
     flush_interval: :timer.seconds(3),

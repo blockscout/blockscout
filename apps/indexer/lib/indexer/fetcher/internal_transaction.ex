@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Indexer.Fetcher.TokenBalance
   alias Indexer.Transform.{Addresses, TokenTransfers}
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @max_batch_size 3
   @max_concurrency 55

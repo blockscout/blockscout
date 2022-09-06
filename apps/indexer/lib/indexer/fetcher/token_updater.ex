@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
   alias Explorer.Token.MetadataRetriever
   alias Indexer.BufferedTask
 
-  @behaviour BufferedTask
+  use BufferedTask
 
   @max_batch_size 10
   @max_concurrency 4

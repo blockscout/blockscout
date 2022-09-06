@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
+  alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
+  alias BlockScoutWeb.API.RPC.RPCView
   alias Explorer.Celo.Util
 
   def render("listaccounts.json", %{accounts: accounts}) do

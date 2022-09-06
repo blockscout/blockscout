@@ -135,7 +135,7 @@ defmodule BlockScoutWeb.SmartContractViewTest do
     if length > @max_size do
       "<details class=\"py-2 word-break-all\"><summary>Click to view</summary>#{output}</details>"
     else
-      "<div class=\"py-2 word-break-all\">#{output}</div>"
+      "<span class=\"word-break-all\" style=\"line-height: 3;\">#{output}</span>"
     end
   end
 
