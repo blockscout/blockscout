@@ -42,4 +42,13 @@ defmodule BlockScoutWeb.Application do
     Endpoint.config_change(changed, removed)
     :ok
   end
+
+
+  def cluster_process(acc, :prod) do
+    topologies = Application.get_env(:block_scout_web, :environment)
+
+    [{Cluster.Supervisor, [topologies, [name: BlockScoutWeb.ClusterSupervisor]]} | acc]
+  end
+
+  def cluster_process(acc, _environment), do: acc
 end
