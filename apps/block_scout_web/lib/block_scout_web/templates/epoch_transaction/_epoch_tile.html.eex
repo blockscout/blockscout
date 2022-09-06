@@ -27,7 +27,7 @@
         <div class="d-flex align-items-end ml-2" style="height: 30px;">
           <span class="tile-address-link-desktop">
             <%= case @epoch_transaction.address do %>
-              <% :error -> %>
+              <% address when address in [:error, nil] -> %>
                 <%= gettext "The address could not be loaded. Please try again later" %>
               <% _ -> %>
                 <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.address), "data-test": "address_hash_link", class: assigns[:class] do %>
@@ -37,7 +37,7 @@
           </span>
           <span class="tile-address-link-mobile">
             <%= case @epoch_transaction.address do %>
-              <% :error -> %>
+              <% address when address in [:error, nil] -> %>
                 <%= gettext "The address could not be loaded. Please try again later" %>
               <% _ -> %>
                 <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, to_string(@epoch_transaction.address)), "data-test": "address_hash_link", class: assigns[:class] do %>
