@@ -5,8 +5,8 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.{LoggerBackend, Memory, Prometheus}
-  alias Prometheus.Setup
+  alias Indexer.{LoggerBackend, Memory}
+  alias Indexer.Prometheus.Setup, as: CeloTelemetry
 
   @impl Application
   def start(_type, _args) do
@@ -17,7 +17,7 @@ defmodule Indexer.Application do
       end
 
     memory_monitor_name = Memory.Monitor
-    Setup.setup()
+    CeloTelemetry.setup()
 
     base_children = [
       {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
@@ -32,6 +32,8 @@ defmodule Indexer.Application do
         base_children
       end
 
+      childred = [cluster_process() | children]
+
     opts = [
       # If the `Memory.Monitor` dies, it needs all the `Shrinkable`s to re-register, so restart them.
       strategy: :rest_for_one,
@@ -41,5 +43,11 @@ defmodule Indexer.Application do
     Logger.add_backend(LoggerBackend)
 
     Supervisor.start_link(children, opts)
+  end
+
+  def cluster_process() do
+    topologies = Application.get_env(:indexer, :topologies)
+
+    [{Cluster.Supervisor, [topologies, [name: Example.ClusterSupervisor]]}]
   end
 end
