@@ -85,8 +85,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
     final
   end
 
-  defp params(%{block_number: block_number, hash: hash, index: index, input: input}) when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index, input: Explorer.Chain.Data.to_string(input)}
+  defp params(%{block_number: block_number, hash: hash, index: index,
+                input: input, has_error_in_internal_txs: has_error_in_internal_txs}) when is_integer(block_number) do
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index,
+      input: Explorer.Chain.Data.to_string(input), has_error_in_internal_txs: has_error_in_internal_txs}
   end
 
   @impl BufferedTask
@@ -173,22 +175,38 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
+  defp valid_param?(param) do
+    cond do
+      blank_input?(param[:input]) == true ->
+        false
+      param[:has_error_in_internal_txs] == false ->
+        false
+      true ->
+        true
+    end
+  end
+
   defp fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments) do
     Enum.reduce(unique_numbers, {:ok, []}, fn
       block_number, {:ok, acc_list} ->
         transactions = block_number
                        |> Chain.get_transactions_of_block_number()
                        |> Enum.map(&params(&1))
-                       |> Enum.filter(fn param -> blank_input?(param[:input]) == false end)
+                       |> Enum.filter(fn param -> valid_param?(param) end)
                        |> Enum.map(fn param ->
-          %{block_number: param[:block_number], hash_data: param[:hash_data], transaction_index: param[:transaction_index]} end)
+          %{block_number: param[:block_number], hash_data: param[:hash_data],
+            transaction_index: param[:transaction_index]}
+          end)
         case transactions do
           [] ->
             {:ok, []}
 
           transactions ->
+            max_handle_txs = Indexer.Fetcher.parse_env("HANDLE_TXS_HAS_INTERNAL_TXS_PER_BLOCK") || 50
             try do
-              EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+              EthereumJSONRPC.fetch_internal_transactions(
+                Enum.slice(transactions, 0, max_handle_txs), json_rpc_named_arguments
+              )
             catch
               :exit, error ->
                 {:error, error}
