@@ -24,6 +24,7 @@ defmodule Indexer.Application do
       {Plug.Cowboy,
        scheme: :http, plug: Indexer.Stack, options: [port: Application.get_env(:indexer, :health_check_port)]}
     ]
+    |> cluster_process(Application.get_env(:indexer, :environment))
 
     children =
       if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
@@ -31,8 +32,6 @@ defmodule Indexer.Application do
       else
         base_children
       end
-
-      childred = [cluster_process() | children]
 
     opts = [
       # If the `Memory.Monitor` dies, it needs all the `Shrinkable`s to re-register, so restart them.
@@ -45,9 +44,11 @@ defmodule Indexer.Application do
     Supervisor.start_link(children, opts)
   end
 
-  def cluster_process() do
-    topologies = Application.get_env(:indexer, :topologies)
+  def cluster_process(acc, :prod) do
+    topologies = Application.get_env(:indexer, :environment)
 
     [{Cluster.Supervisor, [topologies, [name: Example.ClusterSupervisor]]}]
   end
+
+  def cluster_process(acc, _environment), do: acc
 end
