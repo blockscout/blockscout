@@ -98,7 +98,7 @@ function loadTokenBalance (blockNumber) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      if (state.channelDisconnected) $el.show()
+      if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
   '[data-selector="balance-card"]': {
@@ -204,6 +204,10 @@ function loadCounters (store) {
 
 const $addressDetailsPage = $('[data-page="address-details"]')
 if ($addressDetailsPage.length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createStore(reducer)
   const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))

@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.AddressContractController do
   alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.AddressContractVerificationViaJsonController, as: VerificationController
   alias Explorer.{Chain, Market}
+  alias Explorer.Etherscan.Contracts
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
@@ -29,7 +30,7 @@ defmodule BlockScoutWeb.AddressContractController do
       Logger.debug("Address Found #{address_hash}")
       Logger.debug("Smart Contract #{address}")
 
-      with {:ok, implementation_address} <- Chain.get_proxied_address(address_hash),
+      with {:ok, implementation_address} <- Contracts.get_proxied_address(address_hash),
            {:ok, implementation_contract} <- Chain.find_contract_address(implementation_address, address_options, true) do
         Logger.debug("Implementation address FOUND in proxy table #{implementation_address}")
 

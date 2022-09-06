@@ -22,8 +22,8 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: System.get_env("SUBNETWORK"),
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO"),
-  logo_footer: System.get_env("LOGO_FOOTER"),
+  logo: System.get_env("LOGO", "/images/celo_logo.svg"),
+  logo_footer: System.get_env("LOGO_FOOTER", "/images/celo_logo.svg"),
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false,
   staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
@@ -67,6 +67,17 @@ config :block_scout_web,
   re_captcha_site_key: System.get_env("RE_CAPTCHA_SITE_KEY", nil),
   re_captcha_api_key: System.get_env("RE_CAPTCHA_API_KEY", nil),
   re_captcha_project_id: System.get_env("RE_CAPTCHA_PROJECT_ID", nil)
+
+api_rate_limit_value =
+  "API_RATE_LIMIT"
+  |> System.get_env("30")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 30
+  end
+
+config :block_scout_web, api_rate_limit: api_rate_limit_value
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
@@ -165,6 +176,9 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
   wobserver_enabled: System.get_env("WOBSERVER_ENABLED") == "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
+
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
 config :prometheus, BlockScoutWeb.Prometheus.Exporter, path: "/metrics/web"
 

@@ -141,4 +141,17 @@ defmodule Explorer.Repo do
         "blockscout"
     end
   end
+
+  if Mix.env() == :test do
+    def replica, do: __MODULE__
+  else
+    def replica, do: Explorer.Repo.Replica1
+  end
+
+  defmodule Replica1 do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres,
+      read_only: true
+  end
 end

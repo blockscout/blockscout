@@ -47,6 +47,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
       insert(:smart_contract, address_hash: token_contract_address.hash)
 
+      blockchain_get_code_mock()
       blockchain_get_function_mock()
 
       path =
@@ -83,6 +84,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         ]
       )
 
+      blockchain_get_code_mock()
+
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,
           hash: token_contract_address.hash,
@@ -117,6 +120,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         ]
       )
 
+      blockchain_get_code_mock()
       blockchain_get_implementation_mock()
 
       path =
@@ -153,6 +157,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         ]
       )
 
+      blockchain_get_code_mock()
       blockchain_get_implementation_mock_2()
 
       path =
@@ -232,6 +237,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       address = insert(:contract_address)
       smart_contract = insert(:smart_contract, address_hash: address.hash)
 
+      blockchain_get_code_mock()
       blockchain_get_function_mock()
 
       path =
@@ -265,6 +271,16 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       :json_rpc,
       fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000000"}]}
+      end
+    )
+  end
+
+  defp blockchain_get_code_mock do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [%{id: id, method: "eth_getCode", params: [_, _]}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
       end
     )
   end

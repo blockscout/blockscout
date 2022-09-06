@@ -9,6 +9,7 @@ defmodule Explorer.SmartContract.Reader do
   alias EthereumJSONRPC.{Contract, Encoder}
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Etherscan.Contracts
   alias Explorer.SmartContract.Helper
 
   @typedoc """
@@ -199,7 +200,7 @@ defmodule Explorer.SmartContract.Reader do
       |> Chain.address_hash_to_smart_contract()
 
     impl_abi =
-      with {:ok, implementation_address} <- Chain.get_proxied_address(contract_address_hash),
+      with {:ok, implementation_address} <- Contracts.get_proxied_address(contract_address_hash),
            implementation_contract <- Chain.address_hash_to_smart_contract(implementation_address) do
         implementation_contract.abi
       else

@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurnt do
     global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
     callback: &async_task_on_deletion(&1)
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Etherscan}
 
   defp handle_fallback(:sum_minus_burnt) do
     # This will get the task PID if one exists and launch a new task if not
@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurnt do
     {:ok, task} =
       Task.start(fn ->
         try do
-          result = Chain.fetch_sum_coin_total_supply_minus_burnt()
+          result = Etherscan.fetch_sum_coin_total_supply_minus_burnt()
 
           params = %{
             counter_type: "sum_coin_total_supply_minus_burnt",

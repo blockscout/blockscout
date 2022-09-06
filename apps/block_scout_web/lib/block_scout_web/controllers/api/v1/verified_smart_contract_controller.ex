@@ -1,11 +1,14 @@
 defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.API.APILogger
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
   alias Explorer.SmartContract.Solidity.Publisher
 
   def create(conn, params) do
+    APILogger.log(conn)
+
     with {:ok, hash} <- validate_address_hash(params["address_hash"]),
          :ok <- Chain.check_address_exists(hash),
          {:contract, :not_found} <- {:contract, Chain.check_verified_smart_contract_exists(hash)} do

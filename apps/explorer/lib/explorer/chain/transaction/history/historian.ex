@@ -35,8 +35,10 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
       Logger.info("tx/per day chart: latest date #{DateTime.to_string(latest)}")
 
-      with {:ok, min_block} <- Chain.timestamp_to_block_number(earliest, :after),
-           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :after) do
+      from_api = false
+
+      with {:ok, min_block} <- Chain.timestamp_to_block_number(earliest, :after, from_api),
+           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :after, from_api) do
         record =
           min_block
           |> compile_records_in_range(max_block)
