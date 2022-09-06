@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Account.Api.V1.UserController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Account.AuthController, only: [api_authenticate!: 1]
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Ecto.Query, only: [from: 2]
 
   alias BlockScoutWeb.Models.UserFromAuth
@@ -16,9 +16,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   @ok_message "OK"
 
   def info(conn, _params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)} do
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)} do
       conn
       |> put_status(200)
       |> render(:user_info, %{identity: identity})
@@ -26,9 +25,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def watchlist(conn, _params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          watchlist_with_addresses <- preload_watchlist_address_fetched_coin_balance(watchlist) do
@@ -42,9 +40,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def delete_watchlist(conn, %{"id" => watchlist_address_id}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {count, _} <- WatchlistAddress.delete(watchlist_address_id, watchlist.id),
@@ -81,8 +78,6 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
           "email" => notify_email
         }
       }) do
-    uid = api_authenticate!(conn).id
-
     watchlist_params = %{
       name: name,
       watch_coin_input: watch_coin_input,
@@ -97,7 +92,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       address_hash: address_hash
     }
 
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
@@ -139,8 +135,6 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
           "email" => notify_email
         }
       }) do
-    uid = api_authenticate!(conn).id
-
     watchlist_params = %{
       id: watchlist_address_id,
       name: name,
@@ -156,7 +150,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       address_hash: address_hash
     }
 
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
@@ -172,9 +167,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def tags_address(conn, _params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          address_tags <- TagAddress.get_tags_address_by_identity_id(identity.id) do
       conn
       |> put_status(200)
@@ -183,9 +177,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def delete_tag_address(conn, %{"id" => tag_id}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- TagAddress.delete(tag_id, identity.id),
          {:tag_delete, true} <- {:tag_delete, count > 0} do
       conn
@@ -195,9 +188,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def create_tag_address(conn, %{"address_hash" => address_hash, "name" => name}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, address_tag} <-
            TagAddress.create(%{
              name: name,
@@ -211,9 +203,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def update_tag_address(conn, %{"id" => tag_id} = attrs) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, address_tag} <-
            TagAddress.update(
              reject_nil_map_values(%{
@@ -230,9 +221,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def tags_transaction(conn, _params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          transaction_tags <- TagTransaction.get_tags_transaction_by_identity_id(identity.id) do
       conn
       |> put_status(200)
@@ -241,9 +231,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def delete_tag_transaction(conn, %{"id" => tag_id}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- TagTransaction.delete(tag_id, identity.id),
          {:tag_delete, true} <- {:tag_delete, count > 0} do
       conn
@@ -253,9 +242,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def create_tag_transaction(conn, %{"transaction_hash" => tx_hash, "name" => name}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, transaction_tag} <-
            TagTransaction.create(%{
              name: name,
@@ -269,9 +257,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def update_tag_transaction(conn, %{"id" => tag_id} = attrs) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, transaction_tag} <-
            TagTransaction.update(
              reject_nil_map_values(%{
@@ -288,9 +275,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def api_keys(conn, _params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          api_keys <- ApiKey.get_api_keys_by_identity_id(identity.id) do
       conn
       |> put_status(200)
@@ -299,9 +285,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def delete_api_key(conn, %{"api_key" => api_key_uuid}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- ApiKey.delete(api_key_uuid, identity.id),
          {:api_key_delete, true} <- {:api_key_delete, count > 0} do
       conn
@@ -311,9 +296,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def create_api_key(conn, %{"name" => api_key_name}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, api_key} <-
            ApiKey.create(%{name: api_key_name, identity_id: identity.id}) do
       conn
@@ -323,9 +307,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def update_api_key(conn, %{"name" => api_key_name, "api_key" => api_key_value}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, api_key} <-
            ApiKey.update(%{value: api_key_value, name: api_key_name, identity_id: identity.id}) do
       conn
@@ -335,9 +318,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def custom_abis(conn, _params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          custom_abis <- CustomABI.get_custom_abis_by_identity_id(identity.id) do
       conn
       |> put_status(200)
@@ -346,9 +328,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def delete_custom_abi(conn, %{"id" => id}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {count, _} <- CustomABI.delete(id, identity.id),
          {:custom_abi_delete, true} <- {:custom_abi_delete, count > 0} do
       conn
@@ -358,9 +339,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def create_custom_abi(conn, %{"contract_address_hash" => contract_address_hash, "name" => name, "abi" => abi}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, custom_abi} <-
            CustomABI.create(%{
              name: name,
@@ -380,9 +360,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
           "id" => id
         } = params
       ) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, custom_abi} <-
            CustomABI.update(
              reject_nil_map_values(%{
@@ -400,9 +379,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def public_tags_requests(conn, _params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          public_tags_requests <- PublicTagsRequest.get_public_tags_requests_by_identity_id(identity.id) do
       conn
       |> put_status(200)
@@ -411,9 +389,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def delete_public_tags_request(conn, %{"id" => id, "remove_reason" => remove_reason}) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:public_tag_delete, true} <-
            {:public_tag_delete,
             PublicTagsRequest.mark_as_deleted_public_tags_request(%{
@@ -428,9 +405,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   end
 
   def create_public_tags_request(conn, params) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, public_tags_request} <-
            PublicTagsRequest.create(%{
              full_name: params["full_name"],
@@ -455,9 +431,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
           "id" => id
         } = params
       ) do
-    uid = api_authenticate!(conn).id
-
-    with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, public_tags_request} <-
            PublicTagsRequest.update(
              reject_nil_map_values(%{
