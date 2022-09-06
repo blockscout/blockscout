@@ -13,7 +13,6 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
   alias Explorer.Chain.{CeloElectionRewards, CeloEpochRewards, Wei}
   alias Phoenix.View
 
-  alias Explorer.Celo.ContractEvents.Common.TransferEvent
   alias Explorer.Celo.CoreContracts
 
   # The community fund address never changes, so it's ok to hard-code it.
@@ -82,10 +81,21 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
           {:ok, carbon_fund_address_hash} = string_to_address_hash(address_string)
           {:ok, carbon_fund_address} = hash_to_address(carbon_fund_address_hash)
           carbon_fund_address
+
+        _ ->
+          nil
       end
 
-    {:ok, reserve_address_hash} = string_to_address_hash(CoreContracts.contract_address("Reserve"))
-    {:ok, reserve_address} = hash_to_address(reserve_address_hash)
+    reserve_address =
+      case CoreContracts.contract_address("Reserve") do
+        {:ok, address_string} ->
+          {:ok, address_hash} = string_to_address_hash(address_string)
+          {:ok, address} = hash_to_address(address_hash)
+          address
+
+        _ ->
+          nil
+      end
 
     {:ok, community_fund_address_hash} = string_to_address_hash(@community_fund_address)
     {:ok, community_fund_address} = hash_to_address(community_fund_address_hash)
