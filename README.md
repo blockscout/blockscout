@@ -1,10 +1,13 @@
-<h1 align="center">BlockScout</h1>
-<p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
-<div align="center">
+# <center>BlockScout</center>
+<center>Blockchain Explorer for inspecting and analyzing EVM Chains.</center>
+<br/>
+<center>
 
 [![Blockscout](https://github.com/blockscout/blockscout/workflows/Blockscout/badge.svg?branch=master)](https://github.com/blockscout/blockscout/actions)
+[![](https://dcbadge.vercel.app/api/server/blockscout?style=flat)](https://discord.gg/blockscout)
 
-</div>
+</center>
+
 
 BlockScout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on EVM (Ethereum Virtual Machine) blockchains. This includes the POA Network, Gnosis Chain, Ethereum Classic and other **Ethereum testnets, private networks and sidechains**.
 
