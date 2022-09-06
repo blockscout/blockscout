@@ -29,6 +29,8 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     pipe_through(:account_api)
 
+    get("/get_csrf", UserController, :get_csrf)
+
     scope "/user" do
       get("/info", UserController, :info)
 

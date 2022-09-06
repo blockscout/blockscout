@@ -5,6 +5,10 @@ defmodule BlockScoutWeb.Account.AuthController do
 
   plug(Ueberauth)
 
+  def request(conn, _) do
+    not_found(conn)
+  end
+
   def logout(conn, _params) do
     conn
     |> configure_session(drop: true)
@@ -38,6 +42,10 @@ defmodule BlockScoutWeb.Account.AuthController do
         |> put_flash(:error, reason)
         |> redirect(to: root())
     end
+  end
+
+  def callback(conn, _) do
+    not_found(conn)
   end
 
   # for importing in other controllers

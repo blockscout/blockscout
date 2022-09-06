@@ -10,6 +10,14 @@ defmodule BlockScoutWeb.ErrorView do
     "Bad request"
   end
 
+  def render("401." <> _type, _assigns) do
+    "Unauthorized"
+  end
+
+  def render("403." <> _type, _assigns) do
+    "Forbidden"
+  end
+
   def render("422." <> _type, _assigns) do
     "Unprocessable entity"
   end

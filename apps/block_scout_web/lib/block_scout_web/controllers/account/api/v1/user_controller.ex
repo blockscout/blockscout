@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   alias Explorer.Account.{Identity, PublicTagsRequest, TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Market, Repo}
+  alias Plug.CSRFProtection
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
 
@@ -451,6 +452,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       conn
       |> put_status(200)
       |> render(:public_tags_request, %{public_tags_request: public_tags_request})
+    end
+  end
+
+  def get_csrf(conn, _) do
+    with {:auth, %{id: _}} <- {:auth, current_user(conn)} do
+      conn
+      |> put_status(200)
+      |> render(:csrf, %{csrf: CSRFProtection.get_csrf_token()})
     end
   end
 
