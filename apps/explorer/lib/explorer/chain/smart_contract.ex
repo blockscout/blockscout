@@ -199,6 +199,7 @@ defmodule Explorer.Chain.SmartContract do
   * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified 
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
   * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
+  * `implementation_name` - name of the proxy implementation
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -216,7 +217,8 @@ defmodule Explorer.Chain.SmartContract do
           is_vyper_contract: boolean | nil,
           is_changed_bytecode: boolean,
           bytecode_checked_at: DateTime.t(),
-          contract_code_md5: String.t()
+          contract_code_md5: String.t(),
+          implementation_name: String.t() | nil
         }
 
   schema "smart_contracts" do
@@ -236,6 +238,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:is_changed_bytecode, :boolean, default: false)
     field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
     field(:contract_code_md5, :string)
+    field(:implementation_name, :string)
 
     has_many(
       :decompiled_smart_contracts,
@@ -276,7 +279,8 @@ defmodule Explorer.Chain.SmartContract do
       :is_vyper_contract,
       :is_changed_bytecode,
       :bytecode_checked_at,
-      :contract_code_md5
+      :contract_code_md5,
+      :implementation_name
     ])
     |> validate_required([
       :name,
@@ -315,7 +319,8 @@ defmodule Explorer.Chain.SmartContract do
         :is_vyper_contract,
         :is_changed_bytecode,
         :bytecode_checked_at,
-        :contract_code_md5
+        :contract_code_md5,
+        :implementation_name
       ])
       |> (&if(json_verification,
             do: &1,

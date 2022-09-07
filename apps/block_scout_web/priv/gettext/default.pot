@@ -99,7 +99,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:189
+#: lib/block_scout_web/templates/layout/app.html.eex:220
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -200,7 +200,7 @@ msgid "Address (external or contract) sending the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:166
+#: lib/block_scout_web/templates/address/overview.html.eex:165
 msgid "Address balance in xDAI (doesn't include ERC20, ERC721, ERC1155 tokens)."
 msgstr ""
 
@@ -239,7 +239,7 @@ msgid "All pool participant addresses. The top address belongs to the %{pool_typ
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:191
+#: lib/block_scout_web/templates/address/overview.html.eex:190
 msgid "All tokens in the account and total value."
 msgstr ""
 
@@ -306,7 +306,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:4
-#: lib/block_scout_web/templates/address/overview.html.eex:167 lib/block_scout_web/templates/address_token/overview.html.eex:51
+#: lib/block_scout_web/templates/address/overview.html.eex:166 lib/block_scout_web/templates/address_token/overview.html.eex:51
 #: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:42 lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:43
 msgid "Balance"
 msgstr ""
@@ -407,7 +407,7 @@ msgid "Block number containing the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:274
+#: lib/block_scout_web/templates/address/overview.html.eex:273
 msgid "Block number in which the address was updated."
 msgstr ""
 
@@ -429,8 +429,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:48
-#: lib/block_scout_web/templates/address/overview.html.eex:291 lib/block_scout_web/templates/address_validation/index.html.eex:11
-#: lib/block_scout_web/views/address_view.ex:356
+#: lib/block_scout_web/templates/address/overview.html.eex:290 lib/block_scout_web/templates/address_validation/index.html.eex:11
+#: lib/block_scout_web/views/address_view.ex:371
 msgid "Blocks Validated"
 msgstr ""
 
@@ -569,13 +569,13 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:58
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:165 lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126 lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:149
-#: lib/block_scout_web/views/address_view.ex:349
+#: lib/block_scout_web/views/address_view.ex:364
 msgid "Code"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:34
-#: lib/block_scout_web/views/address_view.ex:355
+#: lib/block_scout_web/views/address_view.ex:370
 msgid "Coin Balance History"
 msgstr ""
 
@@ -652,7 +652,7 @@ msgid "Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:126
+#: lib/block_scout_web/templates/address_contract/index.html.eex:122
 msgid "Contract ABI"
 msgstr ""
 
@@ -678,8 +678,8 @@ msgid "Contract Creation"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:142
-#: lib/block_scout_web/templates/address_contract/index.html.eex:157
+#: lib/block_scout_web/templates/address_contract/index.html.eex:138
+#: lib/block_scout_web/templates/address_contract/index.html.eex:153
 msgid "Contract Creation Code"
 msgstr ""
 
@@ -711,7 +711,7 @@ msgid "Contract source code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:148
+#: lib/block_scout_web/templates/address_contract/index.html.eex:144
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
 
@@ -721,7 +721,7 @@ msgid "Contribute"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:128
+#: lib/block_scout_web/templates/address_contract/index.html.eex:124
 msgid "Copy ABI"
 msgstr ""
 
@@ -734,8 +734,8 @@ msgid "Copy Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:144
-#: lib/block_scout_web/templates/address_contract/index.html.eex:160
+#: lib/block_scout_web/templates/address_contract/index.html.eex:140
+#: lib/block_scout_web/templates/address_contract/index.html.eex:156
 msgid "Copy Contract Creation Code"
 msgstr ""
 
@@ -745,8 +745,8 @@ msgid "Copy Decompiled Contract Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:187
-#: lib/block_scout_web/templates/address_contract/index.html.eex:197
+#: lib/block_scout_web/templates/address_contract/index.html.eex:183
+#: lib/block_scout_web/templates/address_contract/index.html.eex:193
 msgid "Copy Deployed ByteCode"
 msgstr ""
 
@@ -781,7 +781,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:102
-#: lib/block_scout_web/templates/address_contract/index.html.eex:115
+#: lib/block_scout_web/templates/address_contract/index.html.eex:113
 msgid "Copy Source Code"
 msgstr ""
 
@@ -881,7 +881,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:101
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7 lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:23
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:120
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:121
 msgid "Data"
 msgstr ""
 
@@ -904,13 +904,13 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:32
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:38 lib/block_scout_web/templates/address_logs/_logs.html.eex:53
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:33 lib/block_scout_web/templates/transaction_log/_logs.html.eex:41
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:56 lib/block_scout_web/templates/transaction_log/_logs.html.eex:72
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:34 lib/block_scout_web/templates/transaction_log/_logs.html.eex:42
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:57 lib/block_scout_web/templates/transaction_log/_logs.html.eex:73
 msgid "Decoded"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_view.ex:350
+#: lib/block_scout_web/views/address_view.ex:365
 msgid "Decompiled Code"
 msgstr ""
 
@@ -951,8 +951,8 @@ msgid "Delegators’ Staked Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:185
-#: lib/block_scout_web/templates/address_contract/index.html.eex:193
+#: lib/block_scout_web/templates/address_contract/index.html.eex:181
+#: lib/block_scout_web/templates/address_contract/index.html.eex:189
 msgid "Deployed ByteCode"
 msgstr ""
 
@@ -975,7 +975,7 @@ msgid "Difficulty"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:149
+#: lib/block_scout_web/templates/address_contract/index.html.eex:145
 msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
 
@@ -1111,7 +1111,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:18
-#: lib/block_scout_web/templates/address/index.html.eex:5 lib/block_scout_web/templates/address/overview.html.eex:180
+#: lib/block_scout_web/templates/address/index.html.eex:5 lib/block_scout_web/templates/address/overview.html.eex:179
 #: lib/block_scout_web/templates/block/overview.html.eex:215 lib/block_scout_web/templates/internal_transaction/_tile.html.eex:24
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:89 lib/block_scout_web/templates/layout/_topnav.html.eex:110
 #: lib/block_scout_web/templates/layout/app.html.eex:51 lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
@@ -1143,7 +1143,7 @@ msgid "Export Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:228
+#: lib/block_scout_web/templates/address_contract/index.html.eex:224
 msgid "External libraries"
 msgstr ""
 
@@ -1154,7 +1154,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:35
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:36
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:37
 msgid "Failed to decode log data."
 msgstr ""
 
@@ -1164,7 +1164,7 @@ msgid "Favorites"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:264
+#: lib/block_scout_web/templates/address/overview.html.eex:263
 msgid "Fetching gas used..."
 msgstr ""
 
@@ -1180,14 +1180,14 @@ msgid "Fetching tokens..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:211
-#: lib/block_scout_web/templates/address/overview.html.eex:219
+#: lib/block_scout_web/templates/address/overview.html.eex:210
+#: lib/block_scout_web/templates/address/overview.html.eex:218
 msgid "Fetching transactions..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:238
-#: lib/block_scout_web/templates/address/overview.html.eex:246 lib/block_scout_web/templates/tokens/overview/_details.html.eex:137
+#: lib/block_scout_web/templates/address/overview.html.eex:237
+#: lib/block_scout_web/templates/address/overview.html.eex:245 lib/block_scout_web/templates/tokens/overview/_details.html.eex:137
 msgid "Fetching transfers..."
 msgstr ""
 
@@ -1231,7 +1231,7 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:257
+#: lib/block_scout_web/templates/address/overview.html.eex:256
 #: lib/block_scout_web/templates/block/_tile.html.eex:73 lib/block_scout_web/templates/block/overview.html.eex:178
 msgid "Gas Used"
 msgstr ""
@@ -1242,7 +1242,7 @@ msgid "Gas Used by Transaction"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:256
+#: lib/block_scout_web/templates/address/overview.html.eex:255
 msgid "Gas used by the address."
 msgstr ""
 
@@ -1377,7 +1377,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:28
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:17 lib/block_scout_web/templates/transaction/_tabs.html.eex:11
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6 lib/block_scout_web/views/address_view.ex:346
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6 lib/block_scout_web/views/address_view.ex:361
 #: lib/block_scout_web/views/transaction_view.ex:512
 msgid "Internal Transactions"
 msgstr ""
@@ -1409,7 +1409,7 @@ msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:275
+#: lib/block_scout_web/templates/address/overview.html.eex:274
 msgid "Last Balance Update"
 msgstr ""
 
@@ -1485,14 +1485,14 @@ msgid "Log Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:130
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:131
 msgid "Log Index"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:41
 #: lib/block_scout_web/templates/address_logs/index.html.eex:10 lib/block_scout_web/templates/transaction/_tabs.html.eex:17
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:8 lib/block_scout_web/views/address_view.ex:357
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:8 lib/block_scout_web/views/address_view.ex:372
 #: lib/block_scout_web/views/transaction_view.ex:513
 msgid "Logs"
 msgstr ""
@@ -1551,7 +1551,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
-#: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10 lib/block_scout_web/views/tokens/instance/overview_view.ex:187
+#: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10 lib/block_scout_web/views/tokens/instance/overview_view.ex:196
 msgid "Metadata"
 msgstr ""
 
@@ -1712,7 +1712,7 @@ msgid "Number of accounts holding the token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:290
+#: lib/block_scout_web/templates/address/overview.html.eex:289
 msgid "Number of blocks validated by this validator."
 msgstr ""
 
@@ -1722,7 +1722,7 @@ msgid "Number of digits that come after the decimal place when displaying token 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:202
+#: lib/block_scout_web/templates/address/overview.html.eex:201
 msgid "Number of transactions related to this address."
 msgstr ""
 
@@ -1732,7 +1732,7 @@ msgid "Number of transfers for the token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:229
+#: lib/block_scout_web/templates/address/overview.html.eex:228
 msgid "Number of transfers to/from this address."
 msgstr ""
 
@@ -1933,14 +1933,14 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:81
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:27 lib/block_scout_web/views/address_view.ex:351
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:27 lib/block_scout_web/views/address_view.ex:366
 #: lib/block_scout_web/views/tokens/overview_view.ex:43
 msgid "Read Contract"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:88
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:41 lib/block_scout_web/views/address_view.ex:352
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:41 lib/block_scout_web/views/address_view.ex:367
 msgid "Read Proxy"
 msgstr ""
 
@@ -2628,8 +2628,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:19 lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:3
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16 lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:5
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:14 lib/block_scout_web/templates/transaction/_tabs.html.eex:4
-#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7 lib/block_scout_web/views/address_view.ex:348
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:186 lib/block_scout_web/views/tokens/overview_view.ex:41
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7 lib/block_scout_web/views/address_view.ex:363
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:195 lib/block_scout_web/views/tokens/overview_view.ex:41
 #: lib/block_scout_web/views/transaction_view.ex:511
 msgid "Token Transfers"
 msgstr ""
@@ -2646,10 +2646,10 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:21
-#: lib/block_scout_web/templates/address/overview.html.eex:192 lib/block_scout_web/templates/address_token/overview.html.eex:58
+#: lib/block_scout_web/templates/address/overview.html.eex:191 lib/block_scout_web/templates/address_token/overview.html.eex:58
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:13 lib/block_scout_web/templates/layout/_topnav.html.eex:69
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:101 lib/block_scout_web/templates/tokens/index.html.eex:10
-#: lib/block_scout_web/views/address_view.ex:345
+#: lib/block_scout_web/views/address_view.ex:360
 msgid "Tokens"
 msgstr ""
 
@@ -2685,7 +2685,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:71
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:90
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:91
 msgid "Topics"
 msgstr ""
 
@@ -2793,11 +2793,11 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:7
-#: lib/block_scout_web/templates/address/overview.html.eex:203 lib/block_scout_web/templates/address/overview.html.eex:209
-#: lib/block_scout_web/templates/address/overview.html.eex:217 lib/block_scout_web/templates/address_transaction/index.html.eex:13
+#: lib/block_scout_web/templates/address/overview.html.eex:202 lib/block_scout_web/templates/address/overview.html.eex:208
+#: lib/block_scout_web/templates/address/overview.html.eex:216 lib/block_scout_web/templates/address_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/block/overview.html.eex:80 lib/block_scout_web/templates/block_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:236 lib/block_scout_web/templates/layout/_topnav.html.eex:43
-#: lib/block_scout_web/views/address_view.ex:347
+#: lib/block_scout_web/views/address_view.ex:362
 msgid "Transactions"
 msgstr ""
 
@@ -2812,8 +2812,8 @@ msgid "Transactions sent"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:230
-#: lib/block_scout_web/templates/address/overview.html.eex:236 lib/block_scout_web/templates/address/overview.html.eex:244
+#: lib/block_scout_web/templates/address/overview.html.eex:229
+#: lib/block_scout_web/templates/address/overview.html.eex:235 lib/block_scout_web/templates/address/overview.html.eex:243
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:50 lib/block_scout_web/templates/tokens/overview/_details.html.eex:133
 msgid "Transfers"
 msgstr ""
@@ -2981,9 +2981,9 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:27
-#: lib/block_scout_web/templates/address_contract/index.html.eex:29 lib/block_scout_web/templates/address_contract/index.html.eex:164
-#: lib/block_scout_web/templates/address_contract/index.html.eex:170 lib/block_scout_web/templates/address_contract/index.html.eex:201
-#: lib/block_scout_web/templates/address_contract/index.html.eex:207 lib/block_scout_web/templates/smart_contract/_functions.html.eex:14
+#: lib/block_scout_web/templates/address_contract/index.html.eex:29 lib/block_scout_web/templates/address_contract/index.html.eex:160
+#: lib/block_scout_web/templates/address_contract/index.html.eex:166 lib/block_scout_web/templates/address_contract/index.html.eex:197
+#: lib/block_scout_web/templates/address_contract/index.html.eex:203 lib/block_scout_web/templates/smart_contract/_functions.html.eex:14
 msgid "Verify & Publish"
 msgstr ""
 
@@ -3139,13 +3139,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:95
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:34 lib/block_scout_web/views/address_view.ex:353
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:34 lib/block_scout_web/views/address_view.ex:368
 msgid "Write Contract"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:102
-#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:48 lib/block_scout_web/views/address_view.ex:354
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:48 lib/block_scout_web/views/address_view.ex:369
 msgid "Write Proxy"
 msgstr ""
 

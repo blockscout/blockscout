@@ -116,5 +116,17 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
                             _options ->
       {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
     end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
   end
 end

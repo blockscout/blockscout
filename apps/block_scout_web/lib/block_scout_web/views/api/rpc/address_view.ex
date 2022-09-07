@@ -205,6 +205,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "symbol" => token.symbol,
       "type" => token.type
     }
+    |> (&if(is_nil(token.id), do: &1, else: Map.put(&1, "id", token.id))).()
   end
 
   defp balance(address) do

@@ -130,7 +130,7 @@ defmodule Explorer.Counters.AverageBlockTime do
   end
 
   defp average_block_cache_period do
-    case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
+    case Integer.parse(System.get_env("CACHE_AVERAGE_BLOCK_PERIOD", "")) do
       {secs, ""} -> :timer.seconds(secs)
       _ -> :timer.minutes(30)
     end

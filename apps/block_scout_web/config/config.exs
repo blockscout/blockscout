@@ -1,9 +1,9 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
+# and its dependencies with the aid of the Config module.
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-use Mix.Config
+import Config
 
 # General application configuration
 config :block_scout_web,
@@ -55,31 +55,34 @@ config :block_scout_web,
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
+default_api_rate_limit = 50
+default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
+
 global_api_rate_limit_value =
   "API_RATE_LIMIT"
-  |> System.get_env("50")
+  |> System.get_env(default_api_rate_limit_str)
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> 50
+    _ -> default_api_rate_limit
   end
 
 api_rate_limit_by_key_value =
   "API_RATE_LIMIT_BY_KEY"
-  |> System.get_env("50")
+  |> System.get_env(default_api_rate_limit_str)
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> 50
+    _ -> default_api_rate_limit
   end
 
 api_rate_limit_by_ip_value =
   "API_RATE_LIMIT_BY_IP"
-  |> System.get_env("50")
+  |> System.get_env(default_api_rate_limit_str)
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> 50
+    _ -> default_api_rate_limit
   end
 
 config :block_scout_web, :api_rate_limit,
@@ -183,4 +186,4 @@ config :hammer,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
+import_config "#{config_env()}.exs"

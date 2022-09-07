@@ -65,16 +65,14 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
@@ -149,8 +147,7 @@ defmodule BlockScoutWeb.SmartContractView do
         values =
           value
           |> Enum.map(&values_only(&1, String.slice(type, 0..-3), components, nested_index + 1))
-          |> Enum.map(&(String.duplicate(@tab, nested_index) <> &1))
-          |> Enum.join(",</br>")
+          |> Enum.map_join(",</br>", &(String.duplicate(@tab, nested_index) <> &1))
 
         wrap_output(render_nested_array_value(values, nested_index - 1), is_too_long)
 
@@ -170,16 +167,14 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         wrap_output(render_array_value(values), is_too_long)
 
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Enum.map(&binary_to_utf_string(&1))
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", &binary_to_utf_string(&1))
 
         wrap_output(render_array_value(values), is_too_long)
 
@@ -355,10 +350,9 @@ defmodule BlockScoutWeb.SmartContractView do
     if type == "tuple" && components do
       types =
         components
-        |> Enum.map(fn component ->
+        |> Enum.map_join(",", fn component ->
           Map.get(component, "type")
         end)
-        |> Enum.join(",")
 
       "tuple[" <> types <> "]"
     else

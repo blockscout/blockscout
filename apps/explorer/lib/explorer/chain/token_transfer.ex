@@ -307,7 +307,7 @@ defmodule Explorer.Chain.TokenTransfer do
   To find out its current owner, it is necessary to look at the token last
   transfer.
   """
-  @spec address_to_unique_tokens(Hash.Address.t()) :: %Ecto.Query{}
+  @spec address_to_unique_tokens(Hash.Address.t()) :: Ecto.Query.t()
   def address_to_unique_tokens(contract_address_hash) do
     from(
       tt in TokenTransfer,

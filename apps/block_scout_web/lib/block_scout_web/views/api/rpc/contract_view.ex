@@ -72,6 +72,10 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     |> set_proxy_info(contract)
   end
 
+  defp set_proxy_info(contract_output, contract) when contract == %{} do
+    contract_output
+  end
+
   defp set_proxy_info(contract_output, contract) do
     result =
       if contract.is_proxy do

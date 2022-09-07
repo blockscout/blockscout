@@ -25,6 +25,10 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
         Keyword.merge(
           [
             necessity_by_association: %{
+              [from_address: :smart_contract] => :optional,
+              [to_address: :smart_contract] => :optional,
+              [from_address: :names] => :optional,
+              [to_address: :names] => :optional,
               from_address: :required,
               to_address: :required,
               token: :required

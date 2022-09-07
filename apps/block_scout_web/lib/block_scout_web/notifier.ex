@@ -17,10 +17,12 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.{Address, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Counters.{AverageBlockTime, Helper}
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
+
+  @check_broadcast_sequence_period 500
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
     Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
@@ -87,7 +89,13 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
-    Enum.each(blocks, &broadcast_block/1)
+    last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
+
+    blocks
+    |> Enum.sort_by(& &1.number, :asc)
+    |> Enum.each(fn block ->
+      broadcast_latest_block?(block, last_broadcasted_block_number)
+    end)
   end
 
   def handle_event({:chain_event, :exchange_rate}) do
@@ -105,7 +113,7 @@ defmodule BlockScoutWeb.Notifier do
           %{exchange_rate | available_supply: nil, market_cap_usd: RSK.market_cap(exchange_rate)}
 
         _ ->
-          exchange_rate
+          Map.from_struct(exchange_rate)
       end
 
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
@@ -229,6 +237,35 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
+  defp broadcast_latest_block?(block, last_broadcasted_block_number) do
+    cond do
+      last_broadcasted_block_number == 0 || last_broadcasted_block_number == block.number - 1 ||
+          last_broadcasted_block_number < block.number - 4 ->
+        broadcast_block(block)
+        :ets.insert(:last_broadcasted_block, {:number, block.number})
+
+      last_broadcasted_block_number > block.number - 1 ->
+        broadcast_block(block)
+
+      true ->
+        Task.start_link(fn ->
+          schedule_broadcasting(block)
+        end)
+    end
+  end
+
+  defp schedule_broadcasting(block) do
+    :timer.sleep(@check_broadcast_sequence_period)
+    last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
+
+    if last_broadcasted_block_number == block.number - 1 do
+      broadcast_block(block)
+      :ets.insert(:last_broadcasted_block, {:number, block.number})
+    else
+      schedule_broadcasting(block)
+    end
+  end
+
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
       block_number: block_number
@@ -283,10 +320,6 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_internal_transaction(internal_transaction) do
-    Endpoint.broadcast("internal_transactions:new_internal_transaction", "new_internal_transaction", %{
-      internal_transaction: internal_transaction
-    })
-
     Endpoint.broadcast("addresses:#{internal_transaction.from_address_hash}", "internal_transaction", %{
       address: internal_transaction.from_address,
       internal_transaction: internal_transaction
@@ -329,15 +362,11 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_token_transfer(token_transfer) do
-    broadcast_token_transfer(token_transfer, "token_transfers:new_token_transfer", "token_transfer")
+    broadcast_token_transfer(token_transfer, "token_transfer")
   end
 
-  defp broadcast_token_transfer(token_transfer, token_transfer_channel, event) do
+  defp broadcast_token_transfer(token_transfer, event) do
     Endpoint.broadcast("token_transfers:#{token_transfer.transaction_hash}", event, %{})
-
-    Endpoint.broadcast(token_transfer_channel, event, %{
-      token_transfer: token_transfer
-    })
 
     Endpoint.broadcast("addresses:#{token_transfer.from_address_hash}", event, %{
       address: token_transfer.from_address,
