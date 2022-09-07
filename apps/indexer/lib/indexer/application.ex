@@ -19,12 +19,13 @@ defmodule Indexer.Application do
     memory_monitor_name = Memory.Monitor
     CeloTelemetry.setup()
 
-    base_children = [
-      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
-      {Plug.Cowboy,
-       scheme: :http, plug: Indexer.Stack, options: [port: Application.get_env(:indexer, :health_check_port)]}
-    ]
-    |> cluster_process(Application.get_env(:indexer, :environment))
+    base_children =
+      [
+        {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+        {Plug.Cowboy,
+         scheme: :http, plug: Indexer.Stack, options: [port: Application.get_env(:indexer, :health_check_port)]}
+      ]
+      |> cluster_process(Application.get_env(:indexer, :environment))
 
     children =
       if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
