@@ -674,7 +674,7 @@ contract ERC20Detailed is IERC20 {
     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
     *
     * Tokens usually opt for a value of 18, imitating the relationship between
-    * Ether and Wei.
+    * PMC and Wei.
     *
     * > Note that this information is only used for _display_ purposes: it in
     * no way affects any of the arithmetic of the contract, including

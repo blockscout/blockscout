@@ -131,9 +131,9 @@ defmodule Explorer.Chain.SmartContract do
   @typedoc """
   * `"pure"` - [specified to not read blockchain state](https://solidity.readthedocs.io/en/develop/contracts.html#pure-functions).
   * `"view"` - [specified to not modify the blockchain state](https://solidity.readthedocs.io/en/develop/contracts.html#view-functions).
-  * `"nonpayable"` - function does not accept Ether.
-    **NOTE**: Sending non-zero Ether to non-payable function will revert the transaction.
-  * `"payable"` - function accepts Ether.
+  * `"nonpayable"` - function does not accept PMC.
+    **NOTE**: Sending non-zero PMC to non-payable function will revert the transaction.
+  * `"payable"` - function accepts PMC.
   """
   @type state_mutability :: String.t()
 
@@ -197,7 +197,7 @@ defmodule Explorer.Chain.SmartContract do
   * `partially_verified` - whether contract verified using partial matched source code or not.
   * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
   * `file_path` - show the filename or path to the file of the contract source file
-  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified 
+  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
   * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
   * `implementation_name` - name of the proxy implementation
