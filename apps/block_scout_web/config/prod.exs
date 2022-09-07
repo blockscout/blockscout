@@ -33,3 +33,5 @@ config :logger, :api,
   path: Path.absname("logs/prod/api.log"),
   metadata_filter: [fetcher: :api],
   rotate: %{max_bytes: 52_428_800, keep: 5}
+
+config :block_scout_web, :captcha_helper, BlockScoutWeb.CaptchaHelper
