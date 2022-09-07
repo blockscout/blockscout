@@ -458,8 +458,9 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   def get_csrf(conn, _) do
     with {:auth, %{id: _}} <- {:auth, current_user(conn)} do
       conn
+      |> put_resp_header("x-bs-account-csrf", CSRFProtection.get_csrf_token())
       |> put_status(200)
-      |> render(:csrf, %{csrf: CSRFProtection.get_csrf_token()})
+      |> render(:message, %{message: "ok"})
     end
   end
 
