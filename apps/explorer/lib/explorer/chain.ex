@@ -3058,6 +3058,11 @@ defmodule Explorer.Chain do
   def fetch_min_missing_block_cache do
     max_block_number = BlockNumber.get_max()
 
+    min_missing_block_number =
+      "min_missing_block_number"
+      |> Chain.get_last_fetched_counter()
+      |> Decimal.to_integer()
+
     if max_block_number > 0 do
       query =
         from(b in Block,
@@ -3065,10 +3070,11 @@ defmodule Explorer.Chain do
             missing_range in fragment(
               """
                 (SELECT b1.number
-                FROM generate_series(0, (?)::integer) AS b1(number)
+                FROM generate_series((?)::integer, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
                   (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
               """,
+              ^min_missing_block_number,
               ^max_block_number
             ),
           on: b.number == missing_range.number,
