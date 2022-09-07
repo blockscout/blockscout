@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#6077](https://github.com/blockscout/blockscout/pull/6077) - Docker: Final layer needs file(1) command for file_info
 
 ### Chore
 

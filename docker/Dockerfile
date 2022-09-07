@@ -78,6 +78,8 @@ RUN mkdir -p /opt/release \
 ##############################################################
 FROM bitwalker/alpine-elixir-phoenix:1.13
 
+RUN apk --no-cache --update add file
+
 WORKDIR /app
 
 COPY --from=builder /opt/release/blockscout .
