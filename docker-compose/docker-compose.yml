@@ -15,6 +15,7 @@ services:
   blockscout:
     depends_on:
       - db
+      - smart-contract-verifier
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     build:
       context: ..
@@ -41,6 +42,17 @@ services:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ./envs/common-blockscout.env
+    environment:
+        ENABLE_RUST_VERIFICATION_SERVICE: 'true'
+        RUST_VERIFICATION_SERVICE_URL: 'http://host.docker.internal:8043/'
     ports:
       - 4000:4000
 
+  smart-contract-verifier:
+    image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'smart-contract-verifier'
+    env_file:
+      -  ./envs/common-smart-contract-verifier.env
+    ports:
+      - 8043:8043
