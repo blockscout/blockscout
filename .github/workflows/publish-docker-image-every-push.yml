@@ -7,7 +7,7 @@ on:
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
-  NEXT_RELEASE_VERSION: 4.1.8
+  NEXT_RELEASE_VERSION: 5.0.0
 
 jobs:
   push_to_registry:

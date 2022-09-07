@@ -629,7 +629,7 @@ msgstr ""
 msgid "Copy Parent Hash"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:16
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:15
 #, elixir-autogen, elixir-format
 msgid "Copy Raw Trace"
 msgstr ""
