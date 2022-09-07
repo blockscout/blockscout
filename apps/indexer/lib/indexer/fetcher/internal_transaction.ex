@@ -135,6 +135,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
           error_count: filtered_unique_numbers_count
         )
+        tx_hash = Enum.at(reason, 0)[:data][:transaction_hash]
+        Chain.update_txs_has_error_in_internal_txs(tx_hash)
 
         # re-queue the de-duped entries
         {:retry, filtered_unique_numbers}
@@ -179,7 +181,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     cond do
       blank_input?(param[:input]) == true ->
         false
-      param[:has_error_in_internal_txs] == false ->
+      is_nil(param[:has_error_in_internal_txs]) == false ->
         false
       true ->
         true

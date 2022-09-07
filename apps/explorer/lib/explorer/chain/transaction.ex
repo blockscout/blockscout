@@ -428,12 +428,12 @@ defmodule Explorer.Chain.Transaction do
     |> unique_constraint(:hash)
   end
 
-  def update_cosmos_hash(hash, cosmos_hash) do
+  def update_error_in_internal_txs(hash) do
     case Hash.Full.cast(hash) do
       {:ok, tx_hash} ->
         schema = Repo.get_by(Transaction, [hash: tx_hash])
-        if schema != nil and is_nil(schema.cosmos_hash) do
-          change(schema, %{cosmos_hash: cosmos_hash}) |> Repo.update()
+        if schema != nil and is_nil(schema.has_error_in_internal_txs) do
+          change(schema, %{has_error_in_internal_txs: true}) |> Repo.update()
         else
           {:error, nil}
         end

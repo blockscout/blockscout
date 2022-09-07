@@ -2397,6 +2397,10 @@ defmodule Explorer.Chain do
     end)
   end
 
+  def update_txs_has_error_in_internal_txs(tx_hash_str) do
+    Transaction.update_error_in_internal_txs(tx_hash_str)
+  end
+
   @doc """
   Finds all Blocks validated by the address with the given hash.
 
