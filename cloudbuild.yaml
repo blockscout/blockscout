@@ -17,7 +17,7 @@ steps:
           "--build-arg", "DISABLE_WRITE_API=true",
           "--build-arg", "DISABLE_INDEXER=true",
           "--build-arg", "DISABLE_WEBAPP=true",
-          "--build-arg", "EPMD_SERVICE_NAME=build_environment_service_name"
+          "--build-arg", "EPMD_SERVICE_NAME=build_environment_service_name",
           "--context", "dir://."]
     waitFor: ["-"]
 options:
