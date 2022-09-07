@@ -36,7 +36,7 @@ defmodule Explorer.Counters.AverageBlockTimeDurationFormat do
       "1.1 minutes"
   """
   @spec format(Duration.t()) :: String.t() | {:error, term}
-  def format(%Duration{} = duration), do: lformat(duration, Translator.default_locale())
+  def format(%Duration{} = duration), do: lformat(duration, Translator.current_locale())
   def format(_), do: {:error, :invalid_duration}
 
   @doc """
@@ -88,13 +88,17 @@ defmodule Explorer.Counters.AverageBlockTimeDurationFormat do
     truncated = trunc(decimal_value)
 
     # remove any trailing `.0`
-    formatted_value =
-      if decimal_value == truncated do
-        truncated
-      else
-        Float.round(decimal_value, 1)
-      end
+    if decimal_value == truncated do
+      Translator.translate_plural(locale, "units", "%{count} #{singular}", "%{count} #{singular}s", truncated)
+    else
+      value =
+        decimal_value
+        |> Float.round(1)
+        |> :erlang.float_to_binary(decimals: 1)
 
-    Translator.translate_plural(locale, "units", "%{count} #{singular}", "%{count} #{singular}s", formatted_value)
+      locale
+      |> Translator.translate_plural("units", "%{count} #{singular}", "%{count} #{singular}s", 5)
+      |> String.replace("5", value)
+    end
   end
 end

@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 4.1.7
+      RELEASE_VERSION: 4.1.8
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -42,39 +42,41 @@ jobs:
           images: blockscout/blockscout
 
       - name: Build & Push Docker image
-        run: |
-          docker buildx build \
-          -t blockscout/blockscout:latest \
-          -t blockscout/blockscout:${{ env.RELEASE_VERSION }} \
-          -f ./docker/Dockerfile \
-          --build-arg CACHE_EXCHANGE_RATES_PERIOD="" \
-          --build-arg DISABLE_READ_API="false" \
-          --build-arg API_PATH="/" \
-          --build-arg NETWORK_PATH="/" \
-          --build-arg DISABLE_WEBAPP="false" \
-          --build-arg DISABLE_WRITE_API="false" \
-          --build-arg CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER="" \
-          --build-arg WOBSERVER_ENABLED="false" \
-          --build-arg ADMIN_PANEL_ENABLED="" \
-          --build-arg CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL="" \
-          --build-arg SOCKET_ROOT="" \
-          --build-arg CHAIN_ID="" \
-          --build-arg JSON_RPC="" \
-          --build-arg SUBNETWORK="" \
-          --build-arg COIN_NAME="" \
-          --push --platform=linux/arm64,linux/amd64 .
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}
+          platforms: |
+            linux/arm64
+            linux/amd64
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=""
+            DISABLE_READ_API="false"
+            API_PATH="/"
+            NETWORK_PATH="/"
+            DISABLE_WEBAPP="false"
+            DISABLE_WRITE_API="false"
+            CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=""
+            WOBSERVER_ENABLED="false"
+            ADMIN_PANEL_ENABLED=""
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=""
+            SOCKET_ROOT=""
 
   merge-master-after-release:
     name: Merge 'master' to specific branch after release
     runs-on: ubuntu-latest
     env:
       BRANCHES: |
-        production-aox-stg
         production-core-stg
         production-eth-stg
         production-harmony-mainnet-shard-0-stg
         production-lukso-stg
         production-optimism-goerli-stg
+        production-optimism-mainnet-stg
         production-optimism-stg
         production-rsk-stg
         production-sokol-stg

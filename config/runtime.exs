@@ -72,7 +72,9 @@ config :block_scout_web,
   max_size_to_show_array_as_is: Integer.parse(System.get_env("MAX_SIZE_UNLESS_HIDE_ARRAY", "50")),
   max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
-  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil)
+  re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
+  chain_id: System.get_env("CHAIN_ID"),
+  json_rpc: System.get_env("JSON_RPC")
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -146,7 +148,8 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :ethereum_jsonrpc,
   rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
-  ipc_path: System.get_env("IPC_PATH")
+  ipc_path: System.get_env("IPC_PATH"),
+  disable_archive_balances?: System.get_env("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES", "false") == "true"
 
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s")
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout: debug_trace_transaction_timeout
@@ -158,6 +161,12 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout:
 disable_indexer = System.get_env("DISABLE_INDEXER")
 disable_webapp = System.get_env("DISABLE_WEBAPP")
 
+healthy_blocks_period =
+  System.get_env("HEALTHY_BLOCKS_PERIOD", "5")
+  |> Integer.parse()
+  |> elem(0)
+  |> :timer.minutes()
+
 config :explorer,
   coin: System.get_env("COIN") || "POA",
   coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "POA",
@@ -166,7 +175,7 @@ config :explorer,
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
-  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
+  healthy_blocks_period: healthy_blocks_period,
   realtime_events_sender:
     if(disable_webapp != "true",
       do: Explorer.Chain.Events.SimpleSender,
@@ -295,6 +304,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   chain_id: System.get_env("CHAIN_ID"),
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
+config :explorer, Explorer.SmartContract.RustVerifierInterface,
+  service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
+  enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
+
 ###############
 ### Indexer ###
 ###############
@@ -361,7 +374,6 @@ coin_balance_on_demand_fetcher_threshold =
 
 config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on_demand_fetcher_threshold
 
-# config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"
 
