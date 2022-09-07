@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#6073](https://github.com/blockscout/blockscout/pull/6073) - Add vyper support for rust verifier microservice integration
 
 ### Fixes
 
