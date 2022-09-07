@@ -2,7 +2,8 @@ defmodule Explorer.ExchangeRates.Source do
   @moduledoc """
   Behaviour for fetching exchange rates from external sources.
   """
-  alias Explorer.ExchangeRates.{Source, Token}
+  alias Explorer.ExchangeRates.Source.CoinGecko
+  alias Explorer.ExchangeRates.Token
   alias HTTPoison.{Error, Response}
 
   @doc """
@@ -11,25 +12,28 @@ defmodule Explorer.ExchangeRates.Source do
   @spec fetch_exchange_rates(module) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates(source \\ exchange_rates_source()) do
     source_url = source.source_url()
-    fetch_exchange_rates_request(source, source_url)
+    fetch_exchange_rates_request(source, source_url, source.headers())
   end
 
   @spec fetch_exchange_rates_for_token(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token(symbol) do
-    source_url = Source.CoinGecko.source_url(symbol)
-    fetch_exchange_rates_request(Source.CoinGecko, source_url)
+    source_url = CoinGecko.source_url(symbol)
+    headers = CoinGecko.headers()
+    fetch_exchange_rates_request(CoinGecko, source_url, headers)
   end
 
   @spec fetch_exchange_rates_for_token_address(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token_address(address_hash) do
-    source_url = Source.CoinGecko.source_url(address_hash)
-    fetch_exchange_rates_request(Source.CoinGecko, source_url)
+    source_url = CoinGecko.source_url(address_hash)
+    headers = CoinGecko.headers()
+    fetch_exchange_rates_request(CoinGecko, source_url, headers)
   end
 
-  defp fetch_exchange_rates_request(_source, source_url) when is_nil(source_url), do: {:error, "Source URL is nil"}
+  defp fetch_exchange_rates_request(_source, source_url, _headers) when is_nil(source_url),
+    do: {:error, "Source URL is nil"}
 
-  defp fetch_exchange_rates_request(source, source_url) do
-    case http_request(source_url) do
+  defp fetch_exchange_rates_request(source, source_url, headers) do
+    case http_request(source_url, headers) do
       {:ok, result} = resp ->
         if is_map(result) do
           result_formatted =
@@ -58,6 +62,8 @@ defmodule Explorer.ExchangeRates.Source do
 
   @callback source_url(String.t()) :: String.t() | :ignore
 
+  @callback headers :: [any]
+
   def headers do
     [{"Content-Type", "application/json"}]
   end
@@ -82,7 +88,11 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+    if config(:source) == Explorer.ExchangeRates.Source.TokenBridge do
+      Explorer.ExchangeRates.Source.CoinGecko
+    else
+      config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+    end
   end
 
   @spec config(atom()) :: term
@@ -90,8 +100,8 @@ defmodule Explorer.ExchangeRates.Source do
     Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
-  def http_request(source_url) do
-    case HTTPoison.get(source_url, headers()) do
+  def http_request(source_url, additional_headers) do
+    case HTTPoison.get(source_url, headers() ++ additional_headers) do
       {:ok, %Response{body: body, status_code: 200}} ->
         parse_http_success_response(body)
 

@@ -382,7 +382,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       abi = [method]
       method_with_id = Map.put(method, "method_id", "0cbf0601")
-      assert [method_with_id] = Reader.get_abi_with_method_id(abi)
+      assert [^method_with_id] = Reader.get_abi_with_method_id(abi)
     end
 
     test "do not crash in some corner cases" do
@@ -399,7 +399,7 @@ defmodule Explorer.SmartContract.ReaderTest do
         }
       ]
 
-      assert abi = Reader.get_abi_with_method_id(abi)
+      assert ^abi = Reader.get_abi_with_method_id(abi)
     end
   end
 

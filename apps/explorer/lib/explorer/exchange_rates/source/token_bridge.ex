@@ -23,6 +23,19 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
     [token_data]
   end
 
+  @impl Source
+  def source_url do
+    secondary_source().source_url()
+  end
+
+  @impl Source
+  def source_url(_), do: :ignore
+
+  @impl Source
+  def headers do
+    []
+  end
+
   defp build_struct(original_token) do
     %Token{
       available_supply: to_decimal(Chain.circulating_supply()),
@@ -45,14 +58,6 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
     |> to_decimal()
     |> Decimal.mult(original_token.usd_value)
   end
-
-  @impl Source
-  def source_url do
-    secondary_source().source_url()
-  end
-
-  @impl Source
-  def source_url(_), do: :ignore
 
   @spec secondary_source() :: module()
   defp secondary_source do

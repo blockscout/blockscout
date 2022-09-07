@@ -97,7 +97,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.13"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "~> 2.10"},
+      {:phoenix_html, "== 3.0.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 2.0"},
       # use `:cowboy` for WebServer with `:plug`

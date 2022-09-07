@@ -604,13 +604,13 @@ defmodule EthereumJSONRPCTest do
       # Can't be faked reliably on real chain
       moxed_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
 
-      unknown_error = {:error, %{"code" => 500, "message" => "Unknown error"}}
+      unknown_error = %{"code" => 500, "message" => "Unknown error"}
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-        unknown_error
+        {:error, unknown_error}
       end)
 
-      assert {:error, unknown_error} =
+      assert {:error, ^unknown_error} =
                EthereumJSONRPC.fetch_block_number_by_tag("latest", moxed_json_rpc_named_arguments)
     end
   end

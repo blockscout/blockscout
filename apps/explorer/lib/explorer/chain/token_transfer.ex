@@ -215,6 +215,10 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
+  def page_token_transfer(query, %PagingOptions{key: {token_id}, asc_order: true}) do
+    where(query, [tt], tt.token_id > ^token_id)
+  end
+
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
     where(query, [tt], tt.token_id < ^token_id)
   end
