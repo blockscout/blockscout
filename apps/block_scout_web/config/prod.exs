@@ -52,7 +52,7 @@ epmd_service =
   unless is_nil(System.get_env("EPMD_SERVICE_NAME")) do
     System.get_env("EPMD_SERVICE_NAME")
   else
-    raise "No value provided for EPMD_SERVICE_NAME env var -"
+    raise "No value provided for EPMD_SERVICE_NAME env var"
   end
 
 config :libcluster,
