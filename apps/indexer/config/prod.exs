@@ -49,19 +49,12 @@ variant =
     |> String.downcase()
   end
 
-epmd_service =
-  unless is_nil(System.get_env("EPMD_SERVICE_NAME")) do
-    System.get_env("EPMD_SERVICE_NAME")
-  else
-    raise "No value provided for EPMD_SERVICE_NAME env var -"
-  end
-
 config :libcluster,
   topologies: [
     blockscout: [
       strategy: Cluster.Strategy.Kubernetes.DNS,
       config: [
-        service: epmd_service,
+        service: System.get_env("EPMD_SERVICE_NAME"),
         application_name: "blockscout"
       ]
     ]
