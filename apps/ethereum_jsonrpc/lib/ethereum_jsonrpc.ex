@@ -184,7 +184,18 @@ defmodule EthereumJSONRPC do
         ) :: {:ok, FetchedBalances.t()} | {:error, reason :: term}
   def fetch_balances(params_list, json_rpc_named_arguments)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
-    id_to_params = id_to_params(params_list)
+    filtered_params =
+      if Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?) do
+        params_list
+        |> Enum.filter(fn
+          %{block_quantity: "latest"} -> true
+          _ -> false
+        end)
+      else
+        params_list
+      end
+
+    id_to_params = id_to_params(filtered_params)
 
     with {:ok, responses} <-
            id_to_params

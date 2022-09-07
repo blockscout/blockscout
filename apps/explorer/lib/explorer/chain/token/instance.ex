@@ -18,7 +18,7 @@ defmodule Explorer.Chain.Token.Instance do
   @type t :: %Instance{
           token_id: non_neg_integer(),
           token_contract_address_hash: Hash.Address.t(),
-          metadata: map(),
+          metadata: map() | nil,
           error: String.t()
         }
 
