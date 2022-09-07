@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     cached_coin_total_supply_wei = AddressSumMinusBurnt.get_sum_minus_burnt()
 
     coin_total_supply_wei =
-      if Decimal.cmp(cached_coin_total_supply_wei, 0) == :gt do
+      if Decimal.compare(cached_coin_total_supply_wei, 0) == :gt do
         cached_coin_total_supply_wei
       else
         Chain.get_last_fetched_counter("sum_coin_total_supply_minus_burnt")

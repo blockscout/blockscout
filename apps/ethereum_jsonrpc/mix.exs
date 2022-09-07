@@ -82,7 +82,7 @@ defmodule EthereumJsonrpc.MixProject do
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
       {:websocket_client, "~> 1.3"},
-      {:decimal, "~> 1.9"},
+      {:decimal, "~> 2.0"},
       {:decorator, "~> 1.4"},
       {:hackney, "~> 1.18"},
       {:poolboy, "~> 1.5.2"}

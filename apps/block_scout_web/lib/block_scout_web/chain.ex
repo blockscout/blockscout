@@ -24,7 +24,6 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
-    StakingPool,
     Token,
     TokenTransfer,
     Transaction,
@@ -342,16 +341,12 @@ defmodule BlockScoutWeb.Chain do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
-  defp paging_params({%CurrentTokenBalance{value: value}, _, %Token{name: name, type: type}}) do
+  defp paging_params({%CurrentTokenBalance{value: value}, %Token{name: name, type: type}}) do
     %{"token_name" => name, "token_type" => type, "value" => Decimal.to_integer(value)}
   end
 
   defp paging_params(%CoinBalance{block_number: block_number}) do
     %{"block_number" => block_number}
-  end
-
-  defp paging_params(%StakingPool{staking_address_hash: address_hash, stakes_ratio: value}) do
-    %{"address_hash" => address_hash, "value" => Decimal.to_string(value)}
   end
 
   defp paging_params(%{

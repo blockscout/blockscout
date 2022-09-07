@@ -147,7 +147,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   def timeout, do: @timeout
 
   defp valid_holder?(value) do
-    not is_nil(value) and Decimal.cmp(value, 0) == :gt
+    not is_nil(value) and Decimal.compare(value, 0) == :gt
   end
 
   # Assumes existence of old_value field with previous value or nil

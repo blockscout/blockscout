@@ -68,7 +68,7 @@
       <!-- Gas Used -->
       <div class="mr-3 mr-md-0">
         <%= formatted_gas(@block.gas_used) %>
-        <% gas = if Decimal.cmp(@block.gas_limit, 0) == :gt, do: Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), else: 0  %>
+        <% gas = if Decimal.compare(@block.gas_limit, 0) == :gt, do: Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), else: 0  %>
         (<%= formatted_gas(gas, format: "#.#%") %>)
         <%= gettext "Gas Used" %>
       </div>

@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.ChainView do
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain.Cache.GasPriceOracle
-  alias Explorer.Chain.Supply.TokenBridge
 
   defp market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
        when is_nil(available_supply) or is_nil(usd_value) do
@@ -23,18 +22,6 @@ defmodule BlockScoutWeb.ChainView do
 
   defp market_cap(module, exchange_rate) do
     module.market_cap(exchange_rate)
-  end
-
-  defp total_market_cap_from_token_bridge(%{usd_value: usd_value}) do
-    TokenBridge.token_bridge_market_cap(%{usd_value: usd_value})
-  end
-
-  defp total_market_cap_from_omni_bridge do
-    TokenBridge.total_market_cap_from_omni_bridge()
-  end
-
-  defp token_bridge_supply? do
-    if System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false
   end
 
   def format_usd_value(nil), do: ""
