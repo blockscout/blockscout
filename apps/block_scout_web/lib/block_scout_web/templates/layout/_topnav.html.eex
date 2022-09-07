@@ -1,4 +1,7 @@
 <% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
+<% other_nets = dropdown_other_nets() %>
+<% test_nets = test_nets(dropdown_nets()) %>
+<% main_nets = dropdown_head_main_nets() %>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
@@ -143,17 +146,23 @@
             <%= subnetwork_title() %>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item header division">Mainnets</a>
-            <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>
-              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+            <%= if Enum.count(main_nets) > 0 do %>
+              <a class="dropdown-item header division">Mainnets</a>
+              <%= for %{url: url, title: title} <- main_nets do %>
+                <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+              <% end %>
             <% end %>
-            <a class="dropdown-item header division">Testnets</a>
-            <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %>
-              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+            <%= if Enum.count(test_nets) > 0 do %>
+              <a class="dropdown-item header division">Testnets</a>
+              <%= for %{url: url, title: title} <- test_nets do %>
+                <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+              <% end %>
             <% end %>
-            <a class="dropdown-item header division">Other Networks</a>
-            <%= for %{url: url, title: title} <- dropdown_other_nets() do %>
-              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+            <%= if Enum.count(other_nets) > 0 do %>
+              <a class="dropdown-item header division">Other Networks</a>
+              <%= for %{url: url, title: title} <- other_nets do %>
+                <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+              <% end %>
             <% end %>
           </div>
         </li>
