@@ -635,7 +635,7 @@ msgstr ""
 msgid "Copy Parent Hash"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:16
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:15
 #, elixir-autogen, elixir-format
 msgid "Copy Raw Trace"
 msgstr ""
@@ -686,6 +686,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:41
 #: lib/block_scout_web/templates/transaction/overview.html.eex:463
 #: lib/block_scout_web/templates/transaction/overview.html.eex:469
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:14
 #, elixir-autogen, elixir-format
 msgid "Copy Value"
 msgstr ""
@@ -2861,7 +2862,7 @@ msgstr ""
 msgid "truffle flattener"
 msgstr ""
 
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:29
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:23
 #, elixir-autogen, elixir-format
 msgid "No trace entries found."
 msgstr ""
