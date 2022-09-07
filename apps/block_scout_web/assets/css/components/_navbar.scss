@@ -239,12 +239,11 @@ $navbar-logo-width: 100% !default;
   flex-shrink: 1;
   display: inline-flex;
   .navbar-logo {
-    max-width: 90px !important;
+    max-width: 90px;
   }
 }
 
 .navbar-logo {
-  max-width: 90px !important;
   max-height: $navbar-logo-height;
   width: $navbar-logo-width;
 }
