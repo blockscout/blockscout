@@ -29,7 +29,7 @@ defmodule Explorer.Celo.VoterRewards do
     query
     |> CeloContractEvent.query_by_voter_param(entry.account_hash)
     |> CeloContractEvent.query_by_group_param(entry.group_hash)
-    |> Repo.one()
+    |> Repo.one(timeout: :infinity)
     |> to_integer_if_not_nil()
   end
 
