@@ -45,7 +45,7 @@ defmodule Indexer.Application do
   end
 
   def cluster_process(acc, :prod) do
-    topologies = Application.get_env(:indexer, :environment)
+    topologies = Application.get_env(:libcluster, :topologies)
 
     [{Cluster.Supervisor, [topologies, [name: Indexer.ClusterSupervisor]]} | acc]
   end
