@@ -216,8 +216,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
                   start_index = rem(pid, max_process) * max_handle_txs
                   cond do
                     start_index > length(transactions) ->
-                      EthereumJSONRPC.fetch_internal_transactions(
-                        Enum.slice(transactions, 0, max_handle_txs-1), json_rpc_named_arguments
+                      Logger.info(
+                        "total transactions: #{length(transactions)}, start_index: #{start_index} is out of range"
                       )
                     true ->
                       EthereumJSONRPC.fetch_internal_transactions(
