@@ -137,7 +137,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         )
 
         # re-queue the de-duped entries
-        # {:retry, filtered_unique_numbers}
+        {:retry, filtered_unique_numbers}
 
       :ignore ->
         :ok
@@ -202,11 +202,29 @@ defmodule Indexer.Fetcher.InternalTransaction do
             {:ok, []}
 
           transactions ->
-            max_handle_txs = Indexer.Fetcher.parse_env("HANDLE_TXS_HAS_INTERNAL_TXS_PER_BLOCK") || 50
+            pid = self() |> :erlang.pid_to_list() |> to_string() |> String.split(".")
+                  |> Enum.at(1) |> Integer.parse() |> elem(0)
+            max_process = @max_concurrency
+            max_handle_txs = @max_batch_size
             try do
-              EthereumJSONRPC.fetch_internal_transactions(
-                Enum.slice(transactions, 0, max_handle_txs), json_rpc_named_arguments
-              )
+              cond do
+                length(transactions) <= max_handle_txs ->
+                  EthereumJSONRPC.fetch_internal_transactions(
+                    transactions, json_rpc_named_arguments
+                  )
+                true ->
+                  start_index = rem(pid, max_process) * max_handle_txs
+                  cond do
+                    start_index > length(transactions) ->
+                      EthereumJSONRPC.fetch_internal_transactions(
+                        Enum.slice(transactions, 0, max_handle_txs-1), json_rpc_named_arguments
+                      )
+                    true ->
+                      EthereumJSONRPC.fetch_internal_transactions(
+                        Enum.slice(transactions, start_index, start_index+max_handle_txs-1), json_rpc_named_arguments
+                      )
+                  end
+              end
             catch
               :exit, error ->
                 {:error, error}
