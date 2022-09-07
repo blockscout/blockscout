@@ -18,7 +18,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 4.1.5
+      RELEASE_VERSION: 4.1.7
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -87,10 +87,11 @@ jobs:
     - name: Merge master back after release
       run: |
           git fetch --unshallow
-          git checkout master
           touch errors.txt
           for branch in $BRANCHES;
           do
+            git reset --merge
+            git checkout master
             git fetch origin
             echo $branch
             git ls-remote --exit-code --heads origin $branch || { echo $branch >> errors.txt; continue; }

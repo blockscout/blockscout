@@ -7,13 +7,15 @@ on:
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
+  NEXT_RELEASE_VERSION: 4.1.8
 
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
-    env:
-      RELEASE_VERSION: 4.1.6
+    outputs:
+      release-version: ${{ steps.output-step.outputs.release-version }}
+      short-sha: ${{ steps.output-step.outputs.short-sha }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -23,13 +25,13 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
@@ -38,14 +40,20 @@ jobs:
 
       - name: Add SHORT_SHA env property with commit short sha
         run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
-      
+
+      - name: Add outputs
+        run: |
+          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
+          echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
+        id: output-step
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.NEXT_RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
@@ -64,3 +72,11 @@ jobs:
             JSON_RPC=
             COIN_NAME=xDai
             SUBNETWORK=
+  tests:
+    needs: push_to_registry
+    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_k8s.yaml@master
+    with:
+      blockscout_image: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
+      environment: 'test'
+      verification_image: 'ghcr.io/blockscout/verification:latest'
+    secrets: inherit

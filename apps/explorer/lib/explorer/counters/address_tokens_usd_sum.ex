@@ -50,6 +50,18 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
+  @spec address_tokens_usd_sum([{Address.CurrentTokenBalance, Explorer.Chain.Token}]) :: Decimal.t()
+  defp address_tokens_usd_sum(token_balances) do
+    token_balances
+    |> Enum.reduce(Decimal.new(0), fn {token_balance, _}, acc ->
+      if token_balance.value && token_balance.token.usd_value do
+        Decimal.add(acc, Chain.balance_in_usd(token_balance))
+      else
+        acc
+      end
+    end)
+  end
+
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash_string) do
@@ -65,7 +77,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
 
   defp update_cache(address_hash_string, token_balances) do
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
-    new_data = Chain.address_tokens_usd_sum(token_balances)
+    new_data = address_tokens_usd_sum(token_balances)
     put_into_cache("hash_#{address_hash_string}", new_data)
   end
 
