@@ -40,11 +40,11 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
 
   describe "blockscout_url/2" do
     setup do
-      on_exit(fn ->
-        Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-          url: [scheme: "http", host: "localhost", api_path: nil, path: nil]
-        )
-      end)
+      original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
+
+      on_exit(fn -> Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, original) end)
+
+      :ok
     end
 
     test "set_path = true returns url with path" do
