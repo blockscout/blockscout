@@ -24,7 +24,6 @@ defmodule Explorer.Chain.Token do
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, Hash, Token}
-  alias Phoenix.HTML
 
   @typedoc """
   * `name` - Name of the token
@@ -103,8 +102,6 @@ defmodule Explorer.Chain.Token do
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:contract_address)
     |> trim_name()
-    |> sanitize_input(:name)
-    |> sanitize_input(:symbol)
     |> unique_constraint(:contract_address_hash)
   end
 
@@ -114,23 +111,6 @@ defmodule Explorer.Chain.Token do
     case get_change(changeset, :name) do
       nil -> changeset
       name -> put_change(changeset, :name, String.trim(name))
-    end
-  end
-
-  defp sanitize_input(%Changeset{valid?: false} = changeset, _), do: changeset
-
-  defp sanitize_input(%Changeset{valid?: true} = changeset, key) do
-    case get_change(changeset, key) do
-      nil ->
-        changeset
-
-      property ->
-        safe_property =
-          property
-          |> HTML.html_escape()
-          |> HTML.safe_to_string()
-
-        put_change(changeset, key, String.trim(safe_property))
     end
   end
 

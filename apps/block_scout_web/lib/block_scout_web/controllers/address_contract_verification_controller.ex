@@ -14,12 +14,12 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
-      address_contract_path =
+      address_path =
         conn
-        |> address_contract_path(:index, address_hash_string)
+        |> address_path(:show, address_hash_string)
         |> Controller.full_path()
 
-      redirect(conn, to: address_contract_path)
+      redirect(conn, to: address_path)
     else
       changeset =
         SmartContract.changeset(
@@ -147,27 +147,21 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
          {:ok, _verified_status} <- Sourcify.check_by_address(address_hash_string) do
       get_metadata_and_publish(address_hash_string, conn)
     else
-      {:error, "partial"} ->
-        {:ok, status, metadata} = Sourcify.check_by_address_any(address_hash_string)
-        process_metadata_and_publish(address_hash_string, metadata, status == "partial", conn)
-
       {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
           prepare_verification_error(error, address_hash_string, conn),
           :on_demand
         )
+    end
+  end
 
-      {:error, error} ->
-        EventsPublisher.broadcast(
-          prepare_verification_error(error, address_hash_string, conn),
-          :on_demand
-        )
+  def get_metadata_and_publish(address_hash_string, nil) do
+    case Sourcify.get_metadata(address_hash_string) do
+      {:ok, verification_metadata} ->
+        process_metadata_and_publish(address_hash_string, verification_metadata, false)
 
-      _ ->
-        EventsPublisher.broadcast(
-          prepare_verification_error("Unexpected error", address_hash_string, conn),
-          :on_demand
-        )
+      {:error, %{"error" => error}} ->
+        {:error, error: error}
     end
   end
 
@@ -177,43 +171,28 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         process_metadata_and_publish(address_hash_string, verification_metadata, false, conn)
 
       {:error, %{"error" => error}} ->
-        return_sourcify_error(conn, error, address_hash_string)
+        EventsPublisher.broadcast(
+          prepare_verification_error(error, address_hash_string, conn),
+          :on_demand
+        )
     end
   end
 
   defp process_metadata_and_publish(address_hash_string, verification_metadata, is_partial, conn \\ nil) do
-    case Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata) do
-      %{
-        "params_to_publish" => params_to_publish,
-        "abi" => abi,
-        "secondary_sources" => secondary_sources,
-        "compilation_target_file_path" => compilation_target_file_path
-      } ->
-        ContractController.publish(conn, %{
-          "addressHash" => address_hash_string,
-          "params" => Map.put(params_to_publish, "partially_verified", is_partial),
-          "abi" => abi,
-          "secondarySources" => secondary_sources,
-          "compilationTargetFilePath" => compilation_target_file_path
-        })
+    %{
+      "params_to_publish" => params_to_publish,
+      "abi" => abi,
+      "secondary_sources" => secondary_sources,
+      "compilation_target_file_path" => compilation_target_file_path
+    } = parse_params_from_sourcify(address_hash_string, verification_metadata)
 
-      {:error, :metadata} ->
-        return_sourcify_error(conn, Sourcify.no_metadata_message(), address_hash_string)
-
-      _ ->
-        return_sourcify_error(conn, Sourcify.failed_verification_message(), address_hash_string)
-    end
-  end
-
-  defp return_sourcify_error(nil, error, _address_hash_string) do
-    {:error, error: error}
-  end
-
-  defp return_sourcify_error(conn, error, address_hash_string) do
-    EventsPublisher.broadcast(
-      prepare_verification_error(error, address_hash_string, conn),
-      :on_demand
-    )
+    ContractController.publish(conn, %{
+      "addressHash" => address_hash_string,
+      "params" => Map.put(params_to_publish, "partially_verified", is_partial),
+      "abi" => abi,
+      "secondarySources" => secondary_sources,
+      "compilationTargetFilePath" => compilation_target_file_path
+    })
   end
 
   def prepare_files_array(files) do
@@ -240,6 +219,98 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
            valid?: false
          }}, conn}}
     ]
+  end
+
+  def parse_params_from_sourcify(address_hash_string, verification_metadata) do
+    [verification_metadata_json] =
+      verification_metadata
+      |> Enum.filter(&(Map.get(&1, "name") == "metadata.json"))
+
+    full_params_initial = parse_json_from_sourcify_for_insertion(verification_metadata_json)
+
+    verification_metadata_sol =
+      verification_metadata
+      |> Enum.filter(fn %{"name" => name, "content" => _content} -> name =~ ".sol" end)
+
+    verification_metadata_sol
+    |> Enum.reduce(full_params_initial, fn %{"name" => name, "content" => content, "path" => _path} = param,
+                                           full_params_acc ->
+      compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
+
+      if String.downcase(name) == String.downcase(compilation_target_file_name) do
+        %{
+          "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
+          "abi" => Map.get(full_params_acc, "abi"),
+          "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
+          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+          "compilation_target_file_name" => compilation_target_file_name
+        }
+      else
+        secondary_sources = [
+          prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
+        ]
+
+        %{
+          "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
+          "abi" => Map.get(full_params_acc, "abi"),
+          "secondary_sources" => secondary_sources,
+          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+          "compilation_target_file_name" => compilation_target_file_name
+        }
+      end
+    end)
+  end
+
+  defp prepare_additional_source(address_hash_string, %{"name" => _name, "content" => content, "path" => path}) do
+    splitted_path =
+      path
+      |> String.split("/")
+
+    trimmed_path =
+      splitted_path
+      |> Enum.slice(9..Enum.count(splitted_path))
+      |> Enum.join("/")
+
+    %{
+      "address_hash" => address_hash_string,
+      "file_name" => "/" <> trimmed_path,
+      "contract_source_code" => content
+    }
+  end
+
+  defp extract_primary_source_code(content, params) do
+    params
+    |> Map.put("contract_source_code", content)
+  end
+
+  def parse_json_from_sourcify_for_insertion(verification_metadata_json) do
+    %{"name" => _, "content" => content} = verification_metadata_json
+    content_json = Sourcify.decode_json(content)
+    compiler_version = "v" <> (content_json |> Map.get("compiler") |> Map.get("version"))
+    abi = content_json |> Map.get("output") |> Map.get("abi")
+    settings = Map.get(content_json, "settings")
+    compilation_target_file_path = settings |> Map.get("compilationTarget") |> Map.keys() |> Enum.at(0)
+    compilation_target_file_name = compilation_target_file_path |> String.split("/") |> Enum.at(-1)
+    contract_name = settings |> Map.get("compilationTarget") |> Map.get("#{compilation_target_file_path}")
+    optimizer = Map.get(settings, "optimizer")
+
+    params =
+      %{}
+      |> Map.put("name", contract_name)
+      |> Map.put("compiler_version", compiler_version)
+      |> Map.put("evm_version", Map.get(settings, "evmVersion"))
+      |> Map.put("optimization", Map.get(optimizer, "enabled"))
+      |> Map.put("optimization_runs", Map.get(optimizer, "runs"))
+      |> Map.put("external_libraries", Map.get(settings, "libraries"))
+      |> Map.put("verified_via_sourcify", true)
+
+    %{
+      "params_to_publish" => params,
+      "abi" => abi,
+      "compilation_target_file_path" => compilation_target_file_path,
+      "compilation_target_file_name" => compilation_target_file_name,
+      "secondary_sources" => []
+    }
   end
 
   def parse_optimization_runs(%{"runs" => runs}) do

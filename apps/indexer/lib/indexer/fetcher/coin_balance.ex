@@ -16,7 +16,6 @@ defmodule Indexer.Fetcher.CoinBalance do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.CoinBalance.Supervisor, as: CoinBalanceSupervisor
 
   @behaviour BufferedTask
 
@@ -35,13 +34,9 @@ defmodule Indexer.Fetcher.CoinBalance do
           %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
         ]) :: :ok
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
-    if CoinBalanceSupervisor.disabled?() do
-      :ok
-    else
-      entries = Enum.map(balance_fields, &entry/1)
+    entries = Enum.map(balance_fields, &entry/1)
 
-      BufferedTask.buffer(__MODULE__, entries)
-    end
+    BufferedTask.buffer(__MODULE__, entries)
   end
 
   @doc false
@@ -139,7 +134,41 @@ defmodule Indexer.Fetcher.CoinBalance do
 
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    importable_balances_daily_params = balances_daily_params(params_list, json_rpc_named_arguments)
+    block_numbers =
+      params_list
+      |> Enum.map(&Map.get(&1, :block_number))
+      |> Enum.sort()
+      |> Enum.dedup()
+
+    block_timestamp_map =
+      Enum.reduce(block_numbers, %{}, fn block_number, map ->
+        case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
+          {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} ->
+            day = DateTime.to_date(timestamp)
+            Map.put(map, "#{block_number}", day)
+
+          _ ->
+            %{}
+        end
+      end)
+
+    importable_balances_daily_params =
+      params_list
+      |> Enum.map(fn balance_param ->
+        if Map.has_key?(block_timestamp_map, "#{balance_param.block_number}") do
+          day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
+
+          incoming_balance_daily_param = %{
+            address_hash: balance_param.address_hash,
+            day: day,
+            value: balance_param.value
+          }
+
+          incoming_balance_daily_param
+        else
+          nil
+        end
+      end)
 
     addresses_params = balances_params_to_address_params(importable_balances_params)
 
@@ -158,7 +187,34 @@ defmodule Indexer.Fetcher.CoinBalance do
 
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    importable_balances_daily_params = balances_daily_params(params_list, json_rpc_named_arguments)
+    block_numbers =
+      params_list
+      |> Enum.map(&Map.get(&1, :block_number))
+      |> Enum.sort()
+      |> Enum.dedup()
+
+    block_timestamp_map =
+      Enum.reduce(block_numbers, %{}, fn block_number, map ->
+        {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
+          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+
+        day = DateTime.to_date(timestamp)
+        Map.put(map, "#{block_number}", day)
+      end)
+
+    importable_balances_daily_params =
+      params_list
+      |> Enum.map(fn balance_param ->
+        day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
+
+        incoming_balance_daily_param = %{
+          address_hash: balance_param.address_hash,
+          day: day,
+          value: balance_param.value
+        }
+
+        incoming_balance_daily_param
+      end)
 
     addresses_params = balances_params_to_address_params(importable_balances_params)
 
@@ -223,45 +279,5 @@ defmodule Indexer.Fetcher.CoinBalance do
        })
        when is_integer(code) and is_binary(message) and is_binary(block_quantity) and is_binary(hash_data) do
     [hash_data, "@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
-  end
-
-  def block_timestamp_map(params_list, json_rpc_named_arguments) do
-    block_numbers =
-      params_list
-      |> Enum.map(&Map.get(&1, :block_number))
-      |> Enum.sort()
-      |> Enum.dedup()
-
-    Enum.reduce(block_numbers, %{}, fn block_number, map ->
-      case EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments) do
-        {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} ->
-          day = DateTime.to_date(timestamp)
-          Map.put(map, "#{block_number}", day)
-
-        _ ->
-          %{}
-      end
-    end)
-  end
-
-  defp balances_daily_params(params_list, json_rpc_named_arguments) do
-    block_timestamp_map = block_timestamp_map(params_list, json_rpc_named_arguments)
-
-    params_list
-    |> Enum.map(fn balance_param ->
-      if Map.has_key?(block_timestamp_map, "#{balance_param.block_number}") do
-        day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
-
-        incoming_balance_daily_param = %{
-          address_hash: balance_param.address_hash,
-          day: day,
-          value: balance_param.value
-        }
-
-        incoming_balance_daily_param
-      else
-        nil
-      end
-    end)
   end
 end

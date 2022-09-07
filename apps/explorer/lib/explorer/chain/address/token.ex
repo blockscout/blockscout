@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Address.Token do
   @doc """
   It builds a paginated query of Address.Tokens that have a balance higher than zero ordered by type and name.
   """
-  @spec list_address_tokens_with_balance(Hash.t(), [paging_options()]) :: Ecto.Query.t()
+  @spec list_address_tokens_with_balance(Hash.t(), [paging_options()]) :: %Ecto.Query{}
   def list_address_tokens_with_balance(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 

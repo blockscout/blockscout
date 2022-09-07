@@ -218,11 +218,11 @@ defmodule BlockScoutWeb.AddressViewTest do
       assert AddressView.primary_name(preloaded_address) == address_name.name
     end
 
-    test "returns any when no primary available" do
+    test "returns nil when no primary available" do
       address_name = insert(:address_name, name: "POA Wallet")
       preloaded_address = Explorer.Repo.preload(address_name.address, :names)
 
-      assert AddressView.primary_name(preloaded_address) == address_name.name
+      refute AddressView.primary_name(preloaded_address)
     end
   end
 

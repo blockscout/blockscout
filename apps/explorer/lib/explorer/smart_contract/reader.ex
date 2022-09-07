@@ -562,7 +562,12 @@ defmodule Explorer.SmartContract.Reader do
 
     case response do
       {integer, ""} ->
-        integer
+        hex_encoding =
+          integer
+          |> :binary.encode_unsigned()
+          |> Base.encode16(case: :lower)
+
+        "0x" <> hex_encoding
 
       _ ->
         item

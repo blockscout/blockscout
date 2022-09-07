@@ -19,8 +19,6 @@ services:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
-      args:
-        COIN: ""
     restart: always
     container_name: 'blockscout'
     links:

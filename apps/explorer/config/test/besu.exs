@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :explorer,
   transport: EthereumJSONRPC.HTTP,

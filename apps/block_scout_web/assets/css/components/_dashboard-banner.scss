@@ -5,11 +5,8 @@ $dashboard-banner-gradient-end: lighten(
 ) !default;
 $dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
-$dashboard-line-color-price-dark-theme: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
-$dashboard-line-color-market-dark-theme: $secondary !default;
 $dashboard-line-color-transactions: $warning !default;
-$dashboard-line-color-transactions-dark-theme: $warning !default;
 $dashboard-stats-item-label-color: #fff !default;
 $dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
 $dashboard-banner-chart-legend-label-color: #fff !default;
@@ -53,10 +50,6 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   flex-grow: 1;
   padding: 15px 0 0 0;
 
-  @include media-breakpoint-up(md) {
-    min-width: 500px;
-  }
-
   @include media-breakpoint-down(md) {
     display: flex;
     flex-direction: column;
@@ -67,6 +60,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 .dashboard-banner-chart {
   flex-grow: 1;
   margin: 15px 0 20px 0;
+  max-width: 350px;
   position: relative;
   min-height: 100px;
   height: calc(100% - 86px);
@@ -83,21 +77,13 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     max-width: 100%;
     width: 100%;
   }
-
-  @include media-breakpoint-down(sm) {
-    height: 150px !important;
-  }
 }
 
 .dashboard-banner-chart-legend {
   display: grid;
-  grid-template-columns: 0.6fr 0.9fr 0.9fr 0.9fr;
+  grid-template-columns: repeat(var(--numChartData), 0.9fr);
   padding-bottom: 12px;
   padding-left:20px;
-
-  @include media-breakpoint-down(sm) {
-    grid-template-columns: 1fr 1fr;
-  }
 
   .dashboard-banner-chart-legend-item {
     padding-bottom: 3px;
@@ -109,10 +95,6 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
     @include media-breakpoint-down(md) {
       display: flex;
       flex-direction: row;
-    }
-
-    @include media-breakpoint-down(sm) {
-      margin-top: 10px;
     }
 
     @media (max-width: 599px) {
@@ -131,28 +113,16 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
       width: 4px;
     }
 
-    &.price-per-day {
-      &::before {
-        background-color: $dashboard-line-color-price;
-      }
+    &:nth-child(1)::before {
+      background-color: $dashboard-line-color-price;
     }
 
-    &.gas-price-oracle {
-      &::before {
-        background-color: $dashboard-line-color-price;
-      }
+    &:nth-child(2)::before {
+      background-color: $dashboard-line-color-market;
     }
 
-    &.market-cap-per-day {
-      &::before {
-        background-color:$dashboard-line-color-market;
-      }
-    }
-
-    &.tx-per-day {
-      &::before {
+    &:nth-child(3)::before {
         background-color: $dashboard-line-color-transactions;
-      }
     }
   }
 

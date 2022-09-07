@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 pool_size =
   if System.get_env("DATABASE_READ_ONLY_API_URL"),

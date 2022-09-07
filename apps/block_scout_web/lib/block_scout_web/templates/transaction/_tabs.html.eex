@@ -1,15 +1,15 @@
-<div id="transaction-tabs" class="card-tabs js-card-tabs">
+<div class="card-tabs js-card-tabs">
   <%= if @show_token_transfers do %>
     <%= link(
           gettext("Token Transfers"),
-          class: "card-tab #{tab_status("token-transfers", @conn.request_path, @show_token_transfers)}",
+          class: "card-tab #{tab_status("token-transfers", @conn.request_path)}",
           to: AccessHelpers.get_path(@conn, :transaction_token_transfer_path, :index, @transaction)
         )
       %>
   <% end %>
   <%= link(
         gettext("Internal Transactions"),
-        class: "card-tab #{tab_status("internal-transactions", @conn.request_path, @show_token_transfers)}",
+        class: "card-tab #{tab_status("internal-transactions", @conn.request_path)}",
         to: AccessHelpers.get_path(@conn, :transaction_internal_transaction_path, :index, @transaction)
       )
     %>

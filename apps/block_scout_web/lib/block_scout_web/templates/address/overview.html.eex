@@ -141,7 +141,7 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% {implementation_address, name} = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || "0x0000000000000000000000000000000000000000" %>
+            <% implementation_address = Chain.get_implementation_address_hash(@address.hash, @address.smart_contract.abi) || "0x0000000000000000000000000000000000000000" %>
             <dl class="row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -150,9 +150,10 @@
               </dt>
               <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_contract_implementation">
                 <%= link(
-                  (if name, do: name <> " | " <> implementation_address, else: implementation_address),
+                  implementation_address,
                   to: address_path(@conn, :show, implementation_address),
-                  class: "contract-address"
+                  class: "contract-address mb-2",
+                  style: "margin-top: 0.5rem;"
                 ) 
                 %>
               </dd>
@@ -165,7 +166,7 @@
               text: gettext("Address balance in xDAI (doesn't include ERC20, ERC721, ERC1155 tokens).") %>
               <%= gettext("Balance") %>
             </dt>
-            <dd data-selector="current-coin-balance" class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
+            <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
               <%= balance(@address) %>
               <%= if !match?({:pending, _}, @coin_balance_status) && !empty_exchange_rate?(@exchange_rate) do %>
                 <% usd_value = to_string(@exchange_rate.usd_value) %>
@@ -273,7 +274,7 @@
                 text: gettext("Block number in which the address was updated.") %>
                 <%= gettext("Last Balance Update") %>
               </dt>
-              <dd data-selector="last-balance-update" class="col-sm-8 col-md-8 col-lg-9" data-test="address_last_balance_update">
+              <dd class="col-sm-8 col-md-8 col-lg-9" data-test="address_last_balance_update">
                 <%= link(
                     @address.fetched_coin_balance_block_number,
                     to: block_path(@conn, :show, @address.fetched_coin_balance_block_number),
@@ -282,7 +283,6 @@
               </dd>
             </dl>
           <% end %>
-          <div data-last-balance-update="<%= @address.fetched_coin_balance_block_number %>"></div>
           <!-- Blocks Validated -->
           <dl class="row address-validation-count-item" style="display: none;">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">

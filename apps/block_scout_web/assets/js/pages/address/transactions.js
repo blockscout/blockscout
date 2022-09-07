@@ -172,7 +172,7 @@ if ($('[data-page="address-transactions"]').length) {
 }
 
 function loadTransactions (store) {
-  const path = $('[class="card-body"]')[0].dataset.asyncListing
+  const path = $('[class="card-body"]')[1].dataset.asyncListing
   store.dispatch({ type: 'START_TRANSACTIONS_FETCH' })
   $.getJSON(path, { type: 'JSON' })
     .done(response => store.dispatch({ type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response) }))

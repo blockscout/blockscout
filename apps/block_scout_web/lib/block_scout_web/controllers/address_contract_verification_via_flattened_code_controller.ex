@@ -8,12 +8,12 @@ defmodule BlockScoutWeb.AddressContractVerificationViaFlattenedCodeController do
 
   def new(conn, %{"address_id" => address_hash_string}) do
     if Chain.smart_contract_fully_verified?(address_hash_string) do
-      address_contract_path =
+      address_path =
         conn
-        |> address_contract_path(:index, address_hash_string)
+        |> address_path(:show, address_hash_string)
         |> Controller.full_path()
 
-      redirect(conn, to: address_contract_path)
+      redirect(conn, to: address_path)
     else
       changeset =
         SmartContract.changeset(

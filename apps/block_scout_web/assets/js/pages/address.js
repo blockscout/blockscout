@@ -80,15 +80,6 @@ export function reducer (state = initialState, action) {
         fetchedCoinBalanceBlockNumber: action.msg.fetchedCoinBalanceBlockNumber
       })
     }
-    case 'RECEIVED_NEW_CURRENT_COIN_BALANCE': {
-      if (state.initialBlockNumber && action.msg.currentCoinBalanceBlockNumber < state.initialBlockNumber) return
-      return Object.assign({}, state, {
-        currentCoinBalance: action.msg.currentCoinBalanceHtml,
-        currentCoinBalanceBlockNumber: action.msg.currentCoinBalanceBlockNumberHtml,
-        initialBlockNumber: state.newBlockNumber,
-        newBlockNumber: action.msg.currentCoinBalanceBlockNumber
-      })
-    }
     default:
       return state
   }
@@ -196,24 +187,6 @@ const elements = {
         $('[data-test="address-tokens-panel-crc-total-worth-container"]').addClass('d-none')
       }
     }
-  },
-  '[data-selector="current-coin-balance"]': {
-    render ($el, state, oldState) {
-      if (!state.newBlockNumber || state.newBlockNumber > oldState.newBlockNumber) return
-      $el.empty().append(state.currentCoinBalance)
-      updateAllCalculatedUsdValues()
-    }
-  },
-  '[data-selector="last-balance-update"]': {
-    render ($el, state, oldState) {
-      if (!state.newBlockNumber || state.newBlockNumber > oldState.newBlockNumber) return
-      $el.empty().append(state.currentCoinBalanceBlockNumber)
-    }
-  },
-  '[data-last-balance-update]': {
-    load ($el) {
-      return { initialBlockNumber: numeral($el.data('last-balance-update')).value() }
-    }
   }
 }
 
@@ -267,12 +240,6 @@ if ($addressDetailsPage.length) {
   addressChannel.on('transfer', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TOKEN_TRANSFER',
-      msg: humps.camelizeKeys(msg)
-    })
-  })
-  addressChannel.on('current_coin_balance', (msg) => {
-    store.dispatch({
-      type: 'RECEIVED_NEW_CURRENT_COIN_BALANCE',
       msg: humps.camelizeKeys(msg)
     })
   })

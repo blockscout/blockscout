@@ -11,7 +11,7 @@
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "Validated Transactions" %></h1>
       <div class="list-top-pagination-container-wrapper">
-        <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.transactions_available_count() == Chain.limit_showing_transactions(), do: Chain.limit_showing_transactions(), else: nil %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.transactions_available_count() == Chain.limit_shownig_transactions(), do: Chain.limit_shownig_transactions(), else: nil %>
       </div>
 
       <div data-selector="channel-batching-message" class="d-none">

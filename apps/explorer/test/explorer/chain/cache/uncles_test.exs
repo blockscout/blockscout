@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Cache.UnclesTest do
 
       Uncles.update_from_second_degree_relations([second_degree_relation])
 
-      assert [%{hash: ^uncle_hash}] = Uncles.all()
+      assert [%{hash: uncle_hash}] = Uncles.all()
     end
   end
 end

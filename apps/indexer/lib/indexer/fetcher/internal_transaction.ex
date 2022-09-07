@@ -98,10 +98,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
             )
   def run(block_numbers, json_rpc_named_arguments) do
     unique_numbers = Enum.uniq(block_numbers)
-    filtered_unique_numbers = EthereumJSONRPC.block_numbers_in_range(unique_numbers)
 
-    filtered_unique_numbers_count = Enum.count(filtered_unique_numbers)
-    Logger.metadata(count: filtered_unique_numbers_count)
+    unique_numbers_count = Enum.count(unique_numbers)
+    Logger.metadata(count: unique_numbers_count)
 
     Logger.debug("fetching internal transactions for blocks")
 
@@ -109,14 +108,14 @@ defmodule Indexer.Fetcher.InternalTransaction do
     |> Keyword.fetch!(:variant)
     |> case do
       EthereumJSONRPC.Parity ->
-        EthereumJSONRPC.fetch_block_internal_transactions(filtered_unique_numbers, json_rpc_named_arguments)
+        EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
       EthereumJSONRPC.Besu ->
-        EthereumJSONRPC.fetch_block_internal_transactions(filtered_unique_numbers, json_rpc_named_arguments)
+        EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
       _ ->
         try do
-          fetch_block_internal_transactions_by_transactions(filtered_unique_numbers, json_rpc_named_arguments)
+          fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
         rescue
           error ->
             {:error, error}
@@ -124,15 +123,15 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
     |> case do
       {:ok, internal_transactions_params} ->
-        import_internal_transaction(internal_transactions_params, filtered_unique_numbers)
+        import_internal_transaction(internal_transactions_params, unique_numbers)
 
       {:error, reason} ->
         Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
-          error_count: filtered_unique_numbers_count
+          error_count: unique_numbers_count
         )
 
         # re-queue the de-duped entries
-        {:retry, filtered_unique_numbers}
+        {:retry, unique_numbers}
 
       :ignore ->
         :ok

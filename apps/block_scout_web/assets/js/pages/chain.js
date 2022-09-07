@@ -343,7 +343,7 @@ if ($chainDetailsPage.length) {
   transactionStatsChannel.join()
   transactionStatsChannel.on('update', msg => store.dispatch({
     type: 'RECEIVED_UPDATED_TRANSACTION_STATS',
-    msg
+    msg: msg
   }))
 
   const $txReloadButton = $('[data-selector="reload-transactions-button"]')

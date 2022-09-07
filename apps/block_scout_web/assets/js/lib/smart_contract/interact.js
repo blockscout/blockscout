@@ -4,23 +4,22 @@ import { compareChainIDs, formatError, formatTitleAndError, getContractABI, getC
 import BigNumber from 'bignumber.js'
 
 export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer) => {
-  const data = {
+  let data = {
     function_name: functionName,
     method_id: $methodId.val(),
-    type
+    type: type,
+    args
   }
-
-  data.args_count = args.length
-  let i = args.length
-
-  while (i--) {
-    data['arg_' + i] = args[i]
-  }
-
   if (isWalletEnabled) {
     getCurrentAccountPromise(window.web3 && window.web3.currentProvider)
       .then((currentAccount) => {
-        data.from = currentAccount
+        data = {
+          function_name: functionName,
+          method_id: $methodId.val(),
+          type: type,
+          from: currentAccount,
+          args
+        }
         $.get(url, data, response => $responseContainer.html(response))
       }
       )

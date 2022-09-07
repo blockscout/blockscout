@@ -97,8 +97,9 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # sobelow_skip ["Traversal"]
   defp fetch_from_file(path) do
-    with {:ok, data} <- File.read(path) do
-      Jason.decode(data)
+    with {:ok, data} <- File.read(path),
+         {:ok, json} <- Jason.decode(data) do
+      {:ok, json}
     end
   end
 

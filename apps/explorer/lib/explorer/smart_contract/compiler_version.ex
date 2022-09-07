@@ -77,9 +77,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
             minor2 = versions2 |> Enum.at(1) |> parse_integer()
             patch1 = versions1 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> parse_integer()
             patch2 = versions2 |> Enum.at(2) |> String.split("-") |> Enum.at(0) |> parse_integer()
-
-            major1 > major2 || (major1 == major2 && minor1 > minor2) ||
-              (major1 == major2 && minor1 == minor2 && patch1 > patch2)
+            major1 >= major2 && minor1 >= minor2 && patch1 >= patch2
           end)
       end
 

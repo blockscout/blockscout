@@ -97,14 +97,14 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.13"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "== 3.0.4"},
+      {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 2.0"},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
-      {:poison, "~> 4.0.1"},
+      {:poison, "~> 4.0"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
@@ -126,7 +126,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:timex, "~> 3.7.1"},
       {:wallaby, "~> 0.28", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
-      {:websocket_client, "~> 1.3"},
+      {:websocket_client, "== 1.3.0"},
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
       {:ex_json_schema, "~> 0.6.2"}
     ]

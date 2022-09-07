@@ -26,8 +26,8 @@ function wrapJsonRpc (method, params) {
   return {
     id: 0,
     jsonrpc: '2.0',
-    method,
-    params
+    method: method,
+    params: params
   }
 }
 

@@ -1,6 +1,6 @@
 // general
-$primary: #133629;
-$secondary: #3E6957;
+$primary: #17314f;
+$secondary: #15bba6;
 $tertiary: #93d7ff;
 $additional-font: #fff;
 
@@ -14,7 +14,7 @@ $footer-item-disc-color: $secondary;
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-line-color-market: #15bba6;
+$dashboard-line-color-market: $secondary;
 
 $dashboard-banner-chart-legend-label-color: $footer-text-color;
 $dashboard-stats-item-label-color: $footer-text-color;
@@ -25,16 +25,13 @@ $dashboard-stats-item-border-color: $secondary; // stat border
 
 $dashboard-banner-gradient-start: $primary; // gradient begin
 
-$dashboard-banner-gradient-end: $secondary; // gradient end
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-$dashboard-banner-network-plain-container-background-color: $secondary; // stats bg
+$dashboard-banner-network-plain-container-background-color: #20446e; // stats bg
 
 
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
-
-// Logo Size
-$navbar-logo-height: 22px;
 
 // form
 $form-control-border-color-active: $secondary;
@@ -51,41 +48,16 @@ $btn-contract-color: $secondary;
 $tile-body-a-color: $secondary;
 $tile-type-block-color: $secondary;
 $tile-type-progress-bar-color: $secondary;
-
-a {
-  color: $secondary;
-}
-
-a:hover, a:focus {
-  color: $secondary;
-}
-
-.tile .tile-body a,
 .tile a:hover,
-.tile span[data-address-hash],
-.tile a[data-test=token_link]
 a.tile-title { color: $secondary !important; }
 .card-body {  
-  a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not(#dropdown-tokens):not(.btn-line):not(.page-link):not(.active) {
-    color: $secondary;
+	a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
+		color: $secondary;
 
-    &:hover {
-      color: $secondary;
-    }
-  }
-}
-
-.dashboard-banner-network-stats-item::before {
-  background-color: #F0EBDE !important;
-}
-
-.dashboard-banner-chart-legend {
-  .dashboard-banner-chart-legend-item.market-cap-per-day
-   {
-    &::before {
-      background-color: $dashboard-line-color-market !important;
-    }
-  }
+		&:hover {
+			color: $secondary;
+		}
+	}
 }
 
 // card
@@ -93,21 +65,19 @@ $card-background-1: $secondary;
 $card-tab-active: $secondary;
 
 .layout-container {
-  .dashboard-banner-container {
-    background-color: $primary !important;
-    background-image: linear-gradient(
-      to bottom,
-      $dashboard-banner-gradient-start,
-      $dashboard-banner-gradient-end
-    );
-  }
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
 }
 
-$badges-color: #20446e;
 // Badges
-$badge-neutral-color: $badges-color;
-$badge-neutral-background-color: rgba($badges-color, .1);
-$api-text-monospace-color: $badges-color;
+$badge-neutral-color: #20446e;
+$badge-neutral-background-color: rgba(#20446e, .1);
+$api-text-monospace-color: #20446e;
 
 // Staking
 $stakes-btn-remove-pool-color: $secondary;
@@ -123,160 +93,55 @@ $modal-status-graph-success: $secondary;
 $stakes-progress-graph-color: $secondary;
 
 // Dark theme
-$dark-primary: $secondary;
-$dark-primary-alternate: $secondary;
-$labels-dark: #A6BCF5;
-$body-dark: #1c1d31; // body background
-$dashboard-line-color-market-dark-theme: $secondary;
-$dashboard-line-color-price-dark-theme: $secondary;
-$dashboard-line-color-transactions-dark-theme: $secondary;
+$dark-primary: #15bba6;
+$dark-secondary: #93d7ff;
+$dark-primary-alternate: #15bba6;
+$dark-tertiary: #5a77ff;
 
+.dark-theme-applied .tile .tile-body a,
+.dark-theme-applied .tile a:hover,
+.dark-theme-applied .tile span[data-address-hash],
+.dark-theme-applied .tile a[data-test=token_link] {
+    color: $dark-tertiary!important;
+}
 
-.dark-theme-applied {
-  .dropdown-item.active:not(.header),
-  .dropdown-item:not(.header):hover,
-  .dropdown-item:not(.header):focus {
-    background-color: $secondary !important;
-  }
-
-  .dashboard-banner-network-stats-item::before {
-		background-color: $secondary !important;
-	}
-
-  .tile .tile-body a,
-  .tile a:hover,
-  .tile span[data-address-hash],
-  .tile a[data-test=token_link] {
-      color: $labels-dark !important;
-  }
-
-  .tile.tile-type-block {
-		border-left-color: $secondary !important;
-	}
-
-  a {
-    color: $labels-dark;
-  }
-
-  a:hover, a:focus {
-    color: $labels-dark;
-  }
-
-  a.ad-url {
-    color: $labels-dark !important;
-  }
-
-  .btn-line {
-    background-color: transparent !important;
-    border-color: $labels-dark !important;
-    color: $labels-dark !important;
+.dark-theme-applied .btn-line {
+    background-color: transparent!important;
+    border-color: $dark-tertiary!important;
+    color: $dark-tertiary!important;
 
     &[disabled] {
         &,
         &:hover {
-            background-color: transparent !important;
-            border-color: $labels-dark !important;
-            color: $labels-dark !important;
+            background-color: transparent!important;
+            border-color: $dark-tertiary!important;
+            color: $dark-tertiary!important;
         }
     }
-  }
+}
 
-  .btn-line:hover {
-    color: $additional-font !important;
-  }
+.dark-theme-applied .btn-line:hover {
+    color: $additional-font!important;
+}
 
-  .btn-no-border-link-to-tems {
-    border-color: $labels-dark !important;
-    color: $labels-dark !important;
-  }
-
-  .btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
-		border-color: $labels-dark !important;
-		path {
-			fill: $labels-dark !important;
-		}
-		&:hover {
-			background-color: $labels-dark !important;
-			path {
-				fill: $body-dark !important;
-			}
-		}
-    &.btn-copy-icon-small {
-      &:hover {
-        background-color: transparent !important;
-        path {
-          fill: $labels-dark !important;
-        }
-      }
-    }
-	}
-
-  .btn-wallet-icon, .btn-contract-icon {
-    background-color: transparent !important;
-    border-color: $labels-dark !important;
-    color: $labels-dark !important;
-
-    &:hover {
-      background-color: $labels-dark !important;
-      border-color: $body-dark !important;
-      color: $body-dark !important;
-    }
-  }
-
-  .btn-contract-icon {
-    path {
-      fill: $labels-dark !important;
-    }
-
-    &:hover {
-			path {
-				fill: $body-dark !important;
-			}
-		}
-  }
-
-  .text-muted {
-    color: #8a8dba !important;
-  }
-
-  .card-tab {
-    color: #fff !important;
-  }
-
-  .card-body {  
-    a:not(.dropdown-item):not(.button):not(.alert-link):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
-        color: $labels-dark !important;
+.dark-theme-applied .card-body {  
+    a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
+        color: $dark-tertiary;
 
         &:hover {
-            color: $labels-dark !important;
+            color: $dark-tertiary;
         }
     }
-  }
+}
 
-  .pagination-container .pagination .page-item.active .page-link {
-    background-color: $secondary;
-    border: 1px solid $secondary;
-  }
-
-  .dashboard-banner-chart-legend {
-    .dashboard-banner-chart-legend-item.tx-per-day,
-    .dashboard-banner-chart-legend-item.price-per-day,
-    .dashboard-banner-chart-legend-item.market-cap-per-day,
-    .dashboard-banner-chart-legend-item.gas-price-oracle
-     {
-      &::before {
-        background-color: $secondary !important;
+.dark-theme-applied .dashboard-banner-chart-legend {
+    .dashboard-banner-chart-legend-item {
+      &:nth-child(1)::before {
+        background-color: $dashboard-line-color-price;
+      }
+  
+      &:nth-child(2)::before {
+        background-color: $dashboard-line-color-market;
       }
     }
   }
-  
-  .dropzone-1 {
-    border-color: #fff !important;
-  }
-  .footer-link {
-		color: $labels-dark !important;
-	}
-  .footer-list ul li::before {
-    background-color: $secondary !important;
-  }
-}

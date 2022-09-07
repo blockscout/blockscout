@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 database = if System.get_env("DATABASE_URL"), do: nil, else: "explorer_dev"
 hostname = if System.get_env("DATABASE_URL"), do: nil, else: "localhost"

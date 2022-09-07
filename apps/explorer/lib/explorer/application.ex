@@ -11,14 +11,13 @@ defmodule Explorer.Application do
     Accounts,
     AddressSum,
     AddressSumMinusBurnt,
-    Block,
+    BlockCount,
     BlockNumber,
     Blocks,
-    GasPriceOracle,
     GasUsage,
     MinMissingBlockNumber,
     NetVersion,
-    Transaction,
+    TransactionCount,
     Transactions,
     Uncles
   }
@@ -52,12 +51,11 @@ defmodule Explorer.Application do
       Explorer.SmartContract.VyperDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
-      Transaction,
+      TransactionCount,
       AddressSum,
       AddressSumMinusBurnt,
-      Block,
+      BlockCount,
       Blocks,
-      GasPriceOracle,
       GasUsage,
       NetVersion,
       BlockNumber,
@@ -70,7 +68,7 @@ defmodule Explorer.Application do
 
     children = base_children ++ configurable_children()
 
-    opts = [strategy: :one_for_one, name: Explorer.Supervisor, max_restarts: 1_000]
+    opts = [strategy: :one_for_one, name: Explorer.Supervisor]
 
     Supervisor.start_link(children, opts)
   end

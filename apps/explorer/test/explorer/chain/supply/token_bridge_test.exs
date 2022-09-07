@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Supply.TokenBridgeTest do
 
   import Mox
 
-  # alias Explorer.Chain.Supply.TokenBridge
+  alias Explorer.Chain.Supply.TokenBridge
 
   @moduletag :capture_log
 

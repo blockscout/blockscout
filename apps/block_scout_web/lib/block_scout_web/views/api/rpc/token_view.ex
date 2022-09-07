@@ -41,10 +41,6 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     }
   end
 
-  defp prepare_bridged_token([]) do
-    %{}
-  end
-
   defp prepare_bridged_token([token, bridged_token]) do
     total_supply = divide_decimals(token.total_supply, token.decimals)
     usd_value = BridgedTokensView.bridged_token_usd_cap(bridged_token, token)

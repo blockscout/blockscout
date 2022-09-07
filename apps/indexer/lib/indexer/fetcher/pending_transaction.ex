@@ -150,16 +150,6 @@ defmodule Indexer.Fetcher.PendingTransaction do
         Logger.error("bad_gateway")
 
         :ok
-
-      {:error, :closed} ->
-        Logger.error("closed")
-
-        :ok
-
-      {:error, reason} ->
-        Logger.error(inspect(reason))
-
-        :ok
     end
   end
 

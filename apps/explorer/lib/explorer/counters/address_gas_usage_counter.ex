@@ -6,10 +6,16 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
-  alias Explorer.Counters.Helper
 
   @cache_name :address_transactions_gas_usage_counter
   @last_update_key "last_update"
+
+  @ets_opts [
+    :set,
+    :named_table,
+    :public,
+    read_concurrency: true
+  ]
 
   config = Application.get_env(:explorer, __MODULE__)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
@@ -59,21 +65,27 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
 
     cond do
       is_nil(updated_at) -> true
-      Helper.current_time() - updated_at > cache_period -> true
+      current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
 
   defp update_cache(address) do
     address_hash_string = to_string(address.hash)
-    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
+    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
     new_data = Chain.address_to_gas_usage_count(address)
     put_into_cache("hash_#{address_hash_string}", new_data)
     put_into_db(address, new_data)
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_cache(key, @cache_name)
+    case :ets.lookup(@cache_name, key) do
+      [{_, value}] ->
+        value
+
+      [] ->
+        0
+    end
   end
 
   defp put_into_cache(key, value) do
@@ -88,13 +100,24 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
     |> Repo.update()
   end
 
-  defp create_cache_table do
-    Helper.create_cache_table(@cache_name)
+  defp current_time do
+    utc_now = DateTime.utc_now()
+
+    DateTime.to_unix(utc_now, :millisecond)
   end
 
-  defp enable_consolidation?, do: @enable_consolidation
+  def create_cache_table do
+    if :ets.whereis(@cache_name) == :undefined do
+      :ets.new(@cache_name, @ets_opts)
+    end
+  end
+
+  def enable_consolidation?, do: @enable_consolidation
 
   defp address_transactions_gas_usage_counter_cache_period do
-    Helper.cache_period("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", 1)
+    case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD", "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.hours(1)
+    end
   end
 end

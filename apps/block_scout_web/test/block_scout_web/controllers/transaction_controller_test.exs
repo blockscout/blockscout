@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
   import BlockScoutWeb.WebRouter.Helpers,
-    only: [transaction_path: 3]
+    only: [transaction_path: 3, transaction_internal_transaction_path: 3, transaction_token_transfer_path: 3]
 
   alias Explorer.Chain.Transaction
 
@@ -127,11 +127,21 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       assert html_response(conn, 422)
     end
 
-    test "no redirect from tx page", %{conn: conn} do
+    test "redirects to transactions/:transaction_id/token-transfers when there are token transfers", %{conn: conn} do
+      transaction = insert(:transaction)
+      insert(:token_transfer, transaction: transaction)
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
+
+      assert redirected_to(conn) =~ transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction)
+    end
+
+    test "redirects to transactions/:transaction_id/internal-transactions when there are no token transfers", %{
+      conn: conn
+    } do
       transaction = insert(:transaction)
       conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
 
-      assert html_response(conn, 200)
+      assert redirected_to(conn) =~ transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction)
     end
   end
 end

@@ -5,7 +5,6 @@ defmodule Explorer.Market.MarketHistoryCache do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Counters.Helper
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -37,7 +36,7 @@ defmodule Explorer.Market.MarketHistoryCache do
 
     cond do
       is_nil(updated_at) -> true
-      Helper.current_time() - updated_at > cache_period -> true
+      current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
@@ -45,7 +44,7 @@ defmodule Explorer.Market.MarketHistoryCache do
   defp update_cache do
     new_data = fetch_from_db()
 
-    put_into_cache(@last_update_key, Helper.current_time())
+    put_into_cache(@last_update_key, current_time())
     put_into_cache(@history_key, new_data)
 
     new_data
@@ -72,7 +71,16 @@ defmodule Explorer.Market.MarketHistoryCache do
     ConCache.put(@cache_name, key, value)
   end
 
+  defp current_time do
+    utc_now = DateTime.utc_now()
+
+    DateTime.to_unix(utc_now, :millisecond)
+  end
+
   defp market_history_cache_period do
-    Helper.cache_period("CACHE_MARKET_HISTORY_PERIOD", 6)
+    case Integer.parse(System.get_env("MARKET_HISTORY_CACHE_PERIOD", "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.hours(6)
+    end
   end
 end

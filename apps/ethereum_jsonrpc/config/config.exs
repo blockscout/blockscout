@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
@@ -26,9 +26,6 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Tracer,
   adapter: SpandexDatadog.Adapter,
   trace_key: :blockscout
 
-debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s")
-config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout: debug_trace_transaction_timeout
-
 config :logger, :ethereum_jsonrpc,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",
@@ -39,4 +36,4 @@ config :logger, :ethereum_jsonrpc,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{config_env()}.exs"
+import_config "#{Mix.env()}.exs"

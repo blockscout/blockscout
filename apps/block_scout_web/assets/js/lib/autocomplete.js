@@ -3,7 +3,6 @@ import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete'
 import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
 import { appendTokenIcon } from './token_icon'
-import { escapeHtml } from './utils'
 import xss from 'xss'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or batch number'
@@ -46,14 +45,13 @@ const resultsListElement = (list, data) => {
 
   fetchTextAdData()
 }
-export const searchEngine = (query, record) => {
-  const queryLowerCase = query.toLowerCase()
+const searchEngine = (query, record) => {
   if (record && (
-    (record.name && record.name.toLowerCase().includes(queryLowerCase)) ||
-      (record.symbol && record.symbol.toLowerCase().includes(queryLowerCase)) ||
-      (record.address_hash && record.address_hash.toLowerCase().includes(queryLowerCase)) ||
-      (record.tx_hash && record.tx_hash.toLowerCase().includes(queryLowerCase)) ||
-      (record.block_hash && record.block_hash.toLowerCase().includes(queryLowerCase))
+    (record.name && record.name.toLowerCase().includes(query.toLowerCase())) ||
+      (record.symbol && record.symbol.toLowerCase().includes(query.toLowerCase())) ||
+      (record.address_hash && record.address_hash.toLowerCase().includes(query.toLowerCase())) ||
+      (record.tx_hash && record.tx_hash.toLowerCase().includes(query.toLowerCase())) ||
+      (record.block_hash && record.block_hash.toLowerCase().includes(query.toLowerCase()))
   )
   ) {
     let searchResult = '<div>'
@@ -64,10 +62,10 @@ export const searchEngine = (query, record) => {
     } else {
       searchResult += '<div>'
       if (record.name) {
-        searchResult += `<b>${escapeHtml(record.name)}</b>`
+        searchResult += `<b>${record.name}</b>`
       }
       if (record.symbol) {
-        searchResult += ` (${escapeHtml(record.symbol)})`
+        searchResult += ` (${record.symbol})`
       }
       if (record.holder_count) {
         searchResult += ` <i>${record.holder_count} holder(s)</i>`
@@ -108,7 +106,7 @@ const config = (id) => {
       src: (query) => dataSrc(query, id),
       cache: false
     },
-    placeHolder,
+    placeHolder: placeHolder,
     searchEngine: (query, record) => searchEngine(query, record),
     threshold: 2,
     resultsList: {
@@ -133,9 +131,9 @@ const config = (id) => {
     }
   }
 }
-const autoCompleteJS = document.querySelector('#main-search-autocomplete') && new AutoComplete(config('main-search-autocomplete'))
+const autoCompleteJS = new AutoComplete(config('main-search-autocomplete'))
 // eslint-disable-next-line
-const autoCompleteJSMobile = document.querySelector('#main-search-autocomplete-mobile') && new AutoComplete(config('main-search-autocomplete-mobile'))
+const autoCompleteJSMobile = new AutoComplete(config('main-search-autocomplete-mobile'))
 
 const selection = (event) => {
   const selectionValue = event.detail.selection.value
@@ -150,6 +148,13 @@ const selection = (event) => {
     window.location = `/blocks/${selectionValue.block_hash}`
   }
 }
+
+document.querySelector('#main-search-autocomplete').addEventListener('selection', function (event) {
+  selection(event)
+})
+document.querySelector('#main-search-autocomplete-mobile').addEventListener('selection', function (event) {
+  selection(event)
+})
 
 const openOnFocus = (event, type) => {
   const query = event.target.value
@@ -173,17 +178,10 @@ const openOnFocus = (event, type) => {
   }
 }
 
-document.querySelector('#main-search-autocomplete') && document.querySelector('#main-search-autocomplete').addEventListener('selection', function (event) {
-  selection(event)
-})
-document.querySelector('#main-search-autocomplete-mobile') && document.querySelector('#main-search-autocomplete-mobile').addEventListener('selection', function (event) {
-  selection(event)
-})
-
-document.querySelector('#main-search-autocomplete') && document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
+document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
   openOnFocus(event, 'desktop')
 })
 
-document.querySelector('#main-search-autocomplete-mobile') && document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
+document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
   openOnFocus(event, 'mobile')
 })

@@ -36,52 +36,60 @@
             <% market_chart_config = @chart_config.market%>
 
             <%= if Enum.member?(market_chart_config, :price) do %>
-              <div class="dashboard-banner-chart-legend-item price-per-day">
-                  <span class="dashboard-banner-chart-legend-label">
-                  <%= System.get_env("COIN_NAME") || System.get_env("COIN") %> <%= gettext "Price" %>
-                  </span>
-                  <div class="dashboard-banner-chart-legend-value-container">
-                    <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+                <div class="dashboard-banner-chart-legend-item">
+                    <span class="dashboard-banner-chart-legend-label">
+                    <%= System.get_env("COIN_NAME") || System.get_env("COIN") %> <%= gettext "Price" %>
                     </span>
+                    <div class="dashboard-banner-chart-legend-value-container">
+                      <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+                      </span>
+                      <%= if @gas_price do %>
+                        <span class="dashboard-banner-chart-legend-value inline ml-2">
+                          <span class="gas-price-icon">
+                            <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
+                          </span>
+                          <%= @gas_price <> " " %>
+                          <%= gettext "Gwei" %>
+                        </span>
+                      <% end %>
+                    </div>
                 </div>
-              </div>
             <% end %>
             <%= if Enum.member?(@chart_config.market, :market_cap) do %>
-            <div class="dashboard-banner-chart-legend-item market-cap-per-day">
+            <div class="dashboard-banner-chart-legend-item">
                 <span class="dashboard-banner-chart-legend-label">
                 <%= gettext "Market Cap" %>
                 </span>
-                <div class="d-flex" style="height: 20px; line-height: 20px;">
+                <div>
                   <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
                   <span style="display: contents;" class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= total_market_cap %>">
                   </span>
                   <%= if token_bridge_supply?() do %>
                     <% token_bridge_market_cap = total_market_cap_from_token_bridge(@exchange_rate) %>
                     <% omni_bridge_market_cap = total_market_cap_from_omni_bridge() %>
-                    <% formatted_total_market_cap = if Decimal.cmp(total_market_cap, 0) == :gt, do: format_currency_value(total_market_cap), else: "N/A" %>
-                    <% formatted_token_bridge_market_cap = if Decimal.cmp(token_bridge_market_cap, 0) == :gt, do: format_currency_value(token_bridge_market_cap), else: "N/A" %>
-                    <% formatted_omni_bridge_market_cap = if Decimal.cmp(omni_bridge_market_cap, 0) == :gt, do: format_currency_value(omni_bridge_market_cap), else: "N/A" %>
+                    <% formatted_total_market_cap = if Decimal.cmp(total_market_cap, 0) == :gt, do: format_usd_value(total_market_cap), else: "N/A" %>
+                    <% formatted_token_bridge_market_cap = if Decimal.cmp(token_bridge_market_cap, 0) == :gt, do: format_usd_value(token_bridge_market_cap), else: "N/A" %>
+                    <% formatted_omni_bridge_market_cap = if Decimal.cmp(omni_bridge_market_cap, 0) == :gt, do: format_usd_value(omni_bridge_market_cap), else: "N/A" %>
                     <span
                       data-toggle="tooltip"
                       data-placement="top"
                       data-html="true"
                       data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                      title="<div class='custom-tooltip header'><b><%= formatted_total_market_cap %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip description left'><b><%= formatted_token_bridge_market_cap %></b> locked in Dai in TokenBridge <br/><b><%= formatted_omni_bridge_market_cap %></b> locked in different assets on xDai in OmniBridge</div>">
-                      <span style="display: inline-block; height: 20px; width: 12px;" class="fontawesome-icon info-circle ml-1" data-test="token-bridge-supply"></span>
+                      title="<div class='custom-tooltip-header'><b><%= formatted_total_market_cap %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip-description left'><b><%= formatted_token_bridge_market_cap %></b> locked in Dai in TokenBridge <br/><b><%= formatted_omni_bridge_market_cap %></b> locked in different assets in OmniBridge</div>">
+                      <i style="color: #ffffff;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i>
                     </span>
                   <% end %>
                 </div>
             </div>
             <% end %>
           <% end %>
-          <%= render BlockScoutWeb.ChainView, "gas_price_oracle_legend_item.html", gas_price: @gas_price %>
           <%= if Map.has_key?(@chart_config, :transactions) do %>
 
             <% transaction_chart_config = @chart_config.transactions%>
             <%= if Enum.member?(transaction_chart_config, :transactions_per_day) do %>
-            <div class="dashboard-banner-chart-legend-item tx-per-day">
+            <div class="dashboard-banner-chart-legend-item">
                 <span class="dashboard-banner-chart-legend-label">
-                    <%= gettext "Daily Transactions" %>
+                    <%= gettext "Tx/day" %>
                 </span>
                 <span class="dashboard-banner-chart-legend-value" data-selector="tx_per_day">
                     <% num_of_transactions = BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>

@@ -101,7 +101,7 @@ export const formatTitleAndError = (error) => {
   } catch (exception) {
     message = ''
   }
-  return { title, message, txHash }
+  return { title: title, message: message, txHash: txHash }
 }
 
 export const getCurrentAccountPromise = (provider) => {
@@ -266,9 +266,9 @@ function isNonSpaceInputType (inputType) {
 }
 
 function replaceSpaces (value, type, components) {
-  if (isNonSpaceInputType(type) && isFunction(value.replace)) {
+  if (isNonSpaceInputType(type)) {
     return value.replace(/\s/g, '')
-  } else if (isTupleInputType(type) && isFunction(value.split)) {
+  } else if (isTupleInputType(type)) {
     return value
       .split(',')
       .map((itemValue, itemIndex) => {
@@ -278,22 +278,18 @@ function replaceSpaces (value, type, components) {
       })
       .join(',')
   } else {
-    if (typeof value.trim === 'function') {
-      return value.trim()
-    }
-    return value
+    return value.trim()
   }
 }
 
 function replaceDoubleQuotes (value, type, components) {
   if (isAddressInputType(type) || isUintInputType(type) || isStringInputType(type) || isBytesInputType(type)) {
-    if (isFunction(value.replaceAll)) {
+    if (typeof value.replaceAll === 'function') {
       return value.replaceAll('"', '')
-    } else if (isFunction(value.replace)) {
+    } else {
       return value.replace(/"/g, '')
     }
-    return value
-  } else if (isTupleInputType(type) && isFunction(value.split)) {
+  } else if (isTupleInputType(type)) {
     return value
       .split(',')
       .map((itemValue, itemIndex) => {
@@ -305,8 +301,4 @@ function replaceDoubleQuotes (value, type, components) {
   } else {
     return value
   }
-}
-
-function isFunction (param) {
-  return typeof param === 'function'
 }

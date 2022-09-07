@@ -1616,8 +1616,7 @@ defmodule Explorer.EtherscanTest do
           name: token_balance.token.name,
           decimals: token_balance.token.decimals,
           symbol: token_balance.token.symbol,
-          type: token_balance.token.type,
-          id: token_balance.token_id
+          type: token_balance.token.type
         }
       ]
 

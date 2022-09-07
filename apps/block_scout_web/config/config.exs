@@ -1,9 +1,9 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Config module.
+# and its dependencies with the aid of the Mix.Config module.
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-import Config
+use Mix.Config
 
 # General application configuration
 config :block_scout_web,
@@ -55,34 +55,31 @@ config :block_scout_web,
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
-default_api_rate_limit = 50
-default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
-
 global_api_rate_limit_value =
   "API_RATE_LIMIT"
-  |> System.get_env(default_api_rate_limit_str)
+  |> System.get_env("50")
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> default_api_rate_limit
+    _ -> 50
   end
 
 api_rate_limit_by_key_value =
   "API_RATE_LIMIT_BY_KEY"
-  |> System.get_env(default_api_rate_limit_str)
+  |> System.get_env("50")
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> default_api_rate_limit
+    _ -> 50
   end
 
 api_rate_limit_by_ip_value =
   "API_RATE_LIMIT_BY_IP"
-  |> System.get_env(default_api_rate_limit_str)
+  |> System.get_env("50")
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> default_api_rate_limit
+    _ -> 50
   end
 
 config :block_scout_web, :api_rate_limit,
@@ -121,14 +118,14 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
 
 # Configures History
 price_chart_config =
-  if System.get_env("SHOW_PRICE_CHART", "false") != "false" do
+  if System.get_env("SHOW_PRICE_CHART", "true") != "false" do
     %{market: [:price, :market_cap]}
   else
     %{}
   end
 
 tx_chart_config =
-  if System.get_env("SHOW_TXS_CHART", "true") == "true" do
+  if System.get_env("SHOW_TXS_CHART", "false") == "true" do
     %{transactions: [:transactions_per_day]}
   else
     %{}
@@ -186,4 +183,4 @@ config :hammer,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{config_env()}.exs"
+import_config "#{Mix.env()}.exs"

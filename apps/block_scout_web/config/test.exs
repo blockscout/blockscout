@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :block_scout_web, :sql_sandbox, true
 

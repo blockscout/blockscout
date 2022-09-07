@@ -431,7 +431,6 @@ defmodule Explorer.Chain.Transaction do
         where:
           tt.token_contract_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
             tt.from_address_hash == ^address_hash,
-        order_by: [asc: tt.log_index],
         preload: [:token, [from_address: :names], [to_address: :names]]
       )
 

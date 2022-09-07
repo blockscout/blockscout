@@ -46,7 +46,7 @@
       <!-- substitute the span with <img class="tile-image" /> to token with images -->
       <div class="inventory-erc721-media" >
         <%= if media_type(media_src(@token_transfer.instance)) == "video" do %>
-          <video>
+          <video autoplay>
             <source src=<%= media_src(@token_transfer.instance) %> type="video/mp4">
           </video>
         <% else %>

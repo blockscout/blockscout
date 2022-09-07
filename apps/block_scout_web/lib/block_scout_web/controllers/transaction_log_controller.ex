@@ -20,8 +20,6 @@ defmodule BlockScoutWeb.TransactionLogController do
         Keyword.merge(
           [
             necessity_by_association: %{
-              [address: :names] => :optional,
-              [address: :smart_contract] => :optional,
               address: :optional
             }
           ],

@@ -1,1 +1,0 @@
-<%= render BlockScoutWeb.TransactionTokenTransferView, "index.html", assigns %>

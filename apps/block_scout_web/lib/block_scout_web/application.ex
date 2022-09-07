@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Application do
       {BlocksIndexedCounter, name: BlocksIndexedCounter}
     ]
 
-    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
+    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor]
     Supervisor.start_link(children, opts)
   end
 

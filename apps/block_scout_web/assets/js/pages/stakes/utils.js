@@ -95,7 +95,7 @@ export function setupChart ($canvas, self, total) {
     type: 'doughnut',
     data: {
       datasets: [{
-        data,
+        data: data,
         backgroundColor: backgroundColors,
         hoverBackgroundColor: backgroundColors,
         borderWidth: 0

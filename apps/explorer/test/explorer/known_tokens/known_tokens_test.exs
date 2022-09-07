@@ -51,7 +51,6 @@ defmodule Explorer.KnownTokensTest do
     end)
 
     stub(TestSource, :source_url, fn -> "http://localhost:#{bypass.port}" end)
-    stub(TestSource, :headers, fn -> [] end)
 
     KnownTokens.init([])
     state = %{}
@@ -90,7 +89,6 @@ defmodule Explorer.KnownTokensTest do
       end)
 
       stub(TestSource, :source_url, fn -> "http://localhost:#{bypass.port}" end)
-      stub(TestSource, :headers, fn -> [] end)
 
       state = %{}
 

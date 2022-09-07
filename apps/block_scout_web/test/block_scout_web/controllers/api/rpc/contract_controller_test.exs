@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.SmartContract
-  alias Explorer.Chain
-  # alias Explorer.{Chain, Factory}
+  alias Explorer.{Chain, Factory}
 
   import Mox
 
@@ -833,23 +832,23 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     })
   end
 
-  # defp verify_schema do
-  #   resolve_schema(%{
-  #     "type" => "object",
-  #     "properties" => %{
-  #       "Address" => %{"type" => "string"},
-  #       "SourceCode" => %{"type" => "string"},
-  #       "ABI" => %{"type" => "string"},
-  #       "ContractName" => %{"type" => "string"},
-  #       "CompilerVersion" => %{"type" => "string"},
-  #       "DecompiledSourceCode" => %{"type" => "string"},
-  #       "DecompilerVersion" => %{"type" => "string"},
-  #       "OptimizationUsed" => %{"type" => "string"}
-  #     }
-  #   })
-  # end
+  defp verify_schema do
+    resolve_schema(%{
+      "type" => "object",
+      "properties" => %{
+        "Address" => %{"type" => "string"},
+        "SourceCode" => %{"type" => "string"},
+        "ABI" => %{"type" => "string"},
+        "ContractName" => %{"type" => "string"},
+        "CompilerVersion" => %{"type" => "string"},
+        "DecompiledSourceCode" => %{"type" => "string"},
+        "DecompilerVersion" => %{"type" => "string"},
+        "OptimizationUsed" => %{"type" => "string"}
+      }
+    })
+  end
 
-  defp resolve_schema(result) do
+  defp resolve_schema(result \\ %{}) do
     %{
       "type" => "object",
       "properties" => %{
@@ -881,18 +880,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                               params: [
                                 _,
                                 "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
                                 "latest"
                               ]
                             },

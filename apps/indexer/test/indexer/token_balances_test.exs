@@ -46,7 +46,7 @@ defmodule Indexer.TokenBalancesTest do
                address_hash: ^address_hash_string,
                block_number: 1_000,
                value_fetched_at: _
-             } = List.first(result.fetched_token_balances)
+             } = List.first(result)
     end
 
     test "fetches balances of ERC-1155 tokens" do
@@ -74,18 +74,15 @@ defmodule Indexer.TokenBalancesTest do
 
       {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(data)
 
-      assert %{
-               failed_token_balances: [],
-               fetched_token_balances: [
-                 %{
-                   value: 2,
-                   token_contract_address_hash: ^token_contract_address_hash,
-                   address_hash: ^address_hash_string,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 }
-               ]
-             } = result
+      assert [
+               %{
+                 value: 2,
+                 token_contract_address_hash: ^token_contract_address_hash,
+                 address_hash: ^address_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               }
+             ] = result
     end
 
     test "fetches multiple balances of tokens" do
@@ -169,63 +166,60 @@ defmodule Indexer.TokenBalancesTest do
 
       {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(data)
 
-      assert %{
-               failed_token_balances: [],
-               fetched_token_balances: [
-                 %{
-                   value: 1_000_000_000_000_000_000_000_000,
-                   token_contract_address_hash: ^token_1_contract_address_hash,
-                   address_hash: ^address_1_hash_string,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 },
-                 %{
-                   value: 3_000_000_000_000_000_000_000_000_000,
-                   token_contract_address_hash: ^token_2_contract_address_hash,
-                   address_hash: ^address_2_hash_string,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 },
-                 %{
-                   value: 1,
-                   token_contract_address_hash: ^token_3_contract_address_hash,
-                   address_hash: ^address_2_hash_string,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 },
-                 %{
-                   value: 6_000_000_000_000_000_000_000_000_000,
-                   token_contract_address_hash: ^token_2_contract_address_hash,
-                   address_hash: ^token_2_contract_address_hash,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 },
-                 %{
-                   value: 5_000_000_000_000_000_000_000_000_000,
-                   token_contract_address_hash: ^token_2_contract_address_hash,
-                   address_hash: ^address_3_hash_string,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 },
-                 %{
-                   value: 6_000_000_000_000_000_000_000_000_000,
-                   token_contract_address_hash: ^token_2_contract_address_hash,
-                   address_hash: ^token_2_contract_address_hash,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 },
-                 %{
-                   value: 2,
-                   token_contract_address_hash: ^token_4_contract_address_hash,
-                   address_hash: ^address_2_hash_string,
-                   block_number: 1_000,
-                   value_fetched_at: _
-                 }
-               ]
-             } = result
+      assert [
+               %{
+                 value: 1_000_000_000_000_000_000_000_000,
+                 token_contract_address_hash: ^token_1_contract_address_hash,
+                 address_hash: ^address_1_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 3_000_000_000_000_000_000_000_000_000,
+                 token_contract_address_hash: ^token_2_contract_address_hash,
+                 address_hash: ^address_2_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 1,
+                 token_contract_address_hash: ^token_3_contract_address_hash,
+                 address_hash: ^address_2_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 6_000_000_000_000_000_000_000_000_000,
+                 token_contract_address_hash: ^token_2_contract_address_hash,
+                 address_hash: ^token_2_contract_address_hash,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 5_000_000_000_000_000_000_000_000_000,
+                 token_contract_address_hash: ^token_2_contract_address_hash,
+                 address_hash: ^address_3_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 6_000_000_000_000_000_000_000_000_000,
+                 token_contract_address_hash: ^token_2_contract_address_hash,
+                 address_hash: ^token_2_contract_address_hash,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               },
+               %{
+                 value: 2,
+                 token_contract_address_hash: ^token_4_contract_address_hash,
+                 address_hash: ^address_2_hash_string,
+                 block_number: 1_000,
+                 value_fetched_at: _
+               }
+             ] = result
     end
 
-    test "returns calls that gave errors to try fetch they again later" do
+    test "ignores calls that gave errors to try fetch they again later" do
       address = insert(:address, hash: "0x7113ffcb9c18a97da1b9cfc43e6cb44ed9165509")
       token = insert(:token, contract_address: build(:contract_address))
 
@@ -242,24 +236,7 @@ defmodule Indexer.TokenBalancesTest do
 
       get_balance_from_blockchain_with_error()
 
-      assert TokenBalances.fetch_token_balances_from_blockchain(token_balances) ==
-               {:ok,
-                %{
-                  failed_token_balances: [
-                    %{
-                      address_hash: "0x7113ffcb9c18a97da1b9cfc43e6cb44ed9165509",
-                      block_number: 1000,
-                      error: "(-32015) VM execution error. (Reverted 0x)",
-                      retries_count: 1,
-                      token_contract_address_hash: to_string(token.contract_address_hash),
-                      token_id: 11,
-                      token_type: "ERC-20",
-                      value: nil,
-                      value_fetched_at: nil
-                    }
-                  ],
-                  fetched_token_balances: []
-                }}
+      assert TokenBalances.fetch_token_balances_from_blockchain(token_balances) == {:ok, []}
     end
   end
 

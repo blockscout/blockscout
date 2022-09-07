@@ -6,5 +6,5 @@ defmodule Explorer.Chain.Gas do
   """
 
   @typedoc @moduledoc
-  @type t :: false | nil | %Decimal{:coef => non_neg_integer(), :exp => integer(), :sign => -1 | 1}
+  @type t :: non_neg_integer()
 end

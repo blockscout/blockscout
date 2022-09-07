@@ -11,7 +11,7 @@ defmodule EthereumJSONRPC.Encoder do
 
   This is what is expected on the Json RPC data parameter.
   """
-  @spec encode_function_call(ABI.FunctionSelector.t(), [term()]) :: String.t()
+  @spec encode_function_call(%ABI.FunctionSelector{}, [term()]) :: String.t()
   def encode_function_call(function_selector, args) do
     parsed_args = parse_args(args)
 
@@ -49,7 +49,7 @@ defmodule EthereumJSONRPC.Encoder do
   """
   def decode_result(_, _, leave_error_as_map \\ false)
 
-  @spec decode_result(map(), ABI.FunctionSelector.t() | [ABI.FunctionSelector.t()]) ::
+  @spec decode_result(map(), %ABI.FunctionSelector{} | [%ABI.FunctionSelector{}]) ::
           {String.t(), {:ok, any()} | {:error, String.t() | :invalid_data}}
   def decode_result(%{error: %{code: code, data: data, message: message}, id: id}, _selector, leave_error_as_map) do
     if leave_error_as_map do

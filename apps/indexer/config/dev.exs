@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :indexer, Indexer.Tracer, env: "dev", disabled?: true
 

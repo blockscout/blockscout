@@ -14,8 +14,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     AddressInternalTransactionCsvExporter,
     AddressLogCsvExporter,
     AddressTokenTransferCsvExporter,
-    AddressTransactionCsvExporter,
-    Wei
+    AddressTransactionCsvExporter
   }
 
   alias Explorer.ExchangeRates.Token
@@ -27,10 +26,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
       [to_address: :names] => :optional,
-      :block => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
+      :block => :optional
     }
   ]
 
@@ -38,7 +34,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
   @burn_address_hash burn_address_hash
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
-    address_options = [necessity_by_association: %{:names => :optional, :smart_contract => :optional}]
+    address_options = [necessity_by_association: %{:names => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false),
@@ -131,13 +127,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       {:error, :not_found} ->
         {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
-
-        address = %Chain.Address{
-          hash: address_hash,
-          smart_contract: nil,
-          token: nil,
-          fetched_coin_balance: %Wei{value: Decimal.new(0)}
-        }
+        address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
 
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->

@@ -17,8 +17,12 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
       {logs, next_page} = split_list_by_page(logs)
 
       transaction_updated =
-        if (error == "Reverted" || error == "execution reverted") && !revert_reason do
-          %Transaction{transaction | revert_reason: Chain.fetch_tx_revert_reason(transaction)}
+        if error == "Reverted" do
+          if revert_reason == nil do
+            %Transaction{transaction | revert_reason: Chain.fetch_tx_revert_reason(transaction)}
+          else
+            transaction
+          end
         else
           transaction
         end

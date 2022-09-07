@@ -11,7 +11,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
@@ -110,7 +110,7 @@ defmodule Indexer.Block.Fetcher do
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
-             {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}
+             {step :: atom(), reason :: [%Ecto.Changeset{}] | term()}
              | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
   def fetch_and_import_range(
         %__MODULE__{
@@ -136,7 +136,7 @@ defmodule Indexer.Block.Fetcher do
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
-           fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
+           fetch_beneficiaries(blocks, json_rpc_named_arguments),
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -160,8 +160,10 @@ defmodule Indexer.Block.Fetcher do
              blocks: blocks
            }
            |> AddressCoinBalancesDaily.params_set(),
-         beneficiaries_with_gas_payment =
-           beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
+         beneficiaries_with_gas_payment <-
+           beneficiary_params_set
+           |> add_gas_payments(transactions_with_receipts, blocks)
+           |> BlockReward.reduce_uncle_rewards(),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -334,48 +336,7 @@ defmodule Indexer.Block.Fetcher do
     quantity_to_integer(block_quantity)
   end
 
-  defp fetch_beneficiaries(blocks, all_transactions, json_rpc_named_arguments) do
-    case Application.get_env(:indexer, :fetch_rewards_way) do
-      "manual" -> fetch_beneficiaries_manual(blocks, all_transactions)
-      _ -> fetch_beneficiaries_by_trace_block(blocks, json_rpc_named_arguments)
-    end
-  end
-
-  def fetch_beneficiaries_manual(blocks, all_transactions) when is_list(blocks) do
-    block_transactions_map = Enum.group_by(all_transactions, & &1.block_number)
-
-    blocks
-    |> Enum.map(fn block -> fetch_beneficiaries_manual(block, block_transactions_map[block.number] || []) end)
-    |> Enum.reduce(%FetchedBeneficiaries{}, fn params_set, %{params_set: acc_params_set} = acc ->
-      %FetchedBeneficiaries{acc | params_set: MapSet.union(acc_params_set, params_set)}
-    end)
-  end
-
-  def fetch_beneficiaries_manual(block, transactions) do
-    block
-    |> Chain.block_reward_by_parts(transactions)
-    |> reward_parts_to_beneficiaries()
-  end
-
-  defp reward_parts_to_beneficiaries(reward_parts) do
-    reward =
-      reward_parts.static_reward
-      |> Wei.sum(reward_parts.txn_fees)
-      |> Wei.sub(reward_parts.burned_fees)
-      |> Wei.sum(reward_parts.uncle_reward)
-
-    MapSet.new([
-      %{
-        address_hash: reward_parts.miner_hash,
-        block_hash: reward_parts.block_hash,
-        block_number: reward_parts.block_number,
-        reward: reward,
-        address_type: :validator
-      }
-    ])
-  end
-
-  defp fetch_beneficiaries_by_trace_block(blocks, json_rpc_named_arguments) do
+  defp fetch_beneficiaries(blocks, json_rpc_named_arguments) do
     hash_string_by_number =
       Enum.into(blocks, %{}, fn %{number: number, hash: hash_string}
                                 when is_integer(number) and is_binary(hash_string) ->
@@ -437,18 +398,6 @@ defmodule Indexer.Block.Fetcher do
       end
     end)
     |> Enum.into(MapSet.new())
-  end
-
-  defp beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts) do
-    case Application.get_env(:indexer, :fetch_rewards_way) do
-      "manual" ->
-        beneficiary_params_set
-
-      _ ->
-        beneficiary_params_set
-        |> add_gas_payments(transactions_with_receipts, blocks)
-        |> BlockReward.reduce_uncle_rewards()
-    end
   end
 
   defp add_gas_payments(beneficiaries, transactions, blocks) do

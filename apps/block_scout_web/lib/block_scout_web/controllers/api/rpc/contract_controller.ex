@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.API.RPC.ContractController do
   use BlockScoutWeb, :controller
 
-  require Logger
-
   alias BlockScoutWeb.AddressContractVerificationController, as: VerificationController
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
@@ -14,12 +12,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
-
-  @smth_went_wrong "Something went wrong while publishing the contract"
-  @verified "Smart-contract already verified."
-  @invalid_address "Invalid address hash"
-  @invalid_args "Invalid args format"
-  @address_required "Query parameter address is required"
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
@@ -44,32 +36,13 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
                ]}
           ]
         }}} ->
-        render(conn, :error, error: @verified)
+        render(conn, :error, error: "Smart-contract already verified.")
 
-      {:publish, {:error, error}} ->
-        Logger.error(fn ->
-          [
-            @smth_went_wrong,
-            ": ",
-            inspect(error)
-          ]
-        end)
-
-        render(conn, :error, error: "#{@smth_went_wrong}: #{inspect(error.errors)}")
-
-      {:publish, error} ->
-        Logger.error(fn ->
-          [
-            @smth_went_wrong,
-            ": ",
-            inspect(error)
-          ]
-        end)
-
-        render(conn, :error, error: @smth_went_wrong)
+      {:publish, _} ->
+        render(conn, :error, error: "Something went wrong while publishing the contract.")
 
       {:format, :error} ->
-        render(conn, :error, error: @invalid_address)
+        render(conn, :error, error: "Invalid address hash")
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
@@ -85,7 +58,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       end
 
     if Chain.smart_contract_fully_verified?(address_hash) do
-      render(conn, :error, error: @verified)
+      render(conn, :error, error: "Smart-contract already verified.")
     else
       case Sourcify.check_by_address(address_hash) do
         {:ok, _verified_status} ->
@@ -124,10 +97,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       render(conn, :show, %{result: uid})
     else
       {:check_verified_status, true} ->
-        render(conn, :error, error: @verified, data: @verified)
+        render(conn, :error, error: "Smart-contract already verified.", data: "Smart-contract already verified")
 
       {:format, :error} ->
-        render(conn, :error, error: @invalid_address, data: @invalid_address)
+        render(conn, :error, error: "Invalid address hash", data: "Invalid address hash")
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error, data: error)
@@ -155,7 +128,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp prepare_params(files) when is_struct(files) do
-    {:error, @invalid_args}
+    {:error, "Invalid args format"}
   end
 
   defp prepare_params(files) when is_map(files) do
@@ -167,7 +140,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp prepare_params(_arg) do
-    {:error, @invalid_args}
+    {:error, "Invalid args format"}
   end
 
   defp validate_files(files) do
@@ -230,48 +203,26 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp get_metadata_and_publish(address_hash_string, conn) do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
-        case Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata) do
-          %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} ->
-            publish_and_handle_response_without_broadcast(
-              address_hash_string,
-              params_to_publish,
-              abi,
-              secondary_sources,
-              conn
-            )
+        %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
+          VerificationController.parse_params_from_sourcify(address_hash_string, verification_metadata)
 
-          {:error, :metadata} ->
-            render(conn, :error, error: Sourcify.no_metadata_message())
+        case publish_without_broadcast(%{
+               "addressHash" => address_hash_string,
+               "params" => params_to_publish,
+               "abi" => abi,
+               "secondarySources" => secondary_sources
+             }) do
+          {:ok, _contract} ->
+            {:format, {:ok, address_hash}} = to_address_hash(address_hash_string)
+            address = Contracts.address_hash_to_address_with_source_code(address_hash)
+            render(conn, :verify, %{contract: address})
 
-          _ ->
-            render(conn, :error, error: Sourcify.failed_verification_message())
+          {:error, changeset} ->
+            render(conn, :error, error: changeset)
         end
 
       {:error, %{"error" => error}} ->
         render(conn, :error, error: error)
-    end
-  end
-
-  defp publish_and_handle_response_without_broadcast(
-         address_hash_string,
-         params_to_publish,
-         abi,
-         secondary_sources,
-         conn
-       ) do
-    case publish_without_broadcast(%{
-           "addressHash" => address_hash_string,
-           "params" => params_to_publish,
-           "abi" => abi,
-           "secondarySources" => secondary_sources
-         }) do
-      {:ok, _contract} ->
-        {:format, {:ok, address_hash}} = to_address_hash(address_hash_string)
-        address = Contracts.address_hash_to_address_with_source_code(address_hash)
-        render(conn, :verify, %{contract: address})
-
-      {:error, changeset} ->
-        render(conn, :error, error: changeset)
     end
   end
 
@@ -318,13 +269,13 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
                ]}
           ]
         }}} ->
-        render(conn, :error, error: @verified)
+        render(conn, :error, error: "Smart-contract already verified.")
 
       {:publish, _} ->
-        render(conn, :error, error: @smth_went_wrong)
+        render(conn, :error, error: "Something went wrong while publishing the contract.")
 
       {:format, :error} ->
-        render(conn, :error, error: @invalid_address)
+        render(conn, :error, error: "Invalid address hash")
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
@@ -406,10 +357,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       render(conn, :getabi, %{abi: contract.abi})
     else
       {:address_param, :error} ->
-        render(conn, :error, error: @address_required)
+        render(conn, :error, error: "Query parameter address is required")
 
       {:format, :error} ->
-        render(conn, :error, error: @invalid_address)
+        render(conn, :error, error: "Invalid address hash")
 
       {:contract, :not_found} ->
         render(conn, :error, error: "Contract source code not verified")
@@ -427,10 +378,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       })
     else
       {:address_param, :error} ->
-        render(conn, :error, error: @address_required)
+        render(conn, :error, error: "Query parameter address is required")
 
       {:format, :error} ->
-        render(conn, :error, error: @invalid_address)
+        render(conn, :error, error: "Invalid address hash")
 
       {:contract, :not_found} ->
         render(conn, :getsourcecode, %{contract: nil, address_hash: nil})
