@@ -14,7 +14,7 @@ services:
         image: hermez-node-blockscout:latest
         environment:
             - NETWORK=POE
-            - SUBNETWORK=Polygon Hermez
+            - SUBNETWORK=Polygon zkEVM
             - ECTO_USE_SSL=false
             - LOGO=/images/blockscout_logo.svg
             - LOGO_FOOTER=/images/blockscout_logo.svg

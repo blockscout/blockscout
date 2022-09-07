@@ -28,8 +28,8 @@ You may want to check your current remote configuration before adding the new up
 
 ```bash
 $ git remote -v
-origin    git@github.com:hermeznetwork/blockscout.git (fetch)
-origin    git@github.com:hermeznetwork/blockscout.git (push)
+origin    git@github.com:0xPolygonHermez/blockscout.git (fetch)
+origin    git@github.com:0xPolygonHermez/blockscout.git (push)
 ```
 
 Now, we can add the upstream remote using the following command:
@@ -42,8 +42,8 @@ Now we have a remote repository configured as upstream. Let's verify it:
 
 ```bash
 $ git remote -v
-origin    git@github.com:hermeznetwork/blockscout.git (fetch)
-origin    git@github.com:hermeznetwork/blockscout.git (push)
+origin    git@github.com:0xPolygonHermez/blockscout.git (fetch)
+origin    git@github.com:0xPolygonHermez/blockscout.git (push)
 upstream  git@github.com:blockscout/blockscout.git (fetch)
 upstream  git@github.com:blockscout/blockscout.git (push)
 ```

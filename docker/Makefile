@@ -540,7 +540,7 @@ tag-stable-version: ## Generate container `{version}` tag
 				tag-latest \
 				tag-version
 
-# Polygon Hermez
+# Polygon zkEVM
 
 DOCKER_IMAGE = hermez-node-blockscout
 DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout

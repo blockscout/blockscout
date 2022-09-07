@@ -16,11 +16,11 @@ services:
         environment:
             - PORT=4010
             - NETWORK=POE
-            - SUBNETWORK=Polygon Hermez
+            - SUBNETWORK=Polygon zkEVM
             - COIN=ETH
             - ETHEREUM_JSONRPC_VARIANT=geth
             - ETHEREUM_JSONRPC_HTTP_URL=http://hez-core:8123
-            - DATABASE_URL=postgres://test_user:test_password@hez-explorer-postgres:5432/explorer
+            - DATABASE_URL=postgres://test_user:test_password@zkevm-node-db:5432/explorer
             - ECTO_USE_SSL=false
             - MIX_ENV=dev
             - LOGO=/images/blockscout_logo.svg

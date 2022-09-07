@@ -437,7 +437,7 @@ msgstr "Batches Validated"
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:22
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
-msgstr "Polygon Hermez is a ZK-Rollup Layer 2 solution optimised for secure, low-cost and usable token transfers on the wings of Ethereum."
+msgstr "Polygon zkEVM is the first open-source zk-Rollup providing complete EVM opcode equivalence for a frictionless user experience and the security of Ethereum."
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:45
