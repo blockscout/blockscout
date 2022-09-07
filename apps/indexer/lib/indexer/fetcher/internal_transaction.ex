@@ -221,6 +221,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
                       Logger.info(
                         "total transactions: #{length(transactions)}, start_index: #{start_index} is out of range"
                       )
+                      {:ok, []}
                     true ->
                       EthereumJSONRPC.fetch_internal_transactions(
                         Enum.slice(transactions, start_index, start_index+max_handle_txs-1), json_rpc_named_arguments
