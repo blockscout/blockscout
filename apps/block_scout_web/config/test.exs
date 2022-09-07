@@ -2,6 +2,8 @@ import Config
 
 config :block_scout_web, :sql_sandbox, true
 
+config :block_scout_web, :environment, :test
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :block_scout_web, BlockScoutWeb.Endpoint,

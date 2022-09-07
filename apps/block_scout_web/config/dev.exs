@@ -14,6 +14,8 @@ port =
     nil -> nil
   end
 
+config :block_scout_web, :environment, :dev
+
 config :block_scout_web, BlockScoutWeb.Endpoint,
   secret_key_base:
     System.get_env("SECRET_KEY_BASE") || "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5",

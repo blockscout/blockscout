@@ -32,6 +32,8 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 config :block_scout_web, BlockScoutWeb.Tracer, env: "production", disabled?: true
 
+config :block_scout_web, :environment, :prod
+
 config :logger, :block_scout_web,
   level: :info,
   path: Path.absname("logs/prod/block_scout_web.log"),
@@ -45,3 +47,14 @@ config :logger, :api,
 
 config :explorer, Explorer.ExchangeRates,
   enabled: if(System.get_env("DISABLE_EXCHANGE_RATES", "false") == "false", do: false, else: true)
+
+config :libcluster,
+  topologies: [
+    blockscout: [
+      strategy: Cluster.Strategy.Kubernetes.DNS,
+      config: [
+        service: System.get_env("EPMD_SERVICE_NAME"),
+        application_name: "blockscout"
+      ]
+    ]
+  ]

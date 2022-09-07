@@ -22,15 +22,17 @@ defmodule BlockScoutWeb.Application do
     Logger.add_backend(LoggerBackend, level: :error)
 
     # Define workers and child supervisors to be supervised
-    children = [
-      # Start the endpoint when the application starts
-      {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
-      child_spec(Endpoint, []),
-      {Absinthe.Subscription, Endpoint},
-      {RealtimeEventHandler, name: RealtimeEventHandler},
-      {StakingEventHandler, name: StakingEventHandler},
-      {BlocksIndexedCounter, name: BlocksIndexedCounter}
-    ]
+    children =
+      [
+        # Start the endpoint when the application starts
+        {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
+        child_spec(Endpoint, []),
+        {Absinthe.Subscription, Endpoint},
+        {RealtimeEventHandler, name: RealtimeEventHandler},
+        {StakingEventHandler, name: StakingEventHandler},
+        {BlocksIndexedCounter, name: BlocksIndexedCounter}
+      ]
+      |> cluster_process(Application.get_env(:block_scout_web, :environment))
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor]
     Supervisor.start_link(children, opts)
@@ -42,4 +44,12 @@ defmodule BlockScoutWeb.Application do
     Endpoint.config_change(changed, removed)
     :ok
   end
+
+  def cluster_process(acc, :prod) do
+    topologies = Application.get_env(:libcluster, :topologies)
+
+    [{Cluster.Supervisor, [topologies, [name: BlockScoutWeb.ClusterSupervisor]]} | acc]
+  end
+
+  def cluster_process(acc, _environment), do: acc
 end

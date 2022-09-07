@@ -5,8 +5,8 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.{LoggerBackend, Memory, Prometheus}
-  alias Prometheus.Setup
+  alias Indexer.{LoggerBackend, Memory}
+  alias Indexer.Prometheus.Setup, as: CeloTelemetry
 
   @impl Application
   def start(_type, _args) do
@@ -17,13 +17,15 @@ defmodule Indexer.Application do
       end
 
     memory_monitor_name = Memory.Monitor
-    Setup.setup()
+    CeloTelemetry.setup()
 
-    base_children = [
-      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
-      {Plug.Cowboy,
-       scheme: :http, plug: Indexer.Stack, options: [port: Application.get_env(:indexer, :health_check_port)]}
-    ]
+    base_children =
+      [
+        {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+        {Plug.Cowboy,
+         scheme: :http, plug: Indexer.Stack, options: [port: Application.get_env(:indexer, :health_check_port)]}
+      ]
+      |> cluster_process(Application.get_env(:indexer, :environment))
 
     children =
       if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
@@ -42,4 +44,12 @@ defmodule Indexer.Application do
 
     Supervisor.start_link(children, opts)
   end
+
+  def cluster_process(acc, :prod) do
+    topologies = Application.get_env(:libcluster, :topologies)
+
+    [{Cluster.Supervisor, [topologies, [name: Indexer.ClusterSupervisor]]} | acc]
+  end
+
+  def cluster_process(acc, _environment), do: acc
 end

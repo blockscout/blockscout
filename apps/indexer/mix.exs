@@ -72,7 +72,9 @@ defmodule Indexer.MixProject do
       {:prometheus_ex, "~>3.0"},
       {:prometheus_plugs, "~> 1.1"},
       {:prometheus_process_collector, "~> 1.1"},
-      {:telemetry, "~> 0.4.0"}
+      {:telemetry, "~> 0.4.0"},
+      # Erlang cluster formation
+      {:libcluster, "~> 3.3"}
     ]
   end
 
