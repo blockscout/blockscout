@@ -122,12 +122,12 @@ defmodule Indexer.Fetcher.CosmosHash do
     case http_request(block_info_url() <> Integer.to_string(block_number)) do
       {:error, reason} ->
         Logger.error("failed to fetch block info via api node: ", inspect(reason))
-        nil
+        []
       {:ok, result} ->
         case result["block"]["data"]["txs"] do
           nil ->
             Logger.debug("block_number: #{block_number} does not have any transactions")
-            nil
+            []
           [] ->
             Logger.debug("block_number: #{block_number} does not have any transactions")
             nil
