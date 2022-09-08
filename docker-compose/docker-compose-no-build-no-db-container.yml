@@ -19,3 +19,11 @@ services:
     ports:
       - 4000:4000
 
+  smart-contract-verifier:
+    image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'smart-contract-verifier'
+    env_file:
+      -  ./envs/common-smart-contract-verifier.env
+    ports:
+      - 8043:8043

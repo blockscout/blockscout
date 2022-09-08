@@ -41,5 +41,7 @@ services:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ./envs/common-blockscout.env
+    environment:
+        ENABLE_RUST_VERIFICATION_SERVICE: 'false'
     ports:
       - 4000:4000
