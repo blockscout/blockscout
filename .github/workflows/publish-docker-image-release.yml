@@ -1,0 +1,109 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Publish Docker image
+
+on:
+  release:
+    types: [published]
+
+env:
+  OTP_VERSION: '24.3.4.1'
+  ELIXIR_VERSION: '1.13.4'
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: 4.1.8
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: blockscout/blockscout
+
+      - name: Build & Push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}
+          platforms: |
+            linux/arm64
+            linux/amd64
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=""
+            DISABLE_READ_API="false"
+            API_PATH="/"
+            NETWORK_PATH="/"
+            DISABLE_WEBAPP="false"
+            DISABLE_WRITE_API="false"
+            CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=""
+            WOBSERVER_ENABLED="false"
+            ADMIN_PANEL_ENABLED=""
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=""
+            SOCKET_ROOT=""
+
+  merge-master-after-release:
+    name: Merge 'master' to specific branch after release
+    runs-on: ubuntu-latest
+    env:
+      BRANCHES: |
+        production-core-stg
+        production-eth-stg
+        production-harmony-mainnet-shard-0-stg
+        production-lukso-stg
+        production-optimism-goerli-stg
+        production-optimism-mainnet-stg
+        production-optimism-stg
+        production-rsk-stg
+        production-sokol-stg
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set Git config
+      run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
+    - name: Merge master back after release
+      run: |
+          git fetch --unshallow
+          touch errors.txt
+          for branch in $BRANCHES;
+          do
+            git reset --merge
+            git checkout master
+            git fetch origin
+            echo $branch
+            git ls-remote --exit-code --heads origin $branch || { echo $branch >> errors.txt; continue; }
+            echo "Merge 'master' to $branch"
+            git checkout $branch
+            git pull || { echo $branch >> errors.txt; continue; }
+            git merge --no-ff master -m "Auto-merge master back to $branch" || { echo $branch >> errors.txt; continue; }
+            git push || { echo $branch >> errors.txt; continue; }
+            git checkout master;
+          done
+          [ -s errors.txt ] && echo "There are problems with merging 'master' to branches:" || echo "Errors file is empty"
+          cat errors.txt
+          [ ! -s errors.txt ]

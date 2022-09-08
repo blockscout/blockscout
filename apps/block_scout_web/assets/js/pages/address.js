@@ -199,14 +199,14 @@ const elements = {
   },
   '[data-selector="current-coin-balance"]': {
     render ($el, state, oldState) {
-      if (!state.newBlockNumber || state.newBlockNumber > oldState.newBlockNumber) return
+      if (!state.newBlockNumber || state.newBlockNumber <= oldState.newBlockNumber) return
       $el.empty().append(state.currentCoinBalance)
       updateAllCalculatedUsdValues()
     }
   },
   '[data-selector="last-balance-update"]': {
     render ($el, state, oldState) {
-      if (!state.newBlockNumber || state.newBlockNumber > oldState.newBlockNumber) return
+      if (!state.newBlockNumber || state.newBlockNumber <= oldState.newBlockNumber) return
       $el.empty().append(state.currentCoinBalanceBlockNumber)
     }
   },
@@ -231,6 +231,25 @@ function loadCounters (store) {
 
 const $addressDetailsPage = $('[data-page="address-details"]')
 if ($addressDetailsPage.length) {
+  const pathParts = window.location.pathname.split('/')
+  const shouldScroll = pathParts.includes('transactions') ||
+  pathParts.includes('token-transfers') ||
+  pathParts.includes('tokens') ||
+  pathParts.includes('internal-transactions') ||
+  pathParts.includes('coin-balances') ||
+  pathParts.includes('logs') ||
+  pathParts.includes('validations') ||
+  pathParts.includes('contracts') ||
+  pathParts.includes('decompiled-contracts') ||
+  pathParts.includes('read-contract') ||
+  pathParts.includes('read-proxy') ||
+  pathParts.includes('write-contract') ||
+  pathParts.includes('write-proxy')
+
+  if (shouldScroll) {
+    location.href = '#address-tabs'
+  }
+
   window.onbeforeunload = () => {
     window.loading = true
   }
@@ -287,11 +306,12 @@ if ($addressDetailsPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  addressChannel.push('get_balance', {})
-    .receive('ok', (msg) => store.dispatch({
-      type: 'RECEIVED_UPDATED_BALANCE',
-      msg: humps.camelizeKeys(msg)
-    }))
+  // following lines causes double /token-balances request
+  // addressChannel.push('get_balance', {})
+  //   .receive('ok', (msg) => store.dispatch({
+  //     type: 'RECEIVED_UPDATED_BALANCE',
+  //     msg: humps.camelizeKeys(msg)
+  //   }))
 
   loadCounters(store)
 

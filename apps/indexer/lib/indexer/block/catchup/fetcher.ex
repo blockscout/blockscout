@@ -71,20 +71,24 @@ defmodule Indexer.Block.Catchup.Fetcher do
       ) do
     Logger.metadata(fetcher: :block_catchup)
 
-    with {:ok, latest_block_number} <- fetch_last_block(json_rpc_named_arguments) do
-      case latest_block_number do
-        # let realtime indexer get the genesis block
-        0 ->
+    with {:ok, ranges} <- block_ranges(json_rpc_named_arguments) do
+      case ranges do
+        # -1 means that latest block is 0, so let realtime indexer get the genesis block
+        [_..-1] ->
           %{first_block_number: 0, missing_block_count: 0, last_block_number: 0, shrunk: false}
 
         _ ->
           # realtime indexer gets the current latest block
-          first = latest_block_number - 1
-          last = last_block()
+          _..first = List.last(ranges)
+          last.._ = List.first(ranges)
 
           Logger.metadata(first_block_number: first, last_block_number: last)
 
-          missing_ranges = Chain.missing_block_number_ranges(first..last)
+          missing_ranges =
+            ranges
+            # let it fetch from newest to oldest block
+            |> Enum.reverse()
+            |> Enum.flat_map(fn f..l -> Chain.missing_block_number_ranges(l..f) end)
 
           range_count = Enum.count(missing_ranges)
 
@@ -347,6 +351,83 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
+  @doc false
+  def block_ranges(json_rpc_named_arguments) do
+    block_ranges_string = Application.get_env(:indexer, :block_ranges)
+
+    ranges =
+      block_ranges_string
+      |> String.split(",")
+      |> Enum.map(fn string_range ->
+        case String.split(string_range, "..") do
+          [from_string, "latest"] ->
+            parse_integer(from_string)
+
+          [from_string, to_string] ->
+            with {from, ""} <- Integer.parse(from_string),
+                 {to, ""} <- Integer.parse(to_string) do
+              if from <= to, do: from..to, else: nil
+            else
+              _ -> nil
+            end
+
+          _ ->
+            nil
+        end
+      end)
+      |> sanitize_ranges()
+
+    case List.last(ranges) do
+      _from.._to ->
+        {:ok, ranges}
+
+      nil ->
+        with {:ok, latest_block_number} <- fetch_last_block(json_rpc_named_arguments) do
+          {:ok, [last_block()..(latest_block_number - 1)]}
+        end
+
+      num ->
+        with {:ok, latest_block_number} <-
+               EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
+          {:ok, List.update_at(ranges, -1, fn _ -> num..(latest_block_number - 1) end)}
+        end
+    end
+  end
+
+  defp sanitize_ranges(ranges) do
+    ranges
+    |> Enum.filter(&(not is_nil(&1)))
+    |> Enum.sort_by(
+      fn
+        from.._to -> from
+        el -> el
+      end,
+      :asc
+    )
+    |> Enum.chunk_while(
+      nil,
+      fn
+        _from.._to = chunk, nil ->
+          {:cont, chunk}
+
+        _ch_from..ch_to = chunk, acc_from..acc_to = acc ->
+          if Range.disjoint?(chunk, acc),
+            do: {:cont, acc, chunk},
+            else: {:cont, acc_from..max(ch_to, acc_to)}
+
+        num, nil ->
+          {:halt, num}
+
+        num, acc_from.._ = acc ->
+          if Range.disjoint?(num..num, acc), do: {:cont, acc, num}, else: {:halt, acc_from}
+
+        _, num ->
+          {:halt, num}
+      end,
+      fn reminder -> {:cont, reminder, nil} end
+    )
+  end
+
   defp last_block do
     string_value = Application.get_env(:indexer, :first_block)
 
@@ -366,8 +447,11 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp latest_block do
     string_value = Application.get_env(:indexer, :last_block)
+    parse_integer(string_value)
+  end
 
-    case Integer.parse(string_value) do
+  defp parse_integer(integer_string) do
+    case Integer.parse(integer_string) do
       {integer, ""} -> integer
       _ -> nil
     end

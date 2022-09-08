@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:13.6
+    image: postgres:14
     restart: always
     container_name: 'postgres'
     environment:
@@ -21,11 +21,22 @@ services:
       dockerfile: ./docker/Dockerfile
       args:
         COIN: ""
+        CACHE_EXCHANGE_RATES_PERIOD: ""
+        DISABLE_READ_API: "false"
+        API_PATH: "/"
+        NETWORK_PATH: "/"
+        DISABLE_WEBAPP: "false"
+        DISABLE_WRITE_API: "false"
+        CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
+        CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
+        SOCKET_ROOT: "/"
+        WOBSERVER_ENABLED: "false"
+        ADMIN_PANEL_ENABLED: ""
     restart: always
     container_name: 'blockscout'
     links:
       - db:database
-    command: 'mix do ecto.create, ecto.migrate, phx.server'
+    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:

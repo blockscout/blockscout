@@ -15,7 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.10",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -23,7 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "0.1.0"
+      version: "4.1.8"
     ]
   end
 
@@ -69,7 +69,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
-      {:mox, "~> 0.4", only: [:test]},
+      {:mox, "~> 1.0", only: [:test]},
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
@@ -82,7 +82,7 @@ defmodule EthereumJsonrpc.MixProject do
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
       {:websocket_client, "~> 1.3"},
-      {:decimal, "~> 1.9"},
+      {:decimal, "~> 2.0"},
       {:decorator, "~> 1.4"},
       {:hackney, "~> 1.18"},
       {:poolboy, "~> 1.5.2"}

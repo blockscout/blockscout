@@ -4,7 +4,7 @@ DOCKER_REPO := blockscout
 APP_NAME := blockscout
 BS_CONTAINER_IMAGE := $(DOCKER_REPO)/$(APP_NAME)
 BS_CONTAINER_NAME := blockscout
-PG_CONTAINER_IMAGE := postgres:13.6
+PG_CONTAINER_IMAGE := postgres:14
 PG_CONTAINER_NAME := db
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 TAG := $(RELEASE_VERSION)-prerelease-$(shell git log -1 --pretty=format:"%h")
@@ -52,6 +52,9 @@ endif
 ifdef ETHEREUM_JSONRPC_TRANSPORT
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ETHEREUM_JSONRPC_TRANSPORT=$(ETHEREUM_JSONRPC_TRANSPORT)'
 endif
+ifdef ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES=$(ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES)'
+endif
 ifdef IPC_PATH
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'IPC_PATH=$(IPC_PATH)'
 endif
@@ -66,9 +69,6 @@ ifdef COIN
 endif
 ifdef METADATA_CONTRACT
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'METADATA_CONTRACT=$(METADATA_CONTRACT)'
-endif
-ifdef POS_STAKING_CONTRACT
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'POS_STAKING_CONTRACT=$(POS_STAKING_CONTRACT)'
 endif
 ifdef VALIDATORS_CONTRACT
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'VALIDATORS_CONTRACT=$(VALIDATORS_CONTRACT)'
@@ -117,6 +117,9 @@ ifdef BLOCK_TRANSFORMER
 endif
 ifdef GRAPHIQL_TRANSACTION
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'GRAPHIQL_TRANSACTION=$(GRAPHIQL_TRANSACTION)'
+endif
+ifdef BLOCK_RANGES
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'BLOCK_RANGES=$(BLOCK_RANGES)'
 endif
 ifdef FIRST_BLOCK
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'FIRST_BLOCK=$(FIRST_BLOCK)'
@@ -174,6 +177,9 @@ ifdef DISABLE_WRITE_API
 endif
 ifdef DISABLE_INDEXER
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_INDEXER=$(DISABLE_INDEXER)'
+endif
+ifdef DISABLE_REALTIME_INDEXER
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_REALTIME_INDEXER=$(DISABLE_REALTIME_INDEXER)'
 endif
 ifdef WEBAPP_URL
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'WEBAPP_URL=$(WEBAPP_URL)'
@@ -259,15 +265,6 @@ endif
 ifdef WOBSERVER_ENABLED
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'WOBSERVER_ENABLED=$(WOBSERVER_ENABLED)'
 endif
-ifdef OMNI_BRIDGE_MEDIATOR
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'OMNI_BRIDGE_MEDIATOR=$(OMNI_BRIDGE_MEDIATOR)'
-endif
-ifdef AMB_BRIDGE_MEDIATORS
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'AMB_BRIDGE_MEDIATORS=$(AMB_BRIDGE_MEDIATORS)'
-endif
-ifdef FOREIGN_JSON_RPC
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'FOREIGN_JSON_RPC=$(FOREIGN_JSON_RPC)'
-endif
 ifdef CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=$(CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL)'
 endif
@@ -277,11 +274,8 @@ endif
 ifdef RESTRICTED_LIST_KEY
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'RESTRICTED_LIST_KEY=$(RESTRICTED_LIST_KEY)'
 endif
-ifdef CACHE_ADDRESS_TRANSACTIONS_PERIOD
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CACHE_ADDRESS_TRANSACTIONS_PERIOD=$(CACHE_ADDRESS_TRANSACTIONS_PERIOD)'
-endif
-ifdef DISABLE_BRIDGE_MARKET_CAP_UPDATER
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_BRIDGE_MARKET_CAP_UPDATER=$(DISABLE_BRIDGE_MARKET_CAP_UPDATER)'
+ifdef CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD=$(CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD)'
 endif
 ifdef CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD=$(CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD)'
@@ -307,12 +301,6 @@ endif
 ifdef COIN_BALANCE_HISTORY_DAYS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'COIN_BALANCE_HISTORY_DAYS=$(COIN_BALANCE_HISTORY_DAYS)'
 endif
-ifdef POS_STAKING_CONTRACT
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'POS_STAKING_CONTRACT=$(POS_STAKING_CONTRACT)'
-endif
-ifdef ENABLE_POS_STAKING_IN_MENU
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ENABLE_POS_STAKING_IN_MENU=$(ENABLE_POS_STAKING_IN_MENU)'
-endif
 ifdef CACHE_TOKEN_EXCHANGE_RATE_PERIOD
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CACHE_TOKEN_EXCHANGE_RATE_PERIOD=$(CACHE_TOKEN_EXCHANGE_RATE_PERIOD)'
 endif
@@ -324,12 +312,6 @@ ifdef SHOW_MAINTENANCE_ALERT
 endif
 ifdef MAINTENANCE_ALERT_MESSAGE
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'MAINTENANCE_ALERT_MESSAGE=$(MAINTENANCE_ALERT_MESSAGE)'
-endif
-ifdef SHOW_STAKING_WARNING
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'SHOW_STAKING_WARNING=$(SHOW_STAKING_WARNING)'
-endif
-ifdef STAKING_WARNING_MESSAGE
-	BLOCKSCOUT_CONTAINER_PARAMS += -e 'STAKING_WARNING_MESSAGE=$(STAKING_WARNING_MESSAGE)'
 endif
 ifdef ENABLE_SOURCIFY_INTEGRATION
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ENABLE_SOURCIFY_INTEGRATION=$(ENABLE_SOURCIFY_INTEGRATION)'
@@ -409,22 +391,94 @@ endif
 ifdef FETCH_REWARDS_WAY
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'FETCH_REWARDS_WAY=$(FETCH_REWARDS_WAY)'
 endif
-
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
-build: 
-	@echo "==> Checking for blockscout image $(BS_CONTAINER_IMAGE)"
-ifdef HAS_BLOCKSCOUT_IMAGE
-	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
-else
-	@echo "==> No image found, trying to build one..."
-	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
+ifdef INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE=$(INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE)'
 endif
+ifdef FOOTER_CHAT_LINK
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'FOOTER_CHAT_LINK=$(FOOTER_CHAT_LINK)'
+endif
+ifdef FOOTER_FORUM_LINK
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'FOOTER_FORUM_LINK=$(FOOTER_FORUM_LINK)'
+endif
+ifdef FOOTER_GITHUB_LINK
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'FOOTER_GITHUB_LINK=$(FOOTER_GITHUB_LINK)'
+endif
+ifdef NETWORK_ICON
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'NETWORK_ICON=$(NETWORK_ICON)'
+endif
+ifdef LOGO_TEXT
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'LOGO_TEXT=$(LOGO_TEXT)'
+endif
+ifdef SHOW_TESTNET_LABEL
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'SHOW_TESTNET_LABEL=$(SHOW_TESTNET_LABEL)'
+endif
+ifdef TESTNET_LABEL_TEXT
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'TESTNET_LABEL_TEXT=$(TESTNET_LABEL_TEXT)'
+endif
+ifdef OTHER_EXPLORERS
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'OTHER_EXPLORERS=$(OTHER_EXPLORERS)'
+endif
+ifdef CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST=$(CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST)'
+endif
+ifdef CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5=$(CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5)'
+endif
+ifdef CUSTOM_CONTRACT_ADDRESSES_CIRCLES
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'CUSTOM_CONTRACT_ADDRESSES_CIRCLES=$(CUSTOM_CONTRACT_ADDRESSES_CIRCLES)'
+endif
+ifdef HEALTHY_BLOCKS_PERIOD
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'HEALTHY_BLOCKS_PERIOD=$(HEALTHY_BLOCKS_PERIOD)'
+endif
+ifdef EXCHANGE_RATES_FETCH_BTC_VALUE
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'EXCHANGE_RATES_FETCH_BTC_VALUE=$(EXCHANGE_RATES_FETCH_BTC_VALUE)'
+endif
+ifdef ENABLE_TXS_STATS
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'ENABLE_TXS_STATS=$(ENABLE_TXS_STATS)'
+endif
+ifdef INDEXER_DISABLE_BLOCK_REWARD_FETCHER
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_BLOCK_REWARD_FETCHER=$(INDEXER_DISABLE_BLOCK_REWARD_FETCHER)'
+endif
+ifdef INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER=$(INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER)'
+endif
+ifdef INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER=$(INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER)'
+endif
+ifdef INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER=$(INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER)'
+endif
+ifdef SECRET_KEY_BASE
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'SECRET_KEY_BASE=$(SECRET_KEY_BASE)'
+endif
+ifdef PORT
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'PORT=$(PORT)'
+endif
+ifdef DATABASE_READ_ONLY_API_URL
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'DATABASE_READ_ONLY_API_URL=$(DATABASE_READ_ONLY_API_URL)'
+endif
+ifdef POOL_SIZE_API
+    BLOCKSCOUT_CONTAINER_PARAMS += -e 'POOL_SIZE_API=$(POOL_SIZE_API)'
+endif
+ifdef ENABLE_RUST_VERIFICATION_SERVICE
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'ENABLE_RUST_VERIFICATION_SERVICE=$(ENABLE_RUST_VERIFICATION_SERVICE)'
+endif
+ifdef RUST_VERIFICATION_SERVICE_URL
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'RUST_VERIFICATION_SERVICE_URL=$(RUST_VERIFICATION_SERVICE_URL)'
+endif
+
+# Polygon Hermez
+DOCKER_IMAGE = hermez-node-blockscout
+DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
+
+build:
+	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
 
 migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "echo $$MIX_ENV && ./bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\""
 
 migrate: build postgres
 	@$(MAKE) -f $(THIS_FILE) migrate_only
@@ -460,12 +514,12 @@ else
 endif
 endif
 
-start: build postgres 
+start: build postgres
 	@echo "==> Starting blockscout"
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
-					$(BS_CONTAINER_IMAGE) /bin/sh -c "mix phx.server"
+					$(BS_CONTAINER_IMAGE) /bin/sh -c "./bin/blockscout start"
 
 BS_STARTED := $(shell docker ps --no-trunc --filter name=^/${BS_CONTAINER_NAME}$)
 stop:
@@ -509,6 +563,17 @@ publish-stable-version: tag-stable-version ## publish the `{version}` tagged con
 	@echo 'publish $(STABLE_TAG) to $(DOCKER_REPO)'
 	docker push $(BS_CONTAINER_IMAGE):$(STABLE_TAG)
 
+push:
+	@echo "==> Pushing image to docker hub"
+	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
+	@docker push hermeznetwork/hermez-node-blockscout:latest
+
+start-compose:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
+
+stop-compose:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
+
 # Docker tagging
 tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
 tag-stable: tag-latest tag-stable-version ## Generate container tags for the `{version}` ans `latest` tags
@@ -536,66 +601,9 @@ tag-stable-version: ## Generate container `{version}` tag
 				publish \
 				publish-latest \
 				publish-version \
-				tag \
-				tag-latest \
-				tag-version
-
-# Polygon zkEVM
-
-DOCKER_IMAGE = hermez-node-blockscout
-DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
-
-build-dev:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-prod:
-	@docker build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-prod-nc:
-	@make build-prod ARGS="--no-cache"
-
-build-dev-m1:
-	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-
-build-prod-m1:
-	@docker buildx build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-
-build-prod-m1-nc:
-	@make build-prod-m1 ARGS="--no-cache"
-
-build-tests:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=test -f ./Dockerfile.test -t $(DOCKER_IMAGE) ../
-
-push:
-	@echo "==> Pushing image to docker hub"
-	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
-	@docker push hermeznetwork/hermez-node-blockscout:latest
-
-start-compose:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
-
-stop-compose:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
-
-watch-compose:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
-
-start-tests:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.test.yml up -d
-
-stop-tests:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.test.yml down --remove-orphans
-
-.PHONY: build-dev \
-				build-prod \
-				build-prod-nc \
-				build-dev-m1 \
-				build-prod-m1 \
-				build-prod-m1-nc \
-				build-tests \
 				push \
 				start-compose \
 				stop-compose \
-				watch-compose \
-				start-tests \
-				stop-tests
+				tag \
+				tag-latest \
+				tag-version

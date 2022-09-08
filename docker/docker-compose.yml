@@ -10,9 +10,9 @@ services:
         ports:
             - 4010:4010
         volumes:
-            - ../apps/block_scout_web/assets:/src/apps/block_scout_web/assets
-            - ../apps/block_scout_web/lib:/src/apps/block_scout_web/lib
-            - /src/apps/block_scout_web/assets/node_modules
+            - ../apps/block_scout_web/assets:/apps/block_scout_web/assets
+            - ../apps/block_scout_web/lib:/apps/block_scout_web/lib
+            - /apps/block_scout_web/assets/node_modules
         environment:
             - PORT=4010
             - NETWORK=POE

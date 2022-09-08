@@ -285,59 +285,6 @@ $c-dark-text-color: #8a8dba;
 		background-color: $c-primary;
 	}
 
-	//network select
-	.network-selector-overlay {
-		background-color: rgba($c-primary, .9);
-	}
-	.network-selector {
-		background-color: $c-primary;
-	}
-	.network-selector-text {
-		color: $text2;
-	}
-	.network-selector-close path {
-		fill: #fff;
-	}
-	.network-selector-search-container {
-		background-color: $c-primary;
-	}
-	.network-selector-search-container path {
-		fill: $text2;
-	}
-	.network-selector-search-input {
-		color: #fff !important;
-		&::placeholder {
-			color: $text2;
-		}
-	}
-	.network-selector-tab {
-		color: $text2;
-		&:hover, &.active {
-			color: #fff;
-		}
-		&.active {
-			&:after {
-				background-color: $c-primary;
-			}
-		}
-	}
-	.network-selector-item,
-	.network-selector-tabs-container {
-		border-bottom-color: darken($text2, 30);
-	}
-	.network-selector-item-title {
-		color: #fff;
-	}
-	.network-selector-item-type {
-		color: $text2;
-	}
-	.radio .radio-icon {
-		border-color: $text2;
-	}
-	.network-selector-item-url:hover .network-selector-item-type {
-		color: #fff;
-	}
-
 	//coin dropdown
 	.token-balance-dropdown[aria-labelledby="dropdown-tokens"] .dropdown-items .dropdown-item:hover {
 		color: #fff !important;
@@ -764,6 +711,7 @@ $c-dark-text-color: #8a8dba;
 	color: $c-primary;
   }
   
-.circles-theme-applied.dark-theme-applied a:hover, a:focus {
+.circles-theme-applied.dark-theme-applied a:hover,
+.circles-theme-applied.dark-theme-applied a:focus {
 	color: $c-primary;
 }
