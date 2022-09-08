@@ -23,6 +23,7 @@ RUN set -ex && \
 # Get Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
+ARG BUILD_ENV=dev
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG DISABLE_READ_API
 ARG API_PATH
@@ -61,15 +62,21 @@ RUN if [ "$COIN" != "" ]; then \
 RUN mix compile && npm install npm@latest
 
 # Add blockscout npm deps
-RUN cd apps/block_scout_web/assets/ && \
+RUN cd apps/block_scout_web/assets && \
     npm install && \
-    npm run deploy && \
-    cd /app/apps/explorer/ && \
-    npm install && \
-    apk update && \
-    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+    if [ "$BUILD_ENV" = "prod" ]; then  npm run deploy; fi
 
-RUN mix phx.digest
+RUN cd /app/apps/explorer && \
+    npm install
+
+# Generate self signed cert for dev env
+RUN cd apps/block_scout_web && \
+    if [ "$BUILD_ENV" = "dev" ]; then mix phx.gen.cert blockscout blockscout.local; fi
+
+RUN apk update
+RUN apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+
+RUN if [ "$BUILD_ENV" = "prod" ]; then mix phx.digest; fi
 
 RUN mkdir -p /opt/release \
   && mix release blockscout \

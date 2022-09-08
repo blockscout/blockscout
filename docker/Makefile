@@ -467,16 +467,12 @@ ifdef RUST_VERIFICATION_SERVICE_URL
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'RUST_VERIFICATION_SERVICE_URL=$(RUST_VERIFICATION_SERVICE_URL)'
 endif
 
+# Polygon Hermez
+DOCKER_IMAGE = hermez-node-blockscout
+DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw "${BS_CONTAINER_IMAGE} ")
 build:
-	@echo "==> Checking for blockscout image $(BS_CONTAINER_IMAGE)"
-ifdef HAS_BLOCKSCOUT_IMAGE
-	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
-else
-	@echo "==> No image found, trying to build one..."
 	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
-endif
 
 migrate_only:
 	@echo "==> Running migrations"
@@ -567,6 +563,17 @@ publish-stable-version: tag-stable-version ## publish the `{version}` tagged con
 	@echo 'publish $(STABLE_TAG) to $(DOCKER_REPO)'
 	docker push $(BS_CONTAINER_IMAGE):$(STABLE_TAG)
 
+push:
+	@echo "==> Pushing image to docker hub"
+	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
+	@docker push hermeznetwork/hermez-node-blockscout:latest
+
+start-compose:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
+
+stop-compose:
+	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
+
 # Docker tagging
 tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
 tag-stable: tag-latest tag-stable-version ## Generate container tags for the `{version}` ans `latest` tags
@@ -594,66 +601,9 @@ tag-stable-version: ## Generate container `{version}` tag
 				publish \
 				publish-latest \
 				publish-version \
-				tag \
-				tag-latest \
-				tag-version
-
-# Polygon Hermez
-
-DOCKER_IMAGE = hermez-node-blockscout
-DOCKER_COMPOSE_PROJECT_NAME = hermez-blockscout
-
-build-dev:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-prod:
-	@docker build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-
-build-prod-nc:
-	@make build-prod ARGS="--no-cache"
-
-build-dev-m1:
-	@docker buildx build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=dev --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-
-build-prod-m1:
-	@docker buildx build $(ARGS) --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=prod --platform linux/arm64 -f ./Dockerfile -t $(DOCKER_IMAGE) --load ../
-
-build-prod-m1-nc:
-	@make build-prod-m1 ARGS="--no-cache"
-
-build-tests:
-	@docker build --build-arg COIN="$(COIN)" --build-arg BUILD_ENV=test -f ./Dockerfile.test -t $(DOCKER_IMAGE) ../
-
-push:
-	@echo "==> Pushing image to docker hub"
-	@docker image tag ${DOCKER_IMAGE} hermeznetwork/hermez-node-blockscout:latest
-	@docker push hermeznetwork/hermez-node-blockscout:latest
-
-start-compose:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up -d
-
-stop-compose:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml down --remove-orphans
-
-watch-compose:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.yml up
-
-start-tests:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.test.yml up -d
-
-stop-tests:
-	@docker-compose -p "$(DOCKER_COMPOSE_PROJECT_NAME)" -f docker-compose.test.yml down --remove-orphans
-
-.PHONY: build-dev \
-				build-prod \
-				build-prod-nc \
-				build-dev-m1 \
-				build-prod-m1 \
-				build-prod-m1-nc \
-				build-tests \
 				push \
 				start-compose \
 				stop-compose \
-				watch-compose \
-				start-tests \
-				stop-tests
+				tag \
+				tag-latest \
+				tag-version
