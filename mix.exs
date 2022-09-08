@@ -5,13 +5,13 @@ defmodule BlockScout.Mixfile do
 
   def project do
     [
-      app: :block_scout,
+      # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "4.1.3",
+      version: "4.1.8",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       preferred_cli_env: [
         credo: :test,
         dialyzer: :test
@@ -24,13 +24,31 @@ defmodule BlockScout.Mixfile do
             ethereum_jsonrpc: :permanent,
             explorer: :permanent,
             indexer: :permanent
-          ]
+          ],
+          steps: [:assemble, &copy_prod_runtime_config/1],
+          validate_compile_env: false
         ]
       ]
     ]
   end
 
   ## Private Functions
+
+  defp copy_prod_runtime_config(%Mix.Release{path: path} = release) do
+    File.mkdir_p!(Path.join([path, "config", "runtime"]))
+    File.cp!(Path.join(["config", "runtime", "prod.exs"]), Path.join([path, "config", "runtime", "prod.exs"]))
+    File.mkdir_p!(Path.join([path, "apps", "explorer", "config", "prod"]))
+
+    File.cp_r!(
+      Path.join(["apps", "explorer", "config", "prod"]),
+      Path.join([path, "apps", "explorer", "config", "prod"])
+    )
+
+    File.mkdir_p!(Path.join([path, "apps", "indexer", "config", "prod"]))
+    File.cp_r!(Path.join(["apps", "indexer", "config", "prod"]), Path.join([path, "apps", "indexer", "config", "prod"]))
+
+    release
+  end
 
   defp dialyzer() do
     [
@@ -75,7 +93,7 @@ defmodule BlockScout.Mixfile do
   defp deps do
     [
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
-      {:tesla, "~> 1.3.3"},
+      {:tesla, "~> 1.4.4"},
       # Documentation
       {:ex_doc, "~> 0.28.2", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}

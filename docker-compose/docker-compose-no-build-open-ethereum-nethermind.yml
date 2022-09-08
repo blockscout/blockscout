@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:13.6
+    image: postgres:14
     restart: always
     container_name: 'postgres'
     environment:
@@ -22,7 +22,7 @@ services:
     container_name: 'blockscout'
     links:
       - db:database
-    command: 'mix do ecto.create, ecto.migrate, phx.server'
+    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
@@ -32,7 +32,8 @@ services:
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
-        ECTO_USE_SSL: false
+        ECTO_USE_SSL: 'false'
+        SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
     ports:
       - 4000:4000
 

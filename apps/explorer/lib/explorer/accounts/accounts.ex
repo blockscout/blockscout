@@ -3,7 +3,7 @@ defmodule Explorer.Accounts do
   Entrypoint for modifying user account information.
   """
 
-  alias Comeonin.Bcrypt
+  alias Bcrypt
   alias Ecto.Changeset
   alias Explorer.Accounts.User
   alias Explorer.Accounts.User.{Authenticate, Registration}
@@ -61,7 +61,7 @@ defmodule Explorer.Accounts do
 
     with {:ok, authentication} <- authentication,
          {:user, %User{} = user} <- {:user, Repo.get_by(User, username: authentication.username)},
-         {:password, true} <- {:password, Bcrypt.checkpw(authentication.password, user.password_hash)} do
+         {:password, true} <- {:password, Bcrypt.verify_pass(authentication.password, user.password_hash)} do
       {:ok, user}
     else
       {:error, %Changeset{}} = error ->
@@ -69,7 +69,7 @@ defmodule Explorer.Accounts do
 
       {:user, nil} ->
         # Run dummy check to mitigate timing attacks
-        Bcrypt.dummy_checkpw()
+        Bcrypt.no_user_verify()
         {:error, :invalid_credentials}
 
       {:password, false} ->

@@ -5,7 +5,7 @@
         to: token_instance_path(@conn, :show, @token.contract_address_hash, to_string(@token_instance.token_id))
       )
     %>
-  <%= if @token_instance.instance do %>
+  <%= if @token_instance.instance && @token_instance.instance.metadata do %>
     <%= link(
         gettext("Metadata"),
         to: token_instance_metadata_path(@conn, :index, Address.checksum(@token.contract_address_hash), to_string(@token_instance.token_id)),

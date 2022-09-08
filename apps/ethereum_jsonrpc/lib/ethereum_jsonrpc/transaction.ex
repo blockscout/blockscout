@@ -110,6 +110,47 @@ defmodule EthereumJSONRPC.Transaction do
         transaction_index: 0
       }
 
+  Erigon `elixir` from txpool_content method can be converted to `params`.
+
+      iex> EthereumJSONRPC.Transaction.elixir_to_params(
+      ...>   %{
+      ...>     "blockHash" => nil,
+      ...>     "blockNumber" => nil,
+      ...>     "from" => "0x870006d72c247bc1e90983c71b3234ee01d3c9d9",
+      ...>     "gas" => 182154,
+      ...>     "hash" => "0x8d2cd1fae48ea0d2a20bb74abbfca05c2d805793e1b42fa844bbdd90f2512f39",
+      ...>     "input" => "0x08dc9f4200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000062ad7e5d00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041ea9764027fc630affb1825e91d830d1e4e9b6e701ce6eb531f7262787739466d0fc8ac23d0496ec1386d6727f3958fc147719d12a4a23b3e592fb7f499006e041b00000000000000000000000000000000000000000000000000000000000000",
+      ...>     "maxFeePerGas" => 169648965806,
+      ...>     "maxPriorityFeePerGas" => 0,
+      ...>     "nonce" => 12,
+      ...>     "r" => 54145857155959999983086152958232689936309058616635618472746031287964711695698,
+      ...>     "s" => 15362740689264852081830165187058601082381583930006578342376475668171980574077,
+      ...>     "to" => "0x7a41e410bb784d9875fa14f2d7d2fa825466cdae",
+      ...>     "transactionIndex" => nil,
+      ...>     "type" => 2,
+      ...>     "v" => 0,
+      ...>     "value" => 275000000000000000
+      ...>   }
+      ...> )
+      %{
+        block_hash: nil,
+        block_number: nil,
+        from_address_hash: "0x870006d72c247bc1e90983c71b3234ee01d3c9d9",
+        gas: 182154,
+        hash: "0x8d2cd1fae48ea0d2a20bb74abbfca05c2d805793e1b42fa844bbdd90f2512f39",
+        index: nil,
+        input: "0x08dc9f4200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000062ad7e5d00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041ea9764027fc630affb1825e91d830d1e4e9b6e701ce6eb531f7262787739466d0fc8ac23d0496ec1386d6727f3958fc147719d12a4a23b3e592fb7f499006e041b00000000000000000000000000000000000000000000000000000000000000",
+        max_fee_per_gas: 169648965806,
+        max_priority_fee_per_gas: 0,
+        nonce: 12,
+        r: 54145857155959999983086152958232689936309058616635618472746031287964711695698,
+        s: 15362740689264852081830165187058601082381583930006578342376475668171980574077,
+        to_address_hash: "0x7a41e410bb784d9875fa14f2d7d2fa825466cdae",
+        transaction_index: nil,
+        type: 2,
+        v: 0,
+        value: 275000000000000000
+      }
   """
   @spec elixir_to_params(elixir) :: params
 
@@ -140,6 +181,55 @@ defmodule EthereumJSONRPC.Transaction do
       from_address_hash: from_address_hash,
       gas: gas,
       gas_price: gas_price,
+      hash: hash,
+      index: index,
+      input: input,
+      nonce: nonce,
+      r: r,
+      s: s,
+      to_address_hash: to_address_hash,
+      v: v,
+      value: value,
+      transaction_index: index,
+      type: type,
+      max_priority_fee_per_gas: max_priority_fee_per_gas,
+      max_fee_per_gas: max_fee_per_gas
+    }
+
+    if transaction["creates"] do
+      Map.put(result, :created_contract_address_hash, transaction["creates"])
+    else
+      result
+    end
+  end
+
+  # txpool_content method on Erigon node returns tx data
+  # without gas price
+  def elixir_to_params(
+        %{
+          "blockHash" => block_hash,
+          "blockNumber" => block_number,
+          "from" => from_address_hash,
+          "gas" => gas,
+          "hash" => hash,
+          "input" => input,
+          "nonce" => nonce,
+          "r" => r,
+          "s" => s,
+          "to" => to_address_hash,
+          "transactionIndex" => index,
+          "v" => v,
+          "value" => value,
+          "type" => type,
+          "maxPriorityFeePerGas" => max_priority_fee_per_gas,
+          "maxFeePerGas" => max_fee_per_gas
+        } = transaction
+      ) do
+    result = %{
+      block_hash: block_hash,
+      block_number: block_number,
+      from_address_hash: from_address_hash,
+      gas: gas,
       hash: hash,
       index: index,
       input: input,

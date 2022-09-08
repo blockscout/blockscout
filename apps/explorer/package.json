@@ -5,7 +5,7 @@
   },
   "private": true,
   "name": "blockscout",
-  "author": "POA Network",
+  "author": "Blockscout",
   "license": "GPL-3.0",
   "engines": {
     "node": "16.x",
@@ -13,6 +13,6 @@
   },
   "scripts": {},
   "dependencies": {
-    "solc": "0.8.0"
+    "solc": "0.8.16"
   }
 }

@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{
     AddressContractVerificationViaFlattenedCodeView,
     AddressContractVerificationViaJsonView,
+    AddressContractVerificationViaMultiPartFilesView,
     AddressContractVerificationViaStandardJsonInputView,
     AddressContractVerificationVyperView,
     Endpoint
@@ -206,14 +207,13 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def select_contract_type_and_form_view(params) do
-    verification_from_metadata_json? =
-      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "json:metadata"
+    verification_from_metadata_json? = check_verification_type(params, "json:metadata")
 
-    verification_from_standard_json_input? =
-      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "json:standard"
+    verification_from_standard_json_input? = check_verification_type(params, "json:standard")
 
-    verification_from_vyper? =
-      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "vyper"
+    verification_from_vyper? = check_verification_type(params, "vyper")
+
+    verification_from_multi_part_files? = check_verification_type(params, "multi-part-files")
 
     compiler = if verification_from_vyper?, do: :vyper, else: :solc
 
@@ -222,11 +222,15 @@ defmodule BlockScoutWeb.Notifier do
         verification_from_standard_json_input? -> AddressContractVerificationViaStandardJsonInputView
         verification_from_metadata_json? -> AddressContractVerificationViaJsonView
         verification_from_vyper? -> AddressContractVerificationVyperView
+        verification_from_multi_part_files? -> AddressContractVerificationViaMultiPartFilesView
         true -> AddressContractVerificationViaFlattenedCodeView
       end
 
     %{view: view, compiler: compiler}
   end
+
+  defp check_verification_type(params, type),
+    do: Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == type
 
   @doc """
   Broadcast the percentage of blocks indexed so far.

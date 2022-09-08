@@ -5,15 +5,10 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
-  alias Explorer.Chain
-
   alias Indexer.{
     Block,
-    CalcLpTokensTotalLiqudity,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer,
-    SetAmbBridgedMetadataForTokens,
-    SetOmniBridgedMetadataForTokens
+    PendingTransactionsSanitizer
   }
 
   alias Indexer.Block.{Catchup, Realtime}
@@ -97,14 +92,21 @@ defmodule Indexer.Supervisor do
 
     realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
 
+    realtime_fetcher =
+      if Application.get_env(:indexer, Realtime.Supervisor)[:enabled] do
+        [
+          {Realtime.Supervisor,
+           [
+             %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
+             [name: Realtime.Supervisor]
+           ]}
+        ]
+      else
+        []
+      end
+
     basic_fetchers = [
       # Root fetchers
-      {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
-      {Realtime.Supervisor,
-       [
-         %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
-         [name: Realtime.Supervisor]
-       ]},
       {Catchup.Supervisor,
        [
          %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
@@ -140,22 +142,12 @@ defmodule Indexer.Supervisor do
       {PendingOpsCleaner, [[], []]}
     ]
 
-    extended_fetchers =
-      if Chain.bridged_tokens_enabled?() do
-        fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
-        [{CalcLpTokensTotalLiqudity, [[], []]} | fetchers_with_omni_status]
-      else
-        basic_fetchers
-      end
-
-    amb_bridge_mediators = Application.get_env(:block_scout_web, :amb_bridge_mediators)
-
     all_fetchers =
-      if amb_bridge_mediators && amb_bridge_mediators !== "" do
-        [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
-      else
-        extended_fetchers
-      end
+      [
+        {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
+      ] ++
+        realtime_fetcher ++
+        basic_fetchers
 
     Supervisor.init(
       all_fetchers,

@@ -305,7 +305,7 @@ export const elements = {
  */
 export function createAsyncLoadStore (reducer, initialState, itemKey) {
   const state = merge(asyncInitialState, initialState)
-  const store = createStore(reduceReducers(asyncReducer, reducer, state))
+  const store = createStore(reduceReducers(state, asyncReducer, reducer))
 
   if (typeof itemKey !== 'undefined') {
     store.dispatch({
@@ -367,12 +367,14 @@ function firstPageLoad (store) {
 
 const $element = $('[data-async-load]')
 if ($element.length) {
-  if (Object.prototype.hasOwnProperty.call($element.data(), 'noFirstLoading')) {
-    enableFirstLoading = false
-  }
-  if (enableFirstLoading) {
-    const store = createStore(asyncReducer)
-    connectElements({ store, elements })
-    firstPageLoad(store)
+  if (!Object.prototype.hasOwnProperty.call($element.data(), 'noSelfCalls')) {
+    if (Object.prototype.hasOwnProperty.call($element.data(), 'noFirstLoading')) {
+      enableFirstLoading = false
+    }
+    if (enableFirstLoading) {
+      const store = createStore(asyncReducer)
+      connectElements({ store, elements })
+      firstPageLoad(store)
+    }
   }
 }

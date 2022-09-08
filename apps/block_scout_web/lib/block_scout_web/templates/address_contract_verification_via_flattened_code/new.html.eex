@@ -15,11 +15,11 @@
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name." %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: gettext "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name." %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_versions: @compiler_versions, tooltip: "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_versions: @compiler_versions, tooltip: gettext "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
@@ -27,7 +27,7 @@
             <div class="center-column">
               <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", "aria-describedby": "evm-version-help-block" %>
             </div>
-            <div class="smart-contract-form-group-tooltip">The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version. <a href="https://forum.poa.network/t/smart-contract-verification-evm-version-details/2318" target="_blank">EVM version details</a>.</div>
+            <div class="smart-contract-form-group-tooltip"><%= gettext "The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version." %> <a href="https://forum.poa.network/t/smart-contract-verification-evm-version-details/2318" target="_blank"><%= gettext "EVM version details" %></a>.</div>
           </div>
         </div>
 
@@ -49,7 +49,7 @@
               </div>
               <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger form-error" %>
             </div>
-            <div class="smart-contract-form-group-tooltip">If you enabled optimization during compilation, select yes.</div>
+            <div class="smart-contract-form-group-tooltip"><%= gettext "If you enabled optimization during compilation, select yes." %></div>
           </div>
         </div>
 
@@ -70,7 +70,7 @@
               <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
               <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger form-error", "data-test": "contract-source-code-error" %>
             </div>
-            <div class="smart-contract-form-group-tooltip">We recommend using flattened code. This is necessary if your code utilizes a library or inherits dependencies. Use the <a href="https://github.com/poanetwork/solidity-flattener" target="_blank">POA solidity flattener or the <a href="https://www.npmjs.com/package/truffle-flattener" target="_blank">truffle flattener</a>.</div>
+            <div class="smart-contract-form-group-tooltip"><%= gettext "We recommend using flattened code. This is necessary if your code utilizes a library or inherits dependencies. Use the" %> <a href="https://github.com/poanetwork/solidity-flattener" target="_blank"><%= gettext "POA solidity flattener or the" %> <a href="https://www.npmjs.com/package/truffle-flattener" target="_blank"><%= gettext "truffle flattener" %></a>.</div>
           </div>
         </div>
 
@@ -79,7 +79,7 @@
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: display_constructor_arguments_text_area %>
 
         <div class="add-contract-libraries-wrapper">
-          <span class="btn-line js-btn-add-contract-libraries">Add Contract Libraries</span>
+          <span class="btn-line js-btn-add-contract-libraries"><%= gettext "Add Contract Libraries" %></span>
         </div>
 
         <div class="smart-contract-libraries-wrapper js-smart-contract-libraries-wrapper">
@@ -89,13 +89,13 @@
             <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html",
               library: :library1,
               library_name: :library1_name,
-              tooltip_text: "A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one."
+              tooltip_text: gettext "A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one."
             %>
 
             <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html",
               library: :library1,
               library_address: :library1_address,
-              tooltip_text: "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
+              tooltip_text: gettext "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
             %>
           </div>
 
@@ -124,7 +124,7 @@
           </div>
 
           <div class="add-contract-library-wrapper js-add-contract-library-wrapper">
-            <span class="btn-line js-btn-add-contract-library">Add Library</span>
+            <span class="btn-line js-btn-add-contract-library"><%= gettext "Add Library" %></span>
           </div>
         </div>
 
@@ -138,7 +138,7 @@
           >
             <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
           </button>
-          <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation"  %>
+          <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation", "data-submit-button": "" %>
           <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
           <%=
             link(
@@ -150,5 +150,4 @@
         </div>
       <% end %>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
 </section>
