@@ -83,7 +83,7 @@ defmodule Indexer.Fetcher.CosmosHash do
     case range do
       nil ->
         Logger.info("range is nil")
-        nil
+        []
       _ ->
         block_numbers = Enum.map(range, fn(number) -> number end)
         for block_number <- block_numbers do

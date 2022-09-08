@@ -432,7 +432,7 @@ defmodule Explorer.Chain.Transaction do
     case Hash.Full.cast(hash) do
       {:ok, tx_hash} ->
         schema = Repo.get_by(Transaction, [hash: tx_hash])
-        if schema != nil and is_nil(schema.has_error_in_internal_txs) do
+        if is_nil(schema) == false and is_nil(schema.has_error_in_internal_txs) do
           change(schema, %{has_error_in_internal_txs: true}) |> Repo.update()
         else
           {:error, nil}
