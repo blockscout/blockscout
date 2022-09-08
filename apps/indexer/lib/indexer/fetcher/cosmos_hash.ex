@@ -121,7 +121,7 @@ defmodule Indexer.Fetcher.CosmosHash do
   defp get_cosmos_hash_tx_list_mapping(block_number) do
     case http_request(block_info_url() <> Integer.to_string(block_number)) do
       {:error, reason} ->
-        Logger.error("failed to fetch block info via api node: ", inspect(reason))
+        Logger.error("failed to fetch block info via api node")
         []
       {:ok, result} ->
         case result["block"]["data"]["txs"] do
@@ -130,7 +130,7 @@ defmodule Indexer.Fetcher.CosmosHash do
             []
           [] ->
             Logger.debug("block_number: #{block_number} does not have any transactions")
-            nil
+            []
           [_|_] ->
             for tx <- result["block"]["data"]["txs"] do
               ethermint_hash = raw_txn_to_ethermint_hash(tx)
