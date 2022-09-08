@@ -40,7 +40,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= value(@transaction, include_label: false) %> <%= gettext "Ether" %>
+          <%= value(@transaction, include_label: false) %> <%= gettext "BNETH" %>
         </span>
         <span class="ml-0 ml-md-1 text-nowrap">
           <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>

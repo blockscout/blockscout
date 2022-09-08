@@ -90,10 +90,6 @@ defmodule Explorer.Mixfile do
       {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
-      # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
-      {:prometheus, "~> 4.0", override: true},
-      # Prometheus metrics for query duration
-      {:prometheus_ecto, "~> 1.4.3"},
       # bypass optional dependency
       {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
       {:que, "~> 0.10.1"},
@@ -104,8 +100,6 @@ defmodule Explorer.Mixfile do
       {:spandex_datadog, "~> 1.0"},
       # `:spandex` tracing of `:ecto`
       {:spandex_ecto, "~> 0.6.2"},
-      # Attach `:prometheus_ecto` to `:ecto`
-      {:telemetry, "~> 0.4.3"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},

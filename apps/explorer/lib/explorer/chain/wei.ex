@@ -102,12 +102,14 @@ defmodule Explorer.Chain.Wei do
   @typedoc """
   The unit to convert `t:wei/0` to.
   """
-  @type unit :: :wei | :gwei | :ether
+  @type unit :: :wei | :gwei | :ether | :bit
 
   @typedoc """
   The smallest fractional unit of Ether.
   """
   @type wei :: Decimal.t()
+
+  @type bit :: Decimal.t()
 
   @typedoc @moduledoc
   @type t :: %__MODULE__{
@@ -115,6 +117,7 @@ defmodule Explorer.Chain.Wei do
         }
 
   @wei_per_ether Decimal.new(1_000_000_000_000_000_000)
+  @wei_per_bit Decimal.new(1_000_000_000_000_000_000)
   @wei_per_gwei Decimal.new(1_000_000_000)
 
   @spec hex_format(Wei.t()) :: String.t()
@@ -211,6 +214,11 @@ defmodule Explorer.Chain.Wei do
     %__MODULE__{value: Decimal.mult(ether, @wei_per_ether)}
   end
 
+  @spec from(bit(), :bit) :: t()
+  def from(%Decimal{} = bit, :bit) do
+    %__MODULE__{value: Decimal.mult(bit, @wei_per_bit)}
+  end
+
   @spec from(gwei(), :gwei) :: t()
   def from(%Decimal{} = gwei, :gwei) do
     %__MODULE__{value: Decimal.mult(gwei, @wei_per_gwei)}
@@ -250,6 +258,11 @@ defmodule Explorer.Chain.Wei do
   @spec to(t(), :ether) :: ether()
   def to(%__MODULE__{value: wei}, :ether) do
     Decimal.div(wei, @wei_per_ether)
+  end
+
+  @spec to(t(), :bit) :: bit()
+  def to(%__MODULE__{value: wei}, :bit) do
+    Decimal.div(wei, @wei_per_bit)
   end
 
   @spec to(t(), :gwei) :: gwei()

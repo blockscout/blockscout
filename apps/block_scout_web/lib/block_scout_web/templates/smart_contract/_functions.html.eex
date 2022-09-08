@@ -55,8 +55,8 @@
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <% function_abi = 
-                    case Jason.encode([function]) do 
+        <% function_abi =
+                    case Jason.encode([function]) do
                       {:ok, abi_string} ->
                         abi_string
                       _ ->
@@ -64,7 +64,7 @@
                           @implementation_abi
                         else
                           @contract_abi
-                        end 
+                        end
                     end %>
         <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= function_abi %>" data-implementation-abi="<%= function_abi %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
@@ -81,17 +81,17 @@
                     <span class="button btn-line button-xs contract-plus-btn-container ml-1">
                       <i class="fa fa-plus contract-plus-btn"></i>
                     </span>
-                    <div class="dropdown-menu exponention-dropdown">  
+                    <div class="dropdown-menu exponention-dropdown">
                       <div class="dropdown-item contract-exponentiation-btn" data-power=6>10<sup>6</sup></div>
                       <div class="dropdown-item contract-exponentiation-btn" data-power=8>10<sup>8</sup></div>
                       <div class="dropdown-item contract-exponentiation-btn" data-power=18>10<sup>18</sup></div>
-                      <div class="dropdown-item contract-exponentiation-btn" data-power><input type="number" name="custom_power" class="form-control form-control-sm address-input-sm ml-1 custom-power-input" />10</div> 
+                      <div class="dropdown-item contract-exponentiation-btn" data-power><input type="number" name="custom_power" class="form-control form-control-sm address-input-sm ml-1 custom-power-input" />10</div>
                     </div>
                   </span>
 
                 <% else %>
-                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm" 
-                  placeholder='<%= input["name"] %>(<%= input["type"] %>)' 
+                  <input type="text" name="function_input" class="form-control form-control-sm address-input-sm"
+                  placeholder='<%= input["name"] %>(<%= input["type"] %>)'
                   size="<%= String.length(input["name"]) + String.length(input["type"]) + 2 %>" />
                 <% end %>
               </div>
@@ -101,7 +101,7 @@
           <%= if Helper.payable?(function) do %>
             <div class="form-group pr-3 d-flex">
               <input type="number" name="function_input" tx-value
-              data-toggle="tooltip" title='Amount in native token <<%= gettext("ETH")%>>' class="form-control form-control-sm address-input-sm" placeholder='value(<%= gettext("ETH")%>)' min="0" step="1e-18" />
+              data-toggle="tooltip" title='Amount in native token <<%= gettext("BNETH")%>>' class="form-control form-control-sm address-input-sm" placeholder='value(<%= gettext("BNETH")%>)' min="0" step="1e-18" />
             </div>
           <% end %>
 
@@ -143,10 +143,10 @@
                       <span class="py-2 px-2">
                         <input class="wei-ether" type="checkbox" autocomplete="off">
                         <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                        <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
+                        <span class="d-none" data-conversion-text-eth><%= gettext("BNETH")%></span>
                       </span>
                     </div>
-                  </div> 
+                  </div>
                 <% else %>
                   <div class="align-self-center function-output word-break-all <%= if not_last_element?(length, index), do: "mb-1" %>"><%= raw(values_with_type(output["value"], output["type"], [output["name"]], 0, output["components"])) %></div>
                 <% end %>

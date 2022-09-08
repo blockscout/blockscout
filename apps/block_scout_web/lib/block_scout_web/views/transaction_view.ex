@@ -315,8 +315,8 @@ defmodule BlockScoutWeb.TransactionView do
     |> Chain.fee(:wei)
     |> fee_to_denomination(opts)
     |> case do
-      {:actual, value} -> value
-      {:maximum, value} -> "#{gettext("Max of")} #{value}"
+         {:actual, value} -> value
+         {:maximum, value} -> "#{gettext("Max of")} #{value}"
     end
   end
 

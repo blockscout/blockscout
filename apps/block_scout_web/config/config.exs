@@ -8,7 +8,8 @@ import Config
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo]
+  ecto_repos: [Explorer.Repo],
+  l1_token_symbol: System.get_env("L1_TOKEN_SYMBOL") || "BNETH"
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
@@ -53,16 +54,6 @@ config :logger, :block_scout_web,
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :block_scout_web]
-
-config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
-  # override default for Phoenix 1.4 compatibility
-  # * `:transport_name` to `:transport`
-  # * remove `:vsn`
-  channel_join_labels: [:channel, :topic, :transport],
-  # override default for Phoenix 1.4 compatibility
-  # * `:transport_name` to `:transport`
-  # * remove `:vsn`
-  channel_receive_labels: [:channel, :topic, :transport, :event]
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 

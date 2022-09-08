@@ -106,14 +106,6 @@ defmodule BlockScoutWeb.Mixfile do
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 4.0.1"},
       {:postgrex, ">= 0.0.0"},
-      # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
-      {:prometheus, "~> 4.0", override: true},
-      # Gather methods for Phoenix requests
-      {:prometheus_phoenix, "~> 1.2"},
-      # Expose metrics from URL Prometheus server can scrape
-      {:prometheus_plugs, "~> 1.1"},
-      # OS process metrics for Prometheus
-      {:prometheus_process_collector, "~> 1.3"},
       {:remote_ip, "~> 1.0"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},

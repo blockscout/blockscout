@@ -26,18 +26,9 @@ defmodule Explorer.Application do
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
-  alias Explorer.Repo.PrometheusLogger
 
   @impl Application
   def start(_type, _args) do
-    PrometheusLogger.setup()
-
-    :telemetry.attach(
-      "prometheus-ecto",
-      [:explorer, :repo, :query],
-      &PrometheusLogger.handle_event/4,
-      %{}
-    )
 
     # Children to start in all environments
     base_children = [
@@ -92,8 +83,6 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AddressTokenUsdSum),
       configure(Explorer.Counters.TokenHoldersCounter),
       configure(Explorer.Counters.TokenTransfersCounter),
-      configure(Explorer.Counters.BlockBurnedFeeCounter),
-      configure(Explorer.Counters.BlockPriorityFeeCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),

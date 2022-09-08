@@ -6,14 +6,11 @@ defmodule BlockScoutWeb.Application do
   use Application
 
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
-  alias BlockScoutWeb.{Endpoint, Prometheus}
+  alias BlockScoutWeb.{Endpoint}
   alias BlockScoutWeb.RealtimeEventHandler
 
   def start(_type, _args) do
     import Supervisor
-
-    Prometheus.Instrumenter.setup()
-    Prometheus.Exporter.setup()
 
     # Define workers and child supervisors to be supervised
     children = [

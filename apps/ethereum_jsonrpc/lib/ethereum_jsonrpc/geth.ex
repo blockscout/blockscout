@@ -89,14 +89,7 @@ defmodule EthereumJSONRPC.Geth do
   @tracer File.read!(@tracer_path)
 
   defp debug_trace_transaction_request(%{id: id, hash_data: hash_data}) do
-    debug_trace_transaction_timeout =
-      Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_transaction_timeout]
-
-    request(%{
-      id: id,
-      method: "debug_traceTransaction",
-      params: [hash_data, %{tracer: @tracer, timeout: debug_trace_transaction_timeout}]
-    })
+    request(%{id: id, method: "debug_traceTransaction", params: [hash_data, %{tracer: @tracer}]})
   end
 
   defp debug_trace_transaction_responses_to_internal_transactions_params(

@@ -21,10 +21,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @behaviour BufferedTask
 
-  @max_batch_size 10
+  @max_batch_size 1
   @max_concurrency 4
   @defaults [
-    flush_interval: :timer.seconds(3),
+    flush_interval: :timer.seconds(60),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     poll: true,
@@ -49,7 +49,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   so the total number of internal transactions that could be produced is unknown.
   """
   @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
+  def async_fetch(block_numbers, timeout \\ 60000) when is_list(block_numbers) do
     if InternalTransactionSupervisor.disabled?() do
       :ok
     else
@@ -130,12 +130,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
         import_internal_transaction(internal_transactions_params, filtered_unique_numbers)
 
       {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
-          error_count: filtered_unique_numbers_count
-        )
+        :ok
+        # Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
+        #   error_count: filtered_unique_numbers_count
+        # )
 
         # re-queue the de-duped entries
-        {:retry, filtered_unique_numbers}
+        # {:retry, filtered_unique_numbers}
 
       :ignore ->
         :ok
@@ -229,20 +230,20 @@ defmodule Indexer.Fetcher.InternalTransaction do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })
 
-      {:error, step, reason, _changes_so_far} ->
-        Logger.error(
-          fn ->
-            [
-              "failed to import internal transactions for blocks: ",
-              inspect(reason)
-            ]
-          end,
-          step: step,
-          error_count: Enum.count(unique_numbers)
-        )
+      # {:error, step, reason, _changes_so_far} ->
+      #   Logger.error(
+      #     fn ->
+      #       [
+      #         "failed to import internal transactions for blocks: ",
+      #         inspect(reason)
+      #       ]
+      #     end,
+      #     step: step,
+      #     error_count: Enum.count(unique_numbers)
+      #   )
 
         # re-queue the de-duped entries
-        {:retry, unique_numbers}
+        # {:retry, unique_numbers}
     end
   end
 

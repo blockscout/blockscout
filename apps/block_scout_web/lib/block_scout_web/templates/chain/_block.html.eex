@@ -11,17 +11,14 @@
         <span class="mr-2"><%= gettext("%{count} Transactions", count: Enum.count(@block.transactions)) %></span>
         <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
       </div>
-      <%= if System.get_env("HIDE_BLOCK_MINER") !== "true" do %>
-        <div class="text-truncate">
-          <%= gettext "Miner" %>
-          <%= render BlockScoutWeb.AddressView,
-            "_link.html",
-            address: @block.miner,
-            contract: false,
-            use_custom_tooltip: false,
-            custom_classes_tooltip: ["miner-address-tooltip"] %>
-        </div>
-      <% end %>
+     <div class="text-truncate">
+        <%= gettext "Miner" %>
+        <%= render BlockScoutWeb.AddressView,
+          "_link.html",
+          address: @block.miner,
+          contract: false,
+          use_custom_tooltip: false %>
+      </div>
       <%= if BlockScoutWeb.BlockView.show_reward?(@block.rewards) do %>
         <div class="text-truncate">
           <%= gettext "Reward" %> <%= BlockScoutWeb.BlockView.combined_rewards_value(@block) %>

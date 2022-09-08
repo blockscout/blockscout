@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.WeiHelpers do
   alias BlockScoutWeb.CldrHelper
   alias Explorer.Chain.Wei
 
-  @valid_units ~w(wei gwei ether)a
+  @valid_units ~w(wei gwei ether bit)a
 
   @type format_option :: {:include_unit_label, boolean()}
 
@@ -73,7 +73,12 @@ defmodule BlockScoutWeb.WeiHelpers do
     end
   end
 
+  defp l1_token_symbol do
+    Application.get_env(:block_scout_web, :l1_token_symbol)
+  end
+
   defp display_unit(:wei), do: gettext("Wei")
   defp display_unit(:gwei), do: gettext("Gwei")
-  defp display_unit(:ether), do: gettext("Ether")
+  defp display_unit(:ether), do: gettext("BNETH")
+  defp display_unit(:bit), do: l1_token_symbol()
 end

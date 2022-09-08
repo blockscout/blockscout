@@ -1,4 +1,4 @@
-<% native_coin = gettext("ETH") %>
+<% native_coin = gettext("BNETH") %>
 <!-- USD value of the balance -->
 <% wei_value = if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>
 <% raw_usd_value =
@@ -14,14 +14,14 @@
         _ -> Decimal.new(0)
     end
 %>
-<% data_usd_exchange_rate = 
+<% data_usd_exchange_rate =
     unless AddressView.empty_exchange_rate?(@exchange_rate) do
         "data-usd-exchange-rate='#{@exchange_rate.usd_value}' data-raw-usd-value='#{raw_usd_value}'"
     end
 %>
 <% native_coin_balance_token = AddressView.balance(@address)
 %>
-<% native_coin_balance_usd = 
+<% native_coin_balance_usd =
     if AddressView.empty_exchange_rate?(@exchange_rate) do
         nil
     else
@@ -32,7 +32,7 @@
         </span>"
     end
 %>
-<% native_coin_balance = 
+<% native_coin_balance =
     if native_coin_balance_usd do
         native_coin_balance_usd <> " | " <> native_coin_balance_token
     else
