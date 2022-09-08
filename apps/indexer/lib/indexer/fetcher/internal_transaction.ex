@@ -217,7 +217,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
                 true ->
                   start_index = rem(pid, max_process) * max_handle_txs
                   cond do
-                    start_index > length(transactions) ->
+                    start_index >= length(transactions) ->
                       Logger.info(
                         "total transactions: #{length(transactions)}, start_index: #{start_index} is out of range"
                       )
