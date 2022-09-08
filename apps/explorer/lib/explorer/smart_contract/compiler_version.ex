@@ -39,17 +39,21 @@ defmodule Explorer.SmartContract.CompilerVersion do
   end
 
   defp fetch_vyper_versions do
-    headers = [{"Content-Type", "application/json"}]
+    if RustVerifierInterface.enabled?() do
+      RustVerifierInterface.vyper_get_versions_list()
+    else
+      headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.get(source_url(:vyper), headers) do
-      {:ok, %{status_code: 200, body: body}} ->
-        {:ok, format_data(body, :vyper)}
+      case HTTPoison.get(source_url(:vyper), headers) do
+        {:ok, %{status_code: 200, body: body}} ->
+          {:ok, format_data(body, :vyper)}
 
-      {:ok, %{status_code: _status_code, body: body}} ->
-        {:error, decode_json(body)["error"]}
+        {:ok, %{status_code: _status_code, body: body}} ->
+          {:error, decode_json(body)["error"]}
 
-      {:error, %{reason: reason}} ->
-        {:error, reason}
+        {:error, %{reason: reason}} ->
+          {:error, reason}
+      end
     end
   end
 
