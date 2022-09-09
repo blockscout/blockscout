@@ -17,6 +17,7 @@ services:
   blockscout:
     depends_on:
       - db
+      - smart-contract-verifier
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     restart: always
     container_name: 'blockscout'
