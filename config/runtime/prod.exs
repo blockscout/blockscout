@@ -70,6 +70,17 @@ variant =
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/prod")
 
+redis_port =
+  case System.get_env("ACCOUNT_REDIS_PORT") && Integer.parse(System.get_env("ACCOUNT_REDIS_PORT")) do
+    {port, _} -> port
+    :error -> nil
+    nil -> nil
+  end
+
+config :explorer, Redix,
+  host: System.get_env("ACCOUNT_REDIS_HOST_URL"),
+  port: redis_port
+
 ###############
 ### Indexer ###
 ###############

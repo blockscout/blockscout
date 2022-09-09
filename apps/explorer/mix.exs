@@ -114,7 +114,8 @@ defmodule Explorer.Mixfile do
       {:con_cache, "~> 1.0"},
       {:tesla, "~> 1.4.4"},
       {:cbor, "~> 1.0"},
-      {:cloak_ecto, "~> 1.2.0"}
+      {:cloak_ecto, "~> 1.2.0"},
+      {:redix, "~> 1.1"}
     ]
   end
 
