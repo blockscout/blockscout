@@ -7,8 +7,6 @@ defmodule Explorer.Factory do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Kernel, except: [+: 2]
 
-  alias Comeonin.Bcrypt
-
   alias Explorer.Account.{
     Identity,
     Watchlist,
