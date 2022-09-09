@@ -1,40 +1,29 @@
 defmodule Explorer.Chain.Events.Listener do
   @moduledoc """
-  Listens and publishes events from PG
+  Listens and dispatches events
   """
 
   use GenServer
 
-  alias Postgrex.Notifications
-
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, "chain_event", name: __MODULE__)
+  def start_link(state) do
+    GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
 
-  def init(channel) do
-    {:ok, pid} =
-      :explorer
-      |> Application.get_env(Explorer.Repo)
-      |> Notifications.start_link()
-
-    ref = Notifications.listen!(pid, channel)
-
-    {:ok, {pid, ref, channel}}
+  def init(state) do
+    {:ok, state, {:continue, :listen_to_source}}
   end
 
-  def handle_info({:notification, _pid, _ref, _topic, payload}, state) do
-    payload
-    |> decode_payload!()
+  def handle_continue(:listen_to_source, %{event_source: source} = state) do
+    source_state = source.setup_source()
+    {:noreply, Map.merge(state, source_state)}
+  end
+
+  def handle_info(msg, %{event_source: source} = state) do
+    msg
+    |> source.handle_source_msg()
     |> broadcast()
 
     {:noreply, state}
-  end
-
-  # sobelow_skip ["Misc.BinToTerm"]
-  defp decode_payload!(payload) do
-    payload
-    |> Base.decode64!()
-    |> :erlang.binary_to_term()
   end
 
   defp broadcast({:chain_event, event_type} = event) do

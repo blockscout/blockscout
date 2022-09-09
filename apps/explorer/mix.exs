@@ -111,7 +111,8 @@ defmodule Explorer.Mixfile do
       {:tesla, "~> 1.3.3"},
       # Log json format
       {:logger_json, "~> 3.2"},
-      {:observer_cli, "~> 1.6"}
+      {:observer_cli, "~> 1.6"},
+      {:phoenix_pubsub, "~> 2.0"}
     ]
   end
 
