@@ -49,7 +49,7 @@
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
               <% personal_tx_tag = if assigns[:tx_tags], do: @tx_tags.personal_tx_tag, else: nil %>
-              <%= if personal_tx_tag do %>
+              <%= if personal_tx_tag && personal_tx_tag.name !== :error do %>
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tx_tag.name, additional_classes: [tag_name_to_label(personal_tx_tag.name), "ml-1"] %>
               <% end %>
               <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @tx_tags %>

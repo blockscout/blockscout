@@ -1,8 +1,10 @@
 <%= for personal_tag <- @tags.personal_tags do %>
-  <%= if personal_tag.label =~ "dark forest" do %>
-    <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: ["df", "ml-1"] %>
-  <% else %>
-    <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: [tag_name_to_label(personal_tag.label), "ml-1"] %>
+  <%= if personal_tag.address_hash do %>
+    <%= if personal_tag.label =~ "dark forest" do %>
+      <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: ["df", "ml-1"] %>
+    <% else %>
+      <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tag.display_name, additional_classes: [tag_name_to_label(personal_tag.label), "ml-1"] %>
+    <% end %>
   <% end %>
 <% end %>
 <%= for watchlist_name <- @tags.watchlist_names do %>

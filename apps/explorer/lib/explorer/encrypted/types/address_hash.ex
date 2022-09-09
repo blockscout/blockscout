@@ -16,6 +16,7 @@ defmodule Explorer.Encrypted.Types.AddressHash do
 
       def after_decrypt(nil), do: nil
       def after_decrypt(""), do: nil
+      def after_decrypt(:error), do: nil
 
       def after_decrypt(value) do
         {:ok, address_hash} = Explorer.Chain.Hash.Address.cast(value)

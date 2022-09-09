@@ -16,6 +16,7 @@ defmodule Explorer.Encrypted.Types.TransactionHash do
 
       def after_decrypt(nil), do: nil
       def after_decrypt(""), do: nil
+      def after_decrypt(:error), do: nil
 
       def after_decrypt(value) do
         {:ok, transaction_hash} = Explorer.Chain.Hash.Full.cast(value)
