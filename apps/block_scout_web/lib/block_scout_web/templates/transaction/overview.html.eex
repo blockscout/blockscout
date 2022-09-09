@@ -77,7 +77,7 @@
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
               text: gettext("Unique character string (TxID) assigned to every verified transaction.") %>
-              <%= gettext "Transaction Cosmos" %>
+              <%= gettext "Transaction Hash (Cosmos)" %>
             </dt>
             <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
               <% ping_pub_external_link = "#{ping_pub_url}/astra/tx/#{@transaction.cosmos_hash}" %>
@@ -89,7 +89,7 @@
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @transaction.cosmos_hash,
-                  aria_label: gettext("Copy Transaction Cosmos"),
+                  aria_label: gettext("Copy Transaction Hash"),
                   title: gettext("Copy Txn Hash") %>
             </dd>
           </dl>
