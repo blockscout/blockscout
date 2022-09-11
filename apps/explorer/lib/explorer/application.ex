@@ -179,8 +179,6 @@ defmodule Explorer.Application do
   end
 
   defp redix_opts do
-    config = Application.get_env(:explorer, Redix)
-
-    [name: :redix, host: config[:host], port: config[:port]]
+    {System.get_env("ACCOUNT_REDIS_URL") || "redis://127.0.0.1:6379", [name: :redix]}
   end
 end
