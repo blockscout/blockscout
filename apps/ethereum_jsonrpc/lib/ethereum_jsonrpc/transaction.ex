@@ -448,7 +448,7 @@ defmodule EthereumJSONRPC.Transaction do
   #
   # "txType": to avoid FunctionClauseError when indexing Wanchain
   defp entry_to_elixir({key, value})
-       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType),
+       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType sourceHash mint isSystemTx),
        do: {key, value}
 
   # specific to Nethermind client
@@ -456,9 +456,15 @@ defmodule EthereumJSONRPC.Transaction do
     do: {"input", value}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas) and
+       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas effectiveGasPrice) and
               quantity != nil do
     {key, quantity_to_integer(quantity)}
+  end
+
+  defp entry_to_elixir({key, quantity})
+       when key in ~w(gasPrice) and
+              quantity == nil do
+    {key, 0}
   end
 
   # as always ganache has it's own vision on JSON RPC standard
