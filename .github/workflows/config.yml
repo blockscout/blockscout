@@ -496,7 +496,8 @@ jobs:
     services:
       redis_db:
         image: 'redis:alpine'
-        command: redis-server
+        ports: 
+          - 6379:6379
 
       postgres:
         image: postgres
@@ -578,3 +579,4 @@ jobs:
           CHAIN_ID: "77"
           ADMIN_PANEL_ENABLED: "true"
           ACCOUNT_ENABLED: "true"
+          ACCOUNT_REDIS_URL: "redis://localhost:6379"
