@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - account
-      - np-add-redis-storage-for-sessions
 
 env:
   MIX_ENV: test
