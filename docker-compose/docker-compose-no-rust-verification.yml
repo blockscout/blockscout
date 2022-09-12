@@ -1,6 +1,10 @@
 version: '3.8'
 
 services:
+  redis_db:
+    image: 'redis:alpine'
+    command: redis-server
+
   db:
     image: postgres:14
     restart: always
@@ -15,6 +19,7 @@ services:
   blockscout:
     depends_on:
       - db
+      - redis_db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     build:
       context: ..

@@ -1,6 +1,10 @@
 version: '3.8'
 
 services:
+  redis_db:
+    image: 'redis:alpine'
+    command: redis-server
+
   db:
     image: postgres:14
     restart: always
@@ -16,6 +20,7 @@ services:
     depends_on:
       - db
       - smart-contract-verifier
+      - redis_db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     restart: always
     container_name: 'blockscout'

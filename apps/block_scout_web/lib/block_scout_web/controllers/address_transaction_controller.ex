@@ -5,7 +5,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.{Chain, Market}
@@ -122,7 +126,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        current_path: Controller.current_full_path(conn)
+        current_path: Controller.current_full_path(conn),
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       :error ->
@@ -151,7 +156,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
               exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-              current_path: Controller.current_full_path(conn)
+              current_path: Controller.current_full_path(conn),
+              tags: get_address_tags(address_hash, current_user(conn))
             )
 
           _ ->
