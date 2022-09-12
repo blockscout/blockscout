@@ -4556,16 +4556,22 @@ defmodule Explorer.Chain do
         on: token.contract_address_hash == token_transfer.token_contract_address_hash,
         left_join: instance in Instance,
         on:
-          token_transfer.token_id == instance.token_id and
-            token_transfer.token_contract_address_hash == instance.token_contract_address_hash,
-        where: is_nil(instance.token_id) and not is_nil(token_transfer.token_id),
-        select: %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+          token_transfer.token_contract_address_hash == instance.token_contract_address_hash and
+            (token_transfer.token_id == instance.token_id or
+               fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id)),
+        where:
+          is_nil(instance.token_id) and (not is_nil(token_transfer.token_id) or not is_nil(token_transfer.token_ids)),
+        select: %{
+          contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: token_transfer.token_id,
+          token_ids: token_transfer.token_ids
+        }
       )
 
     distinct_query =
       from(
         q in subquery(query),
-        distinct: [q.contract_address_hash, q.token_id]
+        distinct: [q.contract_address_hash, q.token_id, q.token_ids]
       )
 
     Repo.stream_reduce(distinct_query, initial, reducer)
