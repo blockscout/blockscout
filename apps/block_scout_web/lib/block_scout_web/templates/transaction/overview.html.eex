@@ -62,7 +62,7 @@
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
               text: gettext("Unique character string (TxID) assigned to every verified transaction.") %>
-              <%= gettext "Transaction Hash" %>
+              <%= gettext "Transaction Hash (EVM Layer)" %>
             </dt>
             <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
               <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction %> </span>
@@ -77,7 +77,7 @@
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
               text: gettext("Unique character string (TxID) assigned to every verified transaction.") %>
-              <%= gettext "Transaction Hash (Cosmos)" %>
+              <%= gettext "Transaction Hash (Cosmos Layer)" %>
             </dt>
             <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
               <% ping_pub_external_link = "#{ping_pub_url}/astra/tx/#{@transaction.cosmos_hash}" %>
