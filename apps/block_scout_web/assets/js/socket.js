@@ -1,12 +1,12 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
 
-let websocketRootUrl = process.env.SOCKET_ROOT
-if (!websocketRootUrl || websocketRootUrl === '/') {
-  websocketRootUrl = ''
-}
+// let websocketRootUrl = process.env.SOCKET_ROOT
+// if (!websocketRootUrl || websocketRootUrl === '/') {
+//   websocketRootUrl = ''
+// }
 
-const socket = new Socket(websocketRootUrl + '/socket', { params: { locale } })
+const socket = new Socket('/optimism/bedrock-goerli' + '/socket', { params: { locale } })
 socket.connect()
 
 export default socket
