@@ -23,6 +23,7 @@
 - [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 - [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
+- [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
 
 ### Chore
 - [#5227](https://github.com/blockscout/blockscout/pull/5227) - Major update of css-loader npm package
