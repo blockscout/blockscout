@@ -6,6 +6,7 @@
 - [#6073](https://github.com/blockscout/blockscout/pull/6073) - Add vyper support for rust verifier microservice integration
 
 ### Fixes
+- [#6091](https://github.com/blockscout/blockscout/pull/6091) - Improve fetching media type for NFT
 
 - [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
 - [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
