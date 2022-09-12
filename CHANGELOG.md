@@ -39,6 +39,7 @@
 - [#5948](https://github.com/blockscout/blockscout/pull/5948) - Fix unexpected messages in `CoinBalanceOnDemand`
 - [#6013](https://github.com/blockscout/blockscout/pull/6013) - Fix ERC-1155 tokens fetching
 - [#6043](https://github.com/blockscout/blockscout/pull/6043) - Fix token instance fetching
+- [#6093](https://github.com/blockscout/blockscout/pull/6093) - Fix Indexer.Fetcher.TokenInstance for ERC-1155 tokens
 
 ### Chore
 
