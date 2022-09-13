@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout
         }) ::
-          {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
+          {:ok, nil | %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout} = options) when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)

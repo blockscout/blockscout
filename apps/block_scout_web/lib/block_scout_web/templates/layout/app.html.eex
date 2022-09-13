@@ -270,7 +270,7 @@
           <%= gettext("- We're indexing this chain right now. Some of the counts may be inaccurate.") %>
         </div>
       <% end %>
-      <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
+      <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: Conn.get_session(@conn, :current_user), conn: @conn %>
 
       <main class="js-ad-dependant-pt pt-5">
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>

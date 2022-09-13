@@ -34,10 +34,10 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.PagingOptions
 
-  defimpl Poison.Encoder, for: Poison.Encoder.Decimal do
+  defimpl Poison.Encoder, for: Decimal do
     def encode(value, _opts) do
       # silence the xref warning
-      decimal = Poison.Encoder.Decimal
+      decimal = Decimal
 
       [?\", decimal.to_string(value), ?\"]
     end

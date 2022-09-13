@@ -8,7 +8,7 @@ import Config
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo]
+  ecto_repos: [Explorer.Repo, Explorer.Repo.Account]
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
@@ -81,6 +81,15 @@ config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISAB
 config :ex_twilio,
   account_sid: {:system, "TWILIO_ACCOUNT_SID"},
   auth_token: {:system, "TWILIO_AUTH_TOKEN"}
+
+# Configures Ueberauth local settings
+config :ueberauth, Ueberauth,
+  providers: [
+    auth0: {
+      Ueberauth.Strategy.Auth0,
+      [callback_path: "/auth/auth0/callback"]
+    }
+  ]
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}

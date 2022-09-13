@@ -2,7 +2,12 @@
 
 ### Features
 
+- [#6092](https://github.com/blockscout/blockscout/pull/6092) - Blockscout Account functionality
+- [#6073](https://github.com/blockscout/blockscout/pull/6073) - Add vyper support for rust verifier microservice integration
+
 ### Fixes
+
+- [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
 
 ### Chore
 

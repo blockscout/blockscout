@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.AddressTokenTransferController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
+
   alias BlockScoutWeb.{AccessHelpers, Controller, TransactionView}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
@@ -108,7 +111,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         current_path: Controller.current_full_path(conn),
         token: token,
-        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       {:restricted_access, _} ->
@@ -199,7 +203,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         current_path: Controller.current_full_path(conn),
-        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       {:restricted_access, _} ->
