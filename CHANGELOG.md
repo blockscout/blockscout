@@ -7,6 +7,8 @@
 
 ### Fixes
 
+- [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
+
 ### Chore
 
 ## 4.1.8-beta
