@@ -1,19 +1,25 @@
 defmodule BlockScoutWeb.SmartContractController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.AddressView
   alias Explorer.Chain
   alias Explorer.SmartContract.{Reader, Writer}
 
+  import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
+
   @burn_address "0x0000000000000000000000000000000000000000"
 
-  def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
+  def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
       }
     ]
 
+    is_custom_abi = parse_boolean(params["is_custom_abi"])
+
     with true <- ajax?(conn),
+         {:custom_abi, false} <- {:custom_abi, is_custom_abi},
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       implementation_address_hash_string =
@@ -78,6 +84,9 @@ defmodule BlockScoutWeb.SmartContractController do
         action: action
       )
     else
+      {:custom_abi, true} ->
+        custom_abi_render(conn, params)
+
       :error ->
         unprocessable_entity(conn)
 
@@ -91,6 +100,51 @@ defmodule BlockScoutWeb.SmartContractController do
 
   def index(conn, _), do: not_found(conn)
 
+  defp custom_abi_render(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
+    with custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
+         false <- is_nil(custom_abi),
+         abi <- custom_abi.abi,
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+      functions =
+        if action == "write" do
+          Writer.filter_write_functions(abi)
+        else
+          Reader.read_only_functions_from_abi(abi, address_hash)
+        end
+
+      read_functions_required_wallet =
+        if action == "read" do
+          Reader.read_functions_required_wallet_from_abi(abi)
+        else
+          []
+        end
+
+      contract_abi = Poison.encode!(abi)
+
+      conn
+      |> put_status(200)
+      |> put_layout(false)
+      |> render(
+        "_functions.html",
+        read_functions_required_wallet: read_functions_required_wallet,
+        read_only_functions: functions,
+        address: %{hash: address_hash},
+        custom_abi: true,
+        contract_abi: contract_abi,
+        implementation_address: @burn_address,
+        implementation_abi: [],
+        contract_type: contract_type,
+        action: action
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      _ ->
+        not_found(conn)
+    end
+  end
+
   def show(conn, params) do
     address_options = [
       necessity_by_association: %{
@@ -101,6 +155,9 @@ defmodule BlockScoutWeb.SmartContractController do
         :contracts_creation_transaction => :optional
       }
     ]
+
+    custom_abi =
+      if parse_boolean(params["is_custom_abi"]), do: AddressView.fetch_custom_abi(conn, params["id"]), else: nil
 
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
@@ -115,18 +172,19 @@ defmodule BlockScoutWeb.SmartContractController do
           else: for(x <- 0..(args_count - 1), do: params["arg_" <> to_string(x)] |> convert_map_to_array())
 
       %{output: outputs, names: names} =
-        if params["from"] do
-          Reader.query_function_with_names(
+        if custom_abi do
+          Reader.query_function_with_names_custom_abi(
             address_hash,
             %{method_id: params["method_id"], args: args},
-            contract_type,
-            params["from"]
+            params["from"],
+            custom_abi.abi
           )
         else
           Reader.query_function_with_names(
             address_hash,
             %{method_id: params["method_id"], args: args},
-            contract_type
+            contract_type,
+            params["from"]
           )
         end
 

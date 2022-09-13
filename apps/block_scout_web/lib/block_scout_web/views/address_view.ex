@@ -4,12 +4,14 @@ defmodule BlockScoutWeb.AddressView do
   require Logger
 
   alias BlockScoutWeb.{AccessHelpers, LayoutView}
+  alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
-  alias Poison.Parser
+
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   @dialyzer :no_match
 
@@ -448,294 +450,32 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
-  def is_faucet?(nil), do: false
-
-  def is_faucet?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    address_hash_str == String.downcase(System.get_env("FAUCET_ADDRESS", ""))
+  def tag_name_to_label(tag_name) do
+    tag_name
+    |> String.replace(" ", "-")
   end
 
-  def is_random_aura?(nil), do: false
-
-  def is_random_aura?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    address_hash_str == String.downcase(System.get_env("RANDOM_AURA_CONTRACT", ""))
-  end
-
-  def is_omni_bridge?(nil), do: false
-
-  def is_omni_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
-  end
-
-  def is_omni_eth_bridge?(nil), do: false
-
-  def is_omni_eth_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE", ""))
-  end
-
-  def is_omni_bsc_bridge?(nil), do: false
-
-  def is_omni_bsc_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE", ""))
-  end
-
-  def is_omni_poa_bridge?(nil), do: false
-
-  def is_omni_poa_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("POA_OMNI_BRIDGE", ""))
-  end
-
-  def is_omni_xdai_bridge?(nil), do: false
-
-  def is_omni_xdai_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("XDAI_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("XDAI_OMNI_BRIDGE", ""))
-  end
-
-  def is_xmoon_token?(nil), do: false
-
-  def is_xmoon_token?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("RINKEBY_XMOON_TOKEN", ""))
-  end
-
-  def is_xbrick_token?(nil), do: false
-
-  def is_xbrick_token?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("RINKEBY_XBRICK_TOKEN", ""))
-  end
-
-  def is_amb_bridge?(nil), do: false
-
-  def is_amb_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("AMB_BRIDGE_ADDRESSES", "")) =~ address_hash_str
-  end
-
-  def is_amb_bridge_mediators?(nil), do: false
-
-  def is_amb_bridge_mediators?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str ||
-      String.downcase(System.get_env("CUSTOM_AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
-  end
-
-  def is_perp_fi?(nil), do: false
-
-  def is_perp_fi?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_PERP_FI", "")) =~ address_hash_str
-  end
-
-  def is_df_0_5?(nil), do: false
-
-  def is_df_0_5?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5", "")) =~ address_hash_str
-  end
-
-  def is_df_0_6?(nil), do: false
-
-  def is_df_0_6?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6", "")) =~ address_hash_str
-  end
-
-  def is_df_0_6_r2?(nil), do: false
-
-  def is_df_0_6_r2?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6_r2", "")) =~ address_hash_str
-  end
-
-  def is_df_0_6_r3?(nil), do: false
-
-  def is_df_0_6_r3?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6_r3", "")) =~ address_hash_str
-  end
-
-  def is_df_0_6_r4?(nil), do: false
-
-  def is_df_0_6_r4?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_6_r4", "")) =~ address_hash_str
-  end
-
-  def is_hopr?(nil), do: false
-
-  def is_hopr?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_HOPR", "")) =~ address_hash_str
-  end
-
-  def is_test?(nil), do: false
-
-  def is_test?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN", "")) =~ address_hash_str
-  end
-
-  def is_gtgs?(nil), do: false
-
-  def is_gtgs?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_GTGS_TOKEN", "")) =~ address_hash_str
-  end
-
-  def is_spam?(nil), do: false
-
-  def is_spam?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SPAM", "")) =~ address_hash_str
-  end
-
-  def is_lewinswap?(nil), do: false
-
-  def is_lewinswap?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP", "")) =~ address_hash_str
-  end
-
-  def is_lewinswap_farm?(nil), do: false
-
-  def is_lewinswap_farm?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP_FARM", "")) =~ address_hash_str
-  end
-
-  def is_lewinswap_stake?(nil), do: false
-
-  def is_lewinswap_stake?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_LEWINSWAP_STAKE", "")) =~ address_hash_str
-  end
-
-  def is_swarm?(nil), do: false
-
-  def is_swarm?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SWARM", "")) =~ address_hash_str
-  end
-
-  def is_cryptostamps?(nil), do: false
-
-  def is_cryptostamps?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CRYPTOSTAMPS", "")) =~ address_hash_str
-  end
-
-  def is_curve?(nil), do: false
-
-  def is_curve?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CURVE", "")) =~ address_hash_str
-  end
-
-  def is_useless_mev_machine?(nil), do: false
-
-  def is_useless_mev_machine?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_USELESS_MEV_MACHINE", "")) =~ address_hash_str
-  end
-
-  def is_tornado_cash?(nil), do: false
-
-  def is_tornado_cash?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_TORNADO_CASH", "")) =~ address_hash_str
-  end
-
-  def is_sana?(nil), do: false
-
-  def is_sana?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_SANA", "")) =~ address_hash_str
-  end
-
-  def is_black_hole?(nil), do: false
-
-  def is_black_hole?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_BLACK_HOLE", "")) =~ address_hash_str
-  end
-
-  def is_rarible?(nil), do: false
-
-  def is_rarible?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_RARIBLE", "")) =~ address_hash_str
-  end
-
-  def is_cryptopunks?(nil), do: false
-
-  def is_cryptopunks?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CRYPTOPUNKS", "")) =~ address_hash_str
-  end
-
-  def is_aox?(nil), do: false
-
-  def is_aox?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_AOX", "")) =~ address_hash_str
-  end
-
-  def is_l2?(nil), do: false
-
-  def is_l2?(address_hash) do
-    is_aox?(address_hash)
-  end
-
-  def is_chainlink_oracle?(nil), do: false
-
-  def is_chainlink_oracle?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("CUSTOM_CONTRACT_ADDRESSES_CHAINLINK_ORACLES", "")) =~ address_hash_str
-  end
-
-  def get_chainlink_oracle_name(oracle_address) do
-    if oracle_address do
-      chainlink_oracles_config = Application.get_env(:block_scout_web, :chainlink_oracles)
-
-      if chainlink_oracles_config do
-        try do
-          chainlink_oracle =
-            chainlink_oracles_config
-            |> Parser.parse!(%{keys: :atoms!})
-            |> Enum.find(fn %{:name => _name, :address => address} ->
-              String.downcase(address) == String.downcase(oracle_address)
-            end)
-
-          chainlink_oracle[:name]
-        rescue
-          _ ->
-            ""
-        end
-      else
-        ""
-      end
-    else
-      ""
+  def fetch_custom_abi(conn, address_hash) do
+    if current_user = current_user(conn) do
+      CustomABI.get_custom_abi_by_identity_id_and_address_hash(address_hash, current_user.id)
     end
   end
+
+  def has_address_custom_abi_with_read_functions?(conn, address_hash) do
+    custom_abi = fetch_custom_abi(conn, address_hash)
+
+    check_custom_abi_for_having_read_functions(custom_abi)
+  end
+
+  def check_custom_abi_for_having_read_functions(custom_abi),
+    do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &is_read_function?(&1))
+
+  def has_address_custom_abi_with_write_functions?(conn, address_hash) do
+    custom_abi = fetch_custom_abi(conn, address_hash)
+
+    check_custom_abi_for_having_write_functions(custom_abi)
+  end
+
+  def check_custom_abi_for_having_write_functions(custom_abi),
+    do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
 end
