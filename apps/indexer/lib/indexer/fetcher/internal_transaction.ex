@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @behaviour BufferedTask
 
-  @max_batch_size 8
+  @max_batch_size 7
   @max_concurrency 3
   @defaults [
     flush_interval: :timer.seconds(3),
@@ -219,7 +219,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
                   cond do
                     start_index >= length(transactions) ->
                       Logger.info(
-                        "total transactions: #{length(transactions)}, start_index: #{start_index} is out of range"
+                        "block_number: #{block_number}, total transactions: #{length(transactions)},
+                        start_index: #{start_index} is out of range"
                       )
                       {:ok, []}
                     true ->
