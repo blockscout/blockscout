@@ -103,9 +103,13 @@ defmodule Indexer.Fetcher.TokenInstance do
   def async_fetch(token_transfers) when is_list(token_transfers) do
     data =
       token_transfers
-      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) end)
+      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) and is_nil(token_transfer.token_ids) end)
       |> Enum.map(fn token_transfer ->
-        %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+        %{
+          contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: token_transfer.token_id,
+          token_ids: token_transfer.token_ids
+        }
       end)
       |> Enum.uniq()
 
