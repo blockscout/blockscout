@@ -2647,11 +2647,12 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
+    trace_first_block = EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
     query =
       from(
         b in Block,
         join: pending_ops in assoc(b, :pending_operations),
-        where: pending_ops.fetch_internal_transactions,
+        where: pending_ops.fetch_internal_transactions and b.number >= ^trace_first_block,
         where: b.consensus,
         select: b.number
       )
@@ -2693,10 +2694,12 @@ defmodule Explorer.Chain do
 
   def stream_block_numbers_with_unfetched_cosmos_hashes(initial, reducer)
       when is_function(reducer, 2) do
+    trace_first_block = EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
     query =
       from(t in Transaction,
         where:
-          not is_nil(t.hash)
+          t.block_number >= ^trace_first_block
+          and not is_nil(t.hash)
           and is_nil(t.cosmos_hash),
         select: t.block_number
       )
