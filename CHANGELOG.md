@@ -8,6 +8,7 @@
 ### Fixes
 
 - [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
+- [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
 - [#6106](https://github.com/blockscout/blockscout/pull/6106) - Fix 500 response on `/coin-balance` for empty address
 
 ### Chore
