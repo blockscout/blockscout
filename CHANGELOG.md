@@ -9,6 +9,7 @@
 
 - [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
 - [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
+- [#6106](https://github.com/blockscout/blockscout/pull/6106) - Fix 500 response on `/coin-balance` for empty address
 
 ### Chore
 
@@ -62,6 +63,7 @@
 - [#5948](https://github.com/blockscout/blockscout/pull/5948) - Fix unexpected messages in `CoinBalanceOnDemand`
 - [#6013](https://github.com/blockscout/blockscout/pull/6013) - Fix ERC-1155 tokens fetching
 - [#6043](https://github.com/blockscout/blockscout/pull/6043) - Fix token instance fetching
+- [#6093](https://github.com/blockscout/blockscout/pull/6093) - Fix Indexer.Fetcher.TokenInstance for ERC-1155 tokens
 
 ### Chore
 
