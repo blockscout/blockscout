@@ -2657,7 +2657,6 @@ defmodule Explorer.Chain do
         join: pending_ops in assoc(b, :pending_operations),
         where: b.number >= ^trace_first_block and pending_ops.fetch_internal_transactions,
         where: b.consensus,
-        order_by: [desc: b.number],
         select: b.number
       )
 
@@ -2704,7 +2703,6 @@ defmodule Explorer.Chain do
         where:
           t.block_number >= ^trace_first_block and not is_nil(t.block_hash)
           and not is_nil(t.hash) and is_nil(t.cosmos_hash),
-        order_by: [desc: t.block_number],
         select: t.block_number
       )
 
