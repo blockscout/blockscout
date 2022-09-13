@@ -135,8 +135,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
           error_count: filtered_unique_numbers_count
         )
-        tx_hash = Enum.at(reason, 0)[:data][:transaction_hash]
-        Chain.update_txs_has_error_in_internal_txs(tx_hash)
+        try do
+          tx_hash = Enum.at(reason, 0)[:data][:transaction_hash]
+          Chain.update_txs_has_error_in_internal_txs(tx_hash)
+        rescue
+          _ ->
+            :ok
+        end
 
         # re-queue the de-duped entries
         {:retry, filtered_unique_numbers}
