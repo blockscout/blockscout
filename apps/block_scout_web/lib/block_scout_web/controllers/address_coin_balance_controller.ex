@@ -104,7 +104,8 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
               coin_balance_status: nil,
               exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
               counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-              current_path: Controller.current_full_path(conn)
+              current_path: Controller.current_full_path(conn),
+              tags: get_address_tags(address_hash, current_user(conn))
             )
 
           _ ->

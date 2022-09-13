@@ -101,6 +101,21 @@ msgstr ""
 msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:13
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:14
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:29
+#, elixir-autogen, elixir-format
+msgid "API key"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/index.html.eex:7
+#: lib/block_scout_web/templates/account/common/_nav.html.eex:16
+#: lib/block_scout_web/templates/layout/_account_menu_item.html.eex:17
+#, elixir-autogen, elixir-format
+msgid "API keys"
+msgstr ""
+
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:95
 #, elixir-autogen, elixir-format
 msgid "APIs"
@@ -150,6 +165,31 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:30
 #, elixir-autogen, elixir-format
 msgid "Back Home"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:25
+#, elixir-autogen, elixir-format
+msgid "Back to API keys (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_address/form.html.eex:24
+#, elixir-autogen, elixir-format
+msgid "Back to Address Tags (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:30
+#, elixir-autogen, elixir-format
+msgid "Back to Custom ABI (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:24
+#, elixir-autogen, elixir-format
+msgid "Back to Transaction Tags (Cancel)"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:81
+#, elixir-autogen, elixir-format
+msgid "Back to Watch list (Cancel)"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:24
@@ -590,6 +630,12 @@ msgstr ""
 msgid "EVM Version"
 msgstr ""
 
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:30
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:26
+#, elixir-autogen, elixir-format
+msgid "EVM version details"
+msgstr ""
+
 #: lib/block_scout_web/views/block_transaction_view.ex:7
 #, elixir-autogen, elixir-format
 msgid "Easy Cowboy! This block does not exist yet!"
@@ -600,6 +646,11 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist_address/row.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "Edit"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Edit Watch list address"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:71
@@ -943,6 +994,12 @@ msgstr ""
 msgid "Transaction"
 msgstr ""
 
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:52
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:48
+#, elixir-autogen, elixir-format
+msgid "If you enabled optimization during compilation, select yes."
+msgstr ""
+
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:12
 #, elixir-autogen, elixir-format
 msgid "If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page."
@@ -1137,6 +1194,11 @@ msgstr ""
 msgid "Owner Address"
 msgstr ""
 
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
+#, elixir-autogen, elixir-format
+msgid "POA solidity flattener or the"
+msgstr ""
+
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:19
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:26
 #, elixir-autogen, elixir-format
@@ -1146,6 +1208,11 @@ msgstr ""
 #: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 #, elixir-autogen, elixir-format
 msgid "Page"
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:7
+#, elixir-autogen, elixir-format
+msgid "Page not found"
 msgstr ""
 
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:33
@@ -1228,6 +1295,11 @@ msgstr ""
 #: lib/block_scout_web/templates/account/custom_abi/row.html.eex:13
 #, elixir-autogen, elixir-format
 msgid "Remove"
+msgstr ""
+
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:77
+#, elixir-autogen, elixir-format
+msgid "Remove from Watch list"
 msgstr ""
 
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:155
@@ -2606,6 +2678,12 @@ msgstr ""
 msgid "The block height of a particular block is defined as the number of blocks preceding it in the blockchain."
 msgstr ""
 
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:22
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:18
+#, elixir-autogen, elixir-format
+msgid "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check."
+msgstr ""
+
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:38
 #, elixir-autogen, elixir-format
 msgid "The fallback function is executed on a call to the contract if none of the other functions match the given function signature, or if no data was supplied at all and there is no receive Ether function. The fallback function always receives data, but in order to also receive Ether it must be marked payable."
@@ -2634,6 +2712,11 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:40
 #, elixir-autogen, elixir-format
 msgid "The receive function is executed on a call to the contract with empty calldata. This is the function that is executed on plain Ether transfers (e.g. via .send() or .transfer()). If no such function exists, but a payable fallback function exists, the fallback function will be called on a plain Ether transfer. If neither a receive Ether nor a payable fallback function is present, the contract cannot receive Ether through regular transactions and throws an exception."
+msgstr ""
+
+#: lib/block_scout_web/templates/page_not_found/index.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "The requested path was not found on BlockScout."
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/overview.html.eex:134
@@ -2781,6 +2864,12 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:73
 #, elixir-autogen, elixir-format
 msgid "Unique character string (TxID) assigned to every verified transaction."
+msgstr ""
+
+#: lib/block_scout_web/templates/account/api_key/form.html.eex:7
+#: lib/block_scout_web/templates/account/custom_abi/form.html.eex:8
+#, elixir-autogen, elixir-format
+msgid "Update"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/overview.html.eex:391

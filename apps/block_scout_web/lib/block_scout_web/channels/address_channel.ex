@@ -201,7 +201,13 @@ defmodule BlockScoutWeb.AddressChannel do
     transaction =
       Transaction
       |> Repo.get_by(hash: token_transfer.transaction_hash)
-      |> Repo.preload([:from_address, :to_address, :block, token_transfers: [:from_address, :to_address, :token]])
+      |> Repo.preload([
+        :from_address,
+        :to_address,
+        :block,
+        :created_contract_address,
+        token_transfers: [:from_address, :to_address, :token]
+      ])
 
     rendered =
       View.render_to_string(
