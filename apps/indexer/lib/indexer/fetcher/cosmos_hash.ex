@@ -120,7 +120,7 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   defp get_cosmos_hash_tx_list_mapping(block_number) do
     case http_request(block_info_url() <> Integer.to_string(block_number)) do
-      {:error, reason} ->
+      {:error, _reason} ->
         Logger.error("failed to fetch block info via api node")
         []
       {:ok, result} ->

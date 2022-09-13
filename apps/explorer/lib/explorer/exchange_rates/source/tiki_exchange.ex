@@ -118,7 +118,7 @@ defmodule Explorer.ExchangeRates.Source.TikiExchange do
 
   @spec base_api_url :: String.t()
   defp base_api_url() do
-    configured_url = System.get_env("API_NODE_URL")
+    System.get_env("API_NODE_URL")
   end
 
   defp base_url do
