@@ -159,7 +159,7 @@ defmodule Explorer.Chain do
   def address_estimated_count do
     cached_value = AddressesCounter.fetch()
 
-    if is_nil(cached_value) do
+    if is_nil(cached_value) || cached_value == 0 do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
 
       count
@@ -188,10 +188,7 @@ defmodule Explorer.Chain do
   while to have the return back.
   """
   def count_addresses do
-    Repo.one(
-      Address.count(),
-      timeout: :infinity
-    )
+    Repo.aggregate(Address, :count, timeout: :infinity)
   end
 
   @doc """
@@ -2650,12 +2647,11 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
-    trace_first_block = System.get_env("TRACE_FIRST_BLOCK") || 1
     query =
       from(
         b in Block,
         join: pending_ops in assoc(b, :pending_operations),
-        where: b.number >= ^trace_first_block and pending_ops.fetch_internal_transactions,
+        where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
         select: b.number
       )
@@ -2697,12 +2693,11 @@ defmodule Explorer.Chain do
 
   def stream_block_numbers_with_unfetched_cosmos_hashes(initial, reducer)
       when is_function(reducer, 2) do
-    trace_first_block = System.get_env("TRACE_FIRST_BLOCK") || 1
     query =
       from(t in Transaction,
         where:
-          t.block_number >= ^trace_first_block and not is_nil(t.block_hash)
-          and not is_nil(t.hash) and is_nil(t.cosmos_hash),
+          not is_nil(t.hash)
+          and is_nil(t.cosmos_hash),
         select: t.block_number
       )
 

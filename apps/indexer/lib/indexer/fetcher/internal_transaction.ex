@@ -181,7 +181,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     cond do
       blank_input?(param[:input]) == true ->
         false
-      is_nil(param[:has_error_in_internal_txs]) == false ->
+      !is_nil(param[:has_error_in_internal_txs]) ->
         false
       true ->
         true
