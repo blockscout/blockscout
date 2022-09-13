@@ -67,7 +67,9 @@ defmodule Indexer.Fetcher.CosmosHash do
               tracer: Tracer
             )
   def run(block_numbers, _) do
-    unique_numbers = Enum.uniq(block_numbers)
+    unique_numbers = Enum.uniq(block_numbers) |> Enum.filter(fn number ->
+      number >= first_block_to_fetch(:trace_first_block)
+    end)
     Logger.debug("fetching cosmos hashes for transactions")
     case unique_numbers do
       [nil] ->
@@ -115,6 +117,15 @@ defmodule Indexer.Fetcher.CosmosHash do
         Enum.map(transactions_without_cosmos_hashes, fn transaction_params ->
           Map.put_new(transaction_params, :cosmos_hash, nil)
         end)
+    end
+  end
+
+  defp first_block_to_fetch(config) do
+    string_value = Application.get_env(:indexer, config)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 0
     end
   end
 
