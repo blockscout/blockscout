@@ -81,6 +81,7 @@ jobs:
         production-optimism-stg
         production-rsk-stg
         production-sokol-stg
+        production-xdai-stg
     steps:
     - uses: actions/checkout@v2
     - name: Set Git config
