@@ -7,6 +7,7 @@
 
 ### Fixes
 
+- [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
 - [#6091](https://github.com/blockscout/blockscout/pull/6091) - Improve fetching media type for NFT
 - [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
 - [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting

@@ -1,6 +1,7 @@
 defmodule Explorer.Token.InstanceMetadataRetrieverTest do
   use EthereumJSONRPC.Case
 
+  alias EthereumJSONRPC.Encoder
   alias Explorer.Token.InstanceMetadataRetriever
   alias Plug.Conn
 
@@ -164,6 +165,104 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
                InstanceMetadataRetriever.fetch_json(%{
                  "c87b56dd" => {:ok, ["http://localhost:#{bypass.port}/api/card/55265"]}
                })
+    end
+
+    test "replace {id} with actual token_id", %{bypass: bypass} do
+      json = """
+      {
+        "name": "Sérgio Mendonça {id}"
+      }
+      """
+
+      abi =
+        [
+          %{
+            "type" => "function",
+            "stateMutability" => "nonpayable",
+            "payable" => false,
+            "outputs" => [],
+            "name" => "tokenURI",
+            "inputs" => [
+              %{"type" => "string", "name" => "name", "internalType" => "string"}
+            ]
+          }
+        ]
+        |> ABI.parse_specification()
+        |> Enum.at(0)
+
+      encoded_url =
+        abi
+        |> Encoder.encode_function_call(["http://localhost:#{bypass.port}/api/card/{id}"])
+        |> String.replace("4cf12d26", "")
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000309",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             error: %{code: -32000, message: "execution reverted"}
+           }
+         ]}
+      end)
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/card/0000000000000000000000000000000000000000000000000000000000000309",
+        fn conn ->
+          Conn.resp(conn, 200, json)
+        end
+      )
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "name" => "Sérgio Mendonça 0000000000000000000000000000000000000000000000000000000000000309"
+                }
+              }} ==
+               InstanceMetadataRetriever.fetch_metadata("0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777)
     end
 
     test "decodes json file in tokenURI" do
