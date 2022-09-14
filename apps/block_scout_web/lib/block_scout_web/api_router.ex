@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
 
-  scope "/account/v1" do
+  scope "/account/v1", as: :account_v1 do
     pipe_through(:api)
     pipe_through(:account_api)
 
@@ -80,6 +80,15 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/address/:address_hash", TagsController, :tags_address)
 
       get("/transaction/:transaction_hash", TagsController, :tags_transaction)
+    end
+  end
+
+  scope "/v2", as: :api_v2 do
+    pipe_through(:api)
+    alias BlockScoutWeb.API.V2
+
+    scope "/transactions" do
+      get("/:transaction_hash", V2.TransactionController, :transaction)
     end
   end
 
