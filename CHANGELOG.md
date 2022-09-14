@@ -4,6 +4,7 @@
 
 - [#6092](https://github.com/blockscout/blockscout/pull/6092) - Blockscout Account functionality
 - [#6073](https://github.com/blockscout/blockscout/pull/6073) - Add vyper support for rust verifier microservice integration
+- [#6111](https://github.com/blockscout/blockscout/pull/6111) - Add Prometheus metrics to indexer
 
 ### Fixes
 
