@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.CosmosHash do
   @moduledoc """
-  Fetches and indexes `t:Explorer.Chain.CosmosHash.t/0`.
+  Fetches `:cosmos_hash`.
 
   See `async_fetch/1` for details on configuring limits.
   """
@@ -134,8 +134,8 @@ defmodule Indexer.Fetcher.CosmosHash do
             []
           [_|_] ->
             for tx <- result["block"]["data"]["txs"] do
-              ethermint_hash = raw_txn_to_ethermint_hash(tx)
-              cosmos_hash = raw_txn_to_cosmos_hash(tx)
+              ethermint_hash = Indexer.TxParser.raw_tx_to_ethereum_tx_hash(tx)
+              cosmos_hash = Indexer.TxParser.raw_tx_to_cosmos_tx_hash(tx)
               %{hash: ethermint_hash, cosmos_hash: cosmos_hash}
             end
         end
@@ -171,32 +171,5 @@ defmodule Indexer.Fetcher.CosmosHash do
   @spec block_info_url :: String.t()
   defp block_info_url() do
     base_api_url() <> "/cosmos/base/tendermint/v1beta1/blocks/"
-  end
-
-  defp raw_txn_to_cosmos_hash(raw_txn) do
-    Base.encode16(:crypto.hash(:sha256, elem(Base.decode64(raw_txn), 1)))
-  end
-
-  defp raw_binary_to_string(raw) do
-    codepoints = String.codepoints(raw)
-    Enum.reduce(codepoints,
-      fn(w, result) ->
-        cond do
-          String.valid?(w) ->
-            result <> w
-          true ->
-            <<parsed::8>> = w
-            result <> <<parsed::utf8>>
-        end
-      end)
-  end
-
-  defp raw_txn_to_ethermint_hash(raw_txn) do
-    string = raw_binary_to_string(Base.decode64!(raw_txn))
-    if String.contains?(string, "/ethermint.evm.v1.MsgEthereumTx") do
-      Regex.scan(~r/0x[0-9a-f]{64}/, string) |> Enum.at(0) |> Enum.at(0)
-    else
-      nil
-    end
   end
 end
