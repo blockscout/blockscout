@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.CosmosHash do
+defmodule Indexer.Fetcher.CosmosTxHash do
   @moduledoc """
-  Fetches and indexes `t:Explorer.Chain.CosmosHash.t/0`.
+  Fetches and indexes `t:Explorer.Chain.CosmosTxHash.t/0`.
 
   See `async_fetch/1` for details on configuring limits.
   """
@@ -10,10 +10,9 @@ defmodule Indexer.Fetcher.CosmosHash do
 
   require Logger
 
-  alias HTTPoison.{Error, Response}
   alias Explorer.Chain
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.CosmosHash.Supervisor, as: CosmosHashSupervisor
+  alias Indexer.Fetcher.CosmosTxHash.Supervisor, as: CosmosTxHashSupervisor
 
   @behaviour BufferedTask
 
@@ -24,7 +23,7 @@ defmodule Indexer.Fetcher.CosmosHash do
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     poll: true,
-    task_supervisor: Indexer.Fetcher.CosmosHash.TaskSupervisor,
+    task_supervisor: Indexer.Fetcher.CosmosTxHash.TaskSupervisor,
     metadata: [fetcher: :cosmos_hash]
   ]
 
@@ -33,7 +32,7 @@ defmodule Indexer.Fetcher.CosmosHash do
   """
   @spec async_fetch([Block.block_number()]) :: :ok
   def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
-    if CosmosHashSupervisor.disabled?() do
+    if CosmosTxHashSupervisor.disabled?() do
       :ok
     else
       BufferedTask.buffer(__MODULE__, block_numbers, timeout)
@@ -62,7 +61,7 @@ defmodule Indexer.Fetcher.CosmosHash do
   @impl BufferedTask
   @decorate trace(
               name: "fetch",
-              resource: "Indexer.Fetcher.CosmosHash.run/2",
+              resource: "Indexer.Fetcher.CosmosTxHash.run/2",
               service: :indexer,
               tracer: Tracer
             )
@@ -121,7 +120,7 @@ defmodule Indexer.Fetcher.CosmosHash do
   end
 
   defp get_cosmos_hash_tx_list_mapping(block_number) do
-    case http_request(block_info_url() <> Integer.to_string(block_number)) do
+    case Indexer.HttpRequest.http_request(block_info_url() <> Integer.to_string(block_number)) do
       {:error, _reason} ->
         Logger.error("failed to fetch block info via api node")
         []
@@ -198,66 +197,6 @@ defmodule Indexer.Fetcher.CosmosHash do
       Regex.scan(~r/0x[0-9a-f]{64}/, string) |> Enum.at(0) |> Enum.at(0)
     else
       nil
-    end
-  end
-
-  defp headers do
-    [{"Content-Type", "application/json"}]
-  end
-
-  defp decode_json(data) do
-    Jason.decode!(data)
-  rescue
-    _ -> data
-  end
-
-  defp parse_http_success_response(body) do
-    body_json = decode_json(body)
-
-    cond do
-      is_map(body_json) ->
-        {:ok, body_json}
-
-      is_list(body_json) ->
-        {:ok, body_json}
-
-      true ->
-        {:ok, body}
-    end
-  end
-
-  defp parse_http_error_response(body) do
-    body_json = decode_json(body)
-
-    if is_map(body_json) do
-      {:error, body_json["error"]}
-    else
-      {:error, body}
-    end
-  end
-
-  defp http_request(source_url) do
-    case HTTPoison.get(source_url, headers()) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        parse_http_success_response(body)
-
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..526 ->
-        parse_http_error_response(body)
-
-      {:ok, %Response{status_code: status_code}} when status_code in 300..308 ->
-        {:error, "Source redirected"}
-
-      {:ok, %Response{status_code: _status_code}} ->
-        {:error, "Source unexpected status code"}
-
-      {:error, %Error{reason: reason}} ->
-        {:error, reason}
-
-      {:error, :nxdomain} ->
-        {:error, "Source is not responsive"}
-
-      {:error, _} ->
-        {:error, "Source unknown response"}
     end
   end
 end

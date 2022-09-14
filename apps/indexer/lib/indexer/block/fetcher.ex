@@ -21,7 +21,7 @@ defmodule Indexer.Block.Fetcher do
     BlockReward,
     CoinBalance,
     ContractCode,
-    CosmosHash,
+    CosmosTxHash,
     InternalTransaction,
     ReplacedTransaction,
     Token,
@@ -131,11 +131,11 @@ defmodule Indexer.Block.Fetcher do
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          blocks = TransformBlocks.transform_blocks(blocks_params),
-         cosmos_hash_params = CosmosHash.get_cosmos_hash_params_by_range(range),
+         cosmos_hash_params = CosmosTxHash.get_cosmos_hash_params_by_range(range),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
-         transactions_with_cosmos_hashes = CosmosHash.put(transactions_with_receipts, cosmos_hash_params),
+         transactions_with_cosmos_hashes = CosmosTxHash.put(transactions_with_receipts, cosmos_hash_params),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
@@ -298,7 +298,7 @@ defmodule Indexer.Block.Fetcher do
         block_number
       end
     end)
-    |> CosmosHash.async_fetch(10_000)
+    |> CosmosTxHash.async_fetch(10_000)
   end
 
   def async_import_cosmos_hashes(_), do: :ok

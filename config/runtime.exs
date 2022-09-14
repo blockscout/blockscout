@@ -368,7 +368,7 @@ config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
 
-config :indexer, Indexer.Fetcher.CosmosHash.TaskSupervisor,
+config :indexer, Indexer.Fetcher.CosmosTxHash.TaskSupervisor,
   disabled?: System.get_env("INDEXER_DISABLE_COSMOS_HASH_FETCHER", "false") == "true"
 
 config :indexer, Indexer.Fetcher.CoinBalance.Supervisor,
