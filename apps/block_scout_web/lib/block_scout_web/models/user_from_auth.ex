@@ -75,8 +75,8 @@ defmodule BlockScoutWeb.Models.UserFromAuth do
     from(i in Identity, where: i.uid_hash == ^auth.uid)
   end
 
-  def query_identity(uid) do
-    from(i in Identity, where: i.uid_hash == ^uid)
+  def query_identity(id) do
+    from(i in Identity, where: i.id == ^id)
   end
 
   defp basic_info(auth, identity) do

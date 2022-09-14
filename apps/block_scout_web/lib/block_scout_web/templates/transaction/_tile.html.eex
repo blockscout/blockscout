@@ -32,7 +32,7 @@
         <%= if method_name do %>
           <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
         <% end %>
-        <%= if tx_tags.personal_tx_tag do %>
+        <%= if tx_tags.personal_tx_tag && tx_tags.personal_tx_tag.name !== :error do %>
           <%= render BlockScoutWeb.FormView, "_tag.html", text: tx_tags.personal_tx_tag.name, additional_classes: [tag_name_to_label(tx_tags.personal_tx_tag.name), "ml-1"] %>
         <% end %>
         <%= render BlockScoutWeb.AddressView, "_labels.html", tags: tx_tags %>

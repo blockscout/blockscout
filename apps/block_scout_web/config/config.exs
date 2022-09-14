@@ -99,13 +99,6 @@ config :ueberauth, Ueberauth,
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
-config :block_scout_web, BlockScoutWeb.Guardian, issuer: "block_scout_web"
-
-config :guardian, Guardian.DB,
-  repo: Explorer.Repo.Account,
-  schema_name: "guardian_tokens",
-  sweep_interval: 60
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

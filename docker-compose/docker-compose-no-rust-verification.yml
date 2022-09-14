@@ -19,9 +19,24 @@ services:
   blockscout:
     depends_on:
       - db
-      - smart-contract-verifier
       - redis_db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+      args:
+        COIN: ""
+        CACHE_EXCHANGE_RATES_PERIOD: ""
+        DISABLE_READ_API: "false"
+        API_PATH: "/"
+        NETWORK_PATH: "/"
+        DISABLE_WEBAPP: "false"
+        DISABLE_WRITE_API: "false"
+        CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER: ""
+        CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
+        SOCKET_ROOT: "/"
+        WOBSERVER_ENABLED: "false"
+        ADMIN_PANEL_ENABLED: ""
     restart: always
     container_name: 'blockscout'
     links:
@@ -32,22 +47,6 @@ services:
     env_file:
       -  ./envs/common-blockscout.env
     environment:
-        ETHEREUM_JSONRPC_VARIANT: 'ganache'
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
-        DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
-        ECTO_USE_SSL: 'false'
-        SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
-        CHAIN_ID: '1337'
+        ENABLE_RUST_VERIFICATION_SERVICE: 'false'
     ports:
       - 4000:4000
-
-  smart-contract-verifier:
-    image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
-    restart: always
-    container_name: 'smart-contract-verifier'
-    env_file:
-      -  ./envs/common-smart-contract-verifier.env
-    ports:
-      - 8043:8043

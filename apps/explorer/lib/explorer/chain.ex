@@ -4790,16 +4790,22 @@ defmodule Explorer.Chain do
         on: token.contract_address_hash == token_transfer.token_contract_address_hash,
         left_join: instance in Instance,
         on:
-          token_transfer.token_id == instance.token_id and
-            token_transfer.token_contract_address_hash == instance.token_contract_address_hash,
-        where: is_nil(instance.token_id) and not is_nil(token_transfer.token_id),
-        select: %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+          token_transfer.token_contract_address_hash == instance.token_contract_address_hash and
+            (token_transfer.token_id == instance.token_id or
+               fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id)),
+        where:
+          is_nil(instance.token_id) and (not is_nil(token_transfer.token_id) or not is_nil(token_transfer.token_ids)),
+        select: %{
+          contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: token_transfer.token_id,
+          token_ids: token_transfer.token_ids
+        }
       )
 
     distinct_query =
       from(
         q in subquery(query),
-        distinct: [q.contract_address_hash, q.token_id]
+        distinct: [q.contract_address_hash, q.token_id, q.token_ids]
       )
 
     Repo.stream_reduce(distinct_query, initial, reducer)
@@ -4872,43 +4878,50 @@ defmodule Explorer.Chain do
     eth_call_foreign_json_rpc_named_arguments =
       compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)
 
-    amb_bridge_mediators
-    |> Enum.each(fn amb_bridge_mediator_hash ->
-      with {:ok, bridge_contract_hash_resp} <-
-             get_bridge_contract_hash(amb_bridge_mediator_hash, json_rpc_named_arguments),
-           bridge_contract_hash <- decode_contract_address_hash_response(bridge_contract_hash_resp),
-           {:ok, destination_chain_id_resp} <- get_destination_chain_id(bridge_contract_hash, json_rpc_named_arguments),
-           foreign_chain_id <- decode_contract_integer_response(destination_chain_id_resp),
-           {:ok, home_token_contract_hash_resp} <-
-             get_erc677_token_hash(amb_bridge_mediator_hash, json_rpc_named_arguments),
-           home_token_contract_hash_string <- decode_contract_address_hash_response(home_token_contract_hash_resp),
-           {:ok, home_token_contract_hash} <- Chain.string_to_address_hash(home_token_contract_hash_string),
-           {:ok, foreign_mediator_contract_hash_resp} <-
-             get_foreign_mediator_contract_hash(amb_bridge_mediator_hash, json_rpc_named_arguments),
-           foreign_mediator_contract_hash <- decode_contract_address_hash_response(foreign_mediator_contract_hash_resp),
-           {:ok, foreign_token_contract_hash_resp} <-
-             get_erc677_token_hash(foreign_mediator_contract_hash, eth_call_foreign_json_rpc_named_arguments),
-           foreign_token_contract_hash_string <-
-             decode_contract_address_hash_response(foreign_token_contract_hash_resp),
-           {:ok, foreign_token_contract_hash} <- Chain.string_to_address_hash(foreign_token_contract_hash_string) do
-        insert_bridged_token_metadata(home_token_contract_hash, %{
-          foreign_chain_id: foreign_chain_id,
-          foreign_token_address_hash: foreign_token_contract_hash,
-          custom_metadata: nil,
-          custom_cap: nil,
-          lp_token: nil,
-          type: "amb"
-        })
+    try do
+      amb_bridge_mediators
+      |> Enum.each(fn amb_bridge_mediator_hash ->
+        with {:ok, bridge_contract_hash_resp} <-
+               get_bridge_contract_hash(amb_bridge_mediator_hash, json_rpc_named_arguments),
+             bridge_contract_hash <- decode_contract_address_hash_response(bridge_contract_hash_resp),
+             {:ok, destination_chain_id_resp} <-
+               get_destination_chain_id(bridge_contract_hash, json_rpc_named_arguments),
+             foreign_chain_id <- decode_contract_integer_response(destination_chain_id_resp),
+             {:ok, home_token_contract_hash_resp} <-
+               get_erc677_token_hash(amb_bridge_mediator_hash, json_rpc_named_arguments),
+             home_token_contract_hash_string <- decode_contract_address_hash_response(home_token_contract_hash_resp),
+             {:ok, home_token_contract_hash} <- Chain.string_to_address_hash(home_token_contract_hash_string),
+             {:ok, foreign_mediator_contract_hash_resp} <-
+               get_foreign_mediator_contract_hash(amb_bridge_mediator_hash, json_rpc_named_arguments),
+             foreign_mediator_contract_hash <-
+               decode_contract_address_hash_response(foreign_mediator_contract_hash_resp),
+             {:ok, foreign_token_contract_hash_resp} <-
+               get_erc677_token_hash(foreign_mediator_contract_hash, eth_call_foreign_json_rpc_named_arguments),
+             foreign_token_contract_hash_string <-
+               decode_contract_address_hash_response(foreign_token_contract_hash_resp),
+             {:ok, foreign_token_contract_hash} <- Chain.string_to_address_hash(foreign_token_contract_hash_string) do
+          insert_bridged_token_metadata(home_token_contract_hash, %{
+            foreign_chain_id: foreign_chain_id,
+            foreign_token_address_hash: foreign_token_contract_hash,
+            custom_metadata: nil,
+            custom_cap: nil,
+            lp_token: nil,
+            type: "amb"
+          })
 
-        set_token_bridged_status(home_token_contract_hash, true)
-      else
-        result ->
-          Logger.debug([
-            "failed to fetch metadata for token bridged with AMB mediator #{amb_bridge_mediator_hash}",
-            inspect(result)
-          ])
-      end
-    end)
+          set_token_bridged_status(home_token_contract_hash, true)
+        else
+          result ->
+            Logger.debug([
+              "failed to fetch metadata for token bridged with AMB mediator #{amb_bridge_mediator_hash}",
+              inspect(result)
+            ])
+        end
+      end)
+    rescue
+      _ ->
+        :ok
+    end
 
     :ok
   end

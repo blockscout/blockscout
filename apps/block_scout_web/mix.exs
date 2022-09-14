@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
-      # {:poison, "~> 5.0.0"},
+      {:poison, "~> 4.0.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
@@ -131,10 +131,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_json_schema, "~> 0.9.1"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
-      {:guardian, "~> 2.2"},
-      {:bureaucrat, "~> 0.2.9", only: :test},
-      {:poison, "~> 4.0.1"},
-      {:guardian_db, "~> 2.0"}
+      {:bureaucrat, "~> 0.2.9", only: :test}
     ]
   end
 

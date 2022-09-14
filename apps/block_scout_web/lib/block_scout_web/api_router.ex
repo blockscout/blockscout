@@ -13,24 +13,16 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.Plug.CheckAuth
+  alias BlockScoutWeb.Plug.CheckAccountAPI
 
   pipeline :api do
     plug(:accepts, ["json"])
   end
 
   pipeline :account_api do
-    plug(Guardian.Plug.VerifyHeader, module: BlockScoutWeb.Guardian, error_handler: BlockScoutWeb.GuardianErrorHandler)
-    plug(CheckAuth)
-  end
-
-  pipeline :tags_api do
-    plug(Guardian.Plug.VerifyHeader,
-      module: BlockScoutWeb.Guardian,
-      error_handler: BlockScoutWeb.GuardianErrorHandler,
-      tolerant?: true,
-      halt: false
-    )
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(CheckAccountAPI)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
@@ -38,6 +30,8 @@ defmodule BlockScoutWeb.ApiRouter do
   scope "/account/v1" do
     pipe_through(:api)
     pipe_through(:account_api)
+
+    get("/get_csrf", UserController, :get_csrf)
 
     scope "/user" do
       get("/info", UserController, :info)
@@ -80,7 +74,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
   scope "/account/v1" do
     pipe_through(:api)
-    pipe_through(:tags_api)
+    pipe_through(:account_api)
 
     scope "/tags" do
       get("/address/:address_hash", TagsController, :tags_address)

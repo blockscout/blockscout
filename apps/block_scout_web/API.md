@@ -34,41 +34,6 @@
     * [public_tags_requests](#blockscoutweb-account-api-v1-usercontroller-public_tags_requests)
     * [delete_public_tags_request](#blockscoutweb-account-api-v1-usercontroller-delete_public_tags_request)
     * [update_public_tags_request](#blockscoutweb-account-api-v1-usercontroller-update_public_tags_request)
-  * [BlockScoutWeb.Account.Api.V1.AuthController](#blockscoutweb-account-api-v1-authcontroller)
-
-## BlockScoutWeb.Account.Api.V1.AuthController
-### <a id=blockscoutweb-account-api-v1-authcontroller-login></a>login
-#### Login
-
-##### Request
-* __Method:__ GET
-* __Path:__ /auth/auth0_api
-
-
-##### Response
-* __Status__: 200
-* __Response body:__
-```json
-{"auth_token":"..."}
-```
-
-### <a id=blockscoutweb-account-api-v1-authcontroller-logout></a>logout
-#### Logout
-
-##### Request
-* __Method:__ GET
-* __Path:__ /auth/api/logout
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNjAzYjliYjctMjAzNS00ZTMwLWFmMDYtZjQzZjdhZGY4YTFjIiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE4IiwidHlwIjoiYWNjZXNzIn0.P4fttdoki0KFFU9WjeuV1ysYVcdOfjZHpupA5ljWyZfaTaGsNGXr8ENf7jZlKxLy6cSjbsL2k3ZAEv9FdJErmg
-```
-
-##### Response
-* __Status__: 200
-* __Response body:__
-```
-OK
-```
 
 ## BlockScoutWeb.Account.Api.V1.UserController
 ### <a id=blockscoutweb-account-api-v1-usercontroller-info></a>info
@@ -77,18 +42,15 @@ OK
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/user/info
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNjAzYjliYjctMjAzNS00ZTMwLWFmMDYtZjQzZjdhZGY4YTFjIiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE4IiwidHlwIjoiYWNjZXNzIn0.P4fttdoki0KFFU9WjeuV1ysYVcdOfjZHpupA5ljWyZfaTaGsNGXr8ENf7jZlKxLy6cSjbsL2k3ZAEv9FdJErmg
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyNGQABWVtYWlsbQAAABp0ZXN0X3VzZXItNEBibG9ja3Njb3V0LmNvbWQAAmlkYcRkAARuYW1lbQAAAApVc2VyIFRlc3Q0ZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjRkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwNGQADHdhdGNobGlzdF9pZGHE.Ovcc2Vzzv4fhFzmirtQjJ06gcqQwUHMMlju7VX24fyo; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjVVLIQxzQ0AAAjk
+x-request-id: FxF1Y1_QfU9-YaIAAGdh
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -96,10 +58,10 @@ access-control-expose-headers:
 * __Response body:__
 ```json
 {
-  "nickname": "test_user18",
-  "name": "User Test18",
-  "email": "test_user-29@blockscout.com",
-  "avatar": "https://example.com/avatar/test_user18"
+  "nickname": "test_user4",
+  "name": "User Test4",
+  "email": "test_user-4@blockscout.com",
+  "avatar": "https://example.com/avatar/test_user4"
 }
 ```
 
@@ -111,7 +73,6 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/tags/address
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYjYwY2U1NjUtNmJkYy00YTUzLWFmNTUtNDgzNTAzYmE2ZTliIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDExIiwidHlwIjoiYWNjZXNzIn0.g3dZzR7VoucLcnWZe8_Ww-w3BaxGOMpyOYZBgyoP5y9uHd_zWvFzvmvo-3uD10Hmuy3Z48jcxZypO0CTACQ3tg
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -126,9 +87,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMThkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTIyQGJsb2Nrc2NvdXQuY29tZAACaWRh0mQABG5hbWVtAAAAC1VzZXIgVGVzdDE4ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE4ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE4ZAAMd2F0Y2hsaXN0X2lkYdI.tFFJ387fBBdBFuMzzeaWcMTeapzMHnbuEfnqTdq5lJ8; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpim7VYsHFF0AABlD
+x-request-id: FxF1Y3ALw8xSCMAAAHAC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -137,7 +99,7 @@ access-control-expose-headers:
 ```json
 {
   "name": "MyName",
-  "id": 191,
+  "id": 61,
   "address_hash": "0x3e9ac8f16c92bc4f093357933b5befbf1e16987b"
 }
 ```
@@ -149,18 +111,15 @@ access-control-expose-headers:
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/tags/address/0x3e9ac8f16c92bc4f093357933b5befbf1e16987b
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYjYwY2U1NjUtNmJkYy00YTUzLWFmNTUtNDgzNTAzYmE2ZTliIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDExIiwidHlwIjoiYWNjZXNzIn0.g3dZzR7VoucLcnWZe8_Ww-w3BaxGOMpyOYZBgyoP5y9uHd_zWvFzvmvo-3uD10Hmuy3Z48jcxZypO0CTACQ3tg
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMThkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTIyQGJsb2Nrc2NvdXQuY29tZAACaWRh0mQABG5hbWVtAAAAC1VzZXIgVGVzdDE4ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE4ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE4ZAAMd2F0Y2hsaXN0X2lkYdI.tFFJ387fBBdBFuMzzeaWcMTeapzMHnbuEfnqTdq5lJ8; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpioOkSkHFF0AAAVh
+x-request-id: FxF1Y3BIWjdSCMAAAG4B
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -186,17 +145,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/tags/address/195
+* __Path:__ /api/account/v1/user/tags/address/57
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNDVhMTIzNDItOTEzYS00NWNiLWIzMjktMzY3MTRiMTQwODE3IiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE0IiwidHlwIjoiYWNjZXNzIn0.p-9LA2uAMy1UKcax83biqshChsDVZBCADgNy677IorSszZ98-tlIQ2ACKao0gR_uhVNZu-wqAxgPJcg22iQpuQ
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
   "name": "name3",
-  "address_hash": "0x0000000000000000000000000000000000000071"
+  "address_hash": "0x0000000000000000000000000000000000000016"
 }
 ```
 
@@ -204,9 +162,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyN2QABWVtYWlsbQAAABt0ZXN0X3VzZXItMTBAYmxvY2tzY291dC5jb21kAAJpZGHHZAAEbmFtZW0AAAAKVXNlciBUZXN0N2QACG5pY2tuYW1lbQAAAAp0ZXN0X3VzZXI3ZAADdWlkbQAAAA9ibG9ja3Njb3V0fDAwMDdkAAx3YXRjaGxpc3RfaWRhxw.Bn03yTZrlP0m6amYLQVeI-pvhvUf1F6d9SGAkDTLEck; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjEYwtEDCiMAAAXB
+x-request-id: FxF1Y2IdgOjzsTkAAGYC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -215,8 +174,8 @@ access-control-expose-headers:
 ```json
 {
   "name": "name3",
-  "id": 195,
-  "address_hash": "0x0000000000000000000000000000000000000071"
+  "id": 57,
+  "address_hash": "0x0000000000000000000000000000000000000016"
 }
 ```
 
@@ -226,18 +185,15 @@ access-control-expose-headers:
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/user/tags/address
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZGMyN2RkZjItZTRkMi00ZWEzLWFkZWYtMDIyYjMwY2QxMzUzIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDAiLCJ0eXAiOiJhY2Nlc3MifQ.wWzQx7QIkq0slxN9T67pycERqba5-0KKTxcSjKEy5q4Fi1zNDAYrdQ4UZVXvzU63ec9Y1MMxzLCaOlZ2p8ci4A
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTVkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTE5QGJsb2Nrc2NvdXQuY29tZAACaWRhz2QABG5hbWVtAAAAC1VzZXIgVGVzdDE1ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE1ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE1ZAAMd2F0Y2hsaXN0X2lkYc8.AoYBq7uUH9JOt11vL4-71qtsXMzpPDFsx8BV97n1Y-o; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQphwzPKDHPBMAAA8j
+x-request-id: FxF1Y2ynKDFWAsYAAG5C
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -247,18 +203,18 @@ access-control-expose-headers:
 [
   {
     "name": "name2",
-    "id": 190,
-    "address_hash": "0x0000000000000000000000000000000000000003"
+    "id": 60,
+    "address_hash": "0x000000000000000000000000000000000000003f"
   },
   {
     "name": "name1",
-    "id": 189,
-    "address_hash": "0x0000000000000000000000000000000000000002"
+    "id": 59,
+    "address_hash": "0x000000000000000000000000000000000000003e"
   },
   {
     "name": "name0",
-    "id": 188,
-    "address_hash": "0x0000000000000000000000000000000000000001"
+    "id": 58,
+    "address_hash": "0x000000000000000000000000000000000000003d"
   }
 ]
 ```
@@ -268,19 +224,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/tags/address/192
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNTBiZjNmY2QtYTdiNi00ZjVmLTg2MTktOWIwZGVmMzY5MGE2IiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDEzIiwidHlwIjoiYWNjZXNzIn0.CJ4QnRrUvkbrO36NOPAqiyZj09iPA6yma7U2P4P8aBlLxWy3bAZUl-3ZKLJmu5gSrCFdPlEDAcDR4o2s3SVyHw
-```
+* __Path:__ /api/account/v1/user/tags/address/62
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMjRkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTM4QGJsb2Nrc2NvdXQuY29tZAACaWRh2GQABG5hbWVtAAAAC1VzZXIgVGVzdDI0ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjI0ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDI0ZAAMd2F0Y2hsaXN0X2lkYdg.x6Qf5zC5gCGQrKy2MbTqd3Xt7S_2oUYaCnO-pbZwRMI; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpi-vPnoAeg4AAAYC
+x-request-id: FxF1Y3biZmVZE0MAAHKC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -300,13 +253,12 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/tags/transaction
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODg4ZTUwZjItNzJjYi00OWYzLWI2YTItNjViMTYzNWZkZjY3IiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDgiLCJ0eXAiOiJhY2Nlc3MifQ.PwpzZUToKUFzfEHeDBubhp_HD5funsu5wrP6fMZXieRItYK9LewGXk7v_D-Iqd2UxQSgmMaqpxRk_-c8RwjHEQ
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
+  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000008",
   "name": "MyName"
 }
 ```
@@ -315,9 +267,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 422
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTlkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTIzQGJsb2Nrc2NvdXQuY29tZAACaWRh02QABG5hbWVtAAAAC1VzZXIgVGVzdDE5ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE5ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE5ZAAMd2F0Y2hsaXN0X2lkYdM.zuwR-sOIcF7Xpo97W6G9Szzi_BPlu6Pu9_4kn7T2c10; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiSlZ8MFRCAAAAPi
+x-request-id: FxF1Y3DXWVBu-HUAAG6h
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -340,13 +293,12 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/tags/transaction
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODg4ZTUwZjItNzJjYi00OWYzLWI2YTItNjViMTYzNWZkZjY3IiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDgiLCJ0eXAiOiJhY2Nlc3MifQ.PwpzZUToKUFzfEHeDBubhp_HD5funsu5wrP6fMZXieRItYK9LewGXk7v_D-Iqd2UxQSgmMaqpxRk_-c8RwjHEQ
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000003",
+  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
   "name": "MyName"
 }
 ```
@@ -355,9 +307,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTlkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTIzQGJsb2Nrc2NvdXQuY29tZAACaWRh02QABG5hbWVtAAAAC1VzZXIgVGVzdDE5ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE5ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE5ZAAMd2F0Y2hsaXN0X2lkYdM.zuwR-sOIcF7Xpo97W6G9Szzi_BPlu6Pu9_4kn7T2c10; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiTYW2IFRCAAABeD
+x-request-id: FxF1Y3EB0Ytu-HUAAG7B
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -365,9 +318,9 @@ access-control-expose-headers:
 * __Response body:__
 ```json
 {
-  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000003",
+  "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
   "name": "MyName",
-  "id": 215
+  "id": 64
 }
 ```
 
@@ -377,19 +330,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ GET
-* __Path:__ /api/account/v1/tags/transaction/0x0000000000000000000000000000000000000000000000000000000000000003
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODg4ZTUwZjItNzJjYi00OWYzLWI2YTItNjViMTYzNWZkZjY3IiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDgiLCJ0eXAiOiJhY2Nlc3MifQ.PwpzZUToKUFzfEHeDBubhp_HD5funsu5wrP6fMZXieRItYK9LewGXk7v_D-Iqd2UxQSgmMaqpxRk_-c8RwjHEQ
-```
+* __Path:__ /api/account/v1/tags/transaction/0x0000000000000000000000000000000000000000000000000000000000000009
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTlkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTIzQGJsb2Nrc2NvdXQuY29tZAACaWRh02QABG5hbWVtAAAAC1VzZXIgVGVzdDE5ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE5ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE5ZAAMd2F0Y2hsaXN0X2lkYdM.zuwR-sOIcF7Xpo97W6G9Szzi_BPlu6Pu9_4kn7T2c10; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiTucn4FRCAAAAQC
+x-request-id: FxF1Y3Efe0tu-HUAAG7h
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -412,10 +362,9 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/tags/transaction/213
+* __Path:__ /api/account/v1/user/tags/transaction/57
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOThjZGVlYjgtMGI3Yy00M2U2LWI3ZDAtODAzYjAyZmNkZTlmIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDMiLCJ0eXAiOiJhY2Nlc3MifQ.wx0GAbtOBVhAcDksePh2srpuYZV0YEKWJzbcWXXzO_zNck0lHLu_AUQ9pJMeLADfsHD5BBtypA8eRYcAPIANeg
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -430,9 +379,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMGQABWVtYWlsbQAAABp0ZXN0X3VzZXItMEBibG9ja3Njb3V0LmNvbWQAAmlkYcBkAARuYW1lbQAAAApVc2VyIFRlc3QwZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjBkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwMGQADHdhdGNobGlzdF9pZGHA.-aMP6TTEeEfxopoeChJPvTvjkSRD9_ZgaeLDlOC21gU; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQph4dlZl_aCMAABFD
+x-request-id: FxF1Y1xoENHeIlkAAGEi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -442,7 +392,7 @@ access-control-expose-headers:
 {
   "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
   "name": "name1",
-  "id": 213
+  "id": 57
 }
 ```
 
@@ -452,18 +402,15 @@ access-control-expose-headers:
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/user/tags/transaction
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNmY3YTU5MTctZTkzZS00ZDIwLWJkMjItYzZkZmI1MjcxMGI4IiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE3IiwidHlwIjoiYWNjZXNzIn0.EwNpusuNiETjPyX99BCG7kFVw1ILO2h5ma3-F6rXbC1C_r4YtIRH3dX8OxxzoGzVkzdT9ycO8N6QywNV2oKRvg
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTRkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTE4QGJsb2Nrc2NvdXQuY29tZAACaWRhzmQABG5hbWVtAAAAC1VzZXIgVGVzdDE0ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE0ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE0ZAAMd2F0Y2hsaXN0X2lkYc4.8SGhlMOY4aB444Afz1VajofmGp9YZbrfbVkZ4BTyaBI; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjT3AhI31PUAAAhi
+x-request-id: FxF1Y2tEsVp5P30AAGzi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -472,19 +419,19 @@ access-control-expose-headers:
 ```json
 [
   {
-    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000009",
+    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000004",
     "name": "name2",
-    "id": 221
+    "id": 60
   },
   {
-    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000008",
+    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000003",
     "name": "name1",
-    "id": 220
+    "id": 59
   },
   {
-    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000007",
+    "transaction_hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
     "name": "name0",
-    "id": 219
+    "id": 58
   }
 ]
 ```
@@ -494,19 +441,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/tags/transaction/216
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiN2JmNmY2NTAtNDFlOS00NzU1LThkM2UtNDYyNTgzMWE0ODAwIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEyIiwidHlwIjoiYWNjZXNzIn0.OApbGu0VIJAb92sk2z5uRryqJfNQUgTZMNYPg3l-fAqFC5Q8Ozf7fzvi7D6UOZYYH_kV7KOplbYSf_f6d6EHww
-```
+* __Path:__ /api/account/v1/user/tags/transaction/61
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTZkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTIwQGJsb2Nrc2NvdXQuY29tZAACaWRh0GQABG5hbWVtAAAAC1VzZXIgVGVzdDE2ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE2ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE2ZAAMd2F0Y2hsaXN0X2lkYdA.YfL9L7-UIBleRbWWhHNvutNuw8Y4SadvwGFmGwakxQA; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiy51yHVod4AABpD
+x-request-id: FxF1Y26c9UuC4TcAAGwh
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -526,7 +470,6 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/watchlist
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMDkzN2VjYjMtN2NiYi00MGE3LThiMTUtOTI1NGI2NDBlMzA2IiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIxIiwidHlwIjoiYWNjZXNzIn0.T2XfV2XJ74KVI_ILXC37uTQZi1WlIQfr60fQd7aX1eC-in8ZW2cO0yBSnTMb8vliqVnvq3ChI4XRZoza0CEpnw
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -542,15 +485,15 @@ content-type: multipart/mixed; boundary=plug_conn_test
       "incoming": true
     },
     "ERC-20": {
-      "outcoming": true,
-      "incoming": true
+      "outcoming": false,
+      "incoming": false
     }
   },
   "notification_methods": {
-    "email": false
+    "email": true
   },
-  "name": "test22",
-  "address_hash": "0x000000000000000000000000000000000000007d"
+  "name": "test2",
+  "address_hash": "0x0000000000000000000000000000000000000007"
 }
 ```
 
@@ -558,9 +501,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyM2QABWVtYWlsbQAAABp0ZXN0X3VzZXItM0BibG9ja3Njb3V0LmNvbWQAAmlkYcNkAARuYW1lbQAAAApVc2VyIFRlc3QzZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjNkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwM2QADHdhdGNobGlzdF9pZGHD.kv5nnz8sVGLaopoZs9ppOfu0hfpFi58yuisPDN6PtPI; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjb3H08IRYYAAApk
+x-request-id: FxF1Y16Kv_0GzWcAAGKi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -578,17 +522,17 @@ access-control-expose-headers:
       "incoming": true
     },
     "ERC-20": {
-      "outcoming": true,
-      "incoming": true
+      "outcoming": false,
+      "incoming": false
     }
   },
   "notification_methods": {
-    "email": false
+    "email": true
   },
-  "name": "test22",
-  "id": 218,
+  "name": "test2",
+  "id": 68,
   "exchange_rate": null,
-  "address_hash": "0x000000000000000000000000000000000000007d",
+  "address_hash": "0x0000000000000000000000000000000000000007",
   "address_balance": null
 }
 ```
@@ -599,18 +543,15 @@ access-control-expose-headers:
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/user/watchlist
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMDkzN2VjYjMtN2NiYi00MGE3LThiMTUtOTI1NGI2NDBlMzA2IiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIxIiwidHlwIjoiYWNjZXNzIn0.T2XfV2XJ74KVI_ILXC37uTQZi1WlIQfr60fQd7aX1eC-in8ZW2cO0yBSnTMb8vliqVnvq3ChI4XRZoza0CEpnw
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyM2QABWVtYWlsbQAAABp0ZXN0X3VzZXItM0BibG9ja3Njb3V0LmNvbWQAAmlkYcNkAARuYW1lbQAAAApVc2VyIFRlc3QzZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjNkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwM2QADHdhdGNobGlzdF9pZGHD.kv5nnz8sVGLaopoZs9ppOfu0hfpFi58yuisPDN6PtPI; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjfSdyoIRYYAAArk
+x-request-id: FxF1Y19FyIUGzWcAAGMC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -622,24 +563,24 @@ access-control-expose-headers:
     "notification_settings": {
       "native": {
         "outcoming": false,
-        "incoming": true
+        "incoming": false
       },
       "ERC-721": {
-        "outcoming": false,
-        "incoming": true
+        "outcoming": true,
+        "incoming": false
       },
       "ERC-20": {
         "outcoming": true,
-        "incoming": true
+        "incoming": false
       }
     },
     "notification_methods": {
-      "email": true
+      "email": false
     },
-    "name": "test23",
-    "id": 219,
+    "name": "test3",
+    "id": 69,
     "exchange_rate": null,
-    "address_hash": "0x000000000000000000000000000000000000007e",
+    "address_hash": "0x0000000000000000000000000000000000000008",
     "address_balance": null
   },
   {
@@ -653,17 +594,17 @@ access-control-expose-headers:
         "incoming": true
       },
       "ERC-20": {
-        "outcoming": true,
-        "incoming": true
+        "outcoming": false,
+        "incoming": false
       }
     },
     "notification_methods": {
-      "email": false
+      "email": true
     },
-    "name": "test22",
-    "id": 218,
+    "name": "test2",
+    "id": 68,
     "exchange_rate": null,
-    "address_hash": "0x000000000000000000000000000000000000007d",
+    "address_hash": "0x0000000000000000000000000000000000000007",
     "address_balance": null
   }
 ]
@@ -674,19 +615,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/watchlist/222
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMjE2YTNmZDktYmZmOS00MDc1LTgwMGMtMzIzMGViY2NkNTQyIiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDI0IiwidHlwIjoiYWNjZXNzIn0.owHZYYTtUZ117ErpxW3xW-qqmfeWCVlli5JbAL1GbRpAKBxsLJ56tcjTv7pbKIq4cM-PzC2bbrw5JuISHhdfOQ
-```
+* __Path:__ /api/account/v1/user/watchlist/74
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTFkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTE0QGJsb2Nrc2NvdXQuY29tZAACaWRhy2QABG5hbWVtAAAAC1VzZXIgVGVzdDExZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjExZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDExZAAMd2F0Y2hsaXN0X2lkYcs.YjW8nzuA66id0ADg2qpyjTMGfKJ7BHhjU_HdVq8w8vk; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjtUa8rUTWIAAAlB
+x-request-id: FxF1Y2f5j2WpY30AAGuC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -703,10 +641,9 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/watchlist/220
+* __Path:__ /api/account/v1/user/watchlist/67
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiNDE0OWJiNzktZDFlZi00NTIyLThmYTMtMTFmODZmMzBkYmE4IiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIyIiwidHlwIjoiYWNjZXNzIn0.yZjVfTRrQ3nuv0eU19VW5swMPO75WdiWZPW2EVrZLcEyXUP0X8oenB-A1haYT_0kMu40K7JZS7XMnR6Fo4wlkA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -714,23 +651,23 @@ content-type: multipart/mixed; boundary=plug_conn_test
 {
   "notification_settings": {
     "native": {
-      "outcoming": true,
-      "incoming": false
+      "outcoming": false,
+      "incoming": true
     },
     "ERC-721": {
       "outcoming": true,
-      "incoming": false
+      "incoming": true
     },
     "ERC-20": {
-      "outcoming": false,
-      "incoming": false
+      "outcoming": true,
+      "incoming": true
     }
   },
   "notification_methods": {
-    "email": false
+    "email": true
   },
-  "name": "test25",
-  "address_hash": "0x0000000000000000000000000000000000000080"
+  "name": "test1",
+  "address_hash": "0x0000000000000000000000000000000000000006"
 }
 ```
 
@@ -738,9 +675,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMWQABWVtYWlsbQAAABp0ZXN0X3VzZXItMUBibG9ja3Njb3V0LmNvbWQAAmlkYcFkAARuYW1lbQAAAApVc2VyIFRlc3QxZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjFkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwMWQADHdhdGNobGlzdF9pZGHB.3KOkZkPrcMrRXfooQckn-zi6xmax1LJMBGBSjmGM8ww; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjkDIU6MdJQAAAki
+x-request-id: FxF1Y12FoNKu97sAAGch
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -750,25 +688,25 @@ access-control-expose-headers:
 {
   "notification_settings": {
     "native": {
-      "outcoming": true,
-      "incoming": false
+      "outcoming": false,
+      "incoming": true
     },
     "ERC-721": {
       "outcoming": true,
-      "incoming": false
+      "incoming": true
     },
     "ERC-20": {
-      "outcoming": false,
-      "incoming": false
+      "outcoming": true,
+      "incoming": true
     }
   },
   "notification_methods": {
-    "email": false
+    "email": true
   },
-  "name": "test25",
-  "id": 220,
+  "name": "test1",
+  "id": 67,
   "exchange_rate": null,
-  "address_hash": "0x0000000000000000000000000000000000000080",
+  "address_hash": "0x0000000000000000000000000000000000000006",
   "address_balance": null
 }
 ```
@@ -781,7 +719,6 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/watchlist
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZTNiNjE0MDEtZjJlOS00YzVlLTllODMtMzdmNWZkNjJhZDIyIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.jgzonm_tqZGmwcImaz114SJkaEVFR-4sjENu3OyUTbjfnxokTHyth6GxgKgyWuakTv0QmwlWLkvI27f6LIcvWA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -790,11 +727,11 @@ content-type: multipart/mixed; boundary=plug_conn_test
   "notification_settings": {
     "native": {
       "outcoming": false,
-      "incoming": false
+      "incoming": true
     },
     "ERC-721": {
       "outcoming": false,
-      "incoming": true
+      "incoming": false
     },
     "ERC-20": {
       "outcoming": true,
@@ -804,8 +741,8 @@ content-type: multipart/mixed; boundary=plug_conn_test
   "notification_methods": {
     "email": false
   },
-  "name": "test0",
-  "address_hash": "0x0000000000000000000000000000000000000008"
+  "name": "test4",
+  "address_hash": "0x0000000000000000000000000000000000000017"
 }
 ```
 
@@ -813,9 +750,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 422
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyOGQABWVtYWlsbQAAABt0ZXN0X3VzZXItMTFAYmxvY2tzY291dC5jb21kAAJpZGHIZAAEbmFtZW0AAAAKVXNlciBUZXN0OGQACG5pY2tuYW1lbQAAAAp0ZXN0X3VzZXI4ZAADdWlkbQAAAA9ibG9ja3Njb3V0fDAwMDhkAAx3YXRjaGxpc3RfaWRhyA.q1Rmte0qLd31GbmpA46bE8rXo2okwzX8aD_oDHn8CIQ; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQph-LHUg_AFwAABND
+x-request-id: FxF1Y2MCqHvooPMAAGbi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -836,10 +774,9 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/watchlist/217
+* __Path:__ /api/account/v1/user/watchlist/72
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZTNiNjE0MDEtZjJlOS00YzVlLTllODMtMzdmNWZkNjJhZDIyIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDUiLCJ0eXAiOiJhY2Nlc3MifQ.jgzonm_tqZGmwcImaz114SJkaEVFR-4sjENu3OyUTbjfnxokTHyth6GxgKgyWuakTv0QmwlWLkvI27f6LIcvWA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -848,11 +785,11 @@ content-type: multipart/mixed; boundary=plug_conn_test
   "notification_settings": {
     "native": {
       "outcoming": false,
-      "incoming": false
+      "incoming": true
     },
     "ERC-721": {
       "outcoming": false,
-      "incoming": true
+      "incoming": false
     },
     "ERC-20": {
       "outcoming": true,
@@ -862,8 +799,8 @@ content-type: multipart/mixed; boundary=plug_conn_test
   "notification_methods": {
     "email": false
   },
-  "name": "test0",
-  "address_hash": "0x0000000000000000000000000000000000000008"
+  "name": "test4",
+  "address_hash": "0x0000000000000000000000000000000000000017"
 }
 ```
 
@@ -871,9 +808,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 422
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyOGQABWVtYWlsbQAAABt0ZXN0X3VzZXItMTFAYmxvY2tzY291dC5jb21kAAJpZGHIZAAEbmFtZW0AAAAKVXNlciBUZXN0OGQACG5pY2tuYW1lbQAAAAp0ZXN0X3VzZXI4ZAADdWlkbQAAAA9ibG9ja3Njb3V0fDAwMDhkAAx3YXRjaGxpc3RfaWRhyA.q1Rmte0qLd31GbmpA46bE8rXo2okwzX8aD_oDHn8CIQ; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQph_yy5k_AFwAABOD
+x-request-id: FxF1Y2Nh1eHooPMAAGci
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -897,7 +835,6 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/api_keys
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMjM1ZWI1MzEtY2U1My00MGY5LWIwZmEtZDE3NTc3NDA4OWI5IiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEiLCJ0eXAiOiJhY2Nlc3MifQ.v1lMn6bUzn8hrFFv6sDR0xioMWiqDt5q5SluJ8p3jAEdEA18ZAXsOLH6-vDNWr50GhObEB6KoSOX8wmbvTtuOg
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -911,9 +848,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMmQABWVtYWlsbQAAABp0ZXN0X3VzZXItMkBibG9ja3Njb3V0LmNvbWQAAmlkYcJkAARuYW1lbQAAAApVc2VyIFRlc3QyZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjJkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwMmQADHdhdGNobGlzdF9pZGHC.ULESD1_sOySz8eEVGnagUzGw6eMIx_8Pwoyr_5S3K0M; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQphyX8rDQD4QAAATB
+x-request-id: FxF1Y14XlMBqXaQAAGHi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -922,7 +860,7 @@ access-control-expose-headers:
 ```json
 {
   "name": "test",
-  "api_key": "b8c07804-e992-4de4-ae29-f0d6a6691d12"
+  "api_key": "de9ef457-3f47-48d3-affa-79ad9d3b27b9"
 }
 ```
 
@@ -933,7 +871,6 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/api_keys
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOWMxYmQ2ZTEtYWZjMi00ODk3LTgwNDktYWE1YWQ4Mjc5MzljIiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE5IiwidHlwIjoiYWNjZXNzIn0.NQGehmwQo4_-iivPSEspKQ4mFxkg8RskxjxkBCc_D7FulNFu3dUA2Qg8sLxCK3Oqxu57WO8HpI2qIeBw3H1HWA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -947,9 +884,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 422
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMjJkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTI2QGJsb2Nrc2NvdXQuY29tZAACaWRh1mQABG5hbWVtAAAAC1VzZXIgVGVzdDIyZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjIyZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDIyZAAMd2F0Y2hsaXN0X2lkYdY.P37J2lZZdHaT4P-RatVaXCx77UcSH3s_TMx-FieaYk0; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjYLyBOZMSkAAAiC
+x-request-id: FxF1Y3LmuuofZKYAAG_h
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -971,18 +909,15 @@ access-control-expose-headers:
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/user/api_keys
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiOWMxYmQ2ZTEtYWZjMi00ODk3LTgwNDktYWE1YWQ4Mjc5MzljIiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE5IiwidHlwIjoiYWNjZXNzIn0.NQGehmwQo4_-iivPSEspKQ4mFxkg8RskxjxkBCc_D7FulNFu3dUA2Qg8sLxCK3Oqxu57WO8HpI2qIeBw3H1HWA
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMjJkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTI2QGJsb2Nrc2NvdXQuY29tZAACaWRh1mQABG5hbWVtAAAAC1VzZXIgVGVzdDIyZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjIyZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDIyZAAMd2F0Y2hsaXN0X2lkYdY.P37J2lZZdHaT4P-RatVaXCx77UcSH3s_TMx-FieaYk0; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjY6CbWZMSkAAAgB
+x-request-id: FxF1Y3LyOSIfZKYAAHAB
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -992,15 +927,15 @@ access-control-expose-headers:
 [
   {
     "name": "test",
-    "api_key": "4b8a9016-f6c7-4cf4-8697-5fb1851e16ec"
+    "api_key": "2ac16688-34e6-4fa4-8983-a9bc34c912f6"
   },
   {
     "name": "test",
-    "api_key": "0f16c464-b857-41c1-894d-233110158756"
+    "api_key": "a55426db-04f0-40be-a146-1ced4558aa0c"
   },
   {
     "name": "test",
-    "api_key": "12cd8bf6-508a-4311-98d7-09ffa6ee043d"
+    "api_key": "d73fc23b-59f0-4e6f-a739-f4de30995101"
   }
 ]
 ```
@@ -1010,10 +945,9 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/api_keys/f46581bc-cc15-4482-8038-dab72c0e4405
+* __Path:__ /api/account/v1/user/api_keys/2b1d400d-713e-4bfc-8ef0-710555693138
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYTFjZGU3ZjEtMzA4My00ZTQ5LWFmNzEtYmU1YmRiOGNlYjFiIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDIiLCJ0eXAiOiJhY2Nlc3MifQ.1QQjWUyhuw2yEHEk-vEI1NcWQpK0BO3uFQPmLCaMhTuzEsg-HIztelraJIB7FSAN70Bt_FzKUN40TjoNvAQGDQ
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -1027,9 +961,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTdkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTIxQGJsb2Nrc2NvdXQuY29tZAACaWRh0WQABG5hbWVtAAAAC1VzZXIgVGVzdDE3ZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjE3ZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDE3ZAAMd2F0Y2hsaXN0X2lkYdE.bLJKM3-kFm04mMC-4-3b2mjrig_lmQYt5C2tg-9q9so; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQph0kB14mvRQAAA_D
+x-request-id: FxF1Y2-0eR7T2BMAAG0B
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1038,7 +973,7 @@ access-control-expose-headers:
 ```json
 {
   "name": "test_1",
-  "api_key": "f46581bc-cc15-4482-8038-dab72c0e4405"
+  "api_key": "2b1d400d-713e-4bfc-8ef0-710555693138"
 }
 ```
 
@@ -1047,19 +982,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/api_keys/50804f9d-d929-4017-a8e0-380facf88d42
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMjE1NThjZTgtNmE5NC00ODQyLThmZmEtMDNmYzI3MzY1MDgyIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDQiLCJ0eXAiOiJhY2Nlc3MifQ.YowVxGq8eb3dX2UK_7Dxl_Lg9T3HeoTEvOkHvgq520H4NYo-6oU8vfFbUMUkLr3jTfWDJgGidhnOfud44JM2vA
-```
+* __Path:__ /api/account/v1/user/api_keys/3bd44c0d-290f-4dfc-9283-5f674080f8ef
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMjBkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTI0QGJsb2Nrc2NvdXQuY29tZAACaWRh1GQABG5hbWVtAAAAC1VzZXIgVGVzdDIwZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjIwZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDIwZAAMd2F0Y2hsaXN0X2lkYdQ.WgjMmOxwwBGcTZZscpLA8EXErwL8ITCvoIXPLIQAhtw; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQph6_OaQNBRoAAAOC
+x-request-id: FxF1Y3HQdpa0710AAHBi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1079,14 +1011,13 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/custom_abis
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiODQzZjg1ODEtMmU3Zi00YzQyLTkxMTAtMzFkNjAwNWFiZDdkIiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE2IiwidHlwIjoiYWNjZXNzIn0.IQC9TAYZyygTEv-g4AilY6tpZmGUCCAyIQfj4tCdmnrHfajzkpnbO3lctA-3oiRlnNB71ZG3te7JWcfvc7ro0w
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "name": "test21",
-  "contract_address_hash": "0x0000000000000000000000000000000000000074",
+  "name": "test25",
+  "contract_address_hash": "0x000000000000000000000000000000000000002c",
   "abi": [
     {
       "type": "function",
@@ -1124,9 +1055,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTJkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTE1QGJsb2Nrc2NvdXQuY29tZAACaWRhzGQABG5hbWVtAAAAC1VzZXIgVGVzdDEyZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjEyZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDEyZAAMd2F0Y2hsaXN0X2lkYcw.7cCOt6SVrOb5VLYplBzwZ03FWMo9jQpAV7cNroY4txY; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjIzQYD_0WMAABxj
+x-request-id: FxF1Y2iZJWbZgfgAAGwC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1134,9 +1066,9 @@ access-control-expose-headers:
 * __Response body:__
 ```json
 {
-  "name": "test21",
-  "id": 468,
-  "contract_address_hash": "0x0000000000000000000000000000000000000074",
+  "name": "test25",
+  "id": 143,
+  "contract_address_hash": "0x000000000000000000000000000000000000002c",
   "abi": [
     {
       "type": "function",
@@ -1177,14 +1109,13 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/custom_abis
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYzdmN2NmOWQtMjEzYi00OGVhLWJlOTEtNWQ2YTI0Yjc1NTdlIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.lZboWExo17mBNR-sGWkbyyZhjLEI7-7GBLwZqI22LT9kIPa3sXXhkUZNfjlhlotS2l_AlXxTpVNZkhDZ_XxdZg
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "name": "test17",
-  "contract_address_hash": "0x0000000000000000000000000000000000000065",
+  "name": "test21",
+  "contract_address_hash": "0x0000000000000000000000000000000000000028",
   "abi": [
     {
       "type": "function",
@@ -1222,9 +1153,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 422
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyOWQABWVtYWlsbQAAABt0ZXN0X3VzZXItMTJAYmxvY2tzY291dC5jb21kAAJpZGHJZAAEbmFtZW0AAAAKVXNlciBUZXN0OWQACG5pY2tuYW1lbQAAAAp0ZXN0X3VzZXI5ZAADdWlkbQAAAA9ibG9ja3Njb3V0fDAwMDlkAAx3YXRjaGxpc3RfaWRhyQ.MCpJsS-nb95ccHRtzOk7DbIRjEcTG34ONq4PrC5hOcU; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiiglpJ_3TEAAAZk
+x-request-id: FxF1Y2Ypm-ny0swAAGiB
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1246,18 +1178,15 @@ access-control-expose-headers:
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/user/custom_abis
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYzdmN2NmOWQtMjEzYi00OGVhLWJlOTEtNWQ2YTI0Yjc1NTdlIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDkiLCJ0eXAiOiJhY2Nlc3MifQ.lZboWExo17mBNR-sGWkbyyZhjLEI7-7GBLwZqI22LT9kIPa3sXXhkUZNfjlhlotS2l_AlXxTpVNZkhDZ_XxdZg
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyOWQABWVtYWlsbQAAABt0ZXN0X3VzZXItMTJAYmxvY2tzY291dC5jb21kAAJpZGHJZAAEbmFtZW0AAAAKVXNlciBUZXN0OWQACG5pY2tuYW1lbQAAAAp0ZXN0X3VzZXI5ZAADdWlkbQAAAA9ibG9ja3Njb3V0fDAwMDlkAAx3YXRjaGxpc3RfaWRhyQ.MCpJsS-nb95ccHRtzOk7DbIRjEcTG34ONq4PrC5hOcU; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpii331h_3TEAAAaE
+x-request-id: FxF1Y2Y-qjXy0swAAGnC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1266,9 +1195,149 @@ access-control-expose-headers:
 ```json
 [
   {
+    "name": "test20",
+    "id": 141,
+    "contract_address_hash": "0x0000000000000000000000000000000000000027",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test19",
+    "id": 140,
+    "contract_address_hash": "0x0000000000000000000000000000000000000026",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test18",
+    "id": 139,
+    "contract_address_hash": "0x0000000000000000000000000000000000000025",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
+    "name": "test17",
+    "id": 138,
+    "contract_address_hash": "0x0000000000000000000000000000000000000024",
+    "abi": [
+      {
+        "type": "function",
+        "stateMutability": "nonpayable",
+        "payable": false,
+        "outputs": [],
+        "name": "set",
+        "inputs": [
+          {
+            "type": "uint256",
+            "name": "x"
+          }
+        ],
+        "constant": false
+      },
+      {
+        "type": "function",
+        "stateMutability": "view",
+        "payable": false,
+        "outputs": [
+          {
+            "type": "uint256",
+            "name": ""
+          }
+        ],
+        "name": "get",
+        "inputs": [],
+        "constant": true
+      }
+    ]
+  },
+  {
     "name": "test16",
-    "id": 465,
-    "contract_address_hash": "0x0000000000000000000000000000000000000064",
+    "id": 137,
+    "contract_address_hash": "0x0000000000000000000000000000000000000023",
     "abi": [
       {
         "type": "function",
@@ -1302,8 +1371,8 @@ access-control-expose-headers:
   },
   {
     "name": "test15",
-    "id": 464,
-    "contract_address_hash": "0x0000000000000000000000000000000000000063",
+    "id": 136,
+    "contract_address_hash": "0x0000000000000000000000000000000000000022",
     "abi": [
       {
         "type": "function",
@@ -1337,8 +1406,8 @@ access-control-expose-headers:
   },
   {
     "name": "test14",
-    "id": 463,
-    "contract_address_hash": "0x0000000000000000000000000000000000000062",
+    "id": 135,
+    "contract_address_hash": "0x0000000000000000000000000000000000000021",
     "abi": [
       {
         "type": "function",
@@ -1372,8 +1441,8 @@ access-control-expose-headers:
   },
   {
     "name": "test13",
-    "id": 462,
-    "contract_address_hash": "0x0000000000000000000000000000000000000061",
+    "id": 134,
+    "contract_address_hash": "0x0000000000000000000000000000000000000020",
     "abi": [
       {
         "type": "function",
@@ -1407,8 +1476,8 @@ access-control-expose-headers:
   },
   {
     "name": "test12",
-    "id": 461,
-    "contract_address_hash": "0x0000000000000000000000000000000000000060",
+    "id": 133,
+    "contract_address_hash": "0x000000000000000000000000000000000000001f",
     "abi": [
       {
         "type": "function",
@@ -1442,8 +1511,8 @@ access-control-expose-headers:
   },
   {
     "name": "test11",
-    "id": 460,
-    "contract_address_hash": "0x000000000000000000000000000000000000005f",
+    "id": 132,
+    "contract_address_hash": "0x000000000000000000000000000000000000001e",
     "abi": [
       {
         "type": "function",
@@ -1477,8 +1546,8 @@ access-control-expose-headers:
   },
   {
     "name": "test10",
-    "id": 459,
-    "contract_address_hash": "0x000000000000000000000000000000000000005e",
+    "id": 131,
+    "contract_address_hash": "0x000000000000000000000000000000000000001d",
     "abi": [
       {
         "type": "function",
@@ -1512,8 +1581,8 @@ access-control-expose-headers:
   },
   {
     "name": "test9",
-    "id": 458,
-    "contract_address_hash": "0x000000000000000000000000000000000000005d",
+    "id": 130,
+    "contract_address_hash": "0x000000000000000000000000000000000000001c",
     "abi": [
       {
         "type": "function",
@@ -1547,8 +1616,8 @@ access-control-expose-headers:
   },
   {
     "name": "test8",
-    "id": 457,
-    "contract_address_hash": "0x000000000000000000000000000000000000005c",
+    "id": 129,
+    "contract_address_hash": "0x000000000000000000000000000000000000001b",
     "abi": [
       {
         "type": "function",
@@ -1582,8 +1651,8 @@ access-control-expose-headers:
   },
   {
     "name": "test7",
-    "id": 456,
-    "contract_address_hash": "0x000000000000000000000000000000000000005b",
+    "id": 128,
+    "contract_address_hash": "0x000000000000000000000000000000000000001a",
     "abi": [
       {
         "type": "function",
@@ -1617,148 +1686,8 @@ access-control-expose-headers:
   },
   {
     "name": "test6",
-    "id": 455,
-    "contract_address_hash": "0x000000000000000000000000000000000000005a",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test5",
-    "id": 454,
-    "contract_address_hash": "0x0000000000000000000000000000000000000059",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test4",
-    "id": 453,
-    "contract_address_hash": "0x0000000000000000000000000000000000000058",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test3",
-    "id": 452,
-    "contract_address_hash": "0x0000000000000000000000000000000000000057",
-    "abi": [
-      {
-        "type": "function",
-        "stateMutability": "nonpayable",
-        "payable": false,
-        "outputs": [],
-        "name": "set",
-        "inputs": [
-          {
-            "type": "uint256",
-            "name": "x"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "type": "function",
-        "stateMutability": "view",
-        "payable": false,
-        "outputs": [
-          {
-            "type": "uint256",
-            "name": ""
-          }
-        ],
-        "name": "get",
-        "inputs": [],
-        "constant": true
-      }
-    ]
-  },
-  {
-    "name": "test2",
-    "id": 451,
-    "contract_address_hash": "0x0000000000000000000000000000000000000056",
+    "id": 127,
+    "contract_address_hash": "0x0000000000000000000000000000000000000019",
     "abi": [
       {
         "type": "function",
@@ -1798,17 +1727,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/custom_abis/467
+* __Path:__ /api/account/v1/user/custom_abis/144
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiZDU2YTY5NzYtY2U4NS00OWQ2LWI2YTgtNzY1OTUzMDkxMGU5IiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDE1IiwidHlwIjoiYWNjZXNzIn0.VeRQl9FN6i2NxfT_x0-E8YPGo8gDxDmGEHfjmLPJAa0-s8vRykPNq5C8loESJAFowi0MCIeHottQvR94oK-TVg
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "name": "test20",
-  "contract_address_hash": "0x0000000000000000000000000000000000000073",
+  "name": "test27",
+  "contract_address_hash": "0x000000000000000000000000000000000000004b",
   "abi": [
     {
       "type": "function",
@@ -1846,9 +1774,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMjFkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTI1QGJsb2Nrc2NvdXQuY29tZAACaWRh1WQABG5hbWVtAAAAC1VzZXIgVGVzdDIxZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjIxZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDIxZAAMd2F0Y2hsaXN0X2lkYdU.SEUqq9ZiSD79HIzwKvwTspmBKKU87m_Xwu5gw2pX1e0; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjG3_3dYelIAABwD
+x-request-id: FxF1Y3JcHmB4X2AAAHDC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1856,9 +1785,9 @@ access-control-expose-headers:
 * __Response body:__
 ```json
 {
-  "name": "test20",
-  "id": 467,
-  "contract_address_hash": "0x0000000000000000000000000000000000000073",
+  "name": "test27",
+  "id": 144,
+  "contract_address_hash": "0x000000000000000000000000000000000000004b",
   "abi": [
     {
       "type": "function",
@@ -1897,19 +1826,16 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/custom_abis/466
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMzE2ZjNhNjAtZTQzYi00MzE1LWE0NzUtY2NlY2VkZTZmYWY4IiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDEwIiwidHlwIjoiYWNjZXNzIn0.sMNyE8SSLXLL9f1Jx6xUfxeuYNDjbOCdoUwmlB1fcEKOrELZGUU_sHnDKKyaL5y1wYyd5PNC0NJ7E1gEPtWUrA
-```
+* __Path:__ /api/account/v1/user/custom_abis/142
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMTBkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTEzQGJsb2Nrc2NvdXQuY29tZAACaWRhymQABG5hbWVtAAAAC1VzZXIgVGVzdDEwZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjEwZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDEwZAAMd2F0Y2hsaXN0X2lkYco.x_6dmEjpZ1o8_ct-M7pWWP0LkI66xhwl8gWeQt9XzHA; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpilcg3W_YHIAAAbk
+x-request-id: FxF1Y2b1jJGBaO4AAGrC
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1929,22 +1855,25 @@ access-control-expose-headers:
 * __Path:__ /api/account/v1/user/public_tags
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMGEzZDI5ZjMtY2UxOS00Y2U5LWEyMTMtMjlhMDA4MGYzMDJkIiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDciLCJ0eXAiOiJhY2Nlc3MifQ._znDLvjrXnb4b2J74_RA2olgq8Zj_eWYKq1J3W3ZkdJksaF0fmJnJ_K35vzAsd4mShDGkRUnJbWveyo-R5egXA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "website": "website10",
-  "tags": "Tag11",
+  "website": "website0",
+  "tags": "Tag0",
   "is_owner": true,
-  "full_name": "full name10",
-  "email": "test_user-18@blockscout.com",
-  "company": "company10",
+  "full_name": "full name0",
+  "email": "test_user-6@blockscout.com",
+  "company": "company0",
   "addresses": [
-    "0x0000000000000000000000000000000000000051"
+    "0x0000000000000000000000000000000000000009",
+    "0x000000000000000000000000000000000000000a",
+    "0x000000000000000000000000000000000000000b",
+    "0x000000000000000000000000000000000000000c",
+    "0x000000000000000000000000000000000000000d"
   ],
-  "additional_comment": "additional_comment10"
+  "additional_comment": "additional_comment0"
 }
 ```
 
@@ -1952,9 +1881,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyNWQABWVtYWlsbQAAABp0ZXN0X3VzZXItNUBibG9ja3Njb3V0LmNvbWQAAmlkYcVkAARuYW1lbQAAAApVc2VyIFRlc3Q1ZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjVkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwNWQADHdhdGNobGlzdF9pZGHF.kXAMBaL9a7aYjPDgZ9Llxe1etUCPH3vEvQe9Fq2May4; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiPkYbM3wm8AAAXk
+x-request-id: FxF1Y2BIESA-ecUAAGgB
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -1962,17 +1892,22 @@ access-control-expose-headers:
 * __Response body:__
 ```json
 {
-  "website": "website10",
-  "tags": "Tag11",
+  "website": "website0",
+  "tags": "Tag0",
+  "submission_date": "2022-09-03T21:00:07.156465Z",
   "is_owner": true,
-  "id": 192,
-  "full_name": "full name10",
-  "email": "test_user-18@blockscout.com",
-  "company": "company10",
+  "id": 131,
+  "full_name": "full name0",
+  "email": "test_user-6@blockscout.com",
+  "company": "company0",
   "addresses": [
-    "0x0000000000000000000000000000000000000051"
+    "0x0000000000000000000000000000000000000009",
+    "0x000000000000000000000000000000000000000a",
+    "0x000000000000000000000000000000000000000b",
+    "0x000000000000000000000000000000000000000c",
+    "0x000000000000000000000000000000000000000d"
   ],
-  "additional_comment": "additional_comment10"
+  "additional_comment": "additional_comment0"
 }
 ```
 
@@ -1982,18 +1917,15 @@ access-control-expose-headers:
 ##### Request
 * __Method:__ GET
 * __Path:__ /api/account/v1/user/public_tags
-* __Request headers:__
-```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYTJkNGIxNjAtZTNiMC00ZDZhLWI0NWUtNTEyYmI0OTZkZWQ4IiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDYiLCJ0eXAiOiJhY2Nlc3MifQ.ZBfbt5qBLc1tVkZvatWlCqdiPgZ3nXF23O5hfGvFdj47rHB2ej7gbg6MKLDOLHBAdt7qIqaKGPnQWj1VerQDcA
-```
 
 ##### Response
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMjNkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTI3QGJsb2Nrc2NvdXQuY29tZAACaWRh12QABG5hbWVtAAAAC1VzZXIgVGVzdDIzZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjIzZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDIzZAAMd2F0Y2hsaXN0X2lkYdc._6gJnvzjA6VEztgoIdpp7chhmhsdFrJImlcdrp4-pW0; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiJB0_ZrrjAAABTD
+x-request-id: FxF1Y3SaPVCdkicAAHIi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -2002,195 +1934,191 @@ access-control-expose-headers:
 ```json
 [
   {
-    "website": "website9",
-    "tags": "Tag10",
+    "website": "website13",
+    "tags": "Tag17",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
     "is_owner": false,
-    "id": 191,
+    "id": 143,
+    "full_name": "full name13",
+    "email": "test_user-37@blockscout.com",
+    "company": "company13",
+    "addresses": [
+      "0x000000000000000000000000000000000000007e",
+      "0x000000000000000000000000000000000000007f",
+      "0x0000000000000000000000000000000000000080",
+      "0x0000000000000000000000000000000000000081",
+      "0x0000000000000000000000000000000000000082",
+      "0x0000000000000000000000000000000000000083",
+      "0x0000000000000000000000000000000000000084"
+    ],
+    "additional_comment": "additional_comment13"
+  },
+  {
+    "website": "website12",
+    "tags": "Tag16",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": false,
+    "id": 142,
+    "full_name": "full name12",
+    "email": "test_user-36@blockscout.com",
+    "company": "company12",
+    "addresses": [
+      "0x0000000000000000000000000000000000000075",
+      "0x0000000000000000000000000000000000000076",
+      "0x0000000000000000000000000000000000000077",
+      "0x0000000000000000000000000000000000000078",
+      "0x0000000000000000000000000000000000000079",
+      "0x000000000000000000000000000000000000007a",
+      "0x000000000000000000000000000000000000007b",
+      "0x000000000000000000000000000000000000007c",
+      "0x000000000000000000000000000000000000007d"
+    ],
+    "additional_comment": "additional_comment12"
+  },
+  {
+    "website": "website11",
+    "tags": "Tag15",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": false,
+    "id": 141,
+    "full_name": "full name11",
+    "email": "test_user-35@blockscout.com",
+    "company": "company11",
+    "addresses": [
+      "0x000000000000000000000000000000000000006d",
+      "0x000000000000000000000000000000000000006e",
+      "0x000000000000000000000000000000000000006f",
+      "0x0000000000000000000000000000000000000070",
+      "0x0000000000000000000000000000000000000071",
+      "0x0000000000000000000000000000000000000072",
+      "0x0000000000000000000000000000000000000073",
+      "0x0000000000000000000000000000000000000074"
+    ],
+    "additional_comment": "additional_comment11"
+  },
+  {
+    "website": "website10",
+    "tags": "Tag14",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": false,
+    "id": 140,
+    "full_name": "full name10",
+    "email": "test_user-34@blockscout.com",
+    "company": "company10",
+    "addresses": [
+      "0x0000000000000000000000000000000000000067",
+      "0x0000000000000000000000000000000000000068",
+      "0x0000000000000000000000000000000000000069",
+      "0x000000000000000000000000000000000000006a",
+      "0x000000000000000000000000000000000000006b",
+      "0x000000000000000000000000000000000000006c"
+    ],
+    "additional_comment": "additional_comment10"
+  },
+  {
+    "website": "website9",
+    "tags": "Tag13",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": true,
+    "id": 139,
     "full_name": "full name9",
-    "email": "test_user-16@blockscout.com",
+    "email": "test_user-33@blockscout.com",
     "company": "company9",
     "addresses": [
-      "0x0000000000000000000000000000000000000048",
-      "0x0000000000000000000000000000000000000049",
-      "0x000000000000000000000000000000000000004a",
-      "0x000000000000000000000000000000000000004b",
+      "0x0000000000000000000000000000000000000061",
+      "0x0000000000000000000000000000000000000062",
+      "0x0000000000000000000000000000000000000063",
+      "0x0000000000000000000000000000000000000064",
+      "0x0000000000000000000000000000000000000065",
+      "0x0000000000000000000000000000000000000066"
+    ],
+    "additional_comment": "additional_comment9"
+  },
+  {
+    "website": "website8",
+    "tags": "Tag12",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": false,
+    "id": 138,
+    "full_name": "full name8",
+    "email": "test_user-32@blockscout.com",
+    "company": "company8",
+    "addresses": [
+      "0x0000000000000000000000000000000000000060"
+    ],
+    "additional_comment": "additional_comment8"
+  },
+  {
+    "website": "website7",
+    "tags": "Tag11",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": true,
+    "id": 137,
+    "full_name": "full name7",
+    "email": "test_user-31@blockscout.com",
+    "company": "company7",
+    "addresses": [
+      "0x000000000000000000000000000000000000005f"
+    ],
+    "additional_comment": "additional_comment7"
+  },
+  {
+    "website": "website6",
+    "tags": "Tag9;Tag10",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": true,
+    "id": 136,
+    "full_name": "full name6",
+    "email": "test_user-30@blockscout.com",
+    "company": "company6",
+    "addresses": [
+      "0x000000000000000000000000000000000000005a",
+      "0x000000000000000000000000000000000000005b",
+      "0x000000000000000000000000000000000000005c",
+      "0x000000000000000000000000000000000000005d",
+      "0x000000000000000000000000000000000000005e"
+    ],
+    "additional_comment": "additional_comment6"
+  },
+  {
+    "website": "website5",
+    "tags": "Tag8",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": false,
+    "id": 135,
+    "full_name": "full name5",
+    "email": "test_user-29@blockscout.com",
+    "company": "company5",
+    "addresses": [
+      "0x0000000000000000000000000000000000000051",
+      "0x0000000000000000000000000000000000000052",
+      "0x0000000000000000000000000000000000000053",
+      "0x0000000000000000000000000000000000000054",
+      "0x0000000000000000000000000000000000000055",
+      "0x0000000000000000000000000000000000000056",
+      "0x0000000000000000000000000000000000000057",
+      "0x0000000000000000000000000000000000000058",
+      "0x0000000000000000000000000000000000000059"
+    ],
+    "additional_comment": "additional_comment5"
+  },
+  {
+    "website": "website4",
+    "tags": "Tag6;Tag7",
+    "submission_date": "2022-09-03T21:00:07.000000Z",
+    "is_owner": true,
+    "id": 134,
+    "full_name": "full name4",
+    "email": "test_user-28@blockscout.com",
+    "company": "company4",
+    "addresses": [
       "0x000000000000000000000000000000000000004c",
       "0x000000000000000000000000000000000000004d",
       "0x000000000000000000000000000000000000004e",
       "0x000000000000000000000000000000000000004f",
       "0x0000000000000000000000000000000000000050"
     ],
-    "additional_comment": "additional_comment9"
-  },
-  {
-    "website": "website8",
-    "tags": "Tag9",
-    "is_owner": true,
-    "id": 190,
-    "full_name": "full name8",
-    "email": "test_user-15@blockscout.com",
-    "company": "company8",
-    "addresses": [
-      "0x000000000000000000000000000000000000003f",
-      "0x0000000000000000000000000000000000000040",
-      "0x0000000000000000000000000000000000000041",
-      "0x0000000000000000000000000000000000000042",
-      "0x0000000000000000000000000000000000000043",
-      "0x0000000000000000000000000000000000000044",
-      "0x0000000000000000000000000000000000000045",
-      "0x0000000000000000000000000000000000000046",
-      "0x0000000000000000000000000000000000000047"
-    ],
-    "additional_comment": "additional_comment8"
-  },
-  {
-    "website": "website7",
-    "tags": "Tag7;Tag8",
-    "is_owner": true,
-    "id": 189,
-    "full_name": "full name7",
-    "email": "test_user-14@blockscout.com",
-    "company": "company7",
-    "addresses": [
-      "0x0000000000000000000000000000000000000035",
-      "0x0000000000000000000000000000000000000036",
-      "0x0000000000000000000000000000000000000037",
-      "0x0000000000000000000000000000000000000038",
-      "0x0000000000000000000000000000000000000039",
-      "0x000000000000000000000000000000000000003a",
-      "0x000000000000000000000000000000000000003b",
-      "0x000000000000000000000000000000000000003c",
-      "0x000000000000000000000000000000000000003d",
-      "0x000000000000000000000000000000000000003e"
-    ],
-    "additional_comment": "additional_comment7"
-  },
-  {
-    "website": "website6",
-    "tags": "Tag6",
-    "is_owner": true,
-    "id": 188,
-    "full_name": "full name6",
-    "email": "test_user-13@blockscout.com",
-    "company": "company6",
-    "addresses": [
-      "0x000000000000000000000000000000000000002f",
-      "0x0000000000000000000000000000000000000030",
-      "0x0000000000000000000000000000000000000031",
-      "0x0000000000000000000000000000000000000032",
-      "0x0000000000000000000000000000000000000033",
-      "0x0000000000000000000000000000000000000034"
-    ],
-    "additional_comment": "additional_comment6"
-  },
-  {
-    "website": "website5",
-    "tags": "Tag5",
-    "is_owner": true,
-    "id": 187,
-    "full_name": "full name5",
-    "email": "test_user-12@blockscout.com",
-    "company": "company5",
-    "addresses": [
-      "0x0000000000000000000000000000000000000028",
-      "0x0000000000000000000000000000000000000029",
-      "0x000000000000000000000000000000000000002a",
-      "0x000000000000000000000000000000000000002b",
-      "0x000000000000000000000000000000000000002c",
-      "0x000000000000000000000000000000000000002d",
-      "0x000000000000000000000000000000000000002e"
-    ],
-    "additional_comment": "additional_comment5"
-  },
-  {
-    "website": "website4",
-    "tags": "Tag4",
-    "is_owner": false,
-    "id": 186,
-    "full_name": "full name4",
-    "email": "test_user-11@blockscout.com",
-    "company": "company4",
-    "addresses": [
-      "0x0000000000000000000000000000000000000022",
-      "0x0000000000000000000000000000000000000023",
-      "0x0000000000000000000000000000000000000024",
-      "0x0000000000000000000000000000000000000025",
-      "0x0000000000000000000000000000000000000026",
-      "0x0000000000000000000000000000000000000027"
-    ],
     "additional_comment": "additional_comment4"
-  },
-  {
-    "website": "website3",
-    "tags": "Tag3",
-    "is_owner": false,
-    "id": 185,
-    "full_name": "full name3",
-    "email": "test_user-10@blockscout.com",
-    "company": "company3",
-    "addresses": [
-      "0x000000000000000000000000000000000000001b",
-      "0x000000000000000000000000000000000000001c",
-      "0x000000000000000000000000000000000000001d",
-      "0x000000000000000000000000000000000000001e",
-      "0x000000000000000000000000000000000000001f",
-      "0x0000000000000000000000000000000000000020",
-      "0x0000000000000000000000000000000000000021"
-    ],
-    "additional_comment": "additional_comment3"
-  },
-  {
-    "website": "website2",
-    "tags": "Tag2",
-    "is_owner": true,
-    "id": 184,
-    "full_name": "full name2",
-    "email": "test_user-9@blockscout.com",
-    "company": "company2",
-    "addresses": [
-      "0x0000000000000000000000000000000000000016",
-      "0x0000000000000000000000000000000000000017",
-      "0x0000000000000000000000000000000000000018",
-      "0x0000000000000000000000000000000000000019",
-      "0x000000000000000000000000000000000000001a"
-    ],
-    "additional_comment": "additional_comment2"
-  },
-  {
-    "website": "website1",
-    "tags": "Tag1",
-    "is_owner": false,
-    "id": 183,
-    "full_name": "full name1",
-    "email": "test_user-8@blockscout.com",
-    "company": "company1",
-    "addresses": [
-      "0x0000000000000000000000000000000000000010",
-      "0x0000000000000000000000000000000000000011",
-      "0x0000000000000000000000000000000000000012",
-      "0x0000000000000000000000000000000000000013",
-      "0x0000000000000000000000000000000000000014",
-      "0x0000000000000000000000000000000000000015"
-    ],
-    "additional_comment": "additional_comment1"
-  },
-  {
-    "website": "website0",
-    "tags": "Tag0",
-    "is_owner": true,
-    "id": 182,
-    "full_name": "full name0",
-    "email": "test_user-7@blockscout.com",
-    "company": "company0",
-    "addresses": [
-      "0x000000000000000000000000000000000000000a",
-      "0x000000000000000000000000000000000000000b",
-      "0x000000000000000000000000000000000000000c",
-      "0x000000000000000000000000000000000000000d",
-      "0x000000000000000000000000000000000000000e",
-      "0x000000000000000000000000000000000000000f"
-    ],
-    "additional_comment": "additional_comment0"
   }
 ]
 ```
@@ -2200,10 +2128,9 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ DELETE
-* __Path:__ /api/account/v1/user/public_tags/191
+* __Path:__ /api/account/v1/user/public_tags/143
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzAsImlhdCI6MTY2MDU3OTkzMCwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiYTJkNGIxNjAtZTNiMC00ZDZhLWI0NWUtNTEyYmI0OTZkZWQ4IiwibmJmIjoxNjYwNTc5OTI5LCJzdWIiOiJibG9ja3Njb3V0fDAwMDYiLCJ0eXAiOiJhY2Nlc3MifQ.ZBfbt5qBLc1tVkZvatWlCqdiPgZ3nXF23O5hfGvFdj47rHB2ej7gbg6MKLDOLHBAdt7qIqaKGPnQWj1VerQDcA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
@@ -2217,9 +2144,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAmaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyMjNkAAVlbWFpbG0AAAAbdGVzdF91c2VyLTI3QGJsb2Nrc2NvdXQuY29tZAACaWRh12QABG5hbWVtAAAAC1VzZXIgVGVzdDIzZAAIbmlja25hbWVtAAAAC3Rlc3RfdXNlcjIzZAADdWlkbQAAABBibG9ja3Njb3V0fDAwMDIzZAAMd2F0Y2hsaXN0X2lkYdc._6gJnvzjA6VEztgoIdpp7chhmhsdFrJImlcdrp4-pW0; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpiJiCRRrrjAAABUD
+x-request-id: FxF1Y3SwObudkicAAHBB
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -2236,25 +2164,29 @@ access-control-expose-headers:
 
 ##### Request
 * __Method:__ PUT
-* __Path:__ /api/account/v1/user/public_tags/194
+* __Path:__ /api/account/v1/user/public_tags/132
 * __Request headers:__
 ```
-authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJibG9ja19zY291dF93ZWIiLCJleHAiOjE2NjI5OTkxMzEsImlhdCI6MTY2MDU3OTkzMSwiaXNzIjoiYmxvY2tfc2NvdXRfd2ViIiwianRpIjoiMzMzOWViOWYtYTE3Ny00MzJlLWE3NjYtMTk4YzIwZjk2ZTMyIiwibmJmIjoxNjYwNTc5OTMwLCJzdWIiOiJibG9ja3Njb3V0fDAwMDIzIiwidHlwIjoiYWNjZXNzIn0.cv2NCc9KC-ad5u8hDlXeSL1EJpt3E_C1OvoENI_xkjBSnWqBL-M-KXSqqgo_42Od_cVKslI4XGtVeK3fk0eaOA
 content-type: multipart/mixed; boundary=plug_conn_test
 ```
 * __Request body:__
 ```json
 {
-  "website": "website13",
-  "tags": "Tag14",
-  "is_owner": false,
-  "full_name": "full name13",
-  "email": "test_user-37@blockscout.com",
-  "company": "company13",
+  "website": "website2",
+  "tags": "Tag2;Tag3",
+  "is_owner": true,
+  "full_name": "full name2",
+  "email": "test_user-9@blockscout.com",
+  "company": "company2",
   "addresses": [
-    "0x0000000000000000000000000000000000000082"
+    "0x000000000000000000000000000000000000000f",
+    "0x0000000000000000000000000000000000000010",
+    "0x0000000000000000000000000000000000000011",
+    "0x0000000000000000000000000000000000000012",
+    "0x0000000000000000000000000000000000000013",
+    "0x0000000000000000000000000000000000000014"
   ],
-  "additional_comment": "additional_comment13"
+  "additional_comment": "additional_comment2"
 }
 ```
 
@@ -2262,9 +2194,10 @@ content-type: multipart/mixed; boundary=plug_conn_test
 * __Status__: 200
 * __Response headers:__
 ```
+set-cookie: _explorer_key=SFMyNTY.g3QAAAABbQAAAAxjdXJyZW50X3VzZXJ0AAAAB2QABmF2YXRhcm0AAAAlaHR0cHM6Ly9leGFtcGxlLmNvbS9hdmF0YXIvdGVzdF91c2VyNmQABWVtYWlsbQAAABp0ZXN0X3VzZXItN0BibG9ja3Njb3V0LmNvbWQAAmlkYcZkAARuYW1lbQAAAApVc2VyIFRlc3Q2ZAAIbmlja25hbWVtAAAACnRlc3RfdXNlcjZkAAN1aWRtAAAAD2Jsb2Nrc2NvdXR8MDAwNmQADHdhdGNobGlzdF9pZGHG.86gruprPiLE-Nf9xkOzjEcW2wfSnCCPly5fHTwHrF6c; path=/; HttpOnly
 content-type: application/json; charset=utf-8
 cache-control: max-age=0, private, must-revalidate
-x-request-id: FwuQpjnaeEIPFzIAAAiB
+x-request-id: FxF1Y2E03jhU4u4AAGSi
 access-control-allow-credentials: true
 access-control-allow-origin: *
 access-control-expose-headers: 
@@ -2272,17 +2205,23 @@ access-control-expose-headers:
 * __Response body:__
 ```json
 {
-  "website": "website13",
-  "tags": "Tag14",
-  "is_owner": false,
-  "id": 194,
-  "full_name": "full name13",
-  "email": "test_user-37@blockscout.com",
-  "company": "company13",
+  "website": "website2",
+  "tags": "Tag2;Tag3",
+  "submission_date": "2022-09-03T21:00:07.000000Z",
+  "is_owner": true,
+  "id": 132,
+  "full_name": "full name2",
+  "email": "test_user-9@blockscout.com",
+  "company": "company2",
   "addresses": [
-    "0x0000000000000000000000000000000000000082"
+    "0x000000000000000000000000000000000000000f",
+    "0x0000000000000000000000000000000000000010",
+    "0x0000000000000000000000000000000000000011",
+    "0x0000000000000000000000000000000000000012",
+    "0x0000000000000000000000000000000000000013",
+    "0x0000000000000000000000000000000000000014"
   ],
-  "additional_comment": "additional_comment13"
+  "additional_comment": "additional_comment2"
 }
 ```
 

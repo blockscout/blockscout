@@ -10,9 +10,9 @@ env:
   MIX_ENV: test
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
-  AUTH0_DOMAIN: 'blockscoutcom.us.auth0.com'
-  AUTH0_LOGOUT_URL: 'https://blockscoutcom.us.auth0.com/v2/logout'
-  AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/auth/logout'
+  ACCOUNT_AUTH0_DOMAIN: 'blockscoutcom.us.auth0.com'
+  ACCOUNT_AUTH0_LOGOUT_URL: 'https://blockscoutcom.us.auth0.com/v2/logout'
+  ACCOUNT_AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/auth/logout'
 
 jobs:
   build-and-cache:
@@ -494,6 +494,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-cache
     services:
+      redis_db:
+        image: 'redis:alpine'
+        ports: 
+          - 6379:6379
+
       postgres:
         image: postgres
         env:
@@ -573,3 +578,5 @@ jobs:
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_ID: "77"
           ADMIN_PANEL_ENABLED: "true"
+          ACCOUNT_ENABLED: "true"
+          ACCOUNT_REDIS_URL: "redis://localhost:6379"

@@ -4,8 +4,6 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
   """
   require Logger
 
-  require Logger
-
   alias Ecto.Changeset
   alias Explorer.Account.PublicTagsRequest
   alias Explorer.Repo

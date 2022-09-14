@@ -276,11 +276,15 @@ defmodule BlockScoutWeb.LayoutView do
     return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
     logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
 
-    params = [
-      client_id: client_id,
-      returnTo: return_to
-    ]
+    if client_id && return_to && logout_url do
+      params = [
+        client_id: client_id,
+        returnTo: return_to
+      ]
 
-    [logout_url, "?", URI.encode_query(params)]
+      [logout_url, "?", URI.encode_query(params)]
+    else
+      []
+    end
   end
 end

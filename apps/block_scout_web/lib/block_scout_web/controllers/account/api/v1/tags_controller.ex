@@ -1,20 +1,21 @@
 defmodule BlockScoutWeb.Account.Api.V1.TagsController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   alias BlockScoutWeb.Models.{GetAddressTags, GetTransactionTags, UserFromAuth}
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash.{Address, Full}
-  alias Guardian.Plug
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
 
   def tags_address(conn, %{"address_hash" => address_hash}) do
     personal_tags =
-      if is_nil(Plug.current_claims(conn)) do
+      if is_nil(current_user(conn)) do
         %{personal_tags: [], watchlist_names: []}
       else
-        uid = Plug.current_claims(conn)["sub"]
+        uid = current_user(conn).id
 
         with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
              {:watchlist, %{watchlists: [watchlist | _]}} <-
@@ -52,10 +53,10 @@ defmodule BlockScoutWeb.Account.Api.V1.TagsController do
       end
 
     personal_tags =
-      if is_nil(Plug.current_claims(conn)) do
+      if is_nil(current_user(conn)) do
         %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
       else
-        uid = Plug.current_claims(conn)["sub"]
+        uid = current_user(conn).id
 
         with {:identity, [%Identity{} = identity]} <- {:identity, UserFromAuth.find_identity(uid)},
              {:watchlist, %{watchlists: [watchlist | _]}} <-

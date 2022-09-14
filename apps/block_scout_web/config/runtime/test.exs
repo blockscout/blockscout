@@ -13,8 +13,6 @@ config :ueberauth, Ueberauth,
   logout_url: "example.com/logout",
   logout_return_to_url: "example.com/return"
 
-config :block_scout_web, BlockScoutWeb.Guardian, secret_key: "secret_key"
-
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"

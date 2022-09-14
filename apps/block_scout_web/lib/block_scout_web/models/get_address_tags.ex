@@ -10,6 +10,9 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
+  def get_address_tags(nil, nil),
+    do: %{common_tags: [], personal_tags: [], watchlist_names: []}
+
   def get_address_tags(%Hash{} = address_hash, current_user) do
     %{
       common_tags: get_tags_on_address(address_hash),

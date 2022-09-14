@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
-  alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.Etherscan.Contracts
   alias Explorer.SmartContract.Helper
@@ -404,7 +404,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       address = Contracts.address_hash_to_address_with_source_code(address_hash)
 
       render(conn, :getsourcecode, %{
-        contract: address
+        contract: address || %Address{hash: address_hash, smart_contract: nil}
       })
     else
       {:address_param, :error} ->
@@ -412,9 +412,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:format, :error} ->
         render(conn, :error, error: @invalid_address)
-
-      {:contract, :not_found} ->
-        render(conn, :getsourcecode, %{contract: nil, address_hash: nil})
     end
   end
 

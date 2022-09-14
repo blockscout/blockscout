@@ -5,10 +5,22 @@ defmodule BlockScoutWeb.WebRouter do
   use BlockScoutWeb, :router
   require Ueberauth
 
+  alias BlockScoutWeb.Plug.CheckAccountWeb
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
+    plug(:protect_from_forgery)
+    plug(BlockScoutWeb.CSPHeader)
+    plug(BlockScoutWeb.ChecksumAddress)
+  end
+
+  pipeline :account do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_flash)
+    plug(CheckAccountWeb)
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
     plug(BlockScoutWeb.ChecksumAddress)
@@ -19,18 +31,16 @@ defmodule BlockScoutWeb.WebRouter do
   end
 
   scope "/auth", BlockScoutWeb do
-    pipe_through(:browser)
+    pipe_through(:account)
 
     get("/profile", Account.AuthController, :profile)
     get("/logout", Account.AuthController, :logout)
     get("/:provider", Account.AuthController, :request)
-    get("/:provider/api_callback", Account.AuthController, :api_callback)
     get("/:provider/callback", Account.AuthController, :callback)
-    get("/api/logout", Account.AuthController, :api_logout)
   end
 
   scope "/account", BlockScoutWeb do
-    pipe_through(:browser)
+    pipe_through(:account)
 
     resources("/tag_address", Account.TagAddressController,
       only: [:index, :new, :create, :delete],
