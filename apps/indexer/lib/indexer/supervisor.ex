@@ -28,7 +28,7 @@ defmodule Indexer.Supervisor do
     TokenTotalSupplyOnDemand,
     TokenUpdater,
     UncleBlock,
-    CosmosTxHash
+    CosmosHash
   }
 
   alias Indexer.Temporary.{
@@ -126,7 +126,7 @@ defmodule Indexer.Supervisor do
       {ContractCode.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {TokenBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {TokenUpdater.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-      {CosmosTxHash.Supervisor, [[memory_monitor: memory_monitor]]},
+      {CosmosHash.Supervisor, [[memory_monitor: memory_monitor]]},
       {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
 
       # Out-of-band fetchers

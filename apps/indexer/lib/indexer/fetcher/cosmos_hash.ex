@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.CosmosTxHash do
+defmodule Indexer.Fetcher.CosmosHash do
   @moduledoc """
-  Fetches and indexes `t:Explorer.Chain.CosmosTxHash.t/0`.
+  Fetches and indexes `t:Explorer.Chain.CosmosHash.t/0`.
 
   See `async_fetch/1` for details on configuring limits.
   """
@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.CosmosTxHash do
 
   alias Explorer.Chain
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.CosmosTxHash.Supervisor, as: CosmosTxHashSupervisor
+  alias Indexer.Fetcher.CosmosHash.Supervisor, as: CosmosHashSupervisor
 
   @behaviour BufferedTask
 
@@ -23,7 +23,7 @@ defmodule Indexer.Fetcher.CosmosTxHash do
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     poll: true,
-    task_supervisor: Indexer.Fetcher.CosmosTxHash.TaskSupervisor,
+    task_supervisor: Indexer.Fetcher.CosmosHash.TaskSupervisor,
     metadata: [fetcher: :cosmos_hash]
   ]
 
@@ -32,7 +32,7 @@ defmodule Indexer.Fetcher.CosmosTxHash do
   """
   @spec async_fetch([Block.block_number()]) :: :ok
   def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
-    if CosmosTxHashSupervisor.disabled?() do
+    if CosmosHashSupervisor.disabled?() do
       :ok
     else
       BufferedTask.buffer(__MODULE__, block_numbers, timeout)
@@ -61,7 +61,7 @@ defmodule Indexer.Fetcher.CosmosTxHash do
   @impl BufferedTask
   @decorate trace(
               name: "fetch",
-              resource: "Indexer.Fetcher.CosmosTxHash.run/2",
+              resource: "Indexer.Fetcher.CosmosHash.run/2",
               service: :indexer,
               tracer: Tracer
             )
