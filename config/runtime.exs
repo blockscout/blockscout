@@ -35,6 +35,17 @@ config :block_scout_web, :footer,
 ### BlockScout Web ###
 ######################
 
+# Configures Ueberauth's Auth0 auth provider
+config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
+  domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
+  client_id: System.get_env("ACCOUNT_AUTH0_CLIENT_ID"),
+  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET")
+
+# Configures Ueberauth local settings
+config :ueberauth, Ueberauth,
+  logout_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_URL"),
+  logout_return_to_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_RETURN_URL")
+
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
@@ -307,6 +318,21 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
 config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
+
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
+  api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("ACCOUNT_SENDGRID_API_KEY")
+
+config :explorer, Explorer.Account,
+  enabled: System.get_env("ACCOUNT_ENABLED") == "true",
+  sendgrid: [
+    sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
+    template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
+  ]
 
 ###############
 ### Indexer ###

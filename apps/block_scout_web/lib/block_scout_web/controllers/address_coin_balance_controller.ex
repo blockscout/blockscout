@@ -5,7 +5,9 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelpers, AddressCoinBalanceView, Controller}
   alias Explorer.{Chain, Market}
@@ -76,7 +78,8 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         current_path: Controller.current_full_path(conn),
-        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       {:restricted_access, _} ->
@@ -101,7 +104,8 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
               coin_balance_status: nil,
               exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
               counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
-              current_path: Controller.current_full_path(conn)
+              current_path: Controller.current_full_path(conn),
+              tags: get_address_tags(address_hash, current_user(conn))
             )
 
           _ ->

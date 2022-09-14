@@ -2,6 +2,9 @@
 defmodule BlockScoutWeb.AddressReadProxyController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
+
   alias BlockScoutWeb.AccessHelpers
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -31,7 +34,8 @@ defmodule BlockScoutWeb.AddressReadProxyController do
         action: :read,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+        tags: get_address_tags(address_hash, current_user(conn))
       )
     else
       _ ->

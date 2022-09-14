@@ -1,0 +1,18 @@
+<tr>
+  <td><%= @custom_abi.name %></td>
+  <td>
+      <%= link(@custom_abi.address_hash, to: address_contract_path(@conn, :index, @custom_abi.address_hash)) %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+          additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @custom_abi.address_hash, aria_label: gettext("Copy Contract Address"), title: gettext("Copy Contract Address"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
+  </td>
+  <td>
+    <form method="post" action="<%= custom_abi_path(@conn, :delete, @custom_abi.id) %>">
+      <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
+      <input type="hidden" name="_method" value="delete">
+    </form>  
+    <a href="" data-delete-item><%= gettext("Remove") %></a>
+  </td>
+  <td>
+    <%= link gettext("Edit"), to: custom_abi_path(@conn, :edit, @custom_abi.id) %>
+  </td>
+</tr>
