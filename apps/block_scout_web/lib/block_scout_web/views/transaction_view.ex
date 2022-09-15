@@ -573,19 +573,19 @@ defmodule BlockScoutWeb.TransactionView do
 
     case revert_reason do
       "0x" <> hex_part ->
-        proccess_hex_revert_reason(hex_part)
+        process_hex_revert_reason(hex_part)
 
       hex_part ->
-        proccess_hex_revert_reason(hex_part)
+        process_hex_revert_reason(hex_part)
     end
   end
 
   # Function converts hex revert reason to the binary
-  @spec proccess_hex_revert_reason(nil) :: nil
-  defp proccess_hex_revert_reason(nil), do: nil
+  @spec process_hex_revert_reason(nil) :: nil
+  defp process_hex_revert_reason(nil), do: nil
 
-  @spec proccess_hex_revert_reason(binary()) :: binary()
-  defp proccess_hex_revert_reason(hex_revert_reason) do
+  @spec process_hex_revert_reason(binary()) :: binary()
+  defp process_hex_revert_reason(hex_revert_reason) do
     case Integer.parse(hex_revert_reason, 16) do
       {number, ""} ->
         :binary.encode_unsigned(number)

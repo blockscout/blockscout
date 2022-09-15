@@ -58,7 +58,7 @@ defmodule Explorer.Chain.Cache.Transaction do
         rescue
           e ->
             Logger.debug([
-              "Coudn't update transaction count test #{inspect(e)}"
+              "Couldn't update transaction count test #{inspect(e)}"
             ])
         end
 

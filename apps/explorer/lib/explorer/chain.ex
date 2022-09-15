@@ -428,7 +428,7 @@ defmodule Explorer.Chain do
 
     options
     |> address_to_transactions_tasks_query()
-    |> Transaction.not_dropped_or_replaced_transacions()
+    |> Transaction.not_dropped_or_replaced_transactions()
     |> where_block_number_in_period(from_block, to_block)
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
