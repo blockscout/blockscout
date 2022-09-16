@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
       |> assert_has(ChainPage.blocks(count: 4))
     end
 
-    test "inserts place holder blocks on render for out of order blocks", %{session: session} do
+    test "doesn't insert place holder blocks on render for out of order blocks", %{session: session} do
       insert(:block, number: 409)
 
       start_supervised!(AddressesCounter)
@@ -75,8 +75,8 @@ defmodule BlockScoutWeb.ViewingChainTest do
 
       session
       |> ChainPage.visit_page()
-      |> assert_has(ChainPage.block(%Block{number: 408}))
-      |> assert_has(ChainPage.place_holder_blocks(3))
+      |> refute_has(ChainPage.block(%Block{number: 408}))
+      |> refute_has(ChainPage.place_holder_blocks(3))
     end
   end
 
