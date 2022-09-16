@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.ApiView
+  alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias BlockScoutWeb.ABIEncodedValueView
   alias BlockScoutWeb.Tokens.Helpers
   alias Explorer.Chain
@@ -34,10 +34,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def prepare_token_transfer(token_transfer) do
     %{
       "tx_hash" => token_transfer.transaction_hash,
-      "from" => token_transfer.from_address_hash,
-      "to" => token_transfer.from_address_hash,
+      "from" => Helper.address_with_info(token_transfer.from_address, token_transfer.from_address_hash),
+      "to" => Helper.address_with_info(token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
-      "token_address" => token_transfer.contract_address_hash,
+      "token_address" => token_transfer.token_contract_address_hash,
       "token_symbol" => Helpers.token_symbol(token_transfer.token),
       "type" => Chain.get_token_transfer_type(token_transfer),
       "token_type" => token_transfer.token.type
@@ -58,14 +58,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       {:ok, value} ->
         %{"value" => value}
     end
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
   end
 
   defp prepare_transaction(transaction) do
@@ -112,7 +104,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       end
 
     decoded_input_data =
-      case transaction |> Transaction.decoded_input_data() |> format_decoded_input() |> debug("decoded") do
+      case transaction |> Transaction.decoded_input_data() |> format_decoded_input() do
         {:ok, method_id, text, mapping} ->
           render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: false)
 
@@ -126,8 +118,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "status" => transaction.status || 0,
       "block" => transaction.block_number,
       "timestamp" => transaction.block && transaction.block.timestamp,
-      "from" => transaction.from_address_hash,
-      "to" => transaction.to_address_hash,
+      "from" => Helper.address_with_info(transaction.from_address, transaction.from_address_hash),
+      "to" => Helper.address_with_info(transaction.to_address, transaction.to_address_hash),
+      "created_contract" =>
+        Helper.address_with_info(transaction.created_contract_address, transaction.created_contract_address_hash),
       "value" => transaction.value,
       "fee" => Tuple.to_list(Chain.fee(transaction, :wei)),
       "gas_price" => transaction.gas_price,
