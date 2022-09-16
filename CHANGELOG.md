@@ -17,6 +17,7 @@
 
 ### Chore
 
+- [#6125](https://github.com/blockscout/blockscout/pull/6125) - Rename obsolete "parity" EthereumJSONRPC.Variant to "nethermind"
 - [#6124](https://github.com/blockscout/blockscout/pull/6124) - Docker compose: add config for Erigon
 - [#6053](https://github.com/blockscout/blockscout/pull/6053) - Bump jest-environment-jsdom from 29.0.1 to 29.0.2 in /apps/block_scout_web/assets
 - [#6055](https://github.com/blockscout/blockscout/pull/6055) - Bump @babel/core from 7.18.13 to 7.19.0 in /apps/block_scout_web/assets

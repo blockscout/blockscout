@@ -1,4 +1,4 @@
-defmodule EthereumJSONRPC.ParityTest do
+defmodule EthereumJSONRPC.NethermindTest do
   use ExUnit.Case, async: true
   use EthereumJSONRPC.Case
 
@@ -9,13 +9,13 @@ defmodule EthereumJSONRPC.ParityTest do
 
   setup :verify_on_exit!
 
-  doctest EthereumJSONRPC.Parity
+  doctest EthereumJSONRPC.Nethermind
 
   @moduletag :no_geth
 
   describe "fetch_internal_transactions/1" do
     test "is not supported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      EthereumJSONRPC.Parity.fetch_internal_transactions([], json_rpc_named_arguments)
+      EthereumJSONRPC.Nethermind.fetch_internal_transactions([], json_rpc_named_arguments)
     end
   end
 
@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.ParityTest do
         end)
       end
 
-      assert EthereumJSONRPC.Parity.fetch_block_internal_transactions(
+      assert EthereumJSONRPC.Nethermind.fetch_block_internal_transactions(
                [block_number],
                json_rpc_named_arguments
              ) == {
@@ -164,7 +164,7 @@ defmodule EthereumJSONRPC.ParityTest do
         end)
       end
 
-      assert EthereumJSONRPC.Parity.fetch_first_trace(
+      assert EthereumJSONRPC.Nethermind.fetch_first_trace(
                [
                  %{
                    hash_data: transaction_hash,
@@ -197,7 +197,7 @@ defmodule EthereumJSONRPC.ParityTest do
                    json_rpc_named_arguments: [
                      transport: EthereumJSONRPC.Mox,
                      transport_options: [],
-                     variant: EthereumJSONRPC.Parity
+                     variant: EthereumJSONRPC.Nethermind
                    ]
                  }
                ]
@@ -259,7 +259,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
-               EthereumJSONRPC.Parity.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
+               EthereumJSONRPC.Nethermind.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
 
@@ -333,7 +333,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set, errors: []}} =
-               EthereumJSONRPC.Parity.fetch_beneficiaries([5_609_295], json_rpc_named_arguments)
+               EthereumJSONRPC.Nethermind.fetch_beneficiaries([5_609_295], json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
 
@@ -364,7 +364,7 @@ defmodule EthereumJSONRPC.ParityTest do
         end)
 
         assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
-                 EthereumJSONRPC.Parity.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
+                 EthereumJSONRPC.Nethermind.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
 
         assert Enum.empty?(params_set)
       end
@@ -441,7 +441,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
-               EthereumJSONRPC.Parity.fetch_beneficiaries([5_077_429], json_rpc_named_arguments)
+               EthereumJSONRPC.Nethermind.fetch_beneficiaries([5_077_429], json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
 
@@ -561,7 +561,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
-               EthereumJSONRPC.Parity.fetch_beneficiaries(
+               EthereumJSONRPC.Nethermind.fetch_beneficiaries(
                  [block_number1, block_number2],
                  json_rpc_named_arguments
                )
@@ -609,7 +609,7 @@ defmodule EthereumJSONRPC.ParityTest do
           {:error, "oops"}
         end)
 
-        assert {:error, "oops"} = EthereumJSONRPC.Parity.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
+        assert {:error, "oops"} = EthereumJSONRPC.Nethermind.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
       end
     end
   end
