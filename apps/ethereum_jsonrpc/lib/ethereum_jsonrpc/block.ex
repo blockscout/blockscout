@@ -598,8 +598,8 @@ defmodule EthereumJSONRPC.Block do
     {key, Transactions.to_elixir(transactions)}
   end
 
-  # Arbitrum fields
-  defp entry_to_elixir({"l1BlockNumber", _}) do
+  # Arbitrum/ZkSync fields
+  defp entry_to_elixir({key, _}) when key in ~w(l1BlockNumber l1BatchNumber l1BatchTxIndex) do
     {:ignore, :ignore}
   end
 end
