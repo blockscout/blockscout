@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.ABIEncodedValueView
+  alias BlockScoutWeb.Tokens.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.{Transaction, Wei}
 
@@ -20,6 +21,43 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("revert_reason.json", %{raw: raw, decoded: decoded}) do
     %{"raw" => raw, "decoded" => decoded}
+  end
+
+  def render("token_transfers.json", %{token_transfers: token_transfers}) do
+    Enum.map(token_transfers, &prepare_token_transfer/1)
+  end
+
+  def render("token_transfer.json", %{token_transfer: token_transfer}) do
+    prepare_token_transfer(token_transfer)
+  end
+
+  def prepare_token_transfer(token_transfer) do
+    %{
+      "tx_hash" => token_transfer.transaction_hash,
+      "from" => token_transfer.from_address_hash,
+      "to" => token_transfer.from_address_hash,
+      "total" => prepare_token_transfer_total(token_transfer),
+      "token_address" => token_transfer.contract_address_hash,
+      "token_symbol" => Helpers.token_symbol(token_transfer.token),
+      "type" => Chain.get_token_transfer_type(token_transfer),
+      "token_type" => token_transfer.token.type
+    }
+  end
+
+  def prepare_token_transfer_total(token_transfer) do
+    case Helpers.token_transfer_amount(token_transfer) do
+      {:ok, :erc721_instance} ->
+        %{"token_id" => token_transfer.token_id}
+
+      {:ok, :erc1155_instance, value} ->
+        %{"token_id" => token_transfer.token_id, "value" => value}
+
+      {:ok, :erc1155_instance, values, token_ids, _decimals} ->
+        Enum.map(Enum.zip(values, token_ids), fn {value, token_id} -> %{"value" => value, "token_id" => token_id} end)
+
+      {:ok, value} ->
+        %{"value" => value}
+    end
   end
 
   defp debug(value, key) do
@@ -104,33 +142,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "position" => transaction.index,
       "revert_reason" => revert_reason,
       "raw_input" => transaction.input,
-      "decoded_input" => decoded_input_data
-      # "decoded_input": {
-      #   "method_name": "submit_signature",
-      #   "method_id": "0x630cea8e",
-      #   "parameters": [
-      #     {
-      #       "name": "signature",
-      #       "type": "bytes",
-      #       "value": "0x0"
-      #     },
-      #     {
-      #       "name": "message",
-      #       "type": "bytes",
-      #       "value": "0x01"
-      #     }
-      #   ]
-      # },
-      # "token_transfers": [
-      #   {
-      #     "tx_hash": "0x655a2304c3f69b0ce52a6dd25bf4377ffddcdde6397aa53d47b13c49af0ac5c8",
-      #     "from": "0xd676432A77cfe7bbF5a048E375557cC18e295aE7",
-      #     "to": "0x70f2534984c651d4FEd7cC48E4741ebE9dFF9b9A",
-      #     "value": 0,
-      #     "token_address": "0x70f2534984c651d4FEd7cC48E4741ebE9dFF9b9A",
-      #     "token_symbol": "WETH"
-      #   }
-      # ]
+      "decoded_input" => decoded_input_data,
+      "token_transfers" =>
+        render("token_transfers.json", %{
+          token_transfers:
+            Enum.take(transaction.token_transfers, Chain.get_token_transfers_per_transaction_preview_count())
+        }),
+      "token_transfers_overflow" =>
+        Enum.count(transaction.token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
     }
   end
 

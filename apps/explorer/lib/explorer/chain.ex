@@ -81,6 +81,8 @@ defmodule Explorer.Chain do
 
   @default_paging_options %PagingOptions{page_size: 50}
 
+  @token_transfers_per_transaction_preview 10
+
   @max_incoming_transactions_count 10_000
 
   @revert_msg_prefix_1 "Revert: "
@@ -1985,6 +1987,7 @@ defmodule Explorer.Chain do
     Transaction
     |> where(hash: ^hash)
     |> join_associations(necessity_by_association)
+    |> debug("result query")
     |> Repo.one()
     |> case do
       nil ->
@@ -1993,6 +1996,28 @@ defmodule Explorer.Chain do
       transaction ->
         {:ok, transaction}
     end
+  end
+
+  def preload_token_transfers(%Transaction{hash: tx_hash} = transaction, necessity_by_association) do
+    token_transfers =
+      TokenTransfer
+      |> where([token_transfer], token_transfer.transaction_hash == ^tx_hash)
+      |> limit(^(@token_transfers_per_transaction_preview + 1))
+      |> order_by([token_transfer], asc: token_transfer.log_index)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
+
+    %Transaction{transaction | token_transfers: token_transfers}
+  end
+
+  def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
   end
 
   @doc """
@@ -4297,6 +4322,16 @@ defmodule Explorer.Chain do
   end
 
   defp join_association(query, association, necessity) when is_atom(association) do
+    case necessity do
+      :optional ->
+        preload(query, ^association)
+
+      :required ->
+        from(q in query, inner_join: a in assoc(q, ^association), preload: [{^association, a}])
+    end
+  end
+
+  defp join_association(query, association, necessity) do
     case necessity do
       :optional ->
         preload(query, ^association)
