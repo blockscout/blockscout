@@ -18,7 +18,7 @@ defmodule EthereumJSONRPC.Variant do
   Fetch the block reward contract beneficiaries for a given blocks from the variant of the Ethereum JSONRPC API.
 
   For more information on block reward contracts see:
-  https://wiki.parity.io/Block-Reward-Contract.html
+  https://openethereum.github.io/Block-Reward-Contract
 
   ## Returns
 
@@ -94,4 +94,21 @@ defmodule EthereumJSONRPC.Variant do
               ],
               EthereumJSONRPC.json_rpc_named_arguments()
             ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
+
+  def get do
+    cond do
+      is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) ->
+        "nethermind"
+
+      System.get_env("ETHEREUM_JSONRPC_VARIANT") == "parity" ->
+        "nethermind"
+
+      true ->
+        "ETHEREUM_JSONRPC_VARIANT"
+        |> System.get_env()
+        |> String.split(".")
+        |> List.last()
+        |> String.downcase()
+    end
+  end
 end

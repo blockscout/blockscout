@@ -39,7 +39,7 @@ defmodule Indexer.MixProject do
     [
       # Optional dependency of `:spandex` for `Spandex.Decorators`
       {:decorator, "~> 1.4"},
-      # JSONRPC access to Parity for `Explorer.Indexer`
+      # JSONRPC access to Nethermind for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
       # RLP encoding
       {:ex_rlp, "~> 0.5.2"},
