@@ -237,6 +237,10 @@ function isTupleInputType (inputType) {
   return inputType && inputType.includes('tuple') && !isArrayInputType(inputType)
 }
 
+function isArrayOfTuple (inputType) {
+  return inputType && inputType.includes('tuple') && isArrayInputType(inputType)
+}
+
 function isAddressInputType (inputType) {
   return inputType && inputType.includes('address') && !isArrayInputType(inputType)
 }
