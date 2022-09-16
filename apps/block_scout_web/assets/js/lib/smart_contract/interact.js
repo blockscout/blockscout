@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals'
 import { compareChainIDs, formatError, formatTitleAndError, getContractABI, getCurrentAccountPromise, getMethodInputs, prepareMethodArgs } from './common_helpers'
+import { fullPath } from '../utils'
 
 export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer) => {
   let data = {
@@ -61,7 +62,8 @@ export const callMethod = (isWalletEnabled, $functionInputs, explorerChainId, $f
             methodToCall
               .on('error', function (error) {
                 const titleAndError = formatTitleAndError(error)
-                const message = titleAndError.message + (titleAndError.txHash ? `<br><a href="/tx/${titleAndError.txHash}">More info</a>` : '')
+                const txUrl = fullPath(`/tx/${titleAndError.txHash}`)
+                const message = titleAndError.message + (titleAndError.txHash ? `<br><a href="${txUrl}">More info</a>` : '')
                 openErrorModal(titleAndError.title.length ? titleAndError.title : `Error in sending transaction for method "${functionName}"`, message, false)
               })
               .on('transactionHash', function (txHash) {

@@ -98,11 +98,9 @@ defmodule BlockScoutWeb.LayoutView do
     """
   end
 
-  def version do
-    BlockScoutWeb.version()
-  end
-
+  def version, do: BlockScoutWeb.version()
   def segment_key, do: BlockScoutWeb.segment_key()
+  def network_path, do: BlockScoutWeb.network_path()
 
   def release_link(version) do
     release_link_env_var = Application.get_env(:block_scout_web, :release_link)
