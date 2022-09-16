@@ -5,9 +5,10 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
   alias Explorer.Chain
   alias Explorer.Market
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain.Transaction.History.TransactionStats
+  alias Explorer.Counters.AverageBlockTime
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
-  alias Explorer.Counters.AverageBlockTime
 
   def counted_info(conn, _) do
     APILogger.log(conn)
@@ -24,6 +25,8 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
       circulating_supply = token.available_supply
       market_cap = token.market_cap_usd
 
+      transaction_stats = get_transaction_stats() |> Enum.at(0)
+
       send_resp(conn, :ok, result(average_block_time,
                                   total_transactions,
                                   total_blocks,
@@ -31,7 +34,8 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
                                   price,
                                   volume_24h,
                                   circulating_supply,
-                                  market_cap
+                                  market_cap,
+                                  transaction_stats
         )
       )
     rescue
@@ -39,8 +43,14 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
     end
   end
 
-  def result(average_block_time, total_transactions, total_blocks,
-        wallet_addresses, price, volume_24h, circulating_supply, market_cap) do
+  defp result(average_block_time, total_transactions, total_blocks, wallet_addresses,
+         price, volume_24h, circulating_supply, market_cap, transaction_stats) do
+    tx_stats = %{
+      "date" => transaction_stats.date,
+      "number_of_transactions" => transaction_stats.number_of_transactions,
+      "gas_used" => transaction_stats.gas_used,
+      "total_fee" => transaction_stats.total_fee
+    }
     %{
       "average_block_time" => average_block_time |> Timex.Duration.to_seconds(),
       "total_transactions" => total_transactions,
@@ -49,15 +59,35 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
       "price" => price,
       "volume_24h" => volume_24h,
       "circulating_supply" => circulating_supply,
-      "market_cap" => market_cap
+      "market_cap" => market_cap,
+      "transaction_stats" => tx_stats
     }
     |> Jason.encode!()
   end
 
-  def error(e) do
+  defp error(e) do
     %{
       "error" => e
     }
     |> Jason.encode!()
+  end
+
+  defp get_transaction_stats do
+    stats_scale = date_range(1)
+    transaction_stats = TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
+
+    # Need datapoint for legend if none currently available.
+    if Enum.empty?(transaction_stats) do
+      [%{number_of_transactions: 0, gas_used: 0}]
+    else
+      transaction_stats
+    end
+  end
+
+  defp date_range(num_days) do
+    today = Date.utc_today()
+    latest = Date.add(today, -1)
+    x_days_back = Date.add(latest, -1 * (num_days - 1))
+    %{earliest: x_days_back, latest: latest}
   end
 end
