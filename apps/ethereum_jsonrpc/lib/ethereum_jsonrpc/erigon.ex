@@ -6,7 +6,7 @@ defmodule EthereumJSONRPC.Erigon do
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.Parity.{FetchedBeneficiaries, Traces}
+  alias EthereumJSONRPC.Nethermind.{FetchedBeneficiaries, Traces}
   alias EthereumJSONRPC.Transactions
 
   @behaviour EthereumJSONRPC.Variant
@@ -27,16 +27,11 @@ defmodule EthereumJSONRPC.Erigon do
     end
   end
 
-  @doc """
-  Internal transaction fetching for individual transactions is no longer supported for Parity.
-
-  To signal to the caller that fetching is not supported, `:ignore` is returned.
-  """
   @impl EthereumJSONRPC.Variant
   def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
+  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Erigon trace URL.
   """
   @impl EthereumJSONRPC.Variant
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do

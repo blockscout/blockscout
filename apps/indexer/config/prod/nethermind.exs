@@ -18,7 +18,7 @@ config :indexer,
       ],
       http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: [pool: :ethereum_jsonrpc]]
     ],
-    variant: EthereumJSONRPC.Parity
+    variant: EthereumJSONRPC.Nethermind
   ],
   subscribe_named_arguments: [
     transport:
