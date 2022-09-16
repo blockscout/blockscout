@@ -94,4 +94,15 @@ defmodule EthereumJSONRPC.Variant do
               ],
               EthereumJSONRPC.json_rpc_named_arguments()
             ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
+
+  def get do
+    if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
+      "nethermind"
+    else
+      System.get_env("ETHEREUM_JSONRPC_VARIANT")
+      |> String.split(".")
+      |> List.last()
+      |> String.downcase()
+    end
+  end
 end
