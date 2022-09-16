@@ -17,24 +17,14 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
       total_transactions = TransactionCache.estimated_count()
       total_blocks = BlockCache.estimated_count()
       wallet_addresses = Chain.address_estimated_count()
-
-      token = Market.get_exchange_rate(Explorer.coin()) || Token.null()
-
-      price = token.usd_value
-      volume_24h = token.volume_24h_usd
-      circulating_supply = token.available_supply
-      market_cap = token.market_cap_usd
-
+      token_stats = Market.get_exchange_rate(Explorer.coin()) || Token.null()
       transaction_stats = get_transaction_stats() |> Enum.at(0)
 
       send_resp(conn, :ok, result(average_block_time,
                                   total_transactions,
                                   total_blocks,
                                   wallet_addresses,
-                                  price,
-                                  volume_24h,
-                                  circulating_supply,
-                                  market_cap,
+                                  token_stats,
                                   transaction_stats
         )
       )
@@ -43,8 +33,8 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
     end
   end
 
-  defp result(average_block_time, total_transactions, total_blocks, wallet_addresses,
-         price, volume_24h, circulating_supply, market_cap, transaction_stats) do
+  defp result(average_block_time, total_transactions, total_blocks,
+         wallet_addresses, token_stats, transaction_stats) do
     tx_stats = %{
       "date" => transaction_stats.date,
       "number_of_transactions" => transaction_stats.number_of_transactions,
@@ -56,10 +46,10 @@ defmodule BlockScoutWeb.API.V1.CountedInfoController do
       "total_transactions" => total_transactions,
       "total_blocks" => total_blocks,
       "wallet_addresses" => wallet_addresses,
-      "price" => price,
-      "volume_24h" => volume_24h,
-      "circulating_supply" => circulating_supply,
-      "market_cap" => market_cap,
+      "token_stats" => %{"price" => token_stats.usd_value,
+                         "volume_24h" => token_stats.volume_24h_usd,
+                         "circulating_supply" => token_stats.available_supply,
+                         "market_cap" => token_stats.market_cap_usd},
       "transaction_stats" => tx_stats
     }
     |> Jason.encode!()
