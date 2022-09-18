@@ -14,6 +14,7 @@
 - [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
 - [#6106](https://github.com/blockscout/blockscout/pull/6106) - Fix 500 response on `/coin-balance` for empty address
 - [#6118](https://github.com/blockscout/blockscout/pull/6118) - Fix unfetched token balances
+- [#6133](https://github.com/blockscout/blockscout/pull/6133) - Prevent logger from truncating response from rust verifier service in case of an error
 
 ### Chore
 
