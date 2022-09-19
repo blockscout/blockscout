@@ -69,3 +69,4 @@ jobs:
             JSON_RPC=https://rpc.gnosischain.com/
             COIN_NAME=xDai
             SUBNETWORK=Gnosis Chain
+            SENTRY_DSN_CLIENT_GNOSIS=${{ secrets.SENTRY_DSN_CLIENT_GNOSIS }}

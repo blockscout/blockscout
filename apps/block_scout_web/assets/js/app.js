@@ -23,7 +23,7 @@ import './lib/reload_button'
 import './lib/stop_propagation'
 import './lib/modals'
 import './lib/card_tabs'
-import './lib/sentry'
+import './lib/sentry_config'
 import './lib/ad'
 
 import swal from 'sweetalert2'

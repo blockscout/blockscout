@@ -167,7 +167,8 @@ const appJs =
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
         'process.env.COIN': JSON.stringify(process.env.COIN),
-        'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH)
+        'process.env.NETWORK_PATH': JSON.stringify(process.env.NETWORK_PATH),
+        'process.env.SENTRY_DSN_CLIENT_GNOSIS': JSON.stringify(process.env.SENTRY_DSN_CLIENT_GNOSIS)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
