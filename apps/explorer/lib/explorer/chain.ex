@@ -82,6 +82,15 @@ defmodule Explorer.Chain do
   @default_paging_options %PagingOptions{page_size: 50}
 
   @token_transfers_per_transaction_preview 10
+  @token_transfers_neccessity_by_association %{
+    [from_address: :smart_contract] => :optional,
+    [to_address: :smart_contract] => :optional,
+    [from_address: :names] => :optional,
+    [to_address: :names] => :optional,
+    from_address: :required,
+    to_address: :required,
+    token: :required
+  }
 
   @max_incoming_transactions_count 10_000
 
@@ -1987,7 +1996,6 @@ defmodule Explorer.Chain do
     Transaction
     |> where(hash: ^hash)
     |> join_associations(necessity_by_association)
-    |> debug("result query")
     |> Repo.one()
     |> case do
       nil ->
@@ -3266,8 +3274,8 @@ defmodule Explorer.Chain do
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
+    |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
   end
 
   @doc """
@@ -3305,8 +3313,8 @@ defmodule Explorer.Chain do
     |> pending_transactions_query()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
+    |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
   end
 
   def pending_transactions_query(query) do
@@ -6247,5 +6255,15 @@ defmodule Explorer.Chain do
     hash
     |> to_string()
     |> String.downcase()
+  end
+
+  def recent_transactions(options \\ [], filter_options \\ [:validated])
+
+  def recent_transactions(options, [:validated | _]) do
+    recent_collated_transactions(options)
+  end
+
+  def recent_transactions(options, [:pending | _]) do
+    recent_pending_transactions(options)
   end
 end

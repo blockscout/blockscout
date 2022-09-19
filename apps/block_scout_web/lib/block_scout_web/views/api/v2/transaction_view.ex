@@ -11,6 +11,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     ApiView.render("message.json", assigns)
   end
 
+  def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(transactions, &prepare_transaction/1), "next_page_params" => next_page_params}
+  end
+
   def render("transaction.json", %{transaction: transaction}) do
     prepare_transaction(transaction)
   end
@@ -115,7 +119,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "hash" => transaction.hash,
       "result" => status,
-      "status" => transaction.status || 0,
+      "status" => transaction.status,
       "block" => transaction.block_number,
       "timestamp" => transaction.block && transaction.block.timestamp,
       "from" => Helper.address_with_info(transaction.from_address, transaction.from_address_hash),

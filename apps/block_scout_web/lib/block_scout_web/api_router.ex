@@ -88,6 +88,7 @@ defmodule BlockScoutWeb.ApiRouter do
     alias BlockScoutWeb.API.V2
 
     scope "/transactions" do
+      get("/", V2.TransactionController, :transactions)
       get("/:transaction_hash", V2.TransactionController, :transaction)
     end
   end
