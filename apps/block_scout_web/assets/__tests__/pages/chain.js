@@ -99,12 +99,11 @@ describe('RECEIVED_NEW_BLOCK', () => {
     ])
   })
 
-  test('inserts place holders if block received out of order', () => {
+  test('displays only sequential blocks', () => {
     window.localized = {}
     const state = Object.assign({}, initialState, {
       blocks: [
         { blockNumber: 3, chainBlockHtml: 'test 3' },
-        { blockNumber: 2, chainBlockHtml: 'test 2' },
         { blockNumber: 1, chainBlockHtml: 'test 1' },
         { blockNumber: 0, chainBlockHtml: 'test 0' }
       ]
@@ -112,16 +111,14 @@ describe('RECEIVED_NEW_BLOCK', () => {
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
       msg: {
-        chainBlockHtml: 'test 6',
-        blockNumber: 6
+        chainBlockHtml: 'test 4',
+        blockNumber: 4
       }
     }
     const output = reducer(state, action)
 
     expect(output.blocks).toEqual([
-      { blockNumber: 6, chainBlockHtml: 'test 6' },
-      { blockNumber: 5, chainBlockHtml: placeHolderBlock(5) },
-      { blockNumber: 4, chainBlockHtml: placeHolderBlock(4) },
+      { blockNumber: 4, chainBlockHtml: 'test 4' },
       { blockNumber: 3, chainBlockHtml: 'test 3' }
     ])
   })
@@ -200,7 +197,7 @@ describe('RECEIVED_NEW_BLOCK', () => {
       { blockNumber: 3, chainBlockHtml: 'test 3' }
     ])
   })
-  test('skipped blocks list replaced when another block comes in with +3 blockheight', () => {
+  test('skipped blocks list doesn\'t appear when another block comes in with +3 blockheight', () => {
     window.localized = {}
     const state = Object.assign({}, initialState, {
       blocks: [
@@ -220,10 +217,7 @@ describe('RECEIVED_NEW_BLOCK', () => {
     const output = reducer(state, action)
 
     expect(output.blocks).toEqual([
-      { blockNumber: 10, chainBlockHtml: 'test 10' },
-      { blockNumber: 9, chainBlockHtml: placeHolderBlock(9) },
-      { blockNumber: 8, chainBlockHtml: placeHolderBlock(8) },
-      { blockNumber: 7, chainBlockHtml: placeHolderBlock(7) }
+      { blockNumber: 10, chainBlockHtml: 'test 10' }
     ])
   })
 })
