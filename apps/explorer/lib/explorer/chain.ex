@@ -83,13 +83,21 @@ defmodule Explorer.Chain do
 
   @token_transfers_per_transaction_preview 10
   @token_transfers_neccessity_by_association %{
-    [from_address: :smart_contract] => :optional,
-    [to_address: :smart_contract] => :optional,
+    # [from_address: :smart_contract] => :optional,
+    # [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
     from_address: :required,
     to_address: :required,
     token: :required
+  }
+
+  @method_name_to_id_map %{
+    "approve" => "095ea7b3",
+    "transfer" => "a9059cbb",
+    "multicall" => "5ae401dc",
+    "mint" => "40c10f19",
+    "commit" => "f14fcbc8"
   }
 
   @max_incoming_transactions_count 10_000
@@ -2006,14 +2014,25 @@ defmodule Explorer.Chain do
     end
   end
 
-  def preload_token_transfers(%Transaction{hash: tx_hash} = transaction, necessity_by_association) do
+  def preload_token_transfers(
+        %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
+        necessity_by_association
+      ) do
     token_transfers =
       TokenTransfer
-      |> where([token_transfer], token_transfer.transaction_hash == ^tx_hash)
-      |> limit(^(@token_transfers_per_transaction_preview + 1))
-      |> order_by([token_transfer], asc: token_transfer.log_index)
-      |> join_associations(necessity_by_association)
-      |> Repo.all()
+      |> (&(if(is_nil(block_hash),
+              do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
+              else:
+                where(
+                  &1,
+                  [token_transfer],
+                  token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
+                )
+            ).()
+            |> limit(^(@token_transfers_per_transaction_preview + 1))
+            |> order_by([token_transfer], asc: token_transfer.log_index)
+            |> join_associations(necessity_by_association)
+            |> Repo.all()))
 
     %Transaction{transaction | token_transfers: token_transfers}
   end
@@ -3193,25 +3212,26 @@ defmodule Explorer.Chain do
 
   """
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_collated_transactions(options \\ []) when is_list(options) do
+  def recent_collated_transactions(options \\ [], method_id_filter \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if is_nil(paging_options.key) do
-      paging_options.page_size
-      |> Transactions.take_enough()
-      |> case do
-        nil ->
-          transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
-          Transactions.update(transactions)
-          transactions
+    # if is_nil(paging_options.key) do
+    #   paging_options.page_size
+    #   |> Transactions.take_enough()
+    #   |> case do
+    #     nil ->
+    #       transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
+    #       Transactions.update(transactions)
+    #       transactions
 
-        transactions ->
-          transactions
-      end
-    else
-      fetch_recent_collated_transactions(paging_options, necessity_by_association)
-    end
+    #     transactions ->
+    #       transactions
+    #   end
+    # else
+    #   fetch_recent_collated_transactions(paging_options, necessity_by_association)
+    # end
+    fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter)
   end
 
   # RAP - random access pagination
@@ -3269,10 +3289,11 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :hash)
   end
 
-  def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
+  def fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter) do
     paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> join_associations(necessity_by_association)
     |> Repo.all()
     |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
@@ -3303,7 +3324,7 @@ defmodule Explorer.Chain do
 
   """
   @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ []) when is_list(options) do
+  def recent_pending_transactions(options \\ [], method_id_filter \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -3311,6 +3332,7 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
+    |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> Repo.all()
@@ -6257,13 +6279,59 @@ defmodule Explorer.Chain do
     |> String.downcase()
   end
 
-  def recent_transactions(options \\ [], filter_options \\ [:validated])
-
-  def recent_transactions(options, [:validated | _]) do
-    recent_collated_transactions(options)
+  def recent_transactions(options, [:validated | _], method_id_filter) do
+    recent_collated_transactions(options, method_id_filter)
   end
 
-  def recent_transactions(options, [:pending | _]) do
-    recent_pending_transactions(options)
+  def recent_transactions(options, [:pending | _], method_id_filter) do
+    recent_pending_transactions(options, method_id_filter)
+  end
+
+  def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
+    method_ids = Enum.flat_map(filter, &map_name_or_method_id_to_method_id/1)
+
+    if method_ids != [] do
+      query
+      |> where([tx], fragment("SUBSTRING(? FOR 4)", tx.input) in ^method_ids)
+      |> debug("result query")
+    else
+      query
+    end
+  end
+
+  def apply_filter_by_method_id_to_transactions(query, filter),
+    do: apply_filter_by_method_id_to_transactions(query, [filter])
+
+  defp map_name_or_method_id_to_method_id(string) when is_binary(string) do
+    if id = @method_name_to_id_map[string] do
+      decode_method_id(id)
+    else
+      trimmed =
+        string
+        |> String.replace("0x", "", global: false)
+
+      decode_method_id(trimmed)
+    end
+  end
+
+  defp decode_method_id(method_id) when is_binary(method_id) do
+    case String.length(method_id) == 8 && Base.decode16(method_id, case: :mixed) do
+      {:ok, bytes} ->
+        [bytes]
+
+      _ ->
+        []
+    end
+  end
+
+  def apply_filter_by_tx_type_to_transactions(query, tx_type) do
+  end
+
+  def filter_contract_call(query) do
+  end
+
+  def filter_contract_creation(query) do
+    query
+    |> where([tx], is_nil(tx.to_address_hash))
   end
 end

@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain
   import BlockScoutWeb.Chain, only: [next_page_params: 3, split_list_by_page: 1]
 
-  import BlockScoutWeb.PagingHelper, only: [paging_options: 2, filter_options: 1]
+  import BlockScoutWeb.PagingHelper, only: [paging_options: 2, filter_options: 1, method_filter_options: 1]
 
   alias Explorer.Chain
 
@@ -14,8 +14,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     :block => :optional,
     [created_contract_address: :names] => :optional,
     [from_address: :names] => :optional,
-    [to_address: :names] => :optional,
-    [to_address: :smart_contract] => :optional
+    [to_address: :names] => :optional
+    # [to_address: :smart_contract] => :optional
   }
 
   @token_transfers_neccessity_by_association %{
@@ -45,6 +45,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   def transactions(conn, params) do
     filter_options = filter_options(params)
+    method_filter_options = method_filter_options(params)
 
     full_options =
       Keyword.merge(
@@ -54,7 +55,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         paging_options(params, filter_options)
       )
 
-    transactions_plus_one = Chain.recent_transactions(full_options, filter_options)
+    transactions_plus_one = Chain.recent_transactions(full_options, filter_options, method_filter_options)
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
     next_page_params = next_page_params(next_page, transactions, params)

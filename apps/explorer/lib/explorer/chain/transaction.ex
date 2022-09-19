@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Transaction do
 
   alias ABI.FunctionSelector
 
+  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
 
   alias Explorer.{Chain, Repo}
@@ -463,6 +464,18 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%__MODULE__{to_address: nil}), do: {:error, :no_to_address}
   def decoded_input_data(%__MODULE__{input: %{bytes: bytes}}) when bytes in [nil, <<>>], do: {:error, :no_input_data}
   def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
+
+  def decoded_input_data(%__MODULE__{
+        to_address: %{smart_contract: %NotLoaded{}},
+        input: input,
+        hash: hash
+      }) do
+    decoded_input_data(%__MODULE__{
+      to_address: %{smart_contract: nil},
+      input: input,
+      hash: hash
+    })
+  end
 
   def decoded_input_data(%__MODULE__{
         to_address: %{smart_contract: nil},

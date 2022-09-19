@@ -46,4 +46,21 @@ defmodule BlockScoutWeb.PagingHelper do
     |> Enum.filter(fn label -> Enum.member?(@allowed_filter_labels, label) end)
     |> Enum.map(&String.to_atom/1)
   end
+
+  def parse_method_filter("[" <> filter) do
+    filter
+    |> String.trim_trailing("]")
+    |> parse_method_filter()
+  end
+
+  def parse_method_filter(filter) do
+    filter
+    |> String.split(",")
+  end
+
+  def method_filter_options(%{"method" => method}) do
+    parse_method_filter(method)
+  end
+
+  def method_filter_options(_params), do: []
 end
