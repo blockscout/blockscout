@@ -432,7 +432,7 @@ msgid "Block number containing the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:282
+#: lib/block_scout_web/templates/address/overview.html.eex:298
 msgid "Block number in which the address was updated."
 msgstr ""
 
@@ -459,7 +459,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:56
-#: lib/block_scout_web/templates/address/overview.html.eex:299 lib/block_scout_web/templates/address_validation/index.html.eex:11
+#: lib/block_scout_web/templates/address/overview.html.eex:315 lib/block_scout_web/templates/address_validation/index.html.eex:11
 #: lib/block_scout_web/views/address_view.ex:422
 msgid "Blocks Validated"
 msgstr ""
@@ -1302,7 +1302,7 @@ msgid "Gas Tracker"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:265
+#: lib/block_scout_web/templates/address/overview.html.eex:281
 #: lib/block_scout_web/templates/block/_tile.html.eex:74 lib/block_scout_web/templates/block/overview.html.eex:203
 #: lib/block_scout_web/templates/block/overview.html.eex:326
 msgid "Gas Used"
@@ -1314,7 +1314,7 @@ msgid "Gas Used by Transaction"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:264
+#: lib/block_scout_web/templates/address/overview.html.eex:280
 msgid "Gas used by the address."
 msgstr ""
 
@@ -1482,7 +1482,7 @@ msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:283
+#: lib/block_scout_web/templates/address/overview.html.eex:299
 msgid "Last Balance Update"
 msgstr ""
 
@@ -1809,7 +1809,7 @@ msgid "Not unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:298
+#: lib/block_scout_web/templates/address/overview.html.eex:314
 msgid "Number of blocks validated."
 msgstr ""
 
@@ -1819,7 +1819,7 @@ msgid "Number of transactions related to this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:245
+#: lib/block_scout_web/templates/address/overview.html.eex:253
 msgid "Number of transfers to/from this address."
 msgstr ""
 
@@ -2949,7 +2949,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:7
-#: lib/block_scout_web/templates/address/overview.html.eex:227 lib/block_scout_web/templates/address_transaction/index.html.eex:13
+#: lib/block_scout_web/templates/address/overview.html.eex:227 lib/block_scout_web/templates/address/overview.html.eex:233
+#: lib/block_scout_web/templates/address/overview.html.eex:241 lib/block_scout_web/templates/address_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/block/_tabs.html.eex:4 lib/block_scout_web/templates/block/overview.html.eex:73
 #: lib/block_scout_web/templates/chain/show.html.eex:233 lib/block_scout_web/templates/stats/index.html.eex:32
 #: lib/block_scout_web/views/address_view.ex:413
@@ -2967,7 +2968,8 @@ msgid "Transactions sent"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:246
+#: lib/block_scout_web/templates/address/overview.html.eex:254
+#: lib/block_scout_web/templates/address/overview.html.eex:260 lib/block_scout_web/templates/address/overview.html.eex:268
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:50
 msgid "Transfers"
 msgstr ""
@@ -3554,19 +3556,19 @@ msgid "CRC Worth"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:272
+#: lib/block_scout_web/templates/address/overview.html.eex:288
 msgid "Fetching gas used..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:232
-#: lib/block_scout_web/templates/address/overview.html.eex:236
+#: lib/block_scout_web/templates/address/overview.html.eex:235
+#: lib/block_scout_web/templates/address/overview.html.eex:243
 msgid "Fetching transactions..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:251
-#: lib/block_scout_web/templates/address/overview.html.eex:255
+#: lib/block_scout_web/templates/address/overview.html.eex:262
+#: lib/block_scout_web/templates/address/overview.html.eex:270
 msgid "Fetching transfers..."
 msgstr ""
 
@@ -3590,7 +3592,7 @@ msgstr ""
 msgid "method Response"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:33
 msgid "Drop the standard input JSON file or click here"
 msgstr ""
