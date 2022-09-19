@@ -126,6 +126,6 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
       {:error, Exception.format(:error, e, __STACKTRACE__)}
   end
 
-  defp valid_api_request_path(%{request_path: rp}) when rp in ["/api", "/api/v1"], do: :valid
+  defp valid_api_request_path(%{request_path: rp}) when rp in ["/api", "/api/", "/api/v1"], do: :valid
   defp valid_api_request_path(_), do: :invalid
 end
