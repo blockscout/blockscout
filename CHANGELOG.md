@@ -1,11 +1,13 @@
 ## Current
 
 ### Features
+- [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
 
 ### Chore
+- [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
 - [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
 - [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
 - [#5138](https://github.com/blockscout/blockscout/pull/5138) - Webpack minor update
