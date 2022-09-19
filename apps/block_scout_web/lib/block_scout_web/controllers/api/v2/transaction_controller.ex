@@ -4,7 +4,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain
   import BlockScoutWeb.Chain, only: [next_page_params: 3, split_list_by_page: 1]
 
-  import BlockScoutWeb.PagingHelper, only: [paging_options: 2, filter_options: 1, method_filter_options: 1]
+  import BlockScoutWeb.PagingHelper,
+    only: [paging_options: 2, filter_options: 1, method_filter_options: 1, type_filter_options: 1]
 
   alias Explorer.Chain
 
@@ -45,7 +46,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   def transactions(conn, params) do
     filter_options = filter_options(params)
-    method_filter_options = method_filter_options(params)
+    method_filter_options = method_filter_options(params) |> debug("method_filter_options")
+    type_filter_options = type_filter_options(params) |> debug("type_filter_options")
 
     full_options =
       Keyword.merge(
@@ -55,7 +57,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         paging_options(params, filter_options)
       )
 
-    transactions_plus_one = Chain.recent_transactions(full_options, filter_options, method_filter_options)
+    transactions_plus_one =
+      Chain.recent_transactions(full_options, filter_options, method_filter_options, type_filter_options)
+
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
     next_page_params = next_page_params(next_page, transactions, params)
@@ -63,5 +67,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+  end
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
   end
 end

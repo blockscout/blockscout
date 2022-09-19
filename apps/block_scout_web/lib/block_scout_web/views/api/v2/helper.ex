@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def implementation_name(_), do: nil
 
-  def is_smart_contract(%Address{contract_code: empty}) when empty in [nil, "", "0x"], do: false
+  def is_smart_contract(%Address{contract_code: nil}), do: false
   def is_smart_contract(%Address{contract_code: _}), do: true
   def is_smart_contract(_), do: false
 end

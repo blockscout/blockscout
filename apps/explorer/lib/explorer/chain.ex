@@ -2020,19 +2020,19 @@ defmodule Explorer.Chain do
       ) do
     token_transfers =
       TokenTransfer
-      |> (&(if(is_nil(block_hash),
-              do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
-              else:
-                where(
-                  &1,
-                  [token_transfer],
-                  token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
-                )
-            ).()
-            |> limit(^(@token_transfers_per_transaction_preview + 1))
-            |> order_by([token_transfer], asc: token_transfer.log_index)
-            |> join_associations(necessity_by_association)
-            |> Repo.all()))
+      |> (&if(is_nil(block_hash),
+            do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
+            else:
+              where(
+                &1,
+                [token_transfer],
+                token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
+              )
+          )).()
+      |> limit(^(@token_transfers_per_transaction_preview + 1))
+      |> order_by([token_transfer], asc: token_transfer.log_index)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
 
     %Transaction{transaction | token_transfers: token_transfers}
   end
@@ -3212,7 +3212,7 @@ defmodule Explorer.Chain do
 
   """
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_collated_transactions(options \\ [], method_id_filter \\ []) when is_list(options) do
+  def recent_collated_transactions(options \\ [], method_id_filter \\ [], type_filter \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -3231,7 +3231,7 @@ defmodule Explorer.Chain do
     # else
     #   fetch_recent_collated_transactions(paging_options, necessity_by_association)
     # end
-    fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter)
+    fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter, type_filter)
   end
 
   # RAP - random access pagination
@@ -3289,12 +3289,14 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :hash)
   end
 
-  def fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter) do
+  def fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter, type_filter) do
     paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
+    |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
+    |> debug("result collated query")
     |> Repo.all()
     |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
   end
@@ -3324,7 +3326,7 @@ defmodule Explorer.Chain do
 
   """
   @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ [], method_id_filter \\ []) when is_list(options) do
+  def recent_pending_transactions(options \\ [], method_id_filter \\ [], type_filter \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -3333,8 +3335,10 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
+    |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
+    |> debug("result pendging query")
     |> Repo.all()
     |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
   end
@@ -6279,12 +6283,12 @@ defmodule Explorer.Chain do
     |> String.downcase()
   end
 
-  def recent_transactions(options, [:validated | _], method_id_filter) do
-    recent_collated_transactions(options, method_id_filter)
+  def recent_transactions(options, [:validated | _], method_id_filter, type_filter_options) do
+    recent_collated_transactions(options, method_id_filter, type_filter_options)
   end
 
-  def recent_transactions(options, [:pending | _], method_id_filter) do
-    recent_pending_transactions(options, method_id_filter)
+  def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
+    recent_pending_transactions(options, method_id_filter, type_filter_options)
   end
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
@@ -6324,14 +6328,40 @@ defmodule Explorer.Chain do
     end
   end
 
-  def apply_filter_by_tx_type_to_transactions(query, tx_type) do
+  def apply_filter_by_tx_type_to_transactions(query, [type | remain]) do
+    case type do
+      :contract_call ->
+        query
+        |> filter_contract_call()
+        |> apply_filter_by_tx_type_to_transactions(remain)
+
+      :contract_creation ->
+        query
+        |> filter_contract_creation()
+        |> apply_filter_by_tx_type_to_transactions(remain)
+
+      :transaction ->
+        query
+        |> filter_transaction()
+        |> apply_filter_by_tx_type_to_transactions(remain)
+    end
   end
 
+  def apply_filter_by_tx_type_to_transactions(query, _), do: query
+
   def filter_contract_call(query) do
+    query
+    |> join(:inner, [tx], tx in assoc(tx, :to_address))
+    |> where([tx, to_address], not is_nil(to_address.contract_code))
   end
 
   def filter_contract_creation(query) do
     query
     |> where([tx], is_nil(tx.to_address_hash))
+  end
+
+  def filter_transaction(query) do
+    query
+    |> where([tx], tx.value > 0)
   end
 end
