@@ -5683,7 +5683,7 @@ defmodule Explorer.Chain do
   defp boolean_to_check_result(false), do: :not_found
 
   @doc """
-  Fetches the first trace from the Parity trace URL.
+  Fetches the first trace from the Nethermind trace URL.
   """
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
     case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
@@ -6203,5 +6203,23 @@ defmodule Explorer.Chain do
 
     query
     |> Repo.one()
+  end
+
+  def is_address_hash_is_smart_contract?(nil), do: false
+
+  def is_address_hash_is_smart_contract?(address_hash) do
+    with %Address{contract_code: bytecode} <- Repo.get_by(Address, hash: address_hash),
+         false <- is_nil(bytecode) do
+      true
+    else
+      _ ->
+        false
+    end
+  end
+
+  def hash_to_lower_case_string(hash) do
+    hash
+    |> to_string()
+    |> String.downcase()
   end
 end

@@ -5540,7 +5540,7 @@ defmodule Explorer.ChainTest do
       refute Chain.contract_address?(to_string(address.hash), 1)
     end
 
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "returns true if fetched code from json rpc", %{
       json_rpc_named_arguments: json_rpc_named_arguments
@@ -5563,7 +5563,7 @@ defmodule Explorer.ChainTest do
       assert Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
     end
 
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "returns false if no fetched code from json rpc", %{
       json_rpc_named_arguments: json_rpc_named_arguments

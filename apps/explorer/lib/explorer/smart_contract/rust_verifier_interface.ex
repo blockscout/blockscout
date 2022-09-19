@@ -1,6 +1,6 @@
 defmodule Explorer.SmartContract.RustVerifierInterface do
   @moduledoc """
-    Adapter for contracts verification with https://github.com/blockscout/blockscout-rs/tree/main/verification
+    Adapter for contracts verification with https://github.com/blockscout/blockscout-rs/blob/main/smart-contract-verifier
   """
   alias HTTPoison.Response
   require Logger
@@ -31,6 +31,17 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
         } = body
       ) do
     http_post_request(standard_json_input_verification_url(), body)
+  end
+
+  def vyper_verify_multipart(
+        %{
+          "creation_bytecode" => _,
+          "deployed_bytecode" => _,
+          "compiler_version" => _,
+          "sources" => _
+        } = body
+      ) do
+    http_post_request(vyper_multiple_files_verification_url(), body)
   end
 
   def http_post_request(url, body) do
@@ -79,6 +90,10 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
     http_get_request(versions_list_url())
   end
 
+  def vyper_get_versions_list do
+    http_get_request(vyper_versions_list_url())
+  end
+
   def proccess_verifier_response(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, decoded} ->
@@ -103,9 +118,13 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def multiple_files_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/multiple-files"
 
+  def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/vyper/verify/multiple-files"
+
   def standard_json_input_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/standard-json"
 
   def versions_list_url, do: "#{base_api_url()}" <> "/solidity/versions"
+
+  def vyper_versions_list_url, do: "#{base_api_url()}" <> "/vyper/versions"
 
   def base_api_url, do: "#{base_url()}" <> "/api/v1"
 

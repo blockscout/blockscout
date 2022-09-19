@@ -266,3 +266,9 @@ defimpl Inspect, for: Explorer.Chain.Wei do
     "#Explorer.Chain.Wei<#{Decimal.to_string(wei.value)}>"
   end
 end
+
+defimpl Jason.Encoder, for: Explorer.Chain.Wei do
+  def encode(wei, _) do
+    Decimal.to_string(wei.value)
+  end
+end

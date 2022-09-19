@@ -29,7 +29,7 @@ defmodule Indexer.Block.Fetcher do
     UncleBlock
   }
 
-  alias Indexer.Tracer
+  alias Indexer.{Prometheus, Tracer}
 
   alias Indexer.Transform.{
     # AddressCoinBalances,
@@ -126,6 +126,8 @@ defmodule Indexer.Block.Fetcher do
     # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
     #   Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
     # end
+    {fetch_time, fetched_blocks} =
+      :timer.tc(fn -> EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments) end)
 
     with {:blocks,
           {:ok,
@@ -134,7 +136,7 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_params_without_receipts,
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
-           }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
+           }}} <- {:blocks, fetched_blocks},
          Logger.info(
            "Block #{Enum.at(blocks_params, 0)[:number]} timestamp find_by_this: #{Timex.to_unix(Enum.at(blocks_params, 0)[:timestamp])}"
          ),
@@ -218,7 +220,7 @@ defmodule Indexer.Block.Fetcher do
       # if Enum.at(range_list, 0) == Enum.at(range_list, -1) do
       Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
       # end
-
+      Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
       update_transactions_cache(inserted[:transactions])
@@ -292,7 +294,11 @@ defmodule Indexer.Block.Fetcher do
         }
       )
 
-    callback_module.import(state, options_with_broadcast)
+    {import_time, result} = :timer.tc(fn -> callback_module.import(state, options_with_broadcast) end)
+
+    no_blocks_to_import = length(options_with_broadcast.blocks.params)
+    Prometheus.Instrumenter.block_import(import_time / no_blocks_to_import, callback_module)
+    result
   end
 
   def async_import_token_instances(%{token_transfers: token_transfers}) do

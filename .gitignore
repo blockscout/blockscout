@@ -9,6 +9,9 @@
 /*.ez
 /logs
 
+# mix dialyzer artifacts
+/priv/plts
+
 # Generated on crash by the VM
 erl_crash.dump
 

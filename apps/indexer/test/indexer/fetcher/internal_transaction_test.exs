@@ -31,7 +31,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   } do
     if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-        EthereumJSONRPC.Parity ->
+        EthereumJSONRPC.Nethermind ->
           EthereumJSONRPC.Mox
           |> expect(:json_rpc, fn _json, _options ->
             {:ok,
@@ -91,7 +91,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   } do
     if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-        EthereumJSONRPC.Parity ->
+        EthereumJSONRPC.Nethermind ->
           EthereumJSONRPC.Mox
           |> expect(:json_rpc, fn [%{id: id}], _options ->
             {:ok,
@@ -156,7 +156,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     } do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             EthereumJSONRPC.Mox
             |> expect(:json_rpc, fn [%{id: id}], _options ->
               {:ok,
@@ -198,7 +198,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             EthereumJSONRPC.Mox
             |> expect(:json_rpc, fn [%{id: id, method: "trace_replayBlockTransactions"}], _options ->
               {:ok,

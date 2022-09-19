@@ -35,6 +35,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   # alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Prometheus
   # alias Indexer.Transform.Addresses
   alias Timex.Duration
 
@@ -326,6 +327,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {fetch_duration, result} =
       :timer.tc(fn -> fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) end)
 
+    Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
+
     case result do
       {:ok, %{inserted: inserted, errors: []}} ->
         log_import_timings(inserted, fetch_duration, time_before)
@@ -341,6 +344,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end)
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
+        Prometheus.Instrumenter.import_errors()
+
         params = %{
           changesets: changesets,
           block_number_to_fetch: block_number_to_fetch,
@@ -364,6 +369,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end
 
       {:error, {:import = step, reason}} ->
+        Prometheus.Instrumenter.import_errors()
         Logger.error(fn -> inspect(reason) end, step: step)
 
       {:error, {step, reason}} ->
@@ -394,6 +400,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp log_import_timings(%{blocks: [%{number: number, timestamp: timestamp}]}, fetch_duration, time_before) do
     node_delay = Timex.diff(time_before, timestamp, :seconds)
+    Prometheus.Instrumenter.node_delay(node_delay)
 
     Logger.debug("Block #{number} fetching duration: #{fetch_duration / 1_000_000}s. Node delay: #{node_delay}s.",
       fetcher: :block_import_timings
@@ -408,7 +415,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Logger.info("### RETRY FETCH AND IMPORT BLOCK ###")
 
     if unknown_block_number_error?(changesets) do
-      # Wait half a second to give Parity time to sync.
+      # Wait half a second to give Nethermind time to sync.
       :timer.sleep(500)
 
       number = params.block_number_to_fetch

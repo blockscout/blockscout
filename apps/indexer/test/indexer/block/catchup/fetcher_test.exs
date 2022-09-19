@@ -33,7 +33,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
         transport: EthereumJSONRPC.Mox,
         transport_options: [],
         # Which one does not matter, so pick one
-        variant: EthereumJSONRPC.Parity
+        variant: EthereumJSONRPC.Nethermind
       ]
     }
   end

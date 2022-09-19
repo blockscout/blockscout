@@ -6,9 +6,12 @@ defmodule Explorer.Chain.Import do
   require Logger
 
   alias Ecto.Changeset
+  alias Explorer.Account.Notify
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
+
+  require Logger
 
   @stages [
     Import.Stage.AddressesBlocks,
@@ -131,6 +134,7 @@ defmodule Explorer.Chain.Import do
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
+      Notify.async(data[:transactions])
       Publisher.broadcast(data, Map.get(options, :broadcast, false))
       {:ok, data}
     end

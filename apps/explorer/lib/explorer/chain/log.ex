@@ -25,7 +25,7 @@ defmodule Explorer.Chain.Log do
    * `transaction` - transaction for which `log` is
    * `transaction_hash` - foreign key for `transaction`.
    * `index` - index of the log entry in all logs for the `transaction`
-   * `type` - type of event.  *Parity-only*
+   * `type` - type of event.  *Nethermind-only*
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),

@@ -339,8 +339,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
     variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-    # we exclude first traces from storing in the DB only in case of Parity variant (Parity/Nethermind). Todo: implement the same for Geth
-    if variant == EthereumJSONRPC.Parity do
+    # we exclude first traces from storing in the DB only in case of Nethermind variant (Nethermind/OpenEthereum). Todo: implement the same for Geth
+    if variant == EthereumJSONRPC.Nethermind do
       valid_internal_transactions_without_first_trace =
         valid_internal_transactions
         |> Enum.reject(fn trace ->
