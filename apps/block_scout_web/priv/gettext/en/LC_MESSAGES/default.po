@@ -3606,3 +3606,18 @@ msgstr ""
 #: lib/block_scout_web/templates/common_components/_changed_bytecode_warning.html.eex:3
 msgid "Warning! Contract bytecode has been changed and doesn't match the verified one. Therefore, interaction with this smart contract may be risky."
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_rap_pagination_container.html.eex:8
+msgid "Go to"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_rap_pagination_container.html.eex:13
+msgid "Only the first"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/common_components/_rap_pagination_container.html.eex:13
+msgid "elements are displayed"
+msgstr ""
