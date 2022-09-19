@@ -22,9 +22,11 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
     alias BlockScoutWeb.API.V1.HealthController
+    alias BlockScoutWeb.API.V1.CommonStatsController
     alias BlockScoutWeb.API.V1.CountedInfoController
 
     get("/health", HealthController, :health)
+    get("/common-stats", CommonStatsController, :common_stats)
     get("/counted-info", CountedInfoController, :counted_info)
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
 
