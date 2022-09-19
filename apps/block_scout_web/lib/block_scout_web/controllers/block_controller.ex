@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.BlockController do
   alias Explorer.Chain
   alias Phoenix.View
 
+  require Logger
+
   def index(conn, params) do
     case params["block_type"] do
       "Uncle" ->
@@ -102,6 +104,44 @@ defmodule BlockScoutWeb.BlockController do
               block_type: block_type
             )
           end),
+        next_page_path: next_page_path
+      }
+    )
+  end
+
+  defp handle_render(full_options, conn, %{"api" => "true"} = params) do
+    blocks_plus_one =
+      full_options
+      |> Keyword.merge(paging_options(params))
+      |> Chain.list_blocks()
+
+    {blocks, next_page} = split_list_by_page(blocks_plus_one)
+
+    block_type = Keyword.get(full_options, :block_type, "Block")
+
+    next_page_path =
+      case next_page_params(next_page, blocks, params) do
+        nil ->
+          nil
+
+        next_page_params ->
+          params_with_block_type =
+            next_page_params
+            |> Map.delete("type")
+            |> Map.put("block_type", block_type)
+
+          blocks_path(
+            conn,
+            :index,
+            params_with_block_type
+          )
+      end
+
+    Logger.info(blocks)
+    json(
+      conn,
+      %{
+        items: blocks,
         next_page_path: next_page_path
       }
     )

@@ -68,6 +68,36 @@ defmodule Explorer.Chain.Block do
           is_empty: boolean()
         }
 
+  @derive {Poison.Encoder,
+    except: [
+      :__meta__,
+      :miner,
+      :parent,
+      :nephew_relations,
+      :nephews,
+      :uncle_relations,
+      :uncles,
+      :transactions,
+      :transaction_forks,
+      :rewards,
+      :pending_operations
+    ]}
+
+  @derive {Jason.Encoder,
+    except: [
+      :__meta__,
+      :miner,
+      :parent,
+      :nephew_relations,
+      :nephews,
+      :uncle_relations,
+      :uncles,
+      :transactions,
+      :transaction_forks,
+      :rewards,
+      :pending_operations
+    ]}
+
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "blocks" do
     field(:consensus, :boolean)
