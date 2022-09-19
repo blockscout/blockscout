@@ -5,8 +5,11 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
+- [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 
 ### Chore
+- [#5153](https://github.com/blockscout/blockscout/pull/5153) - Discord link instead of Gitter
 - [#5142](https://github.com/blockscout/blockscout/pull/5142) - Updated some outdated npm packages
 - [#5140](https://github.com/blockscout/blockscout/pull/5140) - Babel minor and core-js major updates
 - [#5139](https://github.com/blockscout/blockscout/pull/5139) - Eslint major update
