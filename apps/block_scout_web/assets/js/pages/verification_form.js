@@ -4,6 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { fullPath } from '../lib/utils'
 import '../app'
 import Dropzone from 'dropzone'
 
@@ -234,7 +235,7 @@ if ($contractVerificationPage.length) {
 
     const onContractVerified = (address) => {
       document.getElementById('message-address-verified').hidden = false
-      document.getElementById('message-link').setAttribute('href', `/address/${address}/contracts`)
+      document.getElementById('message-link').setAttribute('href', fullPath(`/address/${address}/contracts`))
       document.getElementById('data-button').disabled = true
     }
 
@@ -244,7 +245,7 @@ if ($contractVerificationPage.length) {
         result[0].ABI !== 'Contract source code not verified'
     }
 
-    $.get(`/api/?module=contract&action=getsourcecode&address=${address}`).done(
+    $.get(fullPath(`/api/?module=contract&action=getsourcecode&address=${address}`)).done(
       response => {
         if (isContractVerified(response.result)) {
           onContractVerified(address)

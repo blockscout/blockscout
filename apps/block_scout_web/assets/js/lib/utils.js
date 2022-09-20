@@ -24,3 +24,8 @@ export function showLoader (isTimeout, loader) {
     return null
   }
 }
+
+export function fullPath (path) {
+  const networkPath = document.body.dataset.networkPath || '/'
+  return `${networkPath}${path}`.replace('//', '/')
+}

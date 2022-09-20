@@ -3,6 +3,7 @@ import omit from 'lodash/omit'
 import humps from 'humps'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import { fullPath } from '../../lib/utils'
 import '../address'
 import { utils } from 'web3'
 
@@ -76,7 +77,7 @@ if ($('[data-page="address-logs"]').length) {
     const topic = $('[data-search-field]').val()
     const addressHashPlain = store.getState().addressHash
     const addressHashChecksum = addressHashPlain && utils.toChecksumAddress(addressHashPlain)
-    const path = '/search-logs?topic=' + topic + '&address_id=' + addressHashChecksum
+    const path = fullPath(`/search-logs?topic=${topic}&address_id=${addressHashChecksum}`)
     store.dispatch({ type: 'START_REQUEST' })
     $.getJSON(path, { type: 'JSON' })
       .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
