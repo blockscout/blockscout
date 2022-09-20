@@ -96,6 +96,77 @@ defmodule BlockScoutWeb.BlockTransactionController do
     end
   end
 
+  def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number, "api" => "true"} = params) do
+    case param_block_hash_or_number_to_block(formatted_block_hash_or_number, []) do
+      {:ok, block} ->
+        full_options =
+          Keyword.merge(
+            [
+              necessity_by_association: %{
+                :block => :optional,
+                [created_contract_address: :names] => :optional,
+                [from_address: :names] => :required,
+                [to_address: :names] => :optional,
+                [created_contract_address: :smart_contract] => :optional,
+                [from_address: :smart_contract] => :optional,
+                [to_address: :smart_contract] => :optional
+              }
+            ],
+            put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true)
+          )
+
+        transactions_plus_one = Chain.block_to_transactions(block.hash, full_options)
+
+        {transactions, next_page} = split_list_by_page(transactions_plus_one)
+
+        next_page_path =
+          case next_page_params(next_page, transactions, params) do
+            nil ->
+              nil
+
+            next_page_params ->
+              block_transaction_path(
+                conn,
+                :index,
+                block,
+                Map.delete(next_page_params, "type")
+              )
+          end
+
+        json(
+          conn,
+          %{
+            items: transactions,
+            next_page_path: next_page_path
+          }
+        )
+
+      {:error, {:invalid, :hash}} ->
+        json(
+          conn,
+          %{
+            invalid: formatted_block_hash_or_number,
+          }
+        )
+
+      {:error, {:invalid, :number}} ->
+        json(
+          conn,
+          %{
+            invalid: formatted_block_hash_or_number,
+          }
+        )
+
+      {:error, :not_found} ->
+        json(
+          conn,
+          %{
+            not_found: formatted_block_hash_or_number,
+          }
+        )
+    end
+  end
+
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
            necessity_by_association: %{
