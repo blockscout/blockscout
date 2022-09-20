@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
-  @allowed_type_labels ["transaction", "contract_call", "contract_creation"]
+  @allowed_type_labels ["transaction", "contract_call", "contract_creation", "token_creation"]
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
     with {block_number, ""} <- Integer.parse(block_number_string),
