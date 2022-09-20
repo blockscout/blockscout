@@ -7,8 +7,6 @@ defmodule BlockScoutWeb.BlockController do
   alias Explorer.Chain
   alias Phoenix.View
 
-  require Logger
-
   def index(conn, params) do
     case params["block_type"] do
       "Uncle" ->
@@ -137,7 +135,6 @@ defmodule BlockScoutWeb.BlockController do
           )
       end
 
-    Logger.info(blocks)
     json(
       conn,
       %{
