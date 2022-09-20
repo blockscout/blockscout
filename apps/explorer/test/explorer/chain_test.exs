@@ -4060,19 +4060,25 @@ defmodule Explorer.ChainTest do
       sc_before_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
 
       IO.inspect(sc_before_call.smart_contract_additional_sources)
-      IO.inspect(sc_before_call.smart_contract_additional_sources
-             |> Enum.with_index()|> Enum.all?(fn {el, ind} ->
-               {:ok, src} = Enum.fetch(secondary_sources, ind)
 
-              IO.inspect(el.file_name)
-              IO.inspect(Map.get(src, :file_name))
-              IO.inspect(el.file_name == Map.get(src, :file_name))
-              IO.inspect(el.contract_source_code)
-              IO.inspect(Map.get(src, :contract_source_code))
-              IO.inspect(el.contract_source_code == Map.get(src, :contract_source_code))
-               el.file_name == Map.get(src, :file_name) and
-                 el.contract_source_code == Map.get(src, :contract_source_code)
-             end))
+      IO.inspect(
+        sc_before_call.smart_contract_additional_sources
+        |> Enum.with_index()
+        |> Enum.all?(fn {el, ind} ->
+          {:ok, src} = Enum.fetch(secondary_sources, ind)
+
+          IO.inspect(el.file_name)
+          IO.inspect(Map.get(src, :file_name))
+          IO.inspect(el.file_name == Map.get(src, :file_name))
+          IO.inspect(el.contract_source_code)
+          IO.inspect(Map.get(src, :contract_source_code))
+          IO.inspect(el.contract_source_code == Map.get(src, :contract_source_code))
+
+          el.file_name == Map.get(src, :file_name) and
+            el.contract_source_code == Map.get(src, :contract_source_code)
+        end)
+      )
+
       assert sc_before_call.smart_contract_additional_sources
              |> Enum.with_index()
              |> Enum.all?(fn {el, ind} ->
