@@ -58,6 +58,45 @@ defmodule BlockScoutWeb.PendingTransactionController do
     )
   end
 
+  def index(conn, %{"api" => "true"} = params) do
+    full_options =
+      Keyword.merge(
+        [
+          necessity_by_association: %{
+            [from_address: :names] => :optional,
+            [to_address: :names] => :optional,
+            [created_contract_address: :names] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :smart_contract] => :optional
+          }
+        ],
+        paging_options(params)
+      )
+
+    {transactions, next_page} = get_pending_transactions_and_next_page(full_options)
+
+    next_page_url =
+      case next_page_params(next_page, transactions, params) do
+        nil ->
+          nil
+
+        next_page_params ->
+          pending_transaction_path(
+            conn,
+            :index,
+            Map.delete(next_page_params, "type")
+          )
+      end
+
+    json(
+      conn,
+      %{
+        items: transactions,
+        next_page_path: next_page_url
+      }
+    )
+  end
+
   def index(conn, _params) do
     render(conn, "index.html", current_path: Controller.current_full_path(conn))
   end
