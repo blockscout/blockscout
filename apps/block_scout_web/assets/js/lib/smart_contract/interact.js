@@ -6,7 +6,7 @@ export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functio
   let data = {
     function_name: functionName,
     method_id: $methodId.val(),
-    type: type,
+    type,
     args
   }
   if (isWalletEnabled) {
@@ -15,7 +15,7 @@ export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functio
         data = {
           function_name: functionName,
           method_id: $methodId.val(),
-          type: type,
+          type,
           from: currentAccount,
           args
         }
