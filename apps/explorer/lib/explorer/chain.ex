@@ -3297,7 +3297,7 @@ defmodule Explorer.Chain do
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
-    |> apply_filter_by_tx_type_to_transactions_(type_filter)
+    |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
     |> debug("result collated query")
     |> Repo.all()
@@ -3338,7 +3338,7 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
-    |> apply_filter_by_tx_type_to_transactions_(type_filter)
+    |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> debug("result pendging query")
@@ -6331,22 +6331,23 @@ defmodule Explorer.Chain do
     end
   end
 
-  def apply_filter_by_tx_type_to_transactions_(query, filter) do
-    {dynamic, modified_query} = apply_filter_by_tx_type_to_transactions(filter, query)
-    debug(modified_query.aliases, "aliases")
+  def apply_filter_by_tx_type_to_transactions(query, [_ | _] = filter) do
+    {dynamic, modified_query} = apply_filter_by_tx_type_to_transactions_inner(filter, query)
 
     modified_query
     |> where(^dynamic)
   end
 
-  def apply_filter_by_tx_type_to_transactions(dynamic \\ dynamic(false), filter, query)
+  def apply_filter_by_tx_type_to_transactions(query, _filter), do: query
 
-  def apply_filter_by_tx_type_to_transactions(dynamic, [type | remain], query) do
+  def apply_filter_by_tx_type_to_transactions_inner(dynamic \\ dynamic(false), filter, query)
+
+  def apply_filter_by_tx_type_to_transactions_inner(dynamic, [type | remain], query) do
     case type do
       :contract_call ->
         dynamic
         |> filter_contract_call_dynamic()
-        |> apply_filter_by_tx_type_to_transactions(
+        |> apply_filter_by_tx_type_to_transactions_inner(
           remain,
           join(query, :inner, [tx], tx in assoc(tx, :to_address), as: :to_address)
         )
@@ -6354,16 +6355,21 @@ defmodule Explorer.Chain do
       :contract_creation ->
         dynamic
         |> filter_contract_creation_dynamic()
-        |> apply_filter_by_tx_type_to_transactions(remain, query)
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
 
       :transaction ->
         dynamic
         |> filter_transaction_dynamic()
-        |> apply_filter_by_tx_type_to_transactions(remain, query)
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
+
+      :token_transfer ->
+        dynamic
+        |> filter_token_transfer_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
     end
   end
 
-  def apply_filter_by_tx_type_to_transactions(dynamic_query, _, query), do: {dynamic_query, query}
+  def apply_filter_by_tx_type_to_transactions_inner(dynamic_query, _, query), do: {dynamic_query, query}
 
   def filter_contract_creation_dynamic(dynamic) do
     dynamic([tx], ^dynamic or is_nil(tx.to_address_hash))
@@ -6375,5 +6381,17 @@ defmodule Explorer.Chain do
 
   def filter_contract_call_dynamic(dynamic) do
     dynamic([tx, to_address: to_address], ^dynamic or not is_nil(to_address.contract_code))
+  end
+
+  def filter_token_transfer_dynamic(dynamic) do
+    # TokenTransfer.__struct__.__meta__.source
+    dynamic(
+      [tx],
+      ^dynamic or
+        fragment(
+          "NOT (SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NULL",
+          tx.hash
+        )
+    )
   end
 end
