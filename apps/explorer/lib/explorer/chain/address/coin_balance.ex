@@ -36,6 +36,18 @@ defmodule Explorer.Chain.Address.CoinBalance do
           value: Wei.t() | nil
         }
 
+  @derive {Poison.Encoder,
+    except: [
+      :__meta__,
+      :address
+    ]}
+
+  @derive {Jason.Encoder,
+    except: [
+      :__meta__,
+      :address
+    ]}
+
   @primary_key false
   schema "address_coin_balances" do
     field(:block_number, :integer)
