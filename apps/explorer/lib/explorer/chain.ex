@@ -6349,7 +6349,7 @@ defmodule Explorer.Chain do
         |> filter_contract_call_dynamic()
         |> apply_filter_by_tx_type_to_transactions_inner(
           remain,
-          join(query, :inner, [tx], tx in assoc(tx, :to_address), as: :to_address)
+          join(query, :inner, [tx], address in assoc(tx, :to_address), as: :to_address)
         )
 
       :contract_creation ->
@@ -6366,6 +6366,17 @@ defmodule Explorer.Chain do
         dynamic
         |> filter_token_transfer_dynamic()
         |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
+
+      :token_creation ->
+        dynamic
+        |> filter_token_creation_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(
+          remain,
+          join(query, :inner, [tx], token in Token,
+            on: token.contract_address_hash == tx.created_contract_address_hash,
+            as: :created_token
+          )
+        )
     end
   end
 
@@ -6393,5 +6404,9 @@ defmodule Explorer.Chain do
           tx.hash
         )
     )
+  end
+
+  def filter_token_creation_dynamic(dynamic) do
+    dynamic([tx, created_token: created_token], ^dynamic or (is_nil(tx.to_address_hash) and not is_nil(created_token)))
   end
 end
