@@ -53,6 +53,40 @@ defmodule BlockScoutWeb.AddressLogsController do
     end
   end
 
+  def index(conn, %{"address_id" => address_hash_string, "api" => "true"} = params) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         :ok <- Chain.check_address_exists(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
+      logs_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
+      {results, next_page} = split_list_by_page(logs_plus_one)
+
+      next_page_url =
+        case next_page_params(next_page, results, params) do
+          nil ->
+            nil
+
+          next_page_params ->
+            address_logs_path(conn, :index, address_hash, Map.delete(next_page_params, "type"))
+        end
+
+      json(
+        conn,
+        %{
+          items: results,
+          next_page_path: next_page_url
+        }
+      )
+    else
+      _ ->
+        json(
+          conn,
+          %{
+            not_found: address_hash_string
+          }
+        )
+    end
+  end
+
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),

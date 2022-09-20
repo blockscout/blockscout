@@ -43,6 +43,22 @@ defmodule Explorer.Chain.Log do
           type: String.t() | nil
         }
 
+  @derive {Poison.Encoder,
+    except: [
+      :__meta__,
+      :address,
+      :transaction,
+      :block
+    ]}
+
+  @derive {Jason.Encoder,
+    except: [
+      :__meta__,
+      :address,
+      :transaction,
+      :block
+    ]}
+
   @primary_key false
   schema "logs" do
     field(:data, Data)
