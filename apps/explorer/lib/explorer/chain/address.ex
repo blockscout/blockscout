@@ -65,28 +65,28 @@ defmodule Explorer.Chain.Address do
         }
 
   @derive {Poison.Encoder,
-           except: [
-             :__meta__,
-             :smart_contract,
-             :decompiled_smart_contracts,
-             :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
-             :names,
-             :smart_contract_additional_sources
-           ]}
+    except: [
+      :__meta__,
+      :smart_contract,
+      :token,
+      :contracts_creation_internal_transaction,
+      :contracts_creation_transaction,
+      :names,
+      :decompiled_smart_contracts,
+      :smart_contract_additional_sources
+    ]}
 
   @derive {Jason.Encoder,
-           except: [
-             :__meta__,
-             :smart_contract,
-             :decompiled_smart_contracts,
-             :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
-             :names,
-             :smart_contract_additional_sources
-           ]}
+    except: [
+      :__meta__,
+      :smart_contract,
+      :token,
+      :contracts_creation_internal_transaction,
+      :contracts_creation_transaction,
+      :names,
+      :decompiled_smart_contracts,
+      :smart_contract_additional_sources
+    ]}
 
   @primary_key {:hash, Hash.Address, autogenerate: false}
   schema "addresses" do
