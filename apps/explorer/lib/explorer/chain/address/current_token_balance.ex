@@ -40,6 +40,20 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           token_type: String.t()
         }
 
+  @derive {Poison.Encoder,
+    except: [
+      :__meta__,
+      :address,
+      :token
+    ]}
+
+  @derive {Jason.Encoder,
+    except: [
+      :__meta__,
+      :address,
+      :token
+    ]}
+
   schema "address_current_token_balances" do
     field(:value, :decimal)
     field(:block_number, :integer)
