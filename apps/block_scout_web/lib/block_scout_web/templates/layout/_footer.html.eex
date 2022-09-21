@@ -35,7 +35,7 @@
         <ul>
           <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
           <li><a href="https://github.com/celo-org/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
-          <li><a href="http://celo.acemlna.com/lt.php?s=db4fc05eafff8b3d37fcbb07a289a00e&i=87A3829A1A1306" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
+          <li><a href="http://discord.gg/celo" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
           <li><a href="https://forum.celo.org/" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
         </ul>
       </div>

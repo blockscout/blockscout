@@ -18,7 +18,7 @@ const grid = {
 
 function xAxe (fontColor) {
   return {
-    grid: grid,
+    grid,
     type: 'time',
     time: {
       unit: 'day',
@@ -52,7 +52,7 @@ const config = {
   },
   options: {
     layout: {
-      padding: padding
+      padding
     },
     interaction: {
       intersect: false,
@@ -62,7 +62,7 @@ const config = {
       x: xAxe(sassVariables.dashboardBannerChartAxisFontColor),
       price: {
         position: 'left',
-        grid: grid,
+        grid,
         ticks: {
           beginAtZero: false,
           callback: (value, index, values) => `$${numeral(value).format('0,0.000')}`,
@@ -72,7 +72,7 @@ const config = {
       },
       marketCap: {
         position: 'right',
-        grid: grid,
+        grid,
         ticks: {
           callback: (_value, _index, _values) => '',
           maxTicksLimit: 6,
@@ -82,7 +82,7 @@ const config = {
       },
       numTransactions: {
         position: 'right',
-        grid: grid,
+        grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
@@ -92,7 +92,7 @@ const config = {
       }
     },
     plugins: {
-      legend: legend,
+      legend,
       tooltip: {
         mode: 'index',
         intersect: false,

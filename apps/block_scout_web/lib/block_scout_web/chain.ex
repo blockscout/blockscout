@@ -236,6 +236,22 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: Map.put(paging_options, key, value)]
   end
 
+  def fetch_page_number(%{"page_number" => page_number_string}) do
+    case Integer.parse(page_number_string) do
+      {number, ""} ->
+        number
+
+      _ ->
+        1
+    end
+  end
+
+  def fetch_page_number(_), do: 1
+
+  def update_page_parameters(new_page_number, new_page_size, %PagingOptions{} = options) do
+    %PagingOptions{options | page_number: new_page_number, page_size: new_page_size}
+  end
+
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
     case Integer.parse(formatted_number) do
       {number, ""} -> {:ok, number}

@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import { reducer, initialState } from '../../../js/pages/address/transactions'
 
 describe('RECEIVED_NEW_TRANSACTION', () => {

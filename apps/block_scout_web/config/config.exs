@@ -70,16 +70,39 @@ config :block_scout_web,
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC")
 
-api_rate_limit_value =
+global_api_rate_limit_value =
   "API_RATE_LIMIT"
-  |> System.get_env("30")
+  |> System.get_env("50")
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> 30
+    _ -> 50
   end
 
-config :block_scout_web, api_rate_limit: api_rate_limit_value
+api_rate_limit_by_key_value =
+  "API_RATE_LIMIT_BY_KEY"
+  |> System.get_env("50")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 50
+  end
+
+api_rate_limit_by_ip_value =
+  "API_RATE_LIMIT_BY_IP"
+  |> System.get_env("50")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 50
+  end
+
+config :block_scout_web, :api_rate_limit,
+  global_limit: global_api_rate_limit_value,
+  limit_by_key: api_rate_limit_by_key_value,
+  limit_by_ip: api_rate_limit_by_ip_value,
+  static_api_key: System.get_env("API_RATE_LIMIT_STATIC_API_KEY", nil),
+  whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS", nil)
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 

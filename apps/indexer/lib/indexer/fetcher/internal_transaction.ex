@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Fetcher.TokenBalance
   alias Indexer.Transform.{Addresses, TokenTransfers}
 
@@ -48,7 +49,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
   """
   @spec async_fetch([Block.block_number()]) :: :ok
   def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
-    BufferedTask.buffer(__MODULE__, block_numbers, timeout)
+    if InternalTransactionSupervisor.disabled?() do
+      :ok
+    else
+      BufferedTask.buffer(__MODULE__, block_numbers, timeout)
+    end
   end
 
   @doc false

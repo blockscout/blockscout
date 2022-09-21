@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import { asyncReducer, asyncInitialState } from '../../js/lib/async_listing_load'
 
 describe('ELEMENTS_LOAD', () => {

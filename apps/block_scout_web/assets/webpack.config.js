@@ -84,7 +84,7 @@ const appJs =
       'token-counters': './js/pages/token_counters.js',
       'token-transfers': './js/pages/token/token_transfers.js',
       'admin-tasks': './js/pages/admin/tasks.js',
-      'read-token-contract': './js/pages/read_token_contract.js',
+      'token-contract': './js/pages/token_contract.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'try-api': './js/lib/try_api.js',
