@@ -900,7 +900,7 @@ defmodule Explorer.Chain do
         select:
           sum(
             fragment(
-              "CASE 
+              "CASE
                 WHEN ? = 0 THEN 0
                 WHEN ? < ? THEN ?
                 ELSE ? END",
@@ -7979,6 +7979,22 @@ defmodule Explorer.Chain do
       from(w in CeloUnlocked,
         select: sum(w.amount),
         where: w.available <= fragment("NOW()")
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> %Wei{value: Decimal.new(0)}
+      sum -> sum
+    end
+  end
+
+  def fetch_sum_available_celo_unlocked_for_address(address) do
+    query =
+      from(celo_unlocked in CeloUnlocked,
+        select: sum(celo_unlocked.amount),
+        where: celo_unlocked.available <= fragment("NOW()"),
+        where: celo_unlocked.account_address == ^address
       )
 
     query

@@ -60,4 +60,18 @@ defmodule Explorer.Chain.CeloAccountEpoch do
     |> cast(attrs, @attrs)
     |> validate_required(@required_attrs)
   end
+
+  def last_for_address(address) do
+    query =
+      from(account_epoch in __MODULE__,
+        join: block in Block,
+        on: block.hash == account_epoch.block_hash,
+        where: account_epoch.account_hash == ^address,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+  end
 end
