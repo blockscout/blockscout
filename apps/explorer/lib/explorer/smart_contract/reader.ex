@@ -427,14 +427,14 @@ defmodule Explorer.SmartContract.Reader do
       abi
       |> ABI.parse_specification()
 
-    %{outputs: outputs, method_id: method_id} = proccess_abi(parsed_final_abi, method_id)
+    %{outputs: outputs, method_id: method_id} = process_abi(parsed_final_abi, method_id)
 
     query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map)
   end
 
-  defp proccess_abi(nil, _method_id), do: nil
+  defp process_abi(nil, _method_id), do: nil
 
-  defp proccess_abi(abi, method_id) do
+  defp process_abi(abi, method_id) do
     function_object = find_function_by_method(abi, method_id)
     %ABI.FunctionSelector{returns: returns, method_id: method_id} = function_object
     outputs = extract_outputs(returns)
