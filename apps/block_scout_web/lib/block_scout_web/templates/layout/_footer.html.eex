@@ -24,6 +24,9 @@
           <a href="https://twitter.com/edexablockchain" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
+          <a href="https://github.com/devEdexa" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+            <div class="footer-social-icon-container fontawesome-icon github"></div>
+          </a>
          <!-- <a href="https://www.linkedin.com/company/edexablockchain/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("LinkedIn") %>'>
             <div class="footer-social-icon-container fontawesome-icon linkedin"></div>
           </a> -->
