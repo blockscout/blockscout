@@ -25,7 +25,7 @@
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
           <a href="https://www.linkedin.com/company/edexablockchain/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("LinkedIn") %>'>
-            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
+            <div class="footer-social-icon-container fontawesome-icon linkedin"></div>
           </a>
         </div>
       </div>
