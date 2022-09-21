@@ -57,12 +57,14 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
       {:error, error} ->
         old_truncate = Application.get_env(:logger, :truncate)
         Logger.configure(truncate: :infinity)
+
         Logger.error(fn ->
           [
             "Error while sending request to verification microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
             inspect(error, limit: :infinity, printable_limit: :infinity)
           ]
         end)
+
         Logger.configure(truncate: old_truncate)
         {:error, @request_error_msg}
     end
@@ -79,12 +81,14 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
       {:error, error} ->
         old_truncate = Application.get_env(:logger, :truncate)
         Logger.configure(truncate: :infinity)
+
         Logger.error(fn ->
           [
             "Error while sending request to verification microservice url: #{url}: ",
             inspect(error, limit: :infinity, printable_limit: :infinity)
           ]
         end)
+
         Logger.configure(truncate: old_truncate)
         {:error, @request_error_msg}
     end
