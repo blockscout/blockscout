@@ -4,13 +4,9 @@ defmodule BlockScoutWeb.SmartContractController do
   alias Explorer.Chain
   alias Explorer.SmartContract.{Reader, Writer}
 
-  require Logger
-
   @burn_address "0x0000000000000000000000000000000000000000"
 
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
-    Logger.info("request_path: #{conn.request_path}, hash: #{address_hash_string},
-                 type: #{contract_type}, action: #{action}")
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
@@ -90,97 +86,6 @@ defmodule BlockScoutWeb.SmartContractController do
 
       _ ->
         not_found(conn)
-    end
-  end
-
-  def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action, "api" => "true"}) do
-    Logger.info("request_path: #{conn.request_path}, hash: #{address_hash_string},
-                 type: #{contract_type}, action: #{action}")
-    address_options = [
-      necessity_by_association: %{
-        :smart_contract => :optional
-      }
-    ]
-
-    with true <- ajax?(conn),
-         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      implementation_address_hash_string =
-        if contract_type == "proxy" do
-          address.hash
-          |> Chain.get_implementation_address_hash(address.smart_contract.abi)
-          |> Tuple.to_list()
-          |> List.first() || @burn_address
-        else
-          @burn_address
-        end
-
-      functions =
-        if action == "write" do
-          if contract_type == "proxy" do
-            Writer.write_functions_proxy(implementation_address_hash_string)
-          else
-            Writer.write_functions(address_hash)
-          end
-        else
-          if contract_type == "proxy" do
-            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
-          else
-            Reader.read_only_functions(address_hash)
-          end
-        end
-
-      read_functions_required_wallet =
-        if action == "read" do
-          if contract_type == "proxy" do
-            Reader.read_functions_required_wallet_proxy(implementation_address_hash_string)
-          else
-            Reader.read_functions_required_wallet(address_hash)
-          end
-        else
-          []
-        end
-
-      contract_abi = Poison.encode!(address.smart_contract.abi)
-
-      implementation_abi =
-        if contract_type == "proxy" do
-          implementation_address_hash_string
-          |> Chain.get_implementation_abi()
-          |> Poison.encode!()
-        else
-          []
-        end
-
-      json(
-        conn,
-        %{
-          read_functions_required_wallet: read_functions_required_wallet,
-          read_only_functions: functions,
-          address: address,
-          contract_abi: contract_abi,
-          implementation_address: implementation_address_hash_string,
-          implementation_abi: implementation_abi,
-          contract_type: contract_type,
-          action: action
-        }
-      )
-
-    else
-      :error ->
-        json(
-          conn,
-          %{
-            error: address_hash_string
-          }
-        )
-      _ ->
-        json(
-          conn,
-          %{
-            not_found: address_hash_string
-          }
-        )
     end
   end
 
