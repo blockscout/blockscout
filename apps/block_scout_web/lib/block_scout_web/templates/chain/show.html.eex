@@ -2,9 +2,9 @@
   <div class="container">
     <div class="dashboard-banner">
       <!-- Graph and legend -->
-      <%# <div class="dashboard-banner-network-graph"> %>
+      <div class="dashboard-banner-network-graph">
         <!-- Graph -->
-        <!-- <div class="dashboard-banner-chart">
+        <div class="dashboard-banner-chart">
           <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
             <span><%= gettext("There was a problem loading the chart.") %></span>
           </button>
@@ -19,14 +19,14 @@
                   data-history_chart_config = '<%= @chart_config_json %>'
                   width="350" height="152">
           </canvas>
-        </div> -->
+        </div>
         <!-- Legend -->
-        <!--<script>
+        <script>
          numChartData = <%= Enum.reduce(@chart_config, 0, fn (source, acc) ->
                         acc + length(elem(source, 1)) end) %>
          document.documentElement.style.setProperty("--numChartData", numChartData);
-        </script> -->
-        <!-- <div class="dashboard-banner-chart-legend">
+        </script>
+         <div class="dashboard-banner-chart-legend">
           <%= if Map.has_key?(@chart_config, :market) do %>
 
             <%# THE FOLLOWING LINE PREVENTS COPY/PASTE ERRORS %>
@@ -64,7 +64,7 @@
 
             <% transaction_chart_config = @chart_config.transactions%>
             <%= if Enum.member?(transaction_chart_config, :transactions_per_day) do %>
-            <div class="dashboard-banner-chart-legend-item tx-per-day">
+           <!-- <div class="dashboard-banner-chart-legend-item tx-per-day">
                 <span class="dashboard-banner-chart-legend-label">
                     <%= gettext "Daily Transactions" %>
                 </span>
@@ -83,11 +83,11 @@
                       </span>
                     <% end %>
                 </span>
-            </div>
+            </div> -->
             <% end %>
           <% end %>
-        </div> -->
-      <%# </div>  %>
+        </div>
+      </div>
       <!-- Stats -->
       <div class="dashboard-banner-network-plain-container">
         <div class="dashboard-banner-network-stats">
