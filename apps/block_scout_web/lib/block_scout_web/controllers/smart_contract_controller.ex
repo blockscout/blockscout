@@ -9,7 +9,8 @@ defmodule BlockScoutWeb.SmartContractController do
   @burn_address "0x0000000000000000000000000000000000000000"
 
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
-    Logger.info("hash: #{address_hash_string}, type: #{contract_type}, action: #{action}")
+    Logger.info("request_path: #{conn.request_path}, hash: #{address_hash_string},
+                 type: #{contract_type}, action: #{action}")
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
@@ -93,7 +94,8 @@ defmodule BlockScoutWeb.SmartContractController do
   end
 
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action, "api" => "true"}) do
-    Logger.info("hash: #{address_hash_string}, type: #{contract_type}, action: #{action}")
+    Logger.info("request_path: #{conn.request_path}, hash: #{address_hash_string},
+                 type: #{contract_type}, action: #{action}")
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
