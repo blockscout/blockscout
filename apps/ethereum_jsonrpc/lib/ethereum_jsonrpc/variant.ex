@@ -18,11 +18,11 @@ defmodule EthereumJSONRPC.Variant do
   Fetch the block reward contract beneficiaries for a given blocks from the variant of the Ethereum JSONRPC API.
 
   For more information on block reward contracts see:
-  https://wiki.parity.io/Block-Reward-Contract.html
+  https://openethereum.github.io/Block-Reward-Contract
 
   ## Returns
 
-   * `{:ok, %EthereumJSONRPC.FetchedBeneficiaries{params_list: [%{address_hash: address_hash, block_number: block_number}], errors: %{code: code, message: message, data: %{block_number: block_number}}}` - some beneficiaries were successfully fetched and some may have had errors.
+   * `{:ok, %EthereumJSONRPC.FetchedBeneficiaries{params_set: [%{address_hash: address_hash, block_number: block_number}], errors: %{code: code, message: message, data: %{block_number: block_number}}}` - some beneficiaries were successfully fetched and some may have had errors.
    * `{:error, reason}` - there was an error at the transport level
    * `:ignore` - the variant does not support fetching beneficiaries
   """
@@ -94,4 +94,21 @@ defmodule EthereumJSONRPC.Variant do
               ],
               EthereumJSONRPC.json_rpc_named_arguments()
             ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
+
+  def get do
+    cond do
+      is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) ->
+        "nethermind"
+
+      System.get_env("ETHEREUM_JSONRPC_VARIANT") == "parity" ->
+        "nethermind"
+
+      true ->
+        "ETHEREUM_JSONRPC_VARIANT"
+        |> System.get_env()
+        |> String.split(".")
+        |> List.last()
+        |> String.downcase()
+    end
+  end
 end

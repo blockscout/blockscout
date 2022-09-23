@@ -441,7 +441,7 @@ jobs:
   #         path: cover/excoveralls.html
   #     - store_test_results:
   #         path: _build/test/junit
-  # test_parity_http_websocket:
+  # test_nethermind_http_websocket:
   #   docker:
   #     # Ensure .tool-versions matches
   #     - image: circleci/elixir:1.10.3-node-browsers
@@ -451,8 +451,8 @@ jobs:
   #         PGPASSWORD: postgres
   #         # match POSTGRES_USER for postgres image below
   #         PGUSER: postgres
-  #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.HTTPWebSocket"
-  #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Parity"
+  #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.HTTPWebSocket"
+  #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Nethermind"
   #     - image: circleci/postgres:10.10-alpine
   #       environment:
   #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
@@ -480,13 +480,13 @@ jobs:
   #         command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
   #     - run:
-  #         name: mix test --exclude no_parity
+  #         name: mix test --exclude no_nethermind
   #         command: |
   #           # Don't submit coverage report for forks, but let the build succeed
   #           if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-  #             mix coveralls.html --exclude no_parity --parallel --umbrella
+  #             mix coveralls.html --exclude no_nethermind --parallel --umbrella
   #           else
-  #             mix coveralls.circle --exclude no_parity --parallel --umbrella ||
+  #             mix coveralls.circle --exclude no_nethermind --parallel --umbrella ||
   #               # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
   #               (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
   #           fi
@@ -495,7 +495,7 @@ jobs:
   #         path: cover/excoveralls.html
   #     - store_test_results:
   #         path: _build/test/junit
-  test_parity_mox:
+  test_nethermind_mox:
     docker:
       # Ensure .tool-versions matches
       - image: circleci/elixir:1.10.3-node-browsers
@@ -505,7 +505,7 @@ jobs:
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
       - image: circleci/postgres:10.10-alpine
         environment:
@@ -534,13 +534,13 @@ jobs:
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
       - run:
-          name: mix test --exclude no_parity
+          name: mix test --exclude no_nethermind
           command: |
             # Don't submit coverage report for forks, but let the build succeed
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_parity --parallel --umbrella
+              mix coveralls.html --exclude no_nethermind --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_parity --parallel --umbrella ||
+              mix coveralls.circle --exclude no_nethermind --parallel --umbrella ||
                 # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
                 (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
             fi
@@ -571,8 +571,8 @@ workflows:
       # This unfortunately will only fire if all the tests pass because of how `requires` works
       - coveralls_merge:
           requires:
-            # - test_parity_http_websocket
-            - test_parity_mox
+            # - test_nethermind_http_websocket
+            - test_nethermind_mox
             # - test_geth_http_websocket
             # - test_geth_mox
       - credo:
@@ -591,8 +591,8 @@ workflows:
             - eslint
             - jest
             - sobelow
-            # - test_parity_http_websocket
-            - test_parity_mox
+            # - test_nethermind_http_websocket
+            - test_nethermind_mox
             # - test_geth_http_websocket
             # - test_geth_mox
       - dialyzer:
@@ -613,10 +613,10 @@ workflows:
       - sobelow:
           requires:
             - build
-      # - test_parity_http_websocket:
+      # - test_nethermind_http_websocket:
       #     requires:
       #       - build
-      - test_parity_mox:
+      - test_nethermind_mox:
           requires:
             - build
       # - test_geth_http_websocket:

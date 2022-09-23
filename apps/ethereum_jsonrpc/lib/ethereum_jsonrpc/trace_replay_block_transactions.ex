@@ -1,57 +1,12 @@
-# credo:disable-for-this-file
-defmodule EthereumJSONRPC.Parity do
+defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   @moduledoc """
-  Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
+  Methods for processing the data from `trace_replayBlockTransactions` JSON RPC method
   """
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.Parity.{FetchedBeneficiaries, Traces}
-  alias EthereumJSONRPC.{Transaction, Transactions}
-
-  @behaviour EthereumJSONRPC.Variant
-
-  @impl EthereumJSONRPC.Variant
-  def fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
-      when is_list(block_numbers) and is_list(json_rpc_named_arguments) do
-    id_to_params =
-      block_numbers
-      |> block_numbers_to_params_list()
-      |> id_to_params()
-
-    with {:ok, responses} <-
-           id_to_params
-           |> FetchedBeneficiaries.requests()
-           |> json_rpc(json_rpc_named_arguments) do
-      {:ok, FetchedBeneficiaries.from_responses(responses, id_to_params)}
-    end
-  end
-
-  @doc """
-  Internal transaction fetching for individual transactions is no longer supported for Parity.
-
-  To signal to the caller that fetching is not supported, `:ignore` is returned.
-  """
-  @impl EthereumJSONRPC.Variant
-  def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
-
-  @doc """
-  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
-  """
-  @impl EthereumJSONRPC.Variant
-  def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    id_to_params = id_to_params(block_numbers)
-
-    with {:ok, responses} <-
-           id_to_params
-           |> trace_replay_block_transactions_requests()
-           |> json_rpc(json_rpc_named_arguments) do
-      trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params)
-    end
-  end
-
-  @impl EthereumJSONRPC.Variant
-  def fetch_first_trace(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
+  def fetch_first_trace(transactions_params, json_rpc_named_arguments, traces_module)
+      when is_list(transactions_params) do
     id_to_params = id_to_params(transactions_params)
 
     trace_replay_transaction_response =
@@ -61,7 +16,7 @@ defmodule EthereumJSONRPC.Parity do
 
     case trace_replay_transaction_response do
       {:ok, responses} ->
-        case trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params) do
+        case trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module) do
           {:ok, [first_trace]} ->
             %{block_hash: block_hash} =
               transactions_params
@@ -84,40 +39,25 @@ defmodule EthereumJSONRPC.Parity do
     end
   end
 
-  @doc """
-  Fetches the pending transactions from the Parity node.
+  def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments, traces_module)
+      when is_list(block_numbers) do
+    id_to_params = id_to_params(block_numbers)
 
-  *NOTE*: The pending transactions are local to the node that is contacted and may not be consistent across nodes based
-  on the transactions that each node has seen and how each node prioritizes collating transactions into the next block.
-  """
-  @impl EthereumJSONRPC.Variant
-  @spec fetch_pending_transactions(EthereumJSONRPC.json_rpc_named_arguments()) ::
-          {:ok, [Transaction.params()]} | {:error, reason :: term}
-  def fetch_pending_transactions(json_rpc_named_arguments) do
-    with {:ok, transactions} <-
-           %{id: 1, method: "parity_pendingTransactions", params: []}
-           |> request()
+    with {:ok, responses} <-
+           id_to_params
+           |> trace_replay_block_transactions_requests()
            |> json_rpc(json_rpc_named_arguments) do
-      transactions_params =
-        transactions
-        |> Transactions.to_elixir()
-        |> Transactions.elixir_to_params()
-
-      {:ok, transactions_params}
+      trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params, traces_module)
     end
   end
 
-  defp block_numbers_to_params_list(block_numbers) when is_list(block_numbers) do
-    Enum.map(block_numbers, &%{block_quantity: integer_to_quantity(&1)})
-  end
-
-  defp trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params)
+  defp trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params, traces_module)
        when is_list(responses) and is_map(id_to_params) do
     with {:ok, traces} <- trace_replay_block_transactions_responses_to_traces(responses, id_to_params) do
       params =
         traces
-        |> Traces.to_elixir()
-        |> Traces.elixir_to_params()
+        |> traces_module.to_elixir()
+        |> traces_module.elixir_to_params()
 
       {:ok, params}
     end
@@ -203,13 +143,13 @@ defmodule EthereumJSONRPC.Parity do
     request(%{id: id, method: "trace_replayBlockTransactions", params: [integer_to_quantity(block_number), ["trace"]]})
   end
 
-  def trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params)
+  def trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module)
       when is_list(responses) and is_map(id_to_params) do
     with {:ok, traces} <- trace_replay_transaction_responses_to_first_trace(responses, id_to_params) do
       params =
         traces
-        |> Traces.to_elixir()
-        |> Traces.elixir_to_params()
+        |> traces_module.to_elixir()
+        |> traces_module.elixir_to_params()
 
       {:ok, params}
     end
