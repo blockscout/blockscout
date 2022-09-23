@@ -169,7 +169,8 @@ defmodule Indexer.Supervisor do
       {EventBackfill.Supervisor, [[], []]},
       {TrackedEventCache, [[], []]},
       {CeloMaterializedViewRefresh, [[], []]},
-      {InternalTransactionCache, [[], []]}
+      {InternalTransactionCache, [[], []]},
+      {Indexer.Celo.WriteOperationHandler, [[], []]}
     ]
 
     fetchers_with_bridged_tokens =

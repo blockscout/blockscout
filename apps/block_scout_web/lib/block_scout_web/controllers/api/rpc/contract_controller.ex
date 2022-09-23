@@ -310,6 +310,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     result = publish_without_broadcast(input)
 
     EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
+    result
   end
 
   def proccess_params(input) do
@@ -328,6 +329,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:error, changeset} ->
         {:error, changeset}
+
+      {:update_submitted} ->
+        :update_submitted
     end
   end
 

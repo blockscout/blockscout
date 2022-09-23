@@ -67,6 +67,9 @@ defmodule BlockScoutWeb.Notifier do
             )
 
           {:error, result}
+
+        :update_submitted ->
+          {:ok, :update_submitted}
       end
 
     Endpoint.broadcast(

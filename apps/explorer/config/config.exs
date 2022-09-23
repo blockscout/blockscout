@@ -153,6 +153,8 @@ config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DI
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: System.get_env("DISABLE_WRITE_API") != "true"
 
+config :explorer, :write_api_enabled, System.get_env("DISABLE_WRITE_API") != "true"
+
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
   |> Integer.parse()
