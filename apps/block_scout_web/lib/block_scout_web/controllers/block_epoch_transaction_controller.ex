@@ -26,23 +26,6 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
            }
          ) do
       {:ok, block} ->
-        paging_options_keyword = paging_options(params)
-        %Explorer.PagingOptions{page_size: page_size} = Keyword.get(paging_options_keyword, :paging_options)
-
-        epoch_transactions_plus_one =
-          CeloElectionRewards.get_paginated_rewards_for_block(block.number, Map.put(params, "page_size", page_size))
-
-        {epoch_transactions, next_page} = split_list_by_page(epoch_transactions_plus_one)
-
-        next_page_path =
-          case next_page_params(next_page, epoch_transactions, params) do
-            nil ->
-              nil
-
-            next_page_params ->
-              block_epoch_transaction_path(conn, :index, block, Map.delete(next_page_params, "type"))
-          end
-
         epoch_rewards = CeloEpochRewards.get_celo_epoch_rewards_for_block(block.number)
 
         json(
@@ -50,8 +33,7 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
           %{
             items:
               epoch_rewards
-              |> prepare_epoch_transaction_items(block, epoch_transactions),
-            next_page_path: next_page_path
+              |> prepare_epoch_transaction_items(block)
           }
         )
 
@@ -72,9 +54,9 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     end
   end
 
-  defp prepare_epoch_transaction_items(nil, _, _), do: []
+  defp prepare_epoch_transaction_items(nil, _), do: []
 
-  defp prepare_epoch_transaction_items(epoch_rewards, block, epoch_transactions) do
+  defp prepare_epoch_transaction_items(epoch_rewards, block) do
     carbon_fund_address =
       case AccountReader.get_carbon_offsetting_partner(block.number) do
         {:ok, address_string} ->
@@ -159,16 +141,25 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
         items
       end
 
-    epoch_transactions_json =
-      Enum.map(epoch_transactions, fn epoch_transaction ->
-        View.render_to_string(
-          EpochTransactionView,
-          "_election_tile.html",
-          epoch_transaction: epoch_transaction
-        )
-      end)
+    total = CeloElectionRewards.get_aggregated_for_block_number(block.number)
+    sample_rewards = CeloElectionRewards.get_sample_rewards_for_block_number(block.number)
 
-    items_with_rewards_bolster ++ epoch_transactions_json
+    aggregated_tiles =
+      Enum.map(
+        [:voter, :group, :validator],
+        fn type ->
+          View.render_to_string(
+            EpochTransactionView,
+            "_election_aggregated_tile.html",
+            block: block,
+            reward_type: Atom.to_string(type),
+            total: Map.get(total, type),
+            rewards: Map.get(sample_rewards, type, [])
+          )
+        end
+      )
+
+    items_with_rewards_bolster ++ aggregated_tiles
   end
 
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
