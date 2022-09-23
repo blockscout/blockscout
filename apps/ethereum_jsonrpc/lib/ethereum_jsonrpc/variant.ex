@@ -22,7 +22,7 @@ defmodule EthereumJSONRPC.Variant do
 
   ## Returns
 
-   * `{:ok, %EthereumJSONRPC.FetchedBeneficiaries{params_list: [%{address_hash: address_hash, block_number: block_number}], errors: %{code: code, message: message, data: %{block_number: block_number}}}` - some beneficiaries were successfully fetched and some may have had errors.
+   * `{:ok, %EthereumJSONRPC.FetchedBeneficiaries{params_set: [%{address_hash: address_hash, block_number: block_number}], errors: %{code: code, message: message, data: %{block_number: block_number}}}` - some beneficiaries were successfully fetched and some may have had errors.
    * `{:error, reason}` - there was an error at the transport level
    * `:ignore` - the variant does not support fetching beneficiaries
   """
