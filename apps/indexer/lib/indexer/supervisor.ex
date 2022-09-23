@@ -148,7 +148,9 @@ defmodule Indexer.Supervisor do
       {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers
-      #{UncatalogedTokenTransfers.Supervisor, [[]]},
+      # This worker doesn't work for epoch transactions as they don't have a transaction hash
+      # which results in a growing number of "problematic" blocks. Disabled on purpose.
+      # {UncatalogedTokenTransfers.Supervisor, [[]]},
       {UnclesWithoutIndex.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {BlocksTransactionsMismatch.Supervisor,
