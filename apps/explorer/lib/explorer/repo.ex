@@ -157,6 +157,20 @@ defmodule Explorer.Repo do
     alias Explorer.Repo, as: ExplorerRepo
 
     def init(_, opts) do
+      db_url = Application.get_env(:explorer, Explorer.Repo.Replica1)[:url]
+      repo_conf = Application.get_env(:explorer, Explorer.Repo.Replica1)
+
+      merged =
+        %{url: db_url}
+        |> ConfigHelper.get_db_config()
+        |> Keyword.merge(repo_conf, fn
+          _key, v1, nil -> v1
+          _key, nil, v2 -> v2
+          _, _, v2 -> v2
+        end)
+
+      Application.put_env(:explorer, Explorer.Repo.Replica1, merged)
+
       extra_postgres_parameters = [application_name: ExplorerRepo.get_application_name() <> "-replica1"]
 
       opts =
@@ -164,7 +178,7 @@ defmodule Explorer.Repo do
           Keyword.merge(params, extra_postgres_parameters)
         end)
 
-      {:ok, opts}
+      {:ok, Keyword.put(opts, :url, db_url)}
     end
   end
 end
