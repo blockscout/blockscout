@@ -1,0 +1,44 @@
+<% stats_enabled = Application.get_env(:block_scout_web, :stats_enabled) %>
+<% makerdojo_url = Application.get_env(:block_scout_web, :makerdojo_url) %>
+<%
+{:ok, urls} = makerdojo_url |> Jason.decode()
+%{"attestations" => attestations_url, "uniswap" => uniswap_url, "moola" => moola_url} = urls
+%>
+
+<nav class="menu-wrap" data-selector="stats-nabvar">
+    <div class="leftbuttons">
+        <ul class="topnav" id="topnav">
+            <li class="stats-link selected" data-tab-id="1">
+                <a href="<%= attestations_url %>" target="myiframe">
+                    <%= gettext("Attestations") %>
+                </a>
+            </li>
+            <li class="stats-link" data-tab-id="2">
+                <a href="<%= uniswap_url %>" target="myiframe">
+                    <%= gettext("Uniswap") %>
+                </a>
+            </li>
+            <li class="stats-link" data-tab-id="3">
+                <a  href="<%= moola_url %>" target="myiframe" >
+                    <%= gettext("Moola") %>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<section class="container" data-page="stats-list" id="stats-container">
+    <section class="fs-14" data-page="stats-details">
+        <div class="row">
+            <div class="col-md-12">
+            <%= if stats_enabled do %>
+                <!-- Stats Details -->
+                <div class="makerdojo">
+                <iframe width=100%  src="<%= attestations_url %>" name="myiframe" id="myiframe" frameborder="0" style="border:0;height:100vh;width:100%;" allowfullscreen></iframe>
+                </div>
+            <% end %>
+            </div>
+        </div>
+    </section>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/stats.js") %>"></script>
+</section>

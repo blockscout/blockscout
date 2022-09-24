@@ -1,0 +1,111 @@
+.reportArea.down-scaled {
+    height: 1150px !important;
+    overflow: unset !important;
+}
+
+nav#stats-navbar {
+    background-color:white!important;
+    color: #767676;
+}
+
+iframe#myiframe {
+    height: 3340px !important;
+    @media only screen and (max-width: 768px) {
+            height: 960px !important;
+    }
+}
+
+.moola a {
+    background: #F3F3F3 !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 6px 14px !important;
+    box-shadow: 5px 5px 5px rgb(180, 175, 175);
+    color: #6C6C6C !important;
+}
+
+ul.topnav {
+    list-style-type: none;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 2px;
+    background-color: #fbfafc;
+}
+
+ul.topnav li {
+    -ms-flex-preferred-size: 120px;
+    -ms-flex-negative: 0; 
+    flex-shrink: 0; /* don't allow menu item to shrink below 120px when there isn’t enough space on the row. */
+    -webkit-box-flex: 1;
+    -ms-flex-positive: 1;
+    flex-grow: 1; /* allow items to grow up to 150px wide if the container is big enough */
+    -o-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    margin: 14px 5px;
+    text-align: center;
+}
+
+.menuWrap {
+    -webkit-box-sizing: content-box;
+            box-sizing: content-box;
+    overflow-x: scroll;
+    overflow-y: hidden;
+}
+
+ul.topnav li a {
+    display: inline-block;
+    color: #6C6C6C;
+    font-size: 18px;
+    font-weight: lighter;
+    padding: 0px 50px;
+    text-decoration: none;
+    border: none;
+    margin: 4px 4px 3px 4px;
+    border-radius: 12px;
+    box-shadow: 5px 5px 5px rgb(180, 175, 175);
+}
+
+ul.topnav li.selected a {
+    color: #26ba6c; 
+    font-weight: normal; 
+    border: 1px solid #26ba6c;
+}
+
+ul.topnav li a:hover:not(.active) {color: #6C6C6C;}
+
+@media only screen and (max-width: 768px) {
+    ul.topnav {
+        background-color: none; 
+        overflow-x: scroll; 
+        -webkit-overflow-scrolling: touch; 
+        -ms-overflow-style: -ms-autohiding-scrollbar; 
+        width: 100%;
+    } 
+    
+    .dark-theme-applied ul.topnav {
+        background-color: #282945; 
+        overflow-x: scroll; 
+        white-space: nowrap; 
+        -webkit-overflow-scrolling: touch;
+        -ms-overflow-style: -ms-autohiding-scrollbar;
+    }
+    
+    .topnav::-webkit-scrollbar {display: none; } 
+    
+    ul.topnav li a {
+        color: #6C6C6C; 
+        font-size: 14px; 
+    }
+
+    .navcontainer {
+        background-color: none; 
+        overflow-x: scroll; 
+        -webkit-overflow-scrolling: touch; 
+        -ms-overflow-style: -ms-autohiding-scrollbar; 
+        width: 100%;
+    }
+}

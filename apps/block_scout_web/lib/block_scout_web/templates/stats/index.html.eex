@@ -16,24 +16,24 @@
         <a href="<%= addresses_url %>" target="myiframe">
           <%=  gettext("Addresses") %>
         </a>
-      </li>     
+      </li>
       <li class="stats-link" data-tab-id="3">
         <a  href="<%= cstables_url %>" target="myiframe" >
           <%=  gettext("cStables") %>
         </a>
-      </li>  
+      </li>
       <li class="stats-link" data-tab-id="4">
         <a href="<%= reserve_url %>" target="myiframe">
           <%=  gettext("Mento Reserve") %>
         </a>
-      </li> 
+      </li>
       <li class="stats-link" data-tab-id="5">
         <a href="<%= transactions_url %>" target="myiframe">
           <%=  gettext("Transactions") %>
         </a>
-      </li>  
+      </li>
   </ul>
-</nav>      
+</nav>
 <section class="container" data-page="stats-list" id="stats-container">
 <section class="fs-14" data-page="stats-details">
 
@@ -41,7 +41,7 @@
     <div class="col-md-12">
       <%= if stats_enabled do %>
         <!-- Stats Details -->
-        <div class="google-data-studio"> 
+        <div class="google-data-studio">
           <iframe width=100%  src="<%= overview_url %>" name="myiframe" id="myiframe" frameborder="0" style="border:0;height:100vh;width:100%;" allowfullscreen></iframe>
         </div>
       <% end %>

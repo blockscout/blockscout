@@ -446,6 +446,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/stats", StatsController, :index)
 
+    get("/makerdojo", MakerdojoController, :index)
+
     get("/verified-contracts", VerifiedContractsController, :index)
 
     get("/*path", PageNotFoundController, :index)
