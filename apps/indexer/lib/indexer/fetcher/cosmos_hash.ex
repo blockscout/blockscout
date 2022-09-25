@@ -143,7 +143,6 @@ defmodule Indexer.Fetcher.CosmosHash do
   end
 
   defp fetch_and_import_cosmos_hash(block_number) when is_nil(block_number) == false do
-    Logger.info("block_number = #{block_number}")
     tx_hashes_string = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
                        |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end)
     list_mapping = get_cosmos_hash_tx_list_mapping(block_number)
