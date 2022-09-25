@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.ABIEncodedValueView
   alias BlockScoutWeb.Tokens.Helpers
   alias Explorer.Chain
-  alias Explorer.Chain.{Transaction, Wei}
+  alias Explorer.Chain.{InternalTransaction, Log, Transaction, Wei}
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -19,6 +19,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     prepare_transaction(transaction)
   end
 
+  def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
+    InternalTransaction.internal_transactions_to_raw(internal_transactions)
+  end
+
+  def render("decoded_log_input.json", %{method_id: method_id, text: text, mapping: mapping}) do
+    %{"method_id" => method_id, "method_call" => text, "mapping" => prepare_log_mapping(mapping)}
+  end
+
   def render("decoded_input.json", %{method_id: method_id, text: text, mapping: mapping, error?: _error}) do
     %{"method_id" => method_id, "method_call" => text, "mapping" => prepare_method_mapping(mapping)}
   end
@@ -27,12 +35,30 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{"raw" => raw, "decoded" => decoded}
   end
 
+  def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(token_transfers, &prepare_token_transfer/1), "next_page_params" => next_page_params}
+  end
+
   def render("token_transfers.json", %{token_transfers: token_transfers}) do
     Enum.map(token_transfers, &prepare_token_transfer/1)
   end
 
   def render("token_transfer.json", %{token_transfer: token_transfer}) do
     prepare_token_transfer(token_transfer)
+  end
+
+  def render("internal_transactions.json", %{
+        internal_transactions: internal_transactions,
+        next_page_params: next_page_params
+      }) do
+    %{
+      "items" => Enum.map(internal_transactions, &prepare_internal_transaction/1),
+      "next_page_params" => next_page_params
+    }
+  end
+
+  def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
+    %{"items" => Enum.map(logs, fn log -> prepare_log(log, tx_hash) end), "next_page_params" => next_page_params}
   end
 
   def prepare_token_transfer(token_transfer) do
@@ -62,6 +88,50 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       {:ok, value} ->
         %{"value" => value}
     end
+  end
+
+  def prepare_internal_transaction(internal_transaction) do
+    %{
+      "error" => internal_transaction.error,
+      "success" => is_nil(internal_transaction.error),
+      "type" => internal_transaction.call_type,
+      "transaction_hash" => internal_transaction.transaction_hash,
+      "from" => Helper.address_with_info(internal_transaction.from_address, internal_transaction.from_address_hash),
+      "to" => Helper.address_with_info(internal_transaction.to_address, internal_transaction.to_address_hash),
+      "created_contract" =>
+        Helper.address_with_info(
+          internal_transaction.created_contract_address,
+          internal_transaction.created_contract_address_hash
+        ),
+      "value" => internal_transaction.value,
+      "block" => internal_transaction.block_number,
+      "timestamp" => internal_transaction.transaction.block.timestamp,
+      "index" => internal_transaction.index
+    }
+  end
+
+  def prepare_log(log, transaction_hash) do
+    decoded =
+      case log |> Log.decode(%Transaction{hash: transaction_hash}) |> format_decoded_log_input() do
+        {:ok, method_id, text, mapping} ->
+          render(__MODULE__, "decoded_log_input.json", method_id: method_id, text: text, mapping: mapping)
+
+        _ ->
+          nil
+      end
+
+    %{
+      "address" => Helper.address_with_info(log.address, log.address_hash),
+      "topics" => [
+        log.first_topic,
+        log.second_topic,
+        log.third_topic,
+        log.fourth_topic
+      ],
+      "data" => log.data,
+      "index" => log.index,
+      "decoded" => decoded
+    }
   end
 
   defp prepare_transaction(transaction) do
@@ -157,11 +227,30 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end)
   end
 
+  def prepare_log_mapping(mapping) do
+    Enum.map(mapping, fn {name, type, indexed?, value} ->
+      %{"name" => name, "type" => type, "indexed" => indexed?, "value" => ABIEncodedValueView.value_json(type, value)}
+    end)
+  end
+
   defp format_status({:error, reason}), do: reason
   defp format_status(status), do: status
 
   defp format_decoded_input({:error, _, []}), do: nil
-  defp format_decoded_input({:error, :contract_not_verified, candidates}), do: Enum.at(candidates, 0)
+  defp format_decoded_input({:error, _, candidates}), do: Enum.at(candidates, 0)
   defp format_decoded_input({:ok, _identifier, _text, _mapping} = decoded), do: decoded
   defp format_decoded_input(_), do: nil
+
+  defp format_decoded_log_input({:error, :could_not_decode}), do: nil
+  defp format_decoded_log_input({:error, :no_matching_function}), do: nil
+  defp format_decoded_log_input({:ok, _method_id, _text, _mapping} = decoded), do: decoded
+  defp format_decoded_log_input({:error, _, candidates}), do: Enum.at(candidates, 0)
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+  end
 end
