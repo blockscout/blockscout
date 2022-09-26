@@ -1,5 +1,7 @@
 defmodule BlockScoutWeb.API.V2.Helper do
-  # use BlockScoutWeb, :view
+  @moduledoc """
+    API V2 helper
+  """
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address

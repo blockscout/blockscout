@@ -2,10 +2,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
-  alias BlockScoutWeb.ABIEncodedValueView
+  alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Tokens.Helpers
   alias Explorer.Chain
-  alias Explorer.Chain.{InternalTransaction, Log, Transaction, Wei}
+  alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction, Wei}
+  alias Explorer.Counters.AverageBlockTime
+  alias Timex.Duration
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -24,11 +26,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("decoded_log_input.json", %{method_id: method_id, text: text, mapping: mapping}) do
-    %{"method_id" => method_id, "method_call" => text, "mapping" => prepare_log_mapping(mapping)}
+    %{"method_id" => method_id, "method_call" => text, "parameters" => prepare_log_mapping(mapping)}
   end
 
   def render("decoded_input.json", %{method_id: method_id, text: text, mapping: mapping, error?: _error}) do
-    %{"method_id" => method_id, "method_call" => text, "mapping" => prepare_method_mapping(mapping)}
+    %{"method_id" => method_id, "method_call" => text, "parameters" => prepare_method_mapping(mapping)}
   end
 
   def render("revert_reason.json", %{raw: raw, decoded: decoded}) do
@@ -139,52 +141,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
-    priority_fee_per_gas =
-      if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
-        do: nil,
-        else:
-          Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
-            Wei.to(x, :wei)
-          end)
+    priority_fee_per_gas = priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
 
-    burned_fee =
-      if !is_nil(max_fee_per_gas) and !is_nil(transaction.gas_used) and !is_nil(base_fee_per_gas) do
-        if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
-          %Wei{value: Decimal.new(0)}
-        else
-          Wei.mult(base_fee_per_gas, transaction.gas_used)
-        end
-      else
-        nil
-      end
+    burned_fee = burned_fee(transaction, max_fee_per_gas, base_fee_per_gas)
 
     status = transaction |> Chain.transaction_to_status() |> format_status()
 
-    revert_reason =
-      if is_binary(status) && status |> String.downcase() |> String.contains?("reverted") do
-        case BlockScoutWeb.TransactionView.transaction_revert_reason(transaction) do
-          {:error, _contract_not_verified, candidates} when candidates != [] ->
-            {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
-            render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+    revert_reason = revert_reason(status, transaction)
 
-          {:ok, method_id, text, mapping} ->
-            render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
-
-          _ ->
-            hex = BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(transaction)
-            utf8 = BlockScoutWeb.TransactionView.decoded_revert_reason(transaction)
-            render(__MODULE__, "revert_reason.json", raw: hex, decoded: utf8)
-        end
-      end
-
-    decoded_input_data =
-      case transaction |> Transaction.decoded_input_data() |> format_decoded_input() do
-        {:ok, method_id, text, mapping} ->
-          render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: false)
-
-        _ ->
-          nil
-      end
+    decoded_input_data = decoded_input(transaction)
 
     %{
       "hash" => transaction.hash,
@@ -196,8 +161,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "to" => Helper.address_with_info(transaction.to_address, transaction.to_address_hash),
       "created_contract" =>
         Helper.address_with_info(transaction.created_contract_address, transaction.created_contract_address_hash),
+      "confirmations" =>
+        transaction.block |> Chain.confirmations(block_height: Chain.block_height()) |> format_confirmations(),
+      "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
-      "fee" => Tuple.to_list(Chain.fee(transaction, :wei)),
+      "fee" => transaction |> Chain.fee(:wei) |> format_fee(),
       "gas_price" => transaction.gas_price,
       "type" => transaction.type,
       "gas_used" => transaction.gas_used,
@@ -219,6 +187,55 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "token_transfers_overflow" =>
         Enum.count(transaction.token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
     }
+  end
+
+  defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
+    if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
+      do: nil,
+      else:
+        Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
+          Wei.to(x, :wei)
+        end)
+  end
+
+  defp burned_fee(transaction, max_fee_per_gas, base_fee_per_gas) do
+    if !is_nil(max_fee_per_gas) and !is_nil(transaction.gas_used) and !is_nil(base_fee_per_gas) do
+      if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
+        %Wei{value: Decimal.new(0)}
+      else
+        Wei.mult(base_fee_per_gas, transaction.gas_used)
+      end
+    else
+      nil
+    end
+  end
+
+  defp revert_reason(status, transaction) do
+    if is_binary(status) && status |> String.downcase() |> String.contains?("reverted") do
+      case TransactionView.transaction_revert_reason(transaction) do
+        {:error, _contract_not_verified, candidates} when candidates != [] ->
+          {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
+          render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+
+        {:ok, method_id, text, mapping} ->
+          render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+
+        _ ->
+          hex = TransactionView.get_pure_transaction_revert_reason(transaction)
+          utf8 = TransactionView.decoded_revert_reason(transaction)
+          render(__MODULE__, "revert_reason.json", raw: hex, decoded: utf8)
+      end
+    end
+  end
+
+  defp decoded_input(transaction) do
+    case transaction |> Transaction.decoded_input_data() |> format_decoded_input() do
+      {:ok, method_id, text, mapping} ->
+        render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: false)
+
+      _ ->
+        nil
+    end
   end
 
   def prepare_method_mapping(mapping) do
@@ -246,11 +263,47 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp format_decoded_log_input({:ok, _method_id, _text, _mapping} = decoded), do: decoded
   defp format_decoded_log_input({:error, _, candidates}), do: Enum.at(candidates, 0)
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
+  def format_confirmations({:ok, confirmations}), do: confirmations
+  def format_confirmations(_), do: 0
+
+  def format_fee({type, value}), do: %{"type" => type, "value" => value}
+
+  def processing_time_duration(%Transaction{block: nil}) do
+    []
+  end
+
+  def processing_time_duration(%Transaction{earliest_processing_start: nil}) do
+    avg_time = AverageBlockTime.average_block_time()
+
+    if avg_time == {:error, :disabled} do
+      []
+    else
+      [
+        0,
+        avg_time
+        |> Duration.to_milliseconds()
+      ]
+    end
+  end
+
+  def processing_time_duration(%Transaction{
+        block: %Block{timestamp: end_time},
+        earliest_processing_start: earliest_processing_start,
+        inserted_at: inserted_at
+      }) do
+    long_interval = diff(earliest_processing_start, end_time)
+    short_interval = diff(inserted_at, end_time)
+    merge_intervals(short_interval, long_interval)
+  end
+
+  def merge_intervals(short, long) when short == long, do: [short]
+
+  def merge_intervals(short, long) do
+    [short, long]
+  end
+
+  def diff(left, right) do
+    left
+    |> Timex.diff(right, :milliseconds)
   end
 end

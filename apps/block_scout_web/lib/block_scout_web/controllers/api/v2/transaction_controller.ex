@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
   import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
@@ -17,8 +16,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     :block => :optional,
     [created_contract_address: :names] => :optional,
     [from_address: :names] => :optional,
-    [to_address: :names] => :optional
-    # [to_address: :smart_contract] => :optional
+    [to_address: :names] => :optional,
+    [to_address: :smart_contract] => :optional
   }
 
   @token_transfers_neccessity_by_association %{
@@ -48,8 +47,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   def transactions(conn, params) do
     filter_options = filter_options(params)
-    method_filter_options = method_filter_options(params) |> debug("method_filter_options")
-    type_filter_options = type_filter_options(params) |> debug("type_filter_options")
+    method_filter_options = method_filter_options(params)
+    type_filter_options = type_filter_options(params)
 
     full_options =
       Keyword.merge(
@@ -227,13 +226,5 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         next_page_params: next_page_params
       })
     end
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
   end
 end

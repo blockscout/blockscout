@@ -86,8 +86,8 @@ defmodule Explorer.Chain do
 
   @token_transfers_per_transaction_preview 10
   @token_transfers_neccessity_by_association %{
-    # [from_address: :smart_contract] => :optional,
-    # [to_address: :smart_contract] => :optional,
+    [from_address: :smart_contract] => :optional,
+    [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
     from_address: :required,
@@ -1042,7 +1042,7 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.confirmations(block, block_height: 0)
       {:ok, 1}
   """
-  @spec confirmations(Block.t(), [{:block_height, block_height()}]) ::
+  @spec confirmations(Block.t() | nil, [{:block_height, block_height()}]) ::
           {:ok, non_neg_integer()} | {:error, :non_consensus}
 
   def confirmations(%Block{consensus: true, number: number}, named_arguments) when is_list(named_arguments) do
@@ -1052,6 +1052,8 @@ defmodule Explorer.Chain do
   end
 
   def confirmations(%Block{consensus: false}, _), do: {:error, :non_consensus}
+
+  def confirmations(nil, _), do: {:error, :pending}
 
   @doc """
   Creates an address.
@@ -3219,21 +3221,6 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    # if is_nil(paging_options.key) do
-    #   paging_options.page_size
-    #   |> Transactions.take_enough()
-    #   |> case do
-    #     nil ->
-    #       transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
-    #       Transactions.update(transactions)
-    #       transactions
-
-    #     transactions ->
-    #       transactions
-    #   end
-    # else
-    #   fetch_recent_collated_transactions(paging_options, necessity_by_association)
-    # end
     fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter, type_filter)
   end
 
@@ -6300,7 +6287,6 @@ defmodule Explorer.Chain do
     if method_ids != [] do
       query
       |> where([tx], fragment("SUBSTRING(? FOR 4)", tx.input) in ^method_ids)
-      |> debug("result query")
     else
       query
     end
