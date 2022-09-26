@@ -4,7 +4,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Tokens.Helpers
-  alias Explorer.Chain
+  alias Explorer.ExchangeRates.Token
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction, Wei}
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
@@ -72,7 +73,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "token_address" => token_transfer.token_contract_address_hash,
       "token_symbol" => Helpers.token_symbol(token_transfer.token),
       "type" => Chain.get_token_transfer_type(token_transfer),
-      "token_type" => token_transfer.token.type
+      "token_type" => token_transfer.token.type,
+      "exchange_rate" => Market.add_price(token_transfer.token).usd_value
     }
   end
 
@@ -172,6 +174,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "gas_limit" => transaction.gas,
       "max_fee_per_gas" => transaction.max_fee_per_gas,
       "max_priority_fee_per_gas" => transaction.max_priority_fee_per_gas,
+      "base_fee_per_gas" => base_fee_per_gas,
       "priority_fee" => priority_fee_per_gas && Wei.mult(priority_fee_per_gas, transaction.gas_used),
       "tx_burnt_fee" => burned_fee,
       "nonce" => transaction.nonce,
@@ -185,7 +188,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
             Enum.take(transaction.token_transfers, Chain.get_token_transfers_per_transaction_preview_count())
         }),
       "token_transfers_overflow" =>
-        Enum.count(transaction.token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
+        Enum.count(transaction.token_transfers) > Chain.get_token_transfers_per_transaction_preview_count(),
+      "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value
     }
   end
 
