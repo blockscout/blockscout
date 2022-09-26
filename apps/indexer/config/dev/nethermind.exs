@@ -19,7 +19,7 @@ config :indexer,
       ],
       http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: [pool: :ethereum_jsonrpc]]
     ],
-    variant: EthereumJSONRPC.Parity
+    variant: EthereumJSONRPC.Nethermind
   ],
   # Example configuration to override json_rpc_named_arguments for just the realtime block fetcher
   # realtime_overrides: [
@@ -35,7 +35,7 @@ config :indexer,
   #       ],
   #       http_options: [recv_timeout: :timer.minutes(1), timeout: :timer.minutes(1), hackney: [pool: :ethereum_jsonrpc]]
   #     ],
-  #     variant: EthereumJSONRPC.Parity
+  #     variant: EthereumJSONRPC.Nethermind
   #   ]
   # ],
   subscribe_named_arguments: [

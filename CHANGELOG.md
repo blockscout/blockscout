@@ -4,17 +4,23 @@
 
 - [#6092](https://github.com/blockscout/blockscout/pull/6092) - Blockscout Account functionality
 - [#6073](https://github.com/blockscout/blockscout/pull/6073) - Add vyper support for rust verifier microservice integration
+- [#6111](https://github.com/blockscout/blockscout/pull/6111) - Add Prometheus metrics to indexer
 
 ### Fixes
 
+- [#6158](https://github.com/blockscout/blockscout/pull/6158) - Add missing clause for merge_twin_vyper_contract_with_changeset function
 - [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
 - [#6091](https://github.com/blockscout/blockscout/pull/6091) - Improve fetching media type for NFT
 - [#6094](https://github.com/blockscout/blockscout/pull/6094) - Fix inconsistent behaviour of `getsourcecode` method
 - [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
 - [#6106](https://github.com/blockscout/blockscout/pull/6106) - Fix 500 response on `/coin-balance` for empty address
+- [#6118](https://github.com/blockscout/blockscout/pull/6118) - Fix unfetched token balances
 
 ### Chore
 
+- [#6155](https://github.com/blockscout/blockscout/pull/6155) - Refactor Ethereum JSON RPC variants
+- [#6125](https://github.com/blockscout/blockscout/pull/6125) - Rename obsolete "parity" EthereumJSONRPC.Variant to "nethermind"
+- [#6124](https://github.com/blockscout/blockscout/pull/6124) - Docker compose: add config for Erigon
 - [#6053](https://github.com/blockscout/blockscout/pull/6053) - Bump jest-environment-jsdom from 29.0.1 to 29.0.2 in /apps/block_scout_web/assets
 - [#6055](https://github.com/blockscout/blockscout/pull/6055) - Bump @babel/core from 7.18.13 to 7.19.0 in /apps/block_scout_web/assets
 - [#6054](https://github.com/blockscout/blockscout/pull/6054) - Bump jest from 29.0.1 to 29.0.2 in /apps/block_scout_web/assets

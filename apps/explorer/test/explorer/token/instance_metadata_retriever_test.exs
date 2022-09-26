@@ -54,7 +54,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
   ]
 
   describe "fetch_metadata/2" do
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "fetches json metadata", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do

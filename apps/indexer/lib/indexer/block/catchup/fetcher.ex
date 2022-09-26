@@ -26,6 +26,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.Sequence
   alias Indexer.Memory.Shrinkable
+  alias Indexer.Prometheus
 
   @behaviour Block.Fetcher
 
@@ -96,6 +97,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
             missing_ranges
             |> Stream.map(&Enum.count/1)
             |> Enum.sum()
+
+          Prometheus.Instrumenter.missing_blocks(missing_block_count)
 
           Logger.debug(fn -> "Missed blocks in ranges." end,
             missing_block_range_count: range_count,
@@ -206,7 +209,11 @@ defmodule Indexer.Block.Catchup.Fetcher do
        ) do
     Logger.metadata(fetcher: :block_catchup, first_block_number: first, last_block_number: last)
 
-    case fetch_and_import_range(block_fetcher, range) do
+    {fetch_duration, result} = :timer.tc(fn -> fetch_and_import_range(block_fetcher, range) end)
+
+    Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
+
+    case result do
       {:ok, %{inserted: inserted, errors: errors}} ->
         errors = cap_seq(sequence, errors)
         retry(sequence, errors)
@@ -214,6 +221,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         {:ok, inserted: inserted}
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} = error ->
+        Prometheus.Instrumenter.import_errors()
         Logger.error(fn -> ["failed to validate: ", inspect(changesets), ". Retrying."] end, step: step)
 
         push_back(sequence, range)
@@ -221,6 +229,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         error
 
       {:error, {:import = step, reason}} = error ->
+        Prometheus.Instrumenter.import_errors()
         Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
 
         push_back(sequence, range)
