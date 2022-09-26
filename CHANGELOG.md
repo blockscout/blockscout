@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#6162](https://github.com/blockscout/blockscout/pull/6162) - Extend token symbol type varchar(255) -> text
 - [#6158](https://github.com/blockscout/blockscout/pull/6158) - Add missing clause for merge_twin_vyper_contract_with_changeset function
 - [#6127](https://github.com/blockscout/blockscout/pull/6127) - No missing blocks in UI on the main page
 - [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
