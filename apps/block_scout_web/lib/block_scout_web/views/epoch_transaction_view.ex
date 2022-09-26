@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.EpochTransactionView do
     end
   end
 
-  def get_reward_currency_address(reward_type) do
+  def get_reward_currency_address_hash(reward_type) do
     with {:ok, address_string} <-
            Util.get_address(
              case reward_type do
@@ -20,9 +20,8 @@ defmodule BlockScoutWeb.EpochTransactionView do
                _ -> "StableToken"
              end
            ),
-         {:ok, address_hash} <- Chain.string_to_address_hash(address_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
-      address
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_string) do
+      address_hash
     end
   end
 

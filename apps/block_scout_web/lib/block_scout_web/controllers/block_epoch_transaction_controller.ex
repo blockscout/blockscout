@@ -8,15 +8,10 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     only: [hash_to_block: 2, number_to_block: 2, string_to_address_hash: 1, string_to_block_hash: 1, hash_to_address: 1]
 
   alias BlockScoutWeb.{Controller, EpochTransactionView}
-  alias Explorer.Celo.{AccountReader, EpochUtil}
+  alias Explorer.Celo.{AccountReader, EpochUtil, Util}
   alias Explorer.Chain
   alias Explorer.Chain.{CeloElectionRewards, CeloEpochRewards, Wei}
   alias Phoenix.View
-
-  alias Explorer.Celo.CoreContracts
-
-  # The community fund address never changes, so it's ok to hard-code it.
-  @community_fund_address "0xD533Ca259b330c7A88f74E000a3FaEa2d63B7972"
 
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number, "type" => "JSON"} = params) do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
@@ -56,39 +51,56 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
 
   defp prepare_epoch_transaction_items(nil, _), do: []
 
+  defp get_epoch_transaction_address_strings(%{number: block_number}),
+    do: [
+      {:carbon,
+       case AccountReader.get_carbon_offsetting_partner(block_number) do
+         {:ok, address_string} ->
+           address_string
+
+         _ ->
+           nil
+       end},
+      {:reserve,
+       case Util.get_address("Reserve") do
+         {:ok, address_string} ->
+           address_string
+
+         _ ->
+           nil
+       end},
+      {:community,
+       case Util.get_address("Governance") do
+         {:ok, address_string} ->
+           address_string
+
+         _ ->
+           nil
+       end}
+    ]
+
+  defp get_epoch_transaction_address_hashes(%{number: block_number} = block) do
+    address_strings = get_epoch_transaction_address_strings(block)
+
+    address_strings
+    |> Enum.map(fn {type, address_string} ->
+      if is_nil(address_string) do
+        {type, nil}
+      else
+        case string_to_address_hash(address_string) do
+          {:ok, address_hash} -> {type, address_hash}
+          _ -> {type, nil}
+        end
+      end
+    end)
+    |> Map.new()
+  end
+
   defp prepare_epoch_transaction_items(epoch_rewards, block) do
-    carbon_fund_address =
-      case AccountReader.get_carbon_offsetting_partner(block.number) do
-        {:ok, address_string} ->
-          {:ok, carbon_fund_address_hash} = string_to_address_hash(address_string)
-          {:ok, carbon_fund_address} = hash_to_address(carbon_fund_address_hash)
-          carbon_fund_address
-
-        _ ->
-          nil
-      end
-
-    reserve_address =
-      case CoreContracts.contract_address("Reserve") do
-        {:ok, address_string} ->
-          {:ok, address_hash} = string_to_address_hash(address_string)
-          {:ok, address} = hash_to_address(address_hash)
-          address
-
-        _ ->
-          nil
-      end
-
-    {:ok, community_fund_address_hash} = string_to_address_hash(@community_fund_address)
-
-    community_fund_address =
-      case hash_to_address(community_fund_address_hash) do
-        {:ok, community_fund_address} -> community_fund_address
-        _ -> nil
-      end
+    addresses = get_epoch_transaction_address_hashes(block)
 
     carbon_epoch_transaction = %{
-      address: carbon_fund_address,
+      address: addresses[:carbon],
       amount: get_carbon_fund_amount(epoch_rewards),
       block_number: block.number,
       date: block.timestamp,
@@ -96,7 +108,7 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     }
 
     community_epoch_transaction = %{
-      address: community_fund_address,
+      address: addresses[:community],
       amount: get_community_fund_amount(epoch_rewards),
       block_number: block.number,
       date: block.timestamp,
@@ -122,7 +134,7 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     items_with_rewards_bolster =
       if Decimal.cmp(epoch_rewards.reserve_bolster.value, 0) == :gt do
         reserve_bolster_epoch_transaction = %{
-          address: reserve_address,
+          address: addresses[:reserve],
           amount: get_reserve_bolster_amount(epoch_rewards),
           block_number: block.number,
           date: block.timestamp,

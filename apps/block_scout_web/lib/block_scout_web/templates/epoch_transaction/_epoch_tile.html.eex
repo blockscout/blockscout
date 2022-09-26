@@ -41,7 +41,7 @@
                 <%= gettext "The address could not be loaded. Please try again later" %>
               <% _ -> %>
                 <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, to_string(@epoch_transaction.address)), "data-test": "address_hash_link", class: assigns[:class] do %>
-                  <span> (<%= BlockScoutWeb.AddressView.trimmed_hash(@epoch_transaction.address.hash) %>)</span>
+                  <span> (<%= BlockScoutWeb.AddressView.trimmed_hash(@epoch_transaction.address) %>)</span>
                 <% end %>
            <% end %>
           </span>
