@@ -1,8 +1,9 @@
-<div class="campaign-banner" data-campaign-id="dummy-campaign-id">
+<div class="campaign-banner campaign-banner-closed" data-campaign-id="dummy-campaign-id">
   <div class="campaign-banner-content">
     🚀 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's <a href="#">standard</a>
   </div>
   <button type="button" class="campaign-banner-close" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/campaign-banner.js") %>"></script>
 </div>

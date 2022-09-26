@@ -9,6 +9,9 @@ $campaign-banner-spacing: 6px;
   font-weight: 700;
   font-size: 0.8rem;
 
+  opacity: 1;
+  transition: opacity 1s;
+
   @media (min-width: $breakpoint-lg) {
     font-weight: 900;
     font-size: 0.9rem;
@@ -42,5 +45,13 @@ $campaign-banner-spacing: 6px;
     &:hover {
       color: $celo-dark;
     }
+  }
+
+  &.campaign-banner-closing {
+    opacity: 0;
+  }
+
+  &.campaign-banner-closed {
+    height: 0;
   }
 }

@@ -88,6 +88,7 @@ const appJs =
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'epoch-tile': './js/lib/epoch_tile.js',
+      'campaign-banner': './js/lib/campaign_banner.js',
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
