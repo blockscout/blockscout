@@ -8,8 +8,9 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   require Logger
 
-  alias Explorer.Chain
-  alias Explorer.Token.InstanceMetadataRetriever
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Cache.BlockNumber, Token}
+  alias Explorer.Token.{InstanceMetadataRetriever, InstanceOwnerReader}
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -59,6 +60,7 @@ defmodule Indexer.Fetcher.TokenInstance do
       end
 
     Enum.each(all_token_ids, &fetch_instance(hash, &1))
+    update_current_token_balances(hash, all_token_ids)
 
     :ok
   end
@@ -95,6 +97,39 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         :ok
     end
+  end
+
+  defp update_current_token_balances(token_contract_address_hash, token_ids) do
+    import_params =
+      token_ids
+      |> Enum.map(&instance_owner_request(token_contract_address_hash, &1))
+      |> InstanceOwnerReader.get_owner_of()
+      |> Enum.map(&current_token_balances_import_params/1)
+
+    Chain.import(%{
+      address_current_token_balances: %{
+        params: import_params
+      }
+    })
+  end
+
+  defp instance_owner_request(token_contract_address_hash, token_id) do
+    %{
+      token_contract_address_hash: token_contract_address_hash,
+      token_id: Decimal.to_integer(token_id)
+    }
+  end
+
+  defp current_token_balances_import_params(%{token_contract_address_hash: hash, token_id: token_id, owner: owner}) do
+    %{
+      value: Decimal.new(1),
+      block_number: BlockNumber.get_max(),
+      value_fetched_at: DateTime.utc_now(),
+      token_id: token_id,
+      token_type: Repo.get_by(Token, contract_address_hash: hash).type,
+      address_hash: owner,
+      token_contract_address_hash: hash
+    }
   end
 
   @doc """
