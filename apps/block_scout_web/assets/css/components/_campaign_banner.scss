@@ -1,0 +1,46 @@
+$campaign-banner-spacing: 6px;
+
+.campaign-banner {
+  display: flex;
+  align-items: center;
+
+  background-color: $primary;
+  color: $white;
+  font-weight: 700;
+  font-size: 0.8rem;
+
+  @media (min-width: $breakpoint-lg) {
+    font-weight: 900;
+    font-size: 0.9rem;
+  }
+
+  .campaign-banner-content {
+    flex-grow: 2;
+    text-align: center;
+    padding: $campaign-banner-spacing 0 $campaign-banner-spacing $campaign-banner-spacing;
+  }
+
+  .campaign-banner-close {
+    padding: $campaign-banner-spacing;
+    background-color: $primary;
+    border: none;
+    line-height: 0.6rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: $white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+
+  a {
+    color: $white;
+    text-transform: uppercase;
+    text-decoration: underline;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+}

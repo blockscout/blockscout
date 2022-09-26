@@ -1,0 +1,8 @@
+<div class="campaign-banner" data-campaign-id="dummy-campaign-id">
+  <div class="campaign-banner-content">
+    🚀 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's <a href="#">standard</a>
+  </div>
+  <button type="button" class="campaign-banner-close" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
