@@ -1584,7 +1584,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/_block.html.eex:16
 #, elixir-autogen, elixir-format
 msgid "Miner"
-msgstr ""
+msgstr "Fee Recipient"
 
 #: lib/block_scout_web/views/block_view.ex:61
 #: lib/block_scout_web/views/block_view.ex:66

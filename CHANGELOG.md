@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- [#6158](https://github.com/blockscout/blockscout/pull/6158) - Add missing clause for merge_twin_vyper_contract_with_changeset function
 - [#6127](https://github.com/blockscout/blockscout/pull/6127) - No missing blocks in UI on the main page
 - [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
 - [#6091](https://github.com/blockscout/blockscout/pull/6091) - Improve fetching media type for NFT
@@ -18,6 +19,7 @@
 
 ### Chore
 
+- [#6155](https://github.com/blockscout/blockscout/pull/6155) - Refactor Ethereum JSON RPC variants
 - [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
 - [#6125](https://github.com/blockscout/blockscout/pull/6125) - Rename obsolete "parity" EthereumJSONRPC.Variant to "nethermind"
 - [#6124](https://github.com/blockscout/blockscout/pull/6124) - Docker compose: add config for Erigon
