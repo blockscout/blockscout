@@ -67,6 +67,7 @@ defmodule Indexer.Fetcher.CosmosHash do
             )
   def run(block_numbers, _) do
     unique_numbers = Enum.uniq(block_numbers) |> Enum.filter(fn number ->
+      is_nil(number) == false and
       number >= EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
     end)
     Logger.debug("fetching cosmos hashes for transactions")
