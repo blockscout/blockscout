@@ -90,8 +90,6 @@ defmodule Explorer.Chain do
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
-    from_address: :required,
-    to_address: :required,
     token: :required
   }
 
@@ -2025,7 +2023,7 @@ defmodule Explorer.Chain do
       ) do
     token_transfers =
       TokenTransfer
-      |> (&if(is_nil(block_hash),
+      |> (&(if is_nil(block_hash),
             do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
             else:
               where(
