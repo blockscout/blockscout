@@ -115,7 +115,7 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   defp instance_owner_request(token_contract_address_hash, token_id) do
     %{
-      token_contract_address_hash: token_contract_address_hash,
+      token_contract_address_hash: to_string(token_contract_address_hash),
       token_id: Decimal.to_integer(token_id)
     }
   end
