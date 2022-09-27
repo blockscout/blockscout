@@ -45,8 +45,6 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources "/blocks", BlockController, only: [:show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
-      resources("/epoch-transactions", BlockEpochTransactionController, only: [:index], as: :epoch_transaction)
-      resources("/signers", BlockSignersController, only: [:index], as: :signers)
     end
 
     get("/validators", StakesController, :index, as: :validators, assigns: %{filter: :validator})
