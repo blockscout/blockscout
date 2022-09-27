@@ -1,0 +1,153 @@
+// general
+$primary: #EB4626;
+$secondary: #638BAF;
+$tertiary:  #F19F38;
+$additional-font: #fff;
+
+// footer
+$footer-background-color: #fbfafc;
+$footer-title-color: #fff;
+$footer-text-color: #A4A9B4;
+$footer-item-disc-color: $secondary;
+
+// dashboard
+$dashboard-line-color-price: $tertiary; // price left border
+
+$dashboard-line-color-transactions: $tertiary;
+$dashboard-banner-chart-legend-label-color: $tertiary;
+$dashboard-stats-item-label-color: $dashboard-banner-chart-legend-label-color;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
+
+$dashboard-stats-item-border-color: $secondary; // stat border
+
+$dashboard-banner-gradient-start: $primary; // gradient begin
+
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
+
+$dashboard-banner-network-plain-container-background-color: rgba(0, 0, 0, 0.5); // stats bg
+
+
+// navigation
+.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
+$dropdown-menu-item-hover-color: $primary !default;
+$dropdown-menu-item-hover-background: rgba($primary, .1) !default;
+$header-icon-color-hover: $primary;
+$header-icon-border-color-hover: $primary;
+
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $primary; // button border and font color && hover bg color
+$btn-copy-color: $primary; // btn copy
+$btn-qr-color: $primary; // btn qr-code
+$btn-address-card-icon-color: $primary; // btn address color
+
+//links & tile
+$tile-body-a-color: $primary;
+$tile-type-block-color: $primary;
+$tile-type-progress-bar-color: $primary;
+a.tile-title { color: $secondary !important; }
+
+a {
+  color: $secondary;
+}
+
+.tile span[data-address-hash] {
+  color: $secondary !important;
+}
+
+.tile .tile-body a {
+  color: $secondary !important;
+}
+
+.footer-link {
+  color: $secondary !important;
+}
+
+.navbar-logo {
+  max-height: 30px;
+}
+
+.dropdown-item {
+  &:hover,
+  &:active,
+  &.active {
+    background-color: rgba(235,70,58,.1) !important;
+    color: #333 !important;
+  }
+}
+
+// card
+$card-background-1: $primary;
+$card-tab-active: $primary;
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(60.54deg, #48252C 10.32%, #A73E28 70.36%);
+	}
+}
+
+.dashboard-banner-network-stats-item::before {
+  background-color: $primary !important;
+}
+
+.dashboard-banner-network-stats-label {
+  color: $primary !important;
+}
+
+
+.dashboard-banner-network-plain-container::after {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.dashboard-banner-network-plain-container {
+  background-color: rgba(0, 0, 0, 0) !important;
+}
+// Badges
+$badge-neutral-color: $primary;
+$badge-neutral-background-color: rgba($primary, .1);
+$api-text-monospace-color: $primary;
+
+// Tokens dropdown
+.token-balance-dropdown[aria-labelledby="dropdown-tokens"] {
+  .dropdown-items .dropdown-item:hover {
+    color: $primary !important;
+  }
+}
+
+.dashboard-banner-chart-legend {
+  .dashboard-banner-chart-legend-item.tx-per-day,
+  .dashboard-banner-chart-legend-item.price-per-day,
+  .dashboard-banner-chart-legend-item.market-cap-per-day,
+  .dashboard-banner-chart-legend-item.gas-price-oracle
+   {
+    &::before {
+      background-color: $tertiary !important;
+    }
+  }
+}
+
+.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
+  border-color: $secondary !important;
+  path {
+    fill: $secondary !important;
+  }
+  &:hover {
+    background-color: $secondary !important;
+    path {
+      fill: #fff !important;
+    }
+  }
+  &.btn-copy-icon-small {
+    &:hover {
+      background-color: transparent !important;
+      path {
+        fill: $secondary !important;
+      }
+    }
+  }
+}
+
+// Dark theme
+$dark-primary: #EB4626;
+$dark-secondary: #84B0D3;
+$dark-primary-alternate: #68778d; 
