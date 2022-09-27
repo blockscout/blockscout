@@ -5,27 +5,23 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
   alias Explorer.ExchangeRates.Token
 
   def show(conn, _params) do
-    if ajax?(conn) do
-      exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
-      recent_market_history = Market.fetch_recent_history()
+    recent_market_history = Market.fetch_recent_history()
 
-      market_history_data =
-        case recent_market_history do
-          [today | the_rest] ->
-            encode_market_history_data([%{today | closing_price: exchange_rate.usd_value} | the_rest])
+    market_history_data =
+      case recent_market_history do
+        [today | the_rest] ->
+          encode_market_history_data([%{today | closing_price: exchange_rate.usd_value} | the_rest])
 
-          data ->
-            encode_market_history_data(data)
-        end
+        data ->
+          encode_market_history_data(data)
+      end
 
-      json(conn, %{
-        history_data: market_history_data,
-        supply_data: available_supply(Chain.supply_for_days(), exchange_rate)
-      })
-    else
-      unprocessable_entity(conn)
-    end
+    json(conn, %{
+      history_data: market_history_data,
+      supply_data: available_supply(Chain.supply_for_days(), exchange_rate)
+    })
   end
 
   defp available_supply(:ok, exchange_rate) do
