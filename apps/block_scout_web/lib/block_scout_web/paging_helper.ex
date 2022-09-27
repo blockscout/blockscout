@@ -56,12 +56,13 @@ defmodule BlockScoutWeb.PagingHelper do
     |> parse_filter(allowed_labels)
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   def parse_filter(filter, allowed_labels) when is_binary(filter) do
     filter
     |> String.split(",")
     |> Enum.filter(fn label -> Enum.member?(allowed_labels, label) end)
-    |> Enum.map(&String.to_atom/1)
     |> Enum.uniq()
+    |> Enum.map(&String.to_atom/1)
   end
 
   def parse_method_filter("[" <> filter) do

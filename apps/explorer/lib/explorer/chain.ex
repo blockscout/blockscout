@@ -3316,7 +3316,7 @@ defmodule Explorer.Chain do
 
   """
   @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ [], old_ui?, method_id_filter \\ [], type_filter \\ [])
+  def recent_pending_transactions(options \\ [], old_ui? \\ true, method_id_filter \\ [], type_filter \\ [])
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
