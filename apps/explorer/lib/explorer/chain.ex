@@ -3316,7 +3316,8 @@ defmodule Explorer.Chain do
 
   """
   @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ [], method_id_filter \\ [], type_filter \\ []) when is_list(options) do
+  def recent_pending_transactions(options \\ [], old_ui?, method_id_filter \\ [], type_filter \\ [])
+      when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -3328,9 +3329,13 @@ defmodule Explorer.Chain do
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
+    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> debug("result pendging query")
     |> Repo.all()
-    |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+    |> (&if(old_ui?,
+          do: &1,
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+        )).()
   end
 
   def pending_transactions_query(query) do
@@ -6278,7 +6283,7 @@ defmodule Explorer.Chain do
   end
 
   def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
-    recent_pending_transactions(options, method_id_filter, type_filter_options)
+    recent_pending_transactions(options, false, method_id_filter, type_filter_options)
   end
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
