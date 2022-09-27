@@ -2023,7 +2023,7 @@ defmodule Explorer.Chain do
       ) do
     token_transfers =
       TokenTransfer
-      |> (&(if is_nil(block_hash),
+      |> (&if(is_nil(block_hash),
             do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
             else:
               where(
