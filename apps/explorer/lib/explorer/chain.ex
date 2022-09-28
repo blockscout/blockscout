@@ -2332,6 +2332,7 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_top_tokens(filter, paging_options) do
+    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
     base_query =
       from(t in Token,
         where: t.total_supply > ^0,
@@ -2343,6 +2344,7 @@ defmodule Explorer.Chain do
       base_query
       |> page_tokens(paging_options)
       |> limit(^paging_options.page_size)
+      |> offset(^offset)
 
     query =
       if filter && filter !== "" do
