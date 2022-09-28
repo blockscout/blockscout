@@ -63,68 +63,6 @@ defmodule BlockScoutWeb.AddressTokenController do
     end
   end
 
-  def index(conn, %{"address_id" => address_hash_string, "api" => "true"} = params) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false),
-         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-      token_balances_plus_one =
-        address_hash
-        |> Chain.fetch_last_token_balances(paging_options(params))
-        |> Market.add_price()
-
-      {tokens, next_page} = split_list_by_page(token_balances_plus_one)
-
-      next_page_path =
-        case next_page_params(next_page, tokens, params) do
-          nil ->
-            nil
-
-          next_page_params ->
-            address_token_path(conn, :index, address, Map.delete(next_page_params, "type"))
-        end
-
-      items = for {token_balance, token} <- tokens |> Market.add_price() do
-        %{
-          token_balance: token_balance,
-          token: token,
-          address: address
-        }
-      end
-
-      json(
-        conn,
-        %{
-          items: items,
-          next_page_path: next_page_path
-        }
-      )
-    else
-      {:restricted_access, _} ->
-        json(
-          conn,
-          %{
-            restricted_access: address_hash_string
-          }
-        )
-
-      :error ->
-        json(
-          conn,
-          %{
-            error: address_hash_string
-          }
-        )
-
-      {:error, :not_found} ->
-        json(
-          conn,
-          %{
-            not_found: address_hash_string
-          }
-        )
-    end
-  end
-
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
