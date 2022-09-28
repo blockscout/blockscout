@@ -220,6 +220,9 @@ endif
 ifdef CHECKSUM_FUNCTION
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'CHECKSUM_FUNCTION=$(CHECKSUM_FUNCTION)'
 endif
+ifdef EXCHANGE_RATES_COIN
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'EXCHANGE_RATES_COIN=$(EXCHANGE_RATES_COIN)'
+endif
 ifdef EXCHANGE_RATES_SOURCE
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'EXCHANGE_RATES_SOURCE=$(EXCHANGE_RATES_SOURCE)'
 endif
@@ -519,7 +522,7 @@ ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(BS_CONTAINER_IMAGE)"
 else
 	@echo "==> No image found, trying to build one..."
-	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
+	@docker build -f ./Dockerfile -t $(BS_CONTAINER_IMAGE) ../
 endif
 
 migrate_only:

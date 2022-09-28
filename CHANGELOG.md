@@ -20,6 +20,7 @@
 
 ### Chore
 
+- [#6183](https://github.com/blockscout/blockscout/pull/6183) - Transparent coin name definition
 - [#6155](https://github.com/blockscout/blockscout/pull/6155) - Refactor Ethereum JSON RPC variants
 - [#6125](https://github.com/blockscout/blockscout/pull/6125) - Rename obsolete "parity" EthereumJSONRPC.Variant to "nethermind"
 - [#6124](https://github.com/blockscout/blockscout/pull/6124) - Docker compose: add config for Erigon
