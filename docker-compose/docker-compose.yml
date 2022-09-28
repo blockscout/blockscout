@@ -26,7 +26,6 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
       args:
-        COIN: ""
         CACHE_EXCHANGE_RATES_PERIOD: ""
         DISABLE_READ_API: "false"
         API_PATH: "/"
