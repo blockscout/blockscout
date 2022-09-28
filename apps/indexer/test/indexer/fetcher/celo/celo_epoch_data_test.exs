@@ -392,12 +392,14 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
           %{
             account_hash: validator_hash,
             block_hash: block_hash,
+            block_number: block_number,
             total_locked_gold: 124,
             nonvoting_locked_gold: 0
           },
           %{
             account_hash: voter_hash,
             block_hash: block_hash,
+            block_number: block_number,
             total_locked_gold: 123,
             nonvoting_locked_gold: 101
           }
@@ -537,12 +539,14 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                  %{
                    account_hash: address_2_hash,
                    block_hash: block_hash,
+                   block_number: block_number,
                    total_locked_gold: 124,
                    nonvoting_locked_gold: 0
                  },
                  %{
                    account_hash: address_1_hash,
                    block_hash: block_hash,
+                   block_number: block_number,
                    total_locked_gold: 123,
                    nonvoting_locked_gold: 101
                  }

@@ -107,7 +107,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
   defp get_account_epoch_data(account_hash, block_number, block_hash) do
     case AccountReader.fetch_celo_account_epoch_data(Hash.to_string(account_hash), block_number) do
       {:ok, data} ->
-        {:ok, data |> Map.merge(%{account_hash: account_hash, block_hash: block_hash})}
+        {:ok, data |> Map.merge(%{account_hash: account_hash, block_hash: block_hash, block_number: block_number})}
 
       {:error, error} ->
         {:error, error}

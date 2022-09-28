@@ -76,7 +76,6 @@ defmodule Explorer.Chain.CeloElectionRewards do
   def base_aggregated_block_query(block_number, reward_types) do
     query =
       from(rewards in __MODULE__,
-        group_by: rewards.block_number,
         group_by: rewards.reward_type,
         where: rewards.block_number == ^block_number,
         where: rewards.reward_type in ^reward_types
@@ -253,7 +252,7 @@ defmodule Explorer.Chain.CeloElectionRewards do
     |> Repo.all()
   end
 
-  defp where_non_zero_reward(query), do: query |> where([reward], reward.amount != ^%Wei{value: Decimal.new(0)})
+  defp where_non_zero_reward(query), do: query |> where([reward], reward.amount > ^%Wei{value: Decimal.new(0)})
 
   def get_epoch_transaction_count_for_block(block_number) do
     query = from(reward in __MODULE__, select: count(fragment("*")), where: reward.block_number == ^block_number)

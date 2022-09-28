@@ -17,7 +17,8 @@ defmodule Explorer.Chain.CeloAccountEpoch do
 
   @typedoc """
   * `account_hash` - account for which we're tracking the data
-  * `block_hash` - epoch block for which we're tracking the data
+  * `block_hash` - epoch block hash for which we're tracking the data
+  * `block_number` - epoch block number for which we're tracking the data
   * `total_locked_gold` - amount of locked gold
   * `nonvoting_locked_gold` - amount of non-voting locked gold
   """
@@ -25,18 +26,20 @@ defmodule Explorer.Chain.CeloAccountEpoch do
   @type t :: %__MODULE__{
           account_hash: Hash.Address.t(),
           block_hash: Hash.Full.t(),
+          block_number: non_neg_integer(),
           total_locked_gold: Wei.t(),
           nonvoting_locked_gold: Wei.t()
         }
 
-  @attrs ~w( account_hash block_hash total_locked_gold nonvoting_locked_gold )a
+  @attrs ~w( account_hash block_hash block_number total_locked_gold nonvoting_locked_gold )a
 
-  @required_attrs ~w( account_hash block_hash total_locked_gold nonvoting_locked_gold )a
+  @required_attrs ~w( account_hash block_hash block_number total_locked_gold nonvoting_locked_gold )a
 
   @primary_key false
   schema "celo_accounts_epochs" do
     field(:total_locked_gold, Wei)
     field(:nonvoting_locked_gold, Wei)
+    field(:block_number, :integer)
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
@@ -64,10 +67,8 @@ defmodule Explorer.Chain.CeloAccountEpoch do
   def last_for_address(address) do
     query =
       from(account_epoch in __MODULE__,
-        join: block in Block,
-        on: block.hash == account_epoch.block_hash,
         where: account_epoch.account_hash == ^address,
-        order_by: [desc: block.number],
+        order_by: [desc: account_epoch.block_number],
         limit: 1
       )
 
