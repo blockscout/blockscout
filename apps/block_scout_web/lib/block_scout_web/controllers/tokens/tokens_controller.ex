@@ -68,44 +68,6 @@ defmodule BlockScoutWeb.TokensController do
     )
   end
 
-  def index(conn, %{"api" => "true"} = params) do
-    filter =
-      if Map.has_key?(params, "filter") do
-        Map.get(params, "filter")
-      else
-        nil
-      end
-
-    paging_params =
-      params
-      |> paging_options()
-
-    tokens = Chain.list_top_tokens(filter, paging_params)
-
-    {tokens_page, next_page} = split_list_by_page(tokens)
-
-    next_page_path =
-      case next_page_params(next_page, tokens_page, params) do
-        nil ->
-          nil
-
-        next_page_params ->
-          tokens_path(
-            conn,
-            :index,
-            Map.delete(next_page_params, "type")
-          )
-      end
-
-    json(
-      conn,
-      %{
-        items: tokens_page,
-        next_page_path: next_page_path
-      }
-    )
-  end
-
   def index(conn, _params) do
     render(conn, "index.html", current_path: Controller.current_full_path(conn))
   end

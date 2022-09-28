@@ -12,6 +12,10 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("getlisttokens.json", %{list_tokens: list_tokens}) do
+    RPCView.render("show.json", data: list_tokens)
+  end
+
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
   end
