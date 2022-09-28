@@ -111,17 +111,20 @@ defmodule Explorer.Chain.CeloEpochRewards do
         where: ccc_to.name == "Reserve",
         where: celo_token.name == "GoldToken",
         where: fragment("?->>'from' = '\\x0000000000000000000000000000000000000000'", cce.params),
-        where: cce.block_number == ^epoch_block_number
+        where: cce.block_number == ^epoch_block_number,
+        order_by: [asc: cce.log_index]
       )
 
-    event = Repo.one(query)
+    events = Repo.all(query)
 
-    if is_nil(event) do
-      0
-    else
-      transfer_event = EventMap.celo_contract_event_to_concrete_event(event)
+    case events do
+      [_, bolster_minting] ->
+        transfer_event = EventMap.celo_contract_event_to_concrete_event(bolster_minting)
 
-      transfer_event.value
+        transfer_event.value
+
+      _ ->
+        0
     end
   end
 end

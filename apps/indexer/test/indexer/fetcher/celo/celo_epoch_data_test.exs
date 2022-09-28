@@ -881,7 +881,8 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     )
 
     block = insert(:block, number: 172_800)
-    log = insert(:log, block: block)
+    log_rewards_mint = insert(:log, block: block)
+    log_reserve_bolster_mint = insert(:log, block: block)
 
     insert(:celo_pending_epoch_operations, block_number: block.number)
 
@@ -889,7 +890,18 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       event: %TransferEvent{
         __block_number: block.number,
         __contract_address_hash: gold_token_address,
-        __log_index: log.index,
+        __log_index: log_rewards_mint.index,
+        value: 8_743_659_138_275_098_274_659_872_346,
+        from: "0x0000000000000000000000000000000000000000",
+        to: reserve_address
+      }
+    })
+
+    insert(:contract_event, %{
+      event: %TransferEvent{
+        __block_number: block.number,
+        __contract_address_hash: gold_token_address,
+        __log_index: log_reserve_bolster_mint.index,
         value: 18_173_469_592_702_214_806_939,
         from: "0x0000000000000000000000000000000000000000",
         to: reserve_address
