@@ -2,9 +2,10 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.RPC.Helpers
-  alias Explorer.{Chain, Etherscan}
+  alias Explorer.{Chain, Market, Etherscan, PagingOptions}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
+  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def listaccounts(conn, params) do
@@ -237,6 +238,38 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
       {_, :not_found} ->
         render(conn, :error, error: "No blocks found", data: [])
+    end
+  end
+
+  def gettopaddressesbalance(conn, params) do
+    with pagination_options <- Helpers.put_pagination_options(%{}, params) do
+      options_with_defaults =
+        pagination_options
+        |> Map.put_new(:page_number, 0)
+        |> Map.put_new(:page_size, 10)
+
+      options = [
+        paging_options: %PagingOptions{
+          key: nil,
+          page_number: options_with_defaults.page_number,
+          page_size: options_with_defaults.page_size
+        }
+      ]
+
+      addresses = Chain.list_top_addresses(options)
+
+      exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+      total_supply = Chain.total_supply()
+
+      items = for {address, tx_count} <- addresses do
+        %{
+          address: address,
+          exchange_rate: exchange_rate,
+          total_supply: total_supply,
+          tx_count: tx_count
+        }
+      end
+      render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items})
     end
   end
 

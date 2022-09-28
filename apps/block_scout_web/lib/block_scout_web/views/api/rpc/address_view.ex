@@ -57,6 +57,10 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("gettopaddressesbalance.json", %{top_addresses_balance: items}) do
+    RPCView.render("show.json", data: items)
+  end
+
   def render("eth_get_balance.json", %{balance: balance}) do
     EthRPCView.render("show.json", %{result: balance, id: 0})
   end
