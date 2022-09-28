@@ -24,11 +24,15 @@ defmodule BlockScoutWeb.ApiRouter do
     alias BlockScoutWeb.API.V1.HealthController
     alias BlockScoutWeb.API.V1.CommonStatsController
     alias BlockScoutWeb.API.V1.CountedInfoController
+    alias BlockScoutWeb.API.V1.MarketHistoryChartApiController
+    alias BlockScoutWeb.API.V1.TransactionHistoryChartApiController
 
     get("/health", HealthController, :health)
     get("/common-stats", CommonStatsController, :common_stats)
     get("/estimate-counted-info", CountedInfoController, :counted_info)
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
+    get("/market-history-chart", MarketHistoryChartApiController, :market_history_chart)
+    get("/transaction-history-chart", TransactionHistoryChartApiController, :transaction_history_chart)
 
     if Application.get_env(:block_scout_web, __MODULE__)[:reading_enabled] do
       get("/supply", V1.SupplyController, :supply)
