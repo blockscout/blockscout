@@ -176,6 +176,7 @@ defmodule Explorer.Chain.Transaction do
 
   @derive {Poison.Encoder,
            only: [
+             :block_hash,
              :block_number,
              :cumulative_gas_used,
              :error,
@@ -193,11 +194,15 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :max_priority_fee_per_gas,
+             :max_fee_per_gas,
+             :type
            ]}
 
   @derive {Jason.Encoder,
            only: [
+             :block_hash,
              :block_number,
              :cumulative_gas_used,
              :error,
@@ -215,7 +220,10 @@ defmodule Explorer.Chain.Transaction do
              :v,
              :status,
              :value,
-             :revert_reason
+             :revert_reason,
+             :max_priority_fee_per_gas,
+             :max_fee_per_gas,
+             :type
            ]}
 
   @primary_key {:hash, Hash.Full, autogenerate: false}

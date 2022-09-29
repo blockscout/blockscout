@@ -68,8 +68,10 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   defp prepare_transaction(transaction, block_height, logs, next_page_params) do
     %{
       "hash" => "#{transaction.hash}",
+      "hashCosmos" => "#{transaction.cosmos_hash}",
       "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
-      "blockNumber" => "#{transaction.block_number}",
+      "blockHeight" => "#{transaction.block_number}",
+      "blockHash" => "#{transaction.block_hash}",
       "confirmations" => "#{block_height - transaction.block_number}",
       "success" => if(transaction.status == :ok, do: true, else: false),
       "from" => "#{transaction.from_address_hash}",
@@ -79,8 +81,18 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "gasLimit" => "#{transaction.gas}",
       "gasUsed" => "#{transaction.gas_used}",
       "gasPrice" => "#{transaction.gas_price.value}",
+      "cumulativeGasUsed" => "#{transaction.cumulative_gas_used}",
+      "index" => "#{transaction.index}",
+      "createdContractCodeIndexedAt" => "#{transaction.created_contract_code_indexed_at}",
+      "nonce" => "#{transaction.nonce}",
+      "r" => "#{transaction.r}",
+      "s" => "#{transaction.s}",
+      "v" => "#{transaction.v}",
       "logs" => Enum.map(logs, &prepare_log/1),
+      "maxPriorityFeePerGas" => "#{transaction.max_priority_fee_per_gas.value}",
+      "maxFeePerGas" => "#{transaction.max_fee_per_gas.value}",
       "revertReason" => "#{transaction.revert_reason}",
+      "type" => "#{transaction.type}",
       "next_page_params" => next_page_params
     }
   end
