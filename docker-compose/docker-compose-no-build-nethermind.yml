@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  redis_db:
+    image: 'redis:alpine'
+    command: redis-server
+
+  db:
+    image: postgres:14
+    restart: always
+    container_name: 'postgres'
+    environment:
+        POSTGRES_PASSWORD: ''
+        POSTGRES_USER: 'postgres'
+        POSTGRES_HOST_AUTH_METHOD: 'trust'
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - 7432:5432
+
+  blockscout:
+    depends_on:
+      - db
+      - smart-contract-verifier
+      - redis_db
+    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'blockscout'
+    links:
+      - db:database
+    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ./envs/common-blockscout.env
+    environment:
+        ETHEREUM_JSONRPC_VARIANT: 'nethermind'
+        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
+        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
+        DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
+        ECTO_USE_SSL: 'false'
+        SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
+    ports:
+      - 4000:4000
+
+  smart-contract-verifier:
+    image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
+    restart: always
+    container_name: 'smart-contract-verifier'
+    env_file:
+      -  ./envs/common-smart-contract-verifier.env
+    ports:
+      - 8043:8043

@@ -37,7 +37,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Nethermind ->
             block_number = 3_416_888
             block_quantity = integer_to_quantity(block_number)
 
@@ -492,7 +492,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       end)
       |> (fn mock ->
             case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-              EthereumJSONRPC.Parity ->
+              EthereumJSONRPC.Nethermind ->
                 expect(mock, :json_rpc, fn [%{method: "trace_block"} | _] = requests, _options ->
                   {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}
                 end)

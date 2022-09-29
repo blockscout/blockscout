@@ -253,7 +253,7 @@ defmodule Explorer.Chain.InternalTransaction do
       true
 
   Failed `:call`s are not allowed to set `gas_used` or `output` because they are part of the successful `result` object
-  in the Parity JSONRPC response.  They still need `input`, however.
+  in the Nethermind JSONRPC response.  They still need `input`, however.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -315,7 +315,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ]
 
   For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
-  set because they come from `result` object, which shouldn't be returned from Parity.
+  set because they come from `result` object, which shouldn't be returned from Nethermind.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},

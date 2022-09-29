@@ -50,7 +50,20 @@ defmodule Indexer.Fetcher.TokenInstance do
   end
 
   @impl BufferedTask
-  def run([%{contract_address_hash: token_contract_address_hash, token_id: token_id}], _json_rpc_named_arguments) do
+  def run([%{contract_address_hash: hash, token_id: token_id, token_ids: token_ids}], _json_rpc_named_arguments) do
+    all_token_ids =
+      cond do
+        is_nil(token_id) -> token_ids
+        is_nil(token_ids) -> [token_id]
+        true -> [token_id] ++ token_ids
+      end
+
+    Enum.each(all_token_ids, &fetch_instance(hash, &1))
+
+    :ok
+  end
+
+  defp fetch_instance(token_contract_address_hash, token_id) do
     case InstanceMetadataRetriever.fetch_metadata(to_string(token_contract_address_hash), Decimal.to_integer(token_id)) do
       {:ok, %{metadata: metadata}} ->
         params = %{
@@ -82,8 +95,6 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         :ok
     end
-
-    :ok
   end
 
   @doc """
@@ -92,9 +103,13 @@ defmodule Indexer.Fetcher.TokenInstance do
   def async_fetch(token_transfers) when is_list(token_transfers) do
     data =
       token_transfers
-      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) end)
+      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) and is_nil(token_transfer.token_ids) end)
       |> Enum.map(fn token_transfer ->
-        %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+        %{
+          contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: token_transfer.token_id,
+          token_ids: token_transfer.token_ids
+        }
       end)
       |> Enum.uniq()
 

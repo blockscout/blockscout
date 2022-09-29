@@ -12,6 +12,9 @@ env:
   MIX_ENV: test
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
+  ACCOUNT_AUTH0_DOMAIN: 'blockscoutcom.us.auth0.com'
+  ACCOUNT_AUTH0_LOGOUT_URL: 'https://blockscoutcom.us.auth0.com/v2/logout'
+  ACCOUNT_AUTH0_LOGOUT_RETURN_URL: 'https://blockscout.com/auth/logout'
 
 jobs:
   build-and-cache:
@@ -34,7 +37,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -89,12 +92,12 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      
+
       - name: Restore Mix Deps Cache
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -118,7 +121,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -141,7 +144,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -153,7 +156,7 @@ jobs:
         id: dialyzer-cache
         with:
           path: priv/plts
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-mixlockhash_14-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-mixlockhash_15-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-dialyzer-"
 
@@ -181,7 +184,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -207,7 +210,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -235,7 +238,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -281,7 +284,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -304,7 +307,7 @@ jobs:
       - run: ./node_modules/.bin/jest
         working-directory: apps/block_scout_web/assets
 
-  test_parity_mox_ethereum_jsonrpc:
+  test_nethermind_mox_ethereum_jsonrpc:
     name: EthereumJSONRPC Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
@@ -340,7 +343,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -348,19 +351,19 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-"
 
       - run: ./bin/install_chrome_headless.sh
-      - name: mix test --exclude no_parity
+      - name: mix test --exclude no_nethermind
         run: |
           cd apps/ethereum_jsonrpc
           mix compile
-          mix test --no-start --exclude no_parity
+          mix test --no-start --exclude no_nethermind
         env:
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
-  test_parity_mox_explorer:
+  test_nethermind_mox_explorer:
     name: Explorer Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
@@ -396,7 +399,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -413,21 +416,21 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm
 
       - run: ./bin/install_chrome_headless.sh
-      - name: mix test --exclude no_parity
+      - name: mix test --exclude no_nethermind
         run: |
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/explorer
           mix compile
-          mix test --no-start --exclude no_parity
+          mix test --no-start --exclude no_nethermind
         env:
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
-  test_parity_mox_indexer:
+  test_nethermind_mox_indexer:
     name: Indexer Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
@@ -463,7 +466,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -473,26 +476,31 @@ jobs:
 
       - run: ./bin/install_chrome_headless.sh
 
-      - name: mix test --exclude no_parity
+      - name: mix test --exclude no_nethermind
         run: |
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/indexer
           mix compile
-          mix test --no-start --exclude no_parity
+          mix test --no-start --exclude no_nethermind
         env:
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
 
-  test_parity_mox_block_scout_web:
+  test_nethermind_mox_block_scout_web:
     name: Blockscout Web Tests
     runs-on: ubuntu-latest
     needs: build-and-cache
     services:
+      redis_db:
+        image: 'redis:alpine'
+        ports: 
+          - 6379:6379
+
       postgres:
         image: postgres
         env:
@@ -524,7 +532,7 @@ jobs:
         uses: actions/cache@v2
         id: deps-cache
         with:
-          path: | 
+          path: |
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash_12-${{ hashFiles('mix.lock') }}
@@ -556,19 +564,21 @@ jobs:
 
       - run: ./bin/install_chrome_headless.sh
 
-      - name: mix test --exclude no_parity
+      - name: mix test --exclude no_nethermind
         run: |
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/block_scout_web
           mix compile
-          mix test --no-start --exclude no_parity
+          mix test --no-start --exclude no_nethermind
         env:
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_ID: "77"
           ADMIN_PANEL_ENABLED: "true"
+          ACCOUNT_ENABLED: "true"
+          ACCOUNT_REDIS_URL: "redis://localhost:6379"
