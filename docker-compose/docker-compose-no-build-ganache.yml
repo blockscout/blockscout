@@ -19,7 +19,7 @@ services:
   blockscout:
     depends_on:
       - db
-    image: 996995275645.dkr.ecr.eu-central-1.amazonaws.com/edexa-universe:edexa-explorer-latest-final
+    image: local/blockscout
     restart: always
     container_name: 'blockscout'
     links:
@@ -30,6 +30,7 @@ services:
     env_file:
       -  ./envs/common-blockscout.env
     environment:
+        PORT: 5080
         ETHEREUM_JSONRPC_VARIANT: 'ganache'
         ETHEREUM_JSONRPC_HTTP_URL: https://testnet.edexa.com/rpc
         ETHEREUM_JSONRPC_WS_URL: wss://testnet.edexa.com/ws
@@ -40,7 +41,7 @@ services:
         SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
         CHAIN_ID: '1337'
     ports:
-      - 4000:4000
+      - 5080:5080
 
   smart-contract-verifier:
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}

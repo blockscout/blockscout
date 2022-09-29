@@ -85,24 +85,24 @@ defmodule BlockScoutWeb.LayoutView do
 
     """
     *Describe your issue here.*
-
+    
     ### Environment
     * Elixir Version: #{System.version()}
     * Erlang Version: #{System.otp_release()}
     * BlockScout Version: #{version()}
-
+    
     * User Agent: `#{user_agent}`
-
+    
     ### Steps to reproduce
-
+    
     *Tell us how to reproduce this issue. If possible, push up a branch to your fork with a regression test we can run to reproduce locally.*
-
+    
     ### Expected Behaviour
-
+    
     *Tell us what should happen.*
-
+    
     ### Actual Behaviour
-
+    
     *Tell us what happens instead.*
     """
   end
@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.LayoutView do
           nil
 
         release_link_env_var == "" || release_link_env_var == nil ->
-          "https://github.com/blockscout/blockscout/releases/tag/" <> version
+          "https://github.com/devEdexa" <> version
 
         true ->
           release_link_env_var
