@@ -168,8 +168,6 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout:
 config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
   type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
 
-config :ethereum_jsonrpc, EthereumJSONRPC.Variant, type: System.get_env("ETHEREUM_JSONRPC_VARIANT", "nethermind")
-
 ################
 ### Explorer ###
 ################
