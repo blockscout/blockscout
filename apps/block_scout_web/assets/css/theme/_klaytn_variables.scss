@@ -151,3 +151,9 @@ $api-text-monospace-color: $primary;
 $dark-primary: #EB4626;
 $dark-secondary: #84B0D3;
 $dark-primary-alternate: #68778d; 
+
+.footer-list {
+  h3 {
+    color: $footer-text-color !important;
+  }
+}
