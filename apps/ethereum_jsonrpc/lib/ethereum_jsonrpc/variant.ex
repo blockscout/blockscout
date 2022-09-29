@@ -96,7 +96,7 @@ defmodule EthereumJSONRPC.Variant do
             ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
 
   def get do
-    variant = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:type]
+    variant = System.get_env("ETHEREUM_JSONRPC_VARIANT", "nethermind")
 
     cond do
       is_nil(variant) ->
