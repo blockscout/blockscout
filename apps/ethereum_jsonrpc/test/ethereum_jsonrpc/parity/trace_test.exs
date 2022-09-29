@@ -1,5 +1,5 @@
-defmodule EthereumJSONRPC.Parity.TraceTest do
+defmodule EthereumJSONRPC.Nethermind.TraceTest do
   use ExUnit.Case, async: true
 
-  doctest EthereumJSONRPC.Parity.Trace
+  doctest EthereumJSONRPC.Nethermind.Trace
 end

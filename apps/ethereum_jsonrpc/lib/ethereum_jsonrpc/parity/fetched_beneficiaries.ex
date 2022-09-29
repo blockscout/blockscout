@@ -1,4 +1,4 @@
-defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
+defmodule EthereumJSONRPC.Nethermind.FetchedBeneficiaries do
   @moduledoc """
   Beneficiaries and errors from batch requests to `trace_block`.
   """
@@ -12,7 +12,7 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
   id_to_params - Maps request id to query params
 
   ## Examples
-    iex> EthereumJSONRPC.Parity.FetchedBeneficiaries.from_responses(
+    iex> EthereumJSONRPC.Nethermind.FetchedBeneficiaries.from_responses(
     ...>   [
     ...>     %{
     ...>       id: 0,

@@ -48,6 +48,11 @@
           <h1 class="card-title margin-bottom-1">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
+              <% personal_tx_tag = if assigns[:tx_tags], do: @tx_tags.personal_tx_tag, else: nil %>
+              <%= if personal_tx_tag && personal_tx_tag.name !== :error do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tx_tag.name, additional_classes: [tag_name_to_label(personal_tx_tag.name), "ml-1"] %>
+              <% end %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @tx_tags %>
             </div>
           </h1>
           <%= if status == :pending do %>
@@ -195,6 +200,7 @@
               <%= gettext "From" %></dt>
             <dd class="col-sm-9 col-lg-10">
               <%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false, trimmed: false %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @from_tags %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                 additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                 clipboard_text: from_address_hash,
@@ -220,6 +226,7 @@
                 <% created_address_hash -> %>
                   [<%= gettext("Contract") %>&nbsp;
                   <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
@@ -228,6 +235,7 @@
                     title: gettext("Copy To Address") %>
                 <% recipient_address_hash -> %>
                   <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                  <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                     clipboard_text: recipient_address_hash,

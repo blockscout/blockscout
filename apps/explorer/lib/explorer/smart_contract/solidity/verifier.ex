@@ -36,7 +36,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     end
   end
 
-  def evaluate_authenticity_inner(true, address_hash, params) do
+  defp evaluate_authenticity_inner(true, address_hash, params) do
     deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
 
     creation_tx_input =
@@ -57,7 +57,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> RustVerifierInterface.verify_multi_part()
   end
 
-  def evaluate_authenticity_inner(false, address_hash, params) do
+  defp evaluate_authenticity_inner(false, address_hash, params) do
     latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
     evm_version = Map.get(params, "evm_version", latest_evm_version)
 
@@ -525,9 +525,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     Enum.any?(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
   end
 
-  defp parse_boolean("true"), do: true
-  defp parse_boolean("false"), do: false
+  def parse_boolean("true"), do: true
+  def parse_boolean("false"), do: false
 
-  defp parse_boolean(true), do: true
-  defp parse_boolean(false), do: false
+  def parse_boolean(true), do: true
+  def parse_boolean(false), do: false
+
+  def parse_boolean(_), do: false
 end

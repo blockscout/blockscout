@@ -47,7 +47,8 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
+      const comingBlockNumber = action.msg.blockNumber
+      if (!state.blocks.length || state.blocks[0].blockNumber < comingBlockNumber) {
         let pastBlocks
         if (state.blocks.length < BLOCKS_PER_PAGE) {
           pastBlocks = state.blocks
@@ -55,18 +56,20 @@ function baseReducer (state = initialState, action) {
           $('.miner-address-tooltip').tooltip('hide')
           pastBlocks = state.blocks.slice(0, -1)
         }
+        let blocks = [
+          action.msg,
+          ...pastBlocks
+        ]
+        blocks = filterSequentialBlocks(blocks)
         return Object.assign({}, state, {
           averageBlockTime: action.msg.averageBlockTime,
-          blocks: [
-            action.msg,
-            ...pastBlocks
-          ],
-          blockCount: action.msg.blockNumber + 1
+          blocks,
+          blockCount: comingBlockNumber + 1
         })
       } else {
         return Object.assign({}, state, {
-          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block),
-          blockCount: action.msg.blockNumber + 1
+          blocks: state.blocks.map((block) => block.blockNumber === comingBlockNumber ? action.msg : block),
+          blockCount: comingBlockNumber + 1
         })
       }
     }
@@ -77,7 +80,8 @@ function baseReducer (state = initialState, action) {
       return Object.assign({}, state, { blocksLoading: false })
     }
     case 'BLOCKS_FETCHED': {
-      return Object.assign({}, state, { blocks: [...action.msg.blocks], blocksLoading: false })
+      const sequentialBlocks = filterSequentialBlocks(action.msg.blocks)
+      return Object.assign({}, state, { blocks: [...sequentialBlocks], blocksLoading: false })
     }
     case 'BLOCKS_REQUEST_ERROR': {
       return Object.assign({}, state, { blocksError: true, blocksLoading: false })
@@ -146,6 +150,24 @@ function baseReducer (state = initialState, action) {
     default:
       return state
   }
+}
+
+function filterSequentialBlocks (blocks) {
+  let sequenceIsBroken = false
+  return blocks.filter((block, index) => {
+    if (index === 0) {
+      return true
+    } else if (block.blockNumber + 1 === (blocks[index - 1]).blockNumber) {
+      if (!sequenceIsBroken) {
+        return true
+      } else {
+        return false
+      }
+    } else {
+      sequenceIsBroken = true
+      return false
+    }
+  })
 }
 
 function withMissingBlocks (reducer) {
