@@ -35,6 +35,17 @@ config :block_scout_web, :footer,
 ### BlockScout Web ###
 ######################
 
+# Configures Ueberauth's Auth0 auth provider
+config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
+  domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
+  client_id: System.get_env("ACCOUNT_AUTH0_CLIENT_ID"),
+  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET")
+
+# Configures Ueberauth local settings
+config :ueberauth, Ueberauth,
+  logout_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_URL"),
+  logout_return_to_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_RETURN_URL")
+
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
@@ -154,6 +165,11 @@ config :ethereum_jsonrpc,
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s")
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout: debug_trace_transaction_timeout
 
+config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
+  type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
+
+config :ethereum_jsonrpc, EthereumJSONRPC.Variant, type: System.get_env("ETHEREUM_JSONRPC_VARIANT", "nethermind")
+
 ################
 ### Explorer ###
 ################
@@ -168,8 +184,8 @@ healthy_blocks_period =
   |> :timer.minutes()
 
 config :explorer,
-  coin: System.get_env("COIN") || "POA",
-  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "POA",
+  coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
+  coin_name: System.get_env("COIN_NAME", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
@@ -307,6 +323,21 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
 config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
+
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
+  api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("ACCOUNT_SENDGRID_API_KEY")
+
+config :explorer, Explorer.Account,
+  enabled: System.get_env("ACCOUNT_ENABLED") == "true",
+  sendgrid: [
+    sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
+    template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
+  ]
 
 ###############
 ### Indexer ###

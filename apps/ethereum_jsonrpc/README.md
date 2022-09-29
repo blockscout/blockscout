@@ -22,24 +22,24 @@ library (`HTTPoison`), which forwards the options down to `:hackney`.
 
 ## Testing
 
-### Parity
+### Nethermind
 
 #### Mox
 
 **This is the default setup.  `mix test` will work on its own, but to be explicit, use the following setup**:
 
 ```shell
-export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Parity.Mox
+export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Nethermind.Mox
 export ETHEREUM_JSONRPC_WEB_SOCKET_CASE=EthereumJSONRPC.WebSocket.Case.Mox
-mix test --exclude no_parity
+mix test --exclude no_nethermind
 ```
 
 #### HTTP / WebSocket
 
 ```shell
-export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Parity.HTTPWebSocket
-export ETHEREUM_JSONRPC_WEB_SOCKET_CASE=EthereumJSONRPC.WebSocket.Case.Parity
-mix test --exclude no_parity
+export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Nethermind.HTTPWebSocket
+export ETHEREUM_JSONRPC_WEB_SOCKET_CASE=EthereumJSONRPC.WebSocket.Case.Nethermind
+mix test --exclude no_nethermind
 ```
 
 | Protocol  | URL                                |
