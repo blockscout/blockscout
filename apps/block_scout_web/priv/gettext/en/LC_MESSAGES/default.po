@@ -1414,11 +1414,6 @@ msgstr ""
 msgid "Indexed?"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:44
-#, elixir-autogen, elixir-format
-msgid "Indexing Tokens"
-msgstr ""
-
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "Input"
@@ -3260,4 +3255,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
 #, elixir-autogen, elixir-format
 msgid "truffle flattener"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/app.html.eex:44
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Indexing Internal Transactions"
 msgstr ""
