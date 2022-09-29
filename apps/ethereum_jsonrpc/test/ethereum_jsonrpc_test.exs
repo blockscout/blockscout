@@ -543,6 +543,208 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
+  describe "fetch_blocks_by_tag/2" do
+    @tag capture_log: false
+    test "with earliest", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options ->
+          block_number = "0x0"
+          block_hash = "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c"
+          transaction_hash = "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
+
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "difficulty" => "0x0",
+                 "gasLimit" => "0x0",
+                 "gasUsed" => "0x0",
+                 "hash" => block_hash,
+                 "extraData" => "0x0",
+                 "logsBloom" => "0x0",
+                 "miner" => "0x0",
+                 "number" => block_number,
+                 "parentHash" => "0x0",
+                 "receiptsRoot" => "0x0",
+                 "size" => "0x0",
+                 "sha3Uncles" => "0x0",
+                 "stateRoot" => "0x0",
+                 "timestamp" => "0x0",
+                 "totalDifficulty" => "0x0",
+                 "transactions" => [
+                   %{
+                     "blockHash" => block_hash,
+                     "blockNumber" => block_number,
+                     "from" => "0x0",
+                     "gas" => "0x0",
+                     "gasPrice" => "0x0",
+                     "hash" => transaction_hash,
+                     "input" => "0x",
+                     "nonce" => "0x0",
+                     "r" => "0x0",
+                     "s" => "0x0",
+                     "to" => "0x0",
+                     "transactionIndex" => "0x0",
+                     "v" => "0x0",
+                     "value" => "0x0"
+                   }
+                 ],
+                 "transactionsRoot" => "0x0",
+                 "uncles" => []
+               }
+             }
+           ]}
+        end)
+      end
+
+      log_bad_gateway(
+        fn -> EthereumJSONRPC.fetch_blocks_by_tag("earliest", json_rpc_named_arguments) end,
+        fn result ->
+          assert {:ok, %Blocks{blocks_params: [_ | _], transactions_params: [_ | _]}} = result
+        end
+      )
+    end
+
+    @tag capture_log: false
+    test "with latest", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options ->
+          block_number = "0x1"
+          block_hash = "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c"
+          transaction_hash = "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
+
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "difficulty" => "0x0",
+                 "gasLimit" => "0x0",
+                 "gasUsed" => "0x0",
+                 "hash" => block_hash,
+                 "extraData" => "0x0",
+                 "logsBloom" => "0x0",
+                 "miner" => "0x0",
+                 "number" => block_number,
+                 "parentHash" => "0x0",
+                 "receiptsRoot" => "0x0",
+                 "size" => "0x0",
+                 "sha3Uncles" => "0x0",
+                 "stateRoot" => "0x0",
+                 "timestamp" => "0x0",
+                 "totalDifficulty" => "0x0",
+                 "transactions" => [
+                   %{
+                     "blockHash" => block_hash,
+                     "blockNumber" => block_number,
+                     "from" => "0x0",
+                     "gas" => "0x0",
+                     "gasPrice" => "0x0",
+                     "hash" => transaction_hash,
+                     "input" => "0x",
+                     "nonce" => "0x0",
+                     "r" => "0x0",
+                     "s" => "0x0",
+                     "to" => "0x0",
+                     "transactionIndex" => "0x0",
+                     "v" => "0x0",
+                     "value" => "0x0"
+                   }
+                 ],
+                 "transactionsRoot" => "0x0",
+                 "uncles" => []
+               }
+             }
+           ]}
+        end)
+      end
+
+      log_bad_gateway(
+        fn -> EthereumJSONRPC.fetch_blocks_by_tag("latest", json_rpc_named_arguments) end,
+        fn result ->
+          {:ok, %Blocks{blocks_params: [_ | _], transactions_params: [_ | _]}} = result
+        end
+      )
+    end
+
+    @tag capture_log: false
+    test "with pending", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options ->
+          block_number = "0x1"
+          block_hash = "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c"
+          transaction_hash = "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
+
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "difficulty" => "0x0",
+                 "gasLimit" => "0x0",
+                 "gasUsed" => "0x0",
+                 "hash" => block_hash,
+                 "extraData" => "0x0",
+                 "logsBloom" => "0x0",
+                 "miner" => "0x0",
+                 "number" => block_number,
+                 "parentHash" => "0x0",
+                 "receiptsRoot" => "0x0",
+                 "size" => "0x0",
+                 "sha3Uncles" => "0x0",
+                 "stateRoot" => "0x0",
+                 "timestamp" => "0x0",
+                 "totalDifficulty" => "0x0",
+                 "transactions" => [
+                   %{
+                     "blockHash" => block_hash,
+                     "blockNumber" => block_number,
+                     "from" => "0x0",
+                     "gas" => "0x0",
+                     "gasPrice" => "0x0",
+                     "hash" => transaction_hash,
+                     "input" => "0x",
+                     "nonce" => "0x0",
+                     "r" => "0x0",
+                     "s" => "0x0",
+                     "to" => "0x0",
+                     "transactionIndex" => "0x0",
+                     "v" => "0x0",
+                     "value" => "0x0"
+                   }
+                 ],
+                 "transactionsRoot" => "0x0",
+                 "uncles" => []
+               }
+             }
+           ]}
+        end)
+      end
+
+      log_bad_gateway(
+        fn -> EthereumJSONRPC.fetch_blocks_by_tag("pending", json_rpc_named_arguments) end,
+        fn result ->
+          {:ok, %Blocks{blocks_params: [_ | _], transactions_params: [_ | _]}} = result
+        end
+      )
+    end
+
+    test "unknown errors are returned", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      # Can't be faked reliably on real chain
+      moxed_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      unknown_error = %{"code" => 500, "message" => "Unknown error"}
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:error, unknown_error}
+      end)
+
+      assert {:error, ^unknown_error} =
+               EthereumJSONRPC.fetch_block_number_by_tag("latest", moxed_json_rpc_named_arguments)
+    end
+  end
+
   describe "fetch_block_number_by_tag" do
     @tag capture_log: false
     test "with earliest", %{json_rpc_named_arguments: json_rpc_named_arguments} do
