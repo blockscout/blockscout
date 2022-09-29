@@ -22,7 +22,7 @@ defmodule EthereumJSONRPC.Variant do
 
   ## Returns
 
-   * `{:ok, %EthereumJSONRPC.FetchedBeneficiaries{params_list: [%{address_hash: address_hash, block_number: block_number}], errors: %{code: code, message: message, data: %{block_number: block_number}}}` - some beneficiaries were successfully fetched and some may have had errors.
+   * `{:ok, %EthereumJSONRPC.FetchedBeneficiaries{params_set: [%{address_hash: address_hash, block_number: block_number}], errors: %{code: code, message: message, data: %{block_number: block_number}}}` - some beneficiaries were successfully fetched and some may have had errors.
    * `{:error, reason}` - there was an error at the transport level
    * `:ignore` - the variant does not support fetching beneficiaries
   """
@@ -96,16 +96,17 @@ defmodule EthereumJSONRPC.Variant do
             ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
 
   def get do
+    variant = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:type]
+
     cond do
-      is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) ->
+      is_nil(variant) ->
         "nethermind"
 
-      System.get_env("ETHEREUM_JSONRPC_VARIANT") == "parity" ->
+      variant == "parity" ->
         "nethermind"
 
       true ->
-        "ETHEREUM_JSONRPC_VARIANT"
-        |> System.get_env()
+        variant
         |> String.split(".")
         |> List.last()
         |> String.downcase()

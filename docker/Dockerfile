@@ -33,7 +33,6 @@ ARG WOBSERVER_ENABLED
 ARG ADMIN_PANEL_ENABLED
 ARG CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL
 ARG SOCKET_ROOT
-ARG COIN
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -47,14 +46,6 @@ RUN mix do deps.get, local.rebar --force, deps.compile
 ADD . .
 
 COPY . .
-
-RUN if [ "$COIN" != "" ]; then \
-        sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
-        sed -i "/msgid \"Ether\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/default.pot; \
-        sed -i "/msgid \"Ether\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
-        sed -i "/msgid \"ETH\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/default.pot; \
-        sed -i "/msgid \"ETH\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
-    fi
 
 # Run forderground build and phoenix digest
 RUN mix compile && npm install npm@latest

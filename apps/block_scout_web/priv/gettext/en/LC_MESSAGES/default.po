@@ -618,6 +618,11 @@ msgstr ""
 msgid "ERC-721 "
 msgstr ""
 
+#: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:53
+#, elixir-autogen, elixir-format
+msgid "ERC-721, ERC-1155 tokens (NFT) (beta)"
+msgstr ""
+
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:4
 #, elixir-autogen, elixir-format
 msgid "ETH RPC API Documentation"
