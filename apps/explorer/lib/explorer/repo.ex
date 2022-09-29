@@ -142,11 +142,7 @@ defmodule Explorer.Repo do
     end
   end
 
-  if Mix.env() == :test do
-    def replica, do: __MODULE__
-  else
-    def replica, do: Explorer.Repo.Replica1
-  end
+  def replica, do: __MODULE__
 
   defmodule Replica1 do
     use Ecto.Repo,
