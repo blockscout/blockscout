@@ -41,6 +41,41 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
     end
   end
 
+  def gettxcosmosinfo(conn, params) do
+    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
+         true <- Chain.is_cosmos_tx(txhash_param),
+         {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
+           transaction_from_cosmos_hash(txhash_param),
+         paging_options <- paging_options(params) do
+      from_api = true
+      logs = Chain.cosmos_hash_to_logs(txhash_param, from_api, paging_options)
+      {logs, next_page} = split_list_by_page(logs)
+
+      transaction_updated =
+        if (error == "Reverted" || error == "execution reverted") && !revert_reason do
+          %Transaction{transaction | revert_reason: Chain.fetch_tx_revert_reason(transaction)}
+        else
+          transaction
+        end
+
+      render(conn, :gettxcosmosinfo, %{
+        transaction: transaction_updated,
+        block_height: Chain.block_height(),
+        logs: logs,
+        next_page_params: next_page_params(next_page, logs, params)
+      })
+    else
+      {:transaction, :error} ->
+        render(conn, :error, error: "Transaction not found")
+
+      {:txhash_param, :error} ->
+        render(conn, :error, error: "Query parameter txhash is required")
+
+      false ->
+        render(conn, :error, error: "Invalid txhash format")
+    end
+  end
+
   def gettxreceiptstatus(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param) do
@@ -75,6 +110,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
 
   defp transaction_from_hash(transaction_hash) do
     case Chain.hash_to_transaction(transaction_hash, necessity_by_association: %{block: :required}) do
+      {:error, :not_found} -> {:transaction, :error}
+      {:ok, transaction} -> {:transaction, {:ok, transaction}}
+    end
+  end
+
+  defp transaction_from_cosmos_hash(cosmos_hash) do
+    case Chain.cosmos_hash_to_transaction(cosmos_hash, necessity_by_association: %{block: :required}) do
       {:error, :not_found} -> {:transaction, :error}
       {:ok, transaction} -> {:transaction, {:ok, transaction}}
     end

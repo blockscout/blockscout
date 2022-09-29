@@ -2041,6 +2041,24 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec cosmos_hash_to_transaction(String.t(), [necessity_by_association_option]) ::
+          {:ok, Transaction.t()} | {:error, :not_found}
+  def cosmos_hash_to_transaction(cosmos_hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    Transaction
+    |> where(cosmos_hash: ^cosmos_hash)
+    |> join_associations(necessity_by_association)
+    |> Repo.one()
+    |> case do
+         nil ->
+           {:error, :not_found}
+
+         transaction ->
+           {:ok, transaction}
+       end
+  end
+
   @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
   those `hashes`.
@@ -3592,6 +3610,36 @@ defmodule Explorer.Chain do
     query =
       log_with_transactions
       |> where([_, transaction], transaction.hash == ^transaction_hash)
+      |> page_logs(paging_options)
+      |> limit(^paging_options.page_size)
+      |> order_by([log], asc: log.index)
+      |> join_associations(necessity_by_association)
+
+    if from_api do
+      query
+      |> Repo.replica().all()
+    else
+      query
+      |> Repo.all()
+    end
+  end
+
+  @spec cosmos_hash_to_logs(String.t(), boolean(), [paging_options | necessity_by_association_option]) :: [Log.t()]
+  def cosmos_hash_to_logs(cosmos_hash, from_api, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    log_with_transactions =
+      from(log in Log,
+        inner_join: transaction in Transaction,
+        on:
+          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
+          transaction.hash == log.transaction_hash
+      )
+
+    query =
+      log_with_transactions
+      |> where([_, transaction], transaction.cosmos_hash == ^cosmos_hash)
       |> page_logs(paging_options)
       |> limit(^paging_options.page_size)
       |> order_by([log], asc: log.index)
