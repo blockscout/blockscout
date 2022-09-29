@@ -249,11 +249,11 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     %{}
     |> put_order_by_direction(params)
     |> Helpers.put_pagination_options(params)
-    |> put_start_block(params)
-    |> put_end_block(params)
+    |> put_block(params, "start_block")
+    |> put_block(params, "end_block")
     |> put_filter_by(params)
-    |> put_start_timestamp(params)
-    |> put_end_timestamp(params)
+    |> put_timestamp(params, "start_timestamp")
+    |> put_timestamp(params, "end_timestamp")
   end
 
   @doc """
@@ -427,52 +427,39 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
-  defp put_start_block(options, params) do
-    with %{"startblock" => startblock_param} <- params,
-         {start_block, ""} <- Integer.parse(startblock_param) do
-      Map.put(options, :start_block, start_block)
+  # sobelow_skip ["DOS.StringToAtom"]
+  defp put_block(options, params, key) do
+    with %{^key => block_param} <- params,
+         {block_number, ""} <- Integer.parse(block_param) do
+      Map.put(options, String.to_atom(key), block_number)
     else
       _ ->
         options
     end
   end
 
-  defp put_end_block(options, params) do
-    with %{"endblock" => endblock_param} <- params,
-         {end_block, ""} <- Integer.parse(endblock_param) do
-      Map.put(options, :end_block, end_block)
-    else
-      _ ->
-        options
-    end
-  end
-
+  # sobelow_skip ["DOS.StringToAtom"]
   defp put_filter_by(options, params) do
     case params do
-      %{"filterby" => filter_by} when filter_by in ["from", "to"] ->
-        Map.put(options, :filter_by, filter_by)
+      %{"filter_by" => filter_by} when filter_by in ["from", "to"] ->
+        Map.put(options, String.to_atom("filter_by"), filter_by)
 
       _ ->
         options
     end
   end
 
-  defp put_start_timestamp(options, params) do
-    with %{"starttimestamp" => starttimestamp_param} <- params,
-         {unix_timestamp, ""} <- Integer.parse(starttimestamp_param),
-         {:ok, start_timestamp} <- DateTime.from_unix(unix_timestamp) do
-      Map.put(options, :start_timestamp, start_timestamp)
-    else
-      _ ->
-        options
-    end
+  def put_timestamp({:ok, options}, params, timestamp_param_key) do
+    options = put_timestamp(options, params, timestamp_param_key)
+    {:ok, options}
   end
 
-  defp put_end_timestamp(options, params) do
-    with %{"endtimestamp" => endtimestamp_param} <- params,
-         {unix_timestamp, ""} <- Integer.parse(endtimestamp_param),
-         {:ok, end_timestamp} <- DateTime.from_unix(unix_timestamp) do
-      Map.put(options, :end_timestamp, end_timestamp)
+  # sobelow_skip ["DOS.StringToAtom"]
+  def put_timestamp(options, params, timestamp_param_key) do
+    with %{^timestamp_param_key => timestamp_param} <- params,
+         {unix_timestamp, ""} <- Integer.parse(timestamp_param),
+         {:ok, timestamp} <- DateTime.from_unix(unix_timestamp) do
+      Map.put(options, String.to_atom(timestamp_param_key), timestamp)
     else
       _ ->
         options

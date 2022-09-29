@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.APIDocsView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.LayoutView
+  alias Explorer
 
   def action_tile_id(module, action) do
     "#{module}-#{action}"
@@ -20,7 +21,7 @@ defmodule BlockScoutWeb.APIDocsView do
   end
 
   def model_type_definition(definition_func) when is_function(definition_func, 1) do
-    coin = Application.get_env(:explorer, :coin)
+    coin = Explorer.coin()
     definition_func.(coin)
   end
 

@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6187](https://github.com/blockscout/blockscout/pull/6187) - Filter by created time of verified contracts in listcontracts API endpoint
 - [#6092](https://github.com/blockscout/blockscout/pull/6092) - Blockscout Account functionality
 - [#6073](https://github.com/blockscout/blockscout/pull/6073) - Add vyper support for rust verifier microservice integration
 - [#6111](https://github.com/blockscout/blockscout/pull/6111) - Add Prometheus metrics to indexer
@@ -18,11 +19,13 @@
 - [#6105](https://github.com/blockscout/blockscout/pull/6105) - Fix some token transfers broadcasting
 - [#6106](https://github.com/blockscout/blockscout/pull/6106) - Fix 500 response on `/coin-balance` for empty address
 - [#6118](https://github.com/blockscout/blockscout/pull/6118) - Fix unfetched token balances
+- [#6163](https://github.com/blockscout/blockscout/pull/6163) - Fix rate limit logs
 
 ### Chore
 
-- [#6155](https://github.com/blockscout/blockscout/pull/6155) - Refactor Ethereum JSON RPC variants
 - [#5322](https://github.com/blockscout/blockscout/pull/5322) - DB denormalization: block consensus and timestamp in transaction table
+- [#6183](https://github.com/blockscout/blockscout/pull/6183) - Transparent coin name definition
+- [#6155](https://github.com/blockscout/blockscout/pull/6155), [#6189](https://github.com/blockscout/blockscout/pull/6189) - Refactor Ethereum JSON RPC variants
 - [#6125](https://github.com/blockscout/blockscout/pull/6125) - Rename obsolete "parity" EthereumJSONRPC.Variant to "nethermind"
 - [#6124](https://github.com/blockscout/blockscout/pull/6124) - Docker compose: add config for Erigon
 - [#6053](https://github.com/blockscout/blockscout/pull/6053) - Bump jest-environment-jsdom from 29.0.1 to 29.0.2 in /apps/block_scout_web/assets

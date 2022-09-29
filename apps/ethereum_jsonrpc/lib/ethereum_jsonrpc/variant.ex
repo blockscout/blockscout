@@ -96,16 +96,17 @@ defmodule EthereumJSONRPC.Variant do
             ) :: {:ok, [raw_trace_params]} | {:error, reason :: term} | :ignore
 
   def get do
+    variant = System.get_env("ETHEREUM_JSONRPC_VARIANT", "nethermind")
+
     cond do
-      is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) ->
+      is_nil(variant) ->
         "nethermind"
 
-      System.get_env("ETHEREUM_JSONRPC_VARIANT") == "parity" ->
+      variant == "parity" ->
         "nethermind"
 
       true ->
-        "ETHEREUM_JSONRPC_VARIANT"
-        |> System.get_env()
+        variant
         |> String.split(".")
         |> List.last()
         |> String.downcase()

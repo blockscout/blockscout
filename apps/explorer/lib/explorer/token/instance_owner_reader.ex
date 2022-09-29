@@ -44,7 +44,10 @@ defmodule Explorer.Token.InstanceOwnerReader do
           [ok_result] ++ acc
 
         {:error, error_message} ->
-          Logger.error("Failed to get owner of token_id #{request.token_id}, reason: #{error_message}")
+          Logger.error(
+            "Failed to get owner of token #{request.token_contract_address_hash}, token_id #{request.token_id}, reason: #{error_message}"
+          )
+
           acc
       end
     end)
