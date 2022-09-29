@@ -24,9 +24,12 @@
           <a href="https://twitter.com/edexablockchain" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <div class="footer-social-icon-container fontawesome-icon twitter"></div>
           </a>
-          <a href="https://www.linkedin.com/company/edexablockchain/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("LinkedIn") %>'>
-            <div class="footer-social-icon-container fontawesome-icon telegram"></div>
+          <a href="https://github.com/devEdexa" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+            <div class="footer-social-icon-container fontawesome-icon github"></div>
           </a>
+         <!-- <a href="https://www.linkedin.com/company/edexablockchain/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("LinkedIn") %>'>
+            <div class="footer-social-icon-container fontawesome-icon linkedin"></div>
+          </a> -->
         </div>
       </div>
 
@@ -74,7 +77,7 @@
     <%= unless ignore_version?(version) do %>
       <% release_link = release_link(version) %>
       <div>
-        <%= gettext("Version") %>: <%= release_link || 0.1 %>
+        <!-- <%= gettext("Version") %>: <%= release_link || 0.1 %> -->
       </div>
     <% end %>
   </div>
