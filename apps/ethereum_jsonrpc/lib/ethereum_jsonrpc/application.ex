@@ -14,7 +14,7 @@ defmodule EthereumJSONRPC.Application do
     rolling_window_opts = Keyword.fetch!(config, :rolling_window_opts)
 
     [
-      :hackney_pool.child_spec(:ethereum_jsonrpc, recv_timeout: 60_000, timeout: 60_000, max_connections: 1000),
+      :hackney_pool.child_spec(:ethereum_jsonrpc, recv_timeout: 60_000, timeout: 60_000, max_connections: 100),
       Supervisor.child_spec({RollingWindow, [rolling_window_opts]}, id: RollingWindow.ErrorThrottle)
     ]
     |> add_throttle_rolling_window(config)
