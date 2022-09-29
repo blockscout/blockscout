@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.TokenInstance do
   require Logger
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Cache.BlockNumber, Token}
+  alias Explorer.Chain.{Address, Cache.BlockNumber, Token}
   alias Explorer.Token.{InstanceMetadataRetriever, InstanceOwnerReader}
   alias Indexer.BufferedTask
 
@@ -100,17 +100,12 @@ defmodule Indexer.Fetcher.TokenInstance do
   end
 
   defp update_current_token_balances(token_contract_address_hash, token_ids) do
-    import_params =
-      token_ids
-      |> Enum.map(&instance_owner_request(token_contract_address_hash, &1))
-      |> InstanceOwnerReader.get_owner_of()
-      |> Enum.map(&current_token_balances_import_params/1)
-
-    Chain.import(%{
-      address_current_token_balances: %{
-        params: import_params
-      }
-    })
+    token_ids
+    |> Enum.map(&instance_owner_request(token_contract_address_hash, &1))
+    |> InstanceOwnerReader.get_owner_of()
+    |> Enum.map(&current_token_balances_import_params/1)
+    |> all_import_params()
+    |> Chain.import()
   end
 
   defp instance_owner_request(token_contract_address_hash, token_id) do
@@ -130,6 +125,29 @@ defmodule Indexer.Fetcher.TokenInstance do
       address_hash: owner,
       token_contract_address_hash: hash
     }
+  end
+
+  defp all_import_params(balances_import_params) do
+    addresses_import_params =
+      balances_import_params
+      |> Enum.reduce([], fn %{address_hash: address_hash}, acc ->
+        case Repo.get_by(Address, hash: address_hash) do
+          nil -> [%{hash: address_hash} | acc]
+          _address -> acc
+        end
+      end)
+      |> case do
+        [] -> %{}
+        params -> %{addresses: %{params: params}}
+      end
+
+    current_token_balances_import_params = %{
+      address_current_token_balances: %{
+        params: balances_import_params
+      }
+    }
+
+    Map.merge(current_token_balances_import_params, addresses_import_params)
   end
 
   @doc """
