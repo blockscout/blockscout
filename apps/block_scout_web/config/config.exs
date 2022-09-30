@@ -107,6 +107,19 @@ config :block_scout_web, :api_rate_limit,
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
+campaign_banner_refresh_interval =
+  "CAMPAIGN_BANNER_REFRESH_INTERVAL"
+  |> System.get_env("60")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> 60
+  end
+
+config :block_scout_web, BlockScoutWeb.CampaignBanner,
+  backend_url: System.get_env("CAMPAIGN_BANNER_BACKEND_URL", ""),
+  refresh_interval: campaign_banner_refresh_interval
+
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   url: [

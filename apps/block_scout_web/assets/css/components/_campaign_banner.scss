@@ -1,11 +1,75 @@
 $campaign-banner-spacing: 6px;
 
+.campaign-banner-preset-announcement {
+  background-color: $primary;
+  color: $white;
+
+  .campaign-banner-close {
+    background-color: $primary;
+    color: $white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+
+  .campaign-banner-cta {
+    color: $white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+}
+
+.campaign-banner-preset-warning {
+  background-color: $secondary;
+  color: $celo-dark;
+
+  .campaign-banner-close {
+    background-color: $secondary;
+    color: $celo-dark;
+
+    &:hover {
+      color: $white;
+    }
+  }
+
+  .campaign-banner-cta {
+    color: $celo-dark;
+
+    &:hover {
+      color: $white;
+    }
+  }
+}
+
+.campaign-banner-preset-error {
+  background-color: $tile-status-error-reason;
+  color: white;
+
+  .campaign-banner-close {
+    background-color: $tile-status-error-reason;
+    color: white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+
+  .campaign-banner-cta {
+    color: $white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+}
+
 .campaign-banner {
   display: flex;
   align-items: center;
 
-  background-color: $primary;
-  color: $white;
   font-weight: 700;
   font-size: 0.8rem;
 
@@ -25,26 +89,15 @@ $campaign-banner-spacing: 6px;
 
   .campaign-banner-close {
     padding: $campaign-banner-spacing;
-    background-color: $primary;
     border: none;
     line-height: 0.6rem;
     font-size: 1.8rem;
     font-weight: 700;
-    color: $white;
-
-    &:hover {
-      color: $celo-dark;
-    }
   }
 
   a {
-    color: $white;
     text-transform: uppercase;
     text-decoration: underline;
-
-    &:hover {
-      color: $celo-dark;
-    }
   }
 
   &.campaign-banner-closing {
@@ -53,5 +106,6 @@ $campaign-banner-spacing: 6px;
 
   &.campaign-banner-closed {
     height: 0;
+    display: none;
   }
 }

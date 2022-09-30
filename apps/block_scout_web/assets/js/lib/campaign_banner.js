@@ -1,5 +1,4 @@
 import $ from 'jquery'
-import '../app'
 
 const CLOSED_CAMPAIGN_IDS_KEY = 'closed-campaign-ids'
 

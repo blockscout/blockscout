@@ -187,6 +187,11 @@
         </div>
       <% end %>
 
+      <% campaign_data = BlockScoutWeb.CampaignBanner.get_campaign_data() %>
+      <%= for banner <- campaign_data do %>
+        <%= render BlockScoutWeb.LayoutView, "_campaign_banner.html", banner %>
+      <% end %>
+
       <%= render BlockScoutWeb.LayoutView, "_cookie_banner.html", assigns %>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 
