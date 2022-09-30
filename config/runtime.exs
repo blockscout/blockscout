@@ -182,8 +182,8 @@ healthy_blocks_period =
   |> :timer.minutes()
 
 config :explorer,
-  coin: System.get_env("COIN") || "POA",
-  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "POA",
+  coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
+  coin_name: System.get_env("COIN_NAME", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
@@ -421,6 +421,19 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
+
+blocks_catchup_fetcher_batch_size_default_str = "10"
+blocks_catchup_fetcher_concurrency_default_str = "10"
+
+{blocks_catchup_fetcher_batch_size, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_BATCH_SIZE", blocks_catchup_fetcher_batch_size_default_str))
+
+{blocks_catchup_fetcher_concurrency, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_CONCURRENCY", blocks_catchup_fetcher_concurrency_default_str))
+
+config :indexer, Indexer.Block.Catchup.Fetcher,
+  batch_size: blocks_catchup_fetcher_batch_size,
+  concurrency: blocks_catchup_fetcher_concurrency
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

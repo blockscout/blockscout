@@ -1162,33 +1162,39 @@ defmodule Explorer.Chain do
   Checks to see if the chain is down indexing based on the transaction from the
   oldest block and the `fetch_internal_transactions` pending operation
   """
-  @spec finished_indexing?() :: boolean()
-  def finished_indexing? do
-    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
-    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+  @spec finished_internal_transactions_indexing?() :: boolean()
+  def finished_internal_transactions_indexing? do
+    internal_transactions_disabled? = System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
 
-    if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
+    if internal_transactions_disabled? do
       true
     else
-      with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
-           min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
-        min_block_number =
-          min_block_number
-          |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
-          |> Decimal.to_integer()
+      json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-        query =
-          from(
-            b in Block,
-            join: pending_ops in assoc(b, :pending_operations),
-            where: pending_ops.fetch_internal_transactions,
-            where: b.consensus and b.number == ^min_block_number
-          )
-
-        !Repo.exists?(query)
+      if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
+        true
       else
-        {:transactions_exist, false} -> true
-        nil -> false
+        with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
+             min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
+          min_block_number =
+            min_block_number
+            |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
+            |> Decimal.to_integer()
+
+          query =
+            from(
+              b in Block,
+              join: pending_ops in assoc(b, :pending_operations),
+              where: pending_ops.fetch_internal_transactions,
+              where: b.consensus and b.number == ^min_block_number
+            )
+
+          !Repo.exists?(query)
+        else
+          {:transactions_exist, false} -> true
+          nil -> false
+        end
       end
     end
   end
