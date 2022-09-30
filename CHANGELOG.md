@@ -22,6 +22,7 @@
 
 ### Chore
 
+- [#6195](https://github.com/blockscout/blockscout/pull/6195) - Docker compose configs improvements: Redis container name and persistent storage
 - [#6192](https://github.com/blockscout/blockscout/pull/6192) - Hide Indexing Internal Transactions message, if INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=true
 - [#6183](https://github.com/blockscout/blockscout/pull/6183) - Transparent coin name definition
 - [#6155](https://github.com/blockscout/blockscout/pull/6155), [#6189](https://github.com/blockscout/blockscout/pull/6189) - Refactor Ethereum JSON RPC variants
