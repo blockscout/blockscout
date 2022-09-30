@@ -72,6 +72,12 @@ defmodule Indexer.Prometheus.MetricsCron do
   @impl true
   def handle_info({:DOWN, _, _, _, :normal}, state), do: {:noreply, state}
 
+  @impl true
+  def handle_info({:DOWN, _, _, _, failure_message}, state) do
+    Logger.error("MetricsCron task received an error: #{failure_message |> inspect()}")
+    {:noreply, state}
+  end
+
   def pending_transactions do
     pending_transactions_count = Chain.pending_transactions_count()
     :telemetry.execute([:indexer, :transactions, :pending], %{value: pending_transactions_count})

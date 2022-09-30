@@ -2893,6 +2893,10 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @doc """
+  Streams tuples of {contract_address, event_topic, {block_number, log_index} event_tracking_id} for backfill
+    of historical event data.
+  """
   def stream_events_to_backfill(initial, reducer) do
     query =
       from(
@@ -2901,7 +2905,7 @@ defmodule Explorer.Chain do
         on: sc.id == cet.smart_contract_id,
         where: cet.backfilled == false,
         where: cet.enabled == true,
-        select: {sc.address_hash, cet.topic, cet.id}
+        select: {sc.address_hash, cet.topic, cet.backfilled_up_to, cet.id}
       )
 
     Repo.stream_reduce(query, initial, reducer)

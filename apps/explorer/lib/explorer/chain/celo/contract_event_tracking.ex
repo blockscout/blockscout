@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Celo.ContractEventTracking do
         }
 
   @attrs ~w(
-          abi name topic smart_contract_id backfilled enabled
+          abi name topic smart_contract_id backfilled enabled backfilled_up_to
         )a
 
   @required ~w(
@@ -36,6 +36,7 @@ defmodule Explorer.Chain.Celo.ContractEventTracking do
     field(:topic, :string)
     field(:backfilled, :boolean)
     field(:enabled, :boolean)
+    field(:backfilled_up_to, :map)
 
     belongs_to(:smart_contract, SmartContract)
     has_one(:address, through: [:smart_contract, :address])
@@ -62,9 +63,19 @@ defmodule Explorer.Chain.Celo.ContractEventTracking do
     build_tracking(smart_contract, find_function)
   end
 
-  defp build_tracking(%SmartContract{abi: contract_abi} = smart_contract, find_function) do
+  @doc "Creates Tracking row directly from event abi. Doesn't test event existence on smart contract to support abis of proxied events"
+  def from_event_abi(smart_contract, %{"name" => name, "topic" => topic} = event_abi) do
+    # remove "topic" from abi as it is a generated property
+    event_abi = Map.delete(event_abi, "topic")
+
+    %ContractEventTracking{}
+    |> changeset(%{name: name, abi: event_abi, topic: topic, smart_contract: smart_contract})
+  end
+
+  defp build_tracking(%SmartContract{} = smart_contract, find_function) do
     event_abi =
-      contract_abi
+      smart_contract
+      |> SmartContractHelper.get_all_events()
       |> Enum.find(find_function)
 
     case event_abi do

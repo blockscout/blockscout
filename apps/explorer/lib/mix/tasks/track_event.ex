@@ -37,8 +37,9 @@ defmodule Mix.Tasks.TrackEvent do
     # start ecto repo
     MixTask.run("app.start")
 
-    with {:ok, contract} <- get_verified_contract(options[:contract_address]),
-         {:ok, tracking_changesets} <- get_changesets(contract, options[:topics], options[:event_names], options[:all]) do
+    with {:ok, contract} <- SmartContractHelper.get_verified_contract(options[:contract_address]),
+         {:ok, tracking_changesets} <-
+           create_changesets(contract, options[:topics], options[:event_names], options[:all]) do
       tracking_changesets
       |> Enum.each(fn changeset ->
         case Repo.insert(changeset) do
@@ -58,12 +59,24 @@ defmodule Mix.Tasks.TrackEvent do
     end
   end
 
-  defp get_changesets(contract, _topics, _names, true) do
-    topics = get_all_event_topics(contract)
-    get_changesets(contract, topics, nil, nil)
+  defp create_changesets(contract, _topics, _names, true) do
+    changesets =
+      contract
+      |> SmartContractHelper.get_all_events()
+      |> Enum.map(fn event_abi = %{"name" => name} ->
+        case ContractEventTracking.from_event_abi(contract, event_abi) do
+          cet = %Ecto.Changeset{valid?: true} ->
+            cet
+
+          %Ecto.Changeset{valid?: false, errors: errors} ->
+            raise "Errors found with event name #{name} - #{errors}"
+        end
+      end)
+
+    {:ok, changesets}
   end
 
-  defp get_changesets(contract, _topics, names, _all) when is_binary(names) do
+  defp create_changesets(contract, _topics, names, _all) when is_binary(names) do
     names = names |> String.split(",")
 
     trackings =
@@ -84,7 +97,7 @@ defmodule Mix.Tasks.TrackEvent do
     {:ok, trackings}
   end
 
-  defp get_changesets(contract, topics, _names, _all) when is_list(topics) do
+  defp create_changesets(contract, topics, _names, _all) when is_list(topics) do
     trackings =
       topics
       |> Enum.map(fn topic ->
@@ -103,9 +116,9 @@ defmodule Mix.Tasks.TrackEvent do
     {:ok, trackings}
   end
 
-  defp get_changesets(contract, topics, _names, _all) when is_binary(topics) do
+  defp create_changesets(contract, topics, _names, _all) when is_binary(topics) do
     topics = topics |> String.split(",")
-    get_changesets(contract, topics, nil, nil)
+    create_changesets(contract, topics, nil, nil)
   end
 
   defp get_all_event_topics(%SmartContract{abi: abi}) do
@@ -126,25 +139,6 @@ defmodule Mix.Tasks.TrackEvent do
 
     unless System.get_env("DATABASE_URL") do
       raise "No database connection provided - set DATABASE_URL env variable"
-    end
-  end
-
-  def get_verified_contract(address_string) do
-    case Explorer.Chain.Hash.Address.cast(address_string) do
-      :error ->
-        {:error, "Invalid format for address hash"}
-
-      {:ok, address} ->
-        query = from(sm in SmartContract, where: sm.address_hash == ^address)
-        contract = query |> Repo.one()
-
-        case contract do
-          sm = %SmartContract{} ->
-            {:ok, sm}
-
-          nil ->
-            {:error, "No verified contract found at address #{address_string}"}
-        end
     end
   end
 end

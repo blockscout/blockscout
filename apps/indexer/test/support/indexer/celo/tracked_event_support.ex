@@ -3,6 +3,7 @@ defmodule Indexer.Celo.TrackedEventSupport do
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Chain.Celo.ContractEventTracking
   alias Explorer.Repo
+  import Mox
 
   def create_smart_contract do
     contract_abi =
@@ -50,6 +51,10 @@ defmodule Indexer.Celo.TrackedEventSupport do
   def add_trackings(event_topics, smart_contract) do
     event_topics
     |> Enum.each(fn topic ->
+      # creation of event will read blockchain status to test if this is part of a proxy contract implementation
+      # mocking error reponse to simulate what happens when accessing storage address of non proxy contract
+      EthereumJSONRPC.Mox |> expect(:json_rpc, fn _json, _options -> {:error, []} end)
+
       {:ok, tracking} =
         smart_contract
         |> ContractEventTracking.from_event_topic(topic)
