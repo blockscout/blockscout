@@ -14,11 +14,11 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   end
 
   def render("gettxcosmosinfo.json", %{
-    transaction: transaction,
-    block_height: block_height,
-    logs: logs,
-    next_page_params: next_page_params
-  }) do
+        transaction: transaction,
+        block_height: block_height,
+        logs: logs,
+        next_page_params: next_page_params
+      }) do
     data = prepare_transaction(transaction, block_height, logs, next_page_params)
     RPCView.render("show.json", data: data)
   end
