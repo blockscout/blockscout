@@ -67,8 +67,7 @@ defmodule Indexer.Fetcher.CosmosHash do
             )
   def run(block_numbers, _) do
     unique_numbers = Enum.uniq(block_numbers) |> Enum.filter(fn number ->
-      is_nil(number) == false and
-      number >= EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+      is_nil(number) == false
     end)
     Logger.debug("fetching cosmos hashes for transactions")
     case unique_numbers do
@@ -146,21 +145,27 @@ defmodule Indexer.Fetcher.CosmosHash do
   defp fetch_and_import_cosmos_hash(block_number) when is_nil(block_number) == false do
     tx_hashes_string = Chain.get_tx_hashes_of_block_number_with_unfetched_cosmos_hashes(block_number)
                        |> Enum.map(fn tx -> Chain.Hash.to_string(tx) end)
-    list_mapping = get_cosmos_hash_tx_list_mapping(block_number)
 
-    params = for %{hash: hash, cosmos_hash: cosmos_hash} when is_nil(hash) == false <- list_mapping do
-      if Enum.member?(tx_hashes_string, hash) do
-        %{hash: hash, cosmos_hash: cosmos_hash}
-      else
-        nil
-      end
-    end |> Enum.filter(fn elem -> is_nil(elem) == false end)
+    case tx_hashes_string do
+      [_|_] ->
+        list_mapping = get_cosmos_hash_tx_list_mapping(block_number)
+
+        params = for %{hash: hash, cosmos_hash: cosmos_hash} when is_nil(hash) == false <- list_mapping do
+          if Enum.member?(tx_hashes_string, hash) do
+            %{hash: hash, cosmos_hash: cosmos_hash}
+          else
+            nil
+          end
+        end |> Enum.filter(fn elem -> is_nil(elem) == false end)
     
-    list_params = for %{hash: hash, cosmos_hash: cosmos_hash} <- params do
-      {:ok, tx_hash} = Chain.string_to_transaction_hash(hash)
-      %{hash: tx_hash, cosmos_hash: cosmos_hash}
+        list_params = for %{hash: hash, cosmos_hash: cosmos_hash} <- params do
+          {:ok, tx_hash} = Chain.string_to_transaction_hash(hash)
+          %{hash: tx_hash, cosmos_hash: cosmos_hash}
+        end
+        Chain.update_transactions_cosmos_hashes_by_batch(list_params)
+      _ ->
+        {:ok}
     end
-    Chain.update_transactions_cosmos_hashes_by_batch(list_params)
   end
 
   @spec base_api_url :: String.t()
