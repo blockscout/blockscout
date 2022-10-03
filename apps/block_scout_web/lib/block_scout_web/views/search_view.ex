@@ -26,25 +26,41 @@ defmodule BlockScoutWeb.SearchView do
       "type" => search_result.type,
       "name" => search_result.name,
       "symbol" => search_result.symbol,
-      "address" => search_result.address_hash
+      "address" => search_result.address_hash,
+      "token_url" => token_path(BlockScoutWeb.Endpoint, :show, search_result.address_hash),
+      "address_url" => address_path(BlockScoutWeb.Endpoint, :show, search_result.address_hash)
     }
   end
 
   def prepare_search_result(%{type: address_or_contract} = search_result)
       when address_or_contract in ["address", "contract"] do
-    %{"type" => search_result.type, "name" => search_result.name, "address" => search_result.address_hash}
+    %{
+      "type" => search_result.type,
+      "name" => search_result.name,
+      "address" => search_result.address_hash,
+      "url" => address_path(BlockScoutWeb.Endpoint, :show, search_result.address_hash)
+    }
   end
 
   def prepare_search_result(%{type: "block"} = search_result) do
+    block_hash = hash_to_string(search_result.block_hash)
+
     %{
       "type" => search_result.type,
       "block_number" => search_result.block_number,
-      "block_hash" => hash_to_string(search_result.block_hash)
+      "block_hash" => block_hash,
+      "url" => block_path(BlockScoutWeb.Endpoint, :show, block_hash)
     }
   end
 
   def prepare_search_result(%{type: "transaction"} = search_result) do
-    %{"type" => search_result.type, "tx_hash" => hash_to_string(search_result.tx_hash)}
+    tx_hash = hash_to_string(search_result.tx_hash)
+
+    %{
+      "type" => search_result.type,
+      "tx_hash" => tx_hash,
+      "url" => transaction_path(BlockScoutWeb.Endpoint, :show, tx_hash)
+    }
   end
 
   defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
