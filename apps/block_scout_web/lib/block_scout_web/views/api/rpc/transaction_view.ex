@@ -85,21 +85,51 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     }
   end
 
-  defp prepare_transaction_cosmos(transaction, block_height, logs, next_page_params) do
+  defp prepare_transaction_cosmos(transaction, block_height, logs, _next_page_params) do
     %{
-      "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
+      "block_height" => "#{transaction.block_number}",
+      "block_hash" => "#{transaction.block.hash}",
+      "block_time" => "#{transaction.block.timestamp}",
+      "hash" => "#{transaction.hash}",
+      "cosmos_hash" => "#{transaction.cosmos_hash}",
       "confirmations" => "#{block_height - transaction.block_number}",
       "success" => if(transaction.status == :ok, do: true, else: false),
-      "transaction" => transaction,
+      "error" => "#{transaction.error}",
+      "from" => "#{transaction.from_address_hash}",
+      "to" => "#{transaction.to_address_hash}",
+      "value" => "#{transaction.value.value}",
+      "input" => "#{transaction.input}",
+      "gas_limit" => "#{transaction.gas}",
+      "gas_used" => "#{transaction.gas_used}",
+      "gas_price" => "#{transaction.gas_price.value}",
+      "cumulative_gas_used" => "#{transaction.cumulative_gas_used}",
+      "index" => "#{transaction.index}",
+      "created_contract_code_indexed_at" => "#{transaction.created_contract_code_indexed_at}",
+      "nonce" => "#{transaction.nonce}",
+      "r" => "#{transaction.r}",
+      "s" => "#{transaction.s}",
+      "v" => "#{transaction.v}",
+      "maxPriorityFeePerGas" => "#{parse_gas_value(transaction.max_priority_fee_per_gas)}",
+      "maxFeePerGas" => "#{parse_gas_value(transaction.max_fee_per_gas)}",
+      "type" => "#{transaction.type}",
       "logs" => Enum.map(logs, &prepare_log/1),
-      "next_page_params" => next_page_params
+      "revert_reason" => "#{transaction.revert_reason}"
     }
+  end
+
+  defp parse_gas_value(gas_field) do
+    case gas_field do
+      nil ->
+        nil
+      _ ->
+        gas_field.value
+    end
   end
 
   defp prepare_log(log) do
     %{
       "address" => "#{log.address_hash}",
-      "topics" => get_topics(log),
+      "topics" => get_topics(log) |> Enum.filter(fn log -> is_nil(log) == false end),
       "data" => "#{log.data}",
       "index" => "#{log.index}"
     }
