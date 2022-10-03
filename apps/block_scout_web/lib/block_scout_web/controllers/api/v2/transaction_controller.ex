@@ -73,11 +73,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def raw_trace(conn, %{"transaction_hash" => transaction_hash_string}) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
-           {:not_found,
-            Chain.hash_to_transaction(
-              transaction_hash,
-              necessity_by_association: %{}
-            )} do
+           {:not_found, Chain.hash_to_transaction(transaction_hash)} do
       if is_nil(transaction.block_number) do
         conn
         |> put_status(200)
@@ -139,15 +135,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       full_options =
         Keyword.merge(
           [
-            necessity_by_association: %{
-              [from_address: :smart_contract] => :optional,
-              [to_address: :smart_contract] => :optional,
-              [from_address: :names] => :optional,
-              [to_address: :names] => :optional,
-              from_address: :required,
-              to_address: :required,
-              token: :required
-            }
+            necessity_by_association: @token_transfers_neccessity_by_association
           ],
           paging_options(params)
         )

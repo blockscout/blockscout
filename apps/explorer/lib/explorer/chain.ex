@@ -1041,7 +1041,7 @@ defmodule Explorer.Chain do
       {:ok, 1}
   """
   @spec confirmations(Block.t() | nil, [{:block_height, block_height()}]) ::
-          {:ok, non_neg_integer()} | {:error, :non_consensus}
+          {:ok, non_neg_integer()} | {:error, :non_consensus | :pending}
 
   def confirmations(%Block{consensus: true, number: number}, named_arguments) when is_list(named_arguments) do
     max_consensus_block_number = Keyword.fetch!(named_arguments, :block_height)
@@ -3214,7 +3214,9 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
+  @spec recent_collated_transactions([paging_options | necessity_by_association_option], [String.t()], [:atom]) :: [
+          Transaction.t()
+        ]
   def recent_collated_transactions(options \\ [], method_id_filter \\ [], type_filter \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -3313,7 +3315,9 @@ defmodule Explorer.Chain do
       Results will be the transactions older than the `inserted_at` and `hash` that are passed.
 
   """
-  @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
+  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false, [String.t()], [
+          :atom
+        ]) :: [Transaction.t()]
   def recent_pending_transactions(options \\ [], old_ui? \\ true, method_id_filter \\ [], type_filter \\ [])
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -6276,12 +6280,12 @@ defmodule Explorer.Chain do
     |> String.downcase()
   end
 
-  def recent_transactions(options, [:validated | _], method_id_filter, type_filter_options) do
-    recent_collated_transactions(options, method_id_filter, type_filter_options)
-  end
-
   def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
     recent_pending_transactions(options, false, method_id_filter, type_filter_options)
+  end
+
+  def recent_transactions(options, _, method_id_filter, type_filter_options) do
+    recent_collated_transactions(options, method_id_filter, type_filter_options)
   end
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
