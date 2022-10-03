@@ -66,6 +66,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           |> Map.put(:address_hash, stale_current_token_balance.address_hash)
           |> Map.put(:token_contract_address_hash, token.contract_address_hash)
           |> Map.put(:token_type, token.type)
+          |> Map.put(:token_id, stale_current_token_balance.token_id)
           |> Map.put(:block_number, block_number)
           |> Map.put(:value, Decimal.new(updated_balance))
           |> Map.put(:value_fetched_at, DateTime.utc_now())
