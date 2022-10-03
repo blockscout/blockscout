@@ -165,6 +165,11 @@ config :ethereum_jsonrpc,
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s")
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout: debug_trace_transaction_timeout
 
+config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
+  type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
+
+config :ethereum_jsonrpc, EthereumJSONRPC.Variant, type: System.get_env("ETHEREUM_JSONRPC_VARIANT", "nethermind")
+
 ################
 ### Explorer ###
 ################
@@ -179,8 +184,8 @@ healthy_blocks_period =
   |> :timer.minutes()
 
 config :explorer,
-  coin: System.get_env("COIN") || "POA",
-  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "POA",
+  coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
+  coin_name: System.get_env("COIN_NAME", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",

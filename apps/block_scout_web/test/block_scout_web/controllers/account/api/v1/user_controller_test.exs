@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> post("/api/account/v1/user/tags/address", address_tag)
         |> json_response(200)
 
-      response =
+      _response =
         conn
         |> get("/api/account/v1/user/tags/address")
         |> json_response(200) == [tag_address_response]
@@ -214,7 +214,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> post("/api/account/v1/user/tags/transaction", tx_tag)
         |> json_response(200)
 
-      response =
+      _response =
         conn
         |> get("/api/account/v1/user/tags/transaction")
         |> json_response(200) == [tag_response]

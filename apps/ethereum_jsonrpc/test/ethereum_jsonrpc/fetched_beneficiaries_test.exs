@@ -1,8 +1,8 @@
-defmodule EthereumJSONRPC.Nethermind.FetchedBeneficiariesTest do
+defmodule EthereumJSONRPC.FetchedBeneficiariesTest do
   use ExUnit.Case, async: true
 
   alias EthereumJSONRPC
-  alias EthereumJSONRPC.Nethermind.FetchedBeneficiaries
+  alias EthereumJSONRPC.FetchedBeneficiaries
 
   describe "from_responses/2" do
     test "when block is not found" do
