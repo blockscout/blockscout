@@ -241,10 +241,16 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       changes_list
       |> Enum.map(fn change ->
         updated_change =
-          if Map.has_key?(change, :token_id) do
-            change
-          else
-            Map.put(change, :token_id, 1)
+          cond do
+            Map.has_key?(change, :token_id) ->
+              change
+
+            Map.get(change, :token_type) == "ERC-20" ->
+              Map.put(change, :token_id, 1)
+
+            true ->
+              Logger.error("Current token balance params has no token_id, change: #{inspect(change)}")
+              Map.put(change, :token_id, 1)
           end
 
         updated_change
