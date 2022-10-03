@@ -76,4 +76,42 @@ defmodule BlockScoutWeb.PagingHelper do
     |> String.split(",")
     |> Enum.uniq()
   end
+
+  def select_block_type(%{"type" => type}) do
+    case String.downcase(type) do
+      "uncle" ->
+        [
+          necessity_by_association: %{
+            :transactions => :optional,
+            [miner: :names] => :optional,
+            :nephews => :required,
+            :rewards => :optional
+          },
+          block_type: "Uncle"
+        ]
+
+      "reorg" ->
+        [
+          necessity_by_association: %{
+            :transactions => :optional,
+            [miner: :names] => :optional,
+            :rewards => :optional
+          },
+          block_type: "Reorg"
+        ]
+
+      _ ->
+        select_block_type(nil)
+    end
+  end
+
+  def select_block_type(_),
+    do: [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional,
+        :rewards => :optional
+      },
+      block_type: "Block"
+    ]
 end
