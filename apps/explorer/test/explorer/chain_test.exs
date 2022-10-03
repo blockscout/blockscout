@@ -3851,7 +3851,8 @@ defmodule Explorer.ChainTest do
         to_address: address,
         transaction: transaction,
         token_contract_address: token_contract_address,
-        token: token
+        token: token,
+        block: transaction.block
       )
 
       fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())
