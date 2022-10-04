@@ -106,7 +106,7 @@ $dashboard-banner-network-stats-label: $tertiary default;
     padding-left: 12px;
     padding-top: 3px;
     position: relative;
-    padding-right: 12px;
+    padding-right: 30px;
 
     @include media-breakpoint-down(md) {
       display: flex;
@@ -161,8 +161,8 @@ $dashboard-banner-network-stats-label: $tertiary default;
   .dashboard-banner-chart-legend-label {
     color: $dashboard-banner-chart-legend-label-color;
     display: block;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 400;
     line-height: 1.2;
     margin: 0 0 5px;
 
@@ -179,7 +179,7 @@ $dashboard-banner-network-stats-label: $tertiary default;
   .dashboard-banner-chart-legend-value {
     color: $dashboard-banner-chart-legend-value-color;
     display: block;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: normal;
     line-height: 1.2;
 
@@ -211,11 +211,12 @@ $dashboard-banner-network-stats-label: $tertiary default;
   justify-content: center;
   margin: 45px 0 -15px 30px;
   max-width: 100%;
-  padding: 30px 0 30px 60px;
+  padding: 30px 0 30px 180px;
   width: 750px;
   position: relative;
 
   @include media-breakpoint-down(lg) {
+    padding-left: 30px;
     margin-top: 15px;
     width: 550px;
   }
@@ -294,5 +295,13 @@ $dashboard-banner-network-stats-label: $tertiary default;
     @media (max-width: 374px) {
       font-size: 0.9rem;
     }
+    font-family: "Minecraft";
+    font-style: normal;
+    font-size: 28px;
+    // line-height: 100%;
+    text-align: left;
+    vertical-align: top;
+    font-weight: bold;
+    color: #fff !important;
   }
 }

@@ -1,62 +1,13 @@
-$body-dark: #1c1d31 !default; // body background
-$dark-bg: #22223a !default; // hero shade
-$dark-light-bg: #282945 !default; // pills bg shade
-$dark-light: #313355 !default; // tile light top share
-$labels-dark: #8a8dba !default; // header nav, labels
+$body-dark: #1B1E21; // body background
+$dark-bg: #101112; // hero shade
+$dark-light-bg: #25282C; // pills bg shade
+$dark-light: #1B1E21; // tile light top share
+$labels-dark: #A4A9B4; // header nav, labels
 $dark-stakes-banned-background: #3e314c;
-$dark-primary-nav: $dark-primary !default;
-
-$navbar-color-dark-mode: $dark-light-bg !default;
-$navbar-search-color-dark-mode: $dark-bg !default;
-$navbar-search-slash-icon-color: $primary !default;
-$navbar-link-color-dark-mode: $labels-dark !default;
-$navbar-menu-icons-fill: $labels-dark !default;
-$navbar-toggler-icon-dark-mode: invert(1) !default;
-$navbar-dropdown-item-color-hover-dark-mode: #3f426c !default;
-$dropdown-item-color-dark-mode: $dark-light !default;
-$dropdown-item-color-hover-dark-mode: #3f426c !default;
-
-$btn-line-dark-mode: $dark-primary !default;
-$btn-line-border-hover-dark-mode: $dark-primary !default;
-$btn-line-background-color-hover-dark-mode: $dark-primary !default;
-$btn-dropdown-line-background-color-dark-mode: $dark-light !default;
-$btn-dropdown-line-color-dark-mode: $labels-dark !default;
-
-$logo-filter-dark-mode: brightness(0) invert(1) !default;
-$layout-container-color-dark-mode: $body-dark !default;
-$tile-block-number-color-dark-mode: $labels-dark !default;
-$tile-transaction_hash_link-color-dark-mode: $labels-dark !default;
-$tile-address_hash_link-color-dark-mode: $labels-dark !default;
-$tile-body-color-dark-mode: $dark-light !default;
-$tile-bottom-contents-color-dark-mode: $dark-bg !default;
-$tile-type-block-border-left-color: $dark-primary !default;
-$tile-tx-fee-color-dark-mode: $labels-dark !default;
-$tile-data-from-now-color-dark-mode: $labels-dark !default;
-$tile-transaction-type-block-border-color: $dark-primary !default;
-
-$card-color-dark-mode: $dark-light-bg !default;
-$card-title-color-dark-mode: #fff !default;
-$card-tab-text-color-dark-mode: #fff !default;
-$alert-danger-background-color-dark-mode: $dark-light !default;
-$form-control-background-color-dark-mode: $dark-light !default;
-$stakes-td-border-bottom-color-dark-mode: darken($labels-dark, 30) !default;
-$stakes-table-head-color-dark-mode: $labels-dark !default;
-$text-muted-dark-mode: #6c757d !default;
-$data-empty-response-message-dark-mode: #fff !default;
-$tooltip-background-color-dark-mode: $dark-primary !default;
-$tooltip-inversed-background-color-dark-mode: $btn-line-color !default;
-
-$dashboard-stats-left-border-color-dark-mode: $dark-secondary !default;
-$dashboard-banner-chart-legend-label-color-dark-mode: $labels-dark !default;
-$dashboard-banner-network-plain-container-background-color-dark-mode: $dark-light-bg !default;
-$dashboard-line-color-price-dark-mode: $dark-primary !default;
-$dashboard-line-color-market-dark-mode: $dark-secondary !default;
-
-$footer-background-color-dark-mode: $dark-light-bg !default;
-$footer-text-color-dark-mode: $labels-dark !default;
-$footer-link-color-dark-mode: $labels-dark !default;
-$footer-item-disc-color-dark-mode: $dark-secondary !default;
-
+$dark-font-color: #84B0D3;
+$navbar-bg: #1a1e23;
+$dark-icon-color: #68778d;
+$dark-header-font-color: #A4A9B4;
 // Switcher
 .dark-mode-changer {
 	display: inline-flex;
@@ -85,155 +36,100 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 }
 
 .dark-theme-applied {
-	color: #fff;
+	color: $dark-header-font-color;
 
-	.dark-block-loader {
-		background-color: $card-color-dark-mode;
+	.card-title {
+		color: $dark-header-font-color;
 	}
-
-	#slash-icon {
-		border-color: $navbar-search-slash-icon-color !important;
-		color: $navbar-search-slash-icon-color !important;
-	}
-
-	.text-muted {
-		color: $text-muted-dark-mode !important;
-	}
-
-	div[data-empty-response-message] {
-		color: $data-empty-response-message-dark-mode;
-	}
-
 	// navbar
 	.navbar.navbar-primary {
-		background-color: $navbar-color-dark-mode !important;
+		background-color: $navbar-bg;
 		.input-group-text {
 			&.border {
-				background-color: $navbar-color-dark-mode !important;
+				background-color: $navbar-bg;
 			}
 		}
 	}
 	.navbar-brand .navbar-logo {
-		filter: $logo-filter-dark-mode !important;
+		filter: brightness(0) invert(1);
 	}
 	.navbar.navbar-primary .navbar-nav .nav-link {
-		color: $navbar-link-color-dark-mode !important;
+		color: #fff;
 		.nav-link-icon {
 			svg path {
-				fill: $navbar-menu-icons-fill;
+				fill: $dark-icon-color;
 			}
 		}
 		&.active, &:hover {
 			.nav-link-icon {
 				svg path {
-					fill: $dark-primary-nav;
+					fill: $dark-primary;
 				}
 			}
 			&:before {
-				background-color: $dark-primary-nav;
+				background-color: $dark-primary;
 			}
 		}
 	}
 	.navbar.navbar-primary .form-control {
-		background-color: $navbar-search-color-dark-mode !important;
-		border-color: $navbar-search-color-dark-mode !important;
+		background-color: $navbar-bg;
+		border-color: $navbar-bg;
 		color: #fff;
 		&::placeholder {
 			color: $labels-dark;
 		}
 	}
 	.navbar.navbar-primary .navbar-toggler .navbar-toggler-icon {
-		filter: $navbar-toggler-icon-dark-mode;
+		filter: invert(1);
 	}
 
 	// footer
 	.footer {
-		background: $footer-background-color-dark-mode;
-		color: $footer-text-color-dark-mode;
+		background: $dark-bg;
+		color: $labels-dark;
+	}
+	.footer-logo { 
+		filter: brightness(0) invert(1); 
 	}
 	.footer-social-icon,
 	.footer-link {
-		color: $footer-link-color-dark-mode;
+		color: $dark-font-color;
 	}
 	.footer-social-icon:hover,
 	.footer-link:hover {
 		color: #fff;
 	}
 	.footer-list ul li::before {
-		background-color: $footer-item-disc-color-dark-mode;
-	}
-
-	// hero stats
-
-	.dashboard-banner-network-plain-container,
-	.dashboard-banner-network-plain-container::after {
-		background-color: $dashboard-banner-network-plain-container-background-color-dark-mode !important;
-	}
-	.dashboard-banner-network-stats-label,
-	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
-		color: $dashboard-banner-chart-legend-label-color-dark-mode !important;
-	}
-	.dashboard-banner-network-stats-item::before {
-		background-color: $dashboard-stats-left-border-color-dark-mode !important;
-	}
-	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item {
-		&.price-per-day {
-			&::before {
-			  background-color: $dashboard-line-color-price-dark-mode;
-			}
-		  }
-	  
-		  &.gas-price-oracle {
-			&::before {
-			  background-color: $dashboard-line-color-price-dark-mode;
-			}
-		  }
-	  
-		  &.market-cap-per-day {
-			&::before {
-			  background-color: $dashboard-line-color-market-dark-mode;
-			}
-		  }
-	  
-		  &.tx-per-day {
-			&::before {
-			  background: $dashboard-line-color-transactions-dark-theme;
-			}
-		  }
+		background-color: $dark-secondary;
 	}
 
 	// main container, layout, cards
 	.layout-container main {
-		background-color: $layout-container-color-dark-mode !important;
+		background-color: $dark-bg;
 	}
 
 	.card {
-		background-color: $card-color-dark-mode !important;
-		box-shadow: 0 0 30px 0 rgba(23, 24, 41, 0.5);
+		background-color: $body-dark;
+		box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
 	}
 
 	.card-header {
-		border-bottom-color: darken($navbar-menu-icons-fill, 30);
+		border-bottom-color: darken($labels-dark, 30);
 	}
 
 	.address-detail-hash-title {
 		color: #fff;
 	}
 
-	.card-title {
-		color: $card-title-color-dark-mode;
-	}
-
 	.card-tabs {
-		border-bottom-color: darken($navbar-menu-icons-fill, 30);
+		border-bottom-color: darken($labels-dark, 30);
 	}
 
 	.card-tab {
 		background-color: transparent;
-		color: $card-tab-text-color-dark-mode;
 		&:hover:not(.active) {
-			background-color: rgba($dark-primary, .15);
-			color: $dark-primary;
+			background-color: rgba($dark-primary-alternate, .15);
+			color: $dark-font-color;
 		}
 		&.active {
 			background-color: $dark-primary-alternate;
@@ -247,20 +143,23 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 
 	// Components
 	a {
-		color: $dark-primary;
+		color: $dark-font-color;
+	}
+	.tile-transactions {
+		color: $labels-dark;
 	}
 
 	.tile, .tile-code {
-		border-top-color: $tile-body-color-dark-mode !important;
-		border-bottom-color: $tile-body-color-dark-mode !important;
-		border-right-color: $tile-body-color-dark-mode !important;
-		background-color: $tile-body-color-dark-mode !important;
+		border-top-color: $dark-light;
+		border-bottom-color: $dark-light;
+		border-right-color: $dark-light;
+		background-color: #232629;
 		color: $labels-dark;
 		&:not([class^="tile tile-type"]) {
-			border-left-color: $tile-body-color-dark-mode;
+			border-left-color: $dark-light;
 		}
 		&.tile-type-coin-balance {
-			border-left-color: $tile-body-color-dark-mode;
+			border-left-color: $dark-light;
 		}
 		.tile-title {
 			color: #fff;
@@ -270,13 +169,13 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 		}
 	}
 	.tile-bottom-contents {
-		background-color: $tile-bottom-contents-color-dark-mode;
+		background-color: $dark-bg;
 	}
 	a.tile-title {
-		color: #fff !important;
+		color: $dark-font-color !important;
 	}
 	.tile.tile-type-block .tile-transaction-type-block a {
-		color: #fff;
+		color: $dark-font-color;
 	}
 	.fade-up-blocks-chain .tile-type-block-animation {
 		background-color: $dark-light;
@@ -293,38 +192,20 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 	.tile .tile-body a,
 	.tile a:hover,
 	.tile span[data-address-hash],
-	.tile a[data-test=token_link] { color: $dark-primary; }
+	.tile a[data-test=token_link] { color: $dark-font-color; }
 	.fade-up-blocks-chain .tile-type-block-animation .tile-type-line-up {
 		background-color: $dark-primary;
 	}
 	.tile.tile-type-block {
-		border-left-color: $tile-type-block-border-left-color;
-		& a[data-selector=block-number] {
-			color: $tile-block-number-color-dark-mode !important;
-		}
-		&[data-selector="block-tile"] {
-			border-left-color: $dark-primary !important;
-		}
-	}
-	.tile.tile-type-transaction {
-		& a[data-test=transaction_hash_link] {
-			color: $tile-transaction_hash_link-color-dark-mode !important;
-		}
-		& a[data-test=address_hash_link] span {
-			color: $tile-address_hash_link-color-dark-mode !important;
-		}
-		& span[data-test=tx-fee] {
-			color: $tile-tx-fee-color-dark-mode !important;
-		}
-		& span[data-test=data-from-now] {
-			color: $tile-data-from-now-color-dark-mode !important;
-		}
+		border-left-color: $dark-primary
 	}
 	.tile.tile-type-block .tile-status-label {
-		color: $dark-primary;
+		color: $labels-dark;
 	}
 	.tile.tile-type-block .tile-transaction-type-block {
-		border-color: $tile-transaction-type-block-border-color !important;
+		border-right-color: $dark-primary;
+		border-top-color: $dark-primary;
+		border-bottom-color: $dark-primary;
 	}
 	.tile .progress {
 		background-color: rgba(#fff, .2);
@@ -333,29 +214,31 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 		background-color: $dark-primary;
 	}
 	.tile .tile-title-lg:not([data-balance-change-sign]) {
-		color: $dark-primary;
+		color: $dark-font-color;
 	}
-
+	
+	.dark-block-loader {
+		background-color: #232629;
+	}
 	// btns
 
 	.btn-line {
 		background-color: transparent;
-		border-color: $btn-line-dark-mode;
-		color: $btn-line-dark-mode;
+		border-color: #fff;
+		color: #fff;
 		&:hover {
-			border-color: $btn-line-border-hover-dark-mode;
-			background-color: $btn-line-background-color-hover-dark-mode;
-			color: #fff !important;
+			border-color: $dark-primary;
 		}
 	}
 
 	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon .btn-contract-icon {
-		border-color: $dark-primary;
+		border-color: #fff;
+		background-color: transparent;
 		path {
-			fill: $dark-primary;
+			fill: #fff;
 		}
 		&:hover {
-			background-color: $dark-primary;
+			border-color: $dark-primary;
 			path {
 				fill: #fff;
 			}
@@ -363,54 +246,57 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 	}
 
 	// pagination
+	.page-number {
+		background-color: $body-dark;
+	}
 	.pagination-container .pagination .page-link {
-		color: $navbar-menu-icons-fill;
-		border-color: $dropdown-item-color-dark-mode;
-		background-color: $dropdown-item-color-dark-mode;
+		color: $labels-dark;
+		border-color: $dark-light-bg;
+		background-color: $dark-light-bg;
 		&:not(.no-hover):hover {
 			color: #fff;
-			background-color: $dark-primary;
+			background-color: $dark-light-bg;
 			path {
 				fill: #fff;
 			}
 		}
 		&[disabled] {
-			color: $navbar-menu-icons-fill;
-			border-color: $dropdown-item-color-dark-mode;
-			background-color: $dropdown-item-color-dark-mode;
+			color: $labels-dark;
+			border-color: $dark-light;
+			background-color: $dark-light;
 		}
 	}
 
 	// dropdown
 	.dropdown-menu {
-		background-color: $dropdown-item-color-dark-mode;
-		border-left-color: $dropdown-item-color-dark-mode;
-		border-right-color: $dropdown-item-color-dark-mode;
-		border-bottom-color: $dropdown-item-color-dark-mode;
+		background-color: $dark-light;
+		border-left-color: $dark-light;
+		border-right-color: $dark-light;
+		border-bottom-color: $dark-light;
 	}
 
 	.dropdown-item {
 		color: #fff;
 		&:hover {
-			background-color: rgba(#fff, .1);
+			background-color: #EB4626;
 		}
 	}
 	.dropdown-item.active {
-		background-color: $dark-primary;
+		background-color: #EB4626;
 	}
 	.dropdown-item.active.header,	.dropdown-item.header:hover,	.dropdown-item.header:focus {
-		background-color: $dropdown-item-color-dark-mode !important;
+		background-color: $dark-light !important;
 	}
 	.btn-dropdown-line {
-		background-color: $btn-dropdown-line-background-color-dark-mode;
-		border-color: $btn-dropdown-line-background-color-dark-mode;
-		color: $btn-dropdown-line-color-dark-mode;
+		background-color: $dark-light;
+		border-color: $dark-light;
+		color: $labels-dark;
 	}
 
 	// table
 	.stakes-table-head, .stakes-table-th {
-		background-color: $tile-body-color-dark-mode;
-		color: $stakes-table-head-color-dark-mode;
+		background-color: $dark-light-bg;
+		color: $labels-dark;
 	}
 
 	.stakes-table-body {
@@ -422,7 +308,7 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 	}
 
 	.stakes-td {
-		border-bottom-color: $stakes-td-border-bottom-color-dark-mode;
+		border-bottom-color: darken($labels-dark, 30);
 	}
 
 	.stakes-tr-banned {
@@ -445,10 +331,10 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 	}
 
 	.table th, .table td {
-		border-top-color: darken($navbar-menu-icons-fill, 30);
+		border-top-color: darken($labels-dark, 30);
 	}
 	hr {
-		border-top-color: darken($navbar-menu-icons-fill, 30);
+		border-top-color: darken($labels-dark, 30);
 	}
 
 	.i-tooltip {
@@ -473,7 +359,7 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 
 	// api's
 	.api-anchors-list {
-		background-color: $dropdown-item-color-dark-mode;
+		background-color: $dark-light;
 	}
 	.api-doc-list-item {
 		border-bottom-color: darken($labels-dark, 30);
@@ -501,10 +387,10 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 
 	//tooltips
 	.tooltip .arrow:before {
-		border-top-color: $tooltip-background-color-dark-mode;
-    	border-bottom-color: $tooltip-background-color-dark-mode;
+		border-top-color: $dark-bg;
+		border-bottom-color: $dark-bg;
 	}
-	.tooltip > .tooltip-inner {background-color: $tooltip-background-color-dark-mode;}
+	.tooltip > .tooltip-inner {background-color: $dark-bg;}
 
 	.tooltip-pale-color.bs-tooltip-top .arrow::before,
 	.tooltip-pale-color.bs-tooltip-auto[x-placement^="top"] .arrow::before {
@@ -589,9 +475,9 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 
 	// info allert
 	.alert-info {
-		color: $labels-dark;
-		background-color: $dark-light;
-		border-color: $dark-light;
+		color: #A6BCF5;
+		background-color: #232629;
+		border-color: #232629;
 	}
 
 	// dark text
@@ -639,20 +525,20 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 
 	// Form Controlls
 	.form-control {
-		background-color: $form-control-background-color-dark-mode;
-		border-color: $form-control-background-color-dark-mode;
+		background-color: $dark-light-bg;
+		border-color: $dark-light-bg;
 		color: #fff;
 		transition: border-color 0.15s ease-in-out;
 
 		&[readonly] {
-			background-color: $form-control-background-color-dark-mode !important;
+			background-color: $dark-light !important;
 		}
 
 		&::placeholder {
 			color: $labels-dark;
 		}
 		&:focus {
-			background-color: $form-control-background-color-dark-mode;
+			background-color: $dark-light;
 			border-color: $dark-primary;
 			color: #fff;
 		}
@@ -662,7 +548,7 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 		&:-webkit-autofill:focus {
 			caret-color: #fff;
 			-webkit-text-fill-color: #fff;
-			-webkit-box-shadow: 0 0 0px 1000px $form-control-background-color-dark-mode inset;
+			-webkit-box-shadow: 0 0 0px 1000px $dark-light inset;
 		}
 	}
 
@@ -699,9 +585,9 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 
 	// Content loading placeholders
 	.tile-loader, .table-content-loader {
-		background-color: $tile-bottom-contents-color-dark-mode !important;
+		background-color: $dark-bg !important;
 		&:before {
-			background: linear-gradient(to right, $tile-bottom-contents-color-dark-mode 2%, lighten($tile-bottom-contents-color-dark-mode, 3) 18%, $tile-bottom-contents-color-dark-mode 33%);
+			background: linear-gradient(to right, $dark-bg 2%, lighten($dark-bg, 3) 18%, $dark-bg 33%);
 		}
 	}
 
@@ -857,8 +743,8 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 	}
 
 	.line-numbers [data-line-number]:before {
-		color: #3f436b !important;
-		border-right-color: #3f436b !important;
+		color: $dark-font-color !important;
+		border-right-color: $dark-font-color !important;
 	}
 
 	// 'text dark' label
@@ -1025,8 +911,8 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 	}
 
 	.alert-danger {
-		background-color: $alert-danger-background-color-dark-mode;
-		border-color: $alert-danger-background-color-dark-mode;
+		background-color: #232629;
+		border-color: #232629;
 		.alert-link {
 			color: $alert-danger-color;
 		}
@@ -1091,30 +977,30 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 
 	.tooltip-inversed-color {
 		.tooltip-inner {
-			background-color: $tooltip-inversed-background-color-dark-mode !important;
+			background-color: $btn-line-color !important;
 			color: #fff !important;
 		}
 	}
 
 	.tooltip-inversed-color.bs-tooltip-top .arrow::before,
 	.tooltip-inversed-color.bs-tooltip-auto[x-placement^="top"] .arrow::before {
-		border-top-color: $tooltip-inversed-background-color-dark-mode !important;
+		border-top-color: $btn-line-color !important;
 	}
 		
 	.tooltip-inversed-color.bs-tooltip-right .arrow::before,
 	.tooltip-inversed-color.bs-tooltip-auto[x-placement^="right"] .arrow::before {
-		border-right-color: $tooltip-inversed-background-color-dark-mode !important;
+		border-right-color: $btn-line-color !important;
 	}
 		
 	.tooltip-inversed-color.bs-tooltip-bottom .arrow::before,
 	.tooltip-inversed-color.bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
-		border-bottom-color: $tooltip-inversed-background-color-dark-mode !important;
+		border-bottom-color: $btn-line-color !important;
 	}
 		
 		
 	.tooltip-inversed-color.bs-tooltip-left .arrow::before,
 	.tooltip-inversed-color.bs-tooltip-auto[x-placement^="left"] .arrow::before {
-		border-left-color: $tooltip-inversed-background-color-dark-mode !important;
+		border-left-color: $btn-line-color !important;
 	}
 
 	.stakes-top {
@@ -1134,17 +1020,17 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 		  }
 	}
 	.main-search-autocomplete {
-		background-color: $navbar-search-color-dark-mode !important;
+		background-color: $navbar-bg !important;
 		color: #fff !important;
 	}
 	.autocomplete-category {
 		color: #fff !important;
 	}
 	ul[id^='autoComplete_list_'] {
-		background-color: $navbar-color-dark-mode !important;
+		background-color: $dark-light-bg !important;
 	}
 	li[id^='autoComplete_result_'] {
-		background-color: $navbar-color-dark-mode !important;
+		background-color: $dark-light-bg !important;
 		color: #fff !important;
 
 		&:hover {
@@ -1154,49 +1040,22 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 			background-color: $dark-primary !important;
 		}
 	}
-	.dropdown-item {
-		background-color: $dropdown-item-color-dark-mode !important;
-		color: #fff !important;
-	}
-	.dropdown-item.active:not(.header),
-	.dropdown-item:not(.header):hover,
-	.dropdown-item:not(.header):focus {
-		background-image: none;
-		width: 100%;
-		background-color: $dropdown-item-color-hover-dark-mode !important;
-	}
-	.navbar.navbar-primary .navbar-nav {
-		.nav-item .dropdown-menu .dropdown-item {
-			&.active,
-			&:focus,
-			&:hover {
-			  background-color: $dark-primary-nav !important;
-			  color: #fff;
-			}
-			&.active:not(.header),
-			&:not(.header):hover,
-			&:not(.header):focus {
-				background-color: $navbar-dropdown-item-color-hover-dark-mode !important;
-			}
-		}
-	}
-	.confirmations-label:after {
-		border-left: .9rem solid $card-color-dark-mode;
-	}
-	
-	.i-tooltip-2:hover{
-		color: $labels-dark;
-	}
-	
-	.btn-no-border-link-to-tems {
-		border-color: $dark-primary !important;
-		color: $dark-primary !important;
-	}
 }
 
 .navbar-dark .navbar-toggler {
 	color: rgba(255, 255, 255, 0.5);
 	border: none;
+}
+
+.dark-theme-applied .dropdown-item {
+	background-color: $dark-light !important;
+	color: #fff !important;
+}
+
+.dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
+    background-image: none;
+    width: 100%;
+    background-color: #EB4626 !important;
 }
 
 @media (max-width: 991.98px) {
@@ -1205,7 +1064,7 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 	.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:focus {
 		background-image: none;
 		width: 100%;
-		background: none;
+		background-color: #35335d !important;
 		color: white;
 		border: none;
 	}
@@ -1230,4 +1089,17 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 		top: 14%;
 		color: $dark-primary;
 	}
+}
+.dark-theme-applied .confirmations-label:after {
+	border-left: .9rem solid $body-dark;
+}
+
+.dark-theme-applied .i-tooltip-2:hover{
+	color: $labels-dark;
+}
+
+.dark-theme-applied .btn-no-border-link-to-tems {
+	background-color: rgba($dark-font-color, 0.1);
+	border-color: $dark-font-color;
+	color: $dark-font-color;
 }

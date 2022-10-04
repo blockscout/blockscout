@@ -1,2 +1,34 @@
 @import url('https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700');
 @import url('https://fonts.googleapis.com/css?family=Roboto');
+
+// @font-face {
+//   font-family: 'Minecraftia';
+//   font-style: normal;
+//   src: url(../Minecraftia-Regular.ttf) format("truetype"); 
+// }
+
+@font-face {
+  font-family: 'Minecraft';
+  font-style: normal;
+  font-weight: bold;
+  src: url(../MinecraftBold-nMK1.otf) format("opentype"); 
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  font-style: italic;
+  font-weight: bold;
+  src: url(../MinecraftBoldItalic-1y1e.otf) format("opentype"); 
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  font-style: italic;
+  src: url(../MinecraftItalic-R8Mo.otf) format("opentype"); 
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  font-style: normal;
+  src: url(../MinecraftRegular-Bmg3.otf) format("opentype"); 
+}

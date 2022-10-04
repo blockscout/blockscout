@@ -7,7 +7,7 @@
         <%= if gas_prices_from_oracle do %>
         <span class="dashboard-banner-chart-legend-value inline">
             <div>
-            <div class="d-flex flex-row" style="height: 20px; line-height: 20px;">
+            <div class="d-flex flex-row" style="height: 20px">
                 <div class="flex-column"><%= "#{gas_prices_from_oracle["average"]}" <> " " %><%= gettext "Gwei" %></div>
                 <span
                 data-toggle="tooltip"
@@ -23,7 +23,7 @@
                 </div>
                 "
                 >
-                <span style="display: inline-block; height: 20px; width: 12px;" class="fontawesome-icon info-circle ml-1"></span>
+                <span style="display: inline-block; height: 18px; width: 12px;" class="fontawesome-icon info-circle ml-1"></span>
                 </span>
             </div>
             </div>

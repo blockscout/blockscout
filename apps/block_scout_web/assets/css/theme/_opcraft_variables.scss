@@ -1,0 +1,219 @@
+// general
+$primary: #FF0420;
+$secondary: #638BAF;
+$tertiary:  #F19F38;
+$additional-font: #fff;
+$background-color: #F1F4F9;
+$font-color: #202327;
+// footer
+$footer-background-color: #F1F4F9;
+$footer-title-color: $font-color;
+$footer-text-color: $font-color;
+$footer-item-disc-color: $secondary;
+// dashboard
+$dashboard-line-color-price: $tertiary; // price left border
+
+$dashboard-line-color-transactions: $primary;
+$dashboard-banner-chart-legend-label-color: $font-color;
+$dashboard-stats-item-label-color: $dashboard-banner-chart-legend-label-color;
+$dashboard-banner-chart-legend-value-color: $font-color; // chart labels
+$dashboard-stats-item-value-color: $primary; // stat values
+
+$dashboard-stats-item-border-color: $secondary; // stat border
+
+$dashboard-banner-gradient-start: $primary; // gradient begin
+
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
+
+$dashboard-banner-network-plain-container-background-color: $primary; // stats bg
+
+
+// navigation
+$dropdown-menu-item-hover-color: $primary !default;
+$dropdown-menu-item-hover-background: rgba($primary, .1) !default;
+$header-icon-color-hover: $primary;
+$header-icon-border-color-hover: $primary;
+
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $primary; // button border and font color && hover bg color
+$btn-copy-color: $primary; // btn copy
+$btn-qr-color: $primary; // btn qr-code
+$btn-address-card-icon-color: $primary; // btn address color
+
+//links & tile
+$tile-body-a-color: $primary;
+$tile-type-block-color: $primary;
+$tile-type-progress-bar-color: $primary;
+$tile-transactions-color: #68778D;
+a.tile-title { color: $font-color !important; }
+
+.tile-title {
+  color: $font-color !important;
+}
+
+.card-title {
+  color: $font-color;
+}
+
+a {
+  color: $secondary;
+}
+
+.tile span[data-address-hash] {
+  color: $secondary !important;
+}
+.tile span[data-address-hash] span{
+  color: $secondary !important;
+}
+
+.tile span {
+  color: #68778D;
+}
+
+.tile .tile-body a {
+  color: $secondary !important;
+}
+
+.footer-link {
+  color: $secondary !important;
+}
+
+.navbar-logo {
+  max-height: 30px;
+}
+
+.dropdown-item {
+  &:hover,
+  &:active,
+  &.active {
+    background-color: rgba($primary, 0.05) !important;
+    color: $font-color !important;
+  }
+}
+
+// card
+$card-background-1: $primary;
+$card-tab-active: $primary;
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(#ffffff, #f1f4f9);
+	}
+}
+
+.dashboard-banner-network-stats-item::before {
+  background-color: #fff !important;
+}
+
+.dashboard-banner-network-stats-label {
+  font-family: "Minecraft";
+  font-style: normal;
+  font-size: 14px;
+  line-height: 100%;
+  text-align: left;
+  vertical-align: top;
+  color: #fff !important;
+}
+
+.dashboard-banner-network-plain-container::after {
+  background-color: $primary !important;
+}
+
+// Badges
+$badge-neutral-color: $primary;
+$badge-neutral-background-color: rgba($primary, .1);
+$api-text-monospace-color: $primary;
+
+// Tokens dropdown
+.token-balance-dropdown[aria-labelledby="dropdown-tokens"] {
+  .dropdown-items .dropdown-item:hover {
+    color: $primary !important;
+  }
+}
+
+.dashboard-banner-chart-legend {
+  .dashboard-banner-chart-legend-item.tx-per-day,
+  .dashboard-banner-chart-legend-item.price-per-day,
+  .dashboard-banner-chart-legend-item.market-cap-per-day,
+  .dashboard-banner-chart-legend-item.gas-price-oracle
+   {
+    &::before {
+      background-color: $primary !important;
+    }
+  }
+}
+
+.dashboard-banner-chart-legend-label {
+  font-family: 'Minecraft';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 14px;
+  color: $font-color;
+  white-space: nowrap;
+}
+
+.dashboard-banner-chart-legend-value {
+  font-family: 'Minecraft';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;  
+  color: $font-color;
+}
+
+.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
+  border-color: $primary !important;
+  path {
+    fill: $primary !important;
+  }
+  &:hover {
+    background-color: $primary !important;
+    path {
+      fill: #fff !important;
+    }
+  }
+  &.btn-copy-icon-small {
+    path {
+      fill: $secondary !important;
+    }
+    &:hover {
+      background-color: transparent !important;
+      path {
+        fill: $secondary !important;
+      }
+    }
+  }
+}
+
+// Dark theme
+$dark-primary: #EB4626;
+$dark-secondary: #84B0D3;
+$dark-primary-alternate: #68778d; 
+
+.footer-list ul li::before {
+  background-color: #68778D !important;
+}
+
+.fontawesome-icon {
+  background-color: $secondary !important;
+}
+
+.navbar {
+  box-shadow: none;
+}
+
+.tile.tile-type-block .tile-transaction-type-block a{
+  color: $primary !important;
+}
+
+.alert-info {
+  color: #202327 !important;
+  background-color: #F1F4F9 !important;
+  border-color: #F1F4F9 !important;
+}
+
+.alert-info a{
+  color: #202327 !important;
+}
