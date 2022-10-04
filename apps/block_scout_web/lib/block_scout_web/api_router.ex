@@ -101,6 +101,10 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:block_hash_or_number", V2.BlockController, :block)
       get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
     end
+
+    scope "/addresses" do
+      get("/:address_hash", V2.AddressController, :address)
+    end
   end
 
   scope "/v1", as: :api_v1 do
