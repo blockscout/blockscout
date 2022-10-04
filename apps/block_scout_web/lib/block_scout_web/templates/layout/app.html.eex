@@ -225,10 +225,11 @@
           <%= raw(System.get_env("MAINTENANCE_ALERT_MESSAGE")) %>
         </div>
       <% end %>
-      <%= if not Explorer.Chain.finished_internal_transactions_indexing?() do %>
-        <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
+      <% indexed_ratio = Explorer.Chain.indexed_ratio() %>
+      <%= if not Explorer.Chain.finished_indexing?(indexed_ratio) do %>
+        <div class="alert alert-warning text-center mb-0 p-3" data-seindexed_ratiolector="indexed-status">
           <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html" %>
-          <span data-indexed-ratio="<%=Explorer.Chain.indexed_ratio() %>"></span>
+          <span data-indexed-ratio="<%= indexed_ratio %>"></span>
           <%= gettext("- We're indexing this chain right now. Some of the counts may be inaccurate.") %>
         </div>
       <% end %>
