@@ -24,6 +24,7 @@
 
 ### Chore
 
+- [#6221](https://github.com/blockscout/blockscout/pull/6221) - API CORS Origins management
 - [#6204](https://github.com/blockscout/blockscout/pull/6204) - Refactor contract libs render, CONTRACT_VERIFICATION_MAX_LIBRARIES, refactor parsing integer env vars in config
 - [#6195](https://github.com/blockscout/blockscout/pull/6195) - Docker compose configs improvements: Redis container name and persistent storage
 - [#6192](https://github.com/blockscout/blockscout/pull/6192), [#6207](https://github.com/blockscout/blockscout/pull/6207) - Hide Indexing Internal Transactions message, if INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=true
