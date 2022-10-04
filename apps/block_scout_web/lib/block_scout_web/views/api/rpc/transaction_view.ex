@@ -87,11 +87,11 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
 
   defp prepare_transaction_cosmos(transaction, block_height, logs, _next_page_params) do
     %{
-      "block_height" => transaction.block_number,
-      "block_hash" => "#{transaction.block.hash}",
-      "block_time" => transaction.block.timestamp,
+      "blockHeight" => transaction.block_number,
+      "blockHash" => "#{transaction.block.hash}",
+      "blockTime" => transaction.block.timestamp,
       "hash" => "#{transaction.hash}",
-      "cosmos_hash" => "#{transaction.cosmos_hash}",
+      "cosmosHash" => "#{transaction.cosmos_hash}",
       "confirmations" => block_height - transaction.block_number,
       "success" => if(transaction.status == :ok, do: true, else: false),
       "error" => "#{transaction.error}",
@@ -99,12 +99,12 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "to" => "#{transaction.to_address_hash}",
       "value" => transaction.value.value,
       "input" => "#{transaction.input}",
-      "gas_limit" => transaction.gas,
-      "gas_used" => transaction.gas_used,
-      "gas_price" => transaction.gas_price.value,
-      "cumulative_gas_used" => transaction.cumulative_gas_used,
+      "gasLimit" => transaction.gas,
+      "gasUsed" => transaction.gas_used,
+      "gasPrice" => transaction.gas_price.value,
+      "cumulativeGasUsed" => transaction.cumulative_gas_used,
       "index" => transaction.index,
-      "created_contract_code_indexed_at" => transaction.created_contract_code_indexed_at,
+      "createdContractCodeIndexedAt" => transaction.created_contract_code_indexed_at,
       "nonce" => transaction.nonce,
       "r" => transaction.r,
       "s" => transaction.s,
@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "maxFeePerGas" => parse_gas_value(transaction.max_fee_per_gas),
       "type" => transaction.type,
       "logs" => Enum.map(logs, &prepare_log/1),
-      "revert_reason" => "#{transaction.revert_reason}"
+      "revertReason" => "#{transaction.revert_reason}"
     }
   end
 
