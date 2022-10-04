@@ -1185,7 +1185,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "finished_indexing?/0" do
+  describe "finished_internal_transactions_indexing?/0" do
     test "finished indexing" do
       block = insert(:block, number: 1)
 
@@ -1193,11 +1193,11 @@ defmodule Explorer.ChainTest do
       |> insert()
       |> with_block(block)
 
-      assert Chain.finished_indexing?()
+      assert Chain.finished_internal_transactions_indexing?()
     end
 
     test "finished indexing (no txs)" do
-      assert Chain.finished_indexing?()
+      assert Chain.finished_internal_transactions_indexing?()
     end
 
     test "not finished indexing" do
@@ -1209,7 +1209,7 @@ defmodule Explorer.ChainTest do
 
       insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
 
-      refute Chain.finished_indexing?()
+      refute Chain.finished_internal_transactions_indexing?()
     end
   end
 
@@ -1467,6 +1467,12 @@ defmodule Explorer.ChainTest do
   end
 
   describe "indexed_ratio/0" do
+    setup do
+      on_exit(fn ->
+        Application.put_env(:indexer, :first_block, "")
+      end)
+    end
+
     test "returns indexed ratio" do
       for index <- 5..9 do
         insert(:block, number: index)
@@ -1481,6 +1487,17 @@ defmodule Explorer.ChainTest do
 
     test "returns 1.0 if fully indexed blocks" do
       for index <- 0..9 do
+        insert(:block, number: index)
+        Process.sleep(200)
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
+    end
+
+    test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
+      Application.put_env(:indexer, :first_block, "5")
+
+      for index <- 5..9 do
         insert(:block, number: index)
         Process.sleep(200)
       end
@@ -4802,7 +4819,7 @@ defmodule Explorer.ChainTest do
   end
 
   describe "stream_unfetched_token_instances/2" do
-    test "reduces wuth given reducer and accumulator" do
+    test "reduces with given reducer and accumulator for ERC-721 token" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
 
@@ -4827,7 +4844,33 @@ defmodule Explorer.ChainTest do
       assert result.contract_address_hash == token_transfer.token_contract_address_hash
     end
 
-    test "does not fetch token transfers without token id" do
+    test "reduces with given reducer and accumulator for ERC-1155 token" do
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          block_number: 1000,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token,
+          token_id: nil,
+          token_ids: [11]
+        )
+
+      assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
+      assert result.token_ids == token_transfer.token_ids
+      assert result.contract_address_hash == token_transfer.token_contract_address_hash
+    end
+
+    test "does not fetch token transfers without token id or token_ids" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
 
@@ -4843,7 +4886,8 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         token_contract_address: token_contract_address,
         token: token,
-        token_id: nil
+        token_id: nil,
+        token_ids: nil
       )
 
       assert {:ok, []} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
@@ -5508,7 +5552,7 @@ defmodule Explorer.ChainTest do
       refute Chain.contract_address?(to_string(address.hash), 1)
     end
 
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "returns true if fetched code from json rpc", %{
       json_rpc_named_arguments: json_rpc_named_arguments
@@ -5531,7 +5575,7 @@ defmodule Explorer.ChainTest do
       assert Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
     end
 
-    @tag :no_parity
+    @tag :no_nethermind
     @tag :no_geth
     test "returns false if no fetched code from json rpc", %{
       json_rpc_named_arguments: json_rpc_named_arguments

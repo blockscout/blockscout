@@ -8,8 +8,9 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   require Logger
 
-  alias Explorer.Chain
-  alias Explorer.Token.InstanceMetadataRetriever
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Address, Cache.BlockNumber, Token}
+  alias Explorer.Token.{InstanceMetadataRetriever, InstanceOwnerReader}
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -50,7 +51,21 @@ defmodule Indexer.Fetcher.TokenInstance do
   end
 
   @impl BufferedTask
-  def run([%{contract_address_hash: token_contract_address_hash, token_id: token_id}], _json_rpc_named_arguments) do
+  def run([%{contract_address_hash: hash, token_id: token_id, token_ids: token_ids}], _json_rpc_named_arguments) do
+    all_token_ids =
+      cond do
+        is_nil(token_id) -> token_ids
+        is_nil(token_ids) -> [token_id]
+        true -> [token_id] ++ token_ids
+      end
+
+    Enum.each(all_token_ids, &fetch_instance(hash, &1))
+    update_current_token_balances(hash, all_token_ids)
+
+    :ok
+  end
+
+  defp fetch_instance(token_contract_address_hash, token_id) do
     case InstanceMetadataRetriever.fetch_metadata(to_string(token_contract_address_hash), Decimal.to_integer(token_id)) do
       {:ok, %{metadata: metadata}} ->
         params = %{
@@ -82,8 +97,57 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         :ok
     end
+  end
 
-    :ok
+  defp update_current_token_balances(token_contract_address_hash, token_ids) do
+    token_ids
+    |> Enum.map(&instance_owner_request(token_contract_address_hash, &1))
+    |> InstanceOwnerReader.get_owner_of()
+    |> Enum.map(&current_token_balances_import_params/1)
+    |> all_import_params()
+    |> Chain.import()
+  end
+
+  defp instance_owner_request(token_contract_address_hash, token_id) do
+    %{
+      token_contract_address_hash: to_string(token_contract_address_hash),
+      token_id: Decimal.to_integer(token_id)
+    }
+  end
+
+  defp current_token_balances_import_params(%{token_contract_address_hash: hash, token_id: token_id, owner: owner}) do
+    %{
+      value: Decimal.new(1),
+      block_number: BlockNumber.get_max(),
+      value_fetched_at: DateTime.utc_now(),
+      token_id: token_id,
+      token_type: Repo.get_by(Token, contract_address_hash: hash).type,
+      address_hash: owner,
+      token_contract_address_hash: hash
+    }
+  end
+
+  defp all_import_params(balances_import_params) do
+    addresses_import_params =
+      balances_import_params
+      |> Enum.reduce([], fn %{address_hash: address_hash}, acc ->
+        case Repo.get_by(Address, hash: address_hash) do
+          nil -> [%{hash: address_hash} | acc]
+          _address -> acc
+        end
+      end)
+      |> case do
+        [] -> %{}
+        params -> %{addresses: %{params: params}}
+      end
+
+    current_token_balances_import_params = %{
+      address_current_token_balances: %{
+        params: balances_import_params
+      }
+    }
+
+    Map.merge(current_token_balances_import_params, addresses_import_params)
   end
 
   @doc """
@@ -92,9 +156,13 @@ defmodule Indexer.Fetcher.TokenInstance do
   def async_fetch(token_transfers) when is_list(token_transfers) do
     data =
       token_transfers
-      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) end)
+      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) and is_nil(token_transfer.token_ids) end)
       |> Enum.map(fn token_transfer ->
-        %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+        %{
+          contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: token_transfer.token_id,
+          token_ids: token_transfer.token_ids
+        }
       end)
       |> Enum.uniq()
 

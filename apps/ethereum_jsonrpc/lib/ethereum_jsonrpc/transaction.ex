@@ -72,7 +72,7 @@ defmodule EthereumJSONRPC.Transaction do
         }
 
   @doc """
-  Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Parity.
+  Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
 
       iex> EthereumJSONRPC.Transaction.elixir_to_params(
       ...>   %{

@@ -10,6 +10,11 @@ config :explorer, Explorer.Repo.Replica1,
   prepare: :unnamed,
   timeout: :timer.seconds(60)
 
+# Configures Account database
+config :explorer, Explorer.Repo.Account,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60)
+
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 
 config :logger, :explorer,

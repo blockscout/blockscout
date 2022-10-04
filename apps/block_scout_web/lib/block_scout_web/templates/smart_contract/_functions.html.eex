@@ -1,6 +1,6 @@
-<% minimal_proxy_template = Chain.get_minimal_proxy_template(@address.hash) %>
-<% metadata_for_verification = minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
-<% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
+<% minimal_proxy_template = if assigns[:custom_abi], do: nil, else: Chain.get_minimal_proxy_template(@address.hash) %>
+<% metadata_for_verification = if assigns[:custom_abi], do: nil, else: minimal_proxy_template || Chain.get_address_verified_twin_contract(@address.hash).verified_contract %>
+<% smart_contract_verified = if assigns[:custom_abi], do: false, else: BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
 <%= unless smart_contract_verified do %>
   <%= if metadata_for_verification do %>
     <%= if minimal_proxy_template do %>
@@ -21,9 +21,6 @@
 <%= if smart_contract_verified && @address.smart_contract.is_changed_bytecode do %>
   <%= render BlockScoutWeb.CommonComponentsView, "_changed_bytecode_warning.html" %>
 <% end %>
-<%= if @action == "write" or (@read_functions_required_wallet && @read_functions_required_wallet != []) do %>
-  <%= render BlockScoutWeb.SmartContractView, "_connect_container.html" %>
-<% end %>
 <%= if @contract_type == "proxy" do %>
 <div class="implementation-container">
     <h2 class="implementation-title">Implementation address: </h2><h3  class="implementation-value"><%= link(
@@ -33,7 +30,7 @@
 </div>
 <% end %>
 <%= for {function, counter} <- Enum.with_index(@read_only_functions ++ @read_functions_required_wallet, 1) do %>
-  <div class="d-flex py-2 border-bottom" data-function>
+  <div class="d-flex py-2 border-bottom" data-function<%= if assigns[:custom_abi], do: "-custom" %>>
     <div class="py-2 pr-2 text-nowrap">
       <%= counter %>.
       <%= case function["type"] do %>
@@ -49,12 +46,6 @@
 
     <%= if queryable?(function["inputs"]) || writable?(function) || Helper.read_with_wallet_method?(function) do %>
       <div style="width: 100%; overflow: hidden;">
-        <%=
-          for status <- ["error", "warning", "success", "question"] do
-            render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
-          end
-        %>
-        <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
         <% function_abi = 
                     case Jason.encode([function]) do 
                       {:ok, abi_string} ->
@@ -66,7 +57,7 @@
                           @contract_abi
                         end 
                     end %>
-        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= function_abi %>" data-implementation-abi="<%= function_abi %>" data-chain-id="<%= Application.get_env(:block_scout_web, :chain_id) %>">
+        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= function_abi %>" data-implementation-abi="<%= function_abi %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>" data-custom-abi="<%= if assigns[:custom_abi], do: true, else: false %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
@@ -101,7 +92,7 @@
           <%= if Helper.payable?(function) do %>
             <div class="form-group pr-3 d-flex">
               <input type="number" name="function_input" tx-value
-              data-toggle="tooltip" title='Amount in native token <<%= gettext("ETH")%>>' class="form-control form-control-sm address-input-sm" placeholder='value(<%= gettext("ETH")%>)' min="0" step="1e-18" />
+              data-toggle="tooltip" title='Amount in native token <<%= Explorer.coin_name() %>>' class="form-control form-control-sm address-input-sm" placeholder='value(<%= Explorer.coin_name() %>)' min="0" step="1e-18" />
             </div>
           <% end %>
 
@@ -143,7 +134,7 @@
                       <span class="py-2 px-2">
                         <input class="wei-ether" type="checkbox" autocomplete="off">
                         <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                        <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
+                        <span class="d-none" data-conversion-text-eth><%= Explorer.coin_name() %></span>
                       </span>
                     </div>
                   </div> 

@@ -1,0 +1,33 @@
+<%= if Explorer.Account.enabled?() do %>
+    <%= if @current_user do %>
+        <li class="nav-item dropdown">
+        <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="nav-link-icon">
+            <img src="<%= Plug.Conn.get_session(@conn, :current_user)[:avatar] %>"  size="20" height="20" width="20"  >
+            </span>
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
+            <div class="header dropdown-item">
+            <%= "Signed in as " <> Plug.Conn.get_session(@conn, :current_user)[:nickname] %>
+            </div>
+            <a href="<%= auth_path(@conn, :profile) %>" class= "dropdown-item"><%= gettext "Profile" %></a>
+            <a href="<%= watchlist_path(@conn, :show) %>" class= "dropdown-item"><%= gettext "Watch list" %></a>
+            <a href="<%= tag_address_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Address Tags" %></a>
+            <a href="<%= tag_transaction_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Transaction Tags" %></a>
+            <a href="<%= api_key_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "API keys" %></a>
+            <a href="<%= custom_abi_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Custom ABI" %></a>
+            <a href="<%= public_tags_request_path(@conn, :index) %>" class= "dropdown-item"><%= gettext "Public Tags" %></a>
+            <a href="<%= BlockScoutWeb.LayoutView.sign_out_link %>" class= "dropdown-item"><%= gettext "Sign out" %></a>
+        </div>
+        </li>
+    <% else %>
+        <li>
+        <a class="nav-link topnav-nav-link" href="<%= BlockScoutWeb.LayoutView.sign_in_link %>" id="navbarBlocksDropdown" role="button" aria-haspopup="true">
+            <span class="nav-link-icon">
+            <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
+            </span>
+            Sign in
+        </a>
+        </li>
+    <% end %>
+<% end %>

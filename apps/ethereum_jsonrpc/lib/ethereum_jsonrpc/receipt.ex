@@ -280,7 +280,7 @@ defmodule EthereumJSONRPC.Receipt do
       one when one in ["0x1", "0x01"] ->
         {:ok, {key, :ok}}
 
-      # pre-Byzantium / Ethereum Classic on Parity
+      # pre-Byzantium
       nil ->
         :ignore
 

@@ -20,7 +20,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
           http_options: http_options()
         ],
         # Which one does not matter, so pick one
-        variant: EthereumJSONRPC.Parity
+        variant: EthereumJSONRPC.Nethermind
       ]
     }
   end

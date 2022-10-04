@@ -8,14 +8,14 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-optimism-bedrock-goerli-stg
+      - production-optimism-opcraft-stg
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 4.1.8
-      DOCKER_CHAIN_NAME: optimism-bedrock-goerli
+      DOCKER_CHAIN_NAME: optimism-opcraft
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
