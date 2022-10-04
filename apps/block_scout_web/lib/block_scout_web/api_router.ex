@@ -23,6 +23,7 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :account_api do
+    plug(CORSPlug, origin: RPCTranslator.api_cors_origins())
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(CheckAccountAPI)
