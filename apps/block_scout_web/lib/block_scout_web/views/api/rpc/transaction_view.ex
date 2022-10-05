@@ -16,10 +16,10 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   def render("gettxcosmosinfo.json", %{
         transaction: transaction,
         block_height: block_height,
-        logs: logs,
-        next_page_params: next_page_params
+        token_transfers: token_transfers,
+        logs: logs
       }) do
-    data = prepare_transaction_cosmos(transaction, block_height, logs, next_page_params)
+    data = prepare_transaction_cosmos(transaction, block_height, token_transfers, logs)
     RPCView.render("show.json", data: data)
   end
 
@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     }
   end
 
-  defp prepare_transaction_cosmos(transaction, block_height, logs, _next_page_params) do
+  defp prepare_transaction_cosmos(transaction, block_height, token_transfers, logs) do
     %{
       "blockHeight" => transaction.block_number,
       "blockHash" => "#{transaction.block.hash}",
@@ -112,6 +112,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "maxPriorityFeePerGas" => parse_gas_value(transaction.max_priority_fee_per_gas),
       "maxFeePerGas" => parse_gas_value(transaction.max_fee_per_gas),
       "type" => transaction.type,
+      "tokenTransfers" => Enum.map(token_transfers, &prepare_token_transfer/1),
       "logs" => Enum.map(logs, &prepare_log/1),
       "revertReason" => "#{transaction.revert_reason}"
     }
@@ -124,6 +125,18 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       _ ->
         gas_field.value
     end
+  end
+
+  defp prepare_token_transfer(token_transfer) do
+    %{
+      "amount" => "#{token_transfer.amount}",
+      "logIndex" => "#{token_transfer.log_index}",
+      "fromAddress" => "#{token_transfer.from_address}",
+      "toAddress" => "#{token_transfer.to_address}",
+      "tokenContractAddress" => "#{token_transfer.token_contract_address}",
+      "tokenName" => "#{token_transfer.token.name}",
+      "tokenSymbol" => "#{token_transfer.token.symbol}"
+    }
   end
 
   defp prepare_log(log) do

@@ -45,11 +45,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          true <- Chain.is_cosmos_tx(txhash_param),
          {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
-           transaction_from_cosmos_hash(txhash_param),
-         paging_options <- paging_options(params) do
+           transaction_from_cosmos_hash(txhash_param) do
       from_api = true
-      logs = Chain.cosmos_hash_to_logs(txhash_param, from_api, paging_options)
-      {logs, next_page} = split_list_by_page(logs)
+      logs = Chain.cosmos_hash_to_logs(txhash_param, from_api)
 
       transaction_updated =
         if (error == "Reverted" || error == "execution reverted") && !revert_reason do
@@ -58,12 +56,29 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
           transaction
         end
 
-      render(conn, :gettxcosmosinfo, %{
-        transaction: transaction_updated,
-        block_height: Chain.block_height(),
-        logs: logs,
-        next_page_params: next_page_params(next_page, logs, params)
-      })
+      case Chain.transaction_has_token_transfers?(transaction_updated.hash) do
+        true ->
+          token_transfers = Chain.transaction_to_token_transfers(
+            transaction_updated.hash,
+            necessity_by_association: %{
+              from_address: :required,
+              to_address: :required,
+              token_contract_address: :required,
+              token: :required
+            }
+          )
+          render(conn, :gettxcosmosinfo, %{
+                        transaction: transaction_updated,
+                        block_height: Chain.block_height(),
+                        token_transfers: token_transfers,
+                        logs: logs})
+        false ->
+          render(conn, :gettxcosmosinfo, %{
+                        transaction: transaction_updated,
+                        block_height: Chain.block_height(),
+                        token_transfers: [],
+                        logs: logs})
+      end
     else
       {:transaction, :error} ->
         render(conn, :error, error: "Transaction not found")
