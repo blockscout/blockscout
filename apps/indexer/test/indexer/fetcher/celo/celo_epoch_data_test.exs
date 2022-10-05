@@ -465,6 +465,9 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       }
 
       assert CeloEpochDataFetcher.import_items(input) == :ok
+
+      # Test on_conflict cause
+      assert CeloEpochDataFetcher.import_items(input) == :ok
     end
 
     test "with missing data removes rewards type" do

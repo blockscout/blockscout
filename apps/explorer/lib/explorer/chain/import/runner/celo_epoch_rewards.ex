@@ -97,6 +97,7 @@ defmodule Explorer.Chain.Import.Runner.CeloEpochRewards do
           reserve_gold_balance: fragment("EXCLUDED.reserve_gold_balance"),
           gold_total_supply: fragment("EXCLUDED.gold_total_supply"),
           stable_usd_total_supply: fragment("EXCLUDED.stable_usd_total_supply"),
+          reserve_bolster: fragment("EXCLUDED.reserve_bolster"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]
