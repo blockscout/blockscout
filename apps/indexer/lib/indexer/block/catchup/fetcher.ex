@@ -30,44 +30,20 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   @behaviour Block.Fetcher
 
-  # These are all the *default* values for options.
-  # DO NOT use them directly in the code.  Get options from `state`.
-
-  @blocks_batch_size 4
-  @blocks_concurrency 10
   @shutdown_after :timer.minutes(5)
   @sequence_name :block_catchup_sequencer
 
-  defstruct blocks_batch_size: @blocks_batch_size,
-            blocks_concurrency: @blocks_concurrency,
-            block_fetcher: nil,
+  defstruct block_fetcher: nil,
             memory_monitor: nil
-
-  @doc false
-  def default_blocks_batch_size, do: @blocks_batch_size
 
   @doc """
   Required named arguments
 
     * `:json_rpc_named_arguments` - `t:EthereumJSONRPC.json_rpc_named_arguments/0` passed to
         `EthereumJSONRPC.json_rpc/2`.
-
-  The follow options can be overridden:
-
-    * `:blocks_batch_size` - The number of blocks to request in one call to the JSONRPC.  Defaults to
-      `#{@blocks_batch_size}`.  Block requests also include the transactions for those blocks.  *These transactions
-      are not paginated.*
-    * `:blocks_concurrency` - The number of concurrent requests of `:blocks_batch_size` to allow against the JSONRPC.
-      Defaults to #{@blocks_concurrency}.  So, up to `blocks_concurrency * block_batch_size` (defaults to
-      `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
-      connections.  Up to `block_concurrency * receipts_batch_size * receipts_concurrency` (defaults to
-      `#{@blocks_concurrency * Block.Fetcher.default_receipts_batch_size() * Block.Fetcher.default_receipts_batch_size()}`
-      ) receipts can be requested from the JSONRPC at once over all connections.
-
   """
   def task(
         %__MODULE__{
-          blocks_batch_size: blocks_batch_size,
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
         } = state
       ) do
@@ -112,7 +88,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
                 false
 
               _ ->
-                step = step(first, last, blocks_batch_size)
+                step = step(first, last, blocks_batch_size())
                 sequence_opts = put_memory_monitor([ranges: missing_ranges, step: step], state)
                 gen_server_opts = [name: @sequence_name]
                 {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
@@ -131,6 +107,27 @@ defmodule Indexer.Block.Catchup.Fetcher do
           }
       end
     end
+  end
+
+  @doc """
+  The number of blocks to request in one call to the JSONRPC.  Defaults to
+  10.  Block requests also include the transactions for those blocks.  *These transactions
+  are not paginated.
+  """
+  def blocks_batch_size do
+    Application.get_env(:indexer, __MODULE__)[:batch_size]
+  end
+
+  @doc """
+  The number of concurrent requests of `blocks_batch_size` to allow against the JSONRPC.
+  Defaults to 10.  So, up to `blocks_concurrency * block_batch_size` (defaults to
+  `10 * 10`) blocks can be requested from the JSONRPC at once over all
+  connections.  Up to `block_concurrency * receipts_batch_size * receipts_concurrency` (defaults to
+  `#{10 * Block.Fetcher.default_receipts_batch_size() * Block.Fetcher.default_receipts_concurrency()}`
+  ) receipts can be requested from the JSONRPC at once over all connections.
+  """
+  def blocks_concurrency do
+    Application.get_env(:indexer, __MODULE__)[:concurrency]
   end
 
   defp fetch_last_block(json_rpc_named_arguments) do
@@ -185,13 +182,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_token_instances(imported)
   end
 
-  defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
+  defp stream_fetch_and_import(state, sequence)
        when is_pid(sequence) do
     ranges = Sequence.build_stream(sequence)
 
     TaskSupervisor
     |> Task.Supervisor.async_stream(ranges, &fetch_and_import_range_from_sequence(state, &1, sequence),
-      max_concurrency: blocks_concurrency,
+      max_concurrency: blocks_concurrency(),
       timeout: :infinity,
       shutdown: @shutdown_after
     )

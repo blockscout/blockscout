@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     session
   #     |> AppPage.visit_page()
-  #     |> assert_has(AppPage.indexed_status("Indexing Tokens"))
+  #     |> assert_has(AppPage.indexed_status("Indexing Internal Transactions"))
   #   end
 
   #   test "updates blocks indexed percentage", %{session: session} do
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     BlocksIndexedCounter.calculate_blocks_indexed()
 
-  #     assert_has(session, AppPage.indexed_status("Indexing Tokens"))
+  #     assert_has(session, AppPage.indexed_status("Indexing Internal Transactions"))
   #   end
 
   #   test "removes message when chain is indexed", %{session: session} do
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   #     session
   #     |> AppPage.visit_page()
-  #     |> assert_has(AppPage.indexed_status("Indexing Tokens"))
+  #     |> assert_has(AppPage.indexed_status("Indexing Internal Transactions"))
 
   #     Repo.update_all(
   #       from(p in PendingBlockOperation, where: p.block_hash == ^block_hash),
