@@ -430,7 +430,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
           validator_target_epoch_rewards: 205_631_887_959_760_273_971,
           voter_target_epoch_rewards: 26_043_810_141_454_976_793_003,
           voting_fraction: 410_303_431_329_291_024_629_586,
-          reserve_bolster: 123_456_789
+          reserve_bolster: 0
         },
         voter_rewards: [
           %{
@@ -467,7 +467,15 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       assert CeloEpochDataFetcher.import_items(input) == :ok
 
       # Test on_conflict cause
-      assert CeloEpochDataFetcher.import_items(input) == :ok
+      reserve_bolster_value = 123_456_789
+      input_with_reserve_bolster = put_in(input, [:epoch_rewards, :reserve_bolster], reserve_bolster_value)
+
+      assert CeloEpochDataFetcher.import_items(input_with_reserve_bolster) == :ok
+      reward = Repo.one!(from(rewards in CeloEpochRewards) |> where([r], r.block_number == ^block_number))
+
+      {:ok, amount_in_wei} = Wei.cast(reserve_bolster_value)
+
+      assert reward.reserve_bolster == amount_in_wei
     end
 
     test "with missing data removes rewards type" do
