@@ -55,7 +55,7 @@ defmodule Indexer.Celo.TrackedEventSupport do
       # mocking error reponse to simulate what happens when accessing storage address of non proxy contract
       EthereumJSONRPC.Mox |> expect(:json_rpc, fn _json, _options -> {:error, []} end)
 
-      {:ok, tracking} =
+      {:ok, _tracking} =
         smart_contract
         |> ContractEventTracking.from_event_topic(topic)
         |> Repo.insert()

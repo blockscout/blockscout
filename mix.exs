@@ -12,6 +12,9 @@ defmodule BlockScout.Mixfile do
       deps: deps(),
       dialyzer: dialyzer(),
       elixir: "~> 1.12",
+      elixirc_options: [
+        warnings_as_errors: true
+      ],
       preferred_cli_env: [
         credo: :test,
         dialyzer: :test

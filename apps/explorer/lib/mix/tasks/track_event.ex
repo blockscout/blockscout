@@ -22,11 +22,9 @@ defmodule Mix.Tasks.TrackEvent do
   require Logger
 
   alias Explorer.Chain.Celo.ContractEventTracking
-  alias Explorer.Chain.SmartContract
   alias Explorer.Repo
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Mix.Task, as: MixTask
-  import Ecto.Query
 
   def run(args) do
     {options, _args, invalid} =
@@ -119,17 +117,6 @@ defmodule Mix.Tasks.TrackEvent do
   defp create_changesets(contract, topics, _names, _all) when is_binary(topics) do
     topics = topics |> String.split(",")
     create_changesets(contract, topics, nil, nil)
-  end
-
-  defp get_all_event_topics(%SmartContract{abi: abi}) do
-    abi
-    |> Enum.filter(fn
-      %{"type" => "event"} -> true
-      _ -> false
-    end)
-    |> Enum.map(fn event_abi ->
-      SmartContractHelper.event_abi_to_topic_str(event_abi)
-    end)
   end
 
   defp validate_preconditions(invalid) do

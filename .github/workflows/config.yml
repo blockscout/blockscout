@@ -366,7 +366,7 @@ jobs:
       - name: mix test --exclude no_parity
         run: |
           cd apps/ethereum_jsonrpc
-          mix compile
+          mix compile --warnings-as-errors
           mix test --no-start --exclude no_parity
         env:
           MIX_ENV: "test"
@@ -437,10 +437,12 @@ jobs:
       - run: ./bin/install_chrome_headless.sh
       - name: mix test --exclude no_parity --exclude smart_contract_compiler
         run: |
+          cd apps/explorer
+          mix compile --warnings-as-errors
+          cd ../..
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/explorer
-          mix compile
           mix test --no-start --exclude no_parity --exclude smart_contract_compiler
         env:
           MIX_ENV: "test"
@@ -504,10 +506,12 @@ jobs:
 
       - name: mix test --exclude no_parity
         run: |
+          cd apps/indexer
+          mix compile --warnings-as-errors
+          cd ../..
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/indexer
-          mix compile
           mix test --no-start --exclude no_parity
         env:
           MIX_ENV: "test"
@@ -597,10 +601,12 @@ jobs:
 
       - name: mix test --exclude no_parity
         run: |
+          cd apps/block_scout_web
+          mix compile --warnings-as-errors
+          cd ../..
           mix ecto.create --quiet
           mix ecto.migrate
           cd apps/block_scout_web
-          mix compile
           mix test --no-start --exclude no_parity
         env:
           # match POSTGRES_PASSWORD for postgres image below

@@ -25,7 +25,7 @@ defmodule Mix.Tasks.ListEvents do
 
   require Logger
   use Mix.Task
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Mix.Task, as: MixTask
 

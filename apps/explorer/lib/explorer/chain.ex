@@ -23,7 +23,7 @@ defmodule Explorer.Chain do
     ]
 
   import EthereumJSONRPC,
-    only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2, fetch_codes: 2]
+    only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
 
   require Logger
 
@@ -64,7 +64,6 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingBlockOperation,
-    ProxyContract,
     SmartContract,
     SmartContractAdditionalSource,
     StakingPool,
@@ -644,7 +643,7 @@ defmodule Explorer.Chain do
     from_block = from_block(options)
     to_block = to_block(options)
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
+    {block_number, _transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
       from(log in Log,
@@ -3634,17 +3633,15 @@ defmodule Explorer.Chain do
   end
 
   def pending_transactions_list do
-    query =
-      Transaction
-      |> pending_transactions_query()
-      |> Repo.all(timeout: :infinity)
+    Transaction
+    |> pending_transactions_query()
+    |> Repo.all(timeout: :infinity)
   end
 
   def pending_transactions_count do
-    query =
-      Transaction
-      |> pending_transactions_query()
-      |> Repo.aggregate(:count, :hash)
+    Transaction
+    |> pending_transactions_query()
+    |> Repo.aggregate(:count, :hash)
   end
 
   @doc """
@@ -4462,22 +4459,6 @@ defmodule Explorer.Chain do
       _ -> {:error, "There was an error annotating that the address has been decompiled."}
     end
   end
-
-  # defp set_address_proxy(repo, proxy_address, implementation_address) do
-  #   params = %{
-  #     proxy_address: proxy_address,
-  #     implementation_address: implementation_address
-  #   }
-
-  #   Logger.debug(fn -> "Setting Proxy Address Mapping: #{proxy_address} - #{implementation_address}" end)
-
-  #   %ProxyContract{}
-  #   |> ProxyContract.changeset(params)
-  #   |> repo.insert(
-  #     on_conflict: :replace_all,
-  #     conflict_target: [:proxy_address]
-  #   )
-  # end
 
   defp clear_primary_address_names(repo, address_hash) do
     query =

@@ -48,7 +48,7 @@ defmodule Explorer.Chain.CeloAccountEpoch do
       type: Hash.Full
     )
 
-    belongs_to(:account, Address.Hash,
+    belongs_to(:account, Address,
       foreign_key: :account_hash,
       primary_key: true,
       references: :hash,

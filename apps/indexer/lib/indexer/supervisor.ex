@@ -51,7 +51,6 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
-    UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
 

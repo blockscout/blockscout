@@ -1,11 +1,8 @@
 defmodule BlockScoutWeb.BlockEpochTransactionController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain,
-    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-
   import Explorer.Chain,
-    only: [hash_to_block: 2, number_to_block: 2, string_to_address_hash: 1, string_to_block_hash: 1, hash_to_address: 1]
+    only: [hash_to_block: 2, number_to_block: 2, string_to_address_hash: 1, string_to_block_hash: 1]
 
   alias BlockScoutWeb.{Controller, EpochTransactionView}
   alias Explorer.Celo.{AccountReader, EpochUtil, Util}
@@ -13,7 +10,7 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
   alias Explorer.Chain.{CeloElectionRewards, CeloEpochRewards, Wei}
   alias Phoenix.View
 
-  def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number, "type" => "JSON"} = params) do
+  def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number, "type" => "JSON"}) do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
            necessity_by_association: %{
              [miner: :names] => :required,
@@ -49,7 +46,45 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     end
   end
 
-  defp prepare_epoch_transaction_items(nil, _), do: []
+  def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
+    case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
+           necessity_by_association: %{
+             [miner: :names] => :required,
+             [celo_delegator: :celo_account] => :optional,
+             :uncles => :optional,
+             :nephews => :optional,
+             :rewards => :optional
+           }
+         ) do
+      {:ok, block} ->
+        block_transaction_count = Chain.block_to_transaction_count(block.hash)
+        epoch_rewards = CeloEpochRewards.get_celo_epoch_rewards_for_block(block.number)
+
+        render(
+          conn,
+          "index.html",
+          block: block,
+          block_transaction_count: block_transaction_count,
+          epoch_transaction_count: EpochUtil.calculate_epoch_transaction_count_for_block(block.number, epoch_rewards),
+          current_path: Controller.current_full_path(conn)
+        )
+
+      {:error, {:invalid, :hash}} ->
+        not_found(conn)
+
+      {:error, {:invalid, :number}} ->
+        not_found(conn)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> render(
+          "404.html",
+          block: nil,
+          block_above_tip: block_above_tip(formatted_block_hash_or_number)
+        )
+    end
+  end
 
   defp get_epoch_transaction_address_strings(%{number: block_number}),
     do: [
@@ -79,7 +114,7 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
        end}
     ]
 
-  defp get_epoch_transaction_address_hashes(%{number: block_number} = block) do
+  defp get_epoch_transaction_address_hashes(%{number: _block_number} = block) do
     address_strings = get_epoch_transaction_address_strings(block)
 
     address_strings
@@ -95,6 +130,8 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     end)
     |> Map.new()
   end
+
+  defp prepare_epoch_transaction_items(nil, _), do: []
 
   defp prepare_epoch_transaction_items(epoch_rewards, block) do
     addresses = get_epoch_transaction_address_hashes(block)
@@ -172,46 +209,6 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
       )
 
     items_with_rewards_bolster ++ aggregated_tiles
-  end
-
-  def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number}) do
-    case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
-           necessity_by_association: %{
-             [miner: :names] => :required,
-             [celo_delegator: :celo_account] => :optional,
-             :uncles => :optional,
-             :nephews => :optional,
-             :rewards => :optional
-           }
-         ) do
-      {:ok, block} ->
-        block_transaction_count = Chain.block_to_transaction_count(block.hash)
-        epoch_rewards = CeloEpochRewards.get_celo_epoch_rewards_for_block(block.number)
-
-        render(
-          conn,
-          "index.html",
-          block: block,
-          block_transaction_count: block_transaction_count,
-          epoch_transaction_count: EpochUtil.calculate_epoch_transaction_count_for_block(block.number, epoch_rewards),
-          current_path: Controller.current_full_path(conn)
-        )
-
-      {:error, {:invalid, :hash}} ->
-        not_found(conn)
-
-      {:error, {:invalid, :number}} ->
-        not_found(conn)
-
-      {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> render(
-          "404.html",
-          block: nil,
-          block_above_tip: block_above_tip(formatted_block_hash_or_number)
-        )
-    end
   end
 
   defp param_block_hash_or_number_to_block("0x" <> _ = param, options) do

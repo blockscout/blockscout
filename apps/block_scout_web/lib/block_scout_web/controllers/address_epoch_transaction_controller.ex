@@ -54,14 +54,6 @@ defmodule BlockScoutWeb.AddressEpochTransactionController do
     end
   end
 
-  defp calculate_locked_and_vote_activated_gold(nil) do
-    {:ok, zero_wei} = Wei.cast(0)
-    {zero_wei, zero_wei}
-  end
-
-  defp calculate_locked_and_vote_activated_gold(account_epoch),
-    do: {account_epoch.total_locked_gold, Wei.sub(account_epoch.total_locked_gold, account_epoch.nonvoting_locked_gold)}
-
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
@@ -99,6 +91,14 @@ defmodule BlockScoutWeb.AddressEpochTransactionController do
         not_found(conn)
     end
   end
+
+  defp calculate_locked_and_vote_activated_gold(nil) do
+    {:ok, zero_wei} = Wei.cast(0)
+    {zero_wei, zero_wei}
+  end
+
+  defp calculate_locked_and_vote_activated_gold(account_epoch),
+    do: {account_epoch.total_locked_gold, Wei.sub(account_epoch.total_locked_gold, account_epoch.nonvoting_locked_gold)}
 
   defp get_rewards(address, params) do
     case address.celo_account.account_type do

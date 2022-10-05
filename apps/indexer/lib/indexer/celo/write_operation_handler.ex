@@ -3,12 +3,9 @@ defmodule Indexer.Celo.WriteOperationHandler do
 
   use GenServer
 
-  require Explorer.Celo.Telemetry, as: Telemetry
   require Logger
   alias Explorer.Celo.PubSub
   alias Explorer.SmartContract.Solidity.Publisher, as: SmartContractPublisher
-
-  @cache_refresh_interval :timer.minutes(5)
 
   def start_link([init_arg, gen_server_opts]) do
     start_link(init_arg, gen_server_opts)

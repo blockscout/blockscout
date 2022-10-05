@@ -233,9 +233,8 @@ defmodule Explorer.GraphQL do
   end
 
   def token_txtransfers_query_for_address(address_hash) do
-    query =
-      token_txtransfers_query()
-      |> where([t], t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash)
+    token_txtransfers_query()
+    |> where([t], t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash)
   end
 
   def celo_tx_transfers_query_by_txhash(tx_hash) do

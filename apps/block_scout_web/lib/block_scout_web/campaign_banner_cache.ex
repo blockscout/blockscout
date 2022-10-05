@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.CampaignBannerCache do
 
   alias __MODULE__
 
-  config = Application.get_env(:block_scout_web, __MODULE__)
   @default_campaign_data []
 
   @spec start_link(term()) :: GenServer.on_start()
