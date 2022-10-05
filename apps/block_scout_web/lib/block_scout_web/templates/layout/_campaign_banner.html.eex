@@ -2,7 +2,7 @@
   <div class="campaign-banner-content">
     <%= @content  %>
     <%= if not is_nil(@cta_url) and not is_nil(@cta_content) do %>
-    <a class="campaign-banner-cta" href="<%= @cta_url %>">
+    <a class="campaign-banner-cta" href="<%= @cta_url %>" target="_blank" rel="noopener noreferrer">
       <%= @cta_content %>
     </a>
     <% end %>
