@@ -95,6 +95,12 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:transaction_hash/logs", V2.TransactionController, :logs)
       get("/:transaction_hash/raw-trace", V2.TransactionController, :raw_trace)
     end
+
+    scope "/blocks" do
+      get("/", V2.BlockController, :blocks)
+      get("/:block_hash_or_number", V2.BlockController, :block)
+      get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
+    end
   end
 
   scope "/v1", as: :api_v1 do
