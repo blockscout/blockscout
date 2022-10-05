@@ -24,7 +24,7 @@
               <p style="font-size: 14px;"><%= gettext("Please select what types of notifications you will receive:") %></p>
               <div class="row">
                 <div class="col-sm">
-                  <h3><%= gettext("Ether") %></h3>
+                  <h3><%= Explorer.coin_name() %></h3>
                   <div class="form-input">
                     <%= checkbox f, :watch_coin_input, class: "form-checkbox" %>
                     <%= label f, :watch_coin_input, gettext("Incoming"), class: "label-checkbox" %>

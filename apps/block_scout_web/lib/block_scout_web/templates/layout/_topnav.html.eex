@@ -97,7 +97,7 @@
                       to: bridged_tokens_path(@conn, :show, :poa)
                     ) %>
                 <%= link(
-                      gettext("Ether"),
+                      Explorer.coin_name(),
                       class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
                       to: address_path(@conn, :index)
                     ) %>
@@ -118,7 +118,7 @@
                       to: tokens_path(@conn, :index)
                     ) %>
                 <%= link(
-                      gettext("Ether"),
+                      Explorer.coin_name(),
                       class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
                       to: address_path(@conn, :index)
                     ) %>

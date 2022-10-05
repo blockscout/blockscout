@@ -5,6 +5,7 @@ defmodule Explorer.Account.Notifier.Summary do
 
   require Logger
 
+  alias Explorer
   alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Wei
@@ -79,7 +80,7 @@ defmodule Explorer.Account.Notifier.Summary do
       block_number: transaction.block_number,
       amount: amount(transaction),
       tx_fee: fee(transaction),
-      name: Application.get_env(:explorer, :coin_name),
+      name: Explorer.coin_name(),
       subject: "Coin transaction",
       type: "COIN"
     }
@@ -94,7 +95,7 @@ defmodule Explorer.Account.Notifier.Summary do
       block_number: transaction.block_number,
       amount: amount(transaction),
       tx_fee: fee(transaction),
-      name: Application.get_env(:explorer, :coin_name),
+      name: Explorer.coin_name(),
       subject: "Contract creation",
       type: "COIN"
     }

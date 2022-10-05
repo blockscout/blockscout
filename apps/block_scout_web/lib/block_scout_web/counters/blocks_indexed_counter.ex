@@ -36,15 +36,11 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   end
 
   def calculate_blocks_indexed do
-    ratio = Chain.indexed_ratio()
+    indexed_ratio = Chain.indexed_ratio()
 
-    finished? =
-      case Decimal.compare(ratio, 1) do
-        :lt -> false
-        _ -> Chain.finished_indexing?()
-      end
+    finished? = Chain.finished_indexing?(indexed_ratio)
 
-    Notifier.broadcast_blocks_indexed_ratio(ratio, finished?)
+    Notifier.broadcast_blocks_indexed_ratio(indexed_ratio, finished?)
   end
 
   defp schedule_next_consolidation do

@@ -415,7 +415,7 @@
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                  text: gettext("Amount of") <> " " <> gettext("Ether") <> " " <> gettext("burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
+                  text: gettext("Amount of") <> " " <> Explorer.coin_name() <> " " <> gettext("burned for this transaction. Equals Block Base Fee per Gas * Gas Used.") %>
                 <%= gettext "Transaction Burnt Fee" %>
               </dt>
               <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burned_fee, :ether) %>

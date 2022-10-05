@@ -207,7 +207,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
-      default_blocks_batch_size = Catchup.Fetcher.default_blocks_batch_size()
+      default_blocks_batch_size = Catchup.Fetcher.blocks_batch_size()
 
       assert latest_block_number > default_blocks_batch_size
 
