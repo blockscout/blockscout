@@ -74,14 +74,11 @@ defmodule Explorer.Chain.CeloElectionRewards do
   end
 
   def base_aggregated_block_query(block_number, reward_types) do
-    query =
-      from(rewards in __MODULE__,
-        group_by: rewards.reward_type,
-        where: rewards.block_number == ^block_number,
-        where: rewards.reward_type in ^reward_types
-      )
-
-    query |> where_non_zero_reward()
+    from(rewards in __MODULE__,
+      group_by: rewards.reward_type,
+      where: rewards.block_number == ^block_number,
+      where: rewards.reward_type in ^reward_types
+    )
   end
 
   def aggregated_voter_and_validator_query(block_number) do
