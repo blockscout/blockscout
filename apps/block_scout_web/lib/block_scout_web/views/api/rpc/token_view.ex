@@ -12,8 +12,12 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     RPCView.render("show.json", data: data)
   end
 
-  def render("getlisttokens.json", %{list_tokens: list_tokens}) do
-    RPCView.render("show.json", data: list_tokens)
+  def render("getlisttokens.json", %{list_tokens: tokens, pagination: pagination}) do
+    data = %{
+      "tokens" => Enum.map(tokens, &prepare_list_tokens/1),
+      "pagination" => pagination
+    }
+    RPCView.render("show.json", data: data)
   end
 
   def render("error.json", assigns) do
@@ -29,6 +33,19 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
       "decimals" => to_string(token.decimals),
       "contractAddress" => to_string(token.contract_address_hash),
       "cataloged" => token.cataloged
+    }
+  end
+
+  defp prepare_list_tokens(token) do
+    %{
+      "cataloged" => token.cataloged,
+      "contractAddressHash" => to_string(token.contract_address_hash),
+      "decimals" => to_string(token.decimals),
+      "holderCount" => token.holder_count,
+      "name" => token.name,
+      "symbol" => token.symbol,
+      "totalSupply" => to_string(token.total_supply),
+      "type" => token.type
     }
   end
 

@@ -66,7 +66,11 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
       ]
 
       tokens = Chain.list_top_tokens(nil, options)
-      render(conn, "getlisttokens.json", %{list_tokens: tokens})
+      total_token =  Chain.token_count()
+      pagination = %{total: total_token,
+                     page: options_with_defaults.page_number,
+                     offset: options_with_defaults.page_size}
+      render(conn, "getlisttokens.json", %{list_tokens: tokens, pagination: pagination})
     end
   end
 
