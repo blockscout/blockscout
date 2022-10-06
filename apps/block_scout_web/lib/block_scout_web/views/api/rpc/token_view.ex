@@ -12,10 +12,10 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     RPCView.render("show.json", data: data)
   end
 
-  def render("getlisttokens.json", %{list_tokens: tokens, pagination: pagination}) do
+  def render("getlisttokens.json", %{list_tokens: tokens, hasNextPage: hasNextPage}) do
     data = %{
       "tokens" => Enum.map(tokens, &prepare_list_tokens/1),
-      "pagination" => pagination
+      "hasNextPage" => hasNextPage
     }
     RPCView.render("show.json", data: data)
   end

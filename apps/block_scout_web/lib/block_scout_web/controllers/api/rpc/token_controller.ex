@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, PagingOptions}
 
+  require Logger
+
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
@@ -61,16 +63,21 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
         paging_options: %PagingOptions{
           key: nil,
           page_number: options_with_defaults.page_number,
-          page_size: options_with_defaults.page_size
+          page_size: options_with_defaults.page_size + 1
         }
       ]
 
       tokens = Chain.list_top_tokens(nil, options)
-      total_token =  Chain.token_count()
-      pagination = %{total: total_token,
-                     page: options_with_defaults.page_number,
-                     offset: options_with_defaults.page_size}
-      render(conn, "getlisttokens.json", %{list_tokens: tokens, pagination: pagination})
+      result = tokens |> Enum.reverse() |> tl() |> Enum.reverse()
+      len = length(tokens)
+      Logger.info("len tokens #{length(tokens)}")
+      Logger.info("len result #{length(result)}")
+      Logger.info("page size #{options_with_defaults.page_size}")
+      if len > options_with_defaults.page_size do
+        render(conn, "getlisttokens.json", %{list_tokens: result, hasNextPage: true})
+      else
+        render(conn, "getlisttokens.json", %{list_tokens: tokens, hasNextPage: false})
+      end
     end
   end
 

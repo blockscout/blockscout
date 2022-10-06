@@ -2519,16 +2519,6 @@ defmodule Explorer.Chain do
     Repo.one(query)
   end
 
-  @doc """
-  Counts the number of `t:Explorer.Chain.Token.t/0`.
-  """
-  @spec token_count() :: non_neg_integer()
-  def token_count() do
-    query = from(token in Token, select: fragment("COUNT(*)"))
-
-    Repo.one(query)
-  end
-
   @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
   def address_to_transaction_count(address) do
     if contract?(address) do
