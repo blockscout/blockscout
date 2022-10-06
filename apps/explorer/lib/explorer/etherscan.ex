@@ -386,6 +386,7 @@ defmodule Explorer.Etherscan do
         where: ctb.value > 0,
         select: %{
           balance: ctb.value,
+          block_number: ctb.block_number,
           contract_address_hash: ctb.token_contract_address_hash,
           name: t.name,
           decimals: t.decimals,

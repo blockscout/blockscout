@@ -2604,7 +2604,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
 
     test "with address with existing balance in token_balances table", %{conn: conn} do
-      token_balance = :address_current_token_balance |> insert() |> Repo.preload(:token)
+      block = insert(:block)
+
+      token_balance = :address_current_token_balance |> insert(block_number: block.number) |> Repo.preload(:token)
 
       params = %{
         "module" => "account",
@@ -2618,6 +2620,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "contractAddress" => to_string(token_balance.token_contract_address_hash),
           "name" => token_balance.token.name,
           "decimals" => to_string(token_balance.token.decimals),
+          "blockNumber" => block.number,
           "symbol" => token_balance.token.symbol,
           "type" => token_balance.token.type
         }

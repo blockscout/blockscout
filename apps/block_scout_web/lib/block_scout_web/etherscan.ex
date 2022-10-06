@@ -1344,7 +1344,8 @@ defmodule BlockScoutWeb.Etherscan do
       name: @token_name_type,
       symbol: @token_symbol_type,
       decimals: @token_decimal_type,
-      contractAddress: @address_hash_type
+      contractAddress: @address_hash_type,
+      blockNumber: @block_number_type
     }
   }
 
