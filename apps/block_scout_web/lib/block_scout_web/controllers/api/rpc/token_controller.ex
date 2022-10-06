@@ -4,8 +4,6 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, PagingOptions}
 
-  require Logger
-
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
@@ -36,13 +34,19 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
         paging_options: %PagingOptions{
           key: nil,
           page_number: options_with_defaults.page_number,
-          page_size: options_with_defaults.page_size
+          page_size: options_with_defaults.page_size + 1
         }
       ]
 
       from_api = true
       token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, from_api, options)
-      render(conn, "gettokenholders.json", %{token_holders: token_holders})
+      result = token_holders |> Enum.reverse() |> tl() |> Enum.reverse()
+      len = length(token_holders)
+      if len > options_with_defaults.page_size do
+        render(conn, "gettokenholders.json", %{token_holders: result, hasNextPage: true})
+      else
+        render(conn, "gettokenholders.json", %{token_holders: token_holders, hasNextPage: false})
+      end
     else
       {:contractaddress_param, :error} ->
         render(conn, :error, error: "Query parameter contract address is required")
@@ -70,9 +74,6 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
       tokens = Chain.list_top_tokens(nil, options)
       result = tokens |> Enum.reverse() |> tl() |> Enum.reverse()
       len = length(tokens)
-      Logger.info("len tokens #{length(tokens)}")
-      Logger.info("len result #{length(result)}")
-      Logger.info("page size #{options_with_defaults.page_size}")
       if len > options_with_defaults.page_size do
         render(conn, "getlisttokens.json", %{list_tokens: result, hasNextPage: true})
       else

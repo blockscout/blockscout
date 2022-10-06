@@ -252,24 +252,38 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         paging_options: %PagingOptions{
           key: nil,
           page_number: options_with_defaults.page_number,
-          page_size: options_with_defaults.page_size
+          page_size: options_with_defaults.page_size + 1
         }
       ]
 
       addresses = Chain.list_top_addresses(options)
+      result = addresses |> Enum.reverse() |> tl() |> Enum.reverse()
+      len = length(addresses)
 
       exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
       total_supply = Chain.total_supply()
 
-      items = for {address, tx_count} <- addresses do
-        %{
-          address: address,
-          exchange_rate: exchange_rate,
-          total_supply: total_supply,
-          tx_count: tx_count
-        }
+      if len > options_with_defaults.page_size do
+        items = for {address, tx_count} <- result do
+          %{
+            address: address,
+            exchange_rate: exchange_rate,
+            total_supply: total_supply,
+            tx_count: tx_count
+          }
+        end
+        render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items, hasNextPage: true})
+      else
+        items = for {address, tx_count} <- addresses do
+          %{
+            address: address,
+            exchange_rate: exchange_rate,
+            total_supply: total_supply,
+            tx_count: tx_count
+          }
+        end
+        render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items, hasNextPage: false})
       end
-      render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items})
     end
   end
 
