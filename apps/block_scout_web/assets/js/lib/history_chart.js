@@ -7,7 +7,8 @@ import { DateTime } from 'luxon'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/export-vars-to-js.module.scss'
 
-Chart.defaults.font.family = 'Nunito, "Helvetica Neue", Arial, sans-serif,"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
+Chart.defaults.font.family = 'Minecraft'
+Chart.defaults.font.size = 14
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeScale, Title, Tooltip)
 
 const grid = {
@@ -254,7 +255,7 @@ class MarketHistoryChart {
         if (!chartArea) {
           return
         }
-        return getGradient(ctx, chartArea)
+        return getTxChartColor(ctx, chartArea)
       },
       borderColor: function (context) {
         const chart = context.chart
@@ -263,7 +264,7 @@ class MarketHistoryChart {
         if (!chartArea) {
           return
         }
-        return getGradient(ctx, chartArea)
+        return getTxChartColor(ctx, chartArea)
       },
       // lineTension: 0
     }
