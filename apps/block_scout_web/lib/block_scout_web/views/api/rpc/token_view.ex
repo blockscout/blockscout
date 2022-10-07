@@ -9,18 +9,18 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
 
   def render("gettokenholders.json", %{token_holders: token_holders, hasNextPage: hasNextPage}) do
     data = %{
-      "tokenHolder" => Enum.map(token_holders, &prepare_token_holder/1),
+      "result" => Enum.map(token_holders, &prepare_token_holder/1),
       "hasNextPage" => hasNextPage
     }
-    RPCView.render("show.json", data: data)
+    RPCView.render("show_data.json", data: data)
   end
 
   def render("getlisttokens.json", %{list_tokens: tokens, hasNextPage: hasNextPage}) do
     data = %{
-      "tokens" => Enum.map(tokens, &prepare_list_tokens/1),
+      "result" => Enum.map(tokens, &prepare_list_tokens/1),
       "hasNextPage" => hasNextPage
     }
-    RPCView.render("show.json", data: data)
+    RPCView.render("show_data.json", data: data)
   end
 
   def render("error.json", assigns) do

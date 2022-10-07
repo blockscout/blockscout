@@ -2,10 +2,9 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.RPC.Helpers
-  alias Explorer.{Chain, Market, Etherscan, PagingOptions}
+  alias Explorer.{Chain, Etherscan, PagingOptions}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
-  alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def listaccounts(conn, params) do
@@ -252,36 +251,31 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         paging_options: %PagingOptions{
           key: nil,
           page_number: options_with_defaults.page_number,
-          page_size: options_with_defaults.page_size + 1
+          page_size: options_with_defaults.page_size
+        }
+      ]
+
+      has_next_option = [
+        paging_options: %PagingOptions{
+          key: nil,
+          page_number: options_with_defaults.page_number * options_with_defaults.page_size + 1,
+          page_size: 1
         }
       ]
 
       addresses = Chain.list_top_addresses(options)
-      result = addresses |> Enum.reverse() |> tl() |> Enum.reverse()
-      len = length(addresses)
+      next_addresses = Chain.list_top_addresses(has_next_option)
 
-      exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
-      total_supply = Chain.total_supply()
+      items = for {address, tx_count} <- addresses do
+        %{
+          address: address,
+          tx_count: tx_count
+        }
+      end
 
-      if len > options_with_defaults.page_size do
-        items = for {address, tx_count} <- result do
-          %{
-            address: address,
-            exchange_rate: exchange_rate,
-            total_supply: total_supply,
-            tx_count: tx_count
-          }
-        end
+      if length(next_addresses) > 0 do
         render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items, hasNextPage: true})
       else
-        items = for {address, tx_count} <- addresses do
-          %{
-            address: address,
-            exchange_rate: exchange_rate,
-            total_supply: total_supply,
-            tx_count: tx_count
-          }
-        end
         render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items, hasNextPage: false})
       end
     end

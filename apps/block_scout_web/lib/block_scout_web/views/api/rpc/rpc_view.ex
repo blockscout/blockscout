@@ -9,6 +9,10 @@ defmodule BlockScoutWeb.API.RPC.RPCView do
     }
   end
 
+  def render("show_data.json", %{data: data}) do
+    data
+  end
+
   def render("show_value.json", %{data: data}) do
     {value, _} =
       data

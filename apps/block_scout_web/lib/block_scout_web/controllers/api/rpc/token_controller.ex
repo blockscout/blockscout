@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, PagingOptions}
 
+  require Logger
+
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
@@ -34,16 +36,23 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
         paging_options: %PagingOptions{
           key: nil,
           page_number: options_with_defaults.page_number,
-          page_size: options_with_defaults.page_size + 1
+          page_size: options_with_defaults.page_size
+        }
+      ]
+
+      has_next_option = [
+        paging_options: %PagingOptions{
+          key: nil,
+          page_number: options_with_defaults.page_number * options_with_defaults.page_size + 1,
+          page_size: 1
         }
       ]
 
       from_api = true
       token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, from_api, options)
-      result = token_holders |> Enum.reverse() |> tl() |> Enum.reverse()
-      len = length(token_holders)
-      if len > options_with_defaults.page_size do
-        render(conn, "gettokenholders.json", %{token_holders: result, hasNextPage: true})
+      next_token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, from_api, has_next_option)
+      if length(next_token_holders) > 0 do
+        render(conn, "gettokenholders.json", %{token_holders: token_holders, hasNextPage: true})
       else
         render(conn, "gettokenholders.json", %{token_holders: token_holders, hasNextPage: false})
       end
@@ -67,15 +76,23 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
         paging_options: %PagingOptions{
           key: nil,
           page_number: options_with_defaults.page_number,
-          page_size: options_with_defaults.page_size + 1
+          page_size: options_with_defaults.page_size
+        }
+      ]
+
+      has_next_option = [
+        paging_options: %PagingOptions{
+          key: nil,
+          page_number: options_with_defaults.page_number * options_with_defaults.page_size + 1,
+          page_size: 1
         }
       ]
 
       tokens = Chain.list_top_tokens(nil, options)
-      result = tokens |> Enum.reverse() |> tl() |> Enum.reverse()
-      len = length(tokens)
-      if len > options_with_defaults.page_size do
-        render(conn, "getlisttokens.json", %{list_tokens: result, hasNextPage: true})
+      next_tokens = Chain.list_top_tokens(nil, has_next_option)
+
+      if length(next_tokens) > 0 do
+        render(conn, "getlisttokens.json", %{list_tokens: tokens, hasNextPage: true})
       else
         render(conn, "getlisttokens.json", %{list_tokens: tokens, hasNextPage: false})
       end
