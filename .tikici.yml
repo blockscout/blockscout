@@ -8,6 +8,7 @@ jobs:
   build_docker:
     steps:
       - build_image:
+          buildkit: true
           dockerfile: docker/Dockerfile
   publish_docker:
     steps:
