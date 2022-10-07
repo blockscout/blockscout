@@ -11,7 +11,7 @@ $footer-title-color: $font-color;
 $footer-text-color: $font-color;
 $footer-item-disc-color: $secondary;
 // dashboard
-$dashboard-line-color-price: $tertiary; // price left border
+$dashboard-line-color-price: $primary; // price left border
 
 $dashboard-line-color-transactions: $primary;
 $dashboard-banner-chart-legend-label-color: $font-color;
@@ -63,6 +63,7 @@ a {
 .tile span[data-address-hash] {
   color: $secondary !important;
 }
+
 .tile span[data-address-hash] span{
   color: $secondary !important;
 }
@@ -189,7 +190,7 @@ $api-text-monospace-color: $primary;
 
 // Dark theme
 $dark-primary: #EB4626;
-$dark-secondary: #84B0D3;
+$dark-secondary: #8496AE;
 $dark-primary-alternate: #68778d; 
 
 .footer-list ul li::before {
@@ -214,6 +215,14 @@ $dark-primary-alternate: #68778d;
   border-color: #F1F4F9 !important;
 }
 
-.alert-info a{
+.alert-info .alert-link{
   color: #202327 !important;
+}
+
+.navbar-logo-dark {
+  display: none;
+}
+
+.dark-footer-logo {
+  display: none;
 }
