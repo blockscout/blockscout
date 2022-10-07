@@ -99,7 +99,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:281
+#: lib/block_scout_web/templates/layout/app.html.eex:225
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -236,7 +236,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:29
-#: lib/block_scout_web/views/address_view.ex:119
+#: lib/block_scout_web/views/address_view.ex:107
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr ""
@@ -4194,7 +4194,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:29
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:6
 #: lib/block_scout_web/views/transaction_view.ex:516
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "State changes"
 msgstr ""
 

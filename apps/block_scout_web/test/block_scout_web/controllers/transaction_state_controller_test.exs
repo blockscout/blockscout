@@ -86,6 +86,8 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
         block_number: block.number
       )
 
+      # to check if we can display transaction overview
+      get(conn, transaction_state_path(conn, :index, transaction))
       conn = get(conn, transaction_state_path(conn, :index, transaction), %{type: "JSON"})
 
       {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()

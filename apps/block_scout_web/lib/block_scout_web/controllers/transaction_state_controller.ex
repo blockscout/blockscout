@@ -189,7 +189,8 @@ defmodule BlockScoutWeb.TransactionStateController do
           get_transaction_with_addresses_tags(
             transaction,
             current_user(conn)
-          )
+          ),
+        current_user: current_user(conn)
       )
     else
       :not_found ->
