@@ -24,8 +24,6 @@ defmodule Explorer.Chain do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
 
-  require Logger
-
   alias ABI.TypeDecoder
   alias Ecto.{Changeset, Multi}
 
@@ -2324,7 +2322,6 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_top_addresses(paging_options) do
-    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
     base_query =
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
@@ -2336,7 +2333,6 @@ defmodule Explorer.Chain do
     base_query
     |> page_addresses(paging_options)
     |> limit(^paging_options.page_size)
-    |> offset(^offset)
     |> Repo.all()
   end
 

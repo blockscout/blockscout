@@ -247,36 +247,43 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         |> Map.put_new(:page_number, 0)
         |> Map.put_new(:page_size, 10)
 
-      options = [
-        paging_options: %PagingOptions{
-          key: nil,
-          page_number: options_with_defaults.page_number,
-          page_size: options_with_defaults.page_size
-        }
-      ]
+      options = %PagingOptions{
+        key: nil,
+        page_number: options_with_defaults.page_number,
+        page_size: options_with_defaults.page_size + 1
+      }
 
-      has_next_option = [
-        paging_options: %PagingOptions{
-          key: nil,
-          page_number: options_with_defaults.page_number * options_with_defaults.page_size + 1,
-          page_size: 1
-        }
-      ]
+      addresses =
+        params
+        |> paging_options_top_addresses_balance(options)
+        |> Chain.list_top_addresses()
 
-      addresses = Chain.list_top_addresses(options)
-      next_addresses = Chain.list_top_addresses(has_next_option)
+      {addresses_page, next_page} = split_list_by_page(addresses, options_with_defaults.page_size)
 
-      items = for {address, tx_count} <- addresses do
+      items = for {address, tx_count} <- addresses_page do
         %{
           address: address,
           tx_count: tx_count
         }
       end
 
-      if length(next_addresses) > 0 do
-        render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items, hasNextPage: true})
+      if length(next_page) > 0 do
+        next_page_params = next_page_params(
+          addresses_page |> Enum.at(-1),
+          options_with_defaults.page_number + 1,
+          options_with_defaults.page_size
+        )
+        render(conn, "gettopaddressesbalance.json", %{
+          top_addresses_balance: items,
+          has_next_page: true,
+          next_page_params: next_page_params}
+        )
       else
-        render(conn, "gettopaddressesbalance.json", %{top_addresses_balance: items, hasNextPage: false})
+        render(conn, "gettopaddressesbalance.json", %{
+          top_addresses_balance: items,
+          has_next_page: true,
+          next_page_params: ""}
+        )
       end
     end
   end
@@ -314,6 +321,26 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       end
 
     {:required_params, result}
+  end
+
+  defp paging_options_top_addresses_balance(params, paging_options) do
+    if !is_nil(params["fetched_coin_balance"]) and !is_nil(params["hash"]) do
+      {coin_balance, ""} = Integer.parse(params["fetched_coin_balance"])
+      {:ok, address_hash} = Chain.string_to_address_hash(params["hash"])
+      [paging_options: %{paging_options | key: {%Wei{value: Decimal.new(coin_balance)}, address_hash}}]
+    else
+      [paging_options: paging_options]
+    end
+  end
+
+  defp split_list_by_page(list_plus_one, page_size), do: Enum.split(list_plus_one, page_size)
+
+  defp next_page_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}, page, offset) do
+    %{"page" => page,
+      "offset" => offset,
+      "hash" => hash,
+      "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)
+    }
   end
 
   defp fetch_block_param(%{"block" => "latest"}), do: {:ok, :latest}
