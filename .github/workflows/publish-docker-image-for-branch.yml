@@ -8,7 +8,7 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-optimism-opcraft-stg
+      - production-optimism-opcraft-stg-exp
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
@@ -41,7 +41,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}-exp
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
