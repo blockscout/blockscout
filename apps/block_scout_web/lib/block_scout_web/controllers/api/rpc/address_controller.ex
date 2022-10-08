@@ -281,7 +281,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       else
         render(conn, "gettopaddressesbalance.json", %{
           top_addresses_balance: items,
-          has_next_page: true,
+          has_next_page: false,
           next_page_params: ""}
         )
       end
