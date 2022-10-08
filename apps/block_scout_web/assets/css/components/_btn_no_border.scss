@@ -12,8 +12,8 @@ $btn-no-border-color: $primary !default;
 }
 
 .btn-no-border-link-to-tems {
-  background-color: rgba($common-link-color, 0.1) !important;
-  border-color: #00000000 !important;
+  background-color: rgba($primary, 0.1);
+  border-color: #00000000;
   align-items: center;
   border-radius: 2px;
   display: flex;
@@ -22,7 +22,7 @@ $btn-no-border-color: $primary !default;
   user-select: none;
   text-align: center;
   white-space: nowrap;
-  color: $common-link-color !important;
+  color: $primary;
 
   &:hover {
     border-color: #f5f6fa;

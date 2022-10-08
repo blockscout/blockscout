@@ -11,13 +11,11 @@ $tile-type-unique-token-image-color: $orange !default;
 $tile-type-internal-transaction-color: $teal !default;
 $tile-type-api-documentation-color: $primary !default;
 $tile-type-progress-bar-color: $primary !default;
-$tile-address_hash_link-color: $primary !default;
 $tile-status-error-reason: #ff7986 !default;
 $tile-status-awaiting-internal-transactions: $warning !default;
 $tile-padding: 1rem;
 $tile-title-color: #333 !default;
 $tile-body-a-color: #5959d8 !default;
-$tile-block-number-color: $primary !default;
 
 @mixin generate-tile-block($prefix, $color, $label-color: false) {
   &#{ $prefix } {
@@ -46,7 +44,7 @@ $tile-block-number-color: $primary !default;
     }
 
     .tile-transaction-type-block {
-      background-color: rgba($color, 0.1);
+      background-color: #fff;
       border-bottom: 1px solid $color;
       border-right: 1px solid $color;
       border-top: 1px solid $color;
@@ -294,17 +292,7 @@ $tile-block-number-color: $primary !default;
       margin-bottom: 12px;
       padding: 1rem 1rem 0 1rem;
     }
-
-    & a[data-selector=block-number] {
-      color: $tile-block-number-color !important;
-    }
   }
-
-  &.tile-type-transaction {
-		& a[data-test=address_hash_link] span {
-			color: $tile-address_hash_link-color !important;
-		}
-	}
 
   &.tile-type-contract-creation {
     .tile-text-highlight {
@@ -594,6 +582,10 @@ $cube-quantity: 5;
   background-color: #e2e5ec;
   margin-bottom: 5px;
   border-radius: 4px;
+}
+
+.dark-theme-applied .dark-block-loader {
+  background-color: #313355;
 }
 
 .title-with-label {

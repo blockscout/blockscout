@@ -7,6 +7,9 @@
           <%= if logo_footer() do %>
             <img class="footer-logo" src="<%= static_path(@conn, logo_footer()) %>" alt="<%= subnetwork_title() %>" />
           <% end %>
+          <%= if dark_logo_footer() do %>
+            <img class="dark-footer-logo" src="<%= static_path(@conn, dark_logo_footer()) %>" alt="<%= subnetwork_title() %>" />
+          <% end %>
           <%= if logo_text() do %>
             <span class="logo-text in-footer <%= unless logo_footer(), do: "no-logo" %>"> <%= logo_text() %> </span>
           <% end %>

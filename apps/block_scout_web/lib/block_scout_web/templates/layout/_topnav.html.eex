@@ -8,6 +8,9 @@
       <%= if logo() do %>
         <img class="navbar-logo" id="navbar-logo" src="<%= static_path(@conn, logo()) %>" alt="<%= subnetwork_title() %>" />
       <% end %>
+      <%= if dark_logo() do %>
+        <img class="navbar-logo-dark" id="navbar-logo" src="<%= static_path(@conn, dark_logo()) %>" alt="<%= subnetwork_title() %>" />
+      <% end %>
       <%= if logo_text() do %>
         <span class="logo-text <%= unless logo(), do: "no-logo" %>"> <%= logo_text() %> </span>
       <% end %>
