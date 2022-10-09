@@ -571,14 +571,16 @@ defmodule Explorer.Chain.Transaction do
 
   def get_method_name(_), do: "Transfer"
 
-  defp parse_method_name(method_desc) do
+  def parse_method_name(method_desc, need_upcase \\ true) do
     method_desc
     |> String.split("(")
     |> Enum.at(0)
-    |> upcase_first
+    |> upcase_first(need_upcase)
   end
 
-  defp upcase_first(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
+  defp upcase_first(string, false), do: string
+
+  defp upcase_first(<<first::utf8, rest::binary>>, true), do: String.upcase(<<first::utf8>>) <> rest
 
   defp function_call(name, mapping) do
     text =

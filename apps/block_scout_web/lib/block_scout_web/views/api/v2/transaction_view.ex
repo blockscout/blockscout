@@ -4,9 +4,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Tokens.Helpers
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, Token, Wei}
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
@@ -71,7 +71,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "to" => Helper.address_with_info(token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
       "token_address" => token_transfer.token_contract_address_hash,
-      "token_symbol" => Helpers.token_symbol(token_transfer.token),
+      "token_symbol" => token_transfer.token.symbol,
+      "token_name" => token_transfer.token.name,
       "type" => Chain.get_token_transfer_type(token_transfer),
       "token_type" => token_transfer.token.type,
       "exchange_rate" => Market.add_price(token_transfer.token).usd_value
@@ -79,18 +80,23 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_token_transfer_total(token_transfer) do
-    case Helpers.token_transfer_amount(token_transfer) do
+    case Helpers.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
         %{"token_id" => token_transfer.token_id}
 
-      {:ok, :erc1155_instance, value} ->
-        %{"token_id" => token_transfer.token_id, "value" => value}
+      {:ok, :erc1155_instance, value, decimals} ->
+        %{"token_id" => token_transfer.token_id, "value" => value, "decimals" => decimals}
 
-      {:ok, :erc1155_instance, values, token_ids, _decimals} ->
-        Enum.map(Enum.zip(values, token_ids), fn {value, token_id} -> %{"value" => value, "token_id" => token_id} end)
+      {:ok, :erc1155_instance, values, token_ids, decimals} ->
+        Enum.map(Enum.zip(values, token_ids), fn {value, token_id} ->
+          %{"value" => value, "token_id" => token_id, "decimals" => decimals}
+        end)
 
-      {:ok, value} ->
-        %{"value" => value}
+      {:ok, value, decimals} ->
+        %{"value" => value, "decimals" => decimals}
+
+      _ ->
+        nil
     end
   end
 
@@ -110,7 +116,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "value" => internal_transaction.value,
       "block" => internal_transaction.block_number,
       "timestamp" => internal_transaction.transaction.block.timestamp,
-      "index" => internal_transaction.index
+      "index" => internal_transaction.index,
+      "gas_limit" => internal_transaction.gas
     }
   end
 
@@ -151,7 +158,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     revert_reason = revert_reason(status, transaction)
 
-    decoded_input_data = decoded_input(transaction)
+    decoded_input = transaction |> Transaction.decoded_input_data() |> format_decoded_input()
+    decoded_input_data = decoded_input(decoded_input)
 
     %{
       "hash" => transaction.hash,
@@ -189,7 +197,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         }),
       "token_transfers_overflow" =>
         Enum.count(transaction.token_transfers) > Chain.get_token_transfers_per_transaction_preview_count(),
-      "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value
+      "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
+      "method" => method_name(transaction, decoded_input),
+      "tx_types" => tx_types(transaction)
     }
   end
 
@@ -232,8 +242,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp decoded_input(transaction) do
-    case transaction |> Transaction.decoded_input_data() |> format_decoded_input() do
+  defp decoded_input(decoded_input) do
+    case decoded_input do
       {:ok, method_id, text, mapping} ->
         render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: false)
 
@@ -309,5 +319,79 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def diff(left, right) do
     left
     |> Timex.diff(right, :milliseconds)
+  end
+
+  defp method_name(_, {:ok, _method_id, text, _mapping}) do
+    Transaction.parse_method_name(text, false)
+  end
+
+  defp method_name(%Transaction{to_address: to_address, input: %{bytes: <<method_id::binary-size(4), _::binary>>}}, _) do
+    if Helper.is_smart_contract(to_address) do
+      "0x" <> Base.encode16(method_id, case: :lower)
+    else
+      nil
+    end
+  end
+
+  defp method_name(_, _) do
+    nil
+  end
+
+  defp tx_types(tx, types \\ [], stage \\ :token_transfer)
+
+  defp tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do
+    types =
+      if !is_nil(token_transfers) && token_transfers != [] do
+        types ++ [:token_transfer]
+      else
+        types
+      end
+
+    tx_types(tx, types, :token_creation)
+  end
+
+  defp tx_types(%Transaction{created_contract_address: created_contract_address} = tx, types, :token_creation) do
+    types =
+      if match?(%Address{}, created_contract_address) && match?(%Token{}, created_contract_address.token) do
+        types ++ [:token_creation]
+      else
+        types
+      end
+
+    tx_types(tx, types, :contract_creation)
+  end
+
+  defp tx_types(
+         %Transaction{created_contract_address_hash: created_contract_address_hash} = tx,
+         types,
+         :contract_creation
+       ) do
+    types =
+      if !is_nil(created_contract_address_hash) do
+        types ++ [:contract_creation]
+      else
+        types
+      end
+
+    tx_types(tx, types, :contract_call)
+  end
+
+  defp tx_types(%Transaction{to_address: to_address} = tx, types, :contract_call) do
+    types =
+      if Helper.is_smart_contract(to_address) do
+        types ++ [:contract_call]
+      else
+        types
+      end
+
+    tx_types(tx, types, :transaction)
+  end
+
+  defp tx_types(%Transaction{value: value}, types, :transaction) do
+    if Decimal.compare(value.value, 0) == :gt do
+      types ++ [:transaction]
+    else
+      types
+    end
   end
 end
