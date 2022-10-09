@@ -253,14 +253,14 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         page_size: options_with_defaults.page_size + 1
       }
 
-      addresses =
+      addresses_plus_one =
         params
         |> paging_options_top_addresses_balance(options)
         |> Chain.list_top_addresses()
 
-      {addresses_page, next_page} = split_list_by_page(addresses, options_with_defaults.page_size)
+      {addresses, next_page} = split_list_by_page(addresses_plus_one, options_with_defaults.page_size)
 
-      items = for {address, tx_count} <- addresses_page do
+      items = for {address, tx_count} <- addresses do
         %{
           address: address,
           tx_count: tx_count
@@ -268,11 +268,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       end
 
       if length(next_page) > 0 do
-        next_page_params = next_page_params(
-          addresses_page |> Enum.at(-1),
-          options_with_defaults.page_number + 1,
-          options_with_defaults.page_size
-        )
+        {%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _} = Enum.at(addresses, -1)
+        next_page_params = %{
+          "page" => options_with_defaults.page_number + 1,
+          "offset" => options_with_defaults.page_size,
+          "hash" => hash,
+          "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)
+        }
         render(conn, "gettopaddressesbalance.json", %{
           top_addresses_balance: items,
           has_next_page: true,
@@ -285,6 +287,58 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
           next_page_params: ""}
         )
       end
+    end
+  end
+
+  def getcoinbalancehistory(conn, params) do
+    pagination_options = Helpers.put_pagination_options(%{}, params)
+
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)} do
+
+      options_with_defaults =
+        pagination_options
+        |> Map.put_new(:page_number, 0)
+        |> Map.put_new(:page_size, 10)
+
+      options = %PagingOptions{
+        key: nil,
+        page_number: options_with_defaults.page_number,
+        page_size: options_with_defaults.page_size + 1
+      }
+
+      full_options = paging_options_coin_balance_history(params, options)
+
+      coin_balances_plus_one = Chain.address_to_coin_balances(address_hash, full_options)
+
+      {coin_balances, next_page} = split_list_by_page(coin_balances_plus_one, options_with_defaults.page_size)
+
+      if length(next_page) > 0 do
+        coin_balance = Enum.at(coin_balances, -1)
+        next_page_params = %{
+          "page" => options_with_defaults.page_number + 1,
+          "offset" => options_with_defaults.page_size,
+          "block_number" => coin_balance.block_number
+        }
+        render(conn, "getcoinbalancehistory.json", %{
+          coin_balances: coin_balances,
+          has_next_page: true,
+          next_page_params: next_page_params}
+        )
+      else
+        render(conn, "getcoinbalancehistory.json", %{
+          coin_balances: coin_balances,
+          has_next_page: false,
+          next_page_params: ""}
+        )
+      end
+    else
+      {:address_param, :error} ->
+        render(conn, :error, error: "Query parameter 'address' is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
     end
   end
 
@@ -333,15 +387,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
-  defp split_list_by_page(list_plus_one, page_size), do: Enum.split(list_plus_one, page_size)
-
-  defp next_page_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}, page, offset) do
-    %{"page" => page,
-      "offset" => offset,
-      "hash" => hash,
-      "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)
-    }
+  defp paging_options_coin_balance_history(params, paging_options) do
+    if !is_nil(params["block_number"]) do
+      case Integer.parse(params["block_number"]) do
+        {block_number, ""} ->
+          [paging_options: %{paging_options | key: {block_number}}]
+        _ ->
+          [paging_options: paging_options]
+      end
+    else
+      [paging_options: paging_options]
+    end
   end
+
+  defp split_list_by_page(list_plus_one, page_size), do: Enum.split(list_plus_one, page_size)
 
   defp fetch_block_param(%{"block" => "latest"}), do: {:ok, :latest}
   defp fetch_block_param(%{"block" => "earliest"}), do: {:ok, :earliest}

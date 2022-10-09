@@ -68,6 +68,17 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show_data.json", data: data)
   end
 
+  def render("getcoinbalancehistory.json", %{
+      coin_balances: coin_balances, has_next_page: has_next_page, next_page_params: next_page_params})
+    do
+    data = %{
+      "result" => Enum.map(coin_balances, &prepare_coin_balance_history/1),
+      "hasNextPage" => has_next_page,
+      "nextPageParams" => next_page_params
+    }
+    RPCView.render("show_data.json", data: data)
+  end
+
   def render("eth_get_balance.json", %{balance: balance}) do
     EthRPCView.render("show.json", %{result: balance, id: 0})
   end
@@ -95,6 +106,21 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "balance" => to_string(address.fetched_coin_balance && address.fetched_coin_balance.value),
       "address" => to_string(address.hash),
       "txnCount" => txn_count
+    }
+  end
+
+  defp prepare_coin_balance_history(coin_balance) do
+    %{
+      "addressHash" => coin_balance.address_hash,
+      "blockNumber" => coin_balance.block_number,
+      "blockTimestamp" => coin_balance.block_timestamp,
+      "delta" => coin_balance.delta,
+      "insertedAt" => coin_balance.inserted_at,
+      "transactionHash" => coin_balance.transaction_hash,
+      "transactionValue" => to_string(coin_balance.transaction_value && coin_balance.transaction_value.value),
+      "updatedAt" => coin_balance.updated_at,
+      "value" => to_string(coin_balance.value && coin_balance.value.value),
+      "valueFetchedAt" => coin_balance.value_fetched_at
     }
   end
 
