@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @transaction_necessity_by_association %{
     :block => :optional,
     [created_contract_address: :names] => :optional,
+    [created_contract_address: :token] => :optional,
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
     [to_address: :smart_contract] => :optional
