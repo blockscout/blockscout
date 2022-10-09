@@ -6,14 +6,13 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
   import Ecto.Query, only: [from: 2]
 
   alias Explorer.Account.{TagAddress, WatchlistAddress}
-  alias Explorer.Chain.Hash
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   def get_address_tags(nil, nil),
     do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
-  def get_address_tags(%Hash{} = address_hash, current_user) do
+  def get_address_tags(address_hash, current_user) when not is_nil(address_hash) do
     %{
       common_tags: get_tags_on_address(address_hash),
       personal_tags: get_personal_tags(address_hash, current_user),
@@ -23,13 +22,13 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
 
   def get_address_tags(_, _), do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
-  def get_public_tags(%Hash{} = address_hash) do
+  def get_public_tags(address_hash) when not is_nil(address_hash) do
     %{
       common_tags: get_tags_on_address(address_hash)
     }
   end
 
-  def get_tags_on_address(%Hash{} = address_hash) do
+  def get_tags_on_address(address_hash) when not is_nil(address_hash) do
     query =
       from(
         tt in AddressTag,
@@ -45,7 +44,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
 
   def get_tags_on_address(_), do: []
 
-  def get_personal_tags(%Hash{} = address_hash, %{id: id}) do
+  def get_personal_tags(address_hash, %{id: id}) when not is_nil(address_hash) do
     query =
       from(
         ta in TagAddress,
@@ -59,7 +58,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
 
   def get_personal_tags(_, _), do: []
 
-  def get_watchlist_names_on_address(%Hash{} = address_hash, %{watchlist_id: watchlist_id}) do
+  def get_watchlist_names_on_address(address_hash, %{watchlist_id: watchlist_id}) when not is_nil(address_hash) do
     query =
       from(
         wa in WatchlistAddress,
