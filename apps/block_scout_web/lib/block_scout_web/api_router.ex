@@ -25,6 +25,10 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(CheckAccountAPI)
   end
 
+  pipeline :api_v2 do
+    plug(:fetch_session)
+  end
+
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
 
   scope "/account/v1", as: :account_v1 do
@@ -85,6 +89,8 @@ defmodule BlockScoutWeb.ApiRouter do
 
   scope "/v2", as: :api_v2 do
     pipe_through(:api)
+    pipe_through(:api_v2)
+
     alias BlockScoutWeb.API.V2
 
     scope "/transactions" do

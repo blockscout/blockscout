@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
+  alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helpers
   alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
@@ -10,16 +11,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
   end
 
-  def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(transactions, &prepare_transaction/1), "next_page_params" => next_page_params}
+  def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
+    %{"items" => Enum.map(transactions, &prepare_transaction(&1, conn)), "next_page_params" => next_page_params}
   end
 
-  def render("transaction.json", %{transaction: transaction}) do
-    prepare_transaction(transaction)
+  def render("transaction.json", %{transaction: transaction, conn: conn}) do
+    prepare_transaction(transaction, conn)
   end
 
   def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
@@ -38,16 +41,16 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{"raw" => raw, "decoded" => decoded}
   end
 
-  def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(token_transfers, &prepare_token_transfer/1), "next_page_params" => next_page_params}
+  def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params, conn: conn}) do
+    %{"items" => Enum.map(token_transfers, &prepare_token_transfer(&1, conn)), "next_page_params" => next_page_params}
   end
 
-  def render("token_transfers.json", %{token_transfers: token_transfers}) do
-    Enum.map(token_transfers, &prepare_token_transfer/1)
+  def render("token_transfers.json", %{token_transfers: token_transfers, conn: conn}) do
+    Enum.map(token_transfers, &prepare_token_transfer(&1, conn))
   end
 
-  def render("token_transfer.json", %{token_transfer: token_transfer}) do
-    prepare_token_transfer(token_transfer)
+  def render("token_transfer.json", %{token_transfer: token_transfer, conn: conn}) do
+    prepare_token_transfer(token_transfer, conn)
   end
 
   def render("internal_transactions.json", %{
@@ -64,11 +67,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{"items" => Enum.map(logs, fn log -> prepare_log(log, tx_hash) end), "next_page_params" => next_page_params}
   end
 
-  def prepare_token_transfer(token_transfer) do
+  def prepare_token_transfer(token_transfer, conn) do
     %{
       "tx_hash" => token_transfer.transaction_hash,
-      "from" => Helper.address_with_info(token_transfer.from_address, token_transfer.from_address_hash),
-      "to" => Helper.address_with_info(token_transfer.to_address, token_transfer.to_address_hash),
+      "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
+      "to" => Helper.address_with_info(conn, token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
       "token_address" => token_transfer.token_contract_address_hash,
       "token_symbol" => token_transfer.token.symbol,
@@ -145,7 +148,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  defp prepare_transaction(transaction) do
+  defp prepare_transaction(transaction, conn) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
@@ -167,10 +170,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "status" => transaction.status,
       "block" => transaction.block_number,
       "timestamp" => transaction.block && transaction.block.timestamp,
-      "from" => Helper.address_with_info(transaction.from_address, transaction.from_address_hash),
-      "to" => Helper.address_with_info(transaction.to_address, transaction.to_address_hash),
+      "from" => Helper.address_with_info(conn, transaction.from_address, transaction.from_address_hash),
+      "to" => Helper.address_with_info(conn, transaction.to_address, transaction.to_address_hash),
       "created_contract" =>
-        Helper.address_with_info(transaction.created_contract_address, transaction.created_contract_address_hash),
+        Helper.address_with_info(conn, transaction.created_contract_address, transaction.created_contract_address_hash),
       "confirmations" =>
         transaction.block |> Chain.confirmations(block_height: Chain.block_height()) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
@@ -193,13 +196,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "token_transfers" =>
         render("token_transfers.json", %{
           token_transfers:
-            Enum.take(transaction.token_transfers, Chain.get_token_transfers_per_transaction_preview_count())
+            Enum.take(transaction.token_transfers, Chain.get_token_transfers_per_transaction_preview_count()),
+          conn: conn
         }),
       "token_transfers_overflow" =>
         Enum.count(transaction.token_transfers) > Chain.get_token_transfers_per_transaction_preview_count(),
       "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
       "method" => method_name(transaction, decoded_input),
-      "tx_types" => tx_types(transaction)
+      "tx_types" => tx_types(transaction),
+      "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(conn))
     }
   end
 
@@ -305,8 +310,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         earliest_processing_start: earliest_processing_start,
         inserted_at: inserted_at
       }) do
-    long_interval = diff(earliest_processing_start, end_time)
-    short_interval = diff(inserted_at, end_time)
+    long_interval = abs(diff(earliest_processing_start, end_time))
+    short_interval = abs(diff(inserted_at, end_time))
     merge_intervals(short_interval, long_interval)
   end
 
