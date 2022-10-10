@@ -6384,7 +6384,7 @@ defmodule Explorer.Chain do
         |> filter_contract_creation_dynamic()
         |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
 
-      :transaction ->
+      :coin_transfer ->
         dynamic
         |> filter_transaction_dynamic()
         |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
