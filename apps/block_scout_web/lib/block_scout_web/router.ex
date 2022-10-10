@@ -63,19 +63,19 @@ defmodule BlockScoutWeb.Router do
   api_path = url_params[:api_path]
   path = url_params[:path]
 
-  # if path != api_path do
-  #   scope to_string(api_path) <> "/verify_smart_contract" do
-  #     pipe_through(:api)
+  if path != api_path do
+    scope to_string(api_path) <> "/verify_smart_contract" do
+      pipe_through(:api)
 
-  #     post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-  #   end
-  # else
-  #   scope "/verify_smart_contract" do
-  #     pipe_through(:api)
+      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+    end
+  else
+    scope "/verify_smart_contract" do
+      pipe_through(:api)
 
-  #     post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-  #   end
-  # end
+      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+    end
+  end
 
   if Application.get_env(:block_scout_web, WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)
