@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.Schema.Scalars do
   end
 
   @desc """
-  The smallest fractional unit of Ether. Using wei instead of ether allows code to do integer match instead of using
+  The smallest fractional unit of PMC. Using wei instead of ether allows code to do integer match instead of using
   floats.
 
   See [Ethereum Homestead Documentation](http://ethdocs.org/en/latest/ether.html) for examples of various denominations of wei.

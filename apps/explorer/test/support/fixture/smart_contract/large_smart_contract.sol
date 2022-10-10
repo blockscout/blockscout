@@ -546,7 +546,7 @@ interface IHomeWork {
    * ether) as well as a recipient address. Only the high score holder can
    * recover lost ether and tokens on this contract.
    * @param token address The contract address of the ERC20 token to recover, or
-   * the null address for recovering Ether.
+   * the null address for recovering PMC.
    * @param recipient address payable The account where recovered funds should
    * be transferred.
    * @dev If you are trying to recover funds that were accidentally sent into
@@ -2706,7 +2706,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
    * ether) as well as a recipient address. Only the high score holder can
    * recover lost ether and tokens on this contract.
    * @param token address The contract address of the ERC20 token to recover, or
-   * the null address for recovering Ether.
+   * the null address for recovering PMC.
    * @param recipient address payable The account where recovered funds should
    * be transferred.
    * @dev If you are trying to recover funds that were accidentally sent into

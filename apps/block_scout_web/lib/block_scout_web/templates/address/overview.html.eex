@@ -178,7 +178,7 @@
                     data-placement="top"
                     data-toggle="tooltip"
                     data-html="true"
-                    title='<%= "@ " <> usd_value <> "/" <> gettext("Ether") %>'  
+                    title='<%= "@ " <> usd_value <> "/" <> gettext("PMC") %>'  
                   >
                   </span>)
                 </span>
