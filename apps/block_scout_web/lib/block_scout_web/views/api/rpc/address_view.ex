@@ -10,7 +10,9 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   def render("balance.json", %{addresses: [address]}) do
-    RPCView.render("show.json", data: balance(address))
+    RPCView.render("show.json",
+      data: %{balance: balance(address), lastBalanceUpdate: address.fetched_coin_balance_block_number}
+    )
   end
 
   def render("balance.json", assigns) do
@@ -77,6 +79,21 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "nextPageParams" => next_page_params
     }
     RPCView.render("show_data.json", data: data)
+  end
+
+  def render("getaddresscounters.json", %{
+      transaction_count: transactions_from_db,
+      token_transfer_count: token_transfers_from_db,
+      gas_usage_count: address_gas_usage_from_db,
+      validation_count: validation_count})
+    do
+    data = %{
+      "transactionCount" => transactions_from_db,
+      "tokenTransferCount" => token_transfers_from_db,
+      "gasUsageCount" => address_gas_usage_from_db,
+      "validationCount" => validation_count
+    }
+    RPCView.render("show.json", data: data)
   end
 
   def render("eth_get_balance.json", %{balance: balance}) do

@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.AddressController, only: [async_address_counters: 1]
+
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Etherscan, PagingOptions}
   alias Explorer.Chain.{Address, Wei}
@@ -341,6 +343,40 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         render(conn, :error, error: "Invalid address format")
     end
   end
+
+  def getaddresscounters(conn, params) do
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+
+      {validation_count} = async_address_counters(address)
+      transactions_from_db = address.transactions_count || 0
+      token_transfers_from_db = address.token_transfers_count || 0
+      address_gas_usage_from_db = address.gas_used || 0
+
+      render(conn, "getaddresscounters.json", %{
+        transaction_count: transactions_from_db,
+        token_transfer_count: token_transfers_from_db,
+        gas_usage_count: address_gas_usage_from_db,
+        validation_count: validation_count
+      })
+    else
+      {:address_param, :error} ->
+        render(conn, :error, error: "Query parameter 'address' is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
+
+      _ ->
+        render(conn, "getaddresscounters.json", %{
+          transaction_count: 0,
+          token_transfer_count: 0,
+          gas_usage_count: 0,
+          validation_count: 0
+        })
+    end
+ end
 
   @doc """
   Sanitizes optional params.
