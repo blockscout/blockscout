@@ -389,12 +389,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    tx_types(tx, types, :transaction)
+    tx_types(tx, types, :coin_transfer)
   end
 
-  defp tx_types(%Transaction{value: value}, types, :transaction) do
+  defp tx_types(%Transaction{value: value}, types, :coin_transfer) do
     if Decimal.compare(value.value, 0) == :gt do
-      types ++ [:transaction]
+      types ++ [:coin_transfer]
     else
       types
     end
