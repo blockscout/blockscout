@@ -184,7 +184,7 @@ defmodule EthereumJSONRPC.Log do
   end
 
   # ZkSync fields
-  defp entry_to_elixir({key, _}) when key in ~w(l1BlockNumber) do
+  defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber) do
     :ignore
   end
 
