@@ -110,11 +110,15 @@ $card-tab-active: $primary;
 .dashboard-banner-network-stats-label {
   font-family: "Minecraft";
   font-style: normal;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 100%;
   text-align: left;
   vertical-align: top;
   color: #fff !important;
+}
+
+.dashboard-banner-network-stats-value {
+  font-size: 26px !important;
 }
 
 .dashboard-banner-network-plain-container::after {
@@ -225,4 +229,16 @@ $dark-primary-alternate: #68778d;
 
 .dark-footer-logo {
   display: none;
+}
+
+.pagination-container .pagination .page-item.active .page-link {
+  background-color: #202327 !important;
+  border: 1px solid #202327 !important;
+}
+
+.page-link-light-hover {
+  &:not(.no-hover):hover {
+    background-color: $primary !important;
+    border-color: $primary !important;
+  }
 }

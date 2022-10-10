@@ -309,13 +309,14 @@ $dashboard-line-color-transactions-dark-theme: $primary;
 	}
 	.pagination-container .pagination .page-link {
 		color: $labels-dark;
-		border-color: $dark-light-bg;
-		background-color: $dark-light-bg;
+		border-color: $dark-light-bg !important;
+		background-color: $dark-light-bg !important;
 		&:not(.no-hover):hover {
-			color: #fff;
-			background-color: $dark-light-bg;
+			border-color: rgba($primary, 0.5) !important;
+			color: #fff !important;
+			background-color: $dark-light-bg !important;
 			path {
-				fill: #fff;
+				fill: #fff !important;
 			}
 		}
 		&[disabled] {
@@ -324,7 +325,11 @@ $dashboard-line-color-transactions-dark-theme: $primary;
 			background-color: $dark-light;
 		}
 	}
-
+	.pagination-container .pagination .page-item.active .page-link {
+		background-color: #fff !important;
+		border: 1px solid #fff !important;
+		color: #202327;
+	}
 	// dropdown
 	.dropdown-menu {
 		background-color: $dark-bg;
