@@ -18,7 +18,7 @@
       <span class="tile-status-label ml-2 ml-md-0" data-epoch-transaction-type="Success">Success</span>
     </div>
     <!-- Content -->
-    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0 align-self-center">
       <span class="bs-label reward font-weight-bold">
         <%= @epoch_transaction.amount |> Wei.to(:ether) %> <%= gettext "CELO" %>
       </span>
@@ -27,7 +27,7 @@
         <div class="d-flex align-items-end ml-2" style="height: 30px;">
           <span class="tile-address-link-desktop">
             <%= case @epoch_transaction.address do %>
-              <% :error -> %>
+              <% address when address in [:error, nil] -> %>
                 <%= gettext "The address could not be loaded. Please try again later" %>
               <% _ -> %>
                 <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.address), "data-test": "address_hash_link", class: assigns[:class] do %>
@@ -37,11 +37,11 @@
           </span>
           <span class="tile-address-link-mobile">
             <%= case @epoch_transaction.address do %>
-              <% :error -> %>
+              <% address when address in [:error, nil] -> %>
                 <%= gettext "The address could not be loaded. Please try again later" %>
               <% _ -> %>
                 <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, to_string(@epoch_transaction.address)), "data-test": "address_hash_link", class: assigns[:class] do %>
-                  <span> (<%= BlockScoutWeb.AddressView.trimmed_hash(@epoch_transaction.address.hash) %>)</span>
+                  <span> (<%= BlockScoutWeb.AddressView.trimmed_hash(@epoch_transaction.address) %>)</span>
                 <% end %>
            <% end %>
           </span>

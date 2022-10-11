@@ -20,7 +20,6 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
-  alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
@@ -49,16 +48,12 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
-    %{view: view, compiler: compiler} = select_contract_type_and_form_view(conn.params)
-
     contract_verification_result =
       case contract_verification_result do
         {:ok, _} = result ->
           result
 
         {:error, changeset} ->
-          compiler_versions = fetch_compiler_version(compiler)
-
           result =
             ChangesetView
             |> View.render_to_string("error.json",
@@ -67,6 +62,9 @@ defmodule BlockScoutWeb.Notifier do
             )
 
           {:error, result}
+
+        :update_submitted ->
+          {:ok, :update_submitted}
       end
 
     Endpoint.broadcast(
@@ -183,16 +181,6 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(_), do: nil
-
-  def fetch_compiler_version(compiler) do
-    case CompilerVersion.fetch_versions(compiler) do
-      {:ok, compiler_versions} ->
-        compiler_versions
-
-      {:error, _} ->
-        []
-    end
-  end
 
   def select_contract_type_and_form_view(params) do
     verification_from_json_upload? = Map.has_key?(params, "file")

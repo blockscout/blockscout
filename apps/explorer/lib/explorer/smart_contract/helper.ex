@@ -3,6 +3,10 @@ defmodule Explorer.SmartContract.Helper do
   SmartContract helper functions
   """
 
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.SmartContract
+  import Ecto.Query
+
   def queriable_method?(method) do
     method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"
   end
@@ -52,5 +56,57 @@ defmodule Explorer.SmartContract.Helper do
       |> Base.encode16(case: :lower)
 
     "0x" <> topic
+  end
+
+  @doc "Return all events on contract, return also implementation events if contract is a proxy."
+  def get_all_events(%SmartContract{address_hash: address, abi: abi} = contract) do
+    proxy = Chain.proxy_contract?(address, abi)
+
+    events =
+      if proxy do
+        implementation_events =
+          contract
+          |> get_implementation_contract()
+          |> then(&filter_events(&1.abi))
+
+        implementation_events ++ filter_events(contract.abi)
+      else
+        filter_events(contract.abi)
+      end
+
+    # add the topic directly on the abi (not actually part of the abi itself but used ubiquitously)
+    # then dedup by the topic
+    events
+    |> Enum.map(fn event -> Map.put(event, "topic", event_abi_to_topic_str(event)) end)
+    |> Enum.uniq_by(&Map.get(&1, "topic"))
+  end
+
+  defp get_implementation_contract(%SmartContract{address_hash: address_hash, abi: abi}) do
+    implementation_address = Chain.get_implementation_address_hash(address_hash, abi)
+    {:ok, contract} = get_verified_contract(implementation_address)
+    contract
+  end
+
+  defp filter_events(abi) do
+    abi |> Enum.filter(&(&1["type"] == "event"))
+  end
+
+  def get_verified_contract(address_string) do
+    case Explorer.Chain.Hash.Address.cast(address_string) do
+      :error ->
+        {:error, "Invalid format for address hash"}
+
+      {:ok, address} ->
+        query = from(sm in SmartContract, where: sm.address_hash == ^address)
+        contract = query |> Repo.one()
+
+        case contract do
+          sm = %SmartContract{} ->
+            {:ok, sm}
+
+          nil ->
+            {:error, "No verified contract found at address #{address_string}"}
+        end
+    end
   end
 end

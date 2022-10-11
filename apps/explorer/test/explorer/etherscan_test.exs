@@ -1248,7 +1248,6 @@ defmodule Explorer.EtherscanTest do
       options = %{order_by_direction: :desc}
 
       found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
-      IO.inspect("Gimme found_token_transfers #{inspect(found_token_transfers)}")
 
       block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
 
@@ -1599,11 +1598,12 @@ defmodule Explorer.EtherscanTest do
 
   describe "list_tokens/1" do
     test "returns the tokens owned by an address hash" do
+      block = insert(:block)
       address = insert(:address)
 
       token_balance =
         :address_current_token_balance
-        |> insert(address: address)
+        |> insert(address: address, block_number: block.number)
         |> Repo.preload(:token)
 
       insert(:address_current_token_balance, address: build(:address))
@@ -1616,6 +1616,7 @@ defmodule Explorer.EtherscanTest do
           contract_address_hash: token_balance.token_contract_address_hash,
           name: token_balance.token.name,
           decimals: token_balance.token.decimals,
+          block_number: block.number,
           symbol: token_balance.token.symbol,
           type: token_balance.token.type,
           id: token_balance.token_id

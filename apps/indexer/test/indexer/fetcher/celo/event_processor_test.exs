@@ -1,4 +1,5 @@
 defmodule Indexer.Fetcher.EventProcessorTest do
+  use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase, async: false
 
   import Indexer.Celo.TrackedEventSupport

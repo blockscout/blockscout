@@ -2,6 +2,8 @@ import Config
 
 config :indexer, Indexer.Tracer, env: "production", disabled?: true
 
+config :indexer, :environment, :prod
+
 config :logger, :indexer,
   level: :info,
   path: Path.absname("logs/prod/indexer.log"),
@@ -46,6 +48,17 @@ variant =
     |> List.last()
     |> String.downcase()
   end
+
+config :libcluster,
+  topologies: [
+    blockscout: [
+      strategy: Cluster.Strategy.Kubernetes.DNS,
+      config: [
+        service: System.get_env("EPMD_SERVICE_NAME"),
+        application_name: "blockscout"
+      ]
+    ]
+  ]
 
 # Import variant specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

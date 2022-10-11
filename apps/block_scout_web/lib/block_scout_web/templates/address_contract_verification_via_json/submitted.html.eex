@@ -1,0 +1,12 @@
+<section class="container">
+  <div class="block-not-found">
+    <div class="block-not-found-img">
+      <img alt="Contract Submitted" src="/images/errors-img/pic-404.svg">
+    </div>
+    <div class="block-not-found-content">
+      <h1 class="card-title error-title">Smart Contract submitted for verification</h1>
+      <p class="error-descr">The contract at <%= @address_string %> has been submitted for verification and will be available shortly after propagation.</p>
+      <a class="error-btn btn-line" href="<%= @path %>">View Contract</a>
+    </div>
+  </div>
+</section>

@@ -57,7 +57,7 @@ export function createCoinBalanceHistoryChart (el) {
               time: {
                 unit: 'day',
                 tooltipFormat: 'YYYY-MM-DD',
-                stepSize: stepSize
+                stepSize
               }
             },
             y: {

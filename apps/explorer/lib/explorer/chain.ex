@@ -22,7 +22,8 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
+  import EthereumJSONRPC,
+    only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
 
   require Logger
 
@@ -63,7 +64,6 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingBlockOperation,
-    ProxyContract,
     SmartContract,
     SmartContractAdditionalSource,
     StakingPool,
@@ -116,6 +116,9 @@ defmodule Explorer.Chain do
 
   # seconds
   @check_bytecode_interval 86_400
+
+  @limit_showing_transaсtions 10_000
+  @default_page_size 50
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
@@ -640,7 +643,7 @@ defmodule Explorer.Chain do
     from_block = from_block(options)
     to_block = to_block(options)
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
+    {block_number, _transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
       from(log in Log,
@@ -896,7 +899,7 @@ defmodule Explorer.Chain do
         select:
           sum(
             fragment(
-              "CASE 
+              "CASE
                 WHEN ? = 0 THEN 0
                 WHEN ? < ? THEN ?
                 ELSE ? END",
@@ -1854,6 +1857,25 @@ defmodule Explorer.Chain do
     end
   end
 
+  def fetch_contract_code(address_hash, block \\ "latest") do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    case EthereumJSONRPC.fetch_codes(
+           [%{block_quantity: block, address: address_hash}],
+           json_rpc_named_arguments
+         ) do
+      {:ok, %EthereumJSONRPC.FetchedCodes{params_list: []}} ->
+        nil
+
+      {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
+        contract_code = fetched_codes |> List.first() |> Map.get(:code)
+        {:ok, contract_code}
+
+      _ ->
+        nil
+    end
+  end
+
   defp check_bytecode_matching(address) do
     now = DateTime.utc_now()
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
@@ -1866,6 +1888,9 @@ defmodule Explorer.Chain do
              [%{block_quantity: "latest", address: address.smart_contract.address_hash}],
              json_rpc_named_arguments
            ) do
+        {:ok, %EthereumJSONRPC.FetchedCodes{params_list: []}} ->
+          address
+
         {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
           bytecode_from_node = fetched_codes |> List.first() |> Map.get(:code)
           bytecode_from_db = "0x" <> (address.contract_code.bytes |> Base.encode16(case: :lower))
@@ -2867,6 +2892,10 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @doc """
+  Streams tuples of {contract_address, event_topic, {block_number, log_index} event_tracking_id} for backfill
+    of historical event data.
+  """
   def stream_events_to_backfill(initial, reducer) do
     query =
       from(
@@ -2875,7 +2904,7 @@ defmodule Explorer.Chain do
         on: sc.id == cet.smart_contract_id,
         where: cet.backfilled == false,
         where: cet.enabled == true,
-        select: {sc.address_hash, cet.topic, cet.id}
+        select: {sc.address_hash, cet.topic, cet.backfilled_up_to, cet.id}
       )
 
     Repo.stream_reduce(query, initial, reducer)
@@ -3494,6 +3523,61 @@ defmodule Explorer.Chain do
     end
   end
 
+  # RAP - random access pagination
+  @spec recent_collated_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
+          :total_transactions_count => non_neg_integer(),
+          :transactions => [Transaction.t()]
+        }
+  def recent_collated_transactions_for_rap(options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    total_transactions_count = transactions_available_count()
+
+    fetched_transactions =
+      if is_nil(paging_options.key) or paging_options.page_number == 1 do
+        paging_options.page_size
+        |> Kernel.+(1)
+        |> Transactions.take_enough()
+        |> case do
+          nil ->
+            transactions = fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
+            Transactions.update(transactions)
+            transactions
+
+          transactions ->
+            transactions
+        end
+      else
+        fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
+      end
+
+    %{total_transactions_count: total_transactions_count, transactions: fetched_transactions}
+  end
+
+  def default_page_size, do: @default_page_size
+
+  def fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
+    fetch_transactions_for_rap()
+    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> handle_random_access_paging_options(paging_options)
+    |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    |> Repo.all()
+  end
+
+  defp fetch_transactions_for_rap do
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+  end
+
+  def transactions_available_count do
+    Transaction
+    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> limit(^@limit_showing_transaсtions)
+    |> Repo.aggregate(:count, :hash)
+  end
+
   def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
     paging_options
     |> fetch_transactions()
@@ -3549,17 +3633,15 @@ defmodule Explorer.Chain do
   end
 
   def pending_transactions_list do
-    query =
-      Transaction
-      |> pending_transactions_query()
-      |> Repo.all(timeout: :infinity)
+    Transaction
+    |> pending_transactions_query()
+    |> Repo.all(timeout: :infinity)
   end
 
   def pending_transactions_count do
-    query =
-      Transaction
-      |> pending_transactions_query()
-      |> Repo.aggregate(:count, :hash)
+    Transaction
+    |> pending_transactions_query()
+    |> Repo.aggregate(:count, :hash)
   end
 
   @doc """
@@ -4175,7 +4257,6 @@ defmodule Explorer.Chain do
       new_contract
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
-      |> apply_smart_contract_contract_code_md5_changeset
 
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
@@ -4195,13 +4276,28 @@ defmodule Explorer.Chain do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_contract_query =
       Multi.new()
-      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
       |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+      |> Multi.run(:create_address_if_necessary, fn repo, _ -> create_address_if_not_exists(repo, address_hash) end)
       |> Multi.run(:insert_address_name, fn repo, _ ->
         name = Changeset.get_field(smart_contract_changeset, :name)
         create_address_name(repo, name, address_hash)
       end)
-      |> Multi.insert(:smart_contract, smart_contract_changeset)
+      |> Multi.run(:smart_contract, fn repo, changes ->
+        changeset =
+          case changes do
+            # address was just created, we can calculate md5 without db fetch
+            %{create_address_if_necessary: address = %Explorer.Chain.Address{}} ->
+              smart_contract_changeset
+              |> Changeset.put_change(:contract_byte_code_md5, Address.contract_code_md5(address))
+
+            # address already existed, will have to fetch it for md5
+            _ ->
+              smart_contract_changeset |> add_contract_code_md5_for_changeset()
+          end
+
+        repo.insert(changeset)
+      end)
+      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
 
     insert_contract_query_with_additional_sources =
       smart_contract_additional_sources_changesets
@@ -4229,15 +4325,38 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp apply_smart_contract_contract_code_md5_changeset(changeset) do
-    address_hash = Changeset.get_field(changeset, :address_hash)
+  defp add_contract_code_md5_for_changeset(%Changeset{} = changeset) do
+    address_hash = changeset |> Changeset.get_field(:address_hash)
 
+    _do_add_md5(changeset, address_hash)
+  end
+
+  defp _do_add_md5(changeset, nil), do: changeset
+
+  defp _do_add_md5(changeset, address_hash) do
     case Repo.get(Address, address_hash) do
-      %Address{} = address ->
-        Changeset.put_change(changeset, :contract_byte_code_md5, address |> Address.contract_code_md5())
+      %Address{contract_code: cc} = address when not is_nil(cc) ->
+        changeset |> Changeset.put_change(:contract_byte_code_md5, Address.contract_code_md5(address))
 
       _ ->
         changeset
+    end
+  end
+
+  defp create_address_if_not_exists(repo, address_hash) do
+    address_found =
+      Address
+      |> where([a], a.hash == ^address_hash)
+      |> repo.exists?()
+
+    if address_found do
+      {:ok, nil}
+    else
+      {:ok, code} = fetch_contract_code(address_hash)
+
+      %Address{}
+      |> Address.changeset(%{hash: address_hash, contract_code: code})
+      |> repo.insert()
     end
   end
 
@@ -4272,7 +4391,7 @@ defmodule Explorer.Chain do
       smart_contract
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
-      |> apply_smart_contract_contract_code_md5_changeset
+      |> add_contract_code_md5_for_changeset()
 
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
@@ -4340,22 +4459,6 @@ defmodule Explorer.Chain do
       _ -> {:error, "There was an error annotating that the address has been decompiled."}
     end
   end
-
-  # defp set_address_proxy(repo, proxy_address, implementation_address) do
-  #   params = %{
-  #     proxy_address: proxy_address,
-  #     implementation_address: implementation_address
-  #   }
-
-  #   Logger.debug(fn -> "Setting Proxy Address Mapping: #{proxy_address} - #{implementation_address}" end)
-
-  #   %ProxyContract{}
-  #   |> ProxyContract.changeset(params)
-  #   |> repo.insert(
-  #     on_conflict: :replace_all,
-  #     conflict_target: [:proxy_address]
-  #   )
-  # end
 
   defp clear_primary_address_names(repo, address_hash) do
     query =
@@ -4601,6 +4704,47 @@ defmodule Explorer.Chain do
     |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
   end
+
+  defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
+    do: limit(query, ^(@default_page_size + 1))
+
+  defp handle_random_access_paging_options(query, paging_options) do
+    query
+    |> (&if(paging_options |> Map.get(:page_number, 1) |> proccess_page_number() == 1,
+          do: &1,
+          else: page_transaction(&1, paging_options)
+        )).()
+    |> handle_page(paging_options)
+  end
+
+  defp handle_page(query, paging_options) do
+    page_number = paging_options |> Map.get(:page_number, 1) |> proccess_page_number()
+    page_size = Map.get(paging_options, :page_size, @default_page_size)
+
+    cond do
+      page_in_bounds?(page_number, page_size) && page_number == 1 ->
+        query
+        |> limit(^(page_size + 1))
+
+      page_in_bounds?(page_number, page_size) ->
+        query
+        |> limit(^page_size)
+        |> offset(^((page_number - 2) * page_size))
+
+      true ->
+        query
+        |> limit(^(@default_page_size + 1))
+    end
+  end
+
+  defp proccess_page_number(number) when number < 1, do: 1
+
+  defp proccess_page_number(number), do: number
+
+  defp page_in_bounds?(page_number, page_size),
+    do: page_size <= @limit_showing_transaсtions && @limit_showing_transaсtions - page_number * page_size >= 0
+
+  def limit_shownig_transactions, do: @limit_showing_transaсtions
 
   defp join_association(query, [{association, nested_preload}], necessity)
        when is_atom(association) and is_atom(nested_preload) do
@@ -7604,17 +7748,8 @@ defmodule Explorer.Chain do
 
   def get_implementation_abi_from_proxy(proxy_address_hash, abi)
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    if proxy_contract?(proxy_address_hash, abi) do
-      implementation_address_hash_string = get_implementation_address_hash(proxy_address_hash, abi)
-
-      if implementation_address_hash_string do
-        get_implementation_abi(implementation_address_hash_string)
-      else
-        []
-      end
-    else
-      []
-    end
+    implementation_address_hash_string = get_implementation_address_hash(proxy_address_hash, abi)
+    get_implementation_abi(implementation_address_hash_string)
   end
 
   def get_implementation_abi_from_proxy(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
@@ -7829,6 +7964,22 @@ defmodule Explorer.Chain do
       from(w in CeloUnlocked,
         select: sum(w.amount),
         where: w.available <= fragment("NOW()")
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> %Wei{value: Decimal.new(0)}
+      sum -> sum
+    end
+  end
+
+  def fetch_sum_available_celo_unlocked_for_address(address) do
+    query =
+      from(celo_unlocked in CeloUnlocked,
+        select: sum(celo_unlocked.amount),
+        where: celo_unlocked.available <= fragment("NOW()"),
+        where: celo_unlocked.account_address == ^address
       )
 
     query

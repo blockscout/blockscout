@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import do
   """
 
   alias Ecto.Changeset
+  alias Explorer.Celo.Telemetry
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
@@ -126,9 +127,24 @@ defmodule Explorer.Chain.Import do
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
+      emit_ingestion_metrics(data)
       Publisher.broadcast(data, Map.get(options, :broadcast, false))
       {:ok, data}
     end
+  end
+
+  # for all inserted changes that are a valid list + non zero length
+  # collect a mapping
+  defp emit_ingestion_metrics(data) do
+    data
+    |> Enum.reduce(%{}, fn
+      {change_key, change_list}, acc when is_list(change_list) and change_list != [] ->
+        acc |> Map.put(change_key, length(change_list))
+
+      _, acc ->
+        acc
+    end)
+    |> then(&Telemetry.event(:ingested, &1))
   end
 
   defp runner_to_changes_list(runner_options_pairs) when is_list(runner_options_pairs) do

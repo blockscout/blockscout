@@ -6,7 +6,7 @@
   <div class="row">
     <div class="card-section col-md-12 col-lg-8 pr-0-md mb-2">
       <div class="card">
-        <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
+        <div class="card-body fs-14" style="line-height: 31px;" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title d-flex" style="justify-content: space-between; margin-bottom: 0.75rem">
             <div style="line-height: 30px;">
               <%= cond do %>
@@ -51,77 +51,117 @@
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_qr_code.html" %>
             </span>
           </h1>
-          <!-- bridged token -->
           <%= if @token.bridged do %>
             <div class="view-original-token-container">
               <%= if Map.has_key?(@token, :foreign_token_contract_address_hash) do %>
                 <a data-test="original_token_contract_address" href=<%= foreign_bridged_token_explorer_link(@token) %> target="_blank">View Original Token <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span></a>
               <% end %>
             </div>
-            <%= if Map.has_key?(@token, :custom_metadata) do %>
-              <div style="margin-top: 15px; font-size: 12px;">
-                <%= @token.custom_metadata %>
-              </div>
-            <% end %>
           <% end %>
-
-          <h3 class="token-address-mobile"><%= Address.checksum(@token.contract_address_hash) %></h3>
-
-          <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
-            <span class="mr-4 mb-3 mb-md-0">
-              <%= link to:
-                  AccessHelpers.get_path(@conn, :address_path, :show, Address.checksum(@token.contract_address_hash)),
+          <dl class="row mt-4">
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Address of the token contract") %>
+              <%= gettext("Contract") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9 contract-address">
+              <%= link(
+                  @token.contract_address_hash,
+                  to: AccessHelpers.get_path(@conn, :address_path, :show, 
+                  Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
-              do %>
-                <%=  gettext "View Contract" %>
-              <% end %>
-            </span>
-            <div class="d-flex flex-row justify-content-start text-muted">
-              <span class="mr-4"> <%= @token.type %> </span>
-              <span token-holder-count class="mr-4"></span>
-              <span token-transfer-count class="mr-4"></span>
-              <%= if decimals?(@token) do %>
-                <span  class="mr-4"><%= @token.decimals %> <%= gettext "Decimals" %></span>
-              <% end %>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <%= if total_supply?(@token) do %>
-      <div class="card-section col-md-12 col-lg-4 pl-0-md mb-2">
-        <div class="card card-background-1">
-          <div class="card-body">
-            <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
-            <div class="text-right">
-              <h3 class="text-uppercase">
+                  ) 
+              %>
+            </dd>
+          </dl>
+          <%= if total_supply?(@token) do %>
+            <dl class="row">
+              <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("The total amount of tokens issued") %>
+                <%= gettext("Total supply") %>
+              </dt>
+              <dd class="col-sm-8 col-md-8 col-lg-9">
                 <%= if decimals?(@token) do %>
                   <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
                 <% else %>
                   <%= format_integer_to_currency(@token.total_supply) %>
-                <% end %>
-                <%= unless is_nil(@token.symbol) do %>
-                <%= Gettext.gettext(BlockScoutWeb.Gettext, @token.symbol) %>
-                <% end %>
-              </h3>
-              <%= if @token.usd_value do %>
-                <div class="text-uppercase">
+                <% end %> <%= @token.symbol %>
+              </dd>
+            </dl>
+            <%= if @token.usd_value do %>
+              <dl class="row">
+                <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+                  <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Total Supply * Price") %>
+                  <%= gettext("Market Cap") %>
+                </dt>
+                <dd class="col-sm-8 col-md-8 col-lg-9">
                   <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
-                  <%= unless Map.has_key?(@token, :custom_cap) && @token.custom_cap do %>
-                    |
-                    <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"></span>
-                  <% end %>
-                </div>
-              <% else %>
-                <br />
-              <% end %>
-            </div>
-          </div>
+                </dd>
+              </dl>
+              <%= unless Map.has_key?(@token, :custom_cap) && @token.custom_cap do %>
+                <dl class="row">
+                  <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                    text: gettext("Price per token on the exchanges") %>
+                    <%= gettext("Price") %>
+                  </dt>
+                  <dd class="col-sm-8 col-md-8 col-lg-9">
+                    <span data-selector="token-price" data-usd-value="<%= @token.usd_value %>"></span>
+                  </dd>
+                </dl>
+              <% end %>  
+            <% end %>
+          <% end %>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Number of accounts holding the token") %>
+              <%= gettext("Holders") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9">
+              <% link = if @conn.request_path |> String.contains?("/token-holders"), do: "", else: AccessHelpers.get_path(@conn, :token_holder_path, :index, @token.contract_address_hash) %>
+              <a href="<%= link %>#holders" class="page-link bs-label large btn-no-border-link-to-tems" token-holder-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching holders...") %></a>
+            </dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Number of transfers for the token") %>
+              <%= gettext("Transfers") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9">
+              <% link = if @conn.request_path |> String.contains?("/token-transfers"), do: "", else: AccessHelpers.get_path(@conn, :token_transfer_path, :index, @token.contract_address_hash) %>
+              <a href="<%= link %>#transfers" class="page-link bs-label large btn-no-border-link-to-tems" token-transfer-count><%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transfers...") %></a>
+            </dd>
+          </dl>
+          <%= if decimals?(@token) do %>
+            <dl class="row">
+              <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Number of digits that come after the decimal place when displaying token value") %>
+                <%= gettext("Decimals") %>
+              </dt>
+              <dd class="col-sm-8 col-md-8 col-lg-9">
+                <%= @token.decimals %>
+              </dd>
+            </dl>
+          <% end %>  
+          <dl class="row">
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Type of the token standard") %>
+              <%= gettext("Token type") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9">
+              <%= @token.type %>
+            </dd>
+          </dl>
         </div>
       </div>
     </div>
-  <% end %>
+  </div>
 </section>
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)), title: @token.contract_address %>

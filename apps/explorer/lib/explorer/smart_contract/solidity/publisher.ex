@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   """
   require Logger
 
+  alias Explorer.Celo.PubSub
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.CompilerVersion
@@ -84,6 +85,19 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   defp create_or_update_smart_contract(address_hash, attrs) do
+    if Application.get_env(:explorer, :write_api_enabled) do
+      do_create_or_update(address_hash, attrs)
+    else
+      broadcast_smart_contract_upsert(address_hash, attrs)
+      {:update_submitted}
+    end
+  end
+
+  defp broadcast_smart_contract_upsert(address_hash, attrs) do
+    PubSub.publish_smart_contract(address_hash, attrs)
+  end
+
+  def do_create_or_update(address_hash, attrs) do
     if Chain.smart_contract_verified?(address_hash) do
       Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     else

@@ -15,7 +15,10 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.10",
+      elixir: "~> 1.12",
+      elixirc_options: [
+        warnings_as_errors: true
+      ],
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -111,7 +114,8 @@ defmodule Explorer.Mixfile do
       {:tesla, "~> 1.3.3"},
       # Log json format
       {:logger_json, "~> 3.2"},
-      {:observer_cli, "~> 1.6"}
+      {:observer_cli, "~> 1.6"},
+      {:phoenix_pubsub, "~> 2.0"}
     ]
   end
 

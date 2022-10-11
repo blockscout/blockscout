@@ -66,7 +66,11 @@ config :indexer, Indexer.Fetcher.TokenBalanceOnDemand, threshold: token_balance_
 # config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 if System.get_env("POS_STAKING_CONTRACT") do
   config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
+else
+  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: false
 end
+
+config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
@@ -95,6 +99,26 @@ config :logger, :logger_backend, level: :error
 config :indexer, Indexer.Block.Fetcher, enable_gold_token: true
 config :indexer, Indexer.Prometheus.MetricsCron, metrics_fetcher_blocks_count: 1000
 config :indexer, Indexer.Prometheus.MetricsCron, metrics_cron_interval: System.get_env("METRICS_CRON_INTERVAL") || "2"
+
+config :indexer, :telemetry_config, [
+  [
+    name: [:blockscout, :ingested],
+    type: :summary,
+    label: "indexer_import_ingested",
+    meta: %{
+      help: "Blockchain primitives ingested via `Import.all` by type",
+      metric_labels: [:type]
+    }
+  ],
+  [
+    name: [:blockscout, :chain_event_send],
+    type: :counter,
+    label: "indexer_chain_events_sent",
+    meta: %{
+      help: "Number of chain events sent via pubsub"
+    }
+  ]
+]
 
 config :prometheus, Indexer.Prometheus.Exporter,
   path: "/metrics/indexer",

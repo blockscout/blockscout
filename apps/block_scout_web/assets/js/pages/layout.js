@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import { fullPath } from '../lib/utils'
 
 $(document).click(function (event) {
   const clickover = $(event.target)
@@ -10,7 +11,7 @@ $(document).click(function (event) {
 
 const search = (value) => {
   if (value) {
-    window.location.href = `/search?q=${value}`
+    window.location.href = fullPath(`/search?q=${value}`)
   }
 }
 

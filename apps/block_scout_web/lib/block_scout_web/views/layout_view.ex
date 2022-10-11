@@ -11,17 +11,17 @@ defmodule BlockScoutWeb.LayoutView do
   @default_other_networks [
     %{
       title: "Celo Mainnet",
-      url: "https://explorer.celo.org",
+      url: "https://explorer.celo.org/mainnet",
       test_net?: false
     },
     %{
       title: "Celo Alfajores",
-      url: "https://alfajores-blockscout.celo-testnet.org/",
+      url: "https://explorer.celo.org/alfajores",
       test_net?: true
     },
     %{
       title: "Celo Baklava",
-      url: "https://baklava-blockscout.celo-testnet.org/",
+      url: "https://explorer.celo.org/baklava",
       test_net?: true
     }
   ]
@@ -98,11 +98,9 @@ defmodule BlockScoutWeb.LayoutView do
     """
   end
 
-  def version do
-    BlockScoutWeb.version()
-  end
-
+  def version, do: BlockScoutWeb.version()
   def segment_key, do: BlockScoutWeb.segment_key()
+  def network_path, do: BlockScoutWeb.network_path()
 
   def release_link(version) do
     release_link_env_var = Application.get_env(:block_scout_web, :release_link)

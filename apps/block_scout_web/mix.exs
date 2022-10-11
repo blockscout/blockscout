@@ -15,7 +15,10 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.10",
+      elixir: "~> 1.12",
+      elixirc_options: [
+        warnings_as_errors: true
+      ],
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -114,6 +117,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:prometheus_plugs, "~> 1.1"},
       # OS process metrics for Prometheus
       {:prometheus_process_collector, "~> 1.3"},
+      {:remote_ip, "~> 1.0"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.11.1", only: [:dev, :test], runtime: false},
       # Tracing

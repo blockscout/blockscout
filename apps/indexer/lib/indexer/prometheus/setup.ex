@@ -5,6 +5,7 @@ defmodule Indexer.Prometheus.Setup do
 
   alias Indexer.Prometheus.{
     BlockInstrumenter,
+    CeloInstrumenter,
     DBInstrumenter,
     Exporter,
     GenericInstrumenter,
@@ -20,7 +21,7 @@ defmodule Indexer.Prometheus.Setup do
     RPCInstrumenter.setup()
     TokenInstrumenter.setup()
     TransactionInstrumenter.setup()
-
+    CeloInstrumenter.setup()
     Exporter.setup()
   end
 end

@@ -10,8 +10,20 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
   alias Explorer.Celo.ContractEvents.Common.TransferEvent
   alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
   alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent
-  alias Explorer.Chain.{Address, Block, CeloElectionRewards, CeloEpochRewards, CeloPendingEpochOperation, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    CeloAccountEpoch,
+    CeloElectionRewards,
+    CeloEpochRewards,
+    CeloPendingEpochOperation,
+    Hash,
+    Wei
+  }
+
   alias Indexer.Fetcher.CeloEpochData, as: CeloEpochDataFetcher
+  alias Explorer.Celo.ContractEvents.Lockedgold.GoldLockedEvent
 
   @moduletag :capture_log
 
@@ -76,7 +88,44 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
 
       wait_for_results(fn ->
         assert Repo.one!(from(rewards in CeloEpochRewards))
-        assert count(CeloPendingEpochOperation)
+        assert count(CeloPendingEpochOperation) == 0
+      end)
+
+      # Terminates the process so it finishes all Ecto processes.
+      GenServer.stop(context.pid)
+    end
+  end
+
+  describe "async_fetch for locked gold" do
+    setup [
+      :setup_votes_mox,
+      :setup_epoch_mox,
+      :setup_accounts_epochs_mox,
+      :save_locked_gold_events,
+      :save_voter_contract_events_and_start_fetcher
+    ]
+
+    test "saves epoch reward to db and deletes pending operation", context do
+      CeloEpochDataFetcher.async_fetch([
+        %{
+          block_hash: context.last_block_in_epoch_hash,
+          block_number: context.last_block_in_epoch_number,
+          block_timestamp: DateTime.utc_now()
+        }
+      ])
+
+      wait_for_results(fn ->
+        assert Repo.one!(
+                 from(account_epoch in CeloAccountEpoch)
+                 |> where([ae], ae.account_hash == ^context.address_1_hash)
+               )
+
+        assert Repo.one!(
+                 from(account_epoch in CeloAccountEpoch)
+                 |> where([ae], ae.account_hash == ^context.address_2_hash)
+               )
+
+        assert count(CeloPendingEpochOperation) == 0
       end)
 
       # Terminates the process so it finishes all Ecto processes.
@@ -339,6 +388,22 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       insert(:celo_account, address: validator_hash)
 
       input = %{
+        accounts_epochs: [
+          %{
+            account_hash: validator_hash,
+            block_hash: block_hash,
+            block_number: block_number,
+            total_locked_gold: 124,
+            nonvoting_locked_gold: 0
+          },
+          %{
+            account_hash: voter_hash,
+            block_hash: block_hash,
+            block_number: block_number,
+            total_locked_gold: 123,
+            nonvoting_locked_gold: 101
+          }
+        ],
         block_number: block_number,
         epoch_rewards: %{
           block_hash: block_hash,
@@ -365,7 +430,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
           validator_target_epoch_rewards: 205_631_887_959_760_273_971,
           voter_target_epoch_rewards: 26_043_810_141_454_976_793_003,
           voting_fraction: 410_303_431_329_291_024_629_586,
-          reserve_bolster: 123_456_789
+          reserve_bolster: 0
         },
         voter_rewards: [
           %{
@@ -400,6 +465,17 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       }
 
       assert CeloEpochDataFetcher.import_items(input) == :ok
+
+      # Test on_conflict cause
+      reserve_bolster_value = 123_456_789
+      input_with_reserve_bolster = put_in(input, [:epoch_rewards, :reserve_bolster], reserve_bolster_value)
+
+      assert CeloEpochDataFetcher.import_items(input_with_reserve_bolster) == :ok
+      reward = Repo.one!(from(rewards in CeloEpochRewards) |> where([r], r.block_number == ^block_number))
+
+      {:ok, amount_in_wei} = Wei.cast(reserve_bolster_value)
+
+      assert reward.reserve_bolster == amount_in_wei
     end
 
     test "with missing data removes rewards type" do
@@ -410,6 +486,290 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                voter_rewards: [%{block_number: block_number}]
              }) == %{block_number: block_number}
     end
+  end
+
+  describe "get_accounts_epochs/1 when there are no accounts at all" do
+    test "it fetches empty list" do
+      assert CeloEpochDataFetcher.get_accounts_epochs(%{
+               block_number: 123_456,
+               block_hash: "block-hash"
+             }) == %{
+               block_number: 123_456,
+               block_hash: "block-hash",
+               accounts_epochs: []
+             }
+    end
+
+    test "it skips fetching when there is :accounts_epochs key" do
+      assert CeloEpochDataFetcher.get_accounts_epochs(%{
+               block_number: 123_456,
+               accounts_epochs: [
+                 %{
+                   account: "account-hash-1",
+                   locked_gold: 123_456_789
+                 },
+                 %{
+                   account: "account-hash-2",
+                   locked_gold: 987_654_321
+                 }
+               ]
+             }) == %{
+               block_number: 123_456,
+               accounts_epochs: [
+                 %{
+                   account: "account-hash-1",
+                   locked_gold: 123_456_789
+                 },
+                 %{
+                   account: "account-hash-2",
+                   locked_gold: 987_654_321
+                 }
+               ]
+             }
+    end
+  end
+
+  describe "get_accounts_epochs/1 when there are multiple accounts" do
+    setup [:setup_accounts_epochs_mox, :save_locked_gold_events]
+
+    test "it fetches a list of accounts", %{
+      block: %{
+        number: block_number,
+        hash: block_hash
+      },
+      address_1_hash: address_1_hash,
+      address_2_hash: address_2_hash
+    } do
+      assert CeloEpochDataFetcher.get_accounts_epochs(%{
+               block_number: block_number,
+               block_hash: block_hash
+             }) == %{
+               block_number: block_number,
+               block_hash: block_hash,
+               accounts_epochs: [
+                 %{
+                   account_hash: address_2_hash,
+                   block_hash: block_hash,
+                   block_number: block_number,
+                   total_locked_gold: 124,
+                   nonvoting_locked_gold: 0
+                 },
+                 %{
+                   account_hash: address_1_hash,
+                   block_hash: block_hash,
+                   block_number: block_number,
+                   total_locked_gold: 123,
+                   nonvoting_locked_gold: 101
+                 }
+               ]
+             }
+    end
+  end
+
+  describe "get_accounts_epochs/1 when there is an error" do
+    setup [:setup_accounts_epochs_mox_with_error, :save_locked_gold_events]
+
+    test "it handles error", %{
+      block: %{
+        number: block_number,
+        hash: block_hash
+      },
+      address_1_hash: address_1_hash,
+      address_2_hash: address_2_hash
+    } do
+      assert CeloEpochDataFetcher.get_accounts_epochs(%{
+               block_number: block_number,
+               block_hash: block_hash
+             }) == %{
+               block_number: block_number,
+               block_hash: block_hash,
+               error: "mock_reason"
+             }
+    end
+  end
+
+  defp setup_accounts_epochs_mox(context) do
+    %Address{hash: address_1_hash} = insert(:address)
+    %Address{hash: address_2_hash} = insert(:address)
+
+    set_test_addresses(%{
+      "LockedGold" => "0x8d6677192144292870907e3fa8a5527fe55a7ff6"
+    })
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getAccountTotalLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x30ec70f5000000000000000000000000" <> address_1_hash, to: _}, "0x2A300"]
+           },
+           %{
+             id: getAccountNonvotingLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x3f199b40000000000000000000000000" <> address_1_hash, to: _}, "0x2A300"]
+           }
+         ],
+         _ ->
+        {
+          :ok,
+          [
+            %{
+              id: getAccountTotalLockedGold,
+              jsonrpc: "2.0",
+              result: "0x000000000000000000000000000000000000000000000000000000000000007b"
+            },
+            %{
+              id: getAccountNonvotingLockedGold,
+              jsonrpc: "2.0",
+              result: "0x0000000000000000000000000000000000000000000000000000000000000065"
+            }
+          ]
+        }
+      end
+    )
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getAccountTotalLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x30ec70f5000000000000000000000000" <> address_2_hash, to: _}, "0x2A300"]
+           },
+           %{
+             id: getAccountNonvotingLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x3f199b40000000000000000000000000" <> address_2_hash, to: _}, "0x2A300"]
+           }
+         ],
+         _ ->
+        {
+          :ok,
+          [
+            %{
+              id: getAccountTotalLockedGold,
+              jsonrpc: "2.0",
+              result: "0x000000000000000000000000000000000000000000000000000000000000007c"
+            },
+            %{
+              id: getAccountNonvotingLockedGold,
+              jsonrpc: "2.0",
+              result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        }
+      end
+    )
+
+    Map.merge(context, %{address_1_hash: address_1_hash, address_2_hash: address_2_hash})
+  end
+
+  defp setup_accounts_epochs_mox_with_error(context) do
+    %Address{hash: address_1_hash} = insert(:address)
+    %Address{hash: address_2_hash} = insert(:address)
+
+    set_test_addresses(%{
+      "LockedGold" => "0x8d6677192144292870907e3fa8a5527fe55a7ff6"
+    })
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getAccountTotalLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x30ec70f5000000000000000000000000" <> address_1_hash, to: _}, "0x2A300"]
+           },
+           %{
+             id: getAccountNonvotingLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x3f199b40000000000000000000000000" <> address_1_hash, to: _}, "0x2A300"]
+           }
+         ],
+         _ ->
+        {
+          :ok,
+          [
+            %{
+              id: getAccountTotalLockedGold,
+              jsonrpc: "2.0",
+              result: "0x000000000000000000000000000000000000000000000000000000000000007b"
+            },
+            %{
+              id: getAccountNonvotingLockedGold,
+              jsonrpc: "2.0",
+              result: "0x0000000000000000000000000000000000000000000000000000000000000065"
+            }
+          ]
+        }
+      end
+    )
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getAccountTotalLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x30ec70f5000000000000000000000000" <> address_2_hash, to: _}, "0x2A300"]
+           },
+           %{
+             id: getAccountNonvotingLockedGold,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: "0x3f199b40000000000000000000000000" <> address_2_hash, to: _}, "0x2A300"]
+           }
+         ],
+         _ ->
+        {
+          :error,
+          :mock_reason
+        }
+      end
+    )
+
+    Map.merge(context, %{address_1_hash: address_1_hash, address_2_hash: address_2_hash})
+  end
+
+  defp save_locked_gold_events(context) do
+    block = insert(:block, number: 172_800)
+    log_1 = insert(:log, block: block, index: 1)
+    log_2 = insert(:log, block: block, index: 2)
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_address_hash} = insert(:core_contract)
+
+    insert(:contract_event, %{
+      event: %GoldLockedEvent{
+        __block_number: block.number,
+        __log_index: log_1.index,
+        __contract_address_hash: contract_address_hash,
+        account: context.address_1_hash,
+        value: 2
+      }
+    })
+
+    insert(:contract_event, %{
+      event: %GoldLockedEvent{
+        __block_number: block.number,
+        __log_index: log_2.index,
+        __contract_address_hash: contract_address_hash,
+        account: context.address_2_hash,
+        value: 3
+      }
+    })
+
+    Map.merge(context, %{block: block})
   end
 
   defp setup_votes_mox(context) do
@@ -532,7 +892,8 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     )
 
     block = insert(:block, number: 172_800)
-    log = insert(:log, block: block)
+    log_rewards_mint = insert(:log, block: block)
+    log_reserve_bolster_mint = insert(:log, block: block)
 
     insert(:celo_pending_epoch_operations, block_number: block.number)
 
@@ -540,7 +901,18 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       event: %TransferEvent{
         __block_number: block.number,
         __contract_address_hash: gold_token_address,
-        __log_index: log.index,
+        __log_index: log_rewards_mint.index,
+        value: 8_743_659_138_275_098_274_659_872_346,
+        from: "0x0000000000000000000000000000000000000000",
+        to: reserve_address
+      }
+    })
+
+    insert(:contract_event, %{
+      event: %TransferEvent{
+        __block_number: block.number,
+        __contract_address_hash: gold_token_address,
+        __log_index: log_reserve_bolster_mint.index,
         value: 18_173_469_592_702_214_806_939,
         from: "0x0000000000000000000000000000000000000000",
         to: reserve_address

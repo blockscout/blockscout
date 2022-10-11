@@ -1,0 +1,111 @@
+$campaign-banner-spacing: 6px;
+
+.campaign-banner-preset-announcement {
+  background-color: $primary;
+  color: $white;
+
+  .campaign-banner-close {
+    background-color: $primary;
+    color: $white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+
+  .campaign-banner-cta {
+    color: $white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+}
+
+.campaign-banner-preset-warning {
+  background-color: $secondary;
+  color: $celo-dark;
+
+  .campaign-banner-close {
+    background-color: $secondary;
+    color: $celo-dark;
+
+    &:hover {
+      color: $white;
+    }
+  }
+
+  .campaign-banner-cta {
+    color: $celo-dark;
+
+    &:hover {
+      color: $white;
+    }
+  }
+}
+
+.campaign-banner-preset-error {
+  background-color: $tile-status-error-reason;
+  color: white;
+
+  .campaign-banner-close {
+    background-color: $tile-status-error-reason;
+    color: white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+
+  .campaign-banner-cta {
+    color: $white;
+
+    &:hover {
+      color: $celo-dark;
+    }
+  }
+}
+
+.campaign-banner {
+  display: flex;
+  align-items: center;
+
+  font-weight: 700;
+  font-size: 0.8rem;
+
+  opacity: 1;
+  transition: opacity 1s;
+
+  @media (min-width: $breakpoint-lg) {
+    font-weight: 900;
+    font-size: 0.9rem;
+  }
+
+  .campaign-banner-content {
+    flex-grow: 2;
+    text-align: center;
+    padding: $campaign-banner-spacing 0 $campaign-banner-spacing $campaign-banner-spacing;
+  }
+
+  .campaign-banner-close {
+    padding: $campaign-banner-spacing;
+    border: none;
+    line-height: 0.6rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  a {
+    text-transform: uppercase;
+    text-decoration: underline;
+  }
+
+  &.campaign-banner-closing {
+    opacity: 0;
+  }
+
+  &.campaign-banner-closed {
+    height: 0;
+    display: none;
+  }
+}

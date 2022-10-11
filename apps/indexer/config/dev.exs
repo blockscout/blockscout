@@ -2,6 +2,8 @@ import Config
 
 config :indexer, Indexer.Tracer, env: "dev", disabled?: true
 
+config :indexer, :environment, :dev
+
 config :logger, :indexer,
   level: :debug,
   path: Path.absname("logs/dev/indexer.log")

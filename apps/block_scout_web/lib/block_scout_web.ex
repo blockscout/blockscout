@@ -18,6 +18,7 @@ defmodule BlockScoutWeb do
   """
   def version(), do: Application.get_env(:block_scout_web, :version)
   def segment_key(), do: Application.get_env(:block_scout_web, :segment_key)
+  def network_path(), do: Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
 
   def controller do
     quote do

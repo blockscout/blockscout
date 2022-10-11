@@ -51,7 +51,7 @@
     </script>
   </head>
 
-  <body>
+  <body data-network-path="<%= network_path() %>">
     <% raw_dark_forest_addresses_0_4 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses) || "" %>
     <% raw_dark_forest_addresses_0_5 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_5) || "" %>
     <% raw_dark_forest_addresses_0_6 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6) || "" %>
@@ -187,6 +187,11 @@
         </div>
       <% end %>
 
+      <% campaign_data = BlockScoutWeb.CampaignBannerCache.get_campaign_data() %>
+      <%= for banner <- campaign_data do %>
+        <%= render BlockScoutWeb.LayoutView, "_campaign_banner.html", banner %>
+      <% end %>
+
       <%= render BlockScoutWeb.LayoutView, "_cookie_banner.html", assigns %>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 
@@ -229,7 +234,7 @@
       @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressWriteProxyView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.ReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.ContractView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.InventoryView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.InstanceView &&
@@ -239,7 +244,8 @@
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
+      @view_module != Elixir.BlockScoutWeb.BlockEpochTransactionView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>

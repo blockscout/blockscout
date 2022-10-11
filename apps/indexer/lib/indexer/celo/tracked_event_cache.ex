@@ -10,8 +10,6 @@ defmodule Indexer.Celo.TrackedEventCache do
   alias Explorer.Chain.Celo.ContractEventTracking
   alias Explorer.Repo
 
-  require Explorer.Celo.Telemetry, as: Telemetry
-
   @cache_refresh_interval :timer.minutes(5)
 
   def start_link([init_arg, gen_server_opts]) do
@@ -55,6 +53,7 @@ defmodule Indexer.Celo.TrackedEventCache do
     {:reply, nil, state}
   end
 
+  @impl true
   def handle_info(:refresh_cache, %{table_ref: table} = state) do
     build_cache(table)
     Process.send_after(__MODULE__, :refresh_cache, @cache_refresh_interval)

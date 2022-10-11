@@ -5,6 +5,7 @@ import Analytics from 'analytics'
 import omit from 'lodash/omit'
 import segmentPlugin from '@analytics/segment'
 import uniqid from 'uniqid'
+import { fullPath } from './utils'
 
 let analytics
 let store
@@ -56,15 +57,15 @@ function getPageName (path) {
   switch (true) {
     case path.includes('/search'):
       return '404SearchResult'
-    case path === '/':
+    case path === fullPath('/'):
       return 'home'
-    case path === '/txs':
+    case path === fullPath('/txs'):
       return 'validatedTransactions'
-    case path === '/pending_transactions':
+    case path === fullPath('/pending_transactions'):
       return 'pendingTransactions'
-    case path === '/blocks':
+    case path === fullPath('/blocks'):
       return 'blockHistory'
-    case path === '/accounts':
+    case path === fullPath('/accounts'):
       return 'allAccounts'
     case path.includes('/blocks') && path.includes('/transactions'):
       return 'blockTransactions'
@@ -129,18 +130,15 @@ function getEntityId () {
 // returns blockscout network: Mainnet, Alfajores or Baklava
 function getNetwork () {
   const host = window.location.host
-  switch (true) {
-    case host.includes('localhost'):
-      return 'mainnet-dev'
-    case host === 'explorer.celo.org':
-      return 'mainnet'
-    case host.includes('alfajores'):
-      return 'alfajores'
-    case host.includes('baklava'):
-      return 'baklava'
-    default:
-      return host
+
+  if (host.includes('localhost')) {
+    return 'mainnet-dev'
+  } else if (host.includes('explorer.celo.org')) {
+    // all production envs live on explorer.celo.org/%env% now
+    return window.location.pathname.match('^/([a-z0-9]*)/?')[1]
   }
+
+  return host
 }
 
 // returns timezone offset

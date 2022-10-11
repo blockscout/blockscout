@@ -10,7 +10,10 @@ defmodule Indexer.MixProject do
       deps: deps(),
       deps_path: "../../deps",
       description: "Fetches block chain data from on-chain node for later reading with Explorer.",
-      elixir: "~> 1.10",
+      elixir: "~> 1.12",
+      elixirc_options: [
+        warnings_as_errors: true
+      ],
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
@@ -72,7 +75,9 @@ defmodule Indexer.MixProject do
       {:prometheus_ex, "~>3.0"},
       {:prometheus_plugs, "~> 1.1"},
       {:prometheus_process_collector, "~> 1.1"},
-      {:telemetry, "~> 0.4.0"}
+      {:telemetry, "~> 0.4.0"},
+      # Erlang cluster formation
+      {:libcluster, "~> 3.3"}
     ]
   end
 

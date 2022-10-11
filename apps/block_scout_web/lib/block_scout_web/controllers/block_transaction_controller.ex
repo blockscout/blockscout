@@ -8,9 +8,9 @@ defmodule BlockScoutWeb.BlockTransactionController do
 
   alias BlockScoutWeb.{Controller, TransactionView}
 
-  alias Explorer.Celo.{AccountReader, EpochUtil}
+  alias Explorer.Celo.EpochUtil
   alias Explorer.Chain
-  alias Explorer.Chain.{CeloElectionRewards, CeloEpochRewards}
+  alias Explorer.Chain.CeloEpochRewards
 
   alias Phoenix.View
 

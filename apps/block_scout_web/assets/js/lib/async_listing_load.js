@@ -107,7 +107,7 @@ export function asyncReducer (state = asyncInitialState, action) {
         emptyResponse: action.items.length === 0,
         items: action.items,
         nextPagePath: action.nextPagePath,
-        prevPagePath: prevPagePath
+        prevPagePath
       })
     }
     case 'NAVIGATE_TO_OLDER': {

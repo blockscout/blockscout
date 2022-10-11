@@ -24,7 +24,7 @@ config :explorer,
   realtime_events_sender:
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
-      else: Explorer.Chain.Events.DBSender
+      else: Explorer.Chain.Events.PubSubSender
     )
 
 config :explorer, Explorer.Counters.AverageBlockTime,
@@ -38,11 +38,8 @@ config :explorer, Explorer.Celo.SignerCache, enabled: true
 config :explorer, :stacktrace_depth, 20
 
 config :explorer, Explorer.Chain.Events.Listener,
-  enabled:
-    if(System.get_env("DISABLE_WEBAPP") == "true" && System.get_env("DISABLE_INDEXER") == "true",
-      do: false,
-      else: true
-    )
+  enabled: if(System.get_env("DISABLE_WEBAPP") == "true", do: false, else: true),
+  event_source: Explorer.Chain.Events.PubSubSource
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
@@ -155,6 +152,8 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: System.get_env("DISABLE_WRITE_API") != "true"
+
+config :explorer, :write_api_enabled, System.get_env("DISABLE_WRITE_API") != "true"
 
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")

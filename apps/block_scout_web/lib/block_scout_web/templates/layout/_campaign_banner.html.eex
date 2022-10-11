@@ -1,0 +1,14 @@
+<div class="campaign-banner campaign-banner-closed campaign-banner-preset-<%= @preset %>" data-campaign-id="<%= @id %>">
+  <div class="campaign-banner-content">
+    <%= @content  %>
+    <%= if not is_nil(@cta_url) and not is_nil(@cta_content) do %>
+    <a class="campaign-banner-cta" href="<%= @cta_url %>" target="_blank" rel="noopener noreferrer">
+      <%= @cta_content %>
+    </a>
+    <% end %>
+  </div>
+  <button type="button" class="campaign-banner-close" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  <script defer data-cfasync="false" src="<%= static_path(BlockScoutWeb.Endpoint, "/js/campaign-banner.js") %>"></script>
+</div>

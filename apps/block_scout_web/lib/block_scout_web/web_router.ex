@@ -37,14 +37,14 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources "/block", BlockController, only: [:show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
+      resources("/epoch-transactions", BlockEpochTransactionController, only: [:index], as: :epoch_transaction)
+      resources("/signers", BlockSignersController, only: [:index], as: :signers)
     end
 
     resources("/blocks", BlockController, as: :blocks, only: [:index])
 
     resources "/blocks", BlockController, only: [:show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
-      resources("/epoch-transactions", BlockEpochTransactionController, only: [:index], as: :epoch_transaction)
-      resources("/signers", BlockSignersController, only: [:index], as: :signers)
     end
 
     get("/validators", StakesController, :index, as: :validators, assigns: %{filter: :validator})
@@ -256,9 +256,30 @@ defmodule BlockScoutWeb.WebRouter do
 
       resources(
         "/read-contract",
-        Tokens.ReadContractController,
+        Tokens.ContractController,
         only: [:index],
         as: :read_contract
+      )
+
+      resources(
+        "/write-contract",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_contract
+      )
+
+      resources(
+        "/read-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_proxy
       )
 
       resources(
@@ -314,9 +335,30 @@ defmodule BlockScoutWeb.WebRouter do
 
       resources(
         "/read-contract",
-        Tokens.ReadContractController,
+        Tokens.ContractController,
         only: [:index],
         as: :read_contract
+      )
+
+      resources(
+        "/write-contract",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_contract
+      )
+
+      resources(
+        "/read-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write-proxy",
+        Tokens.ContractController,
+        only: [:index],
+        as: :write_proxy
       )
 
       resources(
@@ -403,6 +445,8 @@ defmodule BlockScoutWeb.WebRouter do
     get("/token-counters", Tokens.TokenController, :token_counters)
 
     get("/stats", StatsController, :index)
+
+    get("/makerdojo", MakerdojoController, :index)
 
     get("/verified-contracts", VerifiedContractsController, :index)
 

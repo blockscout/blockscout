@@ -51,7 +51,6 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
-    UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
 
@@ -148,7 +147,9 @@ defmodule Indexer.Supervisor do
       {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
 
       # Temporary workers
-      {UncatalogedTokenTransfers.Supervisor, [[]]},
+      # This worker doesn't work for epoch transactions as they don't have a transaction hash
+      # which results in a growing number of "problematic" blocks. Disabled on purpose.
+      # {UncatalogedTokenTransfers.Supervisor, [[]]},
       {UnclesWithoutIndex.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
       {BlocksTransactionsMismatch.Supervisor,
@@ -169,7 +170,9 @@ defmodule Indexer.Supervisor do
       {EventBackfill.Supervisor, [[], []]},
       {TrackedEventCache, [[], []]},
       {CeloMaterializedViewRefresh, [[], []]},
-      {InternalTransactionCache, [[], []]}
+      {InternalTransactionCache, [[], []]},
+      {Indexer.Celo.WriteOperationHandler, [[], []]},
+      {CeloEpochData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
     ]
 
     fetchers_with_bridged_tokens =
@@ -203,19 +206,8 @@ defmodule Indexer.Supervisor do
         fetchers_with_amb_bridge_mediators
       end
 
-    fetcher_with_epoch_rewards =
-      if System.get_env("DISPLAY_REWARDS") === "true" do
-        [
-          {CeloEpochData.Supervisor,
-           [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
-          | fetchers_with_metrics
-        ]
-      else
-        fetchers_with_metrics
-      end
-
     Supervisor.init(
-      fetcher_with_epoch_rewards,
+      fetchers_with_metrics,
       strategy: :one_for_one
     )
   end
