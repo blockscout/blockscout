@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.BlockChannel do
       )
 
     push(socket, "new_block", %{
-      average_block_time: Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat),
+      average_block_time: Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormatShortened),
       chain_block_html: rendered_chain_block,
       block_html: rendered_block,
       block_number: block.number,
