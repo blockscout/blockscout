@@ -1,4 +1,4 @@
-import debounce from 'lodash/debounce'
+import debounce from 'lodash.debounce'
 
 export function batchChannel (func) {
   let msgs = []

@@ -1602,7 +1602,7 @@ msgid "ME"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:46
+#: lib/block_scout_web/templates/layout/_footer.html.eex:49
 msgid "Main Networks"
 msgstr ""
 
@@ -1856,7 +1856,7 @@ msgid "Ordered"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:70
+#: lib/block_scout_web/templates/layout/_footer.html.eex:73
 msgid "Other Explorers"
 msgstr ""
 
@@ -2411,7 +2411,7 @@ msgid "Target Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:59
+#: lib/block_scout_web/templates/layout/_footer.html.eex:62
 msgid "Test Networks"
 msgstr ""
 
@@ -3194,7 +3194,7 @@ msgid "Verify the contract "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:85
+#: lib/block_scout_web/templates/layout/_footer.html.eex:88
 msgid "Version"
 msgstr ""
 
@@ -3756,6 +3756,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:78
 msgid "View Less Rewards"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/layout/_footer.html.eex:41
+msgid "Add"
 msgstr ""
 
 #, elixir-format, fuzzy
