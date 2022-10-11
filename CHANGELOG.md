@@ -5,10 +5,11 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5184](https://github.com/blockscout/blockscout/pull/5184) - eth_call method: remove from param from the request, if it is null
+- [#5172](https://github.com/blockscout/blockscout/pull/5172), [#5182](https://github.com/blockscout/blockscout/pull/5182) - Reduced the size of js bundles
 - [#5160](https://github.com/blockscout/blockscout/pull/5160) - Fix blocks validated hint
 - [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
-- [#4701](https://github.com/blockscout/blockscout/pull/4701) - Reduced the size of js bundles
 
 ### Chore
 - [#5171](https://github.com/blockscout/blockscout/pull/5171) - Replace lodash NPM package with tiny lodash modules

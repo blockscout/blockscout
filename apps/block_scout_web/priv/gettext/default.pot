@@ -121,7 +121,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:186
+#: lib/block_scout_web/templates/layout/app.html.eex:192
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -406,7 +406,7 @@ msgid "Block Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:41
+#: lib/block_scout_web/templates/layout/app.html.eex:47
 msgid "Block Proposed, awaiting import..."
 msgstr ""
 
@@ -453,7 +453,7 @@ msgid "Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:40
+#: lib/block_scout_web/templates/layout/app.html.eex:46
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -503,7 +503,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:247 lib/block_scout_web/templates/address_token/overview.html.eex:1
 #: lib/block_scout_web/templates/epoch_transaction/_election_tile.html.eex:24 lib/block_scout_web/templates/epoch_transaction/_epoch_tile.html.eex:23
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20 lib/block_scout_web/templates/layout/_topnav.html.eex:79
-#: lib/block_scout_web/templates/layout/app.html.eex:46 lib/block_scout_web/templates/smart_contract/_functions.html.eex:93
+#: lib/block_scout_web/templates/layout/app.html.eex:52 lib/block_scout_web/templates/smart_contract/_functions.html.eex:93
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:93 lib/block_scout_web/templates/smart_contract/_functions.html.eex:133
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20 lib/block_scout_web/templates/transaction/_tile.html.eex:37
 #: lib/block_scout_web/templates/transaction/overview.html.eex:412 lib/block_scout_web/templates/verified_contracts/_tile.html.eex:29
@@ -1425,7 +1425,7 @@ msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:42
+#: lib/block_scout_web/templates/layout/app.html.eex:48
 msgid "Indexing Tokens"
 msgstr ""
 
@@ -1505,7 +1505,7 @@ msgid "Learn, Borrow, Earn"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:43
+#: lib/block_scout_web/templates/layout/app.html.eex:49
 msgid "Less than"
 msgstr ""
 
@@ -1612,7 +1612,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:60
-#: lib/block_scout_web/templates/layout/app.html.eex:44 lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
+#: lib/block_scout_web/templates/layout/app.html.eex:50 lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
 #: lib/block_scout_web/views/address_view.ex:200
 msgid "Market Cap"
 msgstr ""
@@ -1978,7 +1978,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:40
-#: lib/block_scout_web/templates/layout/app.html.eex:45 lib/block_scout_web/templates/tokens/overview/_details.html.eex:108
+#: lib/block_scout_web/templates/layout/app.html.eex:51 lib/block_scout_web/templates/tokens/overview/_details.html.eex:108
 msgid "Price"
 msgstr ""
 
@@ -2980,7 +2980,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:91
-#: lib/block_scout_web/templates/layout/app.html.eex:47
+#: lib/block_scout_web/templates/layout/app.html.eex:53
 msgid "Tx/day"
 msgstr ""
 

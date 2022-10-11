@@ -241,17 +241,21 @@ defmodule EthereumJSONRPC.Contract do
     end)
   end
 
-  def eth_call_request(data, contract_address, id, block_number, _from) do
+  def eth_call_request(data, contract_address, id, block_number, from) do
     block =
       case block_number do
         nil -> "latest"
         block_number -> integer_to_quantity(block_number)
       end
 
+    params =
+      %{to: contract_address, data: data}
+      |> (&if(is_nil(from), do: &1, else: Map.put(&1, :from, from))).()
+
     full_params = %{
       id: id,
       method: "eth_call",
-      params: [%{to: contract_address, data: data}, block]
+      params: [params, block]
     }
 
     request(full_params)
