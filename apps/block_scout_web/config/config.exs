@@ -69,7 +69,8 @@ config :block_scout_web,
   re_captcha_api_key: System.get_env("RE_CAPTCHA_API_KEY", nil),
   re_captcha_project_id: System.get_env("RE_CAPTCHA_PROJECT_ID", nil),
   chain_id: System.get_env("CHAIN_ID"),
-  json_rpc: System.get_env("JSON_RPC")
+  json_rpc: System.get_env("JSON_RPC"),
+  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
 global_api_rate_limit_value =
   "API_RATE_LIMIT"

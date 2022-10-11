@@ -7,7 +7,9 @@
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
 
 ### Fixes
+- [#5216](https://github.com/blockscout/blockscout/pull/5216) - Add token-transfers-toggle.js to the `block_transaction/index.html.eex`
 - [#5212](https://github.com/blockscout/blockscout/pull/5212) - Fix `gas_used` value bug
+- [#5197](https://github.com/blockscout/blockscout/pull/5197) - Fix contract functions outputs
 - [#5196](https://github.com/blockscout/blockscout/pull/5196) - Various Docker setup fixes
 - [#5192](https://github.com/blockscout/blockscout/pull/5192) - Fix DATABASE_URL config parser
 - [#5191](https://github.com/blockscout/blockscout/pull/5191) - Add empty view for new addresses
@@ -18,6 +20,7 @@
 - [#5160](https://github.com/blockscout/blockscout/pull/5160) - Fix blocks validated hint
 - [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
+- [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
 
 ### Chore
 - [#5202](https://github.com/blockscout/blockscout/pull/5202) - Docker setup Makefile release/publish tasks

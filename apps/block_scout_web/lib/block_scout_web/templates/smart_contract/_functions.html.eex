@@ -114,31 +114,34 @@
     <% else %>
       <%= cond do %>
         <%= outputs?(function["outputs"]) -> %>
-          <% length = Enum.count(function["outputs"]) %>
-          <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>
-            <%= if address?(output["type"]) do %>
-              <div class="py-2 word-break-all">
-                <%= link(
-                  output["value"],
-                  to: address_path(@conn, :show, output["value"])) %><%= if length > 1 and index < length - 1 do %>,&#160;<% end %>
-              </div>
-            <% else %>
-              <%= if output["type"] == "uint256" do %>
+          <div class="align-self-center">
+            <% length = Enum.count(function["outputs"]) %>
+            <%= for {output, index} <- Enum.with_index(function["outputs"]) do %>
+              <%= if address?(output["type"]) do %>
                 <div class="py-2 word-break-all">
-                  <div data-wei-ether-converter>
-                    <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
-                    <span class="py-2 px-2">
-                      <input class="wei-ether" type="checkbox" autocomplete="off">
-                      <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                      <span class="d-none" data-conversion-text-eth><%= gettext("CELO")%></span>
-                    </span>
-                  </div>
-                </div> 
+                  <%= link(
+                    output["value"],
+                    to: address_path(@conn, :show, output["value"])) %><%= if not_last_element?(length, index) do %>,&#160;<% end %>
+                </div>
               <% else %>
-                <%= raw(values_only(output["value"], output["type"], output["components"])) %>
+                <%= if output["type"] == "uint256" do %>
+                  <div class="py-2 word-break-all">
+                    <div data-wei-ether-converter>
+                      <i>(uint256):</i>
+                      <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
+                      <span class="py-2 px-2">
+                        <input class="wei-ether" type="checkbox" autocomplete="off">
+                        <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
+                        <span class="d-none" data-conversion-text-eth><%= gettext("CELO")%></span>
+                      </span>
+                    </div>
+                  </div> 
+                <% else %>
+                  <div class="align-self-center function-output <%= if not_last_element?(length, index), do: "mb-1" %>"><%= raw(values_with_type(output["value"], output["type"], [output["name"]], 0, output["components"])) %></div>
+                <% end %>
               <% end %>
             <% end %>
-          <% end %>
+          </div>
         <% error?(function["outputs"]) -> %>
           <% {:error, text_error} = function["outputs"] %>
           <div class="alert alert-danger py-2 word-break-all" style="margin-bottom: 0;"><%= text_error %></div>
