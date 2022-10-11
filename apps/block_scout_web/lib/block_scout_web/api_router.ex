@@ -87,7 +87,9 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
     alias BlockScoutWeb.API.V1.HealthController
+    alias BlockScoutWeb.SearchController
 
+    get("/search", SearchController, :api_search_result)
     get("/health", HealthController, :health)
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
 
