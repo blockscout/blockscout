@@ -8,7 +8,7 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - production-optimism-opcraft-stg-exp
+      - production-optimism-opcraft-stg
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
