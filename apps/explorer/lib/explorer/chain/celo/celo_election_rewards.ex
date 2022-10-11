@@ -38,7 +38,7 @@ defmodule Explorer.Chain.CeloElectionRewards do
           reward_type: String.t()
         }
 
-  @sample_epoch_block_transaction_limit 20
+  @sample_epoch_block_voter_rewards_limit 20
 
   @primary_key false
   schema "celo_election_rewards" do
@@ -49,15 +49,15 @@ defmodule Explorer.Chain.CeloElectionRewards do
 
     timestamps()
 
-    belongs_to(:addresses, Explorer.Chain.Address,
+    belongs_to(:address, Explorer.Chain.Address,
       foreign_key: :account_hash,
       references: :hash,
       type: Hash.Address
     )
 
-    belongs_to(:celo_account, Explorer.Chain.CeloAccount,
+    belongs_to(:associated_address, Explorer.Chain.Address,
       foreign_key: :associated_account_hash,
-      references: :address,
+      references: :hash,
       type: Hash.Address
     )
   end
@@ -219,7 +219,7 @@ defmodule Explorer.Chain.CeloElectionRewards do
   end
 
   def get_sample_rewards_for_block_number(block_number) do
-    voter_rewards = get_sample_rewards_for_block_number(block_number, "voter")
+    voter_rewards = get_sample_rewards_for_block_number(block_number, "voter", @sample_epoch_block_voter_rewards_limit)
     validator_rewards = get_sample_rewards_for_block_number(block_number, "validator")
     group_rewards = get_sample_rewards_for_block_number(block_number, "group")
 
@@ -230,21 +230,28 @@ defmodule Explorer.Chain.CeloElectionRewards do
     }
   end
 
+  defp base_sample_rewards_for_block_number(block_number, reward_type) do
+    from(reward in __MODULE__,
+      preload: [:address, :associated_address],
+      order_by: [desc: reward.amount],
+      where: reward.block_number == ^block_number,
+      where: reward.reward_type == ^reward_type
+    )
+  end
+
   defp get_sample_rewards_for_block_number(block_number, reward_type) do
-    query =
-      from(reward in __MODULE__,
-        select: %{
-          account_hash: reward.account_hash,
-          amount: reward.amount,
-          associated_account_hash: reward.associated_account_hash
-        },
-        order_by: [desc: reward.amount],
-        where: reward.block_number == ^block_number,
-        where: reward.reward_type == ^reward_type,
-        limit: @sample_epoch_block_transaction_limit
-      )
+    query = base_sample_rewards_for_block_number(block_number, reward_type)
 
     query
+    |> where_non_zero_reward()
+    |> Repo.all()
+  end
+
+  defp get_sample_rewards_for_block_number(block_number, reward_type, limit) do
+    query = base_sample_rewards_for_block_number(block_number, reward_type)
+
+    query
+    |> limit(^limit)
     |> where_non_zero_reward()
     |> Repo.all()
   end

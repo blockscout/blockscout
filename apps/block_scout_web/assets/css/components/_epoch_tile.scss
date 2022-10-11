@@ -24,6 +24,10 @@
   list-style: none;
   padding: 12px 0 0 0;
   margin: 0;
+
+  &.collapse, &.collapsing {
+    padding-top: 0;
+  }
 }
 
 .epoch-aggregated-tile-transactions-list-item-amount, 

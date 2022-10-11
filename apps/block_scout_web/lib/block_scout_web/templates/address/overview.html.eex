@@ -188,24 +188,11 @@
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Amount of locked Celo in the protocol") %>
+                text: gettext("Amount of locked CELO in the protocol") %>
                 <%= gettext("Locked CELO Balance") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
               <%= wei_to_ether_rounded(@locked_gold) %> <%= gettext "CELO" %>
-            </dd>
-          </dl>
-          <% end %>
-          <%= if assigns[:pending_gold] do %>
-          <!-- Pending unlocked -->
-          <dl class="row">
-            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
-              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Amount of Celo that’s in the process of being unlocked (3 days)") %>
-                <%= gettext("Pending Unlocked Gold") %>
-            </dt>
-            <dd class="col-sm-8 col-md-8 col-lg-9">
-              <%= wei_to_ether_rounded(@pending_gold) %> <%= gettext "CELO" %>
             </dd>
           </dl>
           <% end %>
@@ -214,18 +201,30 @@
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
-                text: gettext("Amount of locked Celo that has been activated to vote for validator(s)") %>
-                <%= gettext("Activated Celo Balance") %>
+                text: gettext("Amount of locked CELO that has been activated to vote for validator(s)") %>
+              <%= gettext("Activated CELO Balance") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
               <%= wei_to_ether_rounded(@vote_activated_gold) %> <%= gettext "CELO" %>
             </dd>
           </dl>
           <% end %>
-          <%= if assigns[:voting_sum] do %>
-          <!-- Rewards -->
+          <%= if assigns[:pending_gold] do %>
+          <!-- Pending unlocked -->
           <dl class="row">
-            <%= if @address.celo_account.account_type == "normal" do%>
+            <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Amount of CELO that’s in the process of being unlocked (3 days)") %>
+                <%= gettext("Pending Unlocked Gold") %>
+            </dt>
+            <dd class="col-sm-8 col-md-8 col-lg-9">
+              <%= wei_to_ether_rounded(@pending_gold) %> <%= gettext "CELO" %>
+            </dd>
+          </dl>
+          <% end %>
+          <%= if not is_nil(assigns[:voting_sum]) and @address.celo_account.account_type == "normal" do %>
+          <!-- Voter Rewards -->
+          <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("Voting rewards accumulated over time.") %>
@@ -234,8 +233,11 @@
             <dd class="col-sm-8 col-md-8 col-lg-9">
               <%= wei_to_ether_rounded(@voting_sum) %> <%= gettext "CELO" %>
             </dd>
-            <% end %>
-            <%= if (@address.celo_account.account_type == "validator" or @address.celo_account.account_type == "group") and System.get_env("DISPLAY_REWARDS") === "true" do%>
+          </dl>
+          <% end %>
+          <%= if not is_nil(assigns[:validator_or_group_sum]) and not is_nil(assigns[:voting_sum]) and (@address.celo_account.account_type == "validator" or @address.celo_account.account_type == "group") do %>
+          <!-- Validator / Group Rewards -->
+          <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("Total amount of epoch rewards this address has received, all time.") %>
@@ -244,7 +246,6 @@
             <dd class="col-sm-8 col-md-8 col-lg-9">
               <%= wei_to_ether_rounded(@validator_or_group_sum) %> <%= gettext "cUSD" %> | <%= wei_to_ether_rounded(@voting_sum) %> <%= gettext "CELO" %>
             </dd>
-            <% end %>
           </dl>
           <% end %>
           <!-- Tokens -->

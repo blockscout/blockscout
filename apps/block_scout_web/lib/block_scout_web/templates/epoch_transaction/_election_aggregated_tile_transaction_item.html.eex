@@ -1,0 +1,44 @@
+<li class="epoch-aggregated-tile-transactions-list-item">
+  <%= if @reward_type == "group" do %>
+    <span class="epoch-aggregated-tile-transactions-list-item-address col-xs-12 col-lg-7">
+      <%= render BlockScoutWeb.AddressView,
+        "_link.html",
+        address: @reward.associated_address,
+        contract: false,
+        use_custom_tooltip: false,
+        truncate: true %>
+
+      &rarr;
+
+      <%= render BlockScoutWeb.AddressView,
+        "_link.html",
+        address: @reward.address,
+        contract: false,
+        use_custom_tooltip: false,
+        truncate: true %>
+    </span>
+
+    <span class="epoch-aggregated-tile-transactions-list-item-amount col-xs-12 col-lg-3 ml-3 ml-sm-0">
+      <%= wei_to_ether_rounded(@reward.amount) %>
+      <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, get_reward_currency_address_hash(@reward_type)), "data-test": "address_hash_link" do %>
+        <%= get_reward_currency(@reward_type) %>
+      <% end %>
+    </span>
+  <% else %>
+    <span class="epoch-aggregated-tile-transactions-list-item-address col-xs-12 col-lg-5">
+      <%= render BlockScoutWeb.AddressView,
+        "_link.html",
+        address: @reward.address,
+        contract: false,
+        use_custom_tooltip: false,
+        truncate: false %>
+    </span>
+    <span class="epoch-aggregated-tile-transactions-list-item-amount col-xs-12 col-lg-4 ml-3 ml-sm-0">
+      <%= wei_to_ether_rounded(@reward.amount) %>
+
+      <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, get_reward_currency_address_hash(@reward_type)), "data-test": "address_hash_link" do %>
+        <%= get_reward_currency(@reward_type) %>
+      <% end %>
+    </span>
+  <% end %>
+</li>

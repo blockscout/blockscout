@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.EpochTransactionView do
   alias Explorer.Chain
   alias Explorer.Chain.Wei
 
+  @visible_rewards_batch_size 20
+
   def get_reward_currency(reward_type) do
     case reward_type do
       "voter" -> "CELO"
@@ -40,6 +42,10 @@ defmodule BlockScoutWeb.EpochTransactionView do
         end
       )
     )
+  end
+
+  def separate_visible_rewards(rewards) when is_list(rewards) do
+    rewards |> Enum.split(@visible_rewards_batch_size)
   end
 
   def get_total_reward_value(nil), do: %Wei{value: Decimal.new(0)}

@@ -244,7 +244,8 @@
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView &&
+      @view_module != Elixir.BlockScoutWeb.BlockEpochTransactionView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>

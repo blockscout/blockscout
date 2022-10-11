@@ -1,3 +1,5 @@
+<% {visible_rewards, remaining_rewards} = separate_visible_rewards(@rewards) %>
+
 <div class="tile tile-type-epoch-transaction fade-in" data-test="epoch_transaction"
      data-key="<%= @block.number %>_<%= @reward_type %>"
      data-epoch-transaction-block-number="<%= @block.number %>">
@@ -17,7 +19,7 @@
       <span class="tile-status-label ml-2 ml-md-0" data-epoch-transaction-type="Success">Success</span>
     </div>
     <!-- Content -->
-    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0 align-self-center">
       <span class="bs-label reward font-weight-bold">
         <%= gettext "Rewards: " %> <%= wei_to_ether_rounded(get_total_reward_value(@total)) %>
         <%= get_reward_currency(@reward_type) %>
@@ -35,7 +37,7 @@
                 <%= gettext("Validators") %>
               <% "group" -> %>
                 <%= if is_nil(@total) do "0" else @total.validator_count end %>
-                <%= gettext("Validators") %>
+                <%= gettext("Validator Rewards") %>
                 |
                 <%= if is_nil(@total) do "0" else @total.group_count end %>
                 <%= gettext("Validator Group Rewards") %>
@@ -45,63 +47,37 @@
       </span>
       <div class="epoch-aggregated-tile-transactions-list epoch-aggregated-tile-transactions-list-hidden" data-rewards-type="<%= @reward_type %>">
         <ul class="epoch-aggregated-tile-transactions-list-items">
-        <%= for reward <- @rewards do %>
-          <li class="epoch-aggregated-tile-transactions-list-item">
-            <%= if @reward_type == "group" do %>
-            <span class="epoch-aggregated-tile-transactions-list-item-address col-xs-12 col-lg-5">
-              <%= with {:ok, address} <- Chain.hash_to_address(reward.associated_account_hash) do %>
-                <%= render BlockScoutWeb.AddressView,
-                  "_link.html",
-                  address: address,
-                  contract: false,
-                  use_custom_tooltip: false,
-                  truncate: true %>
-              <% end %>
-
-              &rarr;
-
-              <%= with {:ok, address} <- Chain.hash_to_address(reward.account_hash) do %>
-                <%= render BlockScoutWeb.AddressView,
-                  "_link.html",
-                  address: address,
-                  contract: false,
-                  use_custom_tooltip: false,
-                  truncate: true %>
-              <% end %>
-            </span>
-
-            <span class="epoch-aggregated-tile-transactions-list-item-amount col-xs-12 col-lg-4 ml-3 ml-sm-0">
-              <%= wei_to_ether_rounded(reward.amount) %>
-              <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, get_reward_currency_address_hash(@reward_type)), "data-test": "address_hash_link" do %>
-                <%= get_reward_currency(@reward_type) %>
-              <% end %>
-            </span>
-          <% else %>
-            <span class="epoch-aggregated-tile-transactions-list-item-address col-xs-12 col-lg-5">
-              <%= with {:ok, address} <- Chain.hash_to_address(reward.account_hash) do %>
-                <%= render BlockScoutWeb.AddressView,
-                  "_link.html",
-                  address: address,
-                  contract: false,
-                  use_custom_tooltip: false,
-                  truncate: true %>
-              <% end %>
-            </span>
-            <span class="epoch-aggregated-tile-transactions-list-item-amount col-xs-12 col-lg-4 ml-3 ml-sm-0">
-              <%= wei_to_ether_rounded(reward.amount) %>
-
-              <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, get_reward_currency_address_hash(@reward_type)), "data-test": "address_hash_link" do %>
-                <%= get_reward_currency(@reward_type) %>
-              <% end %>
-            </span>
-            <% end %>
-          </li>
-        <% end %>
+          <%= for reward <- visible_rewards do %>
+            <%= render BlockScoutWeb.EpochTransactionView,
+              "_election_aggregated_tile_transaction_item.html",
+              reward_type: @reward_type,
+              reward: reward
+            %>
+          <% end %>
         </ul>
-        <%= if not is_nil(@total) and @total.count > Enum.count(@rewards) do %>
-          <span>
-            <%= @total.count - Enum.count(@rewards) %> <%= gettext("rewards more (hidden)") %>
-          </span>
+
+        <ul class="epoch-aggregated-tile-transactions-list-items collapse" id="rewards-<%= @reward_type %>">
+          <%= for reward <- remaining_rewards do %>
+            <%= render BlockScoutWeb.EpochTransactionView,
+              "_election_aggregated_tile_transaction_item.html",
+              reward_type: @reward_type,
+              reward: reward
+            %>
+          <% end %>
+        </ul>
+        <%= if @reward_type == "voter" do %>
+          <%= if not is_nil(@total) and @total.count > Enum.count(@rewards) do %>
+            <span>
+              <%= @total.count - Enum.count(@rewards) %> <%= gettext("rewards more") %>
+            </span>
+          <% end %>
+        <% else %>
+          <%= if Enum.any?(remaining_rewards) do %>
+            <div class="token-tile-view-more">
+              <%= link gettext("View All Rewards"), to: "#rewards-#{@reward_type}", "data-toggle": "collapse", "data-selector": "token-transfer-open" %>
+              <%= link gettext("View Less Rewards"), class: "d-none", to: "#rewards-#{@reward_type}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
+            </div>
+          <% end %>
         <% end %>
       </div>
     </div>
