@@ -18,11 +18,11 @@ This command uses by-default `docker-compose.yml`, which build the explorer into
 
 ## Configs for different Ethereum clients
 Also, the repo contains built-in configs for different clients without need to build the image
-- Ganache: `docker-compose -d -f docker-compose-no-build-ganache.yml up -d`
-- HardHat network: `docker-compose -d -f docker-compose-no-build-hardhat-network.yml up -d`
-- Geth: `docker-compose -d -f docker-compose-no-build-geth.yml up -d`
-- OpenEthereum, Nethermind: `docker-compose -d -f docker-compose-no-build-open-ethereum-nethermind up -d`
-- Running only explorer without DB: `docker-compose -d -f docker-compose-no-build-no-db-container.yml up -d`. In this case, one container is created - for the explorer itself. And it assumes that the DB credentials are provided through `DATABASE_URL` environment variable.
+- Ganache: `docker-compose -f docker-compose-no-build-ganache.yml up -d`
+- HardHat network: `docker-compose -f docker-compose-no-build-hardhat-network.yml up -d`
+- Geth: `docker-compose -f docker-compose-no-build-geth.yml up -d`
+- OpenEthereum, Nethermind: `docker-compose -f docker-compose-no-build-open-ethereum-nethermind up -d`
+- Running only explorer without DB: `docker-compose -f docker-compose-no-build-no-db-container.yml up -d`. In this case, one container is created - for the explorer itself. And it assumes that the DB credentials are provided through `DATABASE_URL` environment variable.
 
 All of the configs assume, that the Ethereum JSON RPC is running at http://localhost:8545.
 

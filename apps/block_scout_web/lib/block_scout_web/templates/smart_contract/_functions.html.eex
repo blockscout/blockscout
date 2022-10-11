@@ -135,7 +135,7 @@
                         <span class="d-none" data-conversion-text-eth><%= gettext("CELO")%></span>
                       </span>
                     </div>
-                  </div> 
+                  </div>
                 <% else %>
                   <div class="align-self-center function-output <%= if not_last_element?(length, index), do: "mb-1" %>"><%= raw(values_with_type(output["value"], output["type"], [output["name"]], 0, output["components"])) %></div>
                 <% end %>

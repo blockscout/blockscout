@@ -14,7 +14,7 @@ services:
 
   blockscout:
     depends_on:
-      - postgres
+      - db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     restart: always
     container_name: 'blockscout'
