@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   alias Explorer.Chain
   alias Explorer.Chain.Transaction
 
+  require Logger
+
   def gettxinfo(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
@@ -61,12 +63,20 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
           token_transfers = Chain.transaction_to_token_transfers(
             transaction_updated.hash,
             necessity_by_association: %{
+              [from_address: :smart_contract] => :optional,
+              [to_address: :smart_contract] => :optional,
+              [from_address: :names] => :optional,
+              [to_address: :names] => :optional,
               from_address: :required,
               to_address: :required,
               token_contract_address: :required,
               token: :required
             }
           )
+
+          Logger.info("CHECK")
+          Logger.info(token_transfers)
+
           render(conn, :gettxcosmosinfo, %{
                         transaction: transaction_updated,
                         block_height: Chain.block_height(),

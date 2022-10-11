@@ -132,7 +132,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "amount" => "#{token_transfer.amount}",
       "logIndex" => "#{token_transfer.log_index}",
       "fromAddress" => "#{token_transfer.from_address}",
+      "fromAddressName" => "#{token_transfer.from_address.names}",
       "toAddress" => "#{token_transfer.to_address}",
+      "toAddressName" => "#{token_transfer.to_address.names}",
       "tokenContractAddress" => "#{token_transfer.token_contract_address}",
       "tokenName" => "#{token_transfer.token.name}",
       "tokenSymbol" => "#{token_transfer.token.symbol}"
