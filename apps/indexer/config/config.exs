@@ -49,7 +49,9 @@ config :indexer,
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
-  disabled?: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu"
+  disabled?:
+    System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
+      System.get_env("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER", "false") == "true"
 
 token_balance_on_demand_fetcher_threshold =
   if System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES") do

@@ -38,7 +38,11 @@ config :explorer, Explorer.Celo.SignerCache, enabled: true
 config :explorer, :stacktrace_depth, 20
 
 config :explorer, Explorer.Chain.Events.Listener,
-  enabled: if(System.get_env("DISABLE_WEBAPP") == "true", do: false, else: true),
+  enabled:
+    if(System.get_env("DISABLE_WEBAPP") == "true" && System.get_env("DISABLE_INDEXER") == "true",
+      do: false,
+      else: true
+    ),
   event_source: Explorer.Chain.Events.PubSubSource
 
 config :explorer, Explorer.ChainSpec.GenesisData,
