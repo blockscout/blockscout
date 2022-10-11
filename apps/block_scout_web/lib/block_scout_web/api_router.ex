@@ -110,6 +110,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/addresses" do
       get("/:address_hash", V2.AddressController, :address)
+      get("/:address_hash/token-balances", V2.AddressController, :token_balances)
     end
   end
 

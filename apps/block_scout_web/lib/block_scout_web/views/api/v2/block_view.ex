@@ -10,15 +10,15 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     ApiView.render("message.json", assigns)
   end
 
-  def render("blocks.json", %{blocks: blocks, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(blocks, &prepare_block/1), "next_page_params" => next_page_params}
+  def render("blocks.json", %{blocks: blocks, next_page_params: next_page_params, conn: conn}) do
+    %{"items" => Enum.map(blocks, &prepare_block(&1, conn)), "next_page_params" => next_page_params}
   end
 
-  def render("block.json", %{block: block}) do
-    prepare_block(block)
+  def render("block.json", %{block: block, conn: conn}) do
+    prepare_block(block, conn)
   end
 
-  def prepare_block(block, transaction_count \\ nil) do
+  def prepare_block(block, conn \\ nil) do
     burned_fee = block.base_fee_per_gas && Wei.mult(block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(block.hash))
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
 
@@ -32,8 +32,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     %{
       "height" => block.number,
       "timestamp" => block.timestamp,
-      "tx_count" => transaction_count || count_transactions(block),
-      "miner" => Helper.address_with_info(block.miner, block.miner_hash),
+      "tx_count" => count_transactions(block),
+      "miner" => Helper.address_with_info(conn, block.miner, block.miner_hash),
       "size" => block.size,
       "hash" => block.hash,
       "parent_hash" => block.parent_hash,
@@ -61,10 +61,11 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     Enum.map(rewards, &prepare_reward(&1, block))
   end
 
-  def prepare_reward(reward, block) do
+  def prepare_reward(reward, _block) do
     %{
       "reward" => reward.reward,
-      "type" => BlockView.block_reward_text(reward, block.miner.hash)
+      # BlockView.block_reward_text(reward, block.miner.hash)
+      "type" => reward.address_type
     }
   end
 

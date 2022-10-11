@@ -2565,6 +2565,15 @@ defmodule Explorer.Chain do
   @doc """
   Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
   """
+  def balance_in_usd(_token_balance, %{usd_value: nil}) do
+    nil
+  end
+
+  def balance_in_usd(token_balance, %{usd_value: usd_value, decimals: decimals}) do
+    tokens = CurrencyHelpers.divide_decimals(token_balance.value, decimals)
+    Decimal.mult(tokens, usd_value)
+  end
+
   def balance_in_usd(%{token: %{usd_value: nil}}) do
     nil
   end
