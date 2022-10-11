@@ -1807,11 +1807,6 @@ msgid "Not unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:354
-msgid "Number of blocks validated."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:266
 msgid "Number of transactions related to this address."
 msgstr ""
@@ -3760,4 +3755,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/epoch_transaction/_election_aggregated_tile.html.eex:78
 msgid "View Less Rewards"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:354
+msgid "Number of blocks validated by this validator."
 msgstr ""
