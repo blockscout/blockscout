@@ -130,18 +130,15 @@ function getEntityId () {
 // returns blockscout network: Mainnet, Alfajores or Baklava
 function getNetwork () {
   const host = window.location.host
-  switch (true) {
-    case host.includes('localhost'):
-      return 'mainnet-dev'
-    case host === 'explorer.celo.org':
-      return 'mainnet'
-    case host.includes('alfajores'):
-      return 'alfajores'
-    case host.includes('baklava'):
-      return 'baklava'
-    default:
-      return host
+
+  if (host.includes('localhost')) {
+    return 'mainnet-dev'
+  } else if (host.includes('explorer.celo.org')) {
+    // all production envs live on explorer.celo.org/%env% now
+    return window.location.pathname.match('^/([a-z0-9]*)/?')[1]
   }
+
+  return host
 }
 
 // returns timezone offset

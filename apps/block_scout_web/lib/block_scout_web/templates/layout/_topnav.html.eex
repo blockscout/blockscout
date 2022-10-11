@@ -101,7 +101,11 @@
                     class: "dropdown-item #{tab_status("verified-contracts", @conn.request_path)}",
                     to: verified_contracts_path(@conn, :index)
                 ) %>
-              <a href="/contract-verifications/new" class="dropdown-item" ><%= gettext("Verify Contract") %></a>
+              <%= link(
+                    gettext("Verify Contract"),
+                    class: "dropdown-item #{tab_status("verify-new-contract", @conn.request_path)}",
+                    to: verify_contract_path(@conn, :new)
+                ) %>
               </div>
             </li>
           <% end %>
@@ -140,7 +144,7 @@
               <%= link(
                     gettext("GraphQL"),
                     class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
-                    to: api_url() <> "/graphiql"
+                    to: static_path(@conn, "/graphiql")
                   ) %>
               <%= link(
                     gettext("RPC"),
@@ -264,9 +268,11 @@
             <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %>
               <a class="dropdown-item" href="<%= url %>"><%= title %></a>
             <% end %>
-            <a class="dropdown-item header division">Other Networks</a>
-            <%= for %{url: url, title: title} <- dropdown_other_nets() do %>
-              <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+            <%= if dropdown_other_nets() != [] do %>
+              <a class="dropdown-item header division">Other Networks</a>
+              <%= for %{url: url, title: title} <- dropdown_other_nets() do %>
+                <a class="dropdown-item" href="<%= url %>"><%= title %></a>
+              <% end %>
             <% end %>
           </div>
         </li>

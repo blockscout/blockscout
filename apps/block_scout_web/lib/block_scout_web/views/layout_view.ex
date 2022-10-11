@@ -11,17 +11,17 @@ defmodule BlockScoutWeb.LayoutView do
   @default_other_networks [
     %{
       title: "Celo Mainnet",
-      url: "https://explorer.celo.org",
+      url: "https://explorer.celo.org/mainnet",
       test_net?: false
     },
     %{
       title: "Celo Alfajores",
-      url: "https://alfajores-blockscout.celo-testnet.org/",
+      url: "https://explorer.celo.org/alfajores",
       test_net?: true
     },
     %{
       title: "Celo Baklava",
-      url: "https://baklava-blockscout.celo-testnet.org/",
+      url: "https://explorer.celo.org/baklava",
       test_net?: true
     }
   ]
