@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias Explorer.Etherscan.{Addresses, Blocks}
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
+  require Logger
+
   def listaccounts(conn, params) do
     options =
       params

@@ -191,9 +191,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_internal_transaction(internal_transaction) do
     %{
       "blockNumber" => "#{internal_transaction.block_number}",
-      "timeStamp" => "#{DateTime.to_unix(internal_transaction.block_timestamp)}",
+      "timeStamp" => "#{DateTime.to_unix(internal_transaction.transaction.block.timestamp)}",
       "from" => "#{internal_transaction.from_address_hash}",
+      "fromAddressName" => prepare_address_name(internal_transaction.from_address.names),
       "to" => "#{internal_transaction.to_address_hash}",
+      "toAddressName" => prepare_address_name(internal_transaction.to_address.names),
       "value" => "#{internal_transaction.value.value}",
       "contractAddress" => "#{internal_transaction.created_contract_address_hash}",
       "transactionHash" => to_string(internal_transaction.transaction_hash),
@@ -275,5 +277,14 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   defp balance(address) do
     address.fetched_coin_balance && address.fetched_coin_balance.value && "#{address.fetched_coin_balance.value}"
+  end
+
+  defp prepare_address_name(address_names) do
+    case address_names do
+      [_|_] ->
+        Enum.at(address_names, 0).name
+      _ ->
+        ""
+    end
   end
 end

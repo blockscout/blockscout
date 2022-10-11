@@ -99,27 +99,25 @@ defmodule Explorer.Etherscan do
       even when they are alone in the parent transaction
 
   """
-  @spec list_internal_transactions(Hash.Full.t()) :: [map()]
+  @spec list_internal_transactions(Hash.Full.t()) :: [InternalTransaction.t()]
   def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash) do
-    query =
-      from(
-        it in InternalTransaction,
-        inner_join: t in assoc(it, :transaction),
-        inner_join: b in assoc(t, :block),
-        where: it.transaction_hash == ^transaction_hash,
-        limit: 10_000,
-        select:
-          merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: b.timestamp,
-            block_number: b.number
-          })
+    with :ok <- Chain.check_transaction_exists(transaction_hash) do
+      Chain.transaction_to_internal_transactions(
+        transaction_hash,
+        necessity_by_association: %{
+          [created_contract_address: :names] => :optional,
+          [from_address: :names] => :optional,
+          [to_address: :names] => :optional,
+          [transaction: :block] => :optional,
+          [created_contract_address: :smart_contract] => :optional,
+          [from_address: :smart_contract] => :optional,
+          [to_address: :smart_contract] => :optional
+        }
       )
-
-    query
-    |> Chain.where_transaction_has_multiple_internal_transactions()
-    |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> InternalTransaction.where_nonpending_block()
-    |> Repo.replica().all()
+    else
+     _ ->
+       []
+    end
   end
 
   @doc """
