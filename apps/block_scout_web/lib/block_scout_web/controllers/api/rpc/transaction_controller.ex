@@ -6,8 +6,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   alias Explorer.Chain
   alias Explorer.Chain.Transaction
 
-  require Logger
-
   def gettxinfo(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
@@ -73,9 +71,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
               token: :required
             }
           )
-
-          Logger.info("CHECK")
-          Logger.info(token_transfers)
 
           render(conn, :gettxcosmosinfo, %{
                         transaction: transaction_updated,
