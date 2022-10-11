@@ -1,13 +1,14 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helpers
   alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, Token, Wei}
+  alias Explorer.Chain.Block.Reward
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
@@ -73,12 +74,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "from" => Helper.address_with_info(conn, token_transfer.from_address, token_transfer.from_address_hash),
       "to" => Helper.address_with_info(conn, token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
-      "token_address" => token_transfer.token_contract_address_hash,
-      "token_symbol" => token_transfer.token.symbol,
-      "token_name" => token_transfer.token.name,
-      "type" => Chain.get_token_transfer_type(token_transfer),
-      "token_type" => token_transfer.token.type,
-      "exchange_rate" => Market.add_price(token_transfer.token).usd_value
+      "token" => TokenView.render("token.json", %{token: Market.add_price(token_transfer.token)}),
+      "type" => Chain.get_token_transfer_type(token_transfer)
     }
   end
 
@@ -148,7 +145,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  defp prepare_transaction(transaction, conn) do
+  defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, _conn) do
+    %{
+      "emission_reward" => emission_reward.reward,
+      "block_hash" => validator_reward.block.hash
+    }
+  end
+
+  defp prepare_transaction(%Transaction{} = transaction, conn) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas

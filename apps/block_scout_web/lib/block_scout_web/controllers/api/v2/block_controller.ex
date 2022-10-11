@@ -10,6 +10,18 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias BlockScoutWeb.BlockTransactionController
   alias Explorer.Chain
 
+  @transaction_necessity_by_association [
+    necessity_by_association: %{
+      [created_contract_address: :names] => :optional,
+      [from_address: :names] => :optional,
+      [to_address: :names] => :optional,
+      :block => :optional,
+      [created_contract_address: :smart_contract] => :optional,
+      [from_address: :smart_contract] => :optional,
+      [to_address: :smart_contract] => :optional
+    }
+  ]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def block(conn, %{"block_hash_or_number" => block_hash_or_number}) do
@@ -50,17 +62,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     with {:ok, block} <- BlockTransactionController.param_block_hash_or_number_to_block(block_hash_or_number, []) do
       full_options =
         Keyword.merge(
-          [
-            necessity_by_association: %{
-              :block => :optional,
-              [created_contract_address: :names] => :optional,
-              [from_address: :names] => :required,
-              [to_address: :names] => :optional,
-              [created_contract_address: :smart_contract] => :optional,
-              [from_address: :smart_contract] => :optional,
-              [to_address: :smart_contract] => :optional
-            }
-          ],
+          @transaction_necessity_by_association,
           put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true)
         )
 

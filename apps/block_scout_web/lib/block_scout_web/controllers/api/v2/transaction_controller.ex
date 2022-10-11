@@ -31,6 +31,18 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     token: :required
   }
 
+  @internal_transaction_neccessity_by_association [
+    necessity_by_association: %{
+      [created_contract_address: :names] => :optional,
+      [from_address: :names] => :optional,
+      [to_address: :names] => :optional,
+      [transaction: :block] => :optional,
+      [created_contract_address: :smart_contract] => :optional,
+      [from_address: :smart_contract] => :optional,
+      [to_address: :smart_contract] => :optional
+    }
+  ]
+
   def transaction(conn, %{"transaction_hash" => transaction_hash_string}) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
@@ -157,17 +169,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)} do
       full_options =
         Keyword.merge(
-          [
-            necessity_by_association: %{
-              [created_contract_address: :names] => :optional,
-              [from_address: :names] => :optional,
-              [to_address: :names] => :optional,
-              [transaction: :block] => :optional,
-              [created_contract_address: :smart_contract] => :optional,
-              [from_address: :smart_contract] => :optional,
-              [to_address: :smart_contract] => :optional
-            }
-          ],
+          @internal_transaction_neccessity_by_association,
           paging_options(params)
         )
 
