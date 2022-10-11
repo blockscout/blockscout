@@ -1,5 +1,10 @@
 import Config
 
+pool_size =
+  if System.get_env("DATABASE_READ_ONLY_API_URL"),
+    do: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
+    else: String.to_integer(System.get_env("POOL_SIZE_API", "40"))
+
 # Configures the database
 config :explorer, Explorer.Repo,
   url: System.get_env("DATABASE_URL") || "postgresql://postgres:1234@localhost:5432/blockscout",
@@ -18,10 +23,15 @@ database_api_url =
     do: System.get_env("DATABASE_READ_ONLY_API_URL"),
     else: System.get_env("DATABASE_URL")
 
+pool_size_api =
+  if System.get_env("DATABASE_READ_ONLY_API_URL"),
+    do: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
+    else: String.to_integer(System.get_env("POOL_SIZE_API", "10"))
+
 # Configures API the database
 config :explorer, Explorer.Repo.Replica1,
   url: database_api_url,
-  pool_size: String.to_integer(System.get_env("POOL_SIZE_API", "50")),
+  pool_size: pool_size_api,
   ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
   prepare: :unnamed,
   timeout: :timer.seconds(60)

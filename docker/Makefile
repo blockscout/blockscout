@@ -10,10 +10,13 @@ ifeq ($(SYSTEM), Linux)
 	HOST=localhost
 endif
 
-DB_URL = postgresql://postgres:1234@$(HOST):5432/blockscout?ssl=false
-
-BLOCKSCOUT_CONTAINNER_PARAMS = -e 'MIX_ENV=prod' \
-							-e 'DATABASE_URL=$(DB_URL)'
+ifdef DATABASE_URL
+	DB_URL = $(DATABASE_URL)
+else
+	DB_URL = postgresql://postgres:@$(HOST):5432/explorer?ssl=false
+endif
+BLOCKSCOUT_CONTAINER_PARAMS = -e 'MIX_ENV=prod' \
+															 -e 'DATABASE_URL=$(DB_URL)'
 ifeq ($(SYSTEM), Linux)
 	BLOCKSCOUT_CONTAINER_PARAMS += --network=host
 endif
@@ -379,6 +382,12 @@ endif
 ifdef COIN_NAME
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'COIN_NAME=$(COIN_NAME)'
 endif
+ifdef INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER)'
+endif
+ifdef INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=$(INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER)'
+endif
 
 BLOCKSCOUT_CONTAINNER_PARAMS += -e 'ECTO_USE_SSL=false'
 
@@ -407,6 +416,10 @@ PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_
 PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 
 postgres:
+ifdef DATABASE_URL
+	@echo "==> DATABASE_URL of external DB provided. There is no need to start a container for DB."
+	@$(MAKE) -f $(THIS_FILE) migrate_only
+else
 ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"
 ifdef PG_STARTED
@@ -428,6 +441,7 @@ else
 	@sleep 1
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 endif
+endif
 
 blockscout: build
 	@echo "==> Starting blockscout"
@@ -435,12 +449,30 @@ blockscout: build
 	@docker run --rm --name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					-p 4000:4000 \
-					$(DOCKER_IMAGE) /bin/sh -c "mix do ecto.create, ecto.migrate; mix phx.server"
+					$(DOCKER_IMAGE) /bin/sh -c "mix phx.server"
+
+BS_STARTED := $(shell docker ps --filter name=${BS_CONTAINER_NAME} | grep ${BS_CONTAINER_NAME})
+stop:
+ifdef BS_STARTED
+	@echo "==> Stopping BlockScout container."
+	@docker stop $(BS_CONTAINER_NAME)
+	@echo "==> BlockScout container stopped."
+else
+	@echo "==> BlockScout container already stopped before."
+endif
+ifdef PG_STARTED
+	@echo "==> Stopping Postgres container."
+	@docker stop $(PG_CONTAINER_NAME)
+	@echo "==> Postgres container stopped."
+else
+	@echo "==> Postgres container already stopped before."
+endif
 
 run: start
 
 .PHONY: build \
-		migrate \
-		start \
-		postgres \
-		run
+				migrate \
+				start \
+				stop \
+				postgres \
+				run 
