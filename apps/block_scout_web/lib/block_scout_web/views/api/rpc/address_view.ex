@@ -51,11 +51,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   def render("token_list.json", %{
-    token_list: tokens, has_next_page: has_next_page, next_page_params: next_page_params}) do
+    token_list: tokens, has_next_page: has_next_page, next_page_path: next_page_path}) do
     data = %{
       "result" => Enum.map(tokens, &prepare_token/1),
       "hasNextPage" => has_next_page,
-      "nextPageParams" => next_page_params
+      "nextPagePath" => next_page_path
     }
     RPCView.render("show_data.json", data: data)
   end
@@ -66,23 +66,23 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   def render("gettopaddressesbalance.json", %{
-      top_addresses_balance: items, has_next_page: has_next_page, next_page_params: next_page_params})
+      top_addresses_balance: items, has_next_page: has_next_page, next_page_path: next_page_path})
     do
     data = %{
       "result" => Enum.map(items, &prepare_top_addresses_balance/1),
       "hasNextPage" => has_next_page,
-      "nextPageParams" => next_page_params
+      "nextPagePath" => next_page_path
     }
     RPCView.render("show_data.json", data: data)
   end
 
   def render("getcoinbalancehistory.json", %{
-      coin_balances: coin_balances, has_next_page: has_next_page, next_page_params: next_page_params})
+      coin_balances: coin_balances, has_next_page: has_next_page, next_page_path: next_page_path})
     do
     data = %{
       "result" => Enum.map(coin_balances, &prepare_coin_balance_history/1),
       "hasNextPage" => has_next_page,
-      "nextPageParams" => next_page_params
+      "nextPagePath" => next_page_path
     }
     RPCView.render("show_data.json", data: data)
   end

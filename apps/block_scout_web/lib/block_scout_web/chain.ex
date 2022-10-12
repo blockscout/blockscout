@@ -269,6 +269,20 @@ defmodule BlockScoutWeb.Chain do
 
   def split_list_by_page(list_plus_one), do: Enum.split(list_plus_one, @page_size)
 
+  def next_page_path(next_page_params) do
+    "&" <> to_string(Map.keys(next_page_params)
+                     |> Enum.map(fn key -> "#{key}=#{next_page_params[key]}" end)
+                     |> Enum.join("&"))
+  end
+
+  def get_next_page_number(cur_page_number) do
+    if cur_page_number < 1 do
+      2
+    else
+      cur_page_number + 1
+    end
+  end
+
   defp address_from_param(param) do
     case string_to_address_hash(param) do
       {:ok, hash} ->

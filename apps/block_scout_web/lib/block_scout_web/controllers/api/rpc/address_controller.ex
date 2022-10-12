@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.AddressController, only: [async_address_counters: 1]
+  import BlockScoutWeb.Chain, only: [get_next_page_number: 1, next_page_path: 1]
 
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Market, Etherscan, PagingOptions}
@@ -232,7 +233,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       if length(next_page) > 0 do
         {%Address.CurrentTokenBalance{value: value, token: token}, _} = Enum.at(token_balances, -1)
         next_page_params = %{
-          "page" => options_with_defaults.page_number + 1,
+          "page" => get_next_page_number(options_with_defaults.page_number),
           "offset" => options_with_defaults.page_size,
           "token_name" => token.name,
           "token_type" => token.type,
@@ -241,13 +242,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         render(conn, :token_list, %{
           token_list: token_balances,
           has_next_page: true,
-          next_page_params: next_page_params}
+          next_page_path: next_page_path(next_page_params)}
         )
       else
         render(conn, :token_list, %{
           token_list: token_balances,
           has_next_page: false,
-          next_page_params: ""}
+          next_page_path: ""}
         )
       end
     else
@@ -312,7 +313,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       if length(next_page) > 0 do
         {%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _} = Enum.at(addresses, -1)
         next_page_params = %{
-          "page" => options_with_defaults.page_number + 1,
+          "page" => get_next_page_number(options_with_defaults.page_number),
           "offset" => options_with_defaults.page_size,
           "hash" => hash,
           "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)
@@ -320,13 +321,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         render(conn, "gettopaddressesbalance.json", %{
           top_addresses_balance: items,
           has_next_page: true,
-          next_page_params: next_page_params}
+          next_page_path: next_page_path(next_page_params)}
         )
       else
         render(conn, "gettopaddressesbalance.json", %{
           top_addresses_balance: items,
           has_next_page: false,
-          next_page_params: ""}
+          next_page_path: ""}
         )
       end
     end
@@ -359,20 +360,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       if length(next_page) > 0 do
         coin_balance = Enum.at(coin_balances, -1)
         next_page_params = %{
-          "page" => options_with_defaults.page_number + 1,
+          "page" => get_next_page_number(options_with_defaults.page_number),
           "offset" => options_with_defaults.page_size,
           "block_number" => coin_balance.block_number
         }
         render(conn, "getcoinbalancehistory.json", %{
           coin_balances: coin_balances,
           has_next_page: true,
-          next_page_params: next_page_params}
+          next_page_path: next_page_path(next_page_params)}
         )
       else
         render(conn, "getcoinbalancehistory.json", %{
           coin_balances: coin_balances,
           has_next_page: false,
-          next_page_params: ""}
+          next_page_path: ""}
         )
       end
     else
