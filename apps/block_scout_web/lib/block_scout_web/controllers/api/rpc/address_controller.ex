@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   import BlockScoutWeb.AddressController, only: [async_address_counters: 1]
 
   alias BlockScoutWeb.API.RPC.Helpers
-  alias Explorer.{Chain, Etherscan, PagingOptions}
+  alias Explorer.{Chain, Market, Etherscan, PagingOptions}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
   alias Indexer.Fetcher.CoinBalanceOnDemand
@@ -205,11 +205,51 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   def tokenlist(conn, params) do
+    pagination_options = Helpers.put_pagination_options(%{}, params)
+
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)},
-         {:ok, token_list} <- list_tokens(address_hash) do
-      render(conn, :token_list, %{token_list: token_list})
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)} do
+
+      options_with_defaults =
+        pagination_options
+        |> Map.put_new(:page_number, 0)
+        |> Map.put_new(:page_size, 10)
+
+      options = %PagingOptions{
+        key: nil,
+        page_number: options_with_defaults.page_number,
+        page_size: options_with_defaults.page_size + 1
+      }
+
+      token_balances_plus_one =
+        address_hash
+        |> Chain.fetch_last_token_balances(paging_options_token_list(params, options))
+        |> Market.add_price()
+
+      {token_balances, next_page} = split_list_by_page(token_balances_plus_one, options_with_defaults.page_size)
+
+      if length(next_page) > 0 do
+        {%Address.CurrentTokenBalance{value: value, token: token}, _} = Enum.at(token_balances, -1)
+        next_page_params = %{
+          "page" => options_with_defaults.page_number + 1,
+          "offset" => options_with_defaults.page_size,
+          "token_name" => token.name,
+          "token_type" => token.type,
+          "value" => to_string(value)
+        }
+        render(conn, :token_list, %{
+          token_list: token_balances,
+          has_next_page: true,
+          next_page_params: next_page_params}
+        )
+      else
+        render(conn, :token_list, %{
+          token_list: token_balances,
+          has_next_page: false,
+          next_page_params: ""}
+        )
+      end
     else
       {:address_param, :error} ->
         render(conn, :error, error: "Query parameter address is required")
@@ -431,6 +471,14 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         _ ->
           [paging_options: paging_options]
       end
+    else
+      [paging_options: paging_options]
+    end
+  end
+
+  defp paging_options_token_list(params, paging_options) do
+    if !is_nil(params["token_name"]) and !is_nil(params["token_type"]) and !is_nil(params["value"]) do
+      [paging_options: %{paging_options | key: {params["token_name"], params["token_type"], params["value"]}}]
     else
       [paging_options: paging_options]
     end
@@ -688,13 +736,6 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     case Etherscan.get_token_balance(contract_address_hash, address_hash) do
       nil -> 0
       token_balance -> token_balance.value
-    end
-  end
-
-  defp list_tokens(address_hash) do
-    case Etherscan.list_tokens(address_hash) do
-      [] -> {:error, :not_found}
-      token_list -> {:ok, token_list}
     end
   end
 end

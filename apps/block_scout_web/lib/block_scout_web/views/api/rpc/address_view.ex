@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain.Address
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
 
@@ -49,9 +50,14 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: to_string(token_balance))
   end
 
-  def render("token_list.json", %{token_list: token_list}) do
-    data = Enum.map(token_list, &prepare_token/1)
-    RPCView.render("show.json", data: data)
+  def render("token_list.json", %{
+    token_list: tokens, has_next_page: has_next_page, next_page_params: next_page_params}) do
+    data = %{
+      "result" => Enum.map(tokens, &prepare_token/1),
+      "hasNextPage" => has_next_page,
+      "nextPageParams" => next_page_params
+    }
+    RPCView.render("show_data.json", data: data)
   end
 
   def render("getminedblocks.json", %{blocks: blocks}) do
@@ -263,16 +269,21 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
-  defp prepare_token(token) do
+  defp prepare_token(token_balances) do
+    {%Address.CurrentTokenBalance{
+      token_id: token_id,
+      value: value,
+      token: token
+    }, _} = token_balances
     %{
-      "balance" => to_string(token.balance),
+      "balance" => value,
       "contractAddress" => to_string(token.contract_address_hash),
       "name" => token.name,
-      "decimals" => to_string(token.decimals),
+      "decimals" => token.decimals,
       "symbol" => token.symbol,
       "type" => token.type
     }
-    |> (&if(is_nil(token.id), do: &1, else: Map.put(&1, "id", token.id))).()
+    |> (&if(is_nil(token_id), do: &1, else: Map.put(&1, "id", token_id))).()
   end
 
   defp balance(address) do
