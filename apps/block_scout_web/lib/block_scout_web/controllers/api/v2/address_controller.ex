@@ -98,13 +98,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      transactions =
+      results_plus_one =
         Chain.address_hash_to_token_transfers(
           address_hash,
           options
         )
 
-      {transactions, next_page} = split_list_by_page(transactions)
+      {transactions, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params = next_page_params(next_page, transactions, params)
 
