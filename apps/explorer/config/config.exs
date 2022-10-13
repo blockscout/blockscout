@@ -8,12 +8,13 @@ import Config
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
-  coin: System.get_env("COIN") || "POA",
+  coin: System.get_env("COIN") || "CELO",
+  coin_name: System.get_env("COIN_NAME") || "CELO",
   coingecko_coin_id: System.get_env("COINGECKO_COIN_ID"),
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,default",
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period:
@@ -38,7 +39,11 @@ config :explorer, Explorer.Celo.SignerCache, enabled: true
 config :explorer, :stacktrace_depth, 20
 
 config :explorer, Explorer.Chain.Events.Listener,
-  enabled: if(System.get_env("DISABLE_WEBAPP") == "true", do: false, else: true),
+  enabled:
+    if(System.get_env("DISABLE_WEBAPP") == "true" && System.get_env("DISABLE_INDEXER") == "true",
+      do: false,
+      else: true
+    ),
   event_source: Explorer.Chain.Events.PubSubSource
 
 config :explorer, Explorer.ChainSpec.GenesisData,

@@ -1,10 +1,10 @@
 <%= case @status do %>
       <% :success -> %>
-        <i style="color: #20b760;" class="far fa-check-circle"></i>
+        <i style="color: #20b760;" class="fa-regular fa-check-circle"></i>
       <% {:error, _} -> %>
-        <i style="color: #dc3545;" class="fas fa-exclamation-circle"></i>
+        <i style="color: #dc3545;" class="fa-solid fa-exclamation-circle"></i>
       <% :awaiting_internal_transactions -> %>
-        <i style="color: #f7b32b;" class="fas fa-exclamation-circle"></i>
+        <i style="color: #f7b32b;" class="fa-solid fa-exclamation-circle"></i>
       <% :pending -> %>
       <% _ -> %>
 <% end %>

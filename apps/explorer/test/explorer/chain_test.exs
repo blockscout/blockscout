@@ -5832,8 +5832,6 @@ defmodule Explorer.ChainTest do
           {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
         end
       )
-
-      EthereumJSONRPC.Mox
       |> expect(
         :json_rpc,
         fn %{
@@ -5916,8 +5914,6 @@ defmodule Explorer.ChainTest do
           {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
         end
       )
-
-      EthereumJSONRPC.Mox
       |> expect(
         :json_rpc,
         fn %{

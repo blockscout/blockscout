@@ -19,6 +19,10 @@ defmodule BlockScoutWeb do
   def version(), do: Application.get_env(:block_scout_web, :version)
   def segment_key(), do: Application.get_env(:block_scout_web, :segment_key)
   def network_path(), do: Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
+  def coin_name(), do: Application.get_env(:explorer, :coin_name)
+  def subnetwork(), do: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:subnetwork]
+  def chain_id(), do: Application.get_env(:block_scout_web, :chain_id)
+  def json_rpc(), do: Application.get_env(:block_scout_web, :json_rpc)
 
   def controller do
     quote do

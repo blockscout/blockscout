@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           )
         )
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 200)
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
