@@ -25,6 +25,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     }
   ]
 
+  @transaction_with_tt_necessity_by_association [
+    necessity_by_association: %{
+      [created_contract_address: :names] => :optional,
+      [from_address: :names] => :optional,
+      [to_address: :names] => :optional,
+      [created_contract_address: :smart_contract] => :optional,
+      [from_address: :smart_contract] => :optional,
+      [to_address: :smart_contract] => :optional,
+      [token_transfers: :token] => :optional,
+      [token_transfers: :to_address] => :optional,
+      [token_transfers: :from_address] => :optional,
+      [token_transfers: :token_contract_address] => :optional,
+      :block => :required
+    }
+  ]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def address(conn, %{"address_hash" => address_hash_string}) do
@@ -64,14 +80,38 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Keyword.merge(current_filter(params))
 
       results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
-      {results, next_page} = split_list_by_page(results_plus_one)
+      {transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, results, params)
+      next_page_params = next_page_params(next_page, transactions, params)
 
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:transactions, %{transactions: results, next_page_params: next_page_params})
+      |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+    end
+  end
+
+  def token_transfers(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      options =
+        @transaction_with_tt_necessity_by_association
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(current_filter(params))
+
+      transactions =
+        Chain.address_hash_to_token_transfers(
+          address_hash,
+          options
+        )
+
+      {transactions, next_page} = split_list_by_page(transactions)
+
+      next_page_params = next_page_params(next_page, transactions, params)
+
+      conn
+      |> put_status(200)
+      |> put_view(TransactionView)
+      |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
     end
   end
 end

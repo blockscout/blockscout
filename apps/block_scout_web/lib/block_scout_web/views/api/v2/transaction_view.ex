@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.Tokens.Helpers
+  alias Ecto.Association.NotLoaded
   alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, Token, Wei}
@@ -148,7 +149,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, _conn) do
     %{
       "emission_reward" => emission_reward.reward,
-      "block_hash" => validator_reward.block.hash
+      "block_hash" => validator_reward.block_hash,
+      "from" => emission_reward.address_hash,
+      "to" => validator_reward.address_hash
     }
   end
 
@@ -197,20 +200,28 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "revert_reason" => revert_reason,
       "raw_input" => transaction.input,
       "decoded_input" => decoded_input_data,
-      "token_transfers" =>
-        render("token_transfers.json", %{
-          token_transfers:
-            Enum.take(transaction.token_transfers, Chain.get_token_transfers_per_transaction_preview_count()),
-          conn: conn
-        }),
-      "token_transfers_overflow" =>
-        Enum.count(transaction.token_transfers) > Chain.get_token_transfers_per_transaction_preview_count(),
+      "token_transfers" => token_transfers(transaction.token_transfers, conn),
+      "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers),
       "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
       "method" => method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(conn))
     }
   end
+
+  def token_transfers(%NotLoaded{}, _conn), do: nil
+
+  def token_transfers(token_transfers, conn) do
+    render("token_transfers.json", %{
+      token_transfers: Enum.take(token_transfers, Chain.get_token_transfers_per_transaction_preview_count()),
+      conn: conn
+    })
+  end
+
+  def token_transfers_overflow(%NotLoaded{}), do: false
+
+  def token_transfers_overflow(token_transfers),
+    do: Enum.count(token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
 
   defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
     if is_nil(max_priority_fee_per_gas) or is_nil(base_fee_per_gas),
@@ -350,7 +361,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do
     types =
-      if !is_nil(token_transfers) && token_transfers != [] do
+      if !is_nil(token_transfers) && token_transfers != [] && !match?(%NotLoaded{}, token_transfers) do
         types ++ [:token_transfer]
       else
         types
