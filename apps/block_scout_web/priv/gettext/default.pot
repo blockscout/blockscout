@@ -121,7 +121,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:192
+#: lib/block_scout_web/templates/layout/app.html.eex:198
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -1159,7 +1159,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tabs.html.eex:12
-#: lib/block_scout_web/templates/block/overview.html.eex:91
+#: lib/block_scout_web/templates/block/overview.html.eex:97
 msgid "Epoch Transactions"
 msgstr ""
 

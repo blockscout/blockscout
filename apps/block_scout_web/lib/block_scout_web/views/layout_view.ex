@@ -101,10 +101,10 @@ defmodule BlockScoutWeb.LayoutView do
   def version, do: BlockScoutWeb.version()
   def segment_key, do: BlockScoutWeb.segment_key()
   def network_path, do: BlockScoutWeb.network_path()
-  def coin_name(), do: BlockScoutWeb.coin_name()
-  def subnetwork(), do: BlockScoutWeb.subnetwork()
-  def chain_id(), do: BlockScoutWeb.chain_id()
-  def json_rpc(), do: BlockScoutWeb.json_rpc()
+  def coin_name, do: BlockScoutWeb.coin_name()
+  def subnetwork, do: BlockScoutWeb.subnetwork()
+  def chain_id, do: BlockScoutWeb.chain_id()
+  def json_rpc, do: BlockScoutWeb.json_rpc()
 
   def release_link(version) do
     release_link_env_var = Application.get_env(:block_scout_web, :release_link)
