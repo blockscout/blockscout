@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Ecto.Association.NotLoaded
   alias Explorer.ExchangeRates.Token, as: TokenRate
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, Token, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
@@ -362,7 +362,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do
     types =
       if !is_nil(token_transfers) && token_transfers != [] && !match?(%NotLoaded{}, token_transfers) do
-        types ++ [:token_transfer]
+        [:token_transfer | types]
       else
         types
       end
@@ -373,7 +373,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp tx_types(%Transaction{created_contract_address: created_contract_address} = tx, types, :token_creation) do
     types =
       if match?(%Address{}, created_contract_address) && match?(%Token{}, created_contract_address.token) do
-        types ++ [:token_creation]
+        [:token_creation | types]
       else
         types
       end
@@ -387,10 +387,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          :contract_creation
        ) do
     types =
-      if !is_nil(created_contract_address_hash) do
-        types ++ [:contract_creation]
-      else
+      if is_nil(created_contract_address_hash) do
         types
+      else
+        [:contract_creation | types]
       end
 
     tx_types(tx, types, :contract_call)
@@ -399,7 +399,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp tx_types(%Transaction{to_address: to_address} = tx, types, :contract_call) do
     types =
       if Helper.is_smart_contract(to_address) do
-        types ++ [:contract_call]
+        [:contract_call | types]
       else
         types
       end
@@ -409,7 +409,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp tx_types(%Transaction{value: value}, types, :coin_transfer) do
     if Decimal.compare(value.value, 0) == :gt do
-      types ++ [:coin_transfer]
+      [:coin_transfer | types]
     else
       types
     end

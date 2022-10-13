@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
   pipeline :api_v2 do
     plug(:fetch_session)
+    plug(:protect_from_forgery)
   end
 
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
