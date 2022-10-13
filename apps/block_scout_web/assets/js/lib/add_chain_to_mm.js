@@ -3,28 +3,28 @@ import 'bootstrap'
 export async function addChainToMM ({ btn }) {
   try {
     const chainID = await window.ethereum.request({ method: 'eth_chainId' })
-    const chainIDFromEnvVar = parseInt(process.env.CHAIN_ID)
+    const chainIDFromEnvVar = parseInt(document.body.dataset.chainId)
     const chainIDHex = chainIDFromEnvVar && `0x${chainIDFromEnvVar.toString(16)}`
-    const blockscoutURL = location.protocol + '//' + location.host + process.env.NETWORK_PATH
+    const blockscoutURL = location.protocol + '//' + location.host + document.body.dataset.networkPath
     if (chainID !== chainIDHex) {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
         params: [{
           chainId: chainIDHex,
-          chainName: process.env.SUBNETWORK,
+          chainName: document.body.dataset.subnetwork,
           nativeCurrency: {
-            name: process.env.COIN_NAME,
-            symbol: process.env.COIN_NAME,
+            name: document.body.dataset.coinName,
+            symbol: document.body.dataset.coinName,
             decimals: 18
           },
-          rpcUrls: [process.env.JSON_RPC],
+          rpcUrls: [document.body.dataset.jsonRpc],
           blockExplorerUrls: [blockscoutURL]
         }]
       })
     } else {
       btn.tooltip('dispose')
       btn.tooltip({
-        title: `You're already connected to ${process.env.SUBNETWORK}`,
+        title: `You're already connected to ${document.body.dataset.subnetwork}`,
         trigger: 'click',
         placement: 'bottom'
       }).tooltip('show')

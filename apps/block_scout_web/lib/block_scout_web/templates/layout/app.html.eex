@@ -57,7 +57,13 @@
     </script>
   </head>
 
-  <body data-network-path="<%= network_path() %>">
+  <body
+    data-network-path="<%= network_path() %>"
+    data-chain-id="<%= chain_id() %>"
+    data-subnetwork="<%= subnetwork() %>"
+    data-coin-name="<%= coin_name() %>"
+    data-json-rpc="<%= json_rpc() %>"
+  >
     <% raw_dark_forest_addresses_0_4 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses) || "" %>
     <% raw_dark_forest_addresses_0_5 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_5) || "" %>
     <% raw_dark_forest_addresses_0_6 = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses_v_0_6) || "" %>
