@@ -1158,8 +1158,8 @@ msgid "Epoch #"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:33
-#: lib/block_scout_web/templates/block/_tabs.html.eex:12 lib/block_scout_web/templates/block/overview.html.eex:91
+#: lib/block_scout_web/templates/block/_tabs.html.eex:12
+#: lib/block_scout_web/templates/block/overview.html.eex:91
 msgid "Epoch Transactions"
 msgstr ""
 
@@ -2260,7 +2260,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:30
-#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:43 lib/block_scout_web/templates/address_internal_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:36 lib/block_scout_web/templates/address_internal_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/address_logs/index.html.eex:23 lib/block_scout_web/templates/address_signed/index.html.eex:23
 #: lib/block_scout_web/templates/address_token/index.html.eex:60 lib/block_scout_web/templates/address_token_transfer/index.html.eex:58
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:50 lib/block_scout_web/templates/address_validation/index.html.eex:20
@@ -2556,7 +2556,7 @@ msgid "There are no downtime blocks for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:47
+#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:40
 msgid "There are no epoch transactions for this address."
 msgstr ""
 
