@@ -56,34 +56,11 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
           transaction
         end
 
-      case Chain.transaction_has_token_transfers?(transaction_updated.hash) do
-        true ->
-          token_transfers = Chain.transaction_to_token_transfers(
-            transaction_updated.hash,
-            necessity_by_association: %{
-              [from_address: :smart_contract] => :optional,
-              [to_address: :smart_contract] => :optional,
-              [from_address: :names] => :optional,
-              [to_address: :names] => :optional,
-              from_address: :required,
-              to_address: :required,
-              token_contract_address: :required,
-              token: :required
-            }
-          )
-
-          render(conn, :gettxcosmosinfo, %{
-                        transaction: transaction_updated,
-                        block_height: Chain.block_height(),
-                        token_transfers: token_transfers,
-                        logs: logs})
-        false ->
-          render(conn, :gettxcosmosinfo, %{
-                        transaction: transaction_updated,
-                        block_height: Chain.block_height(),
-                        token_transfers: [],
-                        logs: logs})
-      end
+      render(conn, :gettxcosmosinfo, %{
+        transaction: transaction_updated,
+        block_height: Chain.block_height(),
+        logs: logs}
+      )
     else
       {:transaction, :error} ->
         render(conn, :error, error: "Transaction not found")
@@ -136,7 +113,21 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   end
 
   defp transaction_from_cosmos_hash(cosmos_hash) do
-    case Chain.cosmos_hash_to_transaction(cosmos_hash, necessity_by_association: %{block: :required}) do
+    case Chain.cosmos_hash_to_transaction(cosmos_hash,
+           necessity_by_association: %{
+             [created_contract_address: :names] => :optional,
+             [from_address: :names] => :optional,
+             [to_address: :names] => :optional,
+             [created_contract_address: :smart_contract] => :optional,
+             [from_address: :smart_contract] => :optional,
+             [to_address: :smart_contract] => :optional,
+             [token_transfers: :token] => :optional,
+             [token_transfers: :to_address] => :optional,
+             [token_transfers: :from_address] => :optional,
+             [token_transfers: :token_contract_address] => :optional,
+             :block => :required
+           }
+         ) do
       {:error, :not_found} -> {:transaction, :error}
       {:ok, transaction} -> {:transaction, {:ok, transaction}}
     end

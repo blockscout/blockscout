@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.TransactionView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain.Transaction
   alias BlockScoutWeb.API.RPC.RPCView
 
   def render("gettxinfo.json", %{
@@ -16,10 +17,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   def render("gettxcosmosinfo.json", %{
         transaction: transaction,
         block_height: block_height,
-        token_transfers: token_transfers,
         logs: logs
       }) do
-    data = prepare_transaction_cosmos(transaction, block_height, token_transfers, logs)
+    data = prepare_transaction_cosmos(transaction, block_height, logs)
     RPCView.render("show.json", data: data)
   end
 
@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     }
   end
 
-  defp prepare_transaction_cosmos(transaction, block_height, token_transfers, logs) do
+  defp prepare_transaction_cosmos(transaction, block_height, logs) do
     %{
       "blockHeight" => transaction.block_number,
       "blockHash" => "#{transaction.block.hash}",
@@ -99,6 +99,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "to" => "#{transaction.to_address_hash}",
       "value" => transaction.value.value,
       "input" => "#{transaction.input}",
+      "decodedInput" => decoded_input_transaction_data(transaction),
       "gasLimit" => transaction.gas,
       "gasUsed" => transaction.gas_used,
       "gasPrice" => transaction.gas_price.value,
@@ -112,7 +113,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "maxPriorityFeePerGas" => parse_gas_value(transaction.max_priority_fee_per_gas),
       "maxFeePerGas" => parse_gas_value(transaction.max_fee_per_gas),
       "type" => transaction.type,
-      "tokenTransfers" => Enum.map(token_transfers, &prepare_token_transfer/1),
+      "tokenTransfers" => Enum.map(transaction.token_transfers, &prepare_token_transfer/1),
       "logs" => Enum.map(logs, &prepare_log/1),
       "revertReason" => "#{transaction.revert_reason}"
     }
@@ -162,5 +163,16 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
 
   defp get_topics(log) do
     [log.first_topic, log.second_topic, log.third_topic, log.fourth_topic]
+  end
+
+  defp decoded_input_transaction_data(transaction) do
+    case Transaction.decoded_input_data(transaction) do
+      {:error, _} ->
+        ""
+      {:error, _, _} ->
+        ""
+      output ->
+        output
+    end
   end
 end

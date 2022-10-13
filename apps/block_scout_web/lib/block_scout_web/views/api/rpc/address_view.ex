@@ -1,11 +1,9 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
-
-  require Logger
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -229,12 +227,6 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   defp prepare_common_token_transfer_for_api(tx) do
-    Logger.info("CHECK")
-    if !is_nil(tx.created_contract_address) do
-      Logger.info(tx.created_contract_address.smart_contract)
-    end
-    Logger.info(tx.from_address.smart_contract)
-    Logger.info(tx.to_address.smart_contract)
     %{
       "blockNumber" => tx.block_number,
       "timeStamp" => to_string(DateTime.to_unix(tx.block.timestamp)),
@@ -249,7 +241,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "gasPrice" => tx.gas_price.value,
       "gasUsed" => tx.gas_used,
       "cumulativeGasUsed" => tx.cumulative_gas_used,
-      "input" => tx.input
+      "input" => tx.input,
+      "decodedInput" => decoded_input_transaction_data(tx)
     }
   end
 
@@ -348,6 +341,17 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
         Enum.at(address_names, 0).name
       _ ->
         ""
+    end
+  end
+
+  defp decoded_input_transaction_data(transaction) do
+    case Transaction.decoded_input_data(transaction) do
+      {:error, _} ->
+        ""
+      {:error, _, _} ->
+        ""
+      output ->
+        output
     end
   end
 end
