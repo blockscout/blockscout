@@ -15,10 +15,10 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def render("block.json", %{block: block, conn: conn}) do
-    prepare_block(block, conn)
+    prepare_block(block, conn, true)
   end
 
-  def prepare_block(block, conn \\ nil) do
+  def prepare_block(block, conn, single_block? \\ false) do
     burned_fee = block.base_fee_per_gas && Wei.mult(block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(block.hash))
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
 
@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "extra_data" => "TODO",
       "uncles_hashes" => prepare_uncles(block.uncle_relations),
       "state_root" => "TODO",
-      "rewards" => prepare_rewards(block.rewards, block),
+      "rewards" => prepare_rewards(block.rewards, block, single_block?),
       "gas_target_percentage" => gas_target(block),
       "gas_used_percentage" => gas_used_percentage(block),
       "burnt_fees_percentage" => burnt_fees_percentage(burned_fee, tx_fees),
@@ -57,15 +57,14 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     }
   end
 
-  def prepare_rewards(rewards, block) do
-    Enum.map(rewards, &prepare_reward(&1, block))
+  def prepare_rewards(rewards, block, single_block?) do
+    Enum.map(rewards, &prepare_reward(&1, block, single_block?))
   end
 
-  def prepare_reward(reward, _block) do
+  def prepare_reward(reward, block, single_block?) do
     %{
       "reward" => reward.reward,
-      # BlockView.block_reward_text(reward, block.miner.hash)
-      "type" => reward.address_type
+      "type" => if(single_block?, do: BlockView.block_reward_text(reward, block.miner.hash), else: reward.address_type)
     }
   end
 
