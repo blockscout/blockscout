@@ -9,7 +9,7 @@
             <span>
               <%= if details[:type] != "model", do: details.type %>
               <%= if details[:definition] do %>
-                <i class="fas fa-info-circle ml-2"
+                <i class="fa-solid fa-info-circle ml-2"
                    data-toggle="tooltip"
                    data-placement="right"
                    data-html="true"

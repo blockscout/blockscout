@@ -326,11 +326,11 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp render_type_value(type, value, type) do
-    "<div style=\"padding-left: 20px\">(#{type}) : #{value}</div>"
+    "<div class=\"pl-3\"><i>(#{type})</i> : #{value}</div>"
   end
 
   defp render_type_value(type, value, name) do
-    "<div style=\"padding-left: 20px\"><span style=\"color: black\">#{name}</span> (#{type}) : #{value}</div>"
+    "<div class=\"pl-3\"><i><span style=\"color: black\">#{name}</span> (#{type})</i> : #{value}</div>"
   end
 
   defp render_array_type_value(type, values, name) do
@@ -384,4 +384,6 @@ defmodule BlockScoutWeb.SmartContractView do
         hex_revert_reason
     end
   end
+
+  def not_last_element?(length, index), do: length > 1 and index < length - 1
 end

@@ -6,7 +6,7 @@
             to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
             )
         %>
-  <%= if EpochUtil.is_epoch_block?(@conn.assigns.block.number) and System.get_env("DISPLAY_REWARDS") === "true" do %>
+  <%= if EpochUtil.is_epoch_block?(@conn.assigns.block.number) and (System.get_env("DISPLAY_REWARDS") === "true" or tab_active?("epoch-transactions", @conn.request_path)) do %>
   <%=
           link(
             gettext("Epoch Transactions"),

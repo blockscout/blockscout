@@ -29,15 +29,8 @@
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer epoch transactions" %></a>
           </div>
         </div>
-        <div class="clearfix">
-          <h2 class="card-title float-left"><%= gettext "Epoch Transactions" %></h2>
-          <div class="top-pagination-outer-container float-right">
-            <div class="dropdown u-push-sm">
-
-            </div>
-            <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
 
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>

@@ -50,3 +50,4 @@
   </div>
 </section>
 <div class="stakes-progress-graph-thing-for-getting-color"></div>
+<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/stakes.js") %>"></script>

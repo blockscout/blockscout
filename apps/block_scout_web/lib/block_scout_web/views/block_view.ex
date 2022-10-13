@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.BlockView do
   def block_type(%Block{consensus: false}), do: "Uncle"
 
   def block_type(%Block{number: number}) when rem(number, 17280) == 0,
-    do: "Epoch Block ##{EpochUtil.epoch_by_block_number(number)}"
+    do: "Epoch ##{EpochUtil.epoch_by_block_number(number)} | Block ##{number}"
 
   def block_type(_block), do: "Block"
 

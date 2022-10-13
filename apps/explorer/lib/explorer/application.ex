@@ -122,12 +122,51 @@ defmodule Explorer.Application do
     end
   end
 
+  defp datadog_port do
+    if System.get_env("DATADOG_PORT") do
+      case Integer.parse(System.get_env("DATADOG_PORT")) do
+        {integer, ""} -> integer
+        _ -> 8126
+      end
+    else
+      8126
+    end
+  end
+
+  defp spandex_batch_size do
+    if System.get_env("SPANDEX_BATCH_SIZE") do
+      case Integer.parse(System.get_env("SPANDEX_BATCH_SIZE")) do
+        {integer, ""} -> integer
+        _ -> 100
+      end
+    else
+      100
+    end
+  end
+
+  defp spandex_sync_threshold do
+    if System.get_env("SPANDEX_SYNC_THRESHOLD") do
+      case Integer.parse(System.get_env("SPANDEX_SYNC_THRESHOLD")) do
+        {integer, ""} -> integer
+        _ -> 100
+      end
+    else
+      100
+    end
+  end
+
   defp datadog_opts do
+    datadog_port = datadog_port()
+
+    spandex_batch_size = spandex_batch_size()
+
+    spandex_sync_threshold = spandex_sync_threshold()
+
     [
       host: System.get_env("DATADOG_HOST") || "localhost",
-      port: System.get_env("DATADOG_PORT") || 8126,
-      batch_size: System.get_env("SPANDEX_BATCH_SIZE") || 100,
-      sync_threshold: System.get_env("SPANDEX_SYNC_THRESHOLD") || 100,
+      port: datadog_port,
+      batch_size: spandex_batch_size,
+      sync_threshold: spandex_sync_threshold,
       http: HTTPoison
     ]
   end

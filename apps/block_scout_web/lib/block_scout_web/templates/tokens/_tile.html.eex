@@ -16,9 +16,9 @@
         chain_id: chain_id_for_token_icon,
         address: token_hash_for_token_icon
       %>
+    <% end %>
   </td>
   <td class="stakes-td">
-    <% end %>
     <% token = token_display_name(@token) %>
     <%= link(token,
       to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),

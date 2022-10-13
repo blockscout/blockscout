@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 pre {
   white-space: pre-wrap;
 }
@@ -23,7 +25,7 @@ pre {
 }
 
 .pre-scrollable-shorty {
-  max-height: $pre-scrollable-max-height / 7;
+  max-height: math.div($pre-scrollable-max-height, 7);
 }
 
 .tile pre {

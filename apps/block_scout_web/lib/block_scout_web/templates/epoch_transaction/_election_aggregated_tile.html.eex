@@ -24,9 +24,9 @@
         <%= gettext "Rewards: " %> <%= wei_to_ether_rounded(get_total_reward_value(@total)) %>
         <%= get_reward_currency(@reward_type) %>
       </span>
-      <span class="tile-address-wrapper d-flex flex-md-row mt-3 mt-md-0">
+      <span class="tile-address-wrapper d-flex flex-md-row mt-3 mt-md-0 pl-2">
         <img src="/images/icons/arrow.png" width="28px" height="22.4px">
-        <div class="d-flex align-items-end ml-2" style="height: 30px;">
+        <div class="d-flex align-items-end ml-2 pt-2">
           <span class="epoch-aggregated-tile-reward-count <%= if not is_nil(@total) and @total.count > 0 do "" else "epoch-aggregated-tile-transaction-count-disabled" end %>" data-rewards-type="<%= @reward_type %>">
             <%= case @reward_type do %>
               <% "voter" -> %>
