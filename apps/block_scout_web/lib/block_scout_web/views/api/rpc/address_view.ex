@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
 
+  require Logger
+
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
     RPCView.render("show.json", data: accounts)
@@ -54,6 +56,16 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     token_list: tokens, has_next_page: has_next_page, next_page_path: next_page_path}) do
     data = %{
       "result" => Enum.map(tokens, &prepare_token/1),
+      "hasNextPage" => has_next_page,
+      "nextPagePath" => next_page_path
+    }
+    RPCView.render("show_data.json", data: data)
+  end
+
+  def render("getlisttokentransfers.json", %{
+    token_transfers: token_transfers, has_next_page: has_next_page, next_page_path: next_page_path}) do
+    data = %{
+      "result" => Enum.map(token_transfers, &prepare_common_token_transfer_for_api/1),
       "hasNextPage" => has_next_page,
       "nextPagePath" => next_page_path
     }
@@ -216,6 +228,31 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
+  defp prepare_common_token_transfer_for_api(tx) do
+    Logger.info("CHECK")
+    if !is_nil(tx.created_contract_address) do
+      Logger.info(tx.created_contract_address.smart_contract)
+    end
+    Logger.info(tx.from_address.smart_contract)
+    Logger.info(tx.to_address.smart_contract)
+    %{
+      "blockNumber" => tx.block_number,
+      "timeStamp" => to_string(DateTime.to_unix(tx.block.timestamp)),
+      "hash" => to_string(tx.hash),
+      "nonce" => tx.nonce,
+      "blockHash" => to_string(tx.block.hash),
+      "from" => to_string(tx.from_address_hash),
+      "to" => to_string(tx.to_address_hash),
+      "tokenTransfers" => Enum.map(tx.token_transfers, &prepare_token_transfer_for_api/1),
+      "transactionIndex" => tx.index,
+      "gas" => tx.gas,
+      "gasPrice" => tx.gas_price.value,
+      "gasUsed" => tx.gas_used,
+      "cumulativeGasUsed" => tx.cumulative_gas_used,
+      "input" => tx.input
+    }
+  end
+
   defp prepare_common_token_transfer(token_transfer) do
     %{
       "blockNumber" => to_string(token_transfer.block_number),
@@ -260,6 +297,21 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   defp prepare_token_transfer(token_transfer) do
     prepare_common_token_transfer(token_transfer)
+  end
+
+  defp prepare_token_transfer_for_api(token_transfer) do
+    %{
+      "amount" => "#{token_transfer.amount}",
+      "logIndex" => "#{token_transfer.log_index}",
+      "fromAddress" => "#{token_transfer.from_address}",
+      "fromAddressName" => prepare_address_name(token_transfer.from_address.names),
+      "toAddress" => "#{token_transfer.to_address}",
+      "toAddressName" => prepare_address_name(token_transfer.to_address.names),
+      "tokenContractAddress" => "#{token_transfer.token_contract_address}",
+      "tokenName" => "#{token_transfer.token.name}",
+      "tokenSymbol" => "#{token_transfer.token.symbol}",
+      "decimals" => "#{token_transfer.token.decimals}"
+    }
   end
 
   defp prepare_block(block) do

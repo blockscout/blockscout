@@ -137,7 +137,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "toAddressName" => prepare_address_name(token_transfer.to_address.names),
       "tokenContractAddress" => "#{token_transfer.token_contract_address}",
       "tokenName" => "#{token_transfer.token.name}",
-      "tokenSymbol" => "#{token_transfer.token.symbol}"
+      "tokenSymbol" => "#{token_transfer.token.symbol}",
+      "decimals" => "#{token_transfer.token.decimals}"
     }
   end
 

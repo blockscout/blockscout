@@ -164,6 +164,82 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  def getlisttokentransfers(conn, params) do
+    pagination_options = Helpers.put_pagination_options(%{}, params)
+
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:address, :ok} <- {:address, Chain.check_address_exists(address_hash)} do
+
+      options_with_defaults =
+        pagination_options
+        |> Map.put_new(:page_number, 0)
+        |> Map.put_new(:page_size, 10)
+
+      options = %PagingOptions{
+        key: nil,
+        page_number: options_with_defaults.page_number,
+        page_size: options_with_defaults.page_size + 1
+      }
+
+      full_options =
+        [
+          necessity_by_association: %{
+            [created_contract_address: :names] => :optional,
+            [from_address: :names] => :optional,
+            [to_address: :names] => :optional,
+            [created_contract_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :smart_contract] => :optional,
+            [token_transfers: :token] => :optional,
+            [token_transfers: :to_address] => :optional,
+            [token_transfers: :from_address] => :optional,
+            [token_transfers: :token_contract_address] => :optional,
+            :block => :required
+          }
+        ] |> Keyword.merge(paging_options_token_transfer_list(params, options))
+
+      transactions_plus_one =
+        Chain.address_hash_to_token_transfers(
+          address_hash,
+          full_options
+        )
+
+      {transactions, next_page} = split_list_by_page(transactions_plus_one, options_with_defaults.page_size)
+
+      if length(next_page) > 0 do
+        last_transaction = Enum.at(transactions, -1)
+        next_page_params = %{
+          "page" => get_next_page_number(options_with_defaults.page_number),
+          "offset" => options_with_defaults.page_size,
+          "block_number" => last_transaction.block_number,
+          "index" => last_transaction.index
+        }
+
+        render(conn, "getlisttokentransfers.json", %{
+          token_transfers: transactions,
+          has_next_page: true,
+          next_page_path: next_page_path(next_page_params)}
+        )
+      else
+        render(conn, "getlisttokentransfers.json", %{
+          token_transfers: transactions,
+          has_next_page: false,
+          next_page_path: ""}
+        )
+      end
+    else
+      {:address_param, :error} ->
+        render(conn, :error, error: "Query parameter address is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
+
+      {_, :not_found} ->
+        render(conn, :error, error: "Address not found")
+    end
+  end
+
   def tokentx(conn, params) do
     options = optional_params(params)
 
@@ -480,6 +556,14 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   defp paging_options_token_list(params, paging_options) do
     if !is_nil(params["token_name"]) and !is_nil(params["token_type"]) and !is_nil(params["value"]) do
       [paging_options: %{paging_options | key: {params["token_name"], params["token_type"], params["value"]}}]
+    else
+      [paging_options: paging_options]
+    end
+  end
+
+  defp paging_options_token_transfer_list(params, paging_options) do
+    if !is_nil(params["block_number"]) and !is_nil(params["index"]) do
+      [paging_options: %{paging_options | key: {params["block_number"], params["index"]}}]
     else
       [paging_options: paging_options]
     end
