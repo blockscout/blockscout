@@ -113,6 +113,10 @@ defmodule BlockScoutWeb.AddressContractVerificationViaJsonController do
          {:ok, _verified_status} <- Sourcify.check_by_address(address_hash_string) do
       get_metadata_and_publish(address_hash_string, conn)
     else
+      {:error, "partial"} ->
+        {:ok, status, metadata} = Sourcify.check_by_address_any(address_hash_string)
+        process_metadata_and_publish(address_hash_string, metadata, status == "partial", conn)
+
       {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
           prepare_verification_error(error, address_hash_string, conn),

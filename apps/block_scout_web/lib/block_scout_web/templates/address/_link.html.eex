@@ -1,6 +1,6 @@
 <%= if @address do %>
   <%= if assigns[:show_full_hash] do %>
-    <%= if name = primary_name(@address) do %>
+    <%= if name = implementation_name(@address) || primary_name(@address) do %>
       <span><%= name %> |
     <% end %>
     <%= link to: address_transaction_path(BlockScoutWeb.Endpoint, :index, to_string(@address)), "data-test": "address_hash_link", class: assigns[:class] do %>
