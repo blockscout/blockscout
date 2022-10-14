@@ -24,7 +24,6 @@ defmodule Indexer.Celo.TrackedEventSupport do
       optimized: false
     }
 
-
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
       compiler_version: contract_code_info.version,
