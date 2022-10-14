@@ -113,10 +113,7 @@ defmodule Explorer.SmartContract.Helper do
   def add_contract_code_md5(%{address_hash: address_hash_string} = attrs) when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      contract_code_md5 =
-        :md5
-        |> :crypto.hash(address.contract_code.bytes)
-        |> Base.encode16(case: :lower)
+      contract_code_md5 = contract_code_md5(address.contract_code.bytes)
 
       attrs
       |> Map.put_new(:contract_code_md5, contract_code_md5)
@@ -128,10 +125,7 @@ defmodule Explorer.SmartContract.Helper do
   def add_contract_code_md5(%{address_hash: address_hash} = attrs) do
     case Chain.hash_to_address(address_hash) do
       {:ok, address} ->
-        contract_code_md5 =
-          :md5
-          |> :crypto.hash(address.contract_code.bytes)
-          |> Base.encode16(case: :lower)
+        contract_code_md5 = contract_code_md5(address.contract_code.bytes)
 
         attrs
         |> Map.put_new(:contract_code_md5, contract_code_md5)
@@ -142,4 +136,10 @@ defmodule Explorer.SmartContract.Helper do
   end
 
   def add_contract_code_md5(attrs), do: attrs
+
+  def contract_code_md5(bytes) do
+    :md5
+    |> :crypto.hash(bytes)
+    |> Base.encode16(case: :lower)
+  end
 end

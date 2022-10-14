@@ -208,7 +208,7 @@ defmodule Indexer.Block.Fetcher do
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
-             {step :: atom(), reason :: [%Ecto.Changeset{}] | term()}
+             {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}
              | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
   def fetch_and_import_range(
         %__MODULE__{

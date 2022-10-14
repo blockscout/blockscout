@@ -247,7 +247,7 @@ defmodule Explorer.Chain.Import do
 
     runner_specific_options =
       if Map.has_key?(Enum.into(runner.__info__(:functions), %{}), :runner_specific_options) do
-        apply(runner, :runner_specific_options, [])
+        runner.runner_specific_options()
       else
         []
       end

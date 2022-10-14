@@ -191,12 +191,11 @@ defmodule Explorer.Staking.ContractReader do
       ) do
     staking_epochs_joint =
       staking_epochs
-      |> Enum.map(fn epoch ->
+      |> Enum.map_join(fn epoch ->
         epoch
         |> Integer.to_string(16)
         |> String.pad_leading(64, ["0"])
       end)
-      |> Enum.join("")
 
     pool_staking_address = address_pad_to_64(pool_staking_address)
     staker = address_pad_to_64(staker)
@@ -268,12 +267,11 @@ defmodule Explorer.Staking.ContractReader do
       ) do
     staking_epochs_joint =
       staking_epochs
-      |> Enum.map(fn epoch ->
+      |> Enum.map_join(fn epoch ->
         epoch
         |> Integer.to_string(16)
         |> String.pad_leading(64, ["0"])
       end)
-      |> Enum.join("")
 
     pool_staking_address = address_pad_to_64(pool_staking_address)
 
