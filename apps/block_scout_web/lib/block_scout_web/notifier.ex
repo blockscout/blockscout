@@ -183,19 +183,23 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(_), do: nil
 
   def select_contract_type_and_form_view(params) do
-    verification_from_json_upload? = Map.has_key?(params, "file")
-    verification_from_flattened_source? = Map.has_key?(params, "external_libraries")
+    verification_from_metadata_json? =
+      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "json:metadata"
 
-    verification_from_standard_json_input? = verification_from_json_upload? && Map.has_key?(params, "smart_contract")
+    verification_from_standard_json_input? =
+      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "json:standard"
 
-    compiler = if verification_from_flattened_source? || verification_from_standard_json_input?, do: :solc, else: :vyper
+    verification_from_vyper? =
+      Map.has_key?(params, "verification_type") && Map.get(params, "verification_type") == "vyper"
+
+    compiler = if verification_from_vyper?, do: :vyper, else: :solc
 
     view =
       cond do
         verification_from_standard_json_input? -> AddressContractVerificationViaStandardJsonInputView
-        verification_from_json_upload? -> AddressContractVerificationViaJsonView
-        verification_from_flattened_source? -> AddressContractVerificationViaFlattenedCodeView
-        true -> AddressContractVerificationVyperView
+        verification_from_metadata_json? -> AddressContractVerificationViaJsonView
+        verification_from_vyper? -> AddressContractVerificationVyperView
+        true -> AddressContractVerificationViaFlattenedCodeView
       end
 
     %{view: view, compiler: compiler}

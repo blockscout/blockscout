@@ -317,7 +317,7 @@ defmodule Explorer.Chain.TransactionTest do
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
 
-      contract = insert(:smart_contract) |> Repo.preload(:address)
+      contract = insert(:smart_contract, contract_code_md5: "123") |> Repo.preload(:address)
 
       input_data =
         "set(uint)"

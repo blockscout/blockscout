@@ -117,15 +117,13 @@ defmodule BlockScoutWeb.SmartContractController do
             address_hash,
             %{method_id: params["method_id"], args: args},
             contract_type,
-            params["function_name"],
             params["from"]
           )
         else
           Reader.query_function_with_names(
             address_hash,
             %{method_id: params["method_id"], args: args},
-            contract_type,
-            params["function_name"]
+            contract_type
           )
         end
 

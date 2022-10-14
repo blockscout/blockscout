@@ -4600,7 +4600,7 @@ defmodule Explorer.ChainTest do
 
   describe "address_hash_to_smart_contract/1" do
     test "fetches a smart contract" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       assert ^smart_contract = Chain.address_hash_to_smart_contract(smart_contract.address_hash)
     end
@@ -5853,16 +5853,21 @@ defmodule Explorer.ChainTest do
 
     test "combine_proxy_implementation_abi/2 returns proxy abi if implementation is not verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
       assert Chain.combine_proxy_implementation_abi(proxy_contract_address, @proxy_abi) == @proxy_abi
     end
 
     test "combine_proxy_implementation_abi/2 returns proxy + implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
@@ -5935,16 +5940,21 @@ defmodule Explorer.ChainTest do
 
     test "get_implementation_abi_from_proxy/2 returns [] if implementation is not verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
       assert Chain.get_implementation_abi_from_proxy(proxy_contract_address, @proxy_abi) == []
     end
 
     test "get_implementation_abi_from_proxy/2 returns implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
@@ -5971,10 +5981,15 @@ defmodule Explorer.ChainTest do
 
     test "get_implementation_abi_from_proxy/2 returns implementation abi in case of EIP-1967 proxy pattern" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [])
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
@@ -6016,10 +6031,15 @@ defmodule Explorer.ChainTest do
 
     test "get_implementation_abi/1 returns implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
-      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
 
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)

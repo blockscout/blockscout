@@ -32,6 +32,10 @@
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: "block" %>
 
+        <div class="d-none">
+          <input type="text" id="verification_type" name="verification_type" value="vyper" />
+        </div>
+
         <div class="smart-contract-form-buttons">
           <button
             class="position-absolute w-118 btn-full-primary d-none mr-2"

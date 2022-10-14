@@ -67,10 +67,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       |> Enum.find(&String.ends_with?(&1.filename, ".json"))
 
     with {:ok, body} <- File.read(json_file.path),
-         {:ok, json} <- Jason.decode(body),
+         {:ok, %{metadata: metadata}} <- Jason.decode(body),
          {:ok, metadata} <-
-           json
-           |> Map.get("metadata")
+           metadata
            |> Jason.decode() do
       required_files =
         metadata

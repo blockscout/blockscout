@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     end
 
     test "only responds to ajax requests", %{conn: conn} do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: smart_contract.address_hash)
 
@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     test "lists the smart contract read only functions" do
       token_contract_address = insert(:contract_address)
 
-      insert(:smart_contract, address_hash: token_contract_address.hash)
+      insert(:smart_contract, address_hash: token_contract_address.hash, contract_code_md5: "123")
 
       blockchain_get_code_mock()
       blockchain_get_function_mock()
@@ -81,7 +81,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
             "inputs" => [],
             "constant" => true
           }
-        ]
+        ],
+        contract_code_md5: "123"
       )
 
       blockchain_get_code_mock()
@@ -117,7 +118,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
             "inputs" => [],
             "constant" => false
           }
-        ]
+        ],
+        contract_code_md5: "123"
       )
 
       blockchain_get_code_mock()
@@ -154,7 +156,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
             "inputs" => [],
             "constant" => false
           }
-        ]
+        ],
+        contract_code_md5: "123"
       )
 
       blockchain_get_code_mock()
@@ -217,7 +220,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     end
 
     test "only responds to ajax requests", %{conn: conn} do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       path =
         smart_contract_path(
@@ -235,7 +238,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
     test "fetch the function value from the blockchain" do
       address = insert(:contract_address)
-      smart_contract = insert(:smart_contract, address_hash: address.hash)
+      smart_contract = insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123")
 
       blockchain_get_code_mock()
       blockchain_get_function_mock()

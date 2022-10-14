@@ -55,7 +55,18 @@
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Application.get_env(:block_scout_web, :chain_id) %>">
+        <% function_abi =
+                    case Jason.encode([function]) do
+                      {:ok, abi_string} ->
+                        abi_string
+                      _ ->
+                        if @contract_type == "proxy" do
+                          @implementation_abi
+                        else
+                          @contract_abi
+                        end
+                    end %>
+        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= function_abi %>" data-implementation-abi="<%= function_abi %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 

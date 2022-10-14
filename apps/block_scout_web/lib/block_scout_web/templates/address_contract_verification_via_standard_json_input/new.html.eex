@@ -4,17 +4,13 @@
 <% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
 <% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
-  <div data-selector="channel-disconnected-message" class="d-none">
-    <div data-selector="reload-button" class="alert alert-danger">
-      <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
-    </div>
-  </div>
+  <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
   <div class="new-smart-contract-form">
       <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
       <%= form_for @changeset,
                 address_contract_verification_path(@conn, :create),
-                [id: "json-dropzone-form"],
+                [id: "standard-json-dropzone-form"],
                 fn f -> %>      
       <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
 
@@ -53,7 +49,7 @@
         >
           <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
         </button>
-        <button id="verify-via-standart-json-input-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
+        <button id="verify-via-standard-json-input-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
         <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
         <%=
           link(

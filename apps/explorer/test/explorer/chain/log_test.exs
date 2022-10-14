@@ -79,7 +79,8 @@ defmodule Explorer.Chain.LogTest do
             "type" => "event"
           }
         ],
-        address_hash: to_address.hash
+        address_hash: to_address.hash,
+        contract_code_md5: "123"
       )
 
       topic1_bytes = ExKeccak.hash_256("WantsPets(string,uint256,bool)")

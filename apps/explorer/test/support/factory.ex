@@ -631,13 +631,19 @@ defmodule Explorer.Factory do
   def smart_contract_factory do
     contract_code_info = contract_code_info()
 
+    bytecode_md5 =
+      :md5
+      |> :crypto.hash(contract_code_info.bytecode)
+      |> Base.encode16(case: :lower)
+
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
       compiler_version: contract_code_info.version,
       name: contract_code_info.name,
       contract_source_code: contract_code_info.source_code,
       optimization: contract_code_info.optimized,
-      abi: contract_code_info.abi
+      abi: contract_code_info.abi,
+      contract_code_md5: bytecode_md5
     }
   end
 

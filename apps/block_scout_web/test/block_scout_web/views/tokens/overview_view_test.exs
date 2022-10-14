@@ -94,7 +94,8 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
               "stateMutability" => "view",
               "type" => "function"
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       address = insert(:address, smart_contract: smart_contract)
@@ -118,7 +119,8 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
               "stateMutability" => "nonpayable",
               "type" => "function"
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       address = insert(:address, smart_contract: smart_contract)
