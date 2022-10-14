@@ -549,6 +549,27 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
+  def decoded_input_data(%{bytes: <<method_id::binary-size(4), _::binary>> = data}, hash) do
+    candidates_query =
+      from(
+        contract_method in ContractMethod,
+        where: contract_method.identifier == ^method_id,
+        limit: 1
+      )
+
+    candidates =
+      candidates_query
+      |> Repo.all()
+      |> Enum.flat_map(fn candidate ->
+        case do_decoded_input_data(data, [candidate.abi], nil, hash) do
+          {:ok, _, _, _} = decoded -> [decoded]
+          _ -> []
+        end
+      end)
+
+    {:error, :contract_not_verified, candidates}
+  end
+
   defp do_decoded_input_data(data, abi, address_hash, hash) do
     full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
 

@@ -242,7 +242,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "gasUsed" => tx.gas_used,
       "cumulativeGasUsed" => tx.cumulative_gas_used,
       "input" => tx.input,
-      "decodedInput" => decoded_input_transaction_data(tx)
+      "decodedInput" => decoded_input_transaction_data(tx.input, tx.hash)
     }
   end
 
@@ -344,8 +344,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     end
   end
 
-  defp decoded_input_transaction_data(transaction) do
-    case Transaction.decoded_input_data(transaction) do
+  defp decoded_input_transaction_data(input, transaction_hash) do
+    case Transaction.decoded_input_data(input, transaction_hash) do
       {:error, _} ->
         ""
       {:error, _, _} ->

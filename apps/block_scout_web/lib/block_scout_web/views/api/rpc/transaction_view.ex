@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "to" => "#{transaction.to_address_hash}",
       "value" => transaction.value.value,
       "input" => "#{transaction.input}",
-      "decodedInput" => decoded_input_transaction_data(transaction),
+      "decodedInput" => decoded_input_transaction_data(transaction.input, transaction.hash),
       "gasLimit" => transaction.gas,
       "gasUsed" => transaction.gas_used,
       "gasPrice" => transaction.gas_price.value,
@@ -165,8 +165,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     [log.first_topic, log.second_topic, log.third_topic, log.fourth_topic]
   end
 
-  defp decoded_input_transaction_data(transaction) do
-    case Transaction.decoded_input_data(transaction) do
+  defp decoded_input_transaction_data(input, transaction_hash) do
+    case Transaction.decoded_input_data(input, transaction_hash) do
       {:error, _} ->
         ""
       {:error, _, _} ->

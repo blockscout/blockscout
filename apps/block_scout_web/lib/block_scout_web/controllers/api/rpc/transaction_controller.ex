@@ -115,12 +115,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   defp transaction_from_cosmos_hash(cosmos_hash) do
     case Chain.cosmos_hash_to_transaction(cosmos_hash,
            necessity_by_association: %{
-             [created_contract_address: :names] => :optional,
              [from_address: :names] => :optional,
              [to_address: :names] => :optional,
-             [created_contract_address: :smart_contract] => :optional,
-             [from_address: :smart_contract] => :optional,
-             [to_address: :smart_contract] => :optional,
              [token_transfers: :token] => :optional,
              [token_transfers: :to_address] => :optional,
              [token_transfers: :from_address] => :optional,
