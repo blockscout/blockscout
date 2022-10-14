@@ -24,13 +24,15 @@ defmodule Indexer.Celo.TrackedEventSupport do
       optimized: false
     }
 
+
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
       compiler_version: contract_code_info.version,
       name: contract_code_info.name,
       contract_source_code: contract_code_info.source_code,
       optimization: contract_code_info.optimized,
-      abi: contract_code_info.abi
+      abi: contract_code_info.abi,
+      contract_code_md5: "123"
     }
     |> insert()
   end
