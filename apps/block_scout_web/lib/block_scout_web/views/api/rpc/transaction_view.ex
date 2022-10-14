@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.TransactionView do
   use BlockScoutWeb, :view
 
-  import BlockScoutWeb.API.RPC.ContractController, only: [to_smart_contract: 1]
+  import BlockScoutWeb.API.RPC.ContractController, only: [to_smart_contract_raw: 1]
 
   alias Explorer.Chain.Transaction
   alias BlockScoutWeb.API.RPC.RPCView
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   end
 
   defp decoded_input_transaction_data(input, to_address_hash, transaction_hash) do
-    with {:contract, {:ok, contract}} <- to_smart_contract(to_address_hash) do
+    with {:contract, {:ok, contract}} <- to_smart_contract_raw(to_address_hash) do
       case Transaction.decoded_input_data(input, contract, transaction_hash) do
         {:error, :contract_not_verified, _} ->
           "Contract source code not verified"

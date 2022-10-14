@@ -503,7 +503,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     {:format, Chain.string_to_address_hash(address_hash_string)}
   end
 
-  def to_smart_contract(address_hash) do
+  defp to_smart_contract(address_hash) do
     _ = VerificationController.check_and_verify(Hash.to_string(address_hash))
 
     result =
@@ -513,6 +513,21 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
         contract ->
           {:ok, SmartContract.preload_decompiled_smart_contract(contract)}
+      end
+
+    {:contract, result}
+  end
+
+  def to_smart_contract_raw(address_hash) do
+    _ = VerificationController.check_and_verify(Hash.to_string(address_hash))
+
+    result =
+      case Chain.address_hash_to_smart_contract(address_hash) do
+        nil ->
+          :not_found
+
+        contract ->
+          {:ok, contract}
       end
 
     {:contract, result}
