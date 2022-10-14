@@ -55,7 +55,8 @@ defmodule Explorer.Chain do
     Token.Instance,
     TokenTransfer,
     Transaction,
-    Wei
+    Wei,
+    ContractMethod
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -3843,6 +3844,16 @@ defmodule Explorer.Chain do
   @spec value(Transaction.t(), :ether) :: Wei.ether()
   def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
     Wei.to(value, unit)
+  end
+
+  def get_contract_method_by_input_data(%{bytes: <<method_id::binary-size(4), _::binary>>}) do
+    contract_method_query =
+      from(
+        contract_method in ContractMethod,
+        where: contract_method.identifier == ^method_id,
+        limit: 1
+      )
+    contract_method_query |> Repo.one()
   end
 
   def smart_contract_bytecode(address_hash) do

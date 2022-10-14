@@ -1,9 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
-  import BlockScoutWeb.API.RPC.ContractController, only: [to_smart_contract_raw: 1]
-
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address}
+  alias Explorer.Chain
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
 
@@ -238,13 +237,14 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "from" => to_string(tx.from_address_hash),
       "to" => to_string(tx.to_address_hash),
       "tokenTransfers" => Enum.map(tx.token_transfers,
-        fn token_transfer -> prepare_token_transfer_for_api(tx.input, tx.hash, token_transfer) end),
+        fn token_transfer -> prepare_token_transfer_for_api(token_transfer) end),
       "transactionIndex" => tx.index,
       "gas" => tx.gas,
       "gasPrice" => tx.gas_price.value,
       "gasUsed" => tx.gas_used,
       "cumulativeGasUsed" => tx.cumulative_gas_used,
-      "input" => tx.input
+      "input" => tx.input,
+      "contractMethodName" => get_contract_method_name(tx.input)
     }
   end
 
@@ -294,7 +294,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     prepare_common_token_transfer(token_transfer)
   end
 
-  defp prepare_token_transfer_for_api(input, transaction_hash, token_transfer) do
+  defp prepare_token_transfer_for_api(token_transfer) do
     %{
       "amount" => "#{token_transfer.amount}",
       "logIndex" => "#{token_transfer.log_index}",
@@ -305,8 +305,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "tokenContractAddress" => "#{token_transfer.token_contract_address}",
       "tokenName" => "#{token_transfer.token.name}",
       "tokenSymbol" => "#{token_transfer.token.symbol}",
-      "decimals" => "#{token_transfer.token.decimals}",
-      "decodedInput" => decoded_input_transaction_data(input, token_transfer.from_address.hash, transaction_hash)
+      "decimals" => "#{token_transfer.token.decimals}"
     }
   end
 
@@ -347,19 +346,12 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     end
   end
 
-  defp decoded_input_transaction_data(input, address_hash, transaction_hash) do
-    with {:contract, {:ok, contract}} <- to_smart_contract_raw(address_hash) do
-      case Transaction.decoded_input_data(input, contract, transaction_hash) do
-        {:error, :contract_not_verified, _} ->
-          "Contract source code not verified"
-        {:error, :could_not_decode} ->
-          "Could not decode input data"
-        output ->
-          output
-      end
-    else
-      {:contract, :not_found} ->
-        "Contract source code not found"
+  defp get_contract_method_name(input) do
+    case Chain.get_contract_method_by_input_data(input) do
+      nil ->
+        nil
+      contract_method ->
+        contract_method.abi["name"]
     end
   end
 end
