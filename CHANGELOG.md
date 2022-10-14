@@ -1,6 +1,19 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#5269](https://github.com/blockscout/blockscout/pull/5269) - Address Page: Fix implementation address align
+- [#5259](https://github.com/blockscout/blockscout/pull/5259) - Fix `coin-balances/by-day` bug
+
+### Chore
+
+- [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
+
+
+## 4.1.2-beta
+
+### Features
 - [#5232](https://github.com/blockscout/blockscout/pull/5232) - Contract Read Page: Add functions overloading support
 - [#5220](https://github.com/blockscout/blockscout/pull/5220) - Add info about proxy contracts to api methods response
 - [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration

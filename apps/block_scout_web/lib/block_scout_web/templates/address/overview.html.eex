@@ -151,8 +151,7 @@
                 <%= link(
                   implementation_address,
                   to: address_path(@conn, :show, implementation_address),
-                  class: "contract-address mb-2",
-                  style: "margin-top: 0.5rem;"
+                  class: "contract-address"
                 )
                 %>
               </dd>
