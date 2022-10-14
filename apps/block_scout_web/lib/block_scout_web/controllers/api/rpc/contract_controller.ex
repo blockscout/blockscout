@@ -503,7 +503,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     {:format, Chain.string_to_address_hash(address_hash_string)}
   end
 
-  defp to_smart_contract(address_hash) do
+  def to_smart_contract(address_hash) do
     _ = VerificationController.check_and_verify(Hash.to_string(address_hash))
 
     result =

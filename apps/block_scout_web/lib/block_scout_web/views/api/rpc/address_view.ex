@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
+  import BlockScoutWeb.API.RPC.ContractController, only: [to_smart_contract: 1]
+
   alias Explorer.Chain.{Address, Transaction}
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
@@ -242,7 +244,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "gasUsed" => tx.gas_used,
       "cumulativeGasUsed" => tx.cumulative_gas_used,
       "input" => tx.input,
-      "decodedInput" => decoded_input_transaction_data(tx.input, tx.hash)
+      "decodedInput" => decoded_input_transaction_data(tx.input, tx.to_address_hash, tx.hash)
     }
   end
 
@@ -344,14 +346,19 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     end
   end
 
-  defp decoded_input_transaction_data(input, transaction_hash) do
-    case Transaction.decoded_input_data(input, transaction_hash) do
-      {:error, _} ->
-        ""
-      {:error, _, _} ->
-        ""
-      output ->
-        output
+  defp decoded_input_transaction_data(input, to_address_hash, transaction_hash) do
+    with {:contract, {:ok, contract}} <- to_smart_contract(to_address_hash) do
+      case Transaction.decoded_input_data(input, contract, transaction_hash) do
+        {:error, :contract_not_verified, _} ->
+          "Contract source code not verified"
+        {:error, :could_not_decode} ->
+          "Could not decode input data"
+        output ->
+          output
+      end
+    else
+      {:contract, :not_found} ->
+        "Contract source code not found"
     end
   end
 end

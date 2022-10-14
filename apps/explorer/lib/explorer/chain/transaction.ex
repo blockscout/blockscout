@@ -527,7 +527,7 @@ defmodule Explorer.Chain.Transaction do
         hash: hash
       }) do
     case do_decoded_input_data(data, abi, address_hash, hash) do
-      # In some cases transactions use methods of some unpredictadle contracts, so we can try to look up for method in a whole DB
+      # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
       {:error, :could_not_decode} ->
         case decoded_input_data(%__MODULE__{
                to_address: %{smart_contract: nil},
@@ -549,25 +549,30 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  def decoded_input_data(%{bytes: <<method_id::binary-size(4), _::binary>> = data}, hash) do
-    candidates_query =
-      from(
-        contract_method in ContractMethod,
-        where: contract_method.identifier == ^method_id,
-        limit: 1
-      )
+  def decoded_input_data(
+        %{bytes: data}, %{smart_contract: %{abi: abi, address_hash: to_address_hash}}, transaction_hash
+      ) do
+    case do_decoded_input_data(data, abi, to_address_hash, transaction_hash) do
+      # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
+      {:error, :could_not_decode} ->
+        case decoded_input_data(%__MODULE__{
+          to_address: %{smart_contract: nil},
+          input: %{bytes: data},
+          hash: transaction_hash
+        }) do
+          {:error, :contract_not_verified, []} ->
+            {:error, :could_not_decode}
 
-    candidates =
-      candidates_query
-      |> Repo.all()
-      |> Enum.flat_map(fn candidate ->
-        case do_decoded_input_data(data, [candidate.abi], nil, hash) do
-          {:ok, _, _, _} = decoded -> [decoded]
-          _ -> []
+          {:error, :contract_not_verified, candidates} ->
+            {:error, :contract_verified, candidates}
+
+          _ ->
+            {:error, :could_not_decode}
         end
-      end)
 
-    {:error, :contract_not_verified, candidates}
+      output ->
+        output
+    end
   end
 
   defp do_decoded_input_data(data, abi, address_hash, hash) do
