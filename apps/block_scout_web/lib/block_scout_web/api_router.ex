@@ -94,6 +94,10 @@ defmodule BlockScoutWeb.ApiRouter do
 
     alias BlockScoutWeb.API.V2
 
+    scope "/config" do
+      get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
+    end
+
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/:transaction_hash", V2.TransactionController, :transaction)
