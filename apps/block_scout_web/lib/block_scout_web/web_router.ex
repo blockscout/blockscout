@@ -121,6 +121,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/recent-transactions", RecentTransactionsController, only: [:index])
 
+    resources("/verified-contracts", VerifiedContractsController, only: [:index])
+
     get("/txs", TransactionController, :index)
 
     resources "/tx", TransactionController, only: [:show] do
@@ -468,6 +470,8 @@ defmodule BlockScoutWeb.WebRouter do
     get("/search-logs", AddressLogsController, :search_logs)
 
     get("/search-results", SearchController, :search_results)
+
+    get("/search-verified-contracts", VerifiedContractsController, :search_verified_contracts)
 
     get("/csv-export", CsvExportController, :index)
 
