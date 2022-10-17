@@ -4614,8 +4614,8 @@ defmodule Explorer.Chain do
 
   defp page_verified_contracts(query, %PagingOptions{key: nil}), do: query
 
-  defp page_verified_contracts(query, %PagingOptions{key: {inserted_at}}) do
-    where(query, [contract], contract.inserted_at < ^inserted_at)
+  defp page_verified_contracts(query, %PagingOptions{key: {id}}) do
+    where(query, [contract], contract.id < ^id)
   end
 
   @doc """
