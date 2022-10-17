@@ -186,8 +186,6 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         [
           necessity_by_association: %{
             [created_contract_address: :names] => :optional,
-            [from_address: :names] => :optional,
-            [to_address: :names] => :optional,
             [token_transfers: :token] => :optional,
             [token_transfers: :to_address] => :optional,
             [token_transfers: :from_address] => :optional,

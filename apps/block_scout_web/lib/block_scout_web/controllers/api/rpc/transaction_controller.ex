@@ -152,8 +152,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   defp transaction_from_cosmos_hash(cosmos_hash) do
     case Chain.cosmos_hash_to_transaction(cosmos_hash,
            necessity_by_association: %{
-             [from_address: :names] => :optional,
-             [to_address: :names] => :optional,
              [token_transfers: :token] => :optional,
              [token_transfers: :to_address] => :optional,
              [token_transfers: :from_address] => :optional,
@@ -161,8 +159,10 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
              :block => :required
            }
          ) do
-      {:error, :not_found} -> {:transaction, :error}
-      {:ok, transaction} -> {:transaction, {:ok, transaction}}
+      {:error, :not_found} ->
+        {:transaction, :error}
+      {:ok, transaction} ->
+        {:transaction, {:ok, Chain.preload_transaction_token_address_names(transaction)}}
     end
   end
 

@@ -2058,6 +2058,10 @@ defmodule Explorer.Chain do
        end
   end
 
+  def preload_transaction_token_address_names(transaction) do
+    Repo.preload(transaction, token_transfers: [[from_address: :names], [to_address: :names]])
+  end
+
   @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
   those `hashes`.
