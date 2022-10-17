@@ -549,32 +549,6 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  def decoded_input_data(
-        %{bytes: data}, %{smart_contract: %{abi: abi, address_hash: to_address_hash}}, transaction_hash
-      ) do
-    case do_decoded_input_data(data, abi, to_address_hash, transaction_hash) do
-      # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
-      {:error, :could_not_decode} ->
-        case decoded_input_data(%__MODULE__{
-          to_address: %{smart_contract: nil},
-          input: %{bytes: data},
-          hash: transaction_hash
-        }) do
-          {:error, :contract_not_verified, []} ->
-            {:error, :could_not_decode}
-
-          {:error, :contract_not_verified, candidates} ->
-            {:error, :contract_verified, candidates}
-
-          _ ->
-            {:error, :could_not_decode}
-        end
-
-      output ->
-        output
-    end
-  end
-
   defp do_decoded_input_data(data, abi, address_hash, hash) do
     full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
 
@@ -639,6 +613,7 @@ defmodule Explorer.Chain.Transaction do
     {:ok, result}
   rescue
     _ ->
+      Logger.warn("find_and_decode")
       Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
       {:error, :could_not_decode}
   end
@@ -651,6 +626,7 @@ defmodule Explorer.Chain.Transaction do
     {:ok, mapping}
   rescue
     _ ->
+      Logger.warn("selector_mapping")
       Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
       {:error, :could_not_decode}
   end

@@ -47,7 +47,11 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
          {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
            transaction_from_cosmos_hash(txhash_param) do
       from_api = true
-      logs = Chain.cosmos_hash_to_logs(txhash_param, from_api)
+      logs = Chain.cosmos_hash_to_logs(txhash_param, from_api, necessity_by_association:
+        %{
+          [address: :names] => :optional
+        }
+      )
 
       transaction_updated =
         if (error == "Reverted" || error == "execution reverted") && !revert_reason do
@@ -70,6 +74,39 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
 
       false ->
         render(conn, :error, error: "Invalid txhash format")
+    end
+  end
+
+  def getabibytxhash(conn, params) do
+    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
+         {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
+         {:transaction, {:ok, transaction}} <- transaction_from_hash(transaction_hash) do
+      with {:ok, contract} <- Chain.get_smart_contract_by_address_hash(transaction.to_address_hash) do
+        render(conn, :getabibytxhash, %{
+          abi: contract.abi}
+        )
+      else
+        {:error, :not_found} ->
+          case  Chain.get_contract_method_by_input_data(transaction.input) do
+            nil ->
+              render(conn, :getabibytxhash, %{
+                abi: ""}
+              )
+            contract_method ->
+              render(conn, :getabibytxhash, %{
+                abi: contract_method.abi}
+              )
+          end
+      end
+    else
+      {:txhash_param, :error} ->
+        render(conn, :error, error: "Query parameter txhash is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid txhash format")
+
+      {:transaction, :error} ->
+        render(conn, :error, error: "Transaction not found")
     end
   end
 

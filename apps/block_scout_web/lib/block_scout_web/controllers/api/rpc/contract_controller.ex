@@ -518,21 +518,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     {:contract, result}
   end
 
-  def to_smart_contract_raw(address_hash) do
-    _ = VerificationController.check_and_verify(Hash.to_string(address_hash))
-
-    result =
-      case Chain.address_hash_to_smart_contract(address_hash) do
-        nil ->
-          :not_found
-
-        contract ->
-          {:ok, contract}
-      end
-
-    {:contract, result}
-  end
-
   defp fetch_verify_params(params) do
     {:ok, %{}}
     |> required_param(params, "addressHash", "address_hash")

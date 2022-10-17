@@ -3846,6 +3846,15 @@ defmodule Explorer.Chain do
     Wei.to(value, unit)
   end
 
+  def get_smart_contract_by_address_hash(address_hash) do
+    case address_hash_to_smart_contract(address_hash) do
+      nil ->
+        {:error, :not_found}
+      contract ->
+        {:ok, SmartContract.preload_decompiled_smart_contract(contract)}
+    end
+  end
+
   def get_contract_method_by_input_data(%{bytes: <<method_id::binary-size(4), _::binary>>}) do
     contract_method_query =
       from(
