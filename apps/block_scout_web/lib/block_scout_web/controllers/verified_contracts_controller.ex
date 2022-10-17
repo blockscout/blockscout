@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, fetch_page_number: 1]
 
-
   alias BlockScoutWeb.{Controller, VerifiedContractsView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -18,7 +17,6 @@ defmodule BlockScoutWeb.VerifiedContractsController do
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
-      |> IO.inspect(label: "options")
 
     verified_contracts_plus_one = Chain.verified_contracts(full_options)
     {verified_contracts, next_page} = split_list_by_page(verified_contracts_plus_one)
@@ -48,7 +46,12 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   def index(conn, params) do
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
-      filter: params["filter"]
+      filter: params["filter"],
+      page_number: params |> fetch_page_number() |> Integer.to_string(),
+      contracts_count: Chain.count_contracts_from_cache(),
+      verified_contracts_count: Chain.count_verified_contracts_from_cache(),
+      new_contracts_count: Chain.count_new_contracts_from_cache(),
+      new_verified_contracts_count: Chain.count_new_verified_contracts_from_cache()
     )
   end
 

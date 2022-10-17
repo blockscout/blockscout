@@ -1,0 +1,100 @@
+<section class="container" data-page="verified-contracts-list">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+  <div class="card">
+    <div id="verified-contratc-list" class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
+      <h1 class="card-title list-title-description d-inline-block"><%= gettext "Verified Contracts" %></h1>
+
+      <div class="float-right">
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
+
+      <div class="dropdown u-push-sm d-inline-block mb-2">
+        <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+          id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <%= gettext "Filter by compiler:" %> <%= format_current_filter(@filter) %>
+        </button>
+
+        <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+          <%= link(
+            gettext("All"),
+            to: Helpers.verified_contracts_path(@conn, :index),
+            class: "address__link address__link--active dropdown-item",
+            "data-test": "filter_option"
+          ) %>
+          <%= link(
+            gettext("Solidity"),
+            to: Helpers.verified_contracts_path(@conn, :index, filter: "solidity"),
+            class: "address__link address__link--active dropdown-item",
+            "data-test": "filter_option"
+          ) %>
+          <%= link(
+            gettext("Vyper"),
+            to: Helpers.verified_contracts_path(@conn, :index, filter: "vyper"),
+            class: "address__link address__link--active dropdown-item",
+            "data-test": "filter_option"
+          ) %>
+        </div>
+      </div>
+      
+      <div class="search-input-container mb-3">
+        <input data-search-field="" class="form-control search-input" type="text" name="search" value="<%= @conn.params["search"] %>" placeholder="<%= gettext "Contract name or address" %>" id="search-text-input">
+      </div>
+
+      <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+      </button>
+
+      <div class="addresses-table-container">
+        <div class="stakes-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Address" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Balance" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Txns" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Compiler" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Version" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Optimization" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Constructor args" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Verified" %></div>
+                </th>
+                <th class="stakes-table-th">
+                  <div class="stakes-table-th-content"><%= gettext "Market cap" %></div>
+                </th>
+              </tr>
+            </thead>
+            <tbody data-items data-selector="verified-contracts">
+              <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", columns_num: 9 %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div data-empty-response-message style="display: none;">
+        <br>
+        <div class="tile tile-muted text-center">
+          <span data-selector="empty-verified-contracts-list">
+            <%= gettext "There are no verified contracts." %>
+          </span>
+        </div>
+      </div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+    </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verified-contracts.js") %>"></script>
+</section>
