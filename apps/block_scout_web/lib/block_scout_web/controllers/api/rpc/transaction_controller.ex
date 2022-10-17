@@ -4,7 +4,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Transaction, InternalTransaction}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Import.Runner.InternalTransactions
 
   def gettxinfo(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
@@ -106,6 +108,89 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
         render(conn, :error, error: "Invalid txhash format")
 
       {:transaction, :error} ->
+        render(conn, :error, error: "Transaction not found")
+    end
+  end
+
+  def getrawtracebytxhash(conn, params) do
+    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
+         {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
+         {:ok, transaction} <-
+           Chain.hash_to_transaction(
+             transaction_hash,
+             necessity_by_association: %{
+               :block => :optional,
+               [created_contract_address: :names] => :optional,
+               [from_address: :names] => :optional,
+               [to_address: :names] => :optional,
+               [to_address: :smart_contract] => :optional,
+               :token_transfers => :optional
+             }
+           ) do
+
+      if is_nil(transaction.block_number) do
+        render(conn, :getrawtracebytxhash, %{
+          raw_trace: []}
+        )
+      else
+        internal_transactions = Chain.all_transaction_to_internal_transactions(transaction_hash)
+        first_trace_exists =
+          Enum.find_index(internal_transactions, fn trace ->
+            trace.index == 0
+          end)
+
+        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+        internal_transactions =
+         if first_trace_exists do
+           internal_transactions
+         else
+          response =
+            Chain.fetch_first_trace(
+              [
+                %{
+                  block_hash: transaction.block_hash,
+                  block_number: transaction.block_number,
+                  hash_data: txhash_param,
+                  transaction_index: transaction.index
+                }
+              ],
+              json_rpc_named_arguments
+            )
+
+          case response do
+            {:ok, first_trace_params} ->
+              InternalTransactions.run_insert_only(first_trace_params, %{
+                timeout: :infinity,
+                timestamps: Import.timestamps(),
+                internal_transactions: %{params: first_trace_params}
+              })
+
+              Chain.all_transaction_to_internal_transactions(transaction_hash)
+
+            {:error, _} ->
+              internal_transactions
+
+            :ignore ->
+              internal_transactions
+          end
+        end
+
+        raw_trace = internal_transactions
+                    |> InternalTransaction.internal_transactions_to_raw()
+
+        render(conn, :getrawtracebytxhash, %{
+          raw_trace: raw_trace}
+        )
+      end
+    else
+      {:txhash_param, :error} ->
+        render(conn, :error, error: "Query parameter txhash is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid txhash format")
+
+      {:error, :not_found} ->
         render(conn, :error, error: "Transaction not found")
     end
   end
