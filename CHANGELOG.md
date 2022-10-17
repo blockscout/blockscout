@@ -8,9 +8,12 @@
 - [#6073](https://github.com/blockscout/blockscout/pull/6073) - Add vyper support for rust verifier microservice integration
 - [#6111](https://github.com/blockscout/blockscout/pull/6111) - Add Prometheus metrics to indexer
 - [#6168](https://github.com/blockscout/blockscout/pull/6168) - Token instance fetcher checks instance owner and updates current token balance
+- [#6209](https://github.com/blockscout/blockscout/pull/6209) - Add metrics for block import stages, runners, steps
+- [#6257](https://github.com/blockscout/blockscout/pull/6257) - DISABLE_TOKEN_INSTANCE_FETCHER env variable
 
 ### Fixes
 
+- [#6243](https://github.com/blockscout/blockscout/pull/6243) - Fix freezes on `/blocks` page
 - [#6162](https://github.com/blockscout/blockscout/pull/6162) - Extend token symbol type varchar(255) -> text
 - [#6158](https://github.com/blockscout/blockscout/pull/6158) - Add missing clause for merge_twin_vyper_contract_with_changeset function
 - [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
@@ -24,6 +27,7 @@
 
 ### Chore
 
+- [#6240](https://github.com/blockscout/blockscout/pull/6240) - Elixir 1.14 support
 - [#6204](https://github.com/blockscout/blockscout/pull/6204) - Refactor contract libs render, CONTRACT_VERIFICATION_MAX_LIBRARIES, refactor parsing integer env vars in config
 - [#6195](https://github.com/blockscout/blockscout/pull/6195) - Docker compose configs improvements: Redis container name and persistent storage
 - [#6192](https://github.com/blockscout/blockscout/pull/6192), [#6207](https://github.com/blockscout/blockscout/pull/6207) - Hide Indexing Internal Transactions message, if INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER=true

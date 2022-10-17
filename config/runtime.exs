@@ -521,6 +521,9 @@ config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") 
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
 
+config :indexer, Indexer.Fetcher.TokenInstance.Supervisor,
+  enabled: System.get_env("DISABLE_TOKEN_INSTANCE_FETCHER") != "true"
+
 blocks_catchup_fetcher_batch_size_default_str = "10"
 blocks_catchup_fetcher_concurrency_default_str = "10"
 

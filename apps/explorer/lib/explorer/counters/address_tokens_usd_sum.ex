@@ -10,7 +10,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   @cache_name :address_tokens_usd_value
   @last_update_key "last_update"
 
-  config = Application.get_env(:explorer, Explorer.Counters.AddressTokenUsdSum)
+  config = Application.compile_env(:explorer, Explorer.Counters.AddressTokenUsdSum)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

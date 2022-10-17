@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   @cache_name :token_exchange_rate
   @last_update_key "last_update"
 
-  config = Application.get_env(:explorer, Explorer.Chain.Cache.TokenExchangeRate)
+  config = Application.compile_env(:explorer, Explorer.Chain.Cache.TokenExchangeRate)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
