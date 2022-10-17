@@ -229,7 +229,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     end
   rescue
     e ->
-      Logger.debug(["Could not send request to token uri #{inspect(uri)}. error #{inspect(e)}"],
+      Logger.info(["Could not send request to token uri #{inspect(uri)}. error #{inspect(e)}"],
         fetcher: :token_instances
       )
 
