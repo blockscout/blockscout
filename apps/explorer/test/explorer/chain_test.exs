@@ -1467,6 +1467,12 @@ defmodule Explorer.ChainTest do
   end
 
   describe "indexed_ratio/0" do
+    setup do
+      on_exit(fn ->
+        Application.put_env(:indexer, :first_block, "")
+      end)
+    end
+
     test "returns indexed ratio" do
       for index <- 5..9 do
         insert(:block, number: index)
@@ -1481,6 +1487,17 @@ defmodule Explorer.ChainTest do
 
     test "returns 1.0 if fully indexed blocks" do
       for index <- 0..9 do
+        insert(:block, number: index)
+        Process.sleep(200)
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
+    end
+
+    test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
+      Application.put_env(:indexer, :first_block, "5")
+
+      for index <- 5..9 do
         insert(:block, number: index)
         Process.sleep(200)
       end
