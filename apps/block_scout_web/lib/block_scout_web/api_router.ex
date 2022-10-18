@@ -25,6 +25,11 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(CheckAccountAPI)
   end
 
+  pipeline :api_v2 do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+  end
+
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
 
   scope "/account/v1", as: :account_v1 do
@@ -85,7 +90,13 @@ defmodule BlockScoutWeb.ApiRouter do
 
   scope "/v2", as: :api_v2 do
     pipe_through(:api)
+    pipe_through(:api_v2)
+
     alias BlockScoutWeb.API.V2
+
+    scope "/config" do
+      get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
+    end
 
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
@@ -100,6 +111,13 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/", V2.BlockController, :blocks)
       get("/:block_hash_or_number", V2.BlockController, :block)
       get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
+    end
+
+    scope "/addresses" do
+      get("/:address_hash", V2.AddressController, :address)
+      get("/:address_hash/token-balances", V2.AddressController, :token_balances)
+      get("/:address_hash/transactions", V2.AddressController, :transactions)
+      get("/:address_hash/token-transfers", V2.AddressController, :token_transfers)
     end
   end
 
