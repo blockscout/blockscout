@@ -28,7 +28,6 @@
 
 ### Chore
 
-- [#6221](https://github.com/blockscout/blockscout/pull/6221) - API CORS Origins management
 - [#6240](https://github.com/blockscout/blockscout/pull/6240) - Elixir 1.14 support
 - [#6221](https://github.com/blockscout/blockscout/pull/6221) - API CORS Origins management
 - [#6204](https://github.com/blockscout/blockscout/pull/6204) - Refactor contract libs render, CONTRACT_VERIFICATION_MAX_LIBRARIES, refactor parsing integer env vars in config
