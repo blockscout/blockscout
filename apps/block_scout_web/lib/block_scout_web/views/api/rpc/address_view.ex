@@ -42,6 +42,16 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("txlistinternalbyaddress.json", %{
+    internal_transactions: internal_transactions, has_next_page: has_next_page, next_page_path: next_page_path}) do
+    data = %{
+      "result" => Enum.map(internal_transactions, &prepare_internal_transaction/1),
+      "hasNextPage" => has_next_page,
+      "nextPagePath" => next_page_path
+    }
+    RPCView.render("show_data.json", data: data)
+  end
+
   def render("tokentx.json", %{token_transfers: token_transfers}) do
     data = Enum.map(token_transfers, &prepare_token_transfer/1)
     RPCView.render("show.json", data: data)
