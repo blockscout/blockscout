@@ -5,6 +5,23 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2, get_tags_on_address: 1]
+
+  def address_with_info(conn, address, address_hash) do
+    %{
+      personal_tags: private_tags,
+      watchlist_names: watchlist_names
+    } = get_address_tags(address_hash, current_user(conn))
+
+    public_tags = get_tags_on_address(address_hash)
+
+    Map.merge(address_with_info(address, address_hash), %{
+      "private_tags" => private_tags,
+      "watchlist_names" => watchlist_names,
+      "public_tags" => public_tags
+    })
+  end
 
   def address_with_info(%Address{} = address, _address_hash) do
     %{

@@ -2556,6 +2556,15 @@ defmodule Explorer.Chain do
   @doc """
   Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
   """
+  def balance_in_usd(_token_balance, %{usd_value: nil}) do
+    nil
+  end
+
+  def balance_in_usd(token_balance, %{usd_value: usd_value, decimals: decimals}) do
+    tokens = CurrencyHelpers.divide_decimals(token_balance.value, decimals)
+    Decimal.mult(tokens, usd_value)
+  end
+
   def balance_in_usd(%{token: %{usd_value: nil}}) do
     nil
   end
@@ -6386,7 +6395,7 @@ defmodule Explorer.Chain do
         |> filter_contract_creation_dynamic()
         |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
 
-      :transaction ->
+      :coin_transfer ->
         dynamic
         |> filter_transaction_dynamic()
         |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
