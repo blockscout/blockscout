@@ -77,6 +77,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   def api_cors_origins do
     cors_origins = System.get_env("API_CORS_ORIGINS")
 
+    resp =
     if cors_origins do
       cors_origins
       |> String.split(",")
@@ -84,6 +85,10 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
     else
       "*"
     end
+
+    IO.inspect("### GET API_CORS_ORIGINS: #{resp} ###")
+
+    resp
   end
 
   @doc false
