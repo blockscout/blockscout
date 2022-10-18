@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
+import omit from 'lodash.omit'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
@@ -51,6 +51,16 @@ const $transactionDetailsPage = $('[data-page="transaction-details"]')
 if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
+
+  const pathParts = window.location.pathname.split('/')
+  const shouldScroll = pathParts.includes('internal-transactions') ||
+  pathParts.includes('token-transfers') ||
+  pathParts.includes('logs') ||
+  pathParts.includes('token-transfers') ||
+  pathParts.includes('raw-trace')
+  if (shouldScroll) {
+    document.getElementById('transaction-tabs').scrollIntoView()
+  }
 
   const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()

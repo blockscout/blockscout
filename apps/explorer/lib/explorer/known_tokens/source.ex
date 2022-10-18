@@ -11,13 +11,15 @@ defmodule Explorer.KnownTokens.Source do
   """
   @spec fetch_known_tokens() :: {:ok, [Hash.Address.t()]} | {:error, any}
   def fetch_known_tokens(source \\ known_tokens_source()) do
-    Source.http_request(source.source_url())
+    Source.http_request(source.source_url(), source.headers())
   end
 
   @doc """
   Url for querying the list of known tokens.
   """
   @callback source_url() :: String.t()
+
+  @callback headers() :: [any()]
 
   @spec known_tokens_source() :: module()
   defp known_tokens_source do

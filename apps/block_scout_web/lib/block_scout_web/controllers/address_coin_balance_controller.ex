@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   alias BlockScoutWeb.{AccessHelpers, AddressCoinBalanceView, Controller}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -53,11 +53,17 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
       {:restricted_access, _} ->
         not_found(conn)
 
+      :not_found ->
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            json(conn, %{items: [], next_page_path: ""})
+
+          _ ->
+            not_found(conn)
+        end
+
       :error ->
         unprocessable_entity(conn)
-
-      :not_found ->
-        not_found(conn)
     end
   end
 
@@ -76,11 +82,34 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
       {:restricted_access, _} ->
         not_found(conn)
 
+      {:error, :not_found} ->
+        {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+
+        address = %Chain.Address{
+          hash: address_hash,
+          smart_contract: nil,
+          token: nil,
+          fetched_coin_balance: %Wei{value: Decimal.new(0)}
+        }
+
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            render(
+              conn,
+              "index.html",
+              address: address,
+              coin_balance_status: nil,
+              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+              current_path: Controller.current_full_path(conn)
+            )
+
+          _ ->
+            not_found(conn)
+        end
+
       :error ->
         unprocessable_entity(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
     end
   end
 end

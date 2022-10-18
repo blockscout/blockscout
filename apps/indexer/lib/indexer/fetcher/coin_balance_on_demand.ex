@@ -7,8 +7,6 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin baalnce.
   """
 
-  @latest_balance_stale_threshold :timer.hours(24)
-
   use GenServer
   use Indexer.Fetcher
 
@@ -232,7 +230,8 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
         if average_block_time == 0 do
           {:error, :empty_database}
         else
-          block_number - div(@latest_balance_stale_threshold, average_block_time)
+          threshold = Application.get_env(:indexer, __MODULE__)[:threshold]
+          block_number - div(:timer.minutes(threshold), average_block_time)
         end
     end
   end

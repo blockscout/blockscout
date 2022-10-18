@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # For production, we often load configuration from external
 # sources, such as your system environment. For this reason,
@@ -17,7 +17,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   force_ssl: false,
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
-  check_origin: false,
+  check_origin: System.get_env("CHECK_ORIGIN", "false") == "true" || false,
   http: [port: System.get_env("PORT")],
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "https",

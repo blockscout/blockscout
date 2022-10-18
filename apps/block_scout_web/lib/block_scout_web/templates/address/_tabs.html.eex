@@ -2,7 +2,7 @@
 <% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
 <% dark_forest_addresses_list = dark_forest_addresses_list_0_4 ++ dark_forest_addresses_list_0_5 %>
 <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
-<div class="card-tabs js-card-tabs">
+<div id="address-tabs" class="card-tabs js-card-tabs">
   <%= link(
         gettext("Transactions"),
         class: "card-tab #{tab_status("transactions", @conn.request_path)}",
@@ -63,7 +63,7 @@
               <%= render BlockScoutWeb.IconsView, "_check_dark_forest_icon.html" %>
             </i>
           <% true -> %>
-            <i class="far fa-check-circle"></i>
+            <i class="fa-regular fa-check-circle"></i>
         <% end %>
       <% end %>
     <% end %>
@@ -73,7 +73,7 @@
         to: AccessHelpers.get_path(@conn, :address_decompiled_contract_path, :index, @address.hash),
         class: "card-tab #{tab_status("decompiled-contracts", @conn.request_path)}") do %>
         <%= gettext("Decompiled code") %>
-        <i class="far fa-check-circle"></i>
+        <i class="fa-regular fa-check-circle"></i>
     <% end %>
   <% end %>
   <%= if smart_contract_with_read_only_functions?(@address) do %>

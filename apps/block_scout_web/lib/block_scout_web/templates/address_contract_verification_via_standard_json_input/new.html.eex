@@ -1,28 +1,23 @@
 <% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
-<% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "" %>
-<% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
-<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
+<% changeset = (if assigns[:retrying], do: @changeset, else: SmartContract.merge_twin_contract_with_changeset(metadata_for_verification, @changeset)) |> SmartContract.address_to_checksum_address() %>
+<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: changeset.changes.autodetect_constructor_args %>
 <% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
-  <div data-selector="channel-disconnected-message" class="d-none">
-    <div data-selector="reload-button" class="alert alert-danger">
-      <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
-    </div>
-  </div>
+  <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
 
   <div class="new-smart-contract-form">
       <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
-      <%= form_for @changeset,
+      <%= form_for changeset,
                 address_contract_verification_path(@conn, :create),
-                [id: "json-dropzone-form"],
+                [id: "standard-json-dropzone-form"],
                 fn f -> %>      
-      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
 
-      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name. Also contract name could be: <span class=\"tooltip-quote\"><strong>path/to/file.sol:MyContract</strong></span>", contract_name_value: contract_name_value %>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name. Also contract name could be: <span class=\"tooltip-quote\"><strong>path/to/file.sol:MyContract</strong></span>" %>
 
       <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
-      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions %>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_versions: @compiler_versions, tooltip: "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
 
       <div class="smart-contract-form-group">
         <div class="smart-contract-form-group-inner-wrapper">
@@ -39,7 +34,7 @@
         </div>
       </div>
 
-      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_fetch_constructor_args.html", f: f, fetch_constructor_arguments_automatically: fetch_constructor_arguments_automatically %>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_fetch_constructor_args.html", f: f %>
 
       <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: display_constructor_arguments_text_area %>
 
@@ -53,7 +48,7 @@
         >
           <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
         </button>
-        <button id="verify-via-standart-json-input-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
+        <button id="verify-via-standard-json-input-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
         <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
         <%=
           link(
@@ -66,5 +61,5 @@
       <% end %>
     </div>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.min.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
 </section>

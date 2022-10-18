@@ -1,9 +1,9 @@
 import $ from 'jquery'
-import omit from 'lodash/omit'
-import first from 'lodash/first'
-import rangeRight from 'lodash/rangeRight'
-import find from 'lodash/find'
-import map from 'lodash/map'
+import omit from 'lodash.omit'
+import first from 'lodash.first'
+import rangeRight from 'lodash.rangeright'
+import find from 'lodash.find'
+import map from 'lodash.map'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
@@ -343,7 +343,7 @@ if ($chainDetailsPage.length) {
   transactionStatsChannel.join()
   transactionStatsChannel.on('update', msg => store.dispatch({
     type: 'RECEIVED_UPDATED_TRANSACTION_STATS',
-    msg: msg
+    msg
   }))
 
   const $txReloadButton = $('[data-selector="reload-transactions-button"]')

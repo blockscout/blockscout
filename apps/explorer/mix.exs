@@ -86,7 +86,8 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
-      {:poison, "~> 4.0"},
+      {:phoenix_html, "== 3.0.4"},
+      {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
@@ -108,7 +109,8 @@ defmodule Explorer.Mixfile do
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.3.3"}
+      {:tesla, "~> 1.3.3"},
+      {:cbor, "~> 1.0"}
     ]
   end
 

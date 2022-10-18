@@ -100,61 +100,71 @@ defmodule Explorer.Staking.ContractState do
     # dfc8bf4e = keccak256(validatorSetContract())
     validator_set_contract_signature = "dfc8bf4e"
 
-    %{
-      "2d21d217" => {:ok, [token_contract_address]},
-      "dfc8bf4e" => {:ok, [validator_set_contract_address]}
-    } =
-      Reader.query_contract(
-        staking_contract_address,
-        staking_abi,
-        %{
-          "#{erc_677_token_contract_signature}" => [],
-          "#{validator_set_contract_signature}" => []
+    with %{
+           "2d21d217" => {:ok, [token_contract_address]},
+           "dfc8bf4e" => {:ok, [validator_set_contract_address]}
+         } <-
+           Reader.query_contract(
+             staking_contract_address,
+             staking_abi,
+             %{
+               "#{erc_677_token_contract_signature}" => [],
+               "#{validator_set_contract_signature}" => []
+             },
+             false
+           ),
+         # 56b54bae = keccak256(blockRewardContract())
+         block_reward_contract_signature = "56b54bae",
+         %{"56b54bae" => {:ok, [block_reward_contract_address]}} <-
+           Reader.query_contract(
+             validator_set_contract_address,
+             validator_set_abi,
+             %{
+               "#{block_reward_contract_signature}" => []
+             },
+             false
+           ) do
+      state = %__MODULE__{
+        eth_blocknumber_pull_interval: eth_blocknumber_pull_interval,
+        eth_subscribe_max_delay: eth_subscribe_max_delay,
+        snapshotting_finished: false,
+        timer: nil,
+        contracts: %{
+          staking: staking_contract_address,
+          validator_set: validator_set_contract_address,
+          block_reward: block_reward_contract_address
         },
-        false
+        abi: staking_abi ++ validator_set_abi ++ block_reward_abi
+      }
+
+      :ets.insert(@table_name,
+        block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
+        is_snapshotting: false,
+        last_change_block: 0,
+        pool_rewards: %{},
+        seen_block: 0,
+        snapshotted_epoch_number: -1,
+        snapshotting_scheduled: false,
+        staking_contract: %{abi: staking_abi, address: staking_contract_address},
+        token_contract: %{abi: token_abi, address: token_contract_address},
+        token: get_token(token_contract_address),
+        validator_set_contract: %{abi: validator_set_abi, address: validator_set_contract_address}
       )
 
-    # 56b54bae = keccak256(blockRewardContract())
-    block_reward_contract_signature = "56b54bae"
-
-    %{"56b54bae" => {:ok, [block_reward_contract_address]}} =
-      Reader.query_contract(
-        validator_set_contract_address,
-        validator_set_abi,
-        %{
-          "#{block_reward_contract_signature}" => []
-        },
-        false
-      )
-
-    state = %__MODULE__{
-      eth_blocknumber_pull_interval: eth_blocknumber_pull_interval,
-      eth_subscribe_max_delay: eth_subscribe_max_delay,
-      snapshotting_finished: false,
-      timer: nil,
-      contracts: %{
-        staking: staking_contract_address,
-        validator_set: validator_set_contract_address,
-        block_reward: block_reward_contract_address
-      },
-      abi: staking_abi ++ validator_set_abi ++ block_reward_abi
-    }
-
-    :ets.insert(@table_name,
-      block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
-      is_snapshotting: false,
-      last_change_block: 0,
-      pool_rewards: %{},
-      seen_block: 0,
-      snapshotted_epoch_number: -1,
-      snapshotting_scheduled: false,
-      staking_contract: %{abi: staking_abi, address: staking_contract_address},
-      token_contract: %{abi: token_abi, address: token_contract_address},
-      token: get_token(token_contract_address),
-      validator_set_contract: %{abi: validator_set_abi, address: validator_set_contract_address}
-    )
-
-    {:ok, state, {:continue, []}}
+      {:ok, state, {:continue, []}}
+    else
+      _ ->
+        {:ok,
+         %__MODULE__{
+           eth_blocknumber_pull_interval: eth_blocknumber_pull_interval,
+           eth_subscribe_max_delay: eth_subscribe_max_delay,
+           snapshotting_finished: false,
+           timer: nil,
+           contracts: %{
+             staking: staking_contract_address
+           }
+         }, {:stop, "The archive node is unavailable"}}
+    end
   end
 
   def handle_continue(_, state) do
@@ -564,6 +574,9 @@ defmodule Explorer.Staking.ContractState do
       _ ->
         0
     end
+  catch
+    _ ->
+      0
   end
 
   defp get_settings(global_responses, state, block_number) do

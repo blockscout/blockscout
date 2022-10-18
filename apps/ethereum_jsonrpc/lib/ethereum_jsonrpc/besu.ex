@@ -6,7 +6,7 @@ defmodule EthereumJSONRPC.Besu do
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.Parity.{FetchedBeneficiaries, Traces}
+  alias EthereumJSONRPC.Besu.{FetchedBeneficiaries, Traces}
   alias EthereumJSONRPC.{Transaction, Transactions}
 
   @behaviour EthereumJSONRPC.Variant

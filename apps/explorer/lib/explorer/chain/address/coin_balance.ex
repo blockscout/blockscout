@@ -178,6 +178,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
       cb in subquery(coin_balance_query),
       inner_join: b in Block,
       on: cb.block_number == b.number,
+      where: b.consensus,
       select: %{timestamp: b.timestamp, value: cb.value}
     )
   end

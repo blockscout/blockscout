@@ -3,7 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, ExchangeRates}
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -18,7 +18,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     current_price = get_current_price(market_data)
 
     id = json_data["id"]
-    btc_value = get_btc_value(id, market_data)
+
+    btc_value =
+      if Application.get_env(:explorer, Explorer.ExchangeRates)[:fetch_btc_value], do: get_btc_value(id, market_data)
 
     circulating_supply_data = market_data && market_data["circulating_supply"]
     total_supply_data = market_data && market_data["total_supply"]
@@ -44,45 +46,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @impl Source
   def format_data(_), do: []
 
-  defp get_last_updated(market_data) do
-    last_updated_data = market_data && market_data["last_updated"]
-
-    if last_updated_data do
-      {:ok, last_updated, 0} = DateTime.from_iso8601(last_updated_data)
-      last_updated
-    else
-      nil
-    end
-  end
-
-  defp get_current_price(market_data) do
-    if market_data["current_price"] do
-      to_decimal(market_data["current_price"]["usd"])
-    else
-      1
-    end
-  end
-
-  defp get_btc_value(id, market_data) do
-    case get_btc_price() do
-      {:ok, price} ->
-        btc_price = to_decimal(price)
-        current_price = get_current_price(market_data)
-
-        if id != "btc" && current_price && btc_price do
-          Decimal.div(current_price, btc_price)
-        else
-          1
-        end
-
-      _ ->
-        1
-    end
-  end
-
   @impl Source
   def source_url do
-    explicit_coin_id = Application.get_env(:explorer, :coingecko_coin_id)
+    explicit_coin_id = Application.get_env(:explorer, ExchangeRates)[:coingecko_coin_id]
 
     {:ok, id} =
       if explicit_coin_id do
@@ -123,8 +89,13 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     end
   end
 
-  defp base_url do
-    config(:base_url) || "https://api.coingecko.com/api/v3"
+  @impl Source
+  def headers do
+    [{"X-Cg-Pro-Api-Key", "#{api_key()}"}]
+  end
+
+  defp api_key do
+    Application.get_env(:explorer, ExchangeRates)[:coingecko_api_key]
   end
 
   def coin_id do
@@ -143,7 +114,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
       symbol_downcase = String.downcase(symbol)
 
-      case Source.http_request(url) do
+      case Source.http_request(url, headers()) do
         {:ok, data} = resp ->
           if is_list(data) do
             symbol_data =
@@ -166,10 +137,50 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     end
   end
 
+  defp get_last_updated(market_data) do
+    last_updated_data = market_data && market_data["last_updated"]
+
+    if last_updated_data do
+      {:ok, last_updated, 0} = DateTime.from_iso8601(last_updated_data)
+      last_updated
+    else
+      nil
+    end
+  end
+
+  defp get_current_price(market_data) do
+    if market_data["current_price"] do
+      to_decimal(market_data["current_price"]["usd"])
+    else
+      1
+    end
+  end
+
+  defp get_btc_value(id, market_data) do
+    case get_btc_price() do
+      {:ok, price} ->
+        btc_price = to_decimal(price)
+        current_price = get_current_price(market_data)
+
+        if id != "btc" && current_price && btc_price do
+          Decimal.div(current_price, btc_price)
+        else
+          1
+        end
+
+      _ ->
+        1
+    end
+  end
+
+  defp base_url do
+    config(:base_url) || "https://pro-api.coingecko.com/api/v3"
+  end
+
   defp get_btc_price(currency \\ "usd") do
     url = "#{base_url()}/exchange_rates"
 
-    case Source.http_request(url) do
+    case Source.http_request(url, headers()) do
       {:ok, data} = resp ->
         if is_map(data) do
           current_price = data["rates"][currency]["value"]

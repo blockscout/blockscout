@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
     test "can retrieve current balance card of the address", %{socket: socket, address: address} do
       ref = push(socket, "get_balance", %{})
 
-      assert_reply(ref, :ok, %{balance: sent_balance, balance_card: balance_card})
+      assert_reply(ref, :ok, %{balance: sent_balance, balance_card: _balance_card})
 
       assert sent_balance == address.fetched_coin_balance.value
       # assert balance_card =~ "/address/#{address.hash}/token-balances"

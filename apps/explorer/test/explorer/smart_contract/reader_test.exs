@@ -190,7 +190,8 @@ defmodule Explorer.SmartContract.ReaderTest do
               "inputs" => [],
               "constant" => true
             }
-          ]
+          ],
+          contract_code_md5: "123"
         )
 
       implementation_contract_address = insert(:contract_address)
@@ -216,7 +217,8 @@ defmodule Explorer.SmartContract.ReaderTest do
             "stateMutability" => "view",
             "type" => "function"
           }
-        ]
+        ],
+        contract_code_md5: "123"
       )
 
       implementation_contract_address_hash_string =
@@ -255,7 +257,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   describe "query_function/3" do
     test "given the arguments, fetches the function value from the blockchain" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
 
@@ -268,7 +270,7 @@ defmodule Explorer.SmartContract.ReaderTest do
     end
 
     test "nil arguments is treated as []" do
-      smart_contract = insert(:smart_contract)
+      smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
 
@@ -284,12 +286,12 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   describe "normalize_args/1" do
     test "converts argument when is a number" do
-      assert ["0x00"] = Reader.normalize_args(["0"])
+      assert [0] = Reader.normalize_args(["0"])
 
       assert ["0x798465571ae21a184a272f044f991ad1d5f87a3f"] =
                Reader.normalize_args(["0x798465571ae21a184a272f044f991ad1d5f87a3f"])
 
-      assert ["0x7b"] = Reader.normalize_args(["123"])
+      assert [123] = Reader.normalize_args(["123"])
     end
 
     test "converts argument when is a boolean" do
@@ -380,7 +382,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       abi = [method]
       method_with_id = Map.put(method, "method_id", "0cbf0601")
-      assert [method_with_id] = Reader.get_abi_with_method_id(abi)
+      assert [^method_with_id] = Reader.get_abi_with_method_id(abi)
     end
 
     test "do not crash in some corner cases" do
@@ -397,7 +399,7 @@ defmodule Explorer.SmartContract.ReaderTest do
         }
       ]
 
-      assert abi = Reader.get_abi_with_method_id(abi)
+      assert ^abi = Reader.get_abi_with_method_id(abi)
     end
   end
 
