@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
       "blockNumber" => to_string(token_transfer.block_number),
       "transactionHash" => "#{token_transfer.transaction.hash}",
       "blockHash" => "#{token_transfer.transaction.block.hash}",
-      "timeStamp" => to_string(DateTime.to_unix(token_transfer.transaction.block.timestamp)),
+      "timestamp" => to_string(DateTime.to_unix(token_transfer.transaction.block.timestamp)),
       "amount" => "#{token_transfer.amount}",
       "fromAddress" => "#{token_transfer.from_address}",
       "fromAddressName" => prepare_address_name(token_transfer.from_address.names),
