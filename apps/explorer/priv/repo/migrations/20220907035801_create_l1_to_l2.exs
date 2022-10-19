@@ -18,5 +18,6 @@ defmodule Explorer.Repo.Migrations.CreateL1ToL2 do
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+    create(unique_index(:l1_to_l2, [:queue_index]))
   end
 end

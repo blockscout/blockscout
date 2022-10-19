@@ -1,8 +1,8 @@
-defmodule Explorer.Repo.Migrations.CreateL1ToL2 do
+defmodule Explorer.Repo.Migrations.CreateL2ToL1 do
   use Ecto.Migration
 
   def change do
-    create table(:l1_to_l2, primary_key: false) do
+    create table(:l2_to_l1, primary_key: false) do
       add(:hash, :bytea)
       add(:l2_hash, :bytea, null: false, primary_key: true)
       add(:block, :bigint, null: false)
@@ -19,5 +19,6 @@ defmodule Explorer.Repo.Migrations.CreateL1ToL2 do
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+    create(unique_index(:l2_to_l1, [:msg_nonce]))
   end
 end
