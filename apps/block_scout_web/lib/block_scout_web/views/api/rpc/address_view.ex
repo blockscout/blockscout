@@ -220,9 +220,9 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "blockNumber" => "#{internal_transaction.block_number}",
       "timeStamp" => "#{DateTime.to_unix(internal_transaction.transaction.block.timestamp)}",
       "from" => "#{internal_transaction.from_address_hash}",
-      "fromAddressName" => prepare_address_name(internal_transaction.from_address.names),
+      "fromAddressName" => prepare_address_name(internal_transaction.from_address),
       "to" => "#{internal_transaction.to_address_hash}",
-      "toAddressName" => prepare_address_name(internal_transaction.to_address.names),
+      "toAddressName" => prepare_address_name(internal_transaction.to_address),
       "value" => "#{internal_transaction.value.value}",
       "contractAddress" => "#{internal_transaction.created_contract_address_hash}",
       "transactionHash" => to_string(internal_transaction.transaction_hash),
@@ -309,9 +309,9 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "amount" => "#{token_transfer.amount}",
       "logIndex" => "#{token_transfer.log_index}",
       "fromAddress" => "#{token_transfer.from_address}",
-      "fromAddressName" => prepare_address_name(token_transfer.from_address.names),
+      "fromAddressName" => prepare_address_name(token_transfer.from_address),
       "toAddress" => "#{token_transfer.to_address}",
-      "toAddressName" => prepare_address_name(token_transfer.to_address.names),
+      "toAddressName" => prepare_address_name(token_transfer.to_address),
       "tokenContractAddress" => "#{token_transfer.token_contract_address}",
       "tokenName" => "#{token_transfer.token.name}",
       "tokenSymbol" => "#{token_transfer.token.symbol}",
@@ -347,12 +347,17 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     address.fetched_coin_balance && address.fetched_coin_balance.value && "#{address.fetched_coin_balance.value}"
   end
 
-  defp prepare_address_name(address_names) do
-    case address_names do
-      [_|_] ->
-        Enum.at(address_names, 0).name
-      _ ->
+  defp prepare_address_name(address) do
+    case address do
+      nil ->
         ""
+      _ ->
+        case address.names do
+          [_|_] ->
+            Enum.at(address.names, 0).name
+          _ ->
+            ""
+        end
     end
   end
 

@@ -109,9 +109,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "amount" => "#{token_transfer.amount}",
       "logIndex" => "#{token_transfer.log_index}",
       "fromAddress" => "#{token_transfer.from_address}",
-      "fromAddressName" => prepare_address_name(token_transfer.from_address.names),
+      "fromAddressName" => prepare_address_name(token_transfer.from_address),
       "toAddress" => "#{token_transfer.to_address}",
-      "toAddressName" => prepare_address_name(token_transfer.to_address.names),
+      "toAddressName" => prepare_address_name(token_transfer.to_address),
       "tokenContractAddress" => "#{token_transfer.token_contract_address}",
       "tokenName" => "#{token_transfer.token.name}",
       "tokenSymbol" => "#{token_transfer.token.symbol}",
@@ -119,19 +119,24 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     }
   end
 
-  defp prepare_address_name(address_names) do
-    case address_names do
-      [_|_] ->
-        Enum.at(address_names, 0).name
-      _ ->
+  defp prepare_address_name(address) do
+    case address do
+      nil ->
         ""
+      _ ->
+        case address.names do
+          [_|_] ->
+            Enum.at(address.names, 0).name
+          _ ->
+            ""
+        end
     end
   end
 
   defp prepare_log(log) do
     %{
       "address" => "#{log.address_hash}",
-      "addressName" => "#{prepare_address_name(log.address.names)}",
+      "addressName" => "#{prepare_address_name(log.address)}",
       "topics" => get_topics(log) |> Enum.filter(fn log -> is_nil(log) == false end),
       "data" => "#{log.data}",
       "index" => "#{log.index}"
