@@ -10,12 +10,17 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     ApiView.render("message.json", assigns)
   end
 
-  def render("blocks.json", %{blocks: blocks, next_page_params: next_page_params, conn: conn}) do
-    %{"items" => Enum.map(blocks, &prepare_block(&1, conn)), "next_page_params" => next_page_params}
+  def render("blocks.json", %{blocks: blocks, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(blocks, &prepare_block(&1, nil)), "next_page_params" => next_page_params}
   end
 
   def render("block.json", %{block: block, conn: conn}) do
     prepare_block(block, conn, true)
+  end
+
+  def render("block.json", %{block: block, socket: _socket}) do
+    # single_block? set to true in order to prevent heavy fetching of reward type
+    prepare_block(block, nil, false)
   end
 
   def prepare_block(block, conn, single_block? \\ false) do

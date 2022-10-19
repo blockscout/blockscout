@@ -57,10 +57,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("internal_transactions.json", %{
         internal_transactions: internal_transactions,
-        next_page_params: next_page_params
+        next_page_params: next_page_params,
+        conn: conn
       }) do
     %{
-      "items" => Enum.map(internal_transactions, &prepare_internal_transaction/1),
+      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, conn)),
       "next_page_params" => next_page_params
     }
   end
@@ -101,16 +102,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  def prepare_internal_transaction(internal_transaction) do
+  def prepare_internal_transaction(internal_transaction, conn) do
     %{
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
       "type" => internal_transaction.call_type,
       "transaction_hash" => internal_transaction.transaction_hash,
-      "from" => Helper.address_with_info(internal_transaction.from_address, internal_transaction.from_address_hash),
-      "to" => Helper.address_with_info(internal_transaction.to_address, internal_transaction.to_address_hash),
+      "from" =>
+        Helper.address_with_info(
+          conn,
+          internal_transaction.from_address,
+          internal_transaction.from_address_hash
+        ),
+      "to" => Helper.address_with_info(conn, internal_transaction.to_address, internal_transaction.to_address_hash),
       "created_contract" =>
         Helper.address_with_info(
+          conn,
           internal_transaction.created_contract_address,
           internal_transaction.created_contract_address_hash
         ),
