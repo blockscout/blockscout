@@ -81,6 +81,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "gasPrice" => transaction.gas_price.value,
       "cumulativeGasUsed" => transaction.cumulative_gas_used,
       "index" => transaction.index,
+      "createdContractAddressHash" => transaction.created_contract_address_hash,
       "createdContractCodeIndexedAt" => transaction.created_contract_code_indexed_at,
       "nonce" => transaction.nonce,
       "r" => transaction.r,
