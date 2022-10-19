@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, PagingOptions}
 
-  require Logger
+  import BlockScoutWeb.Chain, only: [get_next_page_number: 1, next_page_path: 1]
 
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
@@ -20,6 +20,58 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
       {:token, {:error, :not_found}} ->
         render(conn, :error, error: "contract address not found")
+    end
+  end
+
+  def getlisttokentransfers(conn, params) do
+    pagination_options = Helpers.put_pagination_options(%{}, params)
+    with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param) do
+
+      options_with_defaults =
+        pagination_options
+        |> Map.put_new(:page_number, 0)
+        |> Map.put_new(:page_size, 10)
+
+      options = %PagingOptions{
+        key: nil,
+        page_number: options_with_defaults.page_number,
+        page_size: options_with_defaults.page_size + 1
+      }
+
+      token_transfers_plus_one =
+        Chain.fetch_token_transfers_from_token_hash(address_hash, paging_options_token_transfer_list(params, options))
+
+      {token_transfers, next_page} = split_list_by_page(token_transfers_plus_one, options_with_defaults.page_size)
+
+      if length(next_page) > 0 do
+        last_token_transfer = Enum.at(token_transfers, -1)
+        next_page_params = %{
+          "page" => get_next_page_number(options_with_defaults.page_number),
+          "offset" => options_with_defaults.page_size,
+          "block_number" => last_token_transfer.block_number,
+          "index" => last_token_transfer.transaction.index
+        }
+
+        render(conn, "getlisttokentransfers.json", %{
+          token_transfers: token_transfers,
+          has_next_page: true,
+          next_page_path: next_page_path(next_page_params)}
+        )
+      else
+        render(conn, "getlisttokentransfers.json", %{
+          token_transfers: token_transfers,
+          has_next_page: false,
+          next_page_path: ""}
+        )
+      end
+
+    else
+      {:contractaddress_param, :error} ->
+        render(conn, :error, error: "Query parameter contract address is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid contract address hash")
     end
   end
 
@@ -98,6 +150,16 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
       end
     end
   end
+
+  defp paging_options_token_transfer_list(params, paging_options) do
+    if !is_nil(params["block_number"]) and !is_nil(params["index"]) do
+      [paging_options: %{paging_options | key: {params["block_number"], params["index"]}}]
+    else
+      [paging_options: paging_options]
+    end
+  end
+
+  defp split_list_by_page(list_plus_one, page_size), do: Enum.split(list_plus_one, page_size)
 
   defp fetch_contractaddress(params) do
     {:contractaddress_param, Map.fetch(params, "contractaddress")}
