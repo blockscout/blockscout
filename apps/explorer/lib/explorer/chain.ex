@@ -788,18 +788,39 @@ defmodule Explorer.Chain do
     end
   end
 
+  def txn_fees(transactions) do
+    Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
+      gas_used
+      |> Decimal.new()
+      |> Decimal.mult(gas_price_to_decimal(gas_price))
+      |> Decimal.add(acc)
+    end)
+  end
+
+  defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
+  defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
+
+  def burned_fees(transactions, base_fee_per_gas) do
+    burned_fee_counter =
+      transactions
+      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
+        gas_used
+        |> Decimal.new()
+        |> Decimal.add(acc)
+      end)
+
+    base_fee_per_gas && Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), burned_fee_counter)
+  end
+
+  defp base_fee_per_gas_to_wei(%Wei{} = wei), do: wei
+  defp base_fee_per_gas_to_wei(base_fee_per_gas), do: %Wei{value: Decimal.new(base_fee_per_gas)}
+
   @uncle_reward_coef 1 / 32
   def block_reward_by_parts(block, transactions) do
     %{hash: block_hash, number: block_number} = block
     base_fee_per_gas = Map.get(block, :base_fee_per_gas)
 
-    txn_fees =
-      Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
-        gas_used
-        |> Decimal.new()
-        |> Decimal.mult(Decimal.new(gas_price))
-        |> Decimal.add(acc)
-      end)
+    txn_fees = txn_fees(transactions)
 
     static_reward =
       Repo.one(
@@ -810,17 +831,9 @@ defmodule Explorer.Chain do
         )
       ) || %Wei{value: Decimal.new(0)}
 
-    burned_fee_counter =
-      transactions
-      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
-        gas_used
-        |> Decimal.new()
-        |> Decimal.add(acc)
-      end)
-
     has_uncles? = is_list(block.uncles) and not Enum.empty?(block.uncles)
 
-    burned_fees = base_fee_per_gas && Wei.mult(%Wei{value: Decimal.new(base_fee_per_gas)}, burned_fee_counter)
+    burned_fees = burned_fees(transactions, base_fee_per_gas)
     uncle_reward = (has_uncles? && Wei.mult(static_reward, Decimal.from_float(@uncle_reward_coef))) || nil
 
     %{

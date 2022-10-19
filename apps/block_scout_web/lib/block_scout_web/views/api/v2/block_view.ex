@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias Explorer.Counters.{BlockBurnedFeeCounter, BlockPriorityFeeCounter}
+  alias Explorer.Chain
   alias Explorer.Chain.{Block, Wei}
 
   def render("message.json", assigns) do
@@ -24,15 +25,10 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def prepare_block(block, conn, single_block? \\ false) do
-    burned_fee = block.base_fee_per_gas && Wei.mult(block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(block.hash))
+    burned_fee = Chain.burned_fees(block.transactions, block.base_fee_per_gas)
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
 
-    tx_fees =
-      Enum.reduce(block.transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
-        gas_used
-        |> Decimal.mult(gas_price.value)
-        |> Decimal.add(acc)
-      end)
+    tx_fees = Chain.txn_fees(block.transactions)
 
     %{
       "height" => block.number,
