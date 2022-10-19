@@ -6,11 +6,11 @@
           <div class="d-flex justify-content-around">
             <div class="d-flex flex-column">
               <h1><%= @contracts_count %></h1>
-              <span class="text-muted"><%= gettext ("Total") %></span>
+              <span class="text-muted">Total</span>
             </div>
             <div class="d-flex flex-column">
               <h1 class="text-success">+<%= @new_contracts_count %></h1>
-              <span class="text-muted"><%= gettext ("Last 24h") %></span>
+              <span class="text-muted">Last 24h</span>
             </div>
           </div>
         </div>
@@ -19,11 +19,11 @@
           <div class="d-flex justify-content-around">
             <div class="d-flex flex-column">
               <h1><%= @verified_contracts_count %></h1>
-              <span class="text-muted"><%= gettext ("Total") %></span>
+              <span class="text-muted">Total</span>
             </div>
             <div class="d-flex flex-column">
               <h1 class="text-success">+<%= @new_verified_contracts_count %></h1>
-              <span class="text-muted"><%= gettext ("Last 24h") %></span>
+              <span class="text-muted">Last 24h</span>
             </div>
           </div>
         </div>

@@ -75,7 +75,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
+  alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter, ContractsCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.{Helper, Reader}
@@ -6486,11 +6486,12 @@ defmodule Explorer.Chain do
     dynamic([tx, created_token: created_token], ^dynamic or (is_nil(tx.to_address_hash) and not is_nil(created_token)))
   end
 
+  @spec verified_contracts([
+          paging_options | necessity_by_association_option | {:filter, :solidity | :vyper} | {:search, String.t()}
+        ]) :: [SmartContract.t()]
   def verified_contracts(options \\ []) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     filter = Keyword.get(options, :filter, nil)
     search_string = Keyword.get(options, :search, nil)
 
