@@ -6,19 +6,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   def render("gettxinfo.json", %{
         transaction: transaction,
         block_height: block_height,
-        logs: logs,
-        next_page_params: next_page_params
-      }) do
-    data = prepare_transaction(transaction, block_height, logs, next_page_params)
-    RPCView.render("show.json", data: data)
-  end
-
-  def render("gettxcosmosinfo.json", %{
-        transaction: transaction,
-        block_height: block_height,
         logs: logs
       }) do
-    data = prepare_transaction_cosmos(transaction, block_height, logs)
+    data = prepare_transaction(transaction, block_height, logs)
     RPCView.render("show.json", data: data)
   end
 
@@ -72,27 +62,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     }
   end
 
-  defp prepare_transaction(transaction, block_height, logs, next_page_params) do
-    %{
-      "hash" => "#{transaction.hash}",
-      "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
-      "blockNumber" => "#{transaction.block_number}",
-      "confirmations" => "#{block_height - transaction.block_number}",
-      "success" => if(transaction.status == :ok, do: true, else: false),
-      "from" => "#{transaction.from_address_hash}",
-      "to" => "#{transaction.to_address_hash}",
-      "value" => "#{transaction.value.value}",
-      "input" => "#{transaction.input}",
-      "gasLimit" => "#{transaction.gas}",
-      "gasUsed" => "#{transaction.gas_used}",
-      "gasPrice" => "#{transaction.gas_price.value}",
-      "logs" => Enum.map(logs, &prepare_log/1),
-      "revertReason" => "#{transaction.revert_reason}",
-      "next_page_params" => next_page_params
-    }
-  end
-
-  defp prepare_transaction_cosmos(transaction, block_height, logs) do
+  defp prepare_transaction(transaction, block_height, logs) do
     %{
       "blockHeight" => transaction.block_number,
       "blockHash" => "#{transaction.block.hash}",

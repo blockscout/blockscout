@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.API.RPC.TransactionController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-
   alias Explorer.Chain
   alias Explorer.Chain.{Transaction, InternalTransaction}
   alias Explorer.Chain.Import
@@ -12,11 +10,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
          {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
-           transaction_from_hash(transaction_hash),
-         paging_options <- paging_options(params) do
+           transaction_from_hash(transaction_hash) do
       from_api = true
-      logs = Chain.transaction_to_logs(transaction_hash, from_api, paging_options)
-      {logs, next_page} = split_list_by_page(logs)
+      logs = Chain.transaction_to_logs(transaction_hash, from_api, necessity_by_association:
+        %{
+          [address: :names] => :optional
+        }
+      )
 
       transaction_updated =
         if (error == "Reverted" || error == "execution reverted") && !revert_reason do
@@ -28,9 +28,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
       render(conn, :gettxinfo, %{
         transaction: transaction_updated,
         block_height: Chain.block_height(),
-        logs: logs,
-        next_page_params: next_page_params(next_page, logs, params)
-      })
+        logs: logs}
+      )
     else
       {:transaction, :error} ->
         render(conn, :error, error: "Transaction not found")
@@ -62,7 +61,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
           transaction
         end
 
-      render(conn, :gettxcosmosinfo, %{
+      render(conn, :gettxinfo, %{
         transaction: transaction_updated,
         block_height: Chain.block_height(),
         logs: logs}
@@ -228,9 +227,19 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   end
 
   defp transaction_from_hash(transaction_hash) do
-    case Chain.hash_to_transaction(transaction_hash, necessity_by_association: %{block: :required}) do
-      {:error, :not_found} -> {:transaction, :error}
-      {:ok, transaction} -> {:transaction, {:ok, transaction}}
+    case Chain.hash_to_transaction(transaction_hash,
+           necessity_by_association: %{
+             [token_transfers: :token] => :optional,
+             [token_transfers: :to_address] => :optional,
+             [token_transfers: :from_address] => :optional,
+             [token_transfers: :token_contract_address] => :optional,
+             block: :required
+           }
+         ) do
+      {:error, :not_found} ->
+        {:transaction, :error}
+      {:ok, transaction} ->
+        {:transaction, {:ok, Chain.preload_transaction_token_address_names(transaction)}}
     end
   end
 
