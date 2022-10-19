@@ -2047,9 +2047,11 @@ defmodule Explorer.Chain do
     end
   end
 
+  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we dont't show any token transfers on tx tile in new UI)
   def preload_token_transfers(
         %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
-        necessity_by_association
+        necessity_by_association,
+        preload_to_detect_tt? \\ true
       ) do
     token_transfers =
       TokenTransfer
@@ -2062,7 +2064,7 @@ defmodule Explorer.Chain do
                 token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
               )
           )).()
-      |> limit(^(@token_transfers_per_transaction_preview + 1))
+      |> limit(^if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1))
       |> order_by([token_transfer], asc: token_transfer.log_index)
       |> join_associations(necessity_by_association)
       |> Repo.all()

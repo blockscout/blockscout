@@ -20,11 +20,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
-    %{"items" => Enum.map(transactions, &prepare_transaction(&1, conn)), "next_page_params" => next_page_params}
+    %{"items" => Enum.map(transactions, &prepare_transaction(&1, conn, false)), "next_page_params" => next_page_params}
   end
 
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
-    prepare_transaction(transaction, conn)
+    prepare_transaction(transaction, conn, true)
   end
 
   def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
@@ -153,16 +153,17 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, _conn) do
+  defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, conn, _single_tx?) do
     %{
       "emission_reward" => emission_reward.reward,
       "block_hash" => validator_reward.block_hash,
-      "from" => emission_reward.address_hash,
-      "to" => validator_reward.address_hash
+      "from" => Helper.address_with_info(conn, emission_reward.address, emission_reward.address_hash),
+      "to" => Helper.address_with_info(conn, validator_reward.address, validator_reward.address_hash),
+      "types" => [:reward]
     }
   end
 
-  defp prepare_transaction(%Transaction{} = transaction, conn) do
+  defp prepare_transaction(%Transaction{} = transaction, conn, single_tx?) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
@@ -207,8 +208,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "revert_reason" => revert_reason,
       "raw_input" => transaction.input,
       "decoded_input" => decoded_input_data,
-      "token_transfers" => token_transfers(transaction.token_transfers, conn),
-      "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers),
+      "token_transfers" => token_transfers(transaction.token_transfers, conn, single_tx?),
+      "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_tx?),
       "exchange_rate" => (Market.get_exchange_rate(Explorer.coin()) || TokenRate.null()).usd_value,
       "method" => method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
@@ -216,18 +217,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def token_transfers(%NotLoaded{}, _conn), do: nil
+  def token_transfers(_, _conn, false), do: nil
+  def token_transfers(%NotLoaded{}, _conn, _), do: nil
 
-  def token_transfers(token_transfers, conn) do
+  def token_transfers(token_transfers, conn, _) do
     render("token_transfers.json", %{
       token_transfers: Enum.take(token_transfers, Chain.get_token_transfers_per_transaction_preview_count()),
       conn: conn
     })
   end
 
-  def token_transfers_overflow(%NotLoaded{}), do: false
+  def token_transfers_overflow(_, false), do: nil
+  def token_transfers_overflow(%NotLoaded{}, _), do: false
 
-  def token_transfers_overflow(token_transfers),
+  def token_transfers_overflow(token_transfers, _),
     do: Enum.count(token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
 
   defp priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas) do
