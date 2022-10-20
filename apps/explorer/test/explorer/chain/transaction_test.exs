@@ -283,10 +283,6 @@ defmodule Explorer.Chain.TransactionTest do
       |> insert()
       |> Repo.preload(to_address: :smart_contract)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn _, _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-
       contract = insert(:smart_contract, contract_code_md5: "123") |> Repo.preload(:address)
 
       input_data =
