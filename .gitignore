@@ -8,7 +8,7 @@
 /doc
 /*.ez
 /logs
-/sync-server/db/*
+/sync-server/db
 node_modules
 
 # Generated on crash by the VM
