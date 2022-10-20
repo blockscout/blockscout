@@ -22,6 +22,16 @@ defmodule BlockScoutWeb.TokenChannel do
     {:ok, %{}, socket}
   end
 
+  def handle_out(
+        "token_transfer",
+        %{token_transfer: _token_transfer},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    push(socket, "token_transfer", %{token_transfer: 1})
+
+    {:noreply, socket}
+  end
+
   def handle_out("token_transfer", %{token_transfer: token_transfer}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
