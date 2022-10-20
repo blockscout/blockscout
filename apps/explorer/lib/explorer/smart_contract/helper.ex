@@ -45,8 +45,7 @@ defmodule Explorer.SmartContract.Helper do
     types =
       event
       |> Map.get("inputs", [])
-      |> Enum.map(& &1["type"])
-      |> Enum.join(",")
+      |> Enum.map_join(",", & &1["type"])
 
     function_signature = "#{name}(#{types})"
 

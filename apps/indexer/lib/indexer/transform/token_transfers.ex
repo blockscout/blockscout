@@ -95,10 +95,12 @@ defmodule Indexer.Transform.TokenTransfers do
     initial_acc = %{token_transfers: [], gold_token: gold_token, transfer_count: 0}
 
     txs
-    |> Enum.filter(fn a -> a.value > 0 end)
-    |> Enum.filter(fn a -> a.index > 0 end)
-    |> Enum.filter(fn a -> not Map.has_key?(a, :error) end)
-    |> Enum.filter(fn a -> not Map.has_key?(a, :call_type) || a.call_type != "delegatecall" end)
+    |> Enum.filter(fn a ->
+      a.value > 0 &&
+        a.index > 0 &&
+        not Map.has_key?(a, :error) &&
+        (not Map.has_key?(a, :call_type) || a.call_type != "delegatecall")
+    end)
     |> Enum.reduce(initial_acc, &do_parse_itx/2)
   end
 
