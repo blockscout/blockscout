@@ -6,6 +6,8 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
 
 ### Fixes
+- [#5319](https://github.com/blockscout/blockscout/pull/5319) - Empty blocks sanitizer performance improvement
+- [#5306](https://github.com/blockscout/blockscout/pull/5306) - Fix indexer bug
 - [#5300](https://github.com/blockscout/blockscout/pull/5300), [#5305](https://github.com/blockscout/blockscout/pull/5305) - Token instance page: general video improvements
 - [#5136](https://github.com/blockscout/blockscout/pull/5136) - Improve contract verification
 - [#5285](https://github.com/blockscout/blockscout/pull/5285) - Fix verified smart-contract bytecode twins feature
@@ -16,6 +18,8 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5318](https://github.com/blockscout/blockscout/pull/5318) - Eliminate Jquery import from chart-loader.js
+- [#5317](https://github.com/blockscout/blockscout/pull/5317) - NPM audit
 - [#5303](https://github.com/blockscout/blockscout/pull/5303) - Besu: revertReason support in trace
 - [#5301](https://github.com/blockscout/blockscout/pull/5301) - Allow specific block keys for sgb/ava
 - [#5295](https://github.com/blockscout/blockscout/pull/5295) - CI pipeline: build and push Docker image to Docker Hub on every release
