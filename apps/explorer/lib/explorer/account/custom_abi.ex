@@ -19,7 +19,7 @@ defmodule Explorer.Account.CustomABI do
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
     field(:address_hash_hash, Cloak.Ecto.SHA256)
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:address_hash, Explorer.Encrypted.AddressHash)
     field(:name, Explorer.Encrypted.Binary)
 
     belongs_to(:identity, Identity)
