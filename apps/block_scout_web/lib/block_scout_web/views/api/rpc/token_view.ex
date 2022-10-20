@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
 
   alias BlockScoutWeb.API.RPC.RPCView
 
-  def render("gettoken.json", %{token: token}) do
-    RPCView.render("show.json", data: prepare_token(token))
+  def render("gettoken.json", %{token_detail: token_detail}) do
+    RPCView.render("show.json", data: prepare_token(token_detail))
   end
 
   def render("getlisttokentransfers.json", %{
@@ -37,15 +37,17 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     RPCView.render("error.json", assigns)
   end
 
-  defp prepare_token(token) do
+  defp prepare_token(token_detail) do
     %{
-      "type" => token.type,
-      "name" => token.name,
-      "symbol" => token.symbol,
-      "totalSupply" => to_string(token.total_supply),
-      "decimals" => to_string(token.decimals),
-      "contractAddress" => to_string(token.contract_address_hash),
-      "cataloged" => token.cataloged
+      "type" => token_detail.token.type,
+      "name" => token_detail.token.name,
+      "symbol" => token_detail.token.symbol,
+      "totalSupply" => to_string(token_detail.token.total_supply),
+      "decimals" => to_string(token_detail.token.decimals),
+      "contractAddress" => to_string(token_detail.token.contract_address_hash),
+      "cataloged" => token_detail.token.cataloged,
+      "transfersCount" => token_detail.transfers_count,
+      "holdersCount" => token_detail.holders_count
     }
   end
 

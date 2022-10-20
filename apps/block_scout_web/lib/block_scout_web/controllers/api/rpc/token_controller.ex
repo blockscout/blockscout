@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Counters.{TokenHoldersCounter, TokenTransfersCounter}
 
   import BlockScoutWeb.Chain, only: [get_next_page_number: 1, next_page_path: 1]
 
@@ -10,7 +11,13 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
          {:token, {:ok, token}} <- {:token, Chain.token_from_address_hash(address_hash)} do
-      render(conn, "gettoken.json", %{token: token})
+      {transfers_count, holders_count} = fetch_token_counters(address_hash, 30_000)
+      token_detail = %{
+        token: token,
+        transfers_count: transfers_count,
+        holders_count: holders_count
+      }
+      render(conn, "gettoken.json", %{token_detail: token_detail})
     else
       {:contractaddress_param, :error} ->
         render(conn, :error, error: "Query parameter contract address is required")
@@ -167,5 +174,33 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
   defp to_address_hash(address_hash_string) do
     {:format, Chain.string_to_address_hash(address_hash_string)}
+  end
+
+  defp fetch_token_counters(address_hash, timeout) do
+    total_token_transfers_task =
+      Task.async(fn ->
+        TokenTransfersCounter.fetch(address_hash)
+      end)
+
+    total_token_holders_task =
+      Task.async(fn ->
+        TokenHoldersCounter.fetch(address_hash)
+      end)
+
+    [total_token_transfers_task, total_token_holders_task]
+    |> Task.yield_many(timeout)
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, _} ->
+          0
+
+        nil ->
+          0
+      end
+    end)
+    |> List.to_tuple()
   end
 end
