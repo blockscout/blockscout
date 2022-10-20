@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateTxnBatches do
+defmodule Explorer.Repo.Migrations.CreateStateBatches do
   use Ecto.Migration
 
   def change do
