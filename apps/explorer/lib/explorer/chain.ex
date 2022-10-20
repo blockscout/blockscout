@@ -3663,27 +3663,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns the list of empty blocks from the DB which have not marked with `t:Explorer.Chain.Block.is_empty/0`.
-  This query used for initializtion of Indexer.EmptyBlocksSanitizer
-  """
-  def unprocessed_empty_blocks_query_list(limit) do
-    query =
-      from(block in Block,
-        left_join: transaction in Transaction,
-        on: block.number == transaction.block_number,
-        where: is_nil(transaction.block_number),
-        where: is_nil(block.is_empty),
-        where: block.consensus == true,
-        select: {block.number, block.hash},
-        order_by: [desc: block.number],
-        limit: ^limit
-      )
-
-    query
-    |> Repo.all(timeout: :infinity)
-  end
-
-  @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.Address.t/0`.
 
       iex> Explorer.Chain.string_to_address_hash("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
