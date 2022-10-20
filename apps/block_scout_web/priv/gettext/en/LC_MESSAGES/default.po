@@ -76,7 +76,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:223
+#: lib/block_scout_web/templates/layout/app.html.eex:224
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -89,12 +89,6 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:97
 #, elixir-autogen, elixir-format
 msgid "A block producer who successfully included the block onto the blockchain."
-msgstr ""
-
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:92
-#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:86
-#, elixir-autogen, elixir-format
-msgid "A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
 
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:73
@@ -192,8 +186,8 @@ msgstr ""
 msgid "Add Custom ABI"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:127
-#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:121
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:93
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:87
 #, elixir-autogen, elixir-format
 msgid "Add Library"
 msgstr ""
@@ -225,6 +219,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:23
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:12
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
 #: lib/block_scout_web/views/address_view.ex:107
 #, elixir-autogen, elixir-format
@@ -501,9 +496,9 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/public_tags_request/form.html.eex:62
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:120
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:145
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:111
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:41
-#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:141
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:107
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:55
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:51
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
@@ -1429,11 +1424,6 @@ msgstr ""
 msgid "Indexed?"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:44
-#, elixir-autogen, elixir-format
-msgid "Indexing Tokens"
-msgstr ""
-
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "Input"
@@ -1492,16 +1482,6 @@ msgstr ""
 msgid "Less than"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:3
-#, elixir-autogen, elixir-format
-msgid "Library Address"
-msgstr ""
-
-#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_name.html.eex:3
-#, elixir-autogen, elixir-format
-msgid "Library Name"
-msgstr ""
-
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:24
 #, elixir-autogen, elixir-format
 msgid "License Expires"
@@ -1538,9 +1518,9 @@ msgid "Loading chart..."
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:77
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:139
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:105
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:35
-#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:133
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:99
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:49
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:45
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:41
@@ -1696,6 +1676,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:22
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:22
 #: lib/block_scout_web/templates/account/watchlist_address/form.html.eex:19
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_name.html.eex:4
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
 #: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
@@ -2067,9 +2048,9 @@ msgstr ""
 msgid "Request to edit a public tag/label"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:142
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:108
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:38
-#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:138
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:104
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:52
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:48
 #, elixir-autogen, elixir-format
@@ -2312,8 +2293,7 @@ msgstr ""
 msgid "Test Networks"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:98
-#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:92
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:11
 #, elixir-autogen, elixir-format
 msgid "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
 msgstr ""
@@ -2960,9 +2940,9 @@ msgstr ""
 msgid "Verify & Publish"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:141
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:107
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:37
-#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:137
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:103
 #: lib/block_scout_web/templates/address_contract_verification_via_standard_json_input/new.html.eex:51
 #: lib/block_scout_web/templates/address_contract_verification_vyper/new.html.eex:47
 #, elixir-autogen, elixir-format
@@ -3275,4 +3255,25 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:73
 #, elixir-autogen, elixir-format
 msgid "truffle flattener"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/app.html.eex:44
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Indexing Internal Transactions"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:5
+#, elixir-autogen, elixir-format
+msgid ") may be added for each contract. Click the Add Library button to add an additional one."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:5
+#, elixir-autogen, elixir-format, fuzzy
+msgid "A library name called in the .sol file. Multiple libraries (up to "
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_name.html.eex:4
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Library"
 msgstr ""

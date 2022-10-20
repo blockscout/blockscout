@@ -73,4 +73,21 @@ defmodule BlockScoutWeb.SearchController do
       current_path: Controller.current_full_path(conn)
     )
   end
+
+  def api_search_result(conn, %{"q" => query} = params) do
+    [paging_options: paging_options] = paging_options(params)
+    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
+
+    search_results_plus_one =
+      paging_options
+      |> ChainController.search_by(offset, query)
+
+    {search_results, next_page} = split_list_by_page(search_results_plus_one)
+
+    next_page_params = next_page_params(next_page, search_results, params)
+
+    conn
+    |> put_status(200)
+    |> render(:search_results, %{search_results: search_results, next_page_params: next_page_params})
+  end
 end
