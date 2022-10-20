@@ -303,23 +303,6 @@ defmodule Explorer.Chain.Address do
     )
   end
 
-  def contract_code_md5(%__MODULE__{contract_code: %Data{bytes: contract_code_bytes}}),
-    do: contract_code_md5(contract_code_bytes)
-
-  def contract_code_md5(contract_code_bytes) when is_binary(contract_code_bytes),
-    do:
-      Base.encode16(
-        :crypto.hash(
-          :md5,
-          "\\x" <>
-            Base.encode16(
-              contract_code_bytes,
-              case: :lower
-            )
-        ),
-        case: :lower
-      )
-
   defimpl String.Chars do
     @doc """
     Uses `hash` as string representation, formatting it according to the eip-55 specification

@@ -222,7 +222,6 @@ defmodule Explorer.Chain.SmartContract do
     field(:compiler_version, :string)
     field(:optimization, :boolean)
     field(:contract_source_code, :string)
-    field(:contract_byte_code_md5, :string)
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
     field(:optimization_runs, :integer)
