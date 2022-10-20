@@ -14,10 +14,13 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
   @moduletag :smart_contract_compiler
   describe "publish/2" do
     test "with valid data creates a smart_contract" do
-      contract_code_info = Factory.contract_code_info()
+      contract_code_info = Factory.contract_code_info_modern_compilator()
 
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
-      insert(:transaction, created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
+      |> with_block(status: :ok)
 
       valid_attrs = %{
         "contract_source_code" => contract_code_info.source_code,
@@ -58,7 +61,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
         created_contract_address_hash: contract_address.hash,
         input: input <> expected_constructor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => contract,
@@ -74,10 +77,13 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
     end
 
     test "corresponding contract_methods are created for the abi" do
-      contract_code_info = Factory.contract_code_info()
+      contract_code_info = Factory.contract_code_info_modern_compilator()
 
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
-      insert(:transaction, created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
+      |> with_block(status: :ok)
 
       valid_attrs = %{
         "contract_source_code" => contract_code_info.source_code,
@@ -97,7 +103,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
     end
 
     test "creates a smart contract with constructor arguments" do
-      contract_code_info = Factory.contract_code_info()
+      contract_code_info = Factory.contract_code_info_modern_compilator()
 
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
 
@@ -116,7 +122,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
         created_contract_address_hash: contract_address.hash,
         input: contract_code_info.tx_input <> constructor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       response = Publisher.publish(contract_address.hash, params)
       assert {:ok, %SmartContract{} = smart_contract} = response
@@ -153,7 +159,10 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
       tx_input = contract_data["tx_input"]
 
       contract_address = insert(:contract_address, contract_code: "0x" <> expected_bytecode)
-      insert(:transaction, created_contract_address_hash: contract_address.hash, input: "0x" <> tx_input)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: "0x" <> tx_input)
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => contract,
