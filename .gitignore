@@ -8,6 +8,11 @@
 /doc
 /*.ez
 /logs
+node_modules
+sync-server/db
+.yarn
+yarn-error
+yarn-error.log
 
 # Generated on crash by the VM
 erl_crash.dump
