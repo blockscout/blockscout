@@ -51,6 +51,7 @@
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
 - [#5016](https://github.com/blockscout/blockscout/pull/5016) - Add view for internal transactions error
 - [#4690](https://github.com/blockscout/blockscout/pull/4690) - Improve pagination: introduce pagination with random access to pages; Integrate it to the Transactions List page
+- [#6168](https://github.com/blockscout/blockscout/pull/6168) - Token instance fetcher checks instance owner and updates current token balance
 
 ### Fixes
 - [#5248](https://github.com/blockscout/blockscout/pull/5248) - Speedup query for getting verified smart-contract bytecode twin
@@ -69,6 +70,7 @@
 - [#5155](https://github.com/blockscout/blockscout/pull/5155) - Fix get_implementation_abi_from_proxy/2 implementation
 - [#5154](https://github.com/blockscout/blockscout/pull/5154) - Fix token counters bug
 - [#4862](https://github.com/blockscout/blockscout/pull/4862) - Fix internal transactions pagination
+- [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
 
 ### Chore
 - [#5230](https://github.com/blockscout/blockscout/pull/5230) - Contract verification forms refactoring
