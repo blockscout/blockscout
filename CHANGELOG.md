@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- [#6309](https://github.com/blockscout/blockscout/pull/6309) - Fix read contract bug and change address tx count
 - [#6243](https://github.com/blockscout/blockscout/pull/6243) - Fix freezes on `/blocks` page
 - [#6162](https://github.com/blockscout/blockscout/pull/6162) - Extend token symbol type varchar(255) -> text
 - [#6158](https://github.com/blockscout/blockscout/pull/6158) - Add missing clause for merge_twin_vyper_contract_with_changeset function
