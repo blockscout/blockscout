@@ -15,7 +15,6 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfers do
   alias Explorer.Chain
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.Temporary.UncatalogedTokenTransfers
-  alias Timex.Duration
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -53,13 +52,7 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfers do
   end
 
   def handle_info(:scan, state) do
-    start = Duration.now(:milliseconds)
     {:ok, block_numbers} = Chain.uncataloged_token_transfer_block_numbers()
-    duration = Duration.now(:milliseconds) - start
-
-    Logger.info(
-      "UncatalogedTokenTransfers completed - duration:#{duration} block_count:#{length(block_numbers)} block_numbers:#{inspect(block_numbers)}"
-    )
 
     case block_numbers do
       [] ->

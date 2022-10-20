@@ -22,8 +22,7 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  import EthereumJSONRPC,
-    only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
 
   require Logger
 
@@ -1854,25 +1853,6 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
-    end
-  end
-
-  def fetch_contract_code(address_hash, block \\ "latest") do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    case EthereumJSONRPC.fetch_codes(
-           [%{block_quantity: block, address: address_hash}],
-           json_rpc_named_arguments
-         ) do
-      {:ok, %EthereumJSONRPC.FetchedCodes{params_list: []}} ->
-        nil
-
-      {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
-        contract_code = fetched_codes |> List.first() |> Map.get(:code)
-        {:ok, contract_code}
-
-      _ ->
-        nil
     end
   end
 
@@ -4257,6 +4237,7 @@ defmodule Explorer.Chain do
       new_contract
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
+      |> apply_smart_contract_contract_code_md5_changeset
 
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
@@ -4276,28 +4257,13 @@ defmodule Explorer.Chain do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_contract_query =
       Multi.new()
+      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
       |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.run(:create_address_if_necessary, fn repo, _ -> create_address_if_not_exists(repo, address_hash) end)
       |> Multi.run(:insert_address_name, fn repo, _ ->
         name = Changeset.get_field(smart_contract_changeset, :name)
         create_address_name(repo, name, address_hash)
       end)
-      |> Multi.run(:smart_contract, fn repo, changes ->
-        changeset =
-          case changes do
-            # address was just created, we can calculate md5 without db fetch
-            %{create_address_if_necessary: address = %Explorer.Chain.Address{}} ->
-              smart_contract_changeset
-              |> Changeset.put_change(:contract_byte_code_md5, Address.contract_code_md5(address))
-
-            # address already existed, will have to fetch it for md5
-            _ ->
-              smart_contract_changeset |> add_contract_code_md5_for_changeset()
-          end
-
-        repo.insert(changeset)
-      end)
-      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+      |> Multi.insert(:smart_contract, smart_contract_changeset)
 
     insert_contract_query_with_additional_sources =
       smart_contract_additional_sources_changesets
@@ -4325,38 +4291,15 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp add_contract_code_md5_for_changeset(%Changeset{} = changeset) do
-    address_hash = changeset |> Changeset.get_field(:address_hash)
+  defp apply_smart_contract_contract_code_md5_changeset(changeset) do
+    address_hash = Changeset.get_field(changeset, :address_hash)
 
-    _do_add_md5(changeset, address_hash)
-  end
-
-  defp _do_add_md5(changeset, nil), do: changeset
-
-  defp _do_add_md5(changeset, address_hash) do
     case Repo.get(Address, address_hash) do
-      %Address{contract_code: cc} = address when not is_nil(cc) ->
-        changeset |> Changeset.put_change(:contract_byte_code_md5, Address.contract_code_md5(address))
+      %Address{} = address ->
+        Changeset.put_change(changeset, :contract_byte_code_md5, address |> Address.contract_code_md5())
 
       _ ->
         changeset
-    end
-  end
-
-  defp create_address_if_not_exists(repo, address_hash) do
-    address_found =
-      Address
-      |> where([a], a.hash == ^address_hash)
-      |> repo.exists?()
-
-    if address_found do
-      {:ok, nil}
-    else
-      {:ok, code} = fetch_contract_code(address_hash)
-
-      %Address{}
-      |> Address.changeset(%{hash: address_hash, contract_code: code})
-      |> repo.insert()
     end
   end
 
@@ -4391,7 +4334,7 @@ defmodule Explorer.Chain do
       smart_contract
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
-      |> add_contract_code_md5_for_changeset()
+      |> apply_smart_contract_contract_code_md5_changeset
 
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
