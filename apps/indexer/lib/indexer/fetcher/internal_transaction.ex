@@ -240,26 +240,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
     Enum.map(internal_transactions, fn a -> Map.put(a, :block_hash, block_hash) end)
   end
 
-  defp decode("0x" <> str) do
-    %{bytes: Base.decode16!(str, case: :mixed)}
-  end
-
-  defp add_gold_token_balances(gold_token, addresses, acc) do
-    Enum.reduce(addresses, acc, fn
-      %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
-        MapSet.put(acc, %{
-          address_hash: decode(hash),
-          token_contract_address_hash: decode(gold_token),
-          block_number: bn,
-          token_type: "ERC-20",
-          token_id: nil
-        })
-
-      _, acc ->
-        acc
-    end)
-  end
-
   defp import_internal_transaction(internal_transactions_params, unique_numbers) do
     internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
 
@@ -268,20 +248,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
         internal_transactions: internal_transactions_params_without_failed_creations
       })
 
-    # Gold token special updates
-    token_transfers =
-      with true <- Application.get_env(:indexer, Indexer.Block.Fetcher, [])[:enable_gold_token],
-           {:ok, gold_token} <- Util.get_address("GoldToken") do
-        set = add_gold_token_balances(gold_token, addresses_params, MapSet.new())
-        TokenBalance.async_fetch(MapSet.to_list(set))
+    # Enqueue fetching of celo balances for addresses referenced in itx
+    {:ok, gold_token} = Util.get_address("GoldToken")
+    fetch_celo_balances_for(addresses_params, gold_token)
 
-        %{token_transfers: celo_token_transfers} =
-          TokenTransfers.parse_itx(internal_transactions_params_without_failed_creations, gold_token)
-
-        celo_token_transfers
-      else
-        _ -> []
-      end
+    %{token_transfers: token_transfers} =
+      TokenTransfers.parse_itx(internal_transactions_params_without_failed_creations, gold_token)
 
     token_transfers_addresses_params =
       Addresses.extract_addresses(%{
@@ -334,6 +306,33 @@ defmodule Indexer.Fetcher.InternalTransaction do
         # re-queue the de-duped entries
         {:retry, unique_numbers}
     end
+  end
+
+  defp decode("0x" <> str) do
+    %{bytes: Base.decode16!(str, case: :mixed)}
+  end
+
+  defp add_gold_token_balances(addresses, gold_token, acc) do
+    Enum.reduce(addresses, acc, fn
+      %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
+        MapSet.put(acc, %{
+          address_hash: decode(hash),
+          token_contract_address_hash: decode(gold_token),
+          block_number: bn,
+          token_type: "ERC-20",
+          token_id: nil
+        })
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  defp fetch_celo_balances_for(addresses, gold_token) do
+    addresses
+    |> add_gold_token_balances(gold_token, MapSet.new())
+    |> MapSet.to_list()
+    |> TokenBalance.async_fetch()
   end
 
   defp remove_failed_creations(internal_transactions_params) do

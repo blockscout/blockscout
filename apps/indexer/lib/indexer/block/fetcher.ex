@@ -164,46 +164,6 @@ defmodule Indexer.Block.Fetcher do
     end)
   end
 
-  defp add_celo_token_balances(celo_token, addresses, acc) do
-    Enum.reduce(addresses, acc, fn
-      %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
-        MapSet.put(acc, %{
-          address_hash: hash,
-          token_contract_address_hash: celo_token,
-          block_number: bn,
-          token_type: "ERC-20",
-          token_id: nil
-        })
-
-      _, acc ->
-        acc
-    end)
-  end
-
-  defp config(key) do
-    Application.get_env(:indexer, __MODULE__, [])[key]
-  end
-
-  defp read_addresses do
-    with {:ok, celo_token} <- Util.get_address("GoldToken"),
-         {:ok, stable_token_usd} <- Util.get_address("StableToken"),
-         {:ok, stable_token_eur} <- Util.get_address("StableTokenEUR"),
-         {:ok, stable_token_real} <- Util.get_address("StableTokenBRL"),
-         {:ok, oracle_address} <- Util.get_address("SortedOracles") do
-      tokens = %{
-        celo: celo_token,
-        cusd: stable_token_usd,
-        ceur: stable_token_eur,
-        creal: stable_token_real
-      }
-
-      {:ok, tokens, oracle_address, true}
-    else
-      _err ->
-        {:ok, %{celo: nil, cusd: nil, ceur: nil, creal: nil}, nil, false}
-    end
-  end
-
   @decorate span(tracer: Tracer)
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
@@ -220,43 +180,44 @@ defmodule Indexer.Block.Fetcher do
       )
       when callback_module != nil do
     with {:blocks,
-          {:ok,
-           %Blocks{
-             blocks_params: blocks_params,
-             transactions_params: transactions_params_without_receipts,
-             block_second_degree_relations_params: block_second_degree_relations_params,
-             errors: blocks_errors
-           }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
+          {
+            :ok,
+            # Fetch blocks and associated block data (transactions included)
+            %Blocks{
+              blocks_params: blocks_params,
+              transactions_params: transactions_params_without_receipts,
+              block_second_degree_relations_params: block_second_degree_relations_params,
+              errors: blocks_errors
+            }
+          }} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          blocks = TransformBlocks.transform_blocks(blocks_params),
-         {:logs, {:ok, %{logs: extra_logs}}} <- {:logs, EthereumJSONRPC.fetch_logs(range, json_rpc_named_arguments)},
+
+         # Fetch and process logs + tx receipts
+         {:logs, {:ok, %{logs: epoch_logs}}} <- {:logs, EthereumJSONRPC.fetch_logs(range, json_rpc_named_arguments)},
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: tx_logs, receipts: receipts} = receipt_params,
-         logs = tx_logs ++ process_extra_logs(extra_logs),
+         logs = tx_logs ++ process_extra_logs(epoch_logs),
+
+         # combine transactions with receipts
+         transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
+
+         # extract token transfers from logs
+         %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
+
+         # extract celo core contract events from logs
          new_core_contracts = process_celo_core_contracts(logs),
          celo_contract_events = EventMap.celo_rpc_to_event_params(logs),
-         transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
-         %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
-         try_celo_token_enabled = config(:enable_gold_token),
-         {:ok,
-          %{
-            celo: celo_token,
-            cusd: stable_token_usd,
-            creal: _,
-            ceur: _
-          }, oracle_address,
-          celo_token_enabled} <-
-           (if try_celo_token_enabled do
-              read_addresses()
-            else
-              {:ok, %{celo: nil, cusd: nil, ceur: nil, creal: nil}, nil, false}
-            end),
-         %{token_transfers: celo_token_transfers} =
-           (if celo_token_enabled do
-              TokenTransfers.parse_tx(transactions_with_receipts, celo_token)
-            else
-              %{token_transfers: []}
-            end),
-         # Non CELO fees should be handled by events
+
+         # Get required core contract addresses from the registry
+         {:ok, celo_token} = Util.get_address("GoldToken"),
+         {:ok, stable_token_usd} = Util.get_address("StableToken"),
+         {:ok, oracle_address} = Util.get_address("SortedOracles"),
+
+         # Create CELO token transfers from native tx values
+         %{token_transfers: native_celo_token_transfers} =
+           TokenTransfers.parse_tx(transactions_with_receipts, celo_token),
+
+         # extract various celo protocol data from logs + oracles
          %{
            accounts: celo_accounts,
            validators: celo_validators,
@@ -271,6 +232,8 @@ defmodule Indexer.Block.Fetcher do
            withdrawals: celo_withdrawals,
            unlocked: celo_unlocked
          } = CeloAccounts.parse(logs, oracle_address),
+
+         # extract cusd + CELO exchange rates from above
          market_history =
            exchange_rates
            |> Enum.filter(fn el ->
@@ -287,17 +250,19 @@ defmodule Indexer.Block.Fetcher do
             else
               []
             end),
+
+         # extract token minting transfers (bridged)
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
+
+         # fetch block reward beneficiaries
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
-         tokens =
-           normal_tokens ++
-             (if celo_token_enabled do
-                [%{contract_address_hash: celo_token, type: "ERC-20"}]
-              else
-                []
-              end),
-         token_transfers = normal_token_transfers ++ celo_token_transfers,
+
+         # fold celo transfers into list of token transfers (treat native chain asset as erc-20)
+         tokens = [%{contract_address_hash: celo_token, type: "ERC-20"} | normal_tokens],
+         token_transfers = normal_token_transfers ++ native_celo_token_transfers,
+
+         # extract all referenced addresses from data
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -308,16 +273,15 @@ defmodule Indexer.Block.Fetcher do
              transactions: transactions_with_receipts,
              wallets: celo_wallets,
              # The address of the CELO token has to be added to the addresses table
-             celo_token:
-               if celo_token_enabled do
-                 [%{hash: celo_token, block_number: last_block}]
-               else
-                 []
-               end
+             celo_token: [%{hash: celo_token, block_number: last_block}]
            }),
+
+         # get celo transfers (erc-20)
          celo_transfers =
            normal_token_transfers
            |> Enum.filter(fn %{token_contract_address_hash: contract} -> contract == celo_token end),
+
+         # extract (instant) coin balances from above data
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
@@ -327,25 +291,23 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),
+
+         # extract daily coin balance from above instant balances
          coin_balances_params_daily_set =
            %{
              coin_balances_params: coin_balances_params_set,
              blocks: blocks
            }
            |> AddressCoinBalancesDaily.params_set(),
+
+         # calculate gas payment beneficiaries
          beneficiaries_with_gas_payment <-
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts, blocks)
            |> BlockReward.reduce_uncle_rewards(),
-         address_token_balances_from_transfers =
-           AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
-         # Also update the CELO token balances
-         address_token_balances =
-           (if celo_token_enabled do
-              add_celo_token_balances(celo_token, addresses, address_token_balances_from_transfers)
-            else
-              address_token_balances_from_transfers
-            end),
+
+         # extract address token balances from token transfers
+         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
              state,

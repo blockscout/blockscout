@@ -111,7 +111,6 @@ config :logger, :logger_backend, level: :error
 #       block_number step count error_count shrunk import_id transaction_id)a,
 #  metadata_filter: [application: :indexer]
 
-config :indexer, Indexer.Block.Fetcher, enable_gold_token: true
 config :indexer, Indexer.Prometheus.MetricsCron, metrics_fetcher_blocks_count: 1000
 config :indexer, Indexer.Prometheus.MetricsCron, metrics_cron_interval: System.get_env("METRICS_CRON_INTERVAL") || "2"
 
