@@ -11,6 +11,21 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: accounts)
   end
 
+  def render("getaddress.json", %{address_detail: address_detail}) do
+    data = %{
+      "balance" => address_detail.fetched_coin_balance.value,
+      "tokenName" => to_string(address_detail.token && address_detail.token.name),
+      "tokenSymbol" => to_string(address_detail.token && address_detail.token.symbol),
+      "creationTransaction" => to_string(address_detail.contracts_creation_transaction &&
+        address_detail.contracts_creation_transaction.hash),
+      "creator" => to_string(address_detail.contracts_creation_transaction &&
+        address_detail.contracts_creation_transaction.from_address_hash),
+      "lastBalanceUpdate" => address_detail.fetched_coin_balance_block_number,
+      "type" => get_address_type(address_detail)
+    }
+    RPCView.render("show.json", data: data)
+  end
+
   def render("balance.json", %{addresses: [address]}) do
     RPCView.render("show.json",
       data: %{balance: balance(address), lastBalanceUpdate: address.fetched_coin_balance_block_number}
@@ -367,6 +382,15 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
         nil
       contract_method ->
         contract_method.abi["name"]
+    end
+  end
+
+  defp get_address_type(address) do
+    case address.token do
+      nil ->
+        "address"
+      _ ->
+        "contract address"
     end
   end
 end

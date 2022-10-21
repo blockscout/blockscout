@@ -24,6 +24,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     |> render(:listaccounts, %{accounts: accounts})
   end
 
+  def getaddress(conn, params) do
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
+      {:ok, address} = Chain.hash_to_address(address_hash)
+      render(conn, "getaddress.json", %{address_detail: address})
+    else
+      {:address_param, :error} ->
+        render(conn, :error, error: "Query parameter 'address' is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
+    end
+  end
+
   def eth_get_balance(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:block_param, {:ok, block}} <- {:block_param, fetch_block_param(params)},
