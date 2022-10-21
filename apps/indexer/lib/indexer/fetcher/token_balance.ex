@@ -34,6 +34,8 @@ defmodule Indexer.Fetcher.TokenBalance do
   @max_retries 3
 
   @spec async_fetch([]) :: :ok
+  def async_fetch([]), do: :ok
+
   def async_fetch(token_balances) do
     formatted_params = Enum.map(token_balances, &entry/1)
     BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
@@ -123,7 +125,7 @@ defmodule Indexer.Fetcher.TokenBalance do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> ["failed to import token balances: ", inspect(reason)] end,
+        Logger.error(fn -> ["failed to import token balances: ", inspect(reason)] end,
           error_count: Enum.count(token_balances_params)
         )
 

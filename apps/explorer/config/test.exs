@@ -50,6 +50,8 @@ config :explorer, Explorer.Tracer, disabled?: false
 
 config :explorer, Explorer.Staking.ContractState, enabled: false
 
+config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber, enabled: false
+
 config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")

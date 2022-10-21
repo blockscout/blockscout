@@ -66,7 +66,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       end
     end
 
-    empty_address_cache()
+    set_test_address()
     CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
@@ -106,7 +106,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     block_number = 1_000_006
     block = insert(:block, number: block_number)
     insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
-    empty_address_cache()
+    set_test_address()
 
     assert :ok = InternalTransaction.run([block_number], json_rpc_named_arguments)
 
@@ -173,7 +173,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         end
       end
 
-      empty_address_cache()
+      set_test_address()
 
       block = insert(:block)
       block_hash = block.hash
@@ -282,8 +282,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         end
       end
 
-      empty_address_cache()
+      set_test_address()
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
 
@@ -341,7 +342,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert %{block_hash: ^valid_block_hash2} = Repo.get(PendingBlockOperation, valid_block_hash2)
       assert %{block_hash: ^empty_block_hash} = Repo.get(PendingBlockOperation, empty_block_hash)
 
-      empty_address_cache()
+      set_test_address()
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
@@ -407,6 +408,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       ]
 
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       assert :ok ==
                InternalTransaction.run(

@@ -119,7 +119,7 @@ defmodule Indexer.Block.FetcherTest do
               unprefixed_celo_token_address_hash,
               event_first_topic,
               event_data,
-              18
+              14
             )
 
           variant ->
@@ -332,7 +332,6 @@ defmodule Indexer.Block.FetcherTest do
       set_test_address(to_string(celo_token_address.hash))
 
       block_number = @first_full_block_number
-      #          insert(:celo_unlocked, %{account_address: "0xC257274276a4E539741Ca11b590B9447B26A8051", amount: 3840})
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -354,7 +353,7 @@ defmodule Indexer.Block.FetcherTest do
               unprefixed_celo_token_address_hash,
               event_first_topic,
               event_data,
-              18
+              14
             )
 
           variant ->
