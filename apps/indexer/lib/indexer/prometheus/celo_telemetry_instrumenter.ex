@@ -20,7 +20,7 @@ defmodule Indexer.Prometheus.CeloInstrumenter do
     end
   end
 
-  def attach_event(name, :summary, label, %{metric_labels: metric_labels, help: help} = _meta) do
+  def attach_event(name, :summary, label, %{metric_labels: metric_labels, help: help} = meta) do
     Logger.info("Attach event #{name |> inspect()}")
 
     Summary.declare(
@@ -29,10 +29,12 @@ defmodule Indexer.Prometheus.CeloInstrumenter do
       help: help
     )
 
-    :telemetry.attach(handler_id(name), name, &__MODULE__.handle_event/4, %{type: :summary, label: label})
+    handler_meta = meta |> Map.merge(%{type: :summary, label: label})
+
+    :telemetry.attach(handler_id(name), name, &__MODULE__.handle_event/4, handler_meta)
   end
 
-  def attach_event(name, :counter, label, %{help: help} = _meta) do
+  def attach_event(name, :counter, label, %{help: help} = meta) do
     Logger.info("Attach event #{name |> inspect()}")
 
     Counter.declare(
@@ -40,7 +42,9 @@ defmodule Indexer.Prometheus.CeloInstrumenter do
       help: help
     )
 
-    :telemetry.attach(handler_id(name), name, &__MODULE__.handle_event/4, %{type: :counter, label: label})
+    handler_meta = meta |> Map.merge(%{type: :counter, label: label})
+
+    :telemetry.attach(handler_id(name), name, &__MODULE__.handle_event/4, handler_meta)
   end
 
   def attach_event(name, :histogram, label, %{buckets: buckets, metric_labels: metric_labels, help: help} = _meta) do
@@ -65,9 +69,10 @@ defmodule Indexer.Prometheus.CeloInstrumenter do
     Counter.inc(name: label)
   end
 
-  def handle_event(_name, measurements, _metadata, %{type: :histogram, label: label})
+  def handle_event(_name, measurements, _metadata, %{type: :histogram, label: label} = meta)
       when is_map(measurements) do
     measurements
+    |> process_measurements(meta)
     |> Enum.each(fn {name, value} ->
       Histogram.observe(
         [name: label, labels: [name]],
@@ -76,9 +81,10 @@ defmodule Indexer.Prometheus.CeloInstrumenter do
     end)
   end
 
-  def handle_event(_name, measurements, _metadata, %{type: :summary, label: label})
+  def handle_event(_name, measurements, _metadata, %{type: :summary, label: label} = meta)
       when is_map(measurements) do
     measurements
+    |> process_measurements(meta)
     |> Enum.each(fn {name, value} ->
       Summary.observe(
         [name: label, labels: [name]],
@@ -90,6 +96,12 @@ defmodule Indexer.Prometheus.CeloInstrumenter do
   def handle_event(name, _measurements, _metadata, _config) do
     Logger.error("unhandled metric #{name |> inspect()}")
   end
+
+  defp process_measurements(measurements, %{function: function}) do
+    function.(measurements)
+  end
+
+  defp process_measurements(measurements, _), do: measurements
 
   defp process_config(event) do
     name = Keyword.get(event, :name, {:error, "no event name"})
