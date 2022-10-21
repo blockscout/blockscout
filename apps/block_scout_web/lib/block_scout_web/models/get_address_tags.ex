@@ -11,17 +11,17 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   def get_address_tags(nil, nil),
-    do: %{personal_tags: [], watchlist_names: []}
+    do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
   def get_address_tags(%Hash{} = address_hash, current_user) do
     %{
-      # common_tags: get_tags_on_address(address_hash),
+      common_tags: get_tags_on_address(address_hash),
       personal_tags: get_personal_tags(address_hash, current_user),
       watchlist_names: get_watchlist_names_on_address(address_hash, current_user)
     }
   end
 
-  def get_address_tags(_, _), do: %{personal_tags: [], watchlist_names: []}
+  def get_address_tags(_, _), do: %{common_tags: [], personal_tags: [], watchlist_names: []}
 
   def get_public_tags(%Hash{} = address_hash) do
     %{
