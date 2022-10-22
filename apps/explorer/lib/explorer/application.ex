@@ -100,6 +100,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
+      configure(Explorer.Tags.AddressTag.Cataloger),
       configure(MinMissingBlockNumber)
     ]
     |> List.flatten()
