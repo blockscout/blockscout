@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Import.Runner.CeloUnlocked do
     insert_options = Util.make_insert_options(option_key(), @timeout, options)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    Multi.run(multi, :insert_pending_items, fn repo, _ ->
+    Multi.run(multi, :celo_unlocked, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
   end
