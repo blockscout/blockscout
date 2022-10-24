@@ -65,7 +65,8 @@ defmodule BlockScoutWeb.Endpoint do
     store: BlockScoutWeb.Plug.RedisCookie,
     key: "_explorer_key",
     signing_salt: "iC2ksJHS",
-    same_site: "Lax"
+    same_site: "Lax",
+    http_only: false
   )
 
   use SpandexPhoenix

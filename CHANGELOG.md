@@ -29,6 +29,7 @@
 
 ### Chore
 
+- [#6325](https://github.com/blockscout/blockscout/pull/6325) - Set http_only attribute of account authorization cookie to false
 - [#6240](https://github.com/blockscout/blockscout/pull/6240) - Elixir 1.14 support
 - [#6204](https://github.com/blockscout/blockscout/pull/6204) - Refactor contract libs render, CONTRACT_VERIFICATION_MAX_LIBRARIES, refactor parsing integer env vars in config
 - [#6195](https://github.com/blockscout/blockscout/pull/6195) - Docker compose configs improvements: Redis container name and persistent storage
