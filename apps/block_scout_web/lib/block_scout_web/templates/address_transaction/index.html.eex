@@ -1,4 +1,4 @@
-<% txs_limit = Chain.limit_showing_address_transaсtions() %>
+<% txs_limit = Chain.limit_showing_address_transactions() %>
 <section class="container">
 
   <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>

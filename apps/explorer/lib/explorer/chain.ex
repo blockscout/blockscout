@@ -94,7 +94,7 @@ defmodule Explorer.Chain do
 
   @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
-  @limit_showing_address_transaсtions 50_000
+  @limit_showing_address_transactions 50_000
   @default_page_size 50
   # seconds
   @check_bytecode_interval 86_400
@@ -353,11 +353,11 @@ defmodule Explorer.Chain do
     Transaction
     |> Transaction.not_dropped_or_replaced_transacions()
     |> Transaction.matching_address_query(direction, address_hash)
-    |> limit(^@limit_showing_address_transaсtions)
+    |> limit(^@limit_showing_address_transactions)
     |> Repo.aggregate(:count, :hash)
   end
 
-  def limit_showing_address_transaсtions, do: @limit_showing_address_transaсtions
+  def limit_showing_address_transactions, do: @limit_showing_address_transactions
 
   def address_to_transactions_without_rewards(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -920,6 +920,17 @@ defmodule Explorer.Chain do
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
+  @spec address_hash_to_transaction_count(Hash.Address.t()) :: non_neg_integer()
+  def address_hash_to_transaction_count(address_hash) do
+    query =
+      from(
+        transaction in Transaction,
+        where: transaction.to_address_hash == ^address_hash or transaction.from_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(query, :count, :hash, timeout: :infinity)
+  end
+
   @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_incoming_transaction_gas_usage(address_hash) do
     to_address_query =
@@ -1120,34 +1131,51 @@ defmodule Explorer.Chain do
   Checks to see if the chain is down indexing based on the transaction from the
   oldest block and the `fetch_internal_transactions` pending operation
   """
-  @spec finished_indexing?() :: boolean()
-  def finished_indexing? do
-    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
-    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+  @spec finished_internal_transactions_indexing?() :: boolean()
+  def finished_internal_transactions_indexing? do
+    internal_transactions_disabled? = System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
 
-    if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
+    if internal_transactions_disabled? do
       true
     else
-      with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
-           min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
-        min_block_number =
-          min_block_number
-          |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
-          |> Decimal.to_integer()
+      json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-        query =
-          from(
-            block in Block,
-            join: pending_ops in assoc(block, :pending_operations),
-            where: pending_ops.fetch_internal_transactions,
-            where: block.consensus and block.number == ^min_block_number
-          )
-
-        !Repo.exists?(query)
+      if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
+        true
       else
-        {:transactions_exist, false} -> true
-        nil -> false
+        with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
+             min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
+          min_block_number =
+            min_block_number
+            |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
+            |> Decimal.to_integer()
+
+          query =
+            from(
+              b in Block,
+              join: pending_ops in assoc(b, :pending_operations),
+              where: pending_ops.fetch_internal_transactions,
+              where: b.consensus and b.number == ^min_block_number
+            )
+
+          !Repo.exists?(query)
+        else
+          {:transactions_exist, false} -> true
+          nil -> false
+        end
       end
+    end
+  end
+
+  @doc """
+  Checks if indexing of blocks and internal transactions finished aka full indexing
+  """
+  @spec finished_indexing?(Decimal.t()) :: boolean()
+  def finished_indexing?(indexed_ratio) do
+    case Decimal.compare(indexed_ratio, 1) do
+      :lt -> false
+      _ -> Chain.finished_internal_transactions_indexing?()
     end
   end
 
@@ -1404,7 +1432,7 @@ defmodule Explorer.Chain do
 
       _ ->
         case Integer.parse(term) do
-          {block_number, _} ->
+          {block_number, ""} ->
             from(block in Block,
               where: block.number == ^block_number,
               select: %{
@@ -1426,7 +1454,9 @@ defmodule Explorer.Chain do
     end
   end
 
-  def joint_search(paging_options, offset, string) do
+  def joint_search(paging_options, offset, raw_string) do
+    string = String.trim(raw_string)
+
     case prepare_search_term(string) do
       {:some, term} ->
         tokens_query = search_token_query(term)
@@ -2016,14 +2046,22 @@ defmodule Explorer.Chain do
   def indexed_ratio do
     %{min: min, max: max} = BlockNumber.get_all()
 
+    min_blockchain_block_number =
+      case Integer.parse(Application.get_env(:indexer, :first_block)) do
+        {block_number, _} -> block_number
+        _ -> 0
+      end
+
     case {min, max} do
       {0, 0} ->
         Decimal.new(0)
 
       _ ->
-        result = Decimal.div(max - min + 1, max + 1)
+        result = Decimal.div(max - min + 1, max - min_blockchain_block_number + 1)
 
-        Decimal.round(result, 2, :down)
+        result
+        |> Decimal.round(2, :down)
+        |> Decimal.min(Decimal.new(1))
     end
   end
 
@@ -2385,17 +2423,7 @@ defmodule Explorer.Chain do
 
   @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
   def address_to_transaction_count(address) do
-    if contract?(address) do
-      incoming_transaction_count = address_to_incoming_transaction_count(address.hash)
-
-      if incoming_transaction_count == 0 do
-        total_transactions_sent_by_address(address.hash)
-      else
-        incoming_transaction_count
-      end
-    else
-      total_transactions_sent_by_address(address.hash)
-    end
+    address_hash_to_transaction_count(address.hash)
   end
 
   @spec address_to_token_transfer_count(Address.t()) :: non_neg_integer()
@@ -5635,7 +5663,7 @@ defmodule Explorer.Chain do
   defp boolean_to_check_result(false), do: :not_found
 
   @doc """
-  Fetches the first trace from the Parity trace URL.
+  Fetches the first trace from the Nethermind trace URL.
   """
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
     case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do

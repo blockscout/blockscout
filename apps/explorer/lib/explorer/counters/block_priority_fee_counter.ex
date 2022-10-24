@@ -9,7 +9,7 @@ defmodule Explorer.Counters.BlockPriorityFeeCounter do
 
   @cache_name :block_priority_fee_counter
 
-  config = Application.get_env(:explorer, Explorer.Counters.BlockPriorityFeeCounter)
+  config = Application.compile_env(:explorer, Explorer.Counters.BlockPriorityFeeCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

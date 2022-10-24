@@ -3,7 +3,12 @@ version: '3.8'
 services:
   redis_db:
     image: 'redis:alpine'
+    ports:
+      - 6379:6379
+    container_name: redis_db
     command: redis-server
+    volumes:
+      - ./redis-data:/data
 
   db:
     image: postgres:14
@@ -26,7 +31,6 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
       args:
-        COIN: ""
         CACHE_EXCHANGE_RATES_PERIOD: ""
         DISABLE_READ_API: "false"
         API_PATH: "/"

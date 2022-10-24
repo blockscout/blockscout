@@ -135,7 +135,7 @@ defmodule EthereumJSONRPC.Log do
         "type" => "mined"
       }
 
-  Geth and Parity >= 1.11.4 includes a `"removed"` key
+  Geth includes a `"removed"` key
 
       iex> EthereumJSONRPC.Log.to_elixir(
       ...>   %{

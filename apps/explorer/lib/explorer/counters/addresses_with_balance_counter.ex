@@ -26,7 +26,7 @@ defmodule Explorer.Counters.AddressesWithBalanceCounter do
   # finish before a test ends, that test will fail. This way, hundreds of
   # tests were failing before disabling the consolidation and the scheduler in
   # the test env.
-  config = Application.get_env(:explorer, Explorer.Counters.AddressesWithBalanceCounter)
+  config = Application.compile_env(:explorer, Explorer.Counters.AddressesWithBalanceCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @update_interval_in_seconds Keyword.get(config, :update_interval_in_seconds)
