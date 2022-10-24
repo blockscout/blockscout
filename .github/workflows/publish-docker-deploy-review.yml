@@ -58,7 +58,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.NEXT_RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout:review-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
@@ -82,7 +82,7 @@ jobs:
   #     appNamespace: review-blockscout-$GITHUB_REF_SLUG
   #     blockscoutIngressHost: bs-blockscout
   #     frontendIngressHost: bs-blockscout
-  #     blockscoutImage: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
+  #     blockscoutImage: blockscout/blockscout:review-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
   #     gethIngressHost: bs-geth
   #     scVerifierIngressHost: bs-sc-verifier
   #   secrets: inherit
