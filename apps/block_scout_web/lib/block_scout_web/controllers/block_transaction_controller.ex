@@ -32,7 +32,10 @@ defmodule BlockScoutWeb.BlockTransactionController do
                 :block => :optional,
                 [created_contract_address: :names] => :optional,
                 [from_address: :names] => :required,
-                [to_address: :names] => :optional
+                [to_address: :names] => :optional,
+                [created_contract_address: :smart_contract] => :optional,
+                [from_address: :smart_contract] => :optional,
+                [to_address: :smart_contract] => :optional
               }
             ],
             put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true)

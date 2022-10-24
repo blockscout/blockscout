@@ -11,7 +11,7 @@ config :explorer, Explorer.Repo,
   password: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
-  ownership_timeout: :timer.minutes(3),
+  ownership_timeout: :timer.minutes(7),
   timeout: :timer.seconds(60),
   queue_target: 1000,
   # deactivate ecto logs for test output

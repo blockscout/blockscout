@@ -38,8 +38,10 @@ defmodule Indexer.Transform.CeloAccounts do
 
   defp get_rates(logs, oracle_address) do
     logs
-    |> Enum.filter(fn log -> log.address_hash == oracle_address end)
-    |> Enum.filter(fn log -> log.first_topic == Events.oracle_reported_event() end)
+    |> Enum.filter(fn log ->
+      log.address_hash == oracle_address &&
+        log.first_topic == Events.oracle_reported_event()
+    end)
     |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
   end
 

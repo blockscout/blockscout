@@ -55,7 +55,6 @@ RUN cd apps/explorer/ && \
 # Add app code
 ADD . .
 
-ARG COIN
 ARG DISABLE_WRITE_API="false"
 ARG DISABLE_INDEXER="false"
 ARG DISABLE_WEBAPP="false"
@@ -70,7 +69,11 @@ ENV DISABLE_WRITE_API=${DISABLE_WRITE_API} \
     SOURCIFY_SERVER_URL=${SOURCIFY_SERVER_URL} \
     SOURCIFY_REPO_URL=${SOURCIFY_REPO_URL}
 
-RUN if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
+RUN if [ "$COIN" != "" ]; then \
+        sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
+        sed -i '/msgid "Ether"/{n;s/msgstr ""/msgstr "${COIN}"/g}' apps/block_scout_web/priv/gettext/default.pot; \
+        sed -i '/msgid "Ether"/{n;s/msgstr ""/msgstr "${COIN}"/g}' apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
+    fi
 
 # Invalidate cache via modifying build args on compilation
 ARG FORCE_MIX_COMPILE_CACHE_MISS

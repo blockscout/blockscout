@@ -9,32 +9,7 @@
           [],
           fn f -> %>
 
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :address_hash, gettext("Contract Address") %>
-              <div class="center-column">
-                <%= text_input f, :address_hash, id: "smart_contract_address_hash", class: "form-control border-rounded", "aria-describedby": "contract-address-help-block", readonly: String.length(@address_hash) > 0 %>
-                <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
-
-                <%= if Chain.smart_contract_verified?(@address_hash) do %>
-                  <div id="message-address-verified">
-                      <%=
-                        link(
-                          gettext("Contract is already verified"),
-                          class: "alert-link",
-                          to: address_contract_path(@conn, :index, @address_hash)
-                          )
-                      %>
-                  </div>
-                <% else %>
-                  <div id= "message-address-verified" hidden="true">
-                    <a id= "message-link" class= "alert-link"> Contract is already verified</a>
-                  </div>
-                <% end %>
-              </div>
-              <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
-            </div>
-          </div>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f, is_verified: Chain.smart_contract_verified?(@address_hash) %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">

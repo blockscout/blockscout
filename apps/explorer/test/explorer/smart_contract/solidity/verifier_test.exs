@@ -70,7 +70,10 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
       contract_code_info: contract_code_info
     } do
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
-      insert(:transaction, created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => contract_code_info.source_code,
@@ -99,7 +102,10 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
       tx_input = contract_data["tx_input"]
 
       contract_address = insert(:contract_address, contract_code: "0x" <> expected_bytecode)
-      insert(:transaction, created_contract_address_hash: contract_address.hash, input: "0x" <> tx_input)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: "0x" <> tx_input)
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => contract,
@@ -134,6 +140,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: "0x" <> input
       )
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => contract,
@@ -167,7 +174,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: contract_code_info.tx_input <> constructor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
       assert abi != nil
@@ -186,7 +193,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: bytecode <> constructor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       code = """
       pragma solidity ^0.4.15;
@@ -223,7 +230,10 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "0x610102610026600b82828239805160001a60731461001957fe5b30600052607381538281f3fe730000000000000000000000000000000000000000301460806040526004361060335760003560e01c8063c2985578146038575b600080fd5b603e60b0565b6040805160208082528351818301528351919283929083019185019080838360005b8381101560765781810151838201526020016060565b50505050905090810190601f16801560a25780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b604080518082019091526003815262666f6f60e81b60208201529056fea265627a7a7231582079c18e1f9cf2812147d15e5d44f16ff748f8b7349d32dc9db50300a3ffbd3a9664736f6c634300050b0032"
 
       contract_address = insert(:contract_address, contract_code: bytecode)
-      insert(:transaction, created_contract_address_hash: contract_address.hash, input: bytecode)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: bytecode)
+      |> with_block(status: :ok)
 
       code = """
       pragma solidity 0.5.11;
@@ -267,7 +277,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: input <> constructor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => contract,
@@ -283,55 +293,58 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
     end
 
     # flaky test
-    # test "returns error when bytecode doesn't match", %{contract_code_info: contract_code_info} do
-    #   contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
-    #   insert(:transaction, created_contract_address_hash: contract_address.hash)
+    test "returns error when bytecode doesn't match", %{contract_code_info: contract_code_info} do
+      contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
 
-    #   different_code = "pragma solidity ^0.4.24; contract SimpleStorage {}"
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash)
+      |> with_block(status: :ok)
 
-    #   params = %{
-    #     "contract_source_code" => different_code,
-    #     "compiler_version" => contract_code_info.version,
-    #     "evm_version" => "default",
-    #     "name" => contract_code_info.name,
-    #     "optimization" => contract_code_info.optimized
-    #   }
+      different_code = "pragma solidity ^0.4.24; contract SimpleStorage {}"
 
-    #   response = Verifier.evaluate_authenticity(contract_address.hash, params)
+      params = %{
+        "contract_source_code" => different_code,
+        "compiler_version" => contract_code_info.version,
+        "evm_version" => "default",
+        "name" => contract_code_info.name,
+        "optimization" => contract_code_info.optimized
+      }
 
-    #   assert {:error, :generated_bytecode} = response
-    # end
+      response = Verifier.evaluate_authenticity(contract_address.hash, params)
+
+      assert {:error, :generated_bytecode} = response
+    end
 
     # flaky test
-    # test "returns error when contract has constructor arguments and they were not provided" do
-    #   path = File.cwd!() <> "/test/support/fixture/smart_contract/solidity_0.5.9_smart_contract.sol"
-    #   contract = File.read!(path)
+    test "returns error when contract has constructor arguments and they were not provided" do
+      path = File.cwd!() <> "/test/support/fixture/smart_contract/solidity_0.5.9_smart_contract.sol"
+      contract = File.read!(path)
 
-    #   constructor_arguments = ""
+      constructor_arguments = ""
 
-    #   bytecode =
-    #     "0x608060405234801561001057600080fd5b50600436106100a95760003560e01c80633177029f116100715780633177029f1461025f57806354fd4d50146102c557806370a082311461034857806395d89b41146103a0578063a9059cbb14610423578063dd62ed3e14610489576100a9565b806306fdde03146100ae578063095ea7b31461013157806318160ddd1461019757806323b872dd146101b5578063313ce5671461023b575b600080fd5b6100b6610501565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156100f65780820151818401526020810190506100db565b50505050905090810190601f1680156101235780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b61017d6004803603604081101561014757600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019092919050505061059f565b604051808215151515815260200191505060405180910390f35b61019f610691565b6040518082815260200191505060405180910390f35b610221600480360360608110156101cb57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610696565b604051808215151515815260200191505060405180910390f35b61024361090f565b604051808260ff1660ff16815260200191505060405180910390f35b6102ab6004803603604081101561027557600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610922565b604051808215151515815260200191505060405180910390f35b6102cd610a14565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561030d5780820151818401526020810190506102f2565b50505050905090810190601f16801561033a5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b61038a6004803603602081101561035e57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610ab2565b6040518082815260200191505060405180910390f35b6103a8610afa565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156103e85780820151818401526020810190506103cd565b50505050905090810190601f1680156104155780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b61046f6004803603604081101561043957600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610b98565b604051808215151515815260200191505060405180910390f35b6104eb6004803603604081101561049f57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610cfe565b6040518082815260200191505060405180910390f35b60038054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156105975780601f1061056c57610100808354040283529160200191610597565b820191906000526020600020905b81548152906001019060200180831161057a57829003601f168201915b505050505081565b600081600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055508273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925846040518082815260200191505060405180910390a36001905092915050565b600090565b6000816000808673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205410158015610762575081600160008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205410155b801561076e5750600082115b1561090357816000808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008282540192505081905550816000808673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254039250508190555081600160008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825403925050819055508273ffffffffffffffffffffffffffffffffffffffff168473ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef846040518082815260200191505060405180910390a360019050610908565b600090505b9392505050565b600460009054906101000a900460ff1681565b600081600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055508273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925846040518082815260200191505060405180910390a36001905092915050565b60068054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015610aaa5780601f10610a7f57610100808354040283529160200191610aaa565b820191906000526020600020905b815481529060010190602001808311610a8d57829003601f168201915b505050505081565b60008060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b60058054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015610b905780601f10610b6557610100808354040283529160200191610b90565b820191906000526020600020905b815481529060010190602001808311610b7357829003601f168201915b505050505081565b6000816000803373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205410158015610be85750600082115b15610cf357816000803373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008282540392505081905550816000808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055508273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef846040518082815260200191505060405180910390a360019050610cf8565b600090505b92915050565b6000600160008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205490509291505056fea265627a7a72305820fe0ba5210ac95870683c2cb054304b04565703bd16c7d7e956df694c9643c6d264736f6c63430005090032"
+      bytecode =
+        "0x608060405234801561001057600080fd5b50600436106100a95760003560e01c80633177029f116100715780633177029f1461025f57806354fd4d50146102c557806370a082311461034857806395d89b41146103a0578063a9059cbb14610423578063dd62ed3e14610489576100a9565b806306fdde03146100ae578063095ea7b31461013157806318160ddd1461019757806323b872dd146101b5578063313ce5671461023b575b600080fd5b6100b6610501565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156100f65780820151818401526020810190506100db565b50505050905090810190601f1680156101235780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b61017d6004803603604081101561014757600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019092919050505061059f565b604051808215151515815260200191505060405180910390f35b61019f610691565b6040518082815260200191505060405180910390f35b610221600480360360608110156101cb57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610696565b604051808215151515815260200191505060405180910390f35b61024361090f565b604051808260ff1660ff16815260200191505060405180910390f35b6102ab6004803603604081101561027557600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610922565b604051808215151515815260200191505060405180910390f35b6102cd610a14565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561030d5780820151818401526020810190506102f2565b50505050905090810190601f16801561033a5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b61038a6004803603602081101561035e57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610ab2565b6040518082815260200191505060405180910390f35b6103a8610afa565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156103e85780820151818401526020810190506103cd565b50505050905090810190601f1680156104155780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b61046f6004803603604081101561043957600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610b98565b604051808215151515815260200191505060405180910390f35b6104eb6004803603604081101561049f57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610cfe565b6040518082815260200191505060405180910390f35b60038054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156105975780601f1061056c57610100808354040283529160200191610597565b820191906000526020600020905b81548152906001019060200180831161057a57829003601f168201915b505050505081565b600081600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055508273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925846040518082815260200191505060405180910390a36001905092915050565b600090565b6000816000808673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205410158015610762575081600160008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205410155b801561076e5750600082115b1561090357816000808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008282540192505081905550816000808673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254039250508190555081600160008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825403925050819055508273ffffffffffffffffffffffffffffffffffffffff168473ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef846040518082815260200191505060405180910390a360019050610908565b600090505b9392505050565b600460009054906101000a900460ff1681565b600081600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055508273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925846040518082815260200191505060405180910390a36001905092915050565b60068054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015610aaa5780601f10610a7f57610100808354040283529160200191610aaa565b820191906000526020600020905b815481529060010190602001808311610a8d57829003601f168201915b505050505081565b60008060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b60058054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015610b905780601f10610b6557610100808354040283529160200191610b90565b820191906000526020600020905b815481529060010190602001808311610b7357829003601f168201915b505050505081565b6000816000803373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205410158015610be85750600082115b15610cf357816000803373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008282540392505081905550816000808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055508273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef846040518082815260200191505060405180910390a360019050610cf8565b600090505b92915050565b6000600160008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205490509291505056fea265627a7a72305820fe0ba5210ac95870683c2cb054304b04565703bd16c7d7e956df694c9643c6d264736f6c63430005090032"
 
-    #   contract_address = insert(:contract_address, contract_code: bytecode)
+      contract_address = insert(:contract_address, contract_code: bytecode)
 
-    #   :transaction
-    #   |> insert(
-    #     created_contract_address_hash: contract_address.hash,
-    #     input: bytecode <> constructor_arguments
-    #   )
-    #   |> with_block()
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode <> constructor_arguments
+      )
+      |> with_block(status: :ok)
 
-    #   params = %{
-    #     "contract_source_code" => contract,
-    #     "compiler_version" => "v0.5.9+commit.e560f70d",
-    #     "evm_version" => "petersburg",
-    #     "name" => "TestToken",
-    #     "optimization" => false,
-    #     "constructor_arguments" => constructor_arguments
-    #   }
+      params = %{
+        "contract_source_code" => contract,
+        "compiler_version" => "v0.5.9+commit.e560f70d",
+        "evm_version" => "petersburg",
+        "name" => "TestToken",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
 
-    #   assert {:error, :generated_bytecode} = Verifier.evaluate_authenticity(contract_address.hash, params)
-    # end
+      assert {:error, :generated_bytecode} = Verifier.evaluate_authenticity(contract_address.hash, params)
+    end
 
     test "returns error when there is a compilation problem", %{contract_code_info: contract_code_info} do
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
@@ -396,7 +409,10 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "0x60e06040523360601b60c05234801561001757600080fd5b5060405161013f38038061013f8339818101604052604081101561003a57600080fd5b50805160209091015160808290526001600160a01b03163160a081905260c05160601c60cc6100736000395080606652505060cc6000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063fb49908514602d575b600080fd5b605060048036036020811015604157600080fd5b50356001600160a01b03166064565b604080519115158252519081900360200190f35b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b038216311191905056fea2646970667358221220b4fbf35809f2d1b85699a897ebb75d00c8c26b29b72decc53db18ddbd853352164736f6c63430006070033000000000000000000000000000000000000000000000000000000000000000100000000000000000000000023602745048d3b8d0a7f953ad444da4cd237ac83"
 
       contract_address = insert(:contract_address, contract_code: bytecode)
-      insert(:transaction, created_contract_address_hash: contract_address.hash, input: tx_input)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: tx_input)
+      |> with_block(status: :ok)
 
       code = """
       pragma solidity >0.6.4 <0.7.0;
@@ -560,33 +576,33 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
 
   describe "compiler version tests" do
     # flaky test
-    # test "verification is failed if wrong version of compiler" do
-    #   bytecode_0_5_10 =
-    #     "0x608060405234801561001057600080fd5b506040516102453803806102458339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101a98061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820fb47165501c50aae8ccb0394b15f4302606e0ba55eb6d59fe12eca19ba494d5e64736f6c634300050a0032"
+    test "verification is failed if wrong version of compiler" do
+      bytecode_0_5_10 =
+        "0x608060405234801561001057600080fd5b506040516102453803806102458339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101a98061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820fb47165501c50aae8ccb0394b15f4302606e0ba55eb6d59fe12eca19ba494d5e64736f6c634300050a0032"
 
-    #   constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
-    #   contract_address = insert(:contract_address, contract_code: bytecode_0_5_10)
-    #   bytecode_construtor_arguments = "#{bytecode_0_5_10}#{constructor_arguments}"
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_10)
+      bytecode_construtor_arguments = "#{bytecode_0_5_10}#{constructor_arguments}"
 
-    #   :transaction
-    #   |> insert(
-    #     created_contract_address_hash: contract_address.hash,
-    #     input: bytecode_construtor_arguments
-    #   )
-    #   |> with_block()
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block(status: :ok)
 
-    #   params = %{
-    #     "contract_source_code" => @code_0_5,
-    #     "compiler_version" => "v0.5.11+commit.c082d0b4",
-    #     "evm_version" => "homestead",
-    #     "name" => "Incrementer",
-    #     "optimization" => false,
-    #     "constructor_arguments" => constructor_arguments
-    #   }
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.11+commit.c082d0b4",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
 
-    #   response = Verifier.evaluate_authenticity(contract_address.hash, params)
-    #   assert {:error, :compiler_version} = response
-    # end
+      response = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert {:error, :compiler_version} = response
+    end
 
     test "verification is successful if proper version of compiler" do
       bytecode_0_5_10 =
@@ -601,7 +617,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: bytecode_construtor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => @code_0_5,
@@ -631,7 +647,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: bytecode_construtor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => @code_0_4,
@@ -659,7 +675,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: bytecode_construtor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => @code_0_5,
@@ -687,7 +703,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: bytecode_construtor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => @code_0_5,
@@ -715,7 +731,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: bytecode_construtor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => @code_0_5,
@@ -743,7 +759,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         created_contract_address_hash: contract_address.hash,
         input: bytecode_construtor_arguments
       )
-      |> with_block()
+      |> with_block(status: :ok)
 
       params = %{
         "contract_source_code" => @code_0_6,

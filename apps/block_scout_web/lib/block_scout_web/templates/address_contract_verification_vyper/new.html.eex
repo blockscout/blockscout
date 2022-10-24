@@ -15,9 +15,9 @@
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name.", contract_name_value: contract_name_value %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code.", contract_name_value: contract_name_value %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions, tooltip: "" %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
@@ -31,6 +31,10 @@
         </div>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: "block" %>
+
+        <div class="d-none">
+          <input type="text" id="verification_type" name="verification_type" value="vyper" />
+        </div>
 
         <div class="smart-contract-form-buttons">
           <button

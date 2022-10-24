@@ -89,7 +89,17 @@ function renderValidationErrors (errors) {
     const { field, message } = error
     const fieldName = field.replaceAll('_', '-')
 
-    $(`<span class="text-danger form-error" data-test="${fieldName}-error" id="${fieldName}-help-block">${message}</span>`).insertAfter(`[name="smart_contract[${field}]"]`)
+    const $errorMessageNode = $(`<span class="text-danger form-error" data-test="${fieldName}-error" id="${fieldName}-help-block">${message}</span>`)
+
+    const erroredFieldNode = document.querySelector(`[name="smart_contract[${field}]"]`)
+    const groupNodes = document.querySelectorAll('.smart-contract-form-group')
+
+    if (erroredFieldNode) {
+      $errorMessageNode.insertAfter(`[name="smart_contract[${field}]"]`)
+    } else if (groupNodes.length > 0) {
+      // dropzone doesn't have an input, needs to be handled differently
+      groupNodes[groupNodes.length - 1].appendChild($errorMessageNode.get('0'))
+    }
   })
 }
 
@@ -129,13 +139,17 @@ const $contractVerificationPage = $('[data-page="contract-verification"]')
 const $contractVerificationChooseTypePage = $('[data-page="contract-verification-choose-type"]')
 
 if ($contractVerificationPage.length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
   const $form = $contractVerificationPage.find('form')
 
-  $form.on('submit', (e) => {
-    e.preventDefault() // avoid to execute the actual submit of the form.
+  $form.on('submit', (event) => {
+    event.preventDefault() // avoid to execute the actual submit of the form.
 
     if ($form.get(0).checkValidity() === false) {
       return false
@@ -169,38 +183,67 @@ if ($contractVerificationPage.length) {
   }))
 
   $(function () {
-    if ($('#metadata-json-dropzone').length) {
-      const dropzone = new Dropzone('#metadata-json-dropzone', {
+    function standardJSONBehavior () {
+      $('#standard-json-dropzone-form').removeClass('dz-clickable')
+      this.on('addedfile', function (_file) {
+        $('#verify-via-standard-json-input-submit').prop('disabled', false)
+        clearValidationErrors()
+        $('#file-help-block').text('')
+        $('#dropzone-previews').addClass('dz-started')
+      })
+
+      this.on('removedfile', function (_file) {
+        if (this.files.length === 0) {
+          $('#verify-via-standard-json-input-submit').prop('disabled', true)
+          $('#dropzone-previews').removeClass('dz-started')
+        }
+      })
+    }
+
+    function metadataJSONBehavior () {
+      $('#metadata-json-dropzone-form').removeClass('dz-clickable')
+      this.on('addedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+        clearValidationErrors()
+        $('#file-help-block').text('')
+        $('#dropzone-previews').addClass('dz-started')
+      })
+
+      this.on('removedfile', function (_file) {
+        changeVisibilityOfVerifyButton(this.files.length)
+        if (this.files.length === 0) {
+          $('#dropzone-previews').removeClass('dz-started')
+        }
+      })
+    }
+
+    const $jsonDropzoneMetadata = $('#metadata-json-dropzone-form')
+
+    if ($jsonDropzoneMetadata.length) {
+      const func = $jsonDropzoneMetadata.length ? metadataJSONBehavior : standardJSONBehavior
+      const maxFiles = $jsonDropzoneMetadata.length ? 100 : 1
+      const acceptedFiles = $jsonDropzoneMetadata.length ? 'text/plain,application/json,.sol,.json' : 'text/plain,application/json,.json'
+      const tag = $jsonDropzoneMetadata.length ? '#metadata-json-dropzone-form' : '#standard-json-dropzone-form'
+      const jsonVerificationType = $jsonDropzoneMetadata.length ? 'json:metadata' : 'json:standard'
+
+      const dropzone = new Dropzone(tag, {
         autoProcessQueue: false,
-        acceptedFiles: 'text/plain,application/json,.sol,.json',
+        acceptedFiles,
         parallelUploads: 100,
         uploadMultiple: true,
         addRemoveLinks: true,
-        maxFilesize: 20,
+        maxFilesize: 10,
+        maxFiles,
         headers: {
           Accept: '*/*'
         },
-        params: { address_hash: $('#smart_contract_address_hash').val() },
-        init: function () {
-          this.on('addedfile', function (_file) {
-            changeVisibilityOfVerifyButton(this.files.length)
-            clearValidationErrors()
-          })
-
-          this.on('removedfile', function (_file) {
-            changeVisibilityOfVerifyButton(this.files.length)
-          })
-        },
-        success: function (file, response) {
-          file.status = Dropzone.QUEUED
-        },
-        error: function (file, errorMessage, xhr) {
-          file.status = Dropzone.QUEUED
-        }
+        previewsContainer: '#dropzone-previews',
+        params: { address_hash: $('#smart_contract_address_hash').val(), verification_type: jsonVerificationType },
+        init: func
       })
 
-      $('#verify-via-json-submit').on('click', function (e) {
-        e.preventDefault()
+      $('#verify-via-metadata-json-submit').on('click', (event) => {
+        event.preventDefault()
 
         if (dropzone.files.length === 0) {
           return
@@ -212,7 +255,7 @@ if ($contractVerificationPage.length) {
     }
 
     function changeVisibilityOfVerifyButton (filesLength) {
-      document.getElementById('verify-via-json-submit').disabled = (filesLength === 0)
+      document.getElementById('verify-via-metadata-json-submit').disabled = (filesLength === 0)
     }
 
     $('.js-smart-contract-form-reset').on('click', function () {

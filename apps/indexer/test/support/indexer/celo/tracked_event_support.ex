@@ -30,7 +30,8 @@ defmodule Indexer.Celo.TrackedEventSupport do
       name: contract_code_info.name,
       contract_source_code: contract_code_info.source_code,
       optimization: contract_code_info.optimized,
-      abi: contract_code_info.abi
+      abi: contract_code_info.abi,
+      contract_code_md5: "123"
     }
     |> insert()
   end

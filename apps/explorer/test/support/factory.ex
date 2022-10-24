@@ -42,6 +42,8 @@ defmodule Explorer.Factory do
     StakingPoolsDelegator
   }
 
+  alias Explorer.SmartContract.Helper
+
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -631,13 +633,16 @@ defmodule Explorer.Factory do
   def smart_contract_factory do
     contract_code_info = contract_code_info()
 
+    bytecode_md5 = Helper.contract_code_md5(contract_code_info.bytecode)
+
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
       compiler_version: contract_code_info.version,
       name: contract_code_info.name,
       contract_source_code: contract_code_info.source_code,
       optimization: contract_code_info.optimized,
-      abi: contract_code_info.abi
+      abi: contract_code_info.abi,
+      contract_code_md5: bytecode_md5
     }
   end
 

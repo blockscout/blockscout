@@ -1,9 +1,25 @@
 <div class="smart-contract-form-group">
     <div class="smart-contract-form-group-inner-wrapper">
-        <label for="smart_contract_address_hash"><%= gettext("Contract Address") %></label>
-        <div class="center-column">
-            <input aria-describedby="contract-address-help-block" class="form-control border-rounded" id="smart_contract_address_hash" name="smart_contract[address_hash]" type="text" value=<%= @address_hash %> readonly="">
+    <%= label @f, :address_hash, gettext("Contract Address") %>
+    <div class="center-column">
+        <%= text_input @f, :address_hash, class: "form-control border-rounded", id: "smart_contract_address_hash", "aria-describedby": "contract-address-help-block", readonly: true %>
+        <%= error_tag @f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
+    </div>
+    <%= if assigns[:is_verified] && @is_verified do %>
+        <div id="message-address-verified">
+            <%=
+            link(
+                gettext("Contract is already verified"),
+                class: "alert-link",
+                to: address_contract_path(@conn, :index, @address_hash)
+                )
+            %>
         </div>
-        <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
+    <% else %>
+        <div id= "message-address-verified" hidden="true">
+            <a id= "message-link" class= "alert-link"> Contract is already verified</a>
+        </div>
+    <% end %>
+    <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
     </div>
 </div>

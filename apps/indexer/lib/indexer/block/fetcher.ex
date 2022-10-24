@@ -168,7 +168,7 @@ defmodule Indexer.Block.Fetcher do
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
-             {step :: atom(), reason :: [%Ecto.Changeset{}] | term()}
+             {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}
              | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
   def fetch_and_import_range(
         %__MODULE__{
@@ -236,8 +236,9 @@ defmodule Indexer.Block.Fetcher do
          # extract cusd + CELO exchange rates from above
          market_history =
            exchange_rates
-           |> Enum.filter(fn el -> el.token == stable_token_usd end)
-           |> Enum.filter(fn el -> el.rate > 0 end)
+           |> Enum.filter(fn el ->
+             el.token == stable_token_usd && el.rate > 0
+           end)
            |> Enum.map(fn %{rate: rate, stamp: time} ->
              inv_rate = Decimal.from_float(1 / rate)
              date = DateTime.to_date(DateTime.from_unix!(time))

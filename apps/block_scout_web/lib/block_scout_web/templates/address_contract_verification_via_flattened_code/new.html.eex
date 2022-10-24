@@ -18,22 +18,13 @@
           [],
           fn f -> %>
 
-        <div class="smart-contract-form-group">
-          <div class="smart-contract-form-group-inner-wrapper">
-            <%= label f, :address_hash, gettext("Contract Address") %>
-            <div class="center-column">
-              <%= text_input f, :address_hash, class: "form-control border-rounded", "aria-describedby": "contract-address-help-block", readonly: true %>
-              <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger form-error" %>
-            </div>
-            <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
-          </div>
-        </div>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name.", contract_name_value: contract_name_value %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions, tooltip: "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
@@ -100,113 +91,41 @@
           <h2 class="smart-contract-title margin-bottom-md"><%= gettext "Contract Libraries" %></h2>
 
           <div class="contract-library-form-group js-contract-library-form-group active">
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library1, gettext("Library Name") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library1_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip">A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one.</div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html",
+              library: :library1,
+              library_name: :library1_name,
+              tooltip_text: "A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one."
+            %>
 
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library1, gettext("Library Address") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library1_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip">The 0x library address. This can be found in the generated json file or Truffle output (if using truffle).</div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html",
+              library: :library1,
+              library_address: :library1_address,
+              tooltip_text: "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
+            %>
           </div>
 
           <div class="contract-library-form-group js-contract-library-form-group">
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library2, gettext("Library Name") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library2_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library2, library_name: :library2_name %>
 
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library2, gettext("Library Address") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library2_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library2, library_address: :library2_address %>
           </div>
 
           <div class="contract-library-form-group js-contract-library-form-group">
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library3, gettext("Library Name") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library3_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library3, library_name: :library3_name %>
 
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library3, gettext("Library Address") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library3_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library3, library_address: :library3_address %>
           </div>
 
           <div class="contract-library-form-group js-contract-library-form-group">
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library4, gettext("Library Name") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library4_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library4, library_name: :library4_name %>
 
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library4, gettext("Library Address") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library4_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library4, library_address: :library4_address %>
           </div>
 
           <div class="contract-library-form-group js-contract-library-form-group">
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library5, gettext("Library Name") %>
-                <div class="center-column">
-                  <%= text_input :external_libraries, :library5_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_name.html", library: :library5, library_name: :library5_name %>
 
-            <div class="smart-contract-form-group">
-              <div class="smart-contract-form-group-inner-wrapper">
-                <%= label f, :library5, gettext("Library Address") %>
-                <div class="center-column">
-                  <%= text_input f, :library5_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-                </div>
-                <div class="smart-contract-form-group-tooltip"></div>
-              </div>
-            </div>
+            <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_library_address.html", library: :library5, library_address: :library5_address %>
           </div>
 
           <div class="add-contract-library-wrapper js-add-contract-library-wrapper">

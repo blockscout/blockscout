@@ -45,8 +45,7 @@ defmodule Explorer.SmartContract.Helper do
     types =
       event
       |> Map.get("inputs", [])
-      |> Enum.map(& &1["type"])
-      |> Enum.join(",")
+      |> Enum.map_join(",", & &1["type"])
 
     function_signature = "#{name}(#{types})"
 
@@ -108,5 +107,38 @@ defmodule Explorer.SmartContract.Helper do
             {:error, "No verified contract found at address #{address_string}"}
         end
     end
+  end
+
+  def add_contract_code_md5(%{address_hash: address_hash_string} = attrs) when is_binary(address_hash_string) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      contract_code_md5 = contract_code_md5(address.contract_code.bytes)
+
+      attrs
+      |> Map.put_new(:contract_code_md5, contract_code_md5)
+    else
+      _ -> attrs
+    end
+  end
+
+  def add_contract_code_md5(%{address_hash: address_hash} = attrs) do
+    case Chain.hash_to_address(address_hash) do
+      {:ok, address} ->
+        contract_code_md5 = contract_code_md5(address.contract_code.bytes)
+
+        attrs
+        |> Map.put_new(:contract_code_md5, contract_code_md5)
+
+      _ ->
+        attrs
+    end
+  end
+
+  def add_contract_code_md5(attrs), do: attrs
+
+  def contract_code_md5(bytes) do
+    :md5
+    |> :crypto.hash(bytes)
+    |> Base.encode16(case: :lower)
   end
 end

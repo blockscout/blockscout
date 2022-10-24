@@ -3,34 +3,27 @@
 
   <div class="new-smart-contract-form">
       <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
-
-      <div class="smart-contract-form-group">
-        <div class="smart-contract-form-group-inner-wrapper">
-          <label for="smart_contract_address_hash"><%= gettext("Contract Address") %></label>
-          <div class="center-column">
-            <input aria-describedby="contract-address-help-block" class="form-control border-rounded" id="smart_contract_address_hash" name="smart_contract[address_hash]" type="text" value=<%= @address_hash %> readonly="">
-          </div>
-          <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
-        </div>
-      </div>
+      <%= form_for @changeset,
+        address_verify_contract_via_json_path(@conn, :create, @address_hash),
+        [id: "metadata-json-dropzone-form"],
+        fn f -> %>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
 
       <div class="smart-contract-form-group">
         <div class="smart-contract-form-group-inner-wrapper">
         <label for="smart_contract_metadata_json"><%= gettext("Sources and Metadata JSON") %></label>
           <div class="center-column">
-            <%= form_for @changeset,
-            address_verify_contract_via_json_path(@conn, :create, @address_hash),
-            [class: "dropzone-1", name: "smart_contract[file]", style: "display: flex; margin: 0 auto;", id: "metadata-json-dropzone"],
-            fn f -> %>
+            <div class="dropzone-1 dropzone-previews" style="display: flex; margin: 0 auto;", id="dropzone-previews">
               <div style="text-align: center;">
-                <span class="dz-message btn-full-primary"><%= gettext("Drop sources and metadata JSON file or click here") %></span>
+                <span class="dz-message btn-full-primary" id="dz-button-message"><%= gettext("Drop sources and metadata JSON file or click here") %></span>
                 <%= error_tag f, :file, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
               </div>
-            <% end %>
+            </div>
           </div>
           <div class="smart-contract-form-group-tooltip">Drop all Solidity contract source files and JSON metadata file(s) created during contract compilation into the drop zone.</div>
         </div>
       </div>
+
       <div class="smart-contract-form-buttons">
         <button
           class="position-absolute w-118 btn-full-primary d-none mr-2"
@@ -41,7 +34,7 @@
         >
           <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
         </button>
-        <button id="verify-via-json-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
+        <button id="verify-via-metadata-json-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
         <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
         <%=
           link(
@@ -51,6 +44,7 @@
             )
         %>
       </div>
+      <% end %>
     </div>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>

@@ -1,6 +1,51 @@
 ## Current
 
 ### Features
+- [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
+- [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
+- [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
+
+### Fixes
+- [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
+- [#5381](https://github.com/blockscout/blockscout/pull/5381), [#5397](https://github.com/blockscout/blockscout/pull/5397) - Fix exchange rate broadcast error
+- [#5375](https://github.com/blockscout/blockscout/pull/5375) - Fix pending transactions fetcher
+- [#5374](https://github.com/blockscout/blockscout/pull/5374) - Return all ERC-1155's token instances in tokenList api endpoint
+- [#5342](https://github.com/blockscout/blockscout/pull/5342) - Fix 500 error on NF token page with nil metadata
+- [#5319](https://github.com/blockscout/blockscout/pull/5319), [#5357](https://github.com/blockscout/blockscout/pull/5357) - Empty blocks sanitizer performance improvement
+- [#5310](https://github.com/blockscout/blockscout/pull/5310) - Fix flash on reload in dark mode
+- [#5306](https://github.com/blockscout/blockscout/pull/5306) - Fix indexer bug
+- [#5300](https://github.com/blockscout/blockscout/pull/5300), [#5305](https://github.com/blockscout/blockscout/pull/5305) - Token instance page: general video improvements
+- [#5136](https://github.com/blockscout/blockscout/pull/5136) - Improve contract verification
+- [#5285](https://github.com/blockscout/blockscout/pull/5285) - Fix verified smart-contract bytecode twins feature
+- [#5269](https://github.com/blockscout/blockscout/pull/5269) - Address Page: Fix implementation address align
+- [#5264](https://github.com/blockscout/blockscout/pull/5264) - Fix bug with 500 response on `partial` sourcify status
+- [#5263](https://github.com/blockscout/blockscout/pull/5263) - Fix bug with name absence for contract
+- [#5259](https://github.com/blockscout/blockscout/pull/5259) - Fix `coin-balances/by-day` bug
+- [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
+
+### Chore
+- [#5368](https://github.com/blockscout/blockscout/pull/5368) - Refactoring from SourcifyFilePathBackfiller
+- [#5367](https://github.com/blockscout/blockscout/pull/5367) - Resolve Prototype Pollution in minimist dependency
+- [#5366](https://github.com/blockscout/blockscout/pull/5366) - Fix Vyper smart-contract verification form tooltips
+- [#5348](https://github.com/blockscout/blockscout/pull/5348) - Block data for Avalanche: pass blockExtraData param
+- [#5341](https://github.com/blockscout/blockscout/pull/5341) - Remove unused broadcasts
+- [#5318](https://github.com/blockscout/blockscout/pull/5318) - Eliminate Jquery import from chart-loader.js
+- [#5317](https://github.com/blockscout/blockscout/pull/5317) - NPM audit
+- [#5303](https://github.com/blockscout/blockscout/pull/5303) - Besu: revertReason support in trace
+- [#5301](https://github.com/blockscout/blockscout/pull/5301) - Allow specific block keys for sgb/ava
+- [#5295](https://github.com/blockscout/blockscout/pull/5295) - CI pipeline: build and push Docker image to Docker Hub on every release
+- [#5290](https://github.com/blockscout/blockscout/pull/5290) - Bump ex_doc from 0.25.2 to 0.28.2
+- [#5289](https://github.com/blockscout/blockscout/pull/5289) - Bump ex_abi from 1.5.9 to 1.5.11
+- [#5288](https://github.com/blockscout/blockscout/pull/5288) - Makefile: find exact container by name
+- [#5287](https://github.com/blockscout/blockscout/pull/5287) - Docker: modify native token symbol
+- [#5286](https://github.com/blockscout/blockscout/pull/5286) - Change namespace for one of the SmartContractViewTest test
+- [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
+
+
+## 4.1.2-beta
+
+### Features
+- [#5232](https://github.com/blockscout/blockscout/pull/5232) - Contract Read Page: Add functions overloading support
 - [#5220](https://github.com/blockscout/blockscout/pull/5220) - Add info about proxy contracts to api methods response
 - [#5200](https://github.com/blockscout/blockscout/pull/5200) - Docker-compose configuration
 - [#5105](https://github.com/blockscout/blockscout/pull/5105) - Redesign token page
@@ -9,6 +54,8 @@
 - [#6168](https://github.com/blockscout/blockscout/pull/6168) - Token instance fetcher checks instance owner and updates current token balance
 
 ### Fixes
+- [#5248](https://github.com/blockscout/blockscout/pull/5248) - Speedup query for getting verified smart-contract bytecode twin
+- [#5241](https://github.com/blockscout/blockscout/pull/5241) - Fix DB hostname Regex pattern
 - [#5216](https://github.com/blockscout/blockscout/pull/5216) - Add token-transfers-toggle.js to the `block_transaction/index.html.eex`
 - [#5212](https://github.com/blockscout/blockscout/pull/5212) - Fix `gas_used` value bug
 - [#5197](https://github.com/blockscout/blockscout/pull/5197) - Fix contract functions outputs
@@ -26,6 +73,7 @@
 - [#6090](https://github.com/blockscout/blockscout/pull/6090) - Fix metadata fetching for ERC-1155 tokens instances 
 
 ### Chore
+- [#5230](https://github.com/blockscout/blockscout/pull/5230) - Contract verification forms refactoring
 - [#5227](https://github.com/blockscout/blockscout/pull/5227) - Major update of css-loader npm package
 - [#5226](https://github.com/blockscout/blockscout/pull/5226) - Update mini-css-extract-plugin, css-minimizer-webpack-plugin packages
 - [#5224](https://github.com/blockscout/blockscout/pull/5224) - Webpack config refactoring
@@ -542,6 +590,7 @@
 - [#3335](https://github.com/blockscout/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#5240](https://github.com/blockscout/blockscout/pull/5240) - Managing invalidation of address coin balance cache
 - [#3450](https://github.com/blockscout/blockscout/pull/3450) - Replace window.web3 with window.ethereum
 - [#3446](https://github.com/blockscout/blockscout/pull/3446), [#3448](https://github.com/blockscout/blockscout/pull/3448) - Set infinity timeout and increase cache invalidation period for counters
 - [#3431](https://github.com/blockscout/blockscout/pull/3431) - Standardize token name definition, if name is empty

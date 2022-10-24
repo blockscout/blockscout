@@ -25,7 +25,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
   def perform({%{"address_hash" => address_hash} = params, json_input, uid}) when is_binary(uid) do
     VerificationStatus.insert_status(uid, :pending, address_hash)
 
-    case Publisher.publish_with_standart_json_input(params, json_input) do
+    case Publisher.publish_with_standard_json_input(params, json_input) do
       {:ok, _contract} ->
         VerificationStatus.update_status(uid, :pass)
 
@@ -36,7 +36,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
 
   def perform({%{"address_hash" => address_hash} = params, json_input, conn}) do
     result =
-      case Publisher.publish_with_standart_json_input(params, json_input) do
+      case Publisher.publish_with_standard_json_input(params, json_input) do
         {:ok, _contract} = result ->
           result
 

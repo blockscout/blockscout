@@ -206,7 +206,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     case Sourcify.get_metadata(address_hash_string) do
       {:ok, verification_metadata} ->
         %{"params_to_publish" => params_to_publish, "abi" => abi, "secondary_sources" => secondary_sources} =
-          VerificationController.parse_params_from_sourcify(address_hash_string, verification_metadata)
+          Sourcify.parse_params_from_sourcify(address_hash_string, verification_metadata)
 
         case publish_without_broadcast(%{
                "addressHash" => address_hash_string,
