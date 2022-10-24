@@ -104,7 +104,8 @@
         @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
         @view_module == Elixir.BlockScoutWeb.TransactionLogView ||
         @view_module == Elixir.BlockScoutWeb.TransactionRawTraceView ||
-        @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView
+        @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView ||
+        @view_module == Elixir.BlockScoutWeb.TransactionStateView
       ) -> %>
         <% to_address = @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
         <% {:ok, created_from_address} = if @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
@@ -245,6 +246,7 @@
       @view_module != Elixir.BlockScoutWeb.TransactionLogView &&
       @view_module != Elixir.BlockScoutWeb.TransactionRawTraceView &&
       @view_module != Elixir.BlockScoutWeb.TransactionTokenTransferView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionStateView &&
       @view_module != Elixir.BlockScoutWeb.AddressTransactionView &&
       @view_module != Elixir.BlockScoutWeb.AddressTokenTransferView &&
       @view_module != Elixir.BlockScoutWeb.AddressTokenView &&
