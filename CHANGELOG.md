@@ -14,6 +14,7 @@
 
 ### Fixes
 
+- [#6309](https://github.com/blockscout/blockscout/pull/6309) - Fix read contract bug and change address tx count
 - [#6303](https://github.com/blockscout/blockscout/pull/6303) - Fix some UI bugs
 - [#6243](https://github.com/blockscout/blockscout/pull/6243) - Fix freezes on `/blocks` page
 - [#6162](https://github.com/blockscout/blockscout/pull/6162) - Extend token symbol type varchar(255) -> text
