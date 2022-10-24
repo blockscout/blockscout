@@ -144,6 +144,11 @@ defmodule BlockScoutWeb.WebRouter do
         only: [:index],
         as: :token_transfer
       )
+
+      resources("/state", TransactionStateController,
+        only: [:index],
+        as: :state
+      )
     end
 
     resources("/accounts", AddressController, only: [:index])
