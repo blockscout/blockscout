@@ -198,7 +198,7 @@ msgid "Back to Watch list (Cancel)"
 msgstr ""
 
 #: lib/block_scout_web/templates/account/watchlist/show.html.eex:24
-#: lib/block_scout_web/templates/address/overview.html.eex:150
+#: lib/block_scout_web/templates/address/overview.html.eex:151
 #: lib/block_scout_web/templates/address_token/overview.html.eex:51
 #, elixir-autogen, elixir-format
 msgid "Balance"
@@ -682,7 +682,7 @@ msgstr ""
 msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
-#: lib/block_scout_web/templates/address/overview.html.eex:119
+#: lib/block_scout_web/templates/address/overview.html.eex:120
 #, elixir-autogen, elixir-format
 msgid "Error: Could not determine contract creator."
 msgstr ""
