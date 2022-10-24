@@ -30,6 +30,12 @@
         "data-test": "internal_transactions_tab_link",
         to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash)
       ) %>
+  <%= link(
+        gettext("Coin Balance History"),
+        class: "card-tab #{tab_status("coin-balances", @conn.request_path)}",
+        "data-test": "coin_balance_tab_link",
+        to: AccessHelpers.get_path(@conn, :address_coin_balance_path, :index, @address.hash)
+      ) %>
   <%= if Chain.check_if_logs_at_address(@address.hash) do %>
     <%= link(
         gettext("Logs"),

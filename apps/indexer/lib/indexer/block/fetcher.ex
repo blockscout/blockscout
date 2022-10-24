@@ -32,8 +32,8 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.{Prometheus, Tracer}
 
   alias Indexer.Transform.{
-    # AddressCoinBalances,
-    # AddressCoinBalancesDaily,
+    AddressCoinBalances,
+    AddressCoinBalancesDaily,
     Addresses,
     AddressTokenBalances,
     MintTransfers,
@@ -54,8 +54,8 @@ defmodule Indexer.Block.Fetcher do
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 addresses: Import.Runner.options(),
-                # address_coin_balances: Import.Runner.options(),
-                # address_coin_balances_daily: Import.Runner.options(),
+                address_coin_balances: Import.Runner.options(),
+                address_coin_balances_daily: Import.Runner.options(),
                 address_token_balances: Import.Runner.options(),
                 blocks: Import.Runner.options(),
                 block_second_degree_relations: Import.Runner.options(),
@@ -121,11 +121,6 @@ defmodule Indexer.Block.Fetcher do
         _.._ = range
       )
       when callback_module != nil do
-    # range_list = Enum.to_list(range)
-
-    # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-    #   Logger.info(["### fetch_and_import_range STARTED ", inspect(range), " ###"])
-    # end
     {fetch_time, fetched_blocks} =
       :timer.tc(fn -> EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments) end)
 
@@ -158,7 +153,7 @@ defmodule Indexer.Block.Fetcher do
          Logger.info("### BEFORE addresses CHANGESET ###"),
          addresses =
            Addresses.extract_addresses(%{
-             #  block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
+             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
@@ -166,35 +161,21 @@ defmodule Indexer.Block.Fetcher do
              transactions: transactions_with_receipts
            }),
          Logger.info("### BEFORE coin_balances_params_set CHANGESET ###"),
-         #  coin_balances_params_set =
-         #    %{
-         #      beneficiary_params: MapSet.to_list(beneficiary_params_set),
-         #      blocks_params: blocks,
-         #      logs_params: logs,
-         #      transactions_params: transactions_with_receipts
-         #    }
-         #    |> AddressCoinBalances.params_set(),
-         #  coin_balances_params_set =
-         #    %{
-         #      beneficiary_params: [],
-         #      blocks_params: [],
-         #      logs_params: [],
-         #      transactions_params: []
-         #    }
-         #    |> AddressCoinBalances.params_set(),
+         coin_balances_params_set =
+           %{
+             beneficiary_params: MapSet.to_list(beneficiary_params_set),
+             blocks_params: blocks,
+             logs_params: logs,
+             transactions_params: transactions_with_receipts
+           }
+           |> AddressCoinBalances.params_set(),
          Logger.info("### BEFORE coin_balances_params_daily_set CHANGESET ###"),
-         #  coin_balances_params_daily_set =
-         #    %{
-         #      coin_balances_params: coin_balances_params_set,
-         #      blocks: blocks
-         #    }
-         #    |> AddressCoinBalancesDaily.params_set(),
-         #  coin_balances_params_daily_set =
-         #    %{
-         #      coin_balances_params: coin_balances_params_set,
-         #      blocks: []
-         #    }
-         #    |> AddressCoinBalancesDaily.params_set(),
+         coin_balances_params_daily_set =
+           %{
+             coin_balances_params: coin_balances_params_set,
+             blocks: blocks
+           }
+           |> AddressCoinBalancesDaily.params_set(),
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
          Logger.info("### BEFORE address_token_balances CHANGESET ###"),
@@ -205,8 +186,8 @@ defmodule Indexer.Block.Fetcher do
              state,
              %{
                addresses: %{params: addresses},
-               #  address_coin_balances: %{params: coin_balances_params_set},
-               #  address_coin_balances_daily: %{params: coin_balances_params_daily_set},
+               address_coin_balances: %{params: coin_balances_params_set},
+               address_coin_balances_daily: %{params: coin_balances_params_daily_set},
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
@@ -217,9 +198,7 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      # if Enum.at(range_list, 0) == Enum.at(range_list, -1) do
       Logger.info(["### fetch_and_import_range FINALIZED ", inspect(range), " ###"])
-      # end
       Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
@@ -228,30 +207,8 @@ defmodule Indexer.Block.Fetcher do
       update_uncles_cache(inserted[:block_second_degree_relations])
       result
     else
-      {step, {:error, reason}} ->
-        # if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-        #   Logger.info(["### fetch_and_import_range FAILED #1 ", inspect(step), inspect(reason), " ###"])
-        # end
-
-        {:error, {step, reason}}
-
-      {:import, {:error, step, failed_value, changes_so_far}} ->
-        #   if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-        #     Logger.info([
-        #       "### fetch_and_import_range FAILED #2 ",
-        #       inspect(step),
-        #       inspect(failed_value),
-        #       inspect(changes_so_far),
-        #       " ###"
-        #     ])
-        #   end
-
-        {:error, {step, failed_value, changes_so_far}}
-
-        # _ ->
-        #   if Enum.at(range_list, 0) != Enum.at(range_list, -1) do
-        #     Logger.info(["### fetch_and_import_range FAILED #3 ", inspect(range), " ###"])
-        #   end
+      {step, {:error, reason}} -> {:error, {step, reason}}
+      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end
 

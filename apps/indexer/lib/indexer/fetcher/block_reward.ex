@@ -133,12 +133,10 @@ defmodule Indexer.Fetcher.BlockReward do
         |> add_timestamp()
         |> import_block_reward_params()
         |> case do
-          # todo
-          # {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
-          {:ok, %{addresses: addresses}} ->
+          {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
             Accounts.drop(addresses)
 
-            # CoinBalance.async_fetch_balances(address_coin_balances)
+            CoinBalance.async_fetch_balances(address_coin_balances)
 
             retry_errors(errors)
 
