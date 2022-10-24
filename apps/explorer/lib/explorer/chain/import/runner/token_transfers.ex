@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, TokenTransfer}
+  alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
@@ -44,7 +45,12 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
       |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :token_transfers, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_referencing,
+        :token_transfers,
+        :token_transfers
+      )
     end)
   end
 

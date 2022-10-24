@@ -114,7 +114,8 @@
                     "data-test": "transaction_hash_link"
                   ) %>
                 <% else %>
-                  <p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>
+                  <p class="alert alert-danger" role="alert"><%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Contract was precompiled and created at genesis or contract creation transaction is missing") %><%= gettext("Error: Could not determine contract creator.") %></p>
                 <% end %>
               </dd>
             </dl>

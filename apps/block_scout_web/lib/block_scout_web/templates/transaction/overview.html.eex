@@ -201,7 +201,7 @@
               <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @from_tags %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                 additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                clipboard_text: from_address_hash,
+                clipboard_text: Address.checksum(from_address_hash),
                 aria_label: gettext("Copy From Address"),
                 title: gettext("Copy From Address") %>
             </dd>
@@ -228,7 +228,7 @@
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                    clipboard_text: recipient_address_hash,
+                    clipboard_text: Address.checksum(recipient_address_hash),
                     aria_label: gettext("Copy To Address"),
                     title: gettext("Copy To Address") %>
                 <% recipient_address_hash -> %>
@@ -236,7 +236,7 @@
                   <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
-                    clipboard_text: recipient_address_hash,
+                    clipboard_text: Address.checksum(recipient_address_hash),
                     aria_label: gettext("Copy To Address"),
                     title: gettext("Copy To Address") %>
                 <% true -> %>

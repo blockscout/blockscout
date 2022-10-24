@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.{Block, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
 
   @behaviour Runner
@@ -62,8 +63,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    multi
-    |> Multi.run(:lose_consensus, fn repo, _ ->
+    run_func = fn repo ->
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
 
       nonconsensus_hashes =
@@ -76,40 +76,90 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         end
 
       {:ok, nonconsensus_hashes}
+    end
+
+    multi
+    |> Multi.run(:lose_consensus, fn repo, _ ->
+      Instrumenter.block_import_stage_runner(
+        fn -> run_func.(repo) end,
+        :address_referencing,
+        :blocks,
+        :lose_consensus
+      )
     end)
     |> Multi.run(:blocks, fn repo, _ ->
-      # Note, needs to be executed after `lose_consensus` for lock acquisition
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          # Note, needs to be executed after `lose_consensus` for lock acquisition
+          insert(repo, changes_list, insert_options)
+        end,
+        :address_referencing,
+        :blocks,
+        :blocks
+      )
     end)
     |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
-      new_pending_operations(repo, nonconsensus_hashes, hashes_for_pending_block_operations, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          new_pending_operations(repo, nonconsensus_hashes, hashes_for_pending_block_operations, insert_options)
+        end,
+        :address_referencing,
+        :blocks,
+        :new_pending_operations
+      )
     end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
-      update_block_second_degree_relations(repo, hashes, %{
-        timeout:
-          options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
-            Runner.Block.SecondDegreeRelations.timeout(),
-        timestamps: timestamps
-      })
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          update_block_second_degree_relations(repo, hashes, %{
+            timeout:
+              options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
+                Runner.Block.SecondDegreeRelations.timeout(),
+            timestamps: timestamps
+          })
+        end,
+        :address_referencing,
+        :blocks,
+        :uncle_fetched_block_second_degree_relations
+      )
     end)
     |> Multi.run(:delete_rewards, fn repo, _ ->
-      delete_rewards(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_rewards(repo, changes_list, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_rewards
+      )
     end)
     |> Multi.run(:fork_transactions, fn repo, _ ->
-      fork_transactions(%{
-        repo: repo,
-        timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
-        timestamps: timestamps,
-        blocks_changes: changes_list
-      })
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          fork_transactions(%{
+            repo: repo,
+            timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
+            timestamps: timestamps,
+            blocks_changes: changes_list
+          })
+        end,
+        :address_referencing,
+        :blocks,
+        :fork_transactions
+      )
     end)
     |> Multi.run(:derive_transaction_forks, fn repo, %{fork_transactions: transactions} ->
-      derive_transaction_forks(%{
-        repo: repo,
-        timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
-        timestamps: timestamps,
-        transactions: transactions
-      })
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          derive_transaction_forks(%{
+            repo: repo,
+            timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
+            timestamps: timestamps,
+            transactions: transactions
+          })
+        end,
+        :address_referencing,
+        :blocks,
+        :derive_transaction_forks
+      )
     end)
   end
 

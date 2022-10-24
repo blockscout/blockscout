@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, Log}
+  alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
 
@@ -44,7 +45,12 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :logs, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_referencing,
+        :logs,
+        :logs
+      )
     end)
   end
 

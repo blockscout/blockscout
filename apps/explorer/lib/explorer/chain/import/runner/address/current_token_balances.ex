@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.{Hash, Import}
   alias Explorer.Chain.Import.Runner.Tokens
+  alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
@@ -133,20 +134,32 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     #   Tokens.acquire_contract_address_tokens(repo, token_contract_address_hashes_and_ids)
     # end)
     |> Multi.run(:address_current_token_balances, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_following,
+        :current_token_balances,
+        :acquire_contract_address_tokens
+      )
     end)
     |> Multi.run(:address_current_token_balances_update_token_holder_counts, fn repo,
                                                                                 %{
                                                                                   address_current_token_balances:
                                                                                     upserted_balances
                                                                                 } ->
-      token_holder_count_deltas = upserted_balances_to_holder_count_deltas(upserted_balances)
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          token_holder_count_deltas = upserted_balances_to_holder_count_deltas(upserted_balances)
 
-      # ShareLocks order already enforced by `acquire_contract_address_tokens` (see docs: sharelocks.md)
-      Tokens.update_holder_counts_with_deltas(
-        repo,
-        token_holder_count_deltas,
-        insert_options
+          # ShareLocks order already enforced by `acquire_contract_address_tokens` (see docs: sharelocks.md)
+          Tokens.update_holder_counts_with_deltas(
+            repo,
+            token_holder_count_deltas,
+            insert_options
+          )
+        end,
+        :block_following,
+        :current_token_balances,
+        :acquire_contract_address_tokens
       )
     end)
   end

@@ -93,10 +93,11 @@ defmodule BlockScout.Mixfile do
   defp deps do
     [
       {:con_cache, "~> 1.0"},
+      {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       {:tesla, "~> 1.4.4"},
       # Documentation
-      {:ex_doc, "~> 0.28.2", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.29.0", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}
     ]
   end

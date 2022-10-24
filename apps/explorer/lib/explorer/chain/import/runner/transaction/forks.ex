@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
 
   alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Hash, Import, Transaction}
+  alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
@@ -46,7 +47,12 @@ defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
       |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :transaction_forks, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_referencing,
+        :forks,
+        :transaction_forks
+      )
     end)
   end
 

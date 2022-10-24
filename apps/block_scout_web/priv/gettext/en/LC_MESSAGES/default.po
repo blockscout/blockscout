@@ -3256,3 +3256,8 @@ msgstr ""
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Library"
 msgstr ""
+
+#: lib/block_scout_web/templates/address/overview.html.eex:120
+#, elixir-autogen, elixir-format
+msgid "Contract was precompiled and created at genesis or contract creation transaction is missing"
+msgstr ""

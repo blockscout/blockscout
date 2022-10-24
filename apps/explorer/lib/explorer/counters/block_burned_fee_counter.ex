@@ -9,7 +9,7 @@ defmodule Explorer.Counters.BlockBurnedFeeCounter do
 
   @cache_name :block_burned_fee_counter
 
-  config = Application.get_env(:explorer, Explorer.Counters.BlockBurnedFeeCounter)
+  config = Application.compile_env(:explorer, Explorer.Counters.BlockBurnedFeeCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import}
+  alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
@@ -49,7 +50,12 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
       |> Map.put_new(:timeout, @timeout)
 
     Multi.run(multi, :block_second_degree_relations, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_following,
+        :second_degree_relations,
+        :block_second_degree_relations
+      )
     end)
   end
 

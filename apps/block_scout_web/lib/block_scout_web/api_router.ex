@@ -87,21 +87,23 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
     alias BlockScoutWeb.API.V1.{GasPriceOracleController, HealthController}
+    alias BlockScoutWeb.SearchController
 
+    get("/search", SearchController, :api_search_result)
     get("/health", HealthController, :health)
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
 
-    if Application.get_env(:block_scout_web, __MODULE__)[:reading_enabled] do
+    if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
       get("/supply", V1.SupplyController, :supply)
       post("/eth-rpc", EthRPC.EthController, :eth_request)
     end
 
-    if Application.get_env(:block_scout_web, __MODULE__)[:writing_enabled] do
+    if Application.compile_env(:block_scout_web, __MODULE__)[:writing_enabled] do
       post("/decompiled_smart_contract", V1.DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", V1.VerifiedSmartContractController, :create)
     end
 
-    if Application.get_env(:block_scout_web, __MODULE__)[:reading_enabled] do
+    if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
       forward("/", RPC.RPCTranslator, %{
         "block" => {RPC.BlockController, []},
         "account" => {RPC.AddressController, []},
@@ -119,7 +121,7 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC}
 
-    if Application.get_env(:block_scout_web, __MODULE__)[:reading_enabled] do
+    if Application.compile_env(:block_scout_web, __MODULE__)[:reading_enabled] do
       post("/eth-rpc", EthRPC.EthController, :eth_request)
 
       forward("/", RPCTranslatorForwarder, %{
