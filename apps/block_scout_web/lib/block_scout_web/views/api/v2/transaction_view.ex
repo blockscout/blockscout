@@ -66,6 +66,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("logs.json", %{logs: logs, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(logs, fn log -> prepare_log(log) end), "next_page_params" => next_page_params}
+  end
+
   def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
     %{"items" => Enum.map(logs, fn log -> prepare_log(log, tx_hash) end), "next_page_params" => next_page_params}
   end
@@ -126,6 +130,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "timestamp" => internal_transaction.transaction.block.timestamp,
       "index" => internal_transaction.index,
       "gas_limit" => internal_transaction.gas
+    }
+  end
+
+  def prepare_log(log) do
+    %{
+      "address" => Helper.address_with_info(log.address, log.address_hash),
+      "topics" => [
+        log.first_topic,
+        log.second_topic,
+        log.third_topic,
+        log.fourth_topic
+      ],
+      "data" => log.data,
+      "index" => log.index
     }
   end
 

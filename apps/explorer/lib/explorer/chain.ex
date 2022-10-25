@@ -676,9 +676,7 @@ defmodule Explorer.Chain do
   end
 
   def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
-    from(q in base_query,
-      where: 1
-    )
+    base_query
   end
 
   def where_block_number_in_period(base_query, from_block, to_block) do
@@ -5127,8 +5125,8 @@ defmodule Explorer.Chain do
     Repo.one(query)
   end
 
-  @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
-  def address_to_balances_by_day(address_hash) do
+  @spec address_to_balances_by_day(Hash.Address.t(), true | false) :: [balance_by_day]
+  def address_to_balances_by_day(address_hash, api? \\ false) do
     latest_block_timestamp =
       address_hash
       |> CoinBalance.last_coin_balance_timestamp()
@@ -5139,7 +5137,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> Enum.sort_by(fn %{date: d} -> {d.year, d.month, d.day} end)
     |> replace_last_value(latest_block_timestamp)
-    |> normalize_balances_by_day()
+    |> normalize_balances_by_day(api?)
   end
 
   # https://github.com/blockscout/blockscout/issues/2658
@@ -5149,7 +5147,21 @@ defmodule Explorer.Chain do
 
   defp replace_last_value(items, _), do: items
 
-  defp normalize_balances_by_day(balances_by_day) do
+  defp normalize_balances_by_day(balances_by_day, true) do
+    result =
+      balances_by_day
+      |> Enum.filter(fn day -> day.value end)
+
+    today = Date.to_string(NaiveDateTime.utc_now())
+
+    if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
+      List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
+    else
+      result
+    end
+  end
+
+  defp normalize_balances_by_day(balances_by_day, false) do
     result =
       balances_by_day
       |> Enum.filter(fn day -> day.value end)

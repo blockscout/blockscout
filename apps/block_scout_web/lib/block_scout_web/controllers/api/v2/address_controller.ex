@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       current_filter: 1
     ]
 
-  alias BlockScoutWeb.API.V2.TransactionView
+  alias BlockScoutWeb.API.V2.{AddressView, BlockView, TransactionView}
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
@@ -112,6 +112,130 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+    end
+  end
+
+  def internal_transactions(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      full_options =
+        [
+          necessity_by_association: %{
+            [created_contract_address: :names] => :optional,
+            [from_address: :names] => :optional,
+            [to_address: :names] => :optional,
+            [created_contract_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :smart_contract] => :optional
+          }
+        ]
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(current_filter(params))
+
+      results_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
+      {internal_transactions, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page_params(next_page, internal_transactions, params)
+
+      conn
+      |> put_status(200)
+      |> put_view(TransactionView)
+      |> render(:transactions, %{internal_transactions: internal_transactions, next_page_params: next_page_params})
+    end
+  end
+
+  def logs(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      results_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
+      {logs, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page_params(next_page, logs, params)
+
+      conn
+      |> put_status(200)
+      |> put_view(TransactionView)
+      |> render(:logs, %{logs: logs, next_page_params: next_page_params})
+    end
+  end
+
+  def logs(conn, %{"address_hash" => address_hash_string, "topic" => topic} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      prepared_topic = String.trim(topic)
+
+      formatted_topic = if String.starts_with?(prepared_topic, "0x"), do: prepared_topic, else: "0x" <> prepared_topic
+
+      results_plus_one = Chain.address_to_logs(address_hash, topic: formatted_topic)
+
+      {logs, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page_params(next_page, logs, params)
+
+      conn
+      |> put_status(200)
+      |> put_view(TransactionView)
+      |> render(:logs, %{logs: logs, next_page_params: next_page_params})
+    end
+  end
+
+  def blocks_validated(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      full_options =
+        Keyword.merge(
+          [
+            necessity_by_association: %{
+              miner: :required,
+              nephews: :optional,
+              transactions: :optional,
+              rewards: :optional
+            }
+          ],
+          paging_options(params)
+        )
+
+      results_plus_one = Chain.get_blocks_validated_by_address(full_options, address_hash)
+      {blocks, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page_params(next_page, blocks, params)
+
+      conn
+      |> put_status(200)
+      |> put_view(BlockView)
+      |> render(:blocks, %{blocks: blocks, next_page_params: next_page_params})
+    end
+  end
+
+  def coin_balance_history(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      full_options = paging_options(params)
+
+      results_plus_one = Chain.address_to_coin_balances(address_hash, full_options)
+
+      {coin_balances, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page_params(next_page, coin_balances, params)
+
+      conn
+      |> put_status(200)
+      |> put_view(AddressView)
+      |> render(:coin_balances, %{coin_balances: coin_balances, next_page_params: next_page_params})
+    end
+  end
+
+  def coin_balance_history_by_day(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      balances_by_day =
+        address_hash
+        |> Chain.address_to_balances_by_day(true)
+
+      # |> Enum.map(fn %{value: value} = map ->
+      #   Map.put(map, :value, Decimal.to_float(value))
+      # end)
+
+      conn
+      |> put_status(200)
+      |> put_view(AddressView)
+      |> render(:coin_balances_by_day, %{coin_balances_by_day: balances_by_day})
+
+      # json(conn, balances_by_day)
     end
   end
 end
