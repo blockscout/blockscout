@@ -27,6 +27,7 @@
 - [#6118](https://github.com/blockscout/blockscout/pull/6118) - Fix unfetched token balances
 - [#6163](https://github.com/blockscout/blockscout/pull/6163) - Fix rate limit logs
 - [#6223](https://github.com/blockscout/blockscout/pull/6223) - Fix coin_id test
+- [#6133](https://github.com/blockscout/blockscout/pull/6133) - Prevent logger from truncating response from rust verifier service in case of an error
 
 ### Chore
 
