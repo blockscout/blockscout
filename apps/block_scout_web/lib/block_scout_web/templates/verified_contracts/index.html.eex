@@ -9,8 +9,8 @@
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: @page_number, show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
       </div>
 
-      <div class="dropdown u-push-sm d-inline-block mb-2">
-        <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+      <div class="dropdown u-push-sm d-inline-block mb-2 mr-5 ml-md-3">
+        <button data-test="filter_dropdown" class="btn-dropdown-line large no-rm dropdown-toggle" type="button"
           id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <%= gettext "Filter by compiler:" %> <%= format_current_filter(@filter) %>
         </button>
@@ -19,13 +19,13 @@
           <%= link(
             gettext("All"),
             to: Helpers.verified_contracts_path(@conn, :index),
-            class: "address__link address__link--active dropdown-item",
+            class: "address__link address__link--active dropdown-item border-bottom",
             "data-test": "filter_option"
           ) %>
           <%= link(
             gettext("Solidity"),
             to: Helpers.verified_contracts_path(@conn, :index, filter: "solidity"),
-            class: "address__link address__link--active dropdown-item",
+            class: "address__link address__link--active dropdown-item border-bottom",
             "data-test": "filter_option"
           ) %>
           <%= link(
@@ -37,11 +37,9 @@
         </div>
       </div>
 
-      <div data-search class="verified-contracts-search d-flex position-relative mb-3">
-        <input data-search-field class="logs-search-input" type='text' placeholder="<%= gettext "Contract name or address" %>" id='search-text-input' />
-        <button data-cancel-search-button class="logs-search-btn-cancel" type="button">x</button>
-        <button data-search-button class="logs-search-btn" type="button"><%= gettext("Search") %></button>
-      </div>
+      <div class="search-input-container mb-3">
+			  <input data-search-field="" class="form-control search-input" type="text" name="search" value="<%= @conn.params["search"] %>" placeholder="<%= gettext "Contract name or address" %>" id="search-text-input">
+	    </div>
 
       <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
         <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>

@@ -14,11 +14,13 @@
     </td>
     <!-- Txns -->
     <td class="stakes-td">
-        <%= if @contract.address.transactions_count do %>
-            <%= Number.Delimit.number_to_delimited(@contract.address.transactions_count, precision: 0) %>
-        <% else %>
-            <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Fetching transactions...") %>
-        <% end %>
+        <span>
+            <%= if @contract.address.transactions_count do %>
+                <%= Number.Delimit.number_to_delimited(@contract.address.transactions_count, precision: 0) %>
+            <% else %>
+                <%= gettext "N/A" %>
+            <% end %>
+        </span>
     </td>
     <!-- Compiler -->
     <td class="stakes-td">
