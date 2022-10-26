@@ -9,7 +9,7 @@
               <span class="text-muted"><%= gettext ("Total") %></span>
             </div>
             <div class="d-flex flex-column">
-              <h1 class="text-success">+<%= @new_contracts_count %></h1>
+              <h1 class="text-success"><%= if @new_verified_contracts_count > 0, do: "+" %><%= @new_contracts_count %></h1>
               <span class="text-muted"><%= gettext ("Last 24h") %></span>
             </div>
           </div>
@@ -22,7 +22,7 @@
               <span class="text-muted"><%= gettext ("Total") %></span>
             </div>
             <div class="d-flex flex-column">
-              <h1 class="text-success">+<%= @new_verified_contracts_count %></h1>
+              <h1 class="text-success"><%= if @new_verified_contracts_count > 0, do: "+" %><%= @new_verified_contracts_count %></h1>
               <span class="text-muted"><%= gettext ("Last 24h") %></span>
             </div>
           </div>
