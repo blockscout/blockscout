@@ -56,13 +56,13 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          cache-from: type=registry,ref=blockscout/blockscout:review-prerelease-buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:review-prerelease-buildcache,mode=max
           tags: blockscout/blockscout:review-prerelease-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
-            API_PATH=/poa/sokol/
+            API_PATH=/poa/sokol
             NETWORK_PATH=/poa/sokol/
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
@@ -72,7 +72,7 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
             CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/poa/sokol/
+            SOCKET_ROOT=/poa/sokol
   # deploy_blockscout:
   #   name: Deploy blockscout app
   #   needs: push_to_registry
