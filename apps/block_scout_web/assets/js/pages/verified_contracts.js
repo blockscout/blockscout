@@ -59,7 +59,7 @@ if ($('[data-page="verified-contracts-list"]').length) {
   const $element = $('[data-async-listing]')
 
   $element.on('click', '[data-next-page-button], [data-prev-page-button]', (event) => {
-    document.getElementById('verified-contratc-list').scrollIntoView()
+    document.getElementById('verified-contracts-list').scrollIntoView()
   })
 
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
@@ -77,13 +77,6 @@ if ($('[data-page="verified-contracts-list"]').length) {
 
   store.dispatch({
     type: 'PAGE_LOAD'
-  })
-
-  $element.on('click', '[data-search-button]', searchFunc)
-
-  $element.on('click', '[data-cancel-search-button]', (_event) => {
-    $('[data-search-field]').val('')
-    loadPage(store, window.location.pathname)
   })
 
   $element.on('input keyup', '[data-search-field]', (event) => {
