@@ -2290,8 +2290,14 @@ defmodule Explorer.Chain do
 
     query =
       if filter && filter !== "" do
-        base_query_with_paging
-        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+        case prepare_search_term(filter) do
+          {:some, filter_term} ->
+            base_query_with_paging
+            |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter_term))
+
+          _ ->
+            base_query_with_paging
+        end
       else
         base_query_with_paging
       end
