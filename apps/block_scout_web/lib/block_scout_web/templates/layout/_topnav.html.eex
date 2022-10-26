@@ -29,12 +29,9 @@
               <%= gettext("Blockchain") %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarBlockchainDropdown">
-              <div class="px-3 py-2">
-                <span class="mr-1">
+              <div class="nav-submenu">
+                <span>
                   <%= gettext("Blocks") %>
-                </span>
-                <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
                 </span>
               </div>
               <%= link(
@@ -47,12 +44,9 @@
               <%= link(gettext("Forked Blocks (Reorgs)"),
                     to: reorg_path(@conn, :reorg),
                     class: "border-bottom dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
-              <div class="px-3 py-2">
-                <span class="mr-1">
+              <div class="nav-submenu">
+                <span>
                   <%= gettext("Transactions") %>
-                </span>
-                <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
                 </span>
               </div>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
