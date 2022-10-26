@@ -29,6 +29,7 @@
 - [#6118](https://github.com/blockscout/blockscout/pull/6118) - Fix unfetched token balances
 - [#6163](https://github.com/blockscout/blockscout/pull/6163) - Fix rate limit logs
 - [#6223](https://github.com/blockscout/blockscout/pull/6223) - Fix coin_id test
+- [#6336](https://github.com/blockscout/blockscout/pull/6336) - Fix sending request on each key in token search
 
 ### Chore
 
