@@ -14,6 +14,8 @@
 
 ### Fixes
 
+- [#6338](https://github.com/blockscout/blockscout/pull/6338) - Fix token search with space
+- [#6329](https://github.com/blockscout/blockscout/pull/6329) - Prevent logger from truncating response from rust verifier service in case of an error
 - [#6309](https://github.com/blockscout/blockscout/pull/6309) - Fix read contract bug and change address tx count
 - [#6303](https://github.com/blockscout/blockscout/pull/6303) - Fix some UI bugs
 - [#6243](https://github.com/blockscout/blockscout/pull/6243) - Fix freezes on `/blocks` page
@@ -27,7 +29,6 @@
 - [#6118](https://github.com/blockscout/blockscout/pull/6118) - Fix unfetched token balances
 - [#6163](https://github.com/blockscout/blockscout/pull/6163) - Fix rate limit logs
 - [#6223](https://github.com/blockscout/blockscout/pull/6223) - Fix coin_id test
-- [#6133](https://github.com/blockscout/blockscout/pull/6133) - Prevent logger from truncating response from rust verifier service in case of an error
 
 ### Chore
 
