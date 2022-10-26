@@ -1,4 +1,7 @@
 defmodule BlockScoutWeb.UserSocketV2 do
+  @moduledoc """
+    Module to distinct new and old UI websocket connections
+  """
   use Phoenix.Socket
 
   channel("addresses:*", BlockScoutWeb.AddressChannel)

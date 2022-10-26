@@ -220,22 +220,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
-  def coin_balance_history_by_day(conn, %{"address_hash" => address_hash_string} = params) do
+  def coin_balance_history_by_day(conn, %{"address_hash" => address_hash_string}) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
       balances_by_day =
         address_hash
         |> Chain.address_to_balances_by_day(true)
 
-      # |> Enum.map(fn %{value: value} = map ->
-      #   Map.put(map, :value, Decimal.to_float(value))
-      # end)
-
       conn
       |> put_status(200)
       |> put_view(AddressView)
       |> render(:coin_balances_by_day, %{coin_balances_by_day: balances_by_day})
-
-      # json(conn, balances_by_day)
     end
   end
 end

@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
-  alias Explorer.Counters.{BlockBurnedFeeCounter, BlockPriorityFeeCounter}
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Wei}
+  alias Explorer.Chain.Block
+  alias Explorer.Counters.BlockPriorityFeeCounter
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
