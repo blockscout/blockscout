@@ -1,8 +1,7 @@
 import $ from 'jquery'
 import omit from 'lodash.omit'
-import humps from 'humps'
 import { connectElements } from '../../lib/redux_helpers.js'
-import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import { createAsyncLoadStore, loadPage } from '../../lib/async_listing_load'
 import '../address'
 import { utils } from 'web3'
 
@@ -57,18 +56,16 @@ const elements = {
 }
 
 if ($('[data-page="address-logs"]').length) {
+  let timer
+  const waitTime = 500
+
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierLog')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
   const $element = $('[data-async-listing]')
 
   connectElements({ store, elements })
 
-  store.dispatch({
-    type: 'PAGE_LOAD',
-    addressHash
-  })
-
-  $element.on('click', '[data-search-button]', (_event) => {
+  const searchFunc = (_event) => {
     store.dispatch({
       type: 'START_SEARCH',
       addressHash
@@ -77,14 +74,31 @@ if ($('[data-page="address-logs"]').length) {
     const addressHashPlain = store.getState().addressHash
     const addressHashChecksum = addressHashPlain && utils.toChecksumAddress(addressHashPlain)
     const path = '/search-logs?topic=' + topic + '&address_id=' + addressHashChecksum
-    store.dispatch({ type: 'START_REQUEST' })
-    $.getJSON(path, { type: 'JSON' })
-      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
-      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
+    loadPage(store, path)
+  }
+
+  store.dispatch({
+    type: 'PAGE_LOAD',
+    addressHash
   })
 
+  $element.on('click', '[data-search-button]', searchFunc)
+
   $element.on('click', '[data-cancel-search-button]', (_event) => {
-    window.location.replace(window.location.href.split('?')[0])
+    $('[data-search-field]').val('')
+    loadPage(store, window.location.pathname)
+  })
+
+  $element.on('input keyup', '[data-search-field]', (event) => {
+    if (event.type === 'input') {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        searchFunc(event)
+      }, waitTime)
+    }
+    if (event.type === 'keyup' && event.keyCode === 13) {
+      clearTimeout(timer)
+      searchFunc(event)
+    }
   })
 }
