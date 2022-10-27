@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.ContractsCounter do
+defmodule Explorer.Counters.VerifiedContractsCounter do
   @moduledoc """
   Caches the number of contracts, new and verified.
 
@@ -10,16 +10,16 @@ defmodule Explorer.Counters.ContractsCounter do
   alias Explorer.Chain
   alias Explorer.Counters.Helper
 
-  @table :contracts_counter
+  @table :verified_contracts_counter
 
-  @cache_key "all"
+  @cache_key "verified"
 
   # It is undesirable to automatically start the consolidation in all environments.
   # Consider the test environment: if the consolidation initiates but does not
   # finish before a test ends, that test will fail. This way, hundreds of
   # tests were failing before disabling the consolidation and the scheduler in
   # the test env.
-  config = Application.compile_env(:explorer, Explorer.Counters.ContractsCounter)
+  config = Application.compile_env(:explorer, Explorer.Counters.VerifiedContractsCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @update_interval_in_seconds Keyword.get(config, :update_interval_in_seconds)
@@ -86,9 +86,9 @@ defmodule Explorer.Counters.ContractsCounter do
   Consolidates the info by populating the `:ets` table with the current database information.
   """
   def consolidate do
-    all_counter = Chain.count_contracts()
+    verified_counter = Chain.count_verified_contracts()
 
-    insert_counter({@cache_key, all_counter})
+    insert_counter({@cache_key, verified_counter})
   end
 
   @doc """
@@ -97,11 +97,11 @@ defmodule Explorer.Counters.ContractsCounter do
   In order to choose whether or not to enable the scheduler and the initial
   consolidation, change the following Explorer config:
 
-  `config :explorer, Explorer.Counters.ContractsCounter, enable_consolidation: true`
+  `config :explorer, Explorer.Counters.VerifiedContractsCounter, enable_consolidation: true`
 
   to:
 
-  `config :explorer, Explorer.Counters.ContractsCounter, enable_consolidation: false`
+  `config :explorer, Explorer.Counters.VerifiedContractsCounter, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
 end

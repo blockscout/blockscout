@@ -72,7 +72,16 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter, ContractsCounter}
+
+  alias Explorer.Counters.{
+    AddressesCounter,
+    AddressesWithBalanceCounter,
+    ContractsCounter,
+    NewContractsCounter,
+    NewVerifiedContractsCounter,
+    VerifiedContractsCounter
+  }
+
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.{Helper, Reader}
@@ -6336,18 +6345,18 @@ defmodule Explorer.Chain do
   end
 
   def count_verified_contracts_from_cache do
-    ContractsCounter.fetch("verified")
+    VerifiedContractsCounter.fetch()
   end
 
   def count_new_verified_contracts_from_cache do
-    ContractsCounter.fetch("new_verified")
+    NewVerifiedContractsCounter.fetch()
   end
 
   def count_contracts_from_cache do
-    ContractsCounter.fetch("all")
+    ContractsCounter.fetch()
   end
 
   def count_new_contracts_from_cache do
-    ContractsCounter.fetch("new")
+    NewContractsCounter.fetch()
   end
 end
