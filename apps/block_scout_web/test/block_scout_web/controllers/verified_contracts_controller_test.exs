@@ -4,12 +4,18 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
   import BlockScoutWeb.WebRouter.Helpers, only: [verified_contracts_path: 2, verified_contracts_path: 3]
 
   alias Explorer.Chain.SmartContract
-  alias Explorer.Counters.ContractsCounter
+  alias Explorer.Counters.{ContractsCounter, NewContractsCounter, NewVerifiedContractsCounter, VerifiedContractsCounter}
 
   describe "GET index/2" do
     test "returns 200", %{conn: conn} do
       start_supervised!(ContractsCounter)
       ContractsCounter.consolidate()
+      start_supervised!(NewContractsCounter)
+      NewContractsCounter.consolidate()
+      start_supervised!(NewVerifiedContractsCounter)
+      NewVerifiedContractsCounter.consolidate()
+      start_supervised!(VerifiedContractsCounter)
+      VerifiedContractsCounter.consolidate()
 
       conn = get(conn, verified_contracts_path(conn, :index))
 
