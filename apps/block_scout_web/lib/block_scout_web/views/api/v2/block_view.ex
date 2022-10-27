@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     %{"items" => Enum.map(blocks, &prepare_block(&1, nil)), "next_page_params" => next_page_params}
   end
 
+  def render("blocks.json", %{blocks: blocks}) do
+    Enum.map(blocks, &prepare_block(&1, nil))
+  end
+
   def render("block.json", %{block: block, conn: conn}) do
     prepare_block(block, conn, true)
   end

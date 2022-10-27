@@ -19,6 +19,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     ApiView.render("message.json", assigns)
   end
 
+  def render("transactions.json", %{transactions: transactions, conn: conn}) do
+    Enum.map(transactions, &prepare_transaction(&1, conn, false))
+  end
+
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
     %{"items" => Enum.map(transactions, &prepare_transaction(&1, conn, false)), "next_page_params" => next_page_params}
   end

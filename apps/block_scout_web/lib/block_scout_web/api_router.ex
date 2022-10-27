@@ -124,6 +124,11 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
     end
+
+    scope "/main-page" do
+      get("/blocks", V2.MainPageController, :blocks)
+      get("/transactions", V2.MainPageController, :transactions)
+    end
   end
 
   scope "/v1", as: :api_v1 do
