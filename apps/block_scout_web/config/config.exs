@@ -5,6 +5,24 @@
 # is restricted to this project.
 import Config
 
+network_path =
+  "NETWORK_PATH"
+  |> System.get_env("/")
+  |> (&(if !String.ends_with?(&1, "/") do
+          &1 <> "/"
+        else
+          &1
+        end)).()
+
+api_path =
+  "API_PATH"
+  |> System.get_env("/")
+  |> (&(if !String.ends_with?(&1, "/") do
+          &1 <> "/"
+        else
+          &1
+        end)).()
+
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
@@ -17,6 +35,10 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: t
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
+  url: [
+    path: network_path,
+    api_path: api_path
+  ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: BlockScoutWeb.PubSub
 

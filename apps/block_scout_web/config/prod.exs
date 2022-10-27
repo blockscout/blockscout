@@ -17,11 +17,7 @@ alias Explorer.Repo.ConfigHelper
 # which you typically run after static files are built.
 config :block_scout_web, BlockScoutWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
-  force_ssl: false,
-  url: [
-    path: ConfigHelper.network_path(),
-    api_path: ConfigHelper.api_path()
-  ]
+  force_ssl: false
 
 config :block_scout_web, BlockScoutWeb.Tracer, env: "production", disabled?: true
 

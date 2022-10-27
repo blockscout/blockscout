@@ -22,9 +22,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   ],
   url: [
     scheme: "http",
-    host: System.get_env("BLOCKSCOUT_HOST", "localhost"),
-    path: ConfigHelper.network_path(),
-    api_path: ConfigHelper.api_path()
+    host: System.get_env("BLOCKSCOUT_HOST", "localhost")
   ],
   https: [
     port: (port && port + 1) || 4001,
