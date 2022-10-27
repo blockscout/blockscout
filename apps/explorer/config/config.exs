@@ -59,6 +59,21 @@ config :explorer, Explorer.Counters.ContractsCounter,
   enable_consolidation: true,
   update_interval_in_seconds: 30 * 60
 
+config :explorer, Explorer.Counters.NewContractsCounter,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_seconds: 30 * 60
+
+config :explorer, Explorer.Counters.VerifiedContractsCounter,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_seconds: 30 * 60
+
+config :explorer, Explorer.Counters.NewVerifiedContractsCounter,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_seconds: 30 * 60
+
 config :explorer, Explorer.Chain.Cache.TokenExchangeRate,
   enabled: true,
   enable_consolidation: true
