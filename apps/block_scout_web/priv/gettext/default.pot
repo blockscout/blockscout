@@ -1389,7 +1389,7 @@ msgstr ""
 msgid "Logs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:50
+#: lib/block_scout_web/templates/layout/_footer.html.eex:52
 #, elixir-autogen, elixir-format
 msgid "Main Networks"
 msgstr ""
@@ -1625,7 +1625,7 @@ msgstr ""
 msgid "Optimization runs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:74
+#: lib/block_scout_web/templates/layout/_footer.html.eex:76
 #, elixir-autogen, elixir-format
 msgid "Other Explorers"
 msgstr ""
@@ -2099,7 +2099,7 @@ msgstr ""
 msgid "Telegram"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:63
+#: lib/block_scout_web/templates/layout/_footer.html.eex:65
 #, elixir-autogen, elixir-format
 msgid "Test Networks"
 msgstr ""
