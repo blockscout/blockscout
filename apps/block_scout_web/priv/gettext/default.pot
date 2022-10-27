@@ -691,7 +691,7 @@ msgid "Connection Lost, click to load newer blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:29
+#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:31
 msgid "Connection Lost, click to load newer epoch transactions"
 msgstr ""
 
@@ -1695,7 +1695,7 @@ msgid "More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:24
+#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:25
 msgid "More epoch transactions have come in"
 msgstr ""
 
@@ -2245,7 +2245,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:30
-#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:36 lib/block_scout_web/templates/address_internal_transaction/index.html.eex:50
+#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:38 lib/block_scout_web/templates/address_internal_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/address_logs/index.html.eex:23 lib/block_scout_web/templates/address_signed/index.html.eex:23
 #: lib/block_scout_web/templates/address_token/index.html.eex:60 lib/block_scout_web/templates/address_token_transfer/index.html.eex:58
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:50 lib/block_scout_web/templates/address_validation/index.html.eex:20
@@ -2541,7 +2541,7 @@ msgid "There are no downtime blocks for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:40
+#: lib/block_scout_web/templates/address_epoch_transaction/index.html.eex:43
 msgid "There are no epoch transactions for this address."
 msgstr ""
 

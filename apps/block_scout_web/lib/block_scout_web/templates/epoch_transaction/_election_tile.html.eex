@@ -37,7 +37,7 @@
         </div>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
-        <%= gettext "Validator Group:" %>
+        <%= gettext "Validator Group:" %>&nbsp;
         <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.associated_account_hash), "data-test": "address_hash_link", class: assigns[:class] do %>
           <%= @epoch_transaction.associated_account_name %>
         <% end %>
@@ -62,7 +62,7 @@
         </div>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
-        <%= gettext "Validator Group:" %>
+        <%= gettext "Validator Group:" %>&nbsp;
         <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @epoch_transaction.associated_account_hash), "data-test": "address_hash_link", class: assigns[:class] do %>
           <%= @epoch_transaction.associated_account_name %>
         <% end %>
