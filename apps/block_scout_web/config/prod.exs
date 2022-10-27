@@ -1,5 +1,7 @@
 import Config
 
+alias Explorer.Repo.ConfigHelper
+
 # For production, we often load configuration from external
 # sources, such as your system environment. For this reason,
 # you won't find the :http configuration below, but set inside
@@ -17,8 +19,8 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   force_ssl: false,
   url: [
-    path: System.get_env("NETWORK_PATH") || "/",
-    api_path: System.get_env("API_PATH") || "/"
+    path: ConfigHelper.network_path(),
+    api_path: ConfigHelper.api_path()
   ]
 
 config :block_scout_web, BlockScoutWeb.Tracer, env: "production", disabled?: true

@@ -17,10 +17,6 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: t
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
-  url: [
-    path: System.get_env("NETWORK_PATH") || "/",
-    api_path: System.get_env("API_PATH") || "/"
-  ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: BlockScoutWeb.PubSub
 
