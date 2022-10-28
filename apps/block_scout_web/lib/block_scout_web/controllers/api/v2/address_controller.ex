@@ -139,21 +139,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:transactions, %{internal_transactions: internal_transactions, next_page_params: next_page_params})
-    end
-  end
-
-  def logs(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
-      results_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
-      {logs, next_page} = split_list_by_page(results_plus_one)
-
-      next_page_params = next_page_params(next_page, logs, params)
-
-      conn
-      |> put_status(200)
-      |> put_view(TransactionView)
-      |> render(:logs, %{logs: logs, next_page_params: next_page_params})
+      |> render(:internal_transactions, %{
+        internal_transactions: internal_transactions,
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -165,6 +154,20 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       results_plus_one = Chain.address_to_logs(address_hash, topic: formatted_topic)
 
+      {logs, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page_params(next_page, logs, params)
+
+      conn
+      |> put_status(200)
+      |> put_view(TransactionView)
+      |> render(:logs, %{logs: logs, next_page_params: next_page_params})
+    end
+  end
+
+  def logs(conn, %{"address_hash" => address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+      results_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
       {logs, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params = next_page_params(next_page, logs, params)
