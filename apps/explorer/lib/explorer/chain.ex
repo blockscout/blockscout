@@ -4224,7 +4224,6 @@ defmodule Explorer.Chain do
 
   defp handle_page(query, paging_options) do
 
-    Logger.info('=2=2=2=2=2=2')
     page_number = paging_options |> Map.get(:page_number, 1) |> proccess_page_number()
     page_size = Map.get(paging_options, :page_size, @default_page_size)
 
