@@ -91,7 +91,7 @@ defmodule BlockScoutWeb.ChainController do
 
     results =
       paging_options
-      |> search_by(offset, term)
+      |> Chain.joint_search(offset, term)
 
     encoded_results =
       results
@@ -123,10 +123,6 @@ defmodule BlockScoutWeb.ChainController do
 
   def token_autocomplete(conn, _) do
     json(conn, "{}")
-  end
-
-  def search_by(paging_options, offset, term) do
-    Chain.joint_search(paging_options, offset, term)
   end
 
   def chain_blocks(conn, _params) do

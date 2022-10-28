@@ -1,16 +1,15 @@
 defmodule BlockScoutWeb.API.V2.StatsController do
   use Phoenix.Controller
 
+  alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Block, as: BlockCache
-  alias Explorer.Chain.Cache.GasUsage
+  alias Explorer.Chain.Cache.{GasPriceOracle, GasUsage}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Chain.Cache.GasPriceOracle
-  alias BlockScoutWeb.API.V2.Helper
-  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Timex.Duration
 
   def stats(conn, _params) do

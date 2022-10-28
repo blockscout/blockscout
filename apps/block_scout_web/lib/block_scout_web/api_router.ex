@@ -94,6 +94,8 @@ defmodule BlockScoutWeb.ApiRouter do
 
     alias BlockScoutWeb.API.V2
 
+    get("/search", V2.SearchController, :search)
+
     scope "/config" do
       get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
     end
@@ -144,9 +146,10 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
     alias BlockScoutWeb.API.V1.HealthController
-    alias BlockScoutWeb.SearchController
+    alias BlockScoutWeb.API.V2.SearchController
 
-    get("/search", SearchController, :api_search_result)
+    # leave the same endpoint in v1 in order to keep backward compatibility
+    get("/search", SearchController, :search)
     get("/health", HealthController, :health)
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
 
