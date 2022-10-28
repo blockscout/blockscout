@@ -70,12 +70,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def render("logs.json", %{logs: logs, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(logs, fn log -> prepare_log(log) end), "next_page_params" => next_page_params}
-  end
-
   def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
     %{"items" => Enum.map(logs, fn log -> prepare_log(log, tx_hash) end), "next_page_params" => next_page_params}
+  end
+
+  def render("logs.json", %{logs: logs, next_page_params: next_page_params}) do
+    %{
+      "items" => Enum.map(logs, fn log -> prepare_log(log, log.transaction) end),
+      "next_page_params" => next_page_params
+    }
   end
 
   def prepare_token_transfer(token_transfer, conn) do
@@ -137,29 +140,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def prepare_log(log) do
-    %{
-      "address" => Helper.address_with_info(log.address, log.address_hash),
-      "topics" => [
-        log.first_topic,
-        log.second_topic,
-        log.third_topic,
-        log.fourth_topic
-      ],
-      "data" => log.data,
-      "index" => log.index
-    }
-  end
-
-  def prepare_log(log, transaction_hash) do
-    decoded =
-      case log |> Log.decode(%Transaction{hash: transaction_hash}) |> format_decoded_log_input() do
-        {:ok, method_id, text, mapping} ->
-          render(__MODULE__, "decoded_log_input.json", method_id: method_id, text: text, mapping: mapping)
-
-        _ ->
-          nil
-      end
+  def prepare_log(log, transaction_or_hash) do
+    decoded = decode_log(log, transaction_or_hash)
 
     %{
       "address" => Helper.address_with_info(log.address, log.address_hash),
@@ -171,9 +153,25 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       ],
       "data" => log.data,
       "index" => log.index,
-      "decoded" => decoded
+      "decoded" => decoded,
+      "smart_contract" => smart_contract_info(transaction_or_hash)
     }
   end
+
+  defp smart_contract_info(%Transaction{} = tx), do: Helper.address_with_info(tx.to_address, tx.to_address_hash)
+  defp smart_contract_info(_), do: nil
+
+  defp decode_log(log, %Transaction{} = tx) do
+    case log |> Log.decode(tx) |> format_decoded_log_input() do
+      {:ok, method_id, text, mapping} ->
+        render(__MODULE__, "decoded_log_input.json", method_id: method_id, text: text, mapping: mapping)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp decode_log(log, transaction_hash), do: decode_log(log, %Transaction{hash: transaction_hash})
 
   defp prepare_transaction({%Reward{} = emission_reward, %Reward{} = validator_reward}, conn, _single_tx?) do
     %{

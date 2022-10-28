@@ -30,7 +30,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => to_string(address),
       "is_contract" => is_smart_contract(address),
       "name" => address_name(address),
-      "implementation_name" => implementation_name(address)
+      "implementation_name" => implementation_name(address),
+      "is_verified" => is_verified(address)
     }
   end
 
@@ -39,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   end
 
   def address_with_info(nil, address_hash) do
-    %{"hash" => address_hash, "is_contract" => false, "name" => nil, "implementation_name" => nil}
+    %{"hash" => address_hash, "is_contract" => false, "name" => nil, "implementation_name" => nil, "is_verified" => nil}
   end
 
   def address_name(%Address{names: [_ | _] = address_names}) do
@@ -63,6 +64,10 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def is_smart_contract(%Address{contract_code: nil}), do: false
   def is_smart_contract(%Address{contract_code: _}), do: true
   def is_smart_contract(_), do: false
+
+  def is_verified(%Address{smart_contract: nil}), do: false
+  def is_verified(%Address{smart_contract: %NotLoaded{}}), do: nil
+  def is_verified(%Address{smart_contract: _}), do: true
 
   def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
       when is_nil(available_supply) or is_nil(usd_value) do
