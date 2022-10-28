@@ -2,13 +2,17 @@
 
 Layer1 data sync in Mantle network
 
-## Installation
+## Deployment Steps
+1. `cd data-sync-service`
 
+2. Copy `.env.example` to `.env`, modify the rpc_url and contract address
+
+3. Install the dependencies
 ```bash
 $ npm install
 ```
 
-## Running the app
+4. Running the app use the following command
 
 ```bash
 # development
@@ -21,25 +25,10 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
 ## License
 
 [MIT licensed](LICENSE).
 
-## Testnet info 
-- goerli L1CrossDomainMessenger Proxy address: 0x5086d1eEF304eb5284A0f6720f79403b4e9bE294
-- L1StandardBridge: 0x636Af16bf2f682dD3109e60102b8E1A089FedAa8
+## About Code
 
--
+
