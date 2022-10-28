@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Block.Reward do
     where(query, [reward], reward.block_number < ^block_number)
   end
 
-@doc """
+  @doc """
   Returns a list of tuples representing rewards by the EmissionFunds on POA chains.
   The tuples have the format {EmissionFunds, Validator}
   """

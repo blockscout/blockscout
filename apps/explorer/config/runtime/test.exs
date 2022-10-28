@@ -19,6 +19,9 @@ config :explorer, Explorer.Market.History.Historian, enabled: false
 
 config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Counters.ContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Counters.NewContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Counters.VerifiedContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Counters.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 

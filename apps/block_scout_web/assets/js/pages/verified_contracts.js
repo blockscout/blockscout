@@ -56,11 +56,15 @@ if ($('[data-page="verified-contracts-list"]').length) {
   let timer
   const waitTime = 500
 
+  const $element = $('[data-async-listing]')
+
+  $element.on('click', '[data-next-page-button], [data-prev-page-button]', (event) => {
+    document.getElementById('verified-contratc-list').scrollIntoView()
+  })
+
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
 
   connectElements({ store, elements })
-
-  const $element = $('[data-async-listing]')
 
   const searchFunc = (_event) => {
     store.dispatch({ type: 'START_SEARCH' })
