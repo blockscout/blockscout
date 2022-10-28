@@ -1,17 +1,22 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
-export class Addresses {
-  @PrimaryColumn({ type: "bytea", name: 'hash' })
-  hash: string;
+export class L1RelayedMessageEvents {
+  @Column({ type: "bytea" })
+  tx_hash: string;
 
-  @Column({ type: 'bytea', nullable: true })
-  contract_code: string;
+  @Column({ type: "bigint" })
+  block_number: string;
+
+  @PrimaryColumn({ type: "bytea" })
+  msg_hash: string;
+
+  @Column({ type: "bytea" })
+  signature: string;
 
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
   inserted_at: Date;
 
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
   updated_at: Date;
-  
 }

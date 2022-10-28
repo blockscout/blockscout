@@ -2,7 +2,7 @@ defmodule Explorer.Repo.Migrations.CreateTxnBatches do
   use Ecto.Migration
 
   def change do
-    create table(:addresses, primary_key: false) do
+    create table(:txn_batches, primary_key: false) do
       add(:batch, :bigint, null: false)
       add(:hash, :bytea, null: false, primary_key: true)
       add(:size, :bigint, null: false)
