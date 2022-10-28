@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
-
+  require Logger
   import BlockScoutWeb.Chain, only: [paging_options: 1]
 
   alias BlockScoutWeb.{ChainView, Controller}

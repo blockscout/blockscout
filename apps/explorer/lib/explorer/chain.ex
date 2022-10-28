@@ -57,7 +57,8 @@ defmodule Explorer.Chain do
     Token.Instance,
     TokenTransfer,
     Transaction,
-    Wei
+    Wei,
+    StateBatch
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -3149,7 +3150,6 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     total_transactions_count = transactions_available_count()
-
     fetched_transactions =
       if is_nil(paging_options.key) or paging_options.page_number == 1 do
         paging_options.page_size
@@ -3182,9 +3182,21 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def fetch_recent_collated_state_batch_for_rap(paging_options, necessity_by_association) do
+    fetch_state_batch_for_rap()
+    |> handle_random_access_paging_options(paging_options)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
   defp fetch_transactions_for_rap do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+  end
+
+  defp fetch_state_batch_for_rap do
+    StateBatch
+    |> order_by([state_batch], desc: state_batch.batch_index)
   end
 
   def transactions_available_count do
@@ -4211,6 +4223,7 @@ defmodule Explorer.Chain do
   end
 
   defp handle_page(query, paging_options) do
+
     page_number = paging_options |> Map.get(:page_number, 1) |> proccess_page_number()
     page_size = Map.get(paging_options, :page_size, @default_page_size)
 

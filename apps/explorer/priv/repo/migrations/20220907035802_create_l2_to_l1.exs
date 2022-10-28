@@ -19,5 +19,6 @@ defmodule Explorer.Repo.Migrations.CreateL2ToL1 do
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+    create(unique_index(:l2_to_l1, [:msg_nonce]))
   end
 end

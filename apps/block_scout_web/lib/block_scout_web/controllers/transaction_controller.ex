@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.TransactionController do
   use BlockScoutWeb, :controller
+  require(Logger)
 
   import BlockScoutWeb.Chain,
     only: [

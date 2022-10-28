@@ -2321,6 +2321,21 @@ msgid "Validated"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+msgid "L1 State Batches"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+msgid "L1 Txn Batches"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+msgid "State Batches"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/index.html.eex:12
 msgid "Validated Transactions"
 msgstr ""
