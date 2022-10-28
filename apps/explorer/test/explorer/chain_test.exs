@@ -3829,12 +3829,12 @@ defmodule Explorer.ChainTest do
 
   describe "recent_collated_transactions/1" do
     test "with no collated transactions it returns an empty list" do
-      assert [] == Explorer.Chain.recent_collated_transactions()
+      assert [] == Explorer.Chain.recent_collated_transactions(true)
     end
 
     test "it excludes pending transactions" do
       insert(:transaction)
-      assert [] == Explorer.Chain.recent_collated_transactions()
+      assert [] == Explorer.Chain.recent_collated_transactions(true)
     end
 
     test "returns a list of recent collated transactions" do
@@ -3846,7 +3846,7 @@ defmodule Explorer.ChainTest do
 
       oldest_seen = Enum.at(newest_first_transactions, 9)
       paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
-      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
+      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(true, paging_options: paging_options)
 
       assert length(recent_collated_transactions) == 10
       assert hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
@@ -3872,7 +3872,7 @@ defmodule Explorer.ChainTest do
         block: transaction.block
       )
 
-      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())
+      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions(true))
       assert fetched_transaction.hash == transaction.hash
       assert length(fetched_transaction.token_transfers) == 2
     end

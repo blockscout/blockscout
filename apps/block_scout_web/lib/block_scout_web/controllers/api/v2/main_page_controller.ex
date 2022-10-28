@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
   def transactions(conn, _params) do
     recent_transactions =
-      Chain.recent_collated_transactions(
+      Chain.recent_collated_transactions(false,
         necessity_by_association: %{
           :block => :required,
           [created_contract_address: :names] => :optional,

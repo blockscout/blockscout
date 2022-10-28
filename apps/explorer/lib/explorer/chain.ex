@@ -3245,7 +3245,7 @@ defmodule Explorer.Chain do
       iex> newest_first_transactions = 50 |> insert_list(:transaction) |> with_block() |> Enum.reverse()
       iex> oldest_seen = Enum.at(newest_first_transactions, 9)
       iex> paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
-      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
+      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(true, paging_options: paging_options)
       iex> length(recent_collated_transactions)
       10
       iex> hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
@@ -3261,14 +3261,17 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions([paging_options | necessity_by_association_option], [String.t()], [:atom]) :: [
+  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option], [String.t()], [
+          :atom
+        ]) :: [
           Transaction.t()
         ]
-  def recent_collated_transactions(options \\ [], method_id_filter \\ [], type_filter \\ []) when is_list(options) do
+  def recent_collated_transactions(old_ui?, options \\ [], method_id_filter \\ [], type_filter \\ [])
+      when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter, type_filter)
+    fetch_recent_collated_transactions(old_ui?, paging_options, necessity_by_association, method_id_filter, type_filter)
   end
 
   # RAP - random access pagination
@@ -3326,16 +3329,26 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :hash)
   end
 
-  def fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter, type_filter) do
+  def fetch_recent_collated_transactions(
+        old_ui?,
+        paging_options,
+        necessity_by_association,
+        method_id_filter,
+        type_filter
+      ) do
     paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
+    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> debug("result collated query")
     |> Repo.all()
-    |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+    |> (&if(old_ui?,
+          do: &1,
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+        )).()
   end
 
   @doc """
@@ -5147,26 +5160,12 @@ defmodule Explorer.Chain do
 
   defp replace_last_value(items, _), do: items
 
-  defp normalize_balances_by_day(balances_by_day, true) do
+  defp normalize_balances_by_day(balances_by_day, api?) do
     result =
       balances_by_day
       |> Enum.filter(fn day -> day.value end)
-
-    today = Date.to_string(NaiveDateTime.utc_now())
-
-    if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
-      List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
-    else
-      result
-    end
-  end
-
-  defp normalize_balances_by_day(balances_by_day, false) do
-    result =
-      balances_by_day
-      |> Enum.filter(fn day -> day.value end)
-      |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
-      |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :date, fn x -> to_string(x) end) end))).()
+      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :value, fn x -> Wei.to(x, :ether) end) end))).()
 
     today = Date.to_string(NaiveDateTime.utc_now())
 
@@ -6346,7 +6345,7 @@ defmodule Explorer.Chain do
   end
 
   def recent_transactions(options, _, method_id_filter, type_filter_options) do
-    recent_collated_transactions(options, method_id_filter, type_filter_options)
+    recent_collated_transactions(false, options, method_id_filter, type_filter_options)
   end
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
