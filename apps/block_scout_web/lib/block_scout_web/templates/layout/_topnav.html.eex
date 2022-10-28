@@ -51,8 +51,13 @@
                     to: transaction_path(@conn, :index)
                   ) %>
               <%= link(
-                gettext("Validated"),
-                class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
+                gettext("L1 State Batches"),
+                class: "dropdown-item #{tab_status("state-batch", @conn.request_path)}",
+                to: transaction_path(@conn, :index)
+              ) %>
+              <%= link(
+                gettext("L1 Txn Batches"),
+                class: "dropdown-item #{tab_status("txn-batch", @conn.request_path)}",
                 to: transaction_path(@conn, :index)
               ) %>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>

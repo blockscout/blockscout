@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TransactionController do
+defmodule BlockScoutWeb.StateBatchController do
   use BlockScoutWeb, :controller
   require(Logger)
 
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.TransactionController do
     Controller,
     TransactionInternalTransactionController,
     TransactionTokenTransferController,
-    TransactionView
+    StateBatchView
   }
 
   alias Explorer.{Chain, Market}
@@ -49,6 +49,7 @@ defmodule BlockScoutWeb.TransactionController do
   ]
 
   def index(conn, %{"type" => "JSON"} = params) do
+
     options =
       @default_options
       |> Keyword.merge(paging_options(params))
@@ -100,7 +101,7 @@ defmodule BlockScoutWeb.TransactionController do
         items:
           Enum.map(transactions, fn transaction ->
             View.render_to_string(
-              TransactionView,
+              StateBatchView,
               "_tile.html",
               transaction: transaction,
               burn_address_hash: @burn_address_hash,
