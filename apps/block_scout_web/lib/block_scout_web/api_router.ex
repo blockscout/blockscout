@@ -25,9 +25,14 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(CheckAccountAPI)
   end
 
+  pipeline :api_v2 do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+  end
+
   alias BlockScoutWeb.Account.Api.V1.{TagsController, UserController}
 
-  scope "/account/v1" do
+  scope "/account/v1", as: :account_v1 do
     pipe_through(:api)
     pipe_through(:account_api)
 
@@ -80,6 +85,39 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/address/:address_hash", TagsController, :tags_address)
 
       get("/transaction/:transaction_hash", TagsController, :tags_transaction)
+    end
+  end
+
+  scope "/v2", as: :api_v2 do
+    pipe_through(:api)
+    pipe_through(:api_v2)
+
+    alias BlockScoutWeb.API.V2
+
+    scope "/config" do
+      get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
+    end
+
+    scope "/transactions" do
+      get("/", V2.TransactionController, :transactions)
+      get("/:transaction_hash", V2.TransactionController, :transaction)
+      get("/:transaction_hash/token-transfers", V2.TransactionController, :token_transfers)
+      get("/:transaction_hash/internal-transactions", V2.TransactionController, :internal_transactions)
+      get("/:transaction_hash/logs", V2.TransactionController, :logs)
+      get("/:transaction_hash/raw-trace", V2.TransactionController, :raw_trace)
+    end
+
+    scope "/blocks" do
+      get("/", V2.BlockController, :blocks)
+      get("/:block_hash_or_number", V2.BlockController, :block)
+      get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
+    end
+
+    scope "/addresses" do
+      get("/:address_hash", V2.AddressController, :address)
+      get("/:address_hash/token-balances", V2.AddressController, :token_balances)
+      get("/:address_hash/transactions", V2.AddressController, :transactions)
+      get("/:address_hash/token-transfers", V2.AddressController, :token_transfers)
     end
   end
 
