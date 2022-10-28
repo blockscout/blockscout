@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address
+  alias Explorer.Chain.Transaction.History.TransactionStats
+
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2, get_tags_on_address: 1]
 
@@ -61,4 +63,40 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def is_smart_contract(%Address{contract_code: nil}), do: false
   def is_smart_contract(%Address{contract_code: _}), do: true
   def is_smart_contract(_), do: false
+
+  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
+      when is_nil(available_supply) or is_nil(usd_value) do
+    Decimal.new(0)
+  end
+
+  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value}) do
+    Decimal.mult(available_supply, usd_value)
+  end
+
+  def market_cap(:standard, exchange_rate) do
+    exchange_rate.market_cap_usd
+  end
+
+  def market_cap(module, exchange_rate) do
+    module.market_cap(exchange_rate)
+  end
+
+  def get_transaction_stats do
+    stats_scale = date_range(1)
+    transaction_stats = TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
+
+    # Need datapoint for legend if none currently available.
+    if Enum.empty?(transaction_stats) do
+      [%{number_of_transactions: 0, gas_used: 0}]
+    else
+      transaction_stats
+    end
+  end
+
+  def date_range(num_days) do
+    today = Date.utc_today()
+    latest = Date.add(today, -1)
+    x_days_back = Date.add(latest, -1 * (num_days - 1))
+    %{earliest: x_days_back, latest: latest}
+  end
 end

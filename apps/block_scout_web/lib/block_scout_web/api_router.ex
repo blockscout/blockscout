@@ -129,6 +129,15 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/blocks", V2.MainPageController, :blocks)
       get("/transactions", V2.MainPageController, :transactions)
     end
+
+    scope "/stats" do
+      get("/", V2.StatsController, :stats)
+
+      scope "/charts" do
+        get("/transactions", V2.StatsController, :transactions_chart)
+        get("/market", V2.StatsController, :market_chart)
+      end
+    end
   end
 
   scope "/v1", as: :api_v1 do
