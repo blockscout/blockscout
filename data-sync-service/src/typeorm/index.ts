@@ -1,11 +1,23 @@
-import { Addresses } from "./addresses.entity";
-import { Transactions } from "./transactions.entity";
 import { L1ToL2 } from "./l1_to_l2.entity";
 import { L2ToL1 } from "./l2_to_l1.entity";
-import { TxnBatches } from "./txn_batches.entity";
-import { StateBatches } from "./state_batches.entity";
+import { L1RelayedMessageEvents } from "./l1_relayed_message_events.entity";
+import { L1SentMessageEvents } from "./l1_sent_message_events.entity";
+import { L2RelayedMessageEvents } from "./l2_relayed_message_events.entity";
+import { L2SentMessageEvents } from "./l2_sent_message_events.entity";
 
-const entities = [Addresses, Transactions, L1ToL2, L2ToL1, TxnBatches, StateBatches];
+const entities = [
+    L1ToL2, L2ToL1,
+    L1RelayedMessageEvents,
+    L1SentMessageEvents,
+    L2RelayedMessageEvents,
+    L2SentMessageEvents
+];
 
-export {Addresses, Transactions, L1ToL2, L2ToL1, TxnBatches, StateBatches};
+export {
+    L1ToL2, L2ToL1,
+    L1RelayedMessageEvents,
+    L1SentMessageEvents,
+    L2RelayedMessageEvents,
+    L2SentMessageEvents
+};
 export default entities;

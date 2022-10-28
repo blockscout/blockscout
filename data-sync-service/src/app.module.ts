@@ -1,10 +1,11 @@
+import { TasksModule } from './schedule/tasks.module';
 import { Module } from '@nestjs/common';
-import { AddressModule } from './address/address.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import entities from './typeorm';
-import { TasksService } from './schedule/tasks.service';
 import { ScheduleModule } from '@nestjs/schedule';
+import { L1IngestionModule } from './l1Ingestion/l1Ingestion.module';
+import { L2IngestionModule } from './l2Ingestion/l2Ingestion.module';
 
 @Module({
   imports: [
@@ -23,10 +24,12 @@ import { ScheduleModule } from '@nestjs/schedule';
       }),
       inject: [ConfigService],
     }),
-    AddressModule,
-    ScheduleModule.forRoot()
+    ScheduleModule.forRoot(),
+    TasksModule,
+    L1IngestionModule,
+    L2IngestionModule
   ],
   controllers: [],
-  providers: [TasksService],
+  providers: [],
 })
 export class AppModule {}
