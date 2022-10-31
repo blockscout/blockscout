@@ -5272,7 +5272,7 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 29
+          token_ids: [29]
         )
 
       second_page =
@@ -5283,17 +5283,17 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
+          token_ids: [11]
         )
 
-      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
+      paging_options = %PagingOptions{key: {List.first(first_page.token_ids)}, page_size: 1}
 
       unique_tokens_ids_paginated =
         token_contract_address.hash
         |> Chain.address_to_unique_tokens(paging_options: paging_options)
         |> Enum.map(& &1.token_id)
 
-      assert unique_tokens_ids_paginated == [second_page.token_id]
+      assert unique_tokens_ids_paginated == [List.first(second_page.token_ids)]
     end
   end
 
