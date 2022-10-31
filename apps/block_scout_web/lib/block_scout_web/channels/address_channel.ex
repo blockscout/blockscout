@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
+  alias BlockScoutWeb.API.V2.AddressView, as: AddressViewAPI
+
   alias BlockScoutWeb.{
     AddressCoinBalanceView,
     AddressView,
@@ -64,7 +66,7 @@ defmodule BlockScoutWeb.AddressChannel do
     push(socket, "balance", %{
       balance: address.fetched_coin_balance.value,
       block_number: address.fetched_coin_balance_block_number,
-      exchange_rate: to_string(exchange_rate)
+      exchange_rate: exchange_rate.usd_value
     })
 
     {:noreply, socket}
@@ -157,7 +159,9 @@ defmodule BlockScoutWeb.AddressChannel do
       ) do
     coin_balance = Chain.get_coin_balance(socket.assigns.address_hash, block_number)
 
-    # TODO: coin balance history chart
+    rendered_coin_balance = AddressViewAPI.render("coin_balance.json", %{coin_balance: coin_balance})
+
+    push(socket, "coin_balance", %{coin_balance: rendered_coin_balance})
 
     push_current_coin_balance(socket, block_number, coin_balance)
 
@@ -186,6 +190,9 @@ defmodule BlockScoutWeb.AddressChannel do
     {:noreply, socket}
   end
 
+  def handle_out("pending_transaction", data, %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket),
+    do: handle_transaction(data, socket, "pending_transaction")
+
   def handle_out("pending_transaction", data, socket), do: handle_transaction(data, socket, "transaction")
 
   def push_current_coin_balance(
@@ -195,7 +202,7 @@ defmodule BlockScoutWeb.AddressChannel do
       ) do
     push(socket, "current_coin_balance", %{
       coin_balance: (coin_balance && coin_balance.value) || %Wei{value: Decimal.new(0)},
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+      exchange_rate: (Market.get_exchange_rate(Explorer.coin()) || Token.null()).usd_value,
       block_number: block_number
     })
   end

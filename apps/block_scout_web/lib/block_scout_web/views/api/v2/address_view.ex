@@ -16,6 +16,10 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     Enum.map(token_balances, &prepare_token_balance/1)
   end
 
+  def render("coin_balance.json", %{coin_balance: coin_balance}) do
+    prepare_coin_balance_history_entry(coin_balance)
+  end
+
   def render("coin_balances.json", %{coin_balances: coin_balances, next_page_params: next_page_params}) do
     %{"items" => Enum.map(coin_balances, &prepare_coin_balance_history_entry/1), "next_page_params" => next_page_params}
   end
