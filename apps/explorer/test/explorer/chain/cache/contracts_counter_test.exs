@@ -1,7 +1,7 @@
-defmodule Explorer.Counters.ContractsCounterTest do
+defmodule Explorer.Chain.Cache.ContractsCounterTest do
   use Explorer.DataCase
 
-  alias Explorer.Counters.ContractsCounter
+  alias Explorer.Chain.Cache.ContractsCounter
   alias Explorer.Chain
 
   test "populates the cache with the number of all contracts" do
@@ -13,6 +13,6 @@ defmodule Explorer.Counters.ContractsCounterTest do
     start_supervised!(ContractsCounter)
     ContractsCounter.consolidate()
 
-    assert Chain.count_contracts_from_cache() == 4
+    assert Chain.count_contracts_from_cache() == Decimal.new(4)
   end
 end
