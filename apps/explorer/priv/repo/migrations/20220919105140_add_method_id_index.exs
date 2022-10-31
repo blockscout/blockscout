@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Migrations.AddMethodIdIndex do
 
   def up do
     execute("""
-      CREATE INDEX method_id ON public.transactions USING btree (substring(input for 4));
+      CREATE INDEX CONCURRENTLY method_id ON public.transactions USING btree (substring(input for 4));
     """)
   end
 
