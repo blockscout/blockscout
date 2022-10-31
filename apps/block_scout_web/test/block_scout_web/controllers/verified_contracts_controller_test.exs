@@ -4,7 +4,13 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
   import BlockScoutWeb.WebRouter.Helpers, only: [verified_contracts_path: 2, verified_contracts_path: 3]
 
   alias Explorer.Chain.SmartContract
-  alias Explorer.Counters.{ContractsCounter, NewContractsCounter, NewVerifiedContractsCounter, VerifiedContractsCounter}
+
+  alias Explorer.Chain.Cache.{
+    ContractsCounter,
+    NewContractsCounter,
+    NewVerifiedContractsCounter,
+    VerifiedContractsCounter
+  }
 
   describe "GET index/2" do
     test "returns 200", %{conn: conn} do
