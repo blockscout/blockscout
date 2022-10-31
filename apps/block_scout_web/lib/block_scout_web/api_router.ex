@@ -13,8 +13,7 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.Plug.CheckAccountAPI
-  alias BlockScoutWeb.Plug.CheckApiV2
+  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
 
   pipeline :api do
     plug(:accepts, ["json"])
