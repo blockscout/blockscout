@@ -66,8 +66,12 @@ defmodule Explorer.Chain do
     Accounts,
     BlockNumber,
     Blocks,
+    ContractsCounter,
+    NewContractsCounter,
+    NewVerifiedContractsCounter,
     Transactions,
-    Uncles
+    Uncles,
+    VerifiedContractsCounter
   }
 
   alias Explorer.Chain.Import.Runner
@@ -75,11 +79,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Counters.{
     AddressesCounter,
-    AddressesWithBalanceCounter,
-    ContractsCounter,
-    NewContractsCounter,
-    NewVerifiedContractsCounter,
-    VerifiedContractsCounter
+    AddressesWithBalanceCounter
   }
 
   alias Explorer.Market.MarketHistoryCache
@@ -6306,7 +6306,7 @@ defmodule Explorer.Chain do
   defp filter_contracts(basic_query, _), do: basic_query
 
   def count_verified_contracts do
-    Repo.aggregate(SmartContract, :count)
+    Repo.aggregate(SmartContract, :count, timeout: :infinity)
   end
 
   def count_new_verified_contracts do
@@ -6317,7 +6317,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.aggregate(:count)
+    |> Repo.aggregate(:count, timeout: :infinity)
   end
 
   def count_contracts do
@@ -6328,7 +6328,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.aggregate(:count)
+    |> Repo.aggregate(:count, timeout: :infinity)
   end
 
   def count_new_contracts do
@@ -6341,7 +6341,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.aggregate(:count)
+    |> Repo.aggregate(:count, timeout: :infinity)
   end
 
   def count_verified_contracts_from_cache do
