@@ -26,8 +26,13 @@ $btn-dropdown-line-font: #333;
       color: $btn-dropdown-line-font;
     }
   }
+  
+  @include btn-line($btn-dropdown-line-bg, $btn-dropdown-line-color, 14px);
+  border-color: $btn-dropdown-line-color;
+  color: $btn-dropdown-line-font;
   outline: none !important;
   margin-right: 20px;
+
   &.no-rm {
     margin-right: 0;
   }
