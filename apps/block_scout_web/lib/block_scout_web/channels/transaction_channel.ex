@@ -30,6 +30,16 @@ defmodule BlockScoutWeb.TransactionChannel do
     {:ok, %{}, socket}
   end
 
+  def handle_out(
+        "pending_transaction",
+        %{transaction: _transaction},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    push(socket, "pending_transaction", %{pending_transaction: 1})
+
+    {:noreply, socket}
+  end
+
   def handle_out("pending_transaction", %{transaction: transaction}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
@@ -46,6 +56,16 @@ defmodule BlockScoutWeb.TransactionChannel do
       transaction_hash: Hash.to_string(transaction.hash),
       transaction_html: rendered_transaction
     })
+
+    {:noreply, socket}
+  end
+
+  def handle_out(
+        "transaction",
+        %{transaction: _transaction},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    push(socket, "transaction", %{transaction: 1})
 
     {:noreply, socket}
   end
