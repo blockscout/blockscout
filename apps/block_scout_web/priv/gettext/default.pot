@@ -2332,7 +2332,27 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+msgid "L1 to L2 Txns"
+msgstr "L1->L2 Txns"
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+msgid "L1 to L2 Transactions"
+msgstr "L1->L2 Transactions"
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+msgid "L2 to L1 Transactions"
+msgstr "L2->L1 Transactions"
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
 msgid "State Batches"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
+msgid "Txn Batches"
 msgstr ""
 
 #, elixir-format

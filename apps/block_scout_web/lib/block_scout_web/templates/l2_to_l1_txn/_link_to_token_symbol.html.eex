@@ -1,0 +1,1 @@
+<%= link(token_symbol(@transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @transfer.token.contract_address_hash), "data-test": "token_link") %>

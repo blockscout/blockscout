@@ -3173,6 +3173,20 @@ defmodule Explorer.Chain do
 
   def default_page_size, do: @default_page_size
 
+  @spec recent_collated_state_batches_for_rap([paging_options]) :: %{
+    :total_transactions_count => non_neg_integer(),
+    :state_batches => [StateBatch.t()]
+  }
+
+  def recent_collated_state_batches_for_rap(options \\ []) when is_list(options) do
+    #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    #total_transactions_count = transactions_available_count()
+    fetched_state_batches =fetch_recent_collated_state_batch_for_rap(paging_options)
+    %{total_transactions_count: 1000, state_batches: fetched_state_batches}
+  end
+
   def fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
     fetch_transactions_for_rap()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
@@ -3182,10 +3196,20 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  def fetch_recent_collated_state_batch_for_rap(paging_options, necessity_by_association) do
+  def fetch_recent_collated_state_batch_for_rap(paging_options) do
+    #query =
+    #  from(
+    #    state in StateBatch,
+    #    where: state.size > 0,
+    #  )
+
+    #query
+    #|> limit(1)
+    #|> Repo.all()
+
     fetch_state_batch_for_rap()
     |> handle_random_access_paging_options(paging_options)
-    |> join_associations(necessity_by_association)
+    #|> join_associations(necessity_by_association)
     |> Repo.all()
   end
 
