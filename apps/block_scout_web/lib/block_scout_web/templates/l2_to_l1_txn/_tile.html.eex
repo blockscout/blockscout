@@ -5,21 +5,26 @@
     style="width:100%;height:42px;display:flex;align-items:center;font-size:16px;padding:0 10px;border-bottom:1px solid #e7eaf3;"
 >
   
-    <span style="width: 18%;">
-      <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
-    </span>
-     <span style="width: 18%;">
+    <span style="width: 10%;">
       batch index
     </span>
-     <span style="width: 18%;">
+     <span style="width: 10%;">
       batch index
     </span>
-     <span style="width: 30%;">
+     <span style="width: 20%;">
       batch index
     </span>
-     <span style="width: 16%;">
+     <span style="width: 10%;">
       batch index
     </span>
-    
+     <span style="width: 20%;">
+      batch index
+    </span>
+    <span style="width: 20%;">
+      batch index
+    </span>
+     <span style="width: 10%;">
+      batch index
+    </span>
 
 </div>

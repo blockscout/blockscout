@@ -6,7 +6,7 @@
     <% {:error, :contract_not_verified, candidates} -> %>
     <div class="alert alert-info">
       <%= gettext "To see accurate decoded input data, the contract must be verified." %>
-      <%= case @state_batch do %>
+      <%= case @transaction do %>
         <% %{to_address: %{hash: hash}} -> %>
           <% path = address_verify_contract_path(@conn, :new, hash) %>
           <%= gettext "Verify the contract " %><a href="<%= path %>"><%= gettext "here" %></a>
@@ -23,17 +23,17 @@
         <hr/>
         <h3><%= text %>: </h3>
 
-        <%= render(BlockScoutWeb.StateBatchView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
+        <%= render(BlockScoutWeb.L1ToL2TxnView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
       <% end %>
     <% end %>
     <% {:ok, method_id, text, mapping} -> %>
-      <%= render(BlockScoutWeb.StateBatchView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
+      <%= render(BlockScoutWeb.L1ToL2TxnView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
     <% {:error, :contract_verified, candidates} -> %>
       <h3><%= gettext "Potential matches from our contract method database:" %></h3>
       <%= for {:ok, method_id, text, mapping} <- candidates do %>
         <hr/>
         <h3><%= text %>: </h3>
-        <%= render(BlockScoutWeb.StateBatchView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
+        <%= render(BlockScoutWeb.L1ToL2TxnView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
       <% end %>
     <% _ -> %>
         <div class="alert alert-danger">

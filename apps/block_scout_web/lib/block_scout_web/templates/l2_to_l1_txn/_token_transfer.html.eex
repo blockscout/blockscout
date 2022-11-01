@@ -1,0 +1,25 @@
+<div class="text-nowrap-small-screen row mt-3 mt-sm-0" data-test="token_transfer">
+  <span class="col-xs-12 col-lg-5" style="display: inline-table;">
+    <%= if from_or_to_address?(@token_transfer, @address) do %>
+      <%= if @token_transfer.from_address_hash == @address.hash do %>
+        <span data-test="transaction_type" class="text-danger">
+            &#8627;
+        </span>
+      <% else %>
+        <span data-test="transaction_type" class="text-success">
+            &#8627;
+        </span>
+      <% end %>
+    <% end %>
+    <span class="d-inline-block tile-type-token-transfer-short-name">
+    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:from, @address, true) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+    </span>
+    &rarr;
+    <span class="d-inline-block tile-type-token-transfer-short-name">
+    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:to, @address, true) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+    </span>
+  </span>
+  <span class="col-xs-12 col-lg-4 ml-3 ml-sm-0">
+    <%= render BlockScoutWeb.L2ToL1TxnView, "_total_transfers.html", Map.put(assigns, :transfer, @token_transfer) %>
+  </span>
+</div>

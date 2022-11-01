@@ -1,7 +1,7 @@
-<% block = @state_batch.block %>
-<% from_address_hash = @state_batch.from_address_hash %>
-<% to_address_hash = @state_batch.to_address_hash %>
-<% created_address_hash = @state_batch.created_contract_address_hash %>
+<% block = @transaction.block %>
+<% from_address_hash = @transaction.from_address_hash %>
+<% to_address_hash = @transaction.to_address_hash %>
+<% created_address_hash = @transaction.created_contract_address_hash %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
@@ -9,7 +9,7 @@
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
-<section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @state_batch %>">
+<section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12">
       <!-- Transaction Details -->
@@ -45,7 +45,7 @@
             <%= if show_tenderly_link?() do %>
               <div class="mr-4 mb-4">
                 <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
-                    transaction_hash: @state_batch.hash,
+                    transaction_hash: @transaction.hash,
                     tenderly_chain_path: tenderly_chain_path() %>
               </div>
             <% end %>
@@ -57,7 +57,7 @@
               <%= gettext "Transaction Hash" %>
             </dt>
             <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
-              <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @state_batch %> </span>
+              <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction %> </span>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                   additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
                   clipboard_text: @transaction,
@@ -75,7 +75,7 @@
               <%= gettext "Result" %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
-              <% formatted_result = BlockScoutWeb.StateBatchView.formatted_result(status) %>
+              <% formatted_result = BlockScoutWeb.L2ToL1TxnView.formatted_result(status) %>
               <span class="mr-4" data-transaction-status="<%= formatted_result %>"><%= render BlockScoutWeb.CommonComponentsView, "_status_icon.html", status: status %><%= formatted_result %></span>
             </dd>
           </dl>
@@ -87,7 +87,7 @@
               <%= gettext "Status" %>
             </dt>
             <dd class="col-sm-9 col-lg-10">
-              <% formatted_status = BlockScoutWeb.StateBatchView.formatted_status(status) %>
+              <% formatted_status = BlockScoutWeb.L2ToL1TxnView.formatted_status(status) %>
               <% confirmations = confirmations(@transaction, block_height: @block_height) %>
               <span class="mr-4">
                 <span data-transaction-status="<%= formatted_status %>">
@@ -111,15 +111,15 @@
                 text: gettext("The revert reason of the transaction.") %>
               <%= gettext "Revert reason" %> </dt>
             <dd class="col-sm-9 col-lg-10">
-              <%= case BlockScoutWeb.StateBatchView.transaction_revert_reason(@transaction) do %>
+              <%= case BlockScoutWeb.L2ToL1TxnView.transaction_revert_reason(@transaction) do %>
                 <% {:error, _contract_not_verified, candidates} when candidates != [] -> %>
                   <% {:ok, method_id, text, mapping} = Enum.at(candidates, 0) %>
-                  <%= render(BlockScoutWeb.StateBatchView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                  <%= render(BlockScoutWeb.L2ToL1TxnView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
                 <% {:ok, method_id, text, mapping} -> %>
-                  <%= render(BlockScoutWeb.StateBatchView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                  <%= render(BlockScoutWeb.L2ToL1TxnView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
                 <% _ -> %>
-                  <% hex = BlockScoutWeb.StateBatchView.get_pure_transaction_revert_reason(@transaction) %>
-                  <% utf8 = BlockScoutWeb.StateBatchView.decoded_revert_reason(@transaction) %>
+                  <% hex = BlockScoutWeb.L2ToL1TxnView.get_pure_transaction_revert_reason(@transaction) %>
+                  <% utf8 = BlockScoutWeb.L2ToL1TxnView.decoded_revert_reason(@transaction) %>
                   <div class="tile tile-muted">
                       <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
                   </div>
@@ -188,7 +188,7 @@
             </dd>
           </dl>
           <!-- To -->
-          <% to_address = @state_batch |> Map.get(:to_address) || @state_batch |> Map.get(:created_contract_address) %>
+          <% to_address = @transaction |> Map.get(:to_address) || @transaction |> Map.get(:created_contract_address) %>
           <% recipient_address_hash = to_address_hash || created_address_hash %>
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
@@ -241,7 +241,7 @@
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                     <table cellpadding="3" cellspacing="0">
                       <%= for transfer <- transfers do %>
-                        <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
+                        <%= render BlockScoutWeb.L2ToL1TxnView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
                       <% end %>
                     </table>
                   </dd>
@@ -258,7 +258,7 @@
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                     <table cellpadding="3" cellspacing="0">
                       <%= for minting <- mintings do %>
-                        <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, minting) %>
+                        <%= render BlockScoutWeb.L2ToL1TxnView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, minting) %>
                       <% end %>
                     </table>
                   </dd>
@@ -274,7 +274,7 @@
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for burning  <- burnings do %>
                     <table cellpadding="3" cellspacing="0">
-                      <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
+                      <%= render BlockScoutWeb.L2ToL1TxnView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
                     </table>
                   <% end %>
                   </dd>
@@ -290,7 +290,7 @@
                   <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
                   <%= for creation  <- creations do %>
                     <table cellpadding="3" cellspacing="0">
-                      <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                      <%= render BlockScoutWeb.L2ToL1TxnView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
                     </table>
                   <% end %>
                   </dd>
@@ -308,7 +308,7 @@
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
             <%= if !empty_exchange_rate?(@exchange_rate) do %>
               (<span class="address-current-balance large"
-                data-wei-value=<%= @state_batch.value.value %>
+                data-wei-value=<%= @transaction.value.value %>
                 data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
               </span>)
             <% end %>
@@ -342,7 +342,7 @@
                 text: gettext("Maximum gas amount approved for the transaction.") %>
               <%= gettext "Gas Limit" %>
             </dt>
-            <dd class="col-sm-9 col-lg-10"> <%= format_gas_limit(@state_batch.gas) %> </dd>
+            <dd class="col-sm-9 col-lg-10"> <%= format_gas_limit(@transaction.gas) %> </dd>
           </dl>
           <!-- Gas Used by Transaction -->
           <dl class="row">
@@ -363,7 +363,7 @@
                                           data-toggle="tooltip"
                                           title="<%= gettext("Index position of Transaction in the block.") %>"><%= gettext "Position" %></span>
             </dt>
-            <dd class="col-sm-9 col-lg-10"> <%= @state_batch.nonce %><span class="index-label ml-2"><%= if block, do: @state_batch.index, else: formatted_result(status) %></span> </dd>
+            <dd class="col-sm-9 col-lg-10"> <%= @transaction.nonce %><span class="index-label ml-2"><%= if block, do: @transaction.index, else: formatted_result(status) %></span> </dd>
           </dl>
           <%= unless value_transfer?(@transaction) do %>
             <dl class="row">
@@ -393,13 +393,13 @@
                     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                         id: "tx-raw-input",
                         additional_classes: ["btn-copy-icon-small", "btn-copy-icon-no-borders", "btn-copy-icon-ml-0", "btn-copy-tx-raw-input", "tx-raw-input"],
-                        clipboard_text: @state_batch.input,
+                        clipboard_text: @transaction.input,
                         aria_label: gettext("Copy Value"),
                         title: gettext("Copy Txn Hex Input") %>
                     <!-- Copy UTF-8 input  -->
                     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                         additional_classes: ["btn-copy-icon-small", "btn-copy-icon-no-borders", "btn-copy-icon-ml-0", "btn-copy-tx-raw-input", "tx-utf8-input"],
-                        clipboard_text: @state_batch.input.bytes,
+                        clipboard_text: @transaction.input.bytes,
                         aria_label: gettext("Copy Value"),
                         title: gettext("Copy Txn UTF-8 Input"),
                         style: "display: none;" %>
@@ -408,13 +408,13 @@
                 <!-- Textarea -->
                 <div class="tx-raw-input">
                   <div class="tile tile-muted">
-                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @state_batch.input %></code></pre>
+                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input %></code></pre>
                   </div>
                 </div>
                 <!-- Textfield -->
                 <div class="tx-utf8-input" style="display: none;">
                   <div class="tile tile-muted">
-                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @state_batch.input.bytes %></code></pre>
+                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input.bytes %></code></pre>
                   </div>
                 </div>
               </dd>
@@ -430,7 +430,7 @@
   <%= unless skip_decoding?(@transaction) do %>
     <div class="row">
       <div class="col-md-12">
-        <%= render BlockScoutWeb.StateBatchView, "_decoded_input.html", Map.put(assigns, :decoded_input_data, decoded_input_data) %>
+        <%= render BlockScoutWeb.L2ToL1TxnView, "_decoded_input.html", Map.put(assigns, :decoded_input_data, decoded_input_data) %>
       </div>
     </div>
   <% end %>

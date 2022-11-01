@@ -1,11 +1,11 @@
-defmodule BlockScoutWeb.StateBatchView do
+defmodule BlockScoutWeb.L1ToL2TxnView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, TabHelpers}
   alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei, StateBatch}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
@@ -36,19 +36,11 @@ defmodule BlockScoutWeb.StateBatchView do
 
   def block_timestamp(%Transaction{block_number: nil, inserted_at: time}), do: time
   def block_timestamp(%Transaction{block: %Block{timestamp: time}}), do: time
-  def block_timestamp(%StateBatch{timestamp: time}), do: time
   def block_timestamp(%Reward{block: %Block{timestamp: time}}), do: time
 
   def value_transfer?(%Transaction{input: %{bytes: bytes}}) when bytes in [<<>>, nil] do
     true
   end
-
-
-  def sub_hash_string(hash) do
-    String.slice(hash, 1..21)
-  end
-
-
 
   def value_transfer?(_), do: false
 

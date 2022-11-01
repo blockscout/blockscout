@@ -27,7 +27,8 @@ defmodule BlockScoutWeb.Chain do
     Token,
     TokenTransfer,
     Transaction,
-    Wei
+    Wei,
+    StateBatch
   }
 
   alias Explorer.PagingOptions
@@ -325,6 +326,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%Transaction{block_number: block_number, index: index}) do
     %{"block_number" => block_number, "index" => index}
+  end
+
+  defp paging_params(%StateBatch{batch_index: batch_index}) do
+    %{"batch_index" => batch_index}
   end
 
   defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do

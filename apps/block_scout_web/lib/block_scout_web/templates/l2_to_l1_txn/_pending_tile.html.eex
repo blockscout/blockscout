@@ -1,17 +1,17 @@
-<% status = BlockScoutWeb.TransactionView.transaction_status(@state_batch) %>
-<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> fade-in" data-test="<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>" data-identifier-hash="<%= @state_batch.hash %>">
+<% status = BlockScoutWeb.TransactionView.transaction_status(@transaction) %>
+<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> fade-in" data-test="<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row" data-test="chain_transaction">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <span class="tile-label" data-test="transaction_type"> <%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>
       <div class="tile-status-label ml-2 ml-md-0" data-test="transaction_status"><%= BlockScoutWeb.TransactionView.formatted_result(status) %></div>
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
-      <%= render BlockScoutWeb.StateBatchView, "_link.html", batch_index: @state_batch.hash %>
+      <%= render BlockScoutWeb.L2ToL1TxnView, "_link.html", transaction_hash: @transaction.hash %>
       <span class="text-nowrap">
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @state_batch.from_address, contract: BlockScoutWeb.AddressView.contract?(@state_batch.from_address), use_custom_tooltip: false %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address), use_custom_tooltip: false %>
         &rarr;
-        <%= if @state_batch.to_address_hash do %>
-          <%= render BlockScoutWeb.AddressView, "_link.html", address: @state_batch.to_address, contract: BlockScoutWeb.AddressView.contract?(@state_batch.to_address), use_custom_tooltip: false %>
+        <%= if @transaction.to_address_hash do %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.to_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address), use_custom_tooltip: false %>
         <% else %>
           <%= gettext("Contract Address Pending") %>
         <% end %>
