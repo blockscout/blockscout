@@ -4,7 +4,13 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
   import BlockScoutWeb.WebRouter.Helpers, only: [verified_contracts_path: 2, verified_contracts_path: 3]
 
   alias Explorer.Chain.SmartContract
-  alias Explorer.Counters.{ContractsCounter, NewContractsCounter, NewVerifiedContractsCounter, VerifiedContractsCounter}
+
+  alias Explorer.Chain.Cache.{
+    ContractsCounter,
+    NewContractsCounter,
+    NewVerifiedContractsCounter,
+    VerifiedContractsCounter
+  }
 
   describe "GET index/2" do
     test "returns 200", %{conn: conn} do
@@ -40,7 +46,7 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
       conn =
         get(conn, verified_contracts_path(conn, :index), %{
           "type" => "JSON",
-          "smartcontract_id" => Integer.to_string(contract.id)
+          "smart_contract_id" => Integer.to_string(contract.id)
         })
 
       items = Map.get(json_response(conn, 200), "items")
@@ -58,7 +64,7 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
 
       expected_path =
         verified_contracts_path(conn, :index, %{
-          smartcontract_id: id,
+          smart_contract_id: id,
           items_count: "50"
         })
 

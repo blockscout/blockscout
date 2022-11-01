@@ -236,7 +236,7 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {name, type, value}}]
   end
 
-  def paging_options(%{"smartcontract_id" => id}) do
+  def paging_options(%{"smart_contract_id" => id}) do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
 
@@ -389,7 +389,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%SmartContract{} = smart_contract) do
-    %{"smartcontract_id" => smart_contract.id}
+    %{"smart_contract_id" => smart_contract.id}
   end
 
   defp paging_params(%{

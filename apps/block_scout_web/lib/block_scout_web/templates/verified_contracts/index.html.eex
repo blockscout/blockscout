@@ -2,7 +2,7 @@
 <section class="container" data-page="verified-contracts-list">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
-    <div id="verified-contratc-list" class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
+    <div id="verified-contracts-list" class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
       <h1 class="card-title list-title-description d-inline-block"><%= gettext "Verified Contracts" %></h1>
 
       <div class="float-right">
