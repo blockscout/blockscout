@@ -1189,7 +1189,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "finished_indexing?/0" do
+  describe "finished_internal_transactions_indexing?/0" do
     test "finished indexing" do
       block = insert(:block, number: 1)
 
@@ -1197,11 +1197,11 @@ defmodule Explorer.ChainTest do
       |> insert()
       |> with_block(block)
 
-      assert Chain.finished_indexing?()
+      assert Chain.finished_internal_transactions_indexing?()
     end
 
     test "finished indexing (no txs)" do
-      assert Chain.finished_indexing?()
+      assert Chain.finished_internal_transactions_indexing?()
     end
 
     test "not finished indexing" do
@@ -1213,7 +1213,7 @@ defmodule Explorer.ChainTest do
 
       insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
 
-      refute Chain.finished_indexing?()
+      refute Chain.finished_internal_transactions_indexing?()
     end
   end
 
@@ -1471,6 +1471,12 @@ defmodule Explorer.ChainTest do
   end
 
   describe "indexed_ratio/0" do
+    setup do
+      on_exit(fn ->
+        Application.put_env(:indexer, :first_block, "")
+      end)
+    end
+
     test "returns indexed ratio" do
       for index <- 5..9 do
         insert(:block, number: index)
@@ -1485,6 +1491,17 @@ defmodule Explorer.ChainTest do
 
     test "returns 1.0 if fully indexed blocks" do
       for index <- 0..9 do
+        insert(:block, number: index)
+        Process.sleep(200)
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
+    end
+
+    test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
+      Application.put_env(:indexer, :first_block, "5")
+
+      for index <- 5..9 do
         insert(:block, number: index)
         Process.sleep(200)
       end
@@ -3855,7 +3872,8 @@ defmodule Explorer.ChainTest do
         to_address: address,
         transaction: transaction,
         token_contract_address: token_contract_address,
-        token: token
+        token: token,
+        block: transaction.block
       )
 
       fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())

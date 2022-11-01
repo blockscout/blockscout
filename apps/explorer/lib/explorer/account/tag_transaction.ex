@@ -17,7 +17,7 @@ defmodule Explorer.Account.TagTransaction do
   schema "account_tag_transactions" do
     field(:tx_hash_hash, Cloak.Ecto.SHA256)
     field(:name, Explorer.Encrypted.Binary)
-    field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
+    field(:tx_hash, Explorer.Encrypted.TransactionHash)
 
     belongs_to(:identity, Identity)
 
@@ -152,4 +152,10 @@ defmodule Explorer.Account.TagTransaction do
   end
 
   def get_max_tags_count, do: @max_tag_transaction_per_account
+end
+
+defimpl Jason.Encoder, for: Explorer.Account.TagTransaction do
+  def encode(tx_tag, opts) do
+    Jason.Encode.string(tx_tag.name, opts)
+  end
 end

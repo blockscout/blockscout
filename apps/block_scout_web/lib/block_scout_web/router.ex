@@ -4,11 +4,11 @@ defmodule BlockScoutWeb.Router do
   alias BlockScoutWeb.Plug.GraphQL
   alias BlockScoutWeb.{ApiRouter, WebRouter}
 
-  if Application.get_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
+  if Application.compile_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
     forward("/wobserver", Wobserver.Web.Router)
   end
 
-  if Application.get_env(:block_scout_web, :admin_panel_enabled) do
+  if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
     forward("/admin", BlockScoutWeb.AdminRouter)
   end
 
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Router do
 
   forward("/api", ApiRouter)
 
-  if Application.get_env(:block_scout_web, ApiRouter)[:reading_enabled] do
+  if Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
     # Needs to be 200 to support the schema introspection for graphiql
     @max_complexity 200
 
@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.Router do
     post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
-  if Application.get_env(:block_scout_web, WebRouter)[:enabled] do
+  if Application.compile_env(:block_scout_web, WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)
   else
     scope "/", BlockScoutWeb do

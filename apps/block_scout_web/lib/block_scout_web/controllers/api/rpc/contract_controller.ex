@@ -570,7 +570,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization_runs(other), do: other
 
   defp fetch_external_libraries(params) do
-    Enum.reduce(1..10, %{}, fn number, acc ->
+    Enum.reduce(1..Application.get_env(:block_scout_web, :verification_max_libraries), %{}, fn number, acc ->
       case Map.fetch(params, "library#{number}Name") do
         {:ok, library_name} ->
           library_address = Map.get(params, "library#{number}Address")
