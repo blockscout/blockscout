@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.TransactionView do
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2, tag_name_to_label: 1]
   import BlockScoutWeb.Tokens.Helpers
 
-  @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace"]
+  @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace", "state"]
 
   @token_burning_title "Token Burning"
   @token_minting_title "Token Minting"
@@ -522,6 +522,7 @@ defmodule BlockScoutWeb.TransactionView do
   defp tab_name(["internal-transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["logs"]), do: gettext("Logs")
   defp tab_name(["raw-trace"]), do: gettext("Raw Trace")
+  defp tab_name(["state"]), do: gettext("State changes")
 
   defp get_transaction_type_from_token_transfers(token_transfers) do
     token_transfers_types =
