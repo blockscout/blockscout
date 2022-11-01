@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Account.AuthController do
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account
+  alias Explorer.Repo.ConfigHelper
   alias Plug.CSRFProtection
 
   plug(Ueberauth)
@@ -68,6 +69,6 @@ defmodule BlockScoutWeb.Account.AuthController do
   def current_user(_), do: nil
 
   defp root do
-    System.get_env("NETWORK_PATH") || "/"
+    ConfigHelper.network_path()
   end
 end
