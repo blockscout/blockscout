@@ -51,16 +51,9 @@ defmodule Indexer.Fetcher.TokenInstance do
   end
 
   @impl BufferedTask
-  def run([%{contract_address_hash: hash, token_id: token_id, token_ids: token_ids}], _json_rpc_named_arguments) do
-    all_token_ids =
-      cond do
-        is_nil(token_id) -> token_ids
-        is_nil(token_ids) -> [token_id]
-        true -> [token_id] ++ token_ids
-      end
-
-    Enum.each(all_token_ids, &fetch_instance(hash, &1))
-    update_current_token_balances(hash, all_token_ids)
+  def run([%{contract_address_hash: hash, token_ids: token_ids}], _json_rpc_named_arguments) do
+    Enum.each(token_ids, &fetch_instance(hash, &1))
+    update_current_token_balances(hash, token_ids)
 
     :ok
   end
@@ -162,11 +155,10 @@ defmodule Indexer.Fetcher.TokenInstance do
   def async_fetch(token_transfers, _disabled?) when is_list(token_transfers) do
     data =
       token_transfers
-      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) and is_nil(token_transfer.token_ids) end)
+      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_ids) end)
       |> Enum.map(fn token_transfer ->
         %{
           contract_address_hash: token_transfer.token_contract_address_hash,
-          token_id: token_transfer.token_id,
           token_ids: token_transfer.token_ids
         }
       end)
