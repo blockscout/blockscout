@@ -16,6 +16,7 @@
 
 ### Fixes
 
+- [#6390](https://github.com/blockscout/blockscout/pull/6390) - Fix transactions responses in API v2
 - [#6357](https://github.com/blockscout/blockscout/pull/6357) - Fix definitions of NETWORK_PATH, API_PATH, SOCKET_ROOT: process trailing slash
 - [#6338](https://github.com/blockscout/blockscout/pull/6338) - Fix token search with space
 - [#6329](https://github.com/blockscout/blockscout/pull/6329) - Prevent logger from truncating response from rust verifier service in case of an error
