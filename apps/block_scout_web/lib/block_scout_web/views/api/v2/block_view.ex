@@ -3,31 +3,36 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
-  alias Explorer.Counters.{BlockBurnedFeeCounter, BlockPriorityFeeCounter}
-  alias Explorer.Chain.{Block, Wei}
+  alias Explorer.Chain
+  alias Explorer.Chain.Block
+  alias Explorer.Counters.BlockPriorityFeeCounter
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
   end
 
-  def render("blocks.json", %{blocks: blocks, next_page_params: next_page_params, conn: conn}) do
-    %{"items" => Enum.map(blocks, &prepare_block(&1, conn)), "next_page_params" => next_page_params}
+  def render("blocks.json", %{blocks: blocks, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(blocks, &prepare_block(&1, nil)), "next_page_params" => next_page_params}
+  end
+
+  def render("blocks.json", %{blocks: blocks}) do
+    Enum.map(blocks, &prepare_block(&1, nil))
   end
 
   def render("block.json", %{block: block, conn: conn}) do
     prepare_block(block, conn, true)
   end
 
+  def render("block.json", %{block: block, socket: _socket}) do
+    # single_block? set to true in order to prevent heavy fetching of reward type
+    prepare_block(block, nil, false)
+  end
+
   def prepare_block(block, conn, single_block? \\ false) do
-    burned_fee = block.base_fee_per_gas && Wei.mult(block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(block.hash))
+    burned_fee = Chain.burned_fees(block.transactions, block.base_fee_per_gas)
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
 
-    tx_fees =
-      Enum.reduce(block.transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
-        gas_used
-        |> Decimal.mult(gas_price.value)
-        |> Decimal.add(acc)
-      end)
+    tx_fees = Chain.txn_fees(block.transactions)
 
     %{
       "height" => block.number,

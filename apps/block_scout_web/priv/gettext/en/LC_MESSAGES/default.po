@@ -61,7 +61,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:224
+#: lib/block_scout_web/templates/layout/app.html.eex:225
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -135,6 +135,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_address.html.eex:4
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:20
+#: lib/block_scout_web/templates/transaction_state/index.html.eex:29
 #: lib/block_scout_web/views/address_view.ex:107
 #, elixir-autogen, elixir-format
 msgid "Address"
@@ -1167,7 +1168,7 @@ msgstr ""
 msgid "Optimization runs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_footer.html.eex:74
+#: lib/block_scout_web/templates/layout/_footer.html.eex:76
 #, elixir-autogen, elixir-format
 msgid "Other Explorers"
 msgstr ""

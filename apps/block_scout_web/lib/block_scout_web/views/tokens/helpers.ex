@@ -70,10 +70,6 @@ defmodule BlockScoutWeb.Tokens.Helpers do
     {:ok, nil}
   end
 
-  defp do_token_transfer_amount_for_api(%Token{type: "ERC-20", decimals: nil}, amount, _amounts, _token_id, _token_ids) do
-    {:ok, amount, nil}
-  end
-
   defp do_token_transfer_amount_for_api(
          %Token{type: "ERC-20", decimals: decimals},
          amount,
