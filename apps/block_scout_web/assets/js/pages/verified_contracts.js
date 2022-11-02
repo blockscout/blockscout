@@ -69,7 +69,9 @@ if ($('[data-page="verified-contracts-list"]').length) {
   const searchFunc = (_event) => {
     store.dispatch({ type: 'START_SEARCH' })
     const searchInput = $('[data-search-field]').val()
-    const path = window.location.pathname + '?search=' + searchInput
+    const pathHaveNoParams = window.location.pathname + '?search=' + searchInput
+    const pathHaveParams = window.location.pathname + window.location.search + '&search=' + searchInput
+    const path = window.location.href.includes('?') ? pathHaveParams : pathHaveNoParams
     loadPage(store, path)
   }
 

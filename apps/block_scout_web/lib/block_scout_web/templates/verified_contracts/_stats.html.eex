@@ -5,11 +5,11 @@
           <h2 class="card-title list-title-description "><%= gettext "Contracts" %></h2>
           <div class="d-flex justify-content-around">
             <div class="d-flex flex-column">
-              <h1><%= @contracts_count %></h1>
+              <h1><%= BlockScoutWeb.Cldr.Number.to_string!(@contracts_count, format: "#,###") %></h1>
               <span class="text-muted"><%= gettext ("Total") %></span>
             </div>
             <div class="d-flex flex-column">
-              <h1 class="text-success"><%= if @new_contracts_count > 0, do: "+" %><%= @new_contracts_count %></h1>
+              <h1 class="text-success"><%= if 0 |> Decimal.new() |> Decimal.lt?(@new_contracts_count), do: "+" %><%= BlockScoutWeb.Cldr.Number.to_string!(@new_contracts_count, format: "#,###") %></h1>
               <span class="text-muted"><%= gettext ("Last 24h") %></span>
             </div>
           </div>
@@ -18,11 +18,11 @@
           <h2 class="card-title list-title-description "><%= gettext "Verified Contracts" %></h2>
           <div class="d-flex justify-content-around">
             <div class="d-flex flex-column">
-              <h1><%= @verified_contracts_count %></h1>
+              <h1><%= BlockScoutWeb.Cldr.Number.to_string!(@verified_contracts_count, format: "#,###") %></h1>
               <span class="text-muted"><%= gettext ("Total") %></span>
             </div>
             <div class="d-flex flex-column">
-              <h1 class="text-success"><%= if @new_verified_contracts_count > 0, do: "+" %><%= @new_verified_contracts_count %></h1>
+              <h1 class="text-success"><%= if 0 |> Decimal.new() |> Decimal.lt?(@new_verified_contracts_count), do: "+" %><%= BlockScoutWeb.Cldr.Number.to_string!(@new_verified_contracts_count, format: "#,###") %></h1>
               <span class="text-muted"><%= gettext ("Last 24h") %></span>
             </div>
           </div>
