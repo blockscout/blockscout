@@ -37,6 +37,7 @@
 
 ### Chore
 
+- [#6387](https://github.com/blockscout/blockscout/pull/6387) - Fix errors in docker-build and e2e-tests workflows
 - [#6325](https://github.com/blockscout/blockscout/pull/6325) - Set http_only attribute of account authorization cookie to false
 - [#6343](https://github.com/blockscout/blockscout/pull/6343) - Docker-compose persistent logs
 - [#6240](https://github.com/blockscout/blockscout/pull/6240) - Elixir 1.14 support
