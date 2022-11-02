@@ -677,6 +677,7 @@ defmodule BlockScoutWeb.Etherscan do
   }
 
   @token_id_type %{
+    name: "Token ID",
     type: "integer",
     definition: "id of token",
     example: ~s("0")
@@ -870,6 +871,7 @@ defmodule BlockScoutWeb.Etherscan do
       values: %{
         type: "array",
         array_type: %{
+          name: "Transferred amount",
           type: "integer",
           definition: "The transferred amount of particular token instance."
         },

@@ -5683,28 +5683,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 or ERC-1155 with the given `hash` and `token_id` exists.
+  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
 
   Returns `:ok` if found
 
-      iex> contract_address = insert(:address)
+      iex> token = insert(:token)
       iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
+      iex> insert(:token_instance,
+      ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, contract_address.hash)
-      :ok
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_ids: [token_id]
-      ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, contract_address.hash)
+      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, token.contract_address_hash)
       :ok
 
   Returns `:not_found` if not found
@@ -5722,28 +5711,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 or ERC-1155 with the given `hash` and `token_id` exists.
+  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
 
   Returns `true` if found
 
-      iex> contract_address = insert(:address)
+      iex> token = insert(:token)
       iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
+      iex> insert(:token_instance,
+      ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, contract_address.hash)
-      true
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_ids: [token_id]
-      ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, contract_address.hash)
+      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, token.contract_address_hash)
       true
 
   Returns `false` if not found
