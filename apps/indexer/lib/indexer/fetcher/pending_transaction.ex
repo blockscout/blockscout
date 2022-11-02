@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
   alias Indexer.Fetcher.PendingTransaction
   alias Indexer.Transform.Addresses
 
-  @chunk_size 250
+  @chunk_size 100
 
   # milliseconds
   @default_interval 1_000
