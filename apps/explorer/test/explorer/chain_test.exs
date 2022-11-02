@@ -137,7 +137,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "ERC721_token_instance_from_token_id_and_token_address/2" do
+  describe "ERC721_or_ERC1155_token_instance_from_token_id_and_token_address/2" do
     test "return ERC721 token instance" do
       contract_address = insert(:address)
 
@@ -146,11 +146,11 @@ defmodule Explorer.ChainTest do
       insert(:token_transfer,
         from_address: contract_address,
         token_contract_address: contract_address,
-        token_id: token_id
+        token_ids: [token_id]
       )
 
       assert {:ok, result} =
-               Chain.erc721_token_instance_from_token_id_and_token_address(token_id, contract_address.hash)
+               Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, contract_address.hash)
 
       assert result.token_id == Decimal.new(token_id)
     end
@@ -4837,41 +4837,15 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
-        )
-
-      assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
-      assert result.token_id == token_transfer.token_id
-      assert result.contract_address_hash == token_transfer.token_contract_address_hash
-    end
-
-    test "reduces with given reducer and accumulator for ERC-1155 token" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-1155")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      token_transfer =
-        insert(
-          :token_transfer,
-          block_number: 1000,
-          to_address: build(:address),
-          transaction: transaction,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_id: nil,
           token_ids: [11]
         )
 
       assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
-      assert result.token_ids == token_transfer.token_ids
+      assert result.token_id == List.first(token_transfer.token_ids)
       assert result.contract_address_hash == token_transfer.token_contract_address_hash
     end
 
-    test "does not fetch token transfers without token id or token_ids" do
+    test "does not fetch token transfers without token_ids" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
 
@@ -4887,7 +4861,6 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         token_contract_address: token_contract_address,
         token: token,
-        token_id: nil,
         token_ids: nil
       )
 
@@ -4911,11 +4884,11 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
+          token_ids: [11]
         )
 
       insert(:token_instance,
-        token_id: token_transfer.token_id,
+        token_id: List.first(token_transfer.token_ids),
         token_contract_address_hash: token_transfer.token_contract_address_hash
       )
 
