@@ -1,24 +1,20 @@
 <div 
-    class="fade-in <%= status_class(@transaction) %>" 
-    data-test="<%= type_suffix(@transaction) %>" 
-    data-identifier-hash="<%= @transaction.hash %>"
+    data-identifier-hash="<%= @txn_batch.batch_index %>"
     style="width:100%;height:42px;display:flex;align-items:center;font-size:16px;padding:0 10px;border-bottom:1px solid #e7eaf3;"
 >
   
     <span style="width: 18%;">
-      <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
+      <%= render "_link.html", batch_index: @txn_batch .batch_index, data_test: "address_hash_link" %>
     </span>
-     <span style="width: 18%;">
-      batch index
+    <span style="width: 18%;" in-tile data-from-now="<%= block_timestamp(@txn_batch ) %>"></span>
+    <span style="width: 18%;">
+      <%= @txn_batch .size %>
     </span>
-     <span style="width: 18%;">
-      batch index
-    </span>
-     <span style="width: 30%;">
-      batch index
-    </span>
-     <span style="width: 16%;">
-      batch index
+    <a style="width: 30%;" href="https://goerli.etherscan.io/tx/<%= @txn_batch .hash %>" target="_blank">
+      <%= sub_hash_string(@txn_batch .hash) %>...
+    </a>
+    <span style="width: 16%;">
+      <%= @txn_batch .pre_total_elements %>
     </span>
     
 

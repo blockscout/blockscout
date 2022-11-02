@@ -58,7 +58,8 @@ defmodule Explorer.Chain do
     TokenTransfer,
     Transaction,
     Wei,
-    StateBatch
+    StateBatch,
+    TxnBatch
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -3213,6 +3214,38 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def fetch_recent_collated_txn_batch_for_rap(paging_options) do
+    #query =
+    #  from(
+    #    state in StateBatch,
+    #    where: state.size > 0,
+    #  )
+
+    #query
+    #|> limit(1)
+    #|> Repo.all()
+
+    fetch_txn_batch_for_rap()
+    |> handle_random_access_paging_options(paging_options)
+    #|> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  @spec recent_collated_txn_batches_for_rap([paging_options]) :: %{
+    :total_transactions_count => non_neg_integer(),
+    :txn_batches => [TxnBatch.t()]
+  }
+
+  def recent_collated_txn_batches_for_rap(options \\ []) when is_list(options) do
+    #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    #total_transactions_count = transactions_available_count()
+    fetched_txn_batches =fetch_recent_collated_txn_batch_for_rap(paging_options)
+    %{total_transactions_count: 1000, txn_batches: fetched_txn_batches}
+  end
+
+
   defp fetch_transactions_for_rap do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
@@ -3221,6 +3254,11 @@ defmodule Explorer.Chain do
   defp fetch_state_batch_for_rap do
     StateBatch
     |> order_by([state_batch], desc: state_batch.batch_index)
+  end
+
+  defp fetch_txn_batch_for_rap do
+    TxnBatch
+    |> order_by([txn_batch], desc: txn_batch.batch_index)
   end
 
   def transactions_available_count do
