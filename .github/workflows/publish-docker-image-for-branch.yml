@@ -54,8 +54,8 @@ jobs:
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
-            API_PATH=/xdai/chiado
-            NETWORK_PATH=/xdai/chiado
+            API_PATH=/gnosis/chiado
+            NETWORK_PATH=/gnosis/chiado
             DISABLE_WEBAPP=false
             DISABLE_WRITE_API=false
             CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER=
@@ -64,6 +64,6 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
             CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
-            SOCKET_ROOT=/xdai/chiado
+            SOCKET_ROOT=/gnosis/chiado
             SUBNETWORK=Gnosis Chain
             SENTRY_DSN_CLIENT_GNOSIS=${{ secrets.SENTRY_DSN_CLIENT_GNOSIS }}
