@@ -695,6 +695,37 @@ defmodule Explorer.Chain do
     )
   end
 
+
+
+
+
+
+
+
+  def where_batch_index_in_period(base_query, from_index, to_index) when is_nil(from_index) and not is_nil(to_index) do
+    from(q in base_query,
+      where: q.batch_index <= ^to_index
+    )
+  end
+
+  def where_batch_index_in_period(base_query, from_index, to_index) when not is_nil(from_index) and is_nil(to_index) do
+    from(q in base_query,
+      where: q.batch_index > ^from_index
+    )
+  end
+
+  def where_batch_index_in_period(base_query, from_index, to_index) when is_nil(from_index) and is_nil(to_index) do
+    from(q in base_query,
+      where: 1
+    )
+  end
+
+  def where_batch_index_in_period(base_query, from_index, to_index) do
+    from(q in base_query,
+      where: q.batch_index > ^from_index and q.batch_index <= ^to_index
+    )
+  end
+
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
   address hash.
@@ -3123,7 +3154,8 @@ defmodule Explorer.Chain do
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
+    Logger.info('-=-=-=')
+    Logger.info(paging_options)
     if is_nil(paging_options.key) do
       paging_options.page_size
       |> Transactions.take_enough()
@@ -3139,6 +3171,28 @@ defmodule Explorer.Chain do
     else
       fetch_recent_collated_transactions(paging_options, necessity_by_association)
     end
+  end
+
+  @spec recent_collated_txn_batches([paging_options]) :: [TxnBatch.t()]
+  def recent_collated_txn_batches(options \\ []) when is_list(options) do
+    #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    #if is_nil(paging_options.key) do
+    #  paging_options.page_size
+    #  |> Transactions.take_enough()
+    #  |> case do
+    #    nil ->
+    #      transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
+    #      Transactions.update(transactions)
+    #      transactions
+#
+    #    transactions ->
+    #      transactions
+    #  end
+    #else
+      fetch_recent_collated_txn_batches(paging_options)
+    #end
   end
 
   # RAP - random access pagination
@@ -3269,6 +3323,8 @@ defmodule Explorer.Chain do
   end
 
   def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
+    Logger.info('======1')
+    Logger.info(paging_options)
     paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
@@ -3276,6 +3332,18 @@ defmodule Explorer.Chain do
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
+
+
+  def fetch_recent_collated_txn_batches(paging_options) do
+    paging_options
+    |> fetch_txn_batches()
+    #|> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    #|> join_associations(necessity_by_association)
+    #|> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    |> Repo.all()
+  end
+
+
 
   @doc """
   Return the list of pending transactions that occurred recently.
@@ -4236,11 +4304,22 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
+
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
+
+
+  defp fetch_txn_batches(paging_options \\ nil, from_index \\ nil, to_index \\ nil) do
+    TxnBatch
+    |> order_by([txn_batch], desc: txn_batch.batch_index)
+    |> where_batch_index_in_period(from_index, to_index)
+    |> handle_paging_options(paging_options)
+  end
+
+
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
     Transaction

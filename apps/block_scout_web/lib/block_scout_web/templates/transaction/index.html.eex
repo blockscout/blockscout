@@ -36,7 +36,6 @@
       <div data-selector="transactions-list" data-items>
         <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
       </div>
-<span>123123</span>
       <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "bottom" %>
 
   </div>
