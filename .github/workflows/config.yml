@@ -7,7 +7,6 @@ on:
   pull_request:
     branches:
       - master
-      - api
 
 env:
   MIX_ENV: test
