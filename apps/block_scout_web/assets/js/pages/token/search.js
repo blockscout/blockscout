@@ -26,6 +26,9 @@ export function reducer (state, action) {
 }
 
 if ($('[data-page="tokens"]').length) {
+  let timer
+  const waitTime = 500
+
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
 
   store.dispatch({
@@ -33,21 +36,24 @@ if ($('[data-page="tokens"]').length) {
   })
 
   $searchInput.on('input', (event) => {
-    const value = $(event.target).val()
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      const value = $(event.target).val()
 
-    const loc = window.location.pathname
+      const loc = window.location.pathname
 
-    if (value.length >= 3 || value === '') {
-      store.dispatch({ type: 'START_SEARCH' })
-      store.dispatch({ type: 'START_REQUEST' })
-      $.ajax({
-        url: `${loc}?type=JSON&filter=${value}`,
-        type: 'GET',
-        dataType: 'json',
-        contentType: 'application/json; charset=utf-8'
-      }).done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
-        .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
-        .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
-    }
+      if (value.length >= 3 || value === '') {
+        store.dispatch({ type: 'START_SEARCH' })
+        store.dispatch({ type: 'START_REQUEST' })
+        $.ajax({
+          url: `${loc}?type=JSON&filter=${value}`,
+          type: 'GET',
+          dataType: 'json',
+          contentType: 'application/json; charset=utf-8'
+        }).done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
+          .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+          .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
+      }
+    }, waitTime)
   })
 }

@@ -1,3 +1,4 @@
+<!-- <%= @address.hash %> -->
 <% coin_or_transfer = if @coin_or_token_transfers == :coin, do: :coin, else: elem(List.first(@coin_or_token_transfers), 1)%>
 <%= if coin_or_transfer != :coin and coin_or_transfer.token.type != "ERC-20" or has_diff?(@balance_diff) do %>
   <tr>

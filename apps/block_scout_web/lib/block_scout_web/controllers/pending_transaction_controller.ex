@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.PendingTransactionController do
   end
 
   defp get_pending_transactions_and_next_page(options) do
-    transactions_plus_one = Chain.recent_pending_transactions(options)
+    transactions_plus_one = Chain.recent_pending_transactions(options, true)
     split_list_by_page(transactions_plus_one)
   end
 end

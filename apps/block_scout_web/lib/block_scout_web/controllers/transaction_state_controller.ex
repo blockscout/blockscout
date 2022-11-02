@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.TransactionStateController do
              necessity_by_association: %{
                [block: :miner] => :required,
                from_address: :required,
-               to_address: :required
+               to_address: :optional
              }
            ),
          {:ok, false} <-
@@ -63,40 +63,45 @@ defmodule BlockScoutWeb.TransactionStateController do
       {from_before, to_before, miner_before} = coin_balances_before(transaction, block_txs)
 
       from_hash = transaction.from_address_hash
+      to_hash = transaction.to_address_hash
+      miner_hash = block.miner_hash
+
       from = transaction.from_address
       from_after = do_update_coin_balance_from_tx(from_hash, transaction, from_before, block)
 
       from_coin_entry =
-        View.render_to_string(
-          TransactionStateView,
-          "_state_change.html",
-          coin_or_token_transfers: :coin,
-          address: from,
-          burn_address_hash: @burn_address_hash,
-          balance_before: from_before,
-          balance_after: from_after,
-          balance_diff: Wei.sub(from_after, from_before),
-          conn: conn
-        )
+        if from_hash not in [to_hash, miner_hash] do
+          View.render_to_string(
+            TransactionStateView,
+            "_state_change.html",
+            coin_or_token_transfers: :coin,
+            address: from,
+            burn_address_hash: @burn_address_hash,
+            balance_before: from_before,
+            balance_after: from_after,
+            balance_diff: Wei.sub(from_after, from_before),
+            conn: conn
+          )
+        end
 
-      to_hash = transaction.to_address_hash
       to = transaction.to_address
       to_after = do_update_coin_balance_from_tx(to_hash, transaction, to_before, block)
 
       to_coin_entry =
-        View.render_to_string(
-          TransactionStateView,
-          "_state_change.html",
-          coin_or_token_transfers: :coin,
-          address: to,
-          burn_address_hash: @burn_address_hash,
-          balance_before: to_before,
-          balance_after: to_after,
-          balance_diff: Wei.sub(to_after, to_before),
-          conn: conn
-        )
+        if to_hash != miner_hash do
+          View.render_to_string(
+            TransactionStateView,
+            "_state_change.html",
+            coin_or_token_transfers: :coin,
+            address: to,
+            burn_address_hash: @burn_address_hash,
+            balance_before: to_before,
+            balance_after: to_after,
+            balance_diff: Wei.sub(to_after, to_before),
+            conn: conn
+          )
+        end
 
-      miner_hash = block.miner_hash
       miner = block.miner
       miner_after = do_update_coin_balance_from_tx(miner_hash, transaction, miner_before, block)
 
@@ -141,7 +146,7 @@ defmodule BlockScoutWeb.TransactionStateController do
           )
         end
 
-      json(conn, %{items: [from_coin_entry, to_coin_entry, miner_entry | items]})
+      json(conn, %{items: Enum.sort([from_coin_entry, to_coin_entry, miner_entry | items])})
     else
       {:restricted_access, _} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)
@@ -253,12 +258,10 @@ defmodule BlockScoutWeb.TransactionStateController do
     to = tx.to_address_hash
     miner = block.miner_hash
 
-    case address_hash do
-      ^from -> Wei.sub(balance, from_loss(tx))
-      ^to -> Wei.sum(balance, to_profit(tx))
-      ^miner -> Wei.sum(balance, miner_profit(tx, block))
-      _ -> balance
-    end
+    balance
+    |> (&if(address_hash == from, do: Wei.sub(&1, from_loss(tx)), else: &1)).()
+    |> (&if(address_hash == to, do: Wei.sum(&1, to_profit(tx)), else: &1)).()
+    |> (&if(address_hash == miner, do: Wei.sum(&1, miner_profit(tx, block)), else: &1)).()
   end
 
   def token_balance(@burn_address_hash, _token_transfer, _block_number) do

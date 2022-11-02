@@ -46,7 +46,9 @@
           <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:github_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
           <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:chat_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Chat (#blockscout)") %></a></li>
           <li><a href="https://github.com/blockscout/blockscout/discussions" rel="noreferrer" class="footer-link"><%= gettext("Discussions") %></a></li>
-          <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
+          <%= if Application.get_env(:block_scout_web, :footer)[:enable_forum_link] do %>
+            <li><a href="<%= Application.get_env(:block_scout_web, :footer)[:forum_link] %>" rel="noreferrer" class="footer-link"><%= gettext("Forum") %></a></li>
+          <% end %>
           <li><a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" class="footer-link"><%= gettext("Staking stats") %></a></li>
           <li><a href="https://duneanalytics.com/maxaleks/xDai-Usage" rel="noreferrer" class="footer-link"><%= gettext("Gnosis Chain Usage stats") %></a></li>
           <%= render BlockScoutWeb.LayoutView, "_add_chain_to_mm.html" %>

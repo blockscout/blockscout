@@ -20,9 +20,11 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
       token_balance_a = build(:token_balance, token: build(:token, type: "ERC-20"))
       token_balance_b = build(:token_balance, token: build(:token, type: "ERC-721"))
 
-      token_balances = [{token_balance_a, %{}, %{}}, {token_balance_b, %{}, %{}}]
+      token_balances = [{token_balance_a, token_balance_a.token}, {token_balance_b, token_balance_b.token}]
 
-      assert AddressTokenBalanceView.filter_by_type(token_balances, "ERC-20") == [{token_balance_a, %{}, %{}}]
+      assert AddressTokenBalanceView.filter_by_type(token_balances, "ERC-20") == [
+               {token_balance_a, token_balance_a.token}
+             ]
     end
   end
 

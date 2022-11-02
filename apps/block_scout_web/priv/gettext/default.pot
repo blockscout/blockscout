@@ -596,7 +596,7 @@ msgstr ""
 msgid "Choose Target Pool"
 msgstr ""
 
-#: lib/block_scout_web/views/block_view.ex:63
+#: lib/block_scout_web/views/block_view.ex:65
 #, elixir-autogen, elixir-format
 msgid "Chore Reward"
 msgstr ""
@@ -1215,7 +1215,7 @@ msgstr ""
 msgid "Emission Contract"
 msgstr ""
 
-#: lib/block_scout_web/views/block_view.ex:71
+#: lib/block_scout_web/views/block_view.ex:73
 #, elixir-autogen, elixir-format
 msgid "Emission Reward"
 msgstr ""
@@ -1470,7 +1470,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:21
 #: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:22
 #: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:38
-#: lib/block_scout_web/views/block_view.ex:21
+#: lib/block_scout_web/views/block_view.ex:22
 #: lib/block_scout_web/views/wei_helpers.ex:77
 #, elixir-autogen, elixir-format
 msgid "Gwei"
@@ -1771,8 +1771,8 @@ msgstr ""
 msgid "Miner"
 msgstr "Validator"
 
-#: lib/block_scout_web/views/block_view.ex:61
-#: lib/block_scout_web/views/block_view.ex:66
+#: lib/block_scout_web/views/block_view.ex:63
+#: lib/block_scout_web/views/block_view.ex:68
 #, elixir-autogen, elixir-format
 msgid "Miner Reward"
 msgstr "Validator Reward"
