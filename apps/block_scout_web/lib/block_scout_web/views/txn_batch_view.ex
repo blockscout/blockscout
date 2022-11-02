@@ -44,8 +44,14 @@ defmodule BlockScoutWeb.TxnBatchView do
   end
 
   def sub_hash_string(hash) do
-    String.slice(hash, 1..21)
+    String.slice(hash, 0..21)
   end
+
+  def sub_hash_string(hash, length) do
+    String.slice(hash, 0..length)
+  end
+
+
 
   def value_transfer?(_), do: false
 

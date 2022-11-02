@@ -273,6 +273,7 @@ const elements = {
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, _oldState) {
+      console.log('--------');
       showLoader(state.transactionsLoading, $el)
     }
   },

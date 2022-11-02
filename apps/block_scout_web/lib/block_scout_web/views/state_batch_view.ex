@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.StateBatchView do
 
 
   def sub_hash_string(hash) do
-    String.slice(hash, 1..21)
+    String.slice(hash, 0..21)
   end
 
 

@@ -1,0 +1,26 @@
+<div 
+    data-identifier-hash="<%= @txn_batch.batch_index %>"
+    style="width:100%;box-sizing:border-box;height:80px;display:flex;align-items:center;font-size:16px;padding:0;border-bottom:1px solid #e7eaf3;"
+>
+    <span
+        style="width:44px;height:44px;flex:0 0 44px;color: #77838f;background: rgba(119,131,143,.1);font-size:18px;font-weight:500;border-radius:8px;text-align:center;line-height:44px;margin-right:5px;"
+    >
+        Ba
+    </span>
+    <div style="margin-bottom:5px;display:flex;flex-direction:column;flex:0 0 120px;">
+        <span>
+            <%= render "_link.html", batch_index: @txn_batch .batch_index, data_test: "address_hash_link" %>
+        </span>
+        <span in-tile data-from-now="<%= block_timestamp(@txn_batch ) %>"></span>
+        
+    </div>
+
+    <div style="margin-bottom:5px;display:flex;flex-direction:column;flex:1;">
+        <a href="https://goerli.etherscan.io/tx/<%= @txn_batch.hash %>" target="_blank">
+            <%= sub_hash_string(@txn_batch.hash, 15) %>...
+        </a>
+        <span>
+            <%= @txn_batch .size %> txns
+        </span>
+    </div>
+</div>
