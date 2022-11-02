@@ -1,5 +1,5 @@
 export type EventName =
-  | 'TransactionEnqueued'
+  //| 'TransactionEnqueued'
   | 'SequencerBatchAppended'
   | 'StateBatchAppended'
 
