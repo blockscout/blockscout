@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      # - fix-docker-build-every-push
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
@@ -75,10 +74,9 @@ jobs:
     needs: push_to_registry
     uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
     with:
-      env_vars: VALUES_DIR=deploy/values/e2e,APP_NAME=e2e-blockscout
       blockscoutImage: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
-      blockscoutIngressHost: blockscout-e2e-$GITHUB_SHA_SHORT
-      frontendIngressHost: blockscout-e2e-$GITHUB_SHA_SHORT
-      gethIngressHost: geth-e2e-$GITHUB_SHA_SHORT
-      scVerifierIngressHost: sc-verifier-e2e-$GITHUB_SHA_SHORT
+      blockscoutIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
+      frontendIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
+      gethIngressHost: e2e-geth-$GITHUB_SHA_SHORT
+      scVerifierIngressHost: e2e-sc-verifier-$GITHUB_SHA_SHORT
     secrets: inherit
