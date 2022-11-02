@@ -83,4 +83,4 @@ jobs:
       frontendIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
       gethIngressHost: e2e-geth-$GITHUB_SHA_SHORT
       scVerifierIngressHost: e2e-sc-verifier-$GITHUB_SHA_SHORT
-    secrets: inherit
+    # secrets: inherit
