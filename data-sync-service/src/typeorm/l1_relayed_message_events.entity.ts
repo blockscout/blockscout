@@ -14,6 +14,9 @@ export class L1RelayedMessageEvents {
   @Column({ type: "bytea" })
   signature: string;
 
+  @Column({ type: "boolean" })
+  is_merge: boolean;
+
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
   inserted_at: Date;
 

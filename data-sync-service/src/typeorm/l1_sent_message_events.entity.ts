@@ -17,6 +17,9 @@ export class L1SentMessageEvents {
   @Column({ type: "bytea" })
   message: string;
 
+  @Column({ type: "boolean" })
+  is_merge: boolean;
+
   @Column({ type: "bytea" })
   signature: string;
 

@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { 
+import {
   L2RelayedMessageEvents,
   L2SentMessageEvents,
 } from 'src/typeorm';
@@ -178,6 +178,9 @@ export class L2IngestionService {
   }
   async getAllSentEvents() {
     return this.sentEventsRepository.find();
+  }
+  async getUnMergeSentEvents() {
+    return this.sentEventsRepository.find({ where: { is_merge: false } });
   }
   async getAllRelayedEvents() {
     return this.relayedEventsRepository.find();

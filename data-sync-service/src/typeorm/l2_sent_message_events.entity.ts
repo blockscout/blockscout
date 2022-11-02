@@ -20,6 +20,9 @@ export class L2SentMessageEvents {
   @Column({ type: "bytea" })
   signature: string;
 
+  @Column({ type: "boolean" })
+  is_merge: boolean;
+
   @PrimaryColumn({ type: 'numeric', precision: 100 })
   message_nonce: number;
 
