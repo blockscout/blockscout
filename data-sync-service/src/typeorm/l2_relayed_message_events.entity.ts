@@ -17,6 +17,9 @@ export class L2RelayedMessageEvents {
   @Column({ type: "boolean" })
   is_merge: boolean;
 
+  @Column({ type: 'timestamp' })
+  timestamp: Date;
+
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
   inserted_at: Date;
 

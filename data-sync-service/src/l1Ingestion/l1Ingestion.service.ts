@@ -7,8 +7,8 @@ import {
   L1RelayedMessageEvents,
   L1SentMessageEvents,
   StateBatches,
-  TxnBatches,
-} from 'src/typeorm';
+  TxnBatches, L2RelayedMessageEvents, L2SentMessageEvents
+} from "src/typeorm";
 import { Repository, getManager, EntityManager, getConnection } from 'typeorm';
 import Web3 from 'web3';
 import CMGABI from '../abi/L1CrossDomainMessenger.json';
@@ -53,15 +53,6 @@ export class L1IngestionService {
     this.sccContract = sccContract;
     this.crossDomainMessengerContract = crossDomainMessengerContract;
     this.web3 = web3;
-  }
-  async getCtcTransactionEnqueuedByBlockNumber(
-    fromBlock: number,
-    toBlock: number,
-  ) {
-    return this.ctcContract.getPastEvents('TransactionEnqueued', {
-      fromBlock,
-      toBlock,
-    });
   }
   async getCtcTransactionBatchAppendedByBlockNumber(
     fromBlock: number,
@@ -126,6 +117,9 @@ export class L1IngestionService {
       .select('Max(block_number)', 'blockNumber')
       .getRawOne();
     return Number(result.blockNumber) || 0;
+  }
+  async getUnMergeSentEvents() {
+    return this.sentEventsRepository.find({ where: { is_merge: false } });
   }
   async createTxnBatchesEvents(startBlock, endBlock) {
     const result: any[] = [];
@@ -203,39 +197,6 @@ export class L1IngestionService {
     }
     return result;
   }
-  async createEnqueuedEvents(startBlock, endBlock) {
-    const list = await this.getCtcTransactionEnqueuedByBlockNumber(startBlock, endBlock);
-    const result: any[] = [];
-    for (const item of list) {
-      const {
-        blockNumber,
-        transactionHash,
-        signature,
-        address,
-        returnValues: {_l1TxOrigin, _target, _gasLimit, _queueIndex, _timestamp },
-      } = item;
-      try {
-        const savedResult = await this.entityManager.save(L1SentMessageEvents, {
-          tx_hash: transactionHash,
-          block_number: blockNumber.toString(),
-          target: _target,
-          sender: address,
-          message: signature,
-          message_nonce: _queueIndex,
-          gas_limit: _gasLimit,
-          signature: signature,
-          inserted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        result.push(savedResult);
-      } catch (error) {
-        this.logger.error(
-          `l1 createEnqueuedEvents blocknumber:${blockNumber} ${error}`,
-        );
-      }
-    }
-    return result;
-  }
   async createSentEvents(startBlock, endBlock) {
     const list = await this.getSentMessageByBlockNumber(startBlock, endBlock);
     const result: any[] = [];
@@ -303,14 +264,67 @@ export class L1IngestionService {
     return result;
   }
   async createL1L2Relation() {
-
-  }
-  async createL2L1Relation() {
-    const sentList = await this.l2IngestionService.getUnMergeSentEvents();
-    const result: any = [];
+    const sentList = await this.getUnMergeSentEvents();
     for (const item of sentList) {
       const {
         tx_hash,
+        block_number,
+        gas_limit,
+        target,
+        sender,
+        message,
+        message_nonce,
+      } = item;
+      const msgHash = this.verifyDomainCalldataHash({
+        target: target.toString(),
+        sender: sender.toString(),
+        message: message.toString(),
+        messageNonce: message_nonce.toString(),
+      });
+      const relayedResult =
+        await this.l2IngestionService.getRelayedEventByMsgHash(msgHash);
+      let l2_hash = 'unknown';
+      if (relayedResult) {
+        l2_hash = relayedResult.tx_hash;
+      } else {
+        continue;
+      }
+      await this.entityManager.save(L1ToL2, {
+        hash: tx_hash,
+        l2_hash: l2_hash,
+        block: Number(block_number),
+        timestamp: relayedResult.timestamp,
+        tx_origin: sender,
+        queue_index: Number(message_nonce.toString()),
+        data: 'unknown',
+        target: sender,
+        gas_limit: gas_limit,
+        gas_used: 1,
+        gas_price: 1,
+        fee_scalar: 1,
+        inserted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      await this.entityManager
+        .createQueryBuilder()
+        .update(L1SentMessageEvents)
+        .set({ is_merge: true })
+        .where('tx_hash = :tx_hash', { tx_hash: item.tx_hash })
+        .execute();
+      await this.entityManager
+        .createQueryBuilder()
+        .update(L2RelayedMessageEvents)
+        .set({ is_merge: true })
+        .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
+        .execute();
+    }
+  }
+  async createL2L1Relation() {
+    const sentList = await this.l2IngestionService.getUnMergeSentEvents();
+    for (const item of sentList) {
+      const {
+        tx_hash,
+        timestamp,
         block_number,
         gas_limit,
         target,
@@ -325,35 +339,42 @@ export class L1IngestionService {
         messageNonce: message_nonce.toString(),
       });
       const relayedResult = await this.getRelayedEventByMsgHash(msgHash);
-      let l1_hash = '';
+      let l1_hash = 'unknown';
       if (relayedResult) {
-        l1_hash = relayedResult.tx_hash.toString();
+        l1_hash = relayedResult.tx_hash;
+      } else {
+        continue;
       }
-      console.log('relayedResult===', relayedResult);
-      /*
-       message_nonce: message_nonce.toString(),
-        l2_tx_hash: item.tx_hash.toString(),
-        l1_tx_hash: relayedResult ? relayedResult.tx_hash.toString() : null
-      */
-      const savedResult = await this.entityManager.save(L2ToL1, {
-        hash: item.tx_hash,
-        l2_hash: relayedResult ? relayedResult.tx_hash : null,
+      await this.entityManager.save(L2ToL1, {
+        hash: l1_hash,
+        l2_hash: tx_hash,
         block: Number(block_number),
-        msg_nonce: message_nonce,
+        msg_nonce: Number(message_nonce),
         from_address: sender,
-        timestamp: new Date().toISOString(),
-        gas_limit: gas_limit,
-        gas_used: 0,
-        gas_price: 0,
-        fee_scalar: 0,
-        txn_batch_index: message_nonce,
-        state_batch_index: message_nonce,
+        txn_batch_index: 1,
+        state_batch_index: 1,
+        timestamp: timestamp,
         status: '',
+        gas_limit: gas_limit,
+        gas_used: gas_limit,
+        gas_price: gas_limit,
+        fee_scalar: gas_limit,
         inserted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
+      await this.entityManager
+        .createQueryBuilder()
+        .update(L2SentMessageEvents)
+        .set({ is_merge: true })
+        .where('tx_hash = :tx_hash', { tx_hash: item.tx_hash })
+        .execute();
+      await this.entityManager
+        .createQueryBuilder()
+        .update(L1RelayedMessageEvents)
+        .set({ is_merge: true })
+        .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
+        .execute();
     }
-    return result;
   }
   async syncSentEvents() {
     const startBlockNumber = await this.getSentEventsBlockNumber();

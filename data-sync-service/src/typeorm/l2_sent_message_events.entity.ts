@@ -29,6 +29,9 @@ export class L2SentMessageEvents {
   @Column({ type: 'numeric', precision: 100 })
   gas_limit: number;
 
+  @Column({ type: 'timestamp' })
+  timestamp: Date;
+
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
   inserted_at: Date;
 
