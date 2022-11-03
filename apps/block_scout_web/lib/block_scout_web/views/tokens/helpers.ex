@@ -52,6 +52,56 @@ defmodule BlockScoutWeb.Tokens.Helpers do
     nil
   end
 
+  def token_transfer_amount_for_api(%{
+        token: token,
+        amount: amount,
+        amounts: amounts,
+        token_id: token_id,
+        token_ids: token_ids
+      }) do
+    do_token_transfer_amount_for_api(token, amount, amounts, token_id, token_ids)
+  end
+
+  def token_transfer_amount_for_api(%{token: token, amount: amount, token_id: token_id}) do
+    do_token_transfer_amount_for_api(token, amount, nil, token_id, nil)
+  end
+
+  defp do_token_transfer_amount_for_api(%Token{type: "ERC-20"}, nil, nil, _token_id, _token_ids) do
+    {:ok, nil}
+  end
+
+  defp do_token_transfer_amount_for_api(
+         %Token{type: "ERC-20", decimals: decimals},
+         amount,
+         _amounts,
+         _token_id,
+         _token_ids
+       ) do
+    {:ok, amount, decimals}
+  end
+
+  defp do_token_transfer_amount_for_api(%Token{type: "ERC-721"}, _amount, _amounts, _token_id, _token_ids) do
+    {:ok, :erc721_instance}
+  end
+
+  defp do_token_transfer_amount_for_api(
+         %Token{type: "ERC-1155", decimals: decimals},
+         amount,
+         amounts,
+         _token_id,
+         token_ids
+       ) do
+    if amount do
+      {:ok, :erc1155_instance, amount, decimals}
+    else
+      {:ok, :erc1155_instance, amounts, token_ids, decimals}
+    end
+  end
+
+  defp do_token_transfer_amount_for_api(_token, _amount, _amounts, _token_id, _token_ids) do
+    nil
+  end
+
   @doc """
   Returns the token's symbol.
 

@@ -14,12 +14,18 @@ defmodule BlockScoutWeb.TokenChannel do
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
 
-  def join("tokens:new_token_transfer", _params, socket) do
+  def join("tokens:" <> _transaction_hash, _params, socket) do
     {:ok, %{}, socket}
   end
 
-  def join("tokens:" <> _transaction_hash, _params, socket) do
-    {:ok, %{}, socket}
+  def handle_out(
+        "token_transfer",
+        %{token_transfer: _token_transfer},
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
+      ) do
+    push(socket, "token_transfer", %{token_transfer: 1})
+
+    {:noreply, socket}
   end
 
   def handle_out("token_transfer", %{token_transfer: token_transfer}, socket) do

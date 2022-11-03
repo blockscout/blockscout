@@ -20,7 +20,7 @@ defmodule Explorer.Account.WatchlistAddress do
   schema "account_watchlist_addresses" do
     field(:address_hash_hash, Cloak.Ecto.SHA256)
     field(:name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:address_hash, Explorer.Encrypted.AddressHash)
 
     belongs_to(:watchlist, Watchlist)
 

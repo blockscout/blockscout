@@ -19,7 +19,7 @@ defmodule Explorer.Account.TagAddress do
   schema "account_tag_addresses" do
     field(:address_hash_hash, Cloak.Ecto.SHA256)
     field(:name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:address_hash, Explorer.Encrypted.AddressHash)
 
     belongs_to(:identity, Identity)
 

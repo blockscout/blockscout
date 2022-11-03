@@ -10,7 +10,7 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   @cache_name :token_holders_counter
   @last_update_key "last_update"
 
-  config = Application.get_env(:explorer, Explorer.Counters.TokenHoldersCounter)
+  config = Application.compile_env(:explorer, Explorer.Counters.TokenHoldersCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

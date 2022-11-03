@@ -32,7 +32,8 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty
 config :block_scout_web, :footer,
   chat_link: System.get_env("FOOTER_CHAT_LINK", "https://discord.gg/blockscout"),
   forum_link: System.get_env("FOOTER_FORUM_LINK", "https://forum.poa.network/c/blockscout"),
-  github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/blockscout/blockscout")
+  github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/blockscout/blockscout"),
+  enable_forum_link: System.get_env("FOOTER_ENABLE_FORUM_LINK", "false") == "true"
 
 ######################
 ### BlockScout Web ###
@@ -98,6 +99,7 @@ config :block_scout_web,
   max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
+  new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
   verification_max_libraries: verification_max_libraries
@@ -167,6 +169,8 @@ config :block_scout_web,
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   # days
   coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
+
+config :block_scout_web, BlockScoutWeb.API.V2, enabled: System.get_env("API_V2_ENABLED") == "true"
 
 ########################
 ### Ethereum JSONRPC ###
@@ -437,6 +441,9 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
+
+config :indexer, Indexer.Fetcher.TokenInstance.Supervisor,
+  disabled?: System.get_env("DISABLE_TOKEN_INSTANCE_FETCHER", "false") == "true"
 
 blocks_catchup_fetcher_batch_size_default_str = "10"
 blocks_catchup_fetcher_concurrency_default_str = "10"

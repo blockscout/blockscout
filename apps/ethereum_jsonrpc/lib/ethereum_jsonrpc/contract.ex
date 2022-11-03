@@ -219,6 +219,8 @@ defmodule EthereumJSONRPC.Contract do
     end
   end
 
+  defp format_error(nil), do: {:error, ""}
+
   defp format_error(message) when is_binary(message) do
     {:error, message}
   end

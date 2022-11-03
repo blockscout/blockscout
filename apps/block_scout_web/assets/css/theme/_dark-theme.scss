@@ -49,6 +49,9 @@ $dark-header-font-color: #A4A9B4;
 				background-color: $navbar-bg;
 			}
 		}
+		.nav-submenu {
+			color: $labels-dark;
+		}
 	}
 	.navbar-brand .navbar-logo {
 		filter: brightness(0) invert(1);
