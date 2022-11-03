@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
     ]
 
   @default_cache_period :timer.hours(2)
-  config = Application.get_env(:explorer, __MODULE__)
+  config = Application.compile_env(:explorer, __MODULE__)
   @enabled Keyword.get(config, :enabled)
 
   use Explorer.Chain.MapCache,

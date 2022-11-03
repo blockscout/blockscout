@@ -7,13 +7,13 @@
     <div
       class="border-bottom"
       data-dropdown-token-balance-test
-      data-token-name="<%= token_name(token_balance.token) %>"
-      data-token-symbol="<%= token_symbol(token_balance.token) %>"
+      data-token-name="<%= token_name(token) %>"
+      data-token-symbol="<%= token_symbol(token) %>"
     >
       <% path = cond do
-          token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
-          token_balance.token_type == "ERC-1155" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token_balance.token.contract_address_hash, to_string(token_balance.token_id))
-          true -> token_path(@conn, :show, to_string(token_balance.token.contract_address_hash))
+          token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token.contract_address_hash, to_string(token_balance.token_id))
+          token_balance.token_type == "ERC-1155" && !is_nil(token_balance.token_id) -> token_instance_path(@conn, :show, token.contract_address_hash, to_string(token_balance.token_id))
+          true -> token_path(@conn, :show, to_string(token.contract_address_hash))
         end
       %>
       <%= link(
@@ -34,16 +34,16 @@
           <% end %>
           <p class="mb-0 col-md-6 pl-0 pr-0 el-1 flex-grow-2 <%= if System.get_env("DISPLAY_TOKEN_ICONS") !== "true", do: "ml-5px" %>"><%= token_name(token) %>
           </p>
-          <%= if token_balance.token.usd_value do %>
+          <%= if token.usd_value do %>
             <p class="mb-0 col-md-6 text-right usd-total">
-              <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(token_balance) %>"></span>
+              <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(token_balance, token) %>"></span>
             </p>
           <% end %>
         </div>
         <div class="row dropdown-row wh-sp">
-          <%= if token_balance.token.usd_value do %>
+          <%= if token.usd_value do %>
             <p class="mb-0 text-right text-muted usd-rate">
-              <span data-selector="token-price" data-token-usd-value="<%= token_balance.token.usd_value %>"></span>
+              <span data-selector="token-price" data-token-usd-value="<%= token.usd_value %>"></span>
             </p>
           <% end %>
         </div>
@@ -52,7 +52,7 @@
             <%= if token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id) do %>
               1
             <% else %>
-              <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_symbol(token_balance.token) %>
+              <%= format_according_to_decimals(token_balance.value, token.decimals) %> <%= token_symbol(token) %>
             <% end %>
             <%= if (token_balance.token_type == "ERC-721" && !is_nil(token_balance.token_id)) or token_balance.token_type == "ERC-1155" do %>
               <%= " TokenID " <> to_string(token_balance.token_id) %>

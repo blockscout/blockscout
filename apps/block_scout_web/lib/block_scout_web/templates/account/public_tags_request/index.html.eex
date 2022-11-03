@@ -1,0 +1,44 @@
+<section class="container">
+  <div class="row">
+    <%= render BlockScoutWeb.Account.CommonView, "_nav.html", conn: @conn, active_item: :public_tags %>
+    <div class="col-md-10">
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title list-title-description header-account"><%= gettext "Public tags" %> </h1>
+          <br>
+          <div style="min-width: 100%;">
+            <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
+              <%= gettext "You can request a public category tag which is displayed to all Blockscout users. Public tags may be added to contract or external addresses, and any associated transactions will inherit that tag. Clicking a tag opens a page with related information and helps provide context and data organization. Requests are sent to a moderator for review and approval. This process can take several days." %>
+            </div>
+          </div>
+          <div class="col-sm">
+            <div class="mb-3 row o-flow-x">
+              <%= if @public_tags_requests != [] do %>
+                <table class="table mb-3 table-watchlist">
+                  <thead style="font-size: 14px; color: #6c757d" >
+                    <tr>
+                      <th scope="col"><%= gettext "Public tag" %></th>
+                      <th scope="col"><%= gettext "Smart contract / Address" %></th>
+                      <th scope="col"><%= gettext "Submission date" %></th>
+                      <th scope="col"></th>
+                      <th scope="col"></th>
+                    </tr>
+                  </thead>
+                  <tbody style="font-size: 15px; color: #6c757d" >
+                    <%= Enum.map(@public_tags_requests, fn x ->
+                      render("row.html", public_tags_request: x, conn: @conn)
+                      end) %>
+                  </tbody>
+                </table>
+              <% end %>
+            </div>
+          </div>
+          <%= if Enum.count(@public_tags_requests) < PublicTagsRequest.get_max_public_tags_request_count() do %>
+            <a class="button button-primary button-sm" href="<%= public_tags_request_path(@conn, :new) %>"><%= gettext "Request to add public tag" %></a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/delete-item-handler.js") %>"></script>
+</section>

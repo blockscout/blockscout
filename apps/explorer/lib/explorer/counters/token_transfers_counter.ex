@@ -10,7 +10,7 @@ defmodule Explorer.Counters.TokenTransfersCounter do
   @cache_name :token_transfers_counter
   @last_update_key "last_update"
 
-  config = Application.get_env(:explorer, Explorer.Counters.TokenTransfersCounter)
+  config = Application.compile_env(:explorer, Explorer.Counters.TokenTransfersCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

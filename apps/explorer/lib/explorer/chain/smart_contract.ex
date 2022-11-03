@@ -458,6 +458,10 @@ defmodule Explorer.Chain.SmartContract do
     merge_twin_vyper_contract_with_changeset(nil, changeset)
   end
 
+  def merge_twin_vyper_contract_with_changeset(%__MODULE__{is_vyper_contract: nil}, %Changeset{} = changeset) do
+    merge_twin_vyper_contract_with_changeset(nil, changeset)
+  end
+
   def merge_twin_vyper_contract_with_changeset(nil, %Changeset{} = changeset) do
     changeset
     |> Changeset.put_change(:name, "Vyper_contract")
