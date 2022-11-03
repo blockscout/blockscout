@@ -1,4 +1,4 @@
-<% native_coin = gettext("ETH") %>
+<% native_coin = Explorer.coin_name() %>
 <!-- USD value of the balance -->
 <% wei_value = if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>
 <% raw_usd_value =
