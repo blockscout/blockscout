@@ -23,6 +23,11 @@ $navbar-logo-width: 100% !default;
   }
 
   .navbar-nav {
+
+    .nav-submenu {
+      padding: 10px 20px;
+      color: $header-links-color; 
+    }
     
     .nav-link {
       outline: none;

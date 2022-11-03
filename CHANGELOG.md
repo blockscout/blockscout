@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6324](https://github.com/blockscout/blockscout/pull/6324) - Add verified contracts list page
 - [#6379](https://github.com/blockscout/blockscout/pull/6379) - API v2 for frontend
 - [#6351](https://github.com/blockscout/blockscout/pull/6351) - Enable forum link env var
 - [#6316](https://github.com/blockscout/blockscout/pull/6316) - Copy public tags functionality to master
@@ -16,6 +17,7 @@
 
 ### Fixes
 
+- [#6390](https://github.com/blockscout/blockscout/pull/6390) - Fix transactions responses in API v2
 - [#6357](https://github.com/blockscout/blockscout/pull/6357) - Fix definitions of NETWORK_PATH, API_PATH, SOCKET_ROOT: process trailing slash
 - [#6338](https://github.com/blockscout/blockscout/pull/6338) - Fix token search with space
 - [#6329](https://github.com/blockscout/blockscout/pull/6329) - Prevent logger from truncating response from rust verifier service in case of an error
