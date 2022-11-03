@@ -76,7 +76,7 @@ jobs:
 
   deploy_and_tests:
     needs: push_to_registry
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@urls
+    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
     with:
       blockscoutImage: blockscout/blockscout:pr-${{ needs.push_to_registry.outputs.short-sha }}
       blockscoutIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
