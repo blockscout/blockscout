@@ -32,11 +32,12 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
-  def filter_options(%{"filter" => filter}) do
-    parse_filter(filter, @allowed_filter_labels)
+  def filter_options(%{"filter" => filter}, fallback) do
+    filter = parse_filter(filter, @allowed_filter_labels)
+    if filter == [], do: [fallback], else: filter
   end
 
-  def filter_options(_params), do: []
+  def filter_options(_params, fallback), do: [fallback]
 
   def type_filter_options(%{"type" => type}) do
     parse_filter(type, @allowed_type_labels)

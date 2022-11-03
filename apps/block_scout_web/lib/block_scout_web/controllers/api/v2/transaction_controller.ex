@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
-    only: [paging_options: 2, filter_options: 1, method_filter_options: 1, type_filter_options: 1]
+    only: [paging_options: 2, filter_options: 2, method_filter_options: 1, type_filter_options: 1]
 
   alias Explorer.Chain
   alias Explorer.Chain.Import
@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   def transactions(conn, params) do
-    filter_options = filter_options(params)
+    filter_options = filter_options(params, :validated)
     method_filter_options = method_filter_options(params)
     type_filter_options = type_filter_options(params)
 
