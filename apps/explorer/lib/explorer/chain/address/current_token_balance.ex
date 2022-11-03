@@ -165,7 +165,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: ctb.value > 0,
       left_join: t in Token,
       on: ctb.token_contract_address_hash == t.contract_address_hash,
-      preload: :token,
       select: {ctb, t},
       order_by: [desc: ctb.value, asc: t.type, asc: t.name]
     )
