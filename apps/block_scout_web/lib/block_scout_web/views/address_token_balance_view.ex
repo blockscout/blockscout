@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
   end
 
   def filter_by_type(token_balances, type) do
-    Enum.filter(token_balances, fn {token_balance, _} -> token_balance.token.type == type end)
+    Enum.filter(token_balances, fn {_token_balance, token} -> token.type == type end)
   end
 
   @doc """
@@ -30,15 +30,23 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
   def sort_by_usd_value_and_name(token_balances) do
     token_balances
     |> Enum.sort(fn {token_balance1, token1}, {token_balance2, token2} ->
-      usd_value1 = token_balance1.token.usd_value
-      usd_value2 = token_balance2.token.usd_value
+      usd_value1 = token1.usd_value
+      usd_value2 = token2.usd_value
 
       token_name1 = token1.name
       token_name2 = token2.name
 
       sort_by_name = sort_2_tokens_by_name(token_name1, token_name2)
 
-      sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
+      sort_2_tokens_by_value_desc_and_name(
+        token_balance1,
+        token_balance2,
+        usd_value1,
+        usd_value2,
+        sort_by_name,
+        token1,
+        token2
+      )
     end)
   end
 
@@ -58,9 +66,17 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
     end
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(
+         token_balance1,
+         token_balance2,
+         usd_value1,
+         usd_value2,
+         sort_by_name,
+         token1,
+         token2
+       )
        when not is_nil(usd_value1) and not is_nil(usd_value2) do
-    case Decimal.compare(Chain.balance_in_usd(token_balance1), Chain.balance_in_usd(token_balance2)) do
+    case Decimal.compare(Chain.balance_in_usd(token_balance1, token1), Chain.balance_in_usd(token_balance2, token2)) do
       :gt ->
         true
 
@@ -72,17 +88,41 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
     end
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, _sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(
+         _token_balance1,
+         _token_balance2,
+         usd_value1,
+         usd_value2,
+         _sort_by_name,
+         _token1,
+         _token2
+       )
        when not is_nil(usd_value1) and is_nil(usd_value2) do
     true
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, _sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(
+         _token_balance1,
+         _token_balance2,
+         usd_value1,
+         usd_value2,
+         _sort_by_name,
+         _token1,
+         _token2
+       )
        when is_nil(usd_value1) and not is_nil(usd_value2) do
     false
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(
+         _token_balance1,
+         _token_balance2,
+         usd_value1,
+         usd_value2,
+         sort_by_name,
+         _token1,
+         _token2
+       )
        when is_nil(usd_value1) and is_nil(usd_value2) do
     sort_by_name
   end

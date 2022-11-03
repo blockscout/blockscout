@@ -11,11 +11,22 @@ config :explorer, Explorer.Repo,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(7),
   timeout: :timer.seconds(60),
-  queue_target: 1000
+  queue_target: 1000,
+  migration_lock: nil
 
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
   database: "explorer_test",
+  hostname: "localhost",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  # Default of `5_000` was too low for `BlockFetcher` test
+  ownership_timeout: :timer.minutes(1),
+  timeout: :timer.seconds(60),
+  queue_target: 1000
+
+# Configure API database
+config :explorer, Explorer.Repo.Account,
+  database: "explorer_test_account",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
