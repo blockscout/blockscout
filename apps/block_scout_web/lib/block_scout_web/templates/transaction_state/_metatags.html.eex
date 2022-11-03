@@ -1,0 +1,1 @@
+<%= render BlockScoutWeb.TransactionView, "_metatags.html", conn: @conn, transaction: @transaction %>

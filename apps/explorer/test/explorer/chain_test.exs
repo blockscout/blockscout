@@ -3829,12 +3829,12 @@ defmodule Explorer.ChainTest do
 
   describe "recent_collated_transactions/1" do
     test "with no collated transactions it returns an empty list" do
-      assert [] == Explorer.Chain.recent_collated_transactions()
+      assert [] == Explorer.Chain.recent_collated_transactions(true)
     end
 
     test "it excludes pending transactions" do
       insert(:transaction)
-      assert [] == Explorer.Chain.recent_collated_transactions()
+      assert [] == Explorer.Chain.recent_collated_transactions(true)
     end
 
     test "returns a list of recent collated transactions" do
@@ -3846,7 +3846,7 @@ defmodule Explorer.ChainTest do
 
       oldest_seen = Enum.at(newest_first_transactions, 9)
       paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
-      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
+      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(true, paging_options: paging_options)
 
       assert length(recent_collated_transactions) == 10
       assert hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
@@ -3868,10 +3868,11 @@ defmodule Explorer.ChainTest do
         to_address: address,
         transaction: transaction,
         token_contract_address: token_contract_address,
-        token: token
+        token: token,
+        block: transaction.block
       )
 
-      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())
+      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions(true))
       assert fetched_transaction.hash == transaction.hash
       assert length(fetched_transaction.token_transfers) == 2
     end
@@ -5731,6 +5732,66 @@ defmodule Explorer.ChainTest do
       )
 
       assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
+    end
+  end
+
+  describe "verified_contracts/2" do
+    test "without contracts" do
+      assert [] = Chain.verified_contracts()
+    end
+
+    test "with contracts" do
+      %SmartContract{address_hash: hash} = insert(:smart_contract)
+
+      assert [%SmartContract{address_hash: ^hash}] = Chain.verified_contracts()
+    end
+
+    test "with contracts can be paginated" do
+      second_page_contracts_ids =
+        50
+        |> insert_list(:smart_contract)
+        |> Enum.map(& &1.id)
+
+      contract = insert(:smart_contract)
+
+      assert second_page_contracts_ids ==
+               [paging_options: %PagingOptions{key: {contract.id}, page_size: 50}]
+               |> Chain.verified_contracts()
+               |> Enum.map(& &1.id)
+               |> Enum.reverse()
+    end
+
+    test "filters solidity" do
+      insert(:smart_contract, is_vyper_contract: true)
+      %SmartContract{address_hash: hash} = insert(:smart_contract, is_vyper_contract: false)
+
+      assert [%SmartContract{address_hash: ^hash}] = Chain.verified_contracts(filter: :solidity)
+    end
+
+    test "filters vyper" do
+      insert(:smart_contract, is_vyper_contract: false)
+      %SmartContract{address_hash: hash} = insert(:smart_contract, is_vyper_contract: true)
+
+      assert [%SmartContract{address_hash: ^hash}] = Chain.verified_contracts(filter: :vyper)
+    end
+
+    test "search by address" do
+      insert(:smart_contract)
+      insert(:smart_contract)
+      insert(:smart_contract)
+      %SmartContract{address_hash: hash} = insert(:smart_contract)
+
+      assert [%SmartContract{address_hash: ^hash}] = Chain.verified_contracts(search: Hash.to_string(hash))
+    end
+
+    test "search by name" do
+      insert(:smart_contract)
+      insert(:smart_contract)
+      insert(:smart_contract)
+      contract_name = "qwertyufhgkhiop"
+      %SmartContract{address_hash: hash} = insert(:smart_contract, name: contract_name)
+
+      assert [%SmartContract{address_hash: ^hash}] = Chain.verified_contracts(search: contract_name)
     end
   end
 

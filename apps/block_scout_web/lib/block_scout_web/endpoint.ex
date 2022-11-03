@@ -2,11 +2,12 @@ defmodule BlockScoutWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :block_scout_web
   use Absinthe.Phoenix.Endpoint
 
-  if Application.get_env(:block_scout_web, :sql_sandbox) do
+  if Application.compile_env(:block_scout_web, :sql_sandbox) do
     plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
 
   socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
+  socket("/socket/v2", BlockScoutWeb.UserSocketV2, websocket: [timeout: 45_000])
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -65,7 +66,8 @@ defmodule BlockScoutWeb.Endpoint do
     store: BlockScoutWeb.Plug.RedisCookie,
     key: "_explorer_key",
     signing_salt: "iC2ksJHS",
-    same_site: "Lax"
+    same_site: "Lax",
+    http_only: false
   )
 
   use SpandexPhoenix

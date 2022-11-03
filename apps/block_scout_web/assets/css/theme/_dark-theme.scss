@@ -52,6 +52,9 @@ $dashboard-line-color-transactions-dark-theme: $primary;
 				background-color: $navbar-bg;
 			}
 		}
+		.nav-submenu {
+			color: $labels-dark;
+		}
 	}
 	.navbar-brand .navbar-logo {
 		filter: brightness(0) invert(1);
