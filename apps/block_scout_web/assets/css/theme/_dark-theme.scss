@@ -112,6 +112,9 @@ $footer-item-disc-color-dark-mode: $dark-secondary !default;
 				background-color: $navbar-color-dark-mode !important;
 			}
 		}
+		.nav-submenu {
+			color: $labels-dark;
+		}
 	}
 	.navbar-brand .navbar-logo {
 		filter: $logo-filter-dark-mode !important;

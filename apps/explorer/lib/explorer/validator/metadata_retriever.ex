@@ -15,7 +15,7 @@ defmodule Explorer.Validator.MetadataRetriever do
     end)
   end
 
-  defp fetch_validators_list do
+  def fetch_validators_list do
     # b7ab4db5 = keccak256(getValidators())
     case Reader.query_contract(
            config(:validators_contract_address),

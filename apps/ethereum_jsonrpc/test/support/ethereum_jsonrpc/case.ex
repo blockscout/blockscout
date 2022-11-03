@@ -28,7 +28,7 @@ defmodule EthereumJSONRPC.Case do
   require Logger
 
   setup do
-    module("ETHEREUM_JSONRPC_CASE", "EthereumJSONRPC.Case.Parity.Mox").setup()
+    module("ETHEREUM_JSONRPC_CASE", "EthereumJSONRPC.Case.Nethermind.Mox").setup()
   end
 
   def log_bad_gateway(under_test, assertions) do

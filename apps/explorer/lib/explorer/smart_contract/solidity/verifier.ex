@@ -525,9 +525,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     Enum.any?(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
   end
 
-  defp parse_boolean("true"), do: true
-  defp parse_boolean("false"), do: false
+  def parse_boolean("true"), do: true
+  def parse_boolean("false"), do: false
 
-  defp parse_boolean(true), do: true
-  defp parse_boolean(false), do: false
+  def parse_boolean(true), do: true
+  def parse_boolean(false), do: false
+
+  def parse_boolean(_), do: false
 end

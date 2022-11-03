@@ -9,9 +9,6 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   use Explorer.Schema
 
-  import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
-
   alias Explorer.Chain
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.{Address, Block, Hash, Token}
@@ -89,8 +86,22 @@ defmodule Explorer.Chain.Address.TokenBalance do
       join: t in Token,
       on: tb.token_contract_address_hash == t.contract_address_hash,
       where:
-        ((tb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20" or t.type == "ERC-1155") and
+        ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or t.type == "ERC-1155") and
           (is_nil(tb.value_fetched_at) or is_nil(tb.value))
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the token balance of the given token contract hash of the given address in the given block.
+  """
+  def fetch_token_balance(address_hash, token_contract_address_hash, block_number) do
+    from(
+      tb in TokenBalance,
+      where: tb.address_hash == ^address_hash,
+      where: tb.token_contract_address_hash == ^token_contract_address_hash,
+      where: tb.block_number <= ^block_number,
+      limit: ^1,
+      order_by: [desc: :block_number]
     )
   end
 end

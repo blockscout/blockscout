@@ -28,6 +28,7 @@
           <% end %>
           <h1 class="card-title lg-card-title mb-2-desktop">
             <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
+            <%= render BlockScoutWeb.AddressView, "_labels.html", address_hash: @address.hash, tags: @tags %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
@@ -37,25 +38,6 @@
                       aria_label: gettext("Copy Address"),
                       title: gettext("Copy Address") %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_qr_code.html" %>
-              <%= if validator_metadata = primary_validator_metadata(@address) do %>
-                <span
-                  class="overview-title-item"
-                  data-target="#validatorModal"
-                  data-toggle="modal"
-                >
-                  <span
-                    aria-label='<%= gettext("Show Validator Info") %>'
-                    class="btn-address-card-icon"
-                    data-placement="top"
-                    data-toggle="tooltip"
-                    title='<%= gettext("Validator Info") %>'
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">
-                      <path fill-rule="evenodd" d="M19 6h-6a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zm0-4h-6a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zM9 10H1a1 1 0 0 1-1-1V7a2 2 0 0 1 2-2h.184A2.962 2.962 0 0 1 2 4V3a3 3 0 1 1 6 0v1c0 .353-.072.686-.184 1H8a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1zM6 3a1 1 0 0 0-2 0v1a1 1 0 0 0 2 0V3zm2 4H2v1h6V7zm5 1h6a1 1 0 0 1 0 2h-6a1 1 0 0 1 0-2z"/>
-                    </svg>
-                  </span>
-                </span>
-              <% end %>
             </span>
           </h1>
           <h3 class="address-detail-hash-title mb-4 <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
@@ -134,7 +116,8 @@
                     "data-test": "transaction_hash_link"
                   ) %>
                 <% else %>
-                  <p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>
+                  <p class="alert alert-danger" role="alert"><%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Contract was precompiled and created at genesis or contract creation transaction is missing") %><%= gettext("Error: Could not determine contract creator.") %></p>
                 <% end %>
               </dd>
             </dl>
@@ -178,7 +161,7 @@
                     data-placement="top"
                     data-toggle="tooltip"
                     data-html="true"
-                    title='<%= "@ " <> usd_value <> "/" <> gettext("Ether") %>'  
+                    title='<%= "@ " <> usd_value <> "/" <> Explorer.coin_name() %>'  
                   >
                   </span>)
                 </span>
@@ -305,10 +288,5 @@
 
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@address), title: @address %>
-
-<!-- Modal Validator -->
-<%= if validator_metadata do %>
-  <%= render BlockScoutWeb.AddressView, "_validator_metadata_modal.html", address_name: address_name, validator_metadata: validator_metadata %>
-<% end %>
 
 <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 

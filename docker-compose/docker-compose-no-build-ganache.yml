@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  redis_db:
+    image: 'redis:alpine'
+    ports:
+      - 6379:6379
+    container_name: redis_db
+    command: redis-server
+    volumes:
+      - ./redis-data:/data
+
   db:
     image: postgres:14
     restart: always
@@ -16,6 +25,7 @@ services:
     depends_on:
       - db
       - smart-contract-verifier
+      - redis_db
     image: blockscout/blockscout:${DOCKER_TAG:-latest}
     restart: always
     container_name: 'blockscout'
@@ -30,6 +40,7 @@ services:
         ETHEREUM_JSONRPC_VARIANT: 'ganache'
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
+        INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
         ECTO_USE_SSL: 'false'
@@ -37,6 +48,8 @@ services:
         CHAIN_ID: '1337'
     ports:
       - 4000:4000
+    volumes:
+      - ./logs/:/app/logs/
 
   smart-contract-verifier:
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
@@ -46,3 +59,4 @@ services:
       -  ./envs/common-smart-contract-verifier.env
     ports:
       - 8043:8043
+

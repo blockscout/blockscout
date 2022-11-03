@@ -1,0 +1,29 @@
+<tr>
+  <td><%= @watchlist_address.name %></td>
+  <td>
+    <div>
+      <%= link(trimmed_hash(@watchlist_address.address_hash), to: address_path(@conn, :show, @watchlist_address.address_hash)) %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @watchlist_address.address_hash, aria_label: gettext("Copy From Address"), title: gettext("Copy Address"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
+    </div>
+  </td>
+  <td>
+    <%= balance_ether(@watchlist_address.fetched_coin_balance) %>
+    <br>
+
+    <span class="address-current-balance">
+      (<span
+           data-wei-value="<%= if @watchlist_address.fetched_coin_balance, do: @watchlist_address.fetched_coin_balance.value %>"
+           data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
+           data-placement="top"
+           data-toggle="tooltip"
+           data-html="true"
+           title='<%= "@ " <> to_string(@exchange_rate.usd_value) <> "/" <> Explorer.coin_name() %>'  
+           >
+      </span>)
+    </span>
+  </td>
+  <td>
+    <%= link(gettext("Edit"), to: watchlist_address_path(@conn, :edit, @watchlist_address.id)) %>
+  </td>
+</tr>
