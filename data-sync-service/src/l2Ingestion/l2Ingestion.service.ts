@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { 
+import {
   L2RelayedMessageEvents,
   L2SentMessageEvents,
 } from 'src/typeorm';
@@ -91,6 +91,7 @@ export class L2IngestionService {
     const list = await this.getSentMessageByBlockNumber(startBlock, endBlock);
     let result: any[] = [];
     for(const item of list) {
+      console.log("item====", item)
       const {
         blockNumber,
         transactionHash,
@@ -103,7 +104,7 @@ export class L2IngestionService {
         },
         signature
       } = item;
-
+      const { timestamp } = await this.web3.eth.getBlock(blockNumber);
       try {
         const savedResult = await this.entityManager.save(L2SentMessageEvents, {
           tx_hash: transactionHash,
@@ -114,6 +115,7 @@ export class L2IngestionService {
           message_nonce: messageNonce,
           gas_limit: gasLimit,
           signature,
+          timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -135,12 +137,14 @@ export class L2IngestionService {
         returnValues: { msgHash },
         signature
       } = item;
+      const { timestamp } = await this.web3.eth.getBlock(blockNumber);
       try {
         const savedResult = await this.entityManager.save(L2RelayedMessageEvents, {
           tx_hash: transactionHash,
           block_number: blockNumber.toString(),
           msg_hash: msgHash,
           signature,
+          timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -178,6 +182,9 @@ export class L2IngestionService {
   }
   async getAllSentEvents() {
     return this.sentEventsRepository.find();
+  }
+  async getUnMergeSentEvents() {
+    return this.sentEventsRepository.find({ where: { is_merge: false } });
   }
   async getAllRelayedEvents() {
     return this.relayedEventsRepository.find();
