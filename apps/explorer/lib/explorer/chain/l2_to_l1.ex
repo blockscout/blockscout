@@ -14,11 +14,13 @@ defmodule Explorer.Chain.L2ToL1 do
         status: String.t(),
         gas_limit: Gas.t(),
       }
+
+  @primary_key {:msg_nonce, :integer, autogenerate: false}
   schema "l2_to_l1" do
     field(:hash, :string)
     field(:l2_hash, :string)
     field(:block, :integer)
-    field(:msg_nonce, :integer)
+    # field(:msg_nonce, :integer)
     field(:from_address, :string)
     field(:txn_batch_index, :integer)
     field(:state_batch_index, :integer)

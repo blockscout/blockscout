@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.L1ToL2TxnView do
   alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei, L1ToL2}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
@@ -37,6 +37,15 @@ defmodule BlockScoutWeb.L1ToL2TxnView do
   def block_timestamp(%Transaction{block_number: nil, inserted_at: time}), do: time
   def block_timestamp(%Transaction{block: %Block{timestamp: time}}), do: time
   def block_timestamp(%Reward{block: %Block{timestamp: time}}), do: time
+  def block_timestamp(%L1ToL2{timestamp: time}), do: time
+
+  def sub_hash_string(hash) do
+    String.slice(hash, 0..21)
+  end
+
+  def sub_hash_string(hash, length) do
+    String.slice(hash, 0..length)
+  end
 
   def value_transfer?(%Transaction{input: %{bytes: bytes}}) when bytes in [<<>>, nil] do
     true

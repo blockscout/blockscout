@@ -1,30 +1,35 @@
-<div 
-    class="fade-in <%= status_class(@transaction) %>" 
-    data-test="<%= type_suffix(@transaction) %>" 
-    data-identifier-hash="<%= @transaction.hash %>"
+<div
+    class="fade-in"
+    data-identifier-hash="<%= @l1_to_l2.queue_index %>"
     style="width:100%;height:42px;display:flex;align-items:center;font-size:16px;padding:0 10px;border-bottom:1px solid #e7eaf3;"
 >
   
     <span style="width: 10%;">
-      batch index
+       <%= @l1_to_l2.block %>
     </span>
-     <span style="width: 10%;">
-      batch index
-    </span>
-     <span style="width: 20%;">
-      batch index
-    </span>
-     <span style="width: 10%;">
-      batch index
-    </span>
-     <span style="width: 20%;">
-      batch index
+    <span style="width: 10%;">
+      <%= @l1_to_l2.queue_index %>
     </span>
     <span style="width: 20%;">
-      batch index
+      <a style="width: 30%;" href="#">
+        <%= sub_hash_string(@l1_to_l2.l2_hash) %>...
+      </a>
     </span>
      <span style="width: 10%;">
-      batch index
+        <span style="width: 18%;" in-tile data-from-now="<%= block_timestamp(@l1_to_l2) %>"></span>
+    </span>
+     <span style="width: 20%;">
+       <a style="width: 30%;" href="#">
+         <%= sub_hash_string(@l1_to_l2.hash) %>...
+       </a>
+    </span>
+    <span style="width: 20%;">
+       <a style="width: 30%;" href="#">
+         <%= sub_hash_string(@l1_to_l2.tx_origin) %>...
+       </a>
+    </span>
+     <span style="width: 10%;">
+       <%= @l1_to_l2.gas_limit %>
     </span>
     
 
