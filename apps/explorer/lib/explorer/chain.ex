@@ -59,7 +59,9 @@ defmodule Explorer.Chain do
     Transaction,
     Wei,
     StateBatch,
-    TxnBatch
+    TxnBatch,
+    L1ToL2,
+    L2ToL1,
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -694,13 +696,6 @@ defmodule Explorer.Chain do
       where: q.block_number > ^from_block and q.block_number <= ^to_block
     )
   end
-
-
-
-
-
-
-
 
   def where_batch_index_in_period(base_query, from_index, to_index) when is_nil(from_index) and not is_nil(to_index) do
     from(q in base_query,
@@ -3195,6 +3190,11 @@ defmodule Explorer.Chain do
     #end
   end
 
+  @spec recent_collated_l1_to_l2([paging_options]) :: [TxnBatch.t()]
+  def recent_collated_l1_to_l2(options \\ []) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+      fetch_recent_collated_l1_to_l2(paging_options)
+  end
   # RAP - random access pagination
   @spec recent_collated_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
           :total_transactions_count => non_neg_integer(),
@@ -3236,10 +3236,31 @@ defmodule Explorer.Chain do
   def recent_collated_state_batches_for_rap(options \\ []) when is_list(options) do
     #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
     #total_transactions_count = transactions_available_count()
     fetched_state_batches =fetch_recent_collated_state_batch_for_rap(paging_options)
     %{total_transactions_count: 1000, state_batches: fetched_state_batches}
+  end
+
+  @spec recent_collated_l2_to_l1_for_rap([paging_options]) :: %{
+    :total_transactions_count => non_neg_integer(),
+    :l2_to_l1 => [L2ToL1.t()]
+  }
+
+  def recent_collated_l2_to_l1_for_rap(options \\ []) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    fetched_l2_to_l1 =fetch_recent_collated_l2_to_l1_for_rap(paging_options)
+    %{total_transactions_count: 1000, l2_to_l1: fetched_l2_to_l1}
+  end
+
+  @spec recent_collated_l1_to_l2_for_rap([paging_options]) :: %{
+    :total_transactions_count => non_neg_integer(),
+    :l1_to_l2 => [L1ToL2.t()]
+  }
+
+  def recent_collated_l1_to_l2_for_rap(options \\ []) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    fetched_l1_to_l2=fetch_recent_collated_l1_to_l2_for_rap(paging_options)
+    %{total_transactions_count: 1000, l1_to_l2: fetched_l1_to_l2}
   end
 
   def fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
@@ -3251,37 +3272,27 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def fetch_recent_collated_l2_to_l1_for_rap(paging_options) do
+    fetch_l2_to_l1_for_rap()
+    |> handle_random_access_paging_options(paging_options)
+    |> Repo.all()
+  end
+
+  def fetch_recent_collated_l1_to_l2_for_rap(paging_options) do
+    fetch_l1_to_l2_for_rap()
+    |> handle_random_access_paging_options(paging_options)
+    |> Repo.all()
+  end
+
   def fetch_recent_collated_state_batch_for_rap(paging_options) do
-    #query =
-    #  from(
-    #    state in StateBatch,
-    #    where: state.size > 0,
-    #  )
-
-    #query
-    #|> limit(1)
-    #|> Repo.all()
-
     fetch_state_batch_for_rap()
     |> handle_random_access_paging_options(paging_options)
-    #|> join_associations(necessity_by_association)
     |> Repo.all()
   end
 
   def fetch_recent_collated_txn_batch_for_rap(paging_options) do
-    #query =
-    #  from(
-    #    state in StateBatch,
-    #    where: state.size > 0,
-    #  )
-
-    #query
-    #|> limit(1)
-    #|> Repo.all()
-
     fetch_txn_batch_for_rap()
     |> handle_random_access_paging_options(paging_options)
-    #|> join_associations(necessity_by_association)
     |> Repo.all()
   end
 
@@ -3293,7 +3304,6 @@ defmodule Explorer.Chain do
   def recent_collated_txn_batches_for_rap(options \\ []) when is_list(options) do
     #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
     #total_transactions_count = transactions_available_count()
     fetched_txn_batches =fetch_recent_collated_txn_batch_for_rap(paging_options)
     %{total_transactions_count: 1000, txn_batches: fetched_txn_batches}
@@ -3315,6 +3325,16 @@ defmodule Explorer.Chain do
     |> order_by([txn_batch], desc: txn_batch.batch_index)
   end
 
+  defp fetch_l1_to_l2_for_rap do
+    L1ToL2
+    |> order_by([l1_to_l2], desc: l1_to_l2.batch_index)
+  end
+
+  defp fetch_l2_to_l1_for_rap do
+    L2ToL1
+    |> order_by([l2_to_l1], desc: l2_to_l1.msg_nonce)
+  end
+
   def transactions_available_count do
     Transaction
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
@@ -3333,7 +3353,6 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-
   def fetch_recent_collated_txn_batches(paging_options) do
     paging_options
     |> fetch_txn_batches()
@@ -3343,7 +3362,11 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-
+  def fetch_recent_collated_l1_to_l2(paging_options) do
+    paging_options
+    |> fetch_l1_to_l2()
+    |> Repo.all()
+  end
 
   @doc """
   Return the list of pending transactions that occurred recently.
@@ -4304,13 +4327,11 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
-
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
-
 
   defp fetch_txn_batches(paging_options \\ nil, from_index \\ nil, to_index \\ nil) do
     TxnBatch
@@ -4319,7 +4340,17 @@ defmodule Explorer.Chain do
     |> handle_paging_options(paging_options)
   end
 
+  defp fetch_l1_to_l2(paging_options \\ nil, from_index \\ nil, to_index \\ nil) do
+    L1ToL2
+    |> order_by([l1_to_l2], desc: l1_to_l2.queue_index)
+    |> handle_paging_options(paging_options)
+  end
 
+  defp fetch_l2_to_l1(paging_options \\ nil, from_index \\ nil, to_index \\ nil) do
+    L2ToL1
+    |> order_by([l2_to_l1], desc: l2_to_l1.msg_nonce)
+    |> handle_paging_options(paging_options)
+  end
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
     Transaction

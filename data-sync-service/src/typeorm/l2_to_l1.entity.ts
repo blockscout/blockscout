@@ -23,15 +23,6 @@ export class L2ToL1 {
   @Column({ type: 'numeric', precision: 100 })
   gas_limit: number;
 
-  @Column({ type: 'numeric', precision: 100 })
-  gas_used: number;
-
-  @Column({ type: 'numeric', precision: 100 })
-  gas_price: number;
-
-  @Column({ type: 'int8' })
-  fee_scalar: number;
-
   @Column({ type: 'int8' })
   txn_batch_index: number;
 

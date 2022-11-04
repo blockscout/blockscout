@@ -21,22 +21,10 @@ export class L1ToL2 {
   queue_index: number;
 
   @Column({ type: 'bytea' })
-  data: string;
-
-  @Column({ type: 'bytea' })
   target: string;
 
   @Column({ type: 'numeric', precision: 100 })
   gas_limit: number;
-
-  @Column({ type: 'numeric', precision: 100 })
-  gas_used: number;
-
-  @Column({ type: 'numeric', precision: 100 })
-  gas_price: number;
-
-  @Column({ type: 'int8' })
-  fee_scalar: number;
 
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
   inserted_at: Date;

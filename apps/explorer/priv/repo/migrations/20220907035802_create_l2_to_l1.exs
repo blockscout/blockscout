@@ -13,9 +13,6 @@ defmodule Explorer.Repo.Migrations.CreateL2ToL1 do
       add(:timestamp, :utc_datetime_usec, null: false)
       add(:status, :string, null: false)
       add(:gas_limit, :numeric, precision: 100, null: false)
-      add(:gas_used, :numeric, precision: 100, null: false)
-      add(:gas_price, :numeric, precision: 100, null: false)
-      add(:fee_scalar, :bigint, null: false)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
