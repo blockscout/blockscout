@@ -63,14 +63,14 @@ defmodule BlockScoutWeb.L1ToL2TxnController do
         |> update_page_parameters(Chain.default_page_size(), Keyword.get(options, :paging_options))
       )
 
-    %{total_transactions_count: transactions_count, transactions: transactions_plus_one} =
-      Chain.recent_collated_transactions_for_rap(full_options)
+    %{total_transactions_count: transactions_count, l1_to_l2: txn_batch_plus_one} =
+      Chain.recent_collated_l1_to_l2_for_rap(full_options)
 
-    {transactions, next_page} =
+    {l1_to_l2, next_page} =
       if fetch_page_number(params) == 1 do
-        split_list_by_page(transactions_plus_one)
+        split_list_by_page(txn_batch_plus_one)
       else
-        {transactions_plus_one, nil}
+        {txn_batch_plus_one, nil}
       end
 
     next_page_params =
@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.L1ToL2TxnController do
 
         pages_limit = transactions_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
 
-        case next_page_params(next_page, transactions, params) do
+        case next_page_params(next_page, l1_to_l2, params) do
           nil ->
             nil
 
@@ -99,12 +99,11 @@ defmodule BlockScoutWeb.L1ToL2TxnController do
       conn,
       %{
         items:
-          Enum.map(transactions, fn transaction ->
+          Enum.map(l1_to_l2, fn txn_batch ->
             View.render_to_string(
-              L1ToL2TxnView,
+              TxnBatchView,
               "_tile.html",
-              transaction: transaction,
-              burn_address_hash: @burn_address_hash,
+              txn_batch: txn_batch,
               conn: conn
             )
           end),
