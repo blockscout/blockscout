@@ -30,6 +30,8 @@ defmodule BlockScoutWeb.Chain do
     Wei,
     StateBatch,
     TxnBatch,
+    L1ToL2,
+    L2ToL1,
   }
 
   alias Explorer.PagingOptions
@@ -337,6 +339,13 @@ defmodule BlockScoutWeb.Chain do
     %{"batch_index" => batch_index}
   end
 
+  defp paging_params(%L1ToL2{queue_index: queue_index}) do
+    %{"queue_index" => queue_index}
+  end
+
+   defp paging_params(%L2ToL1{msg_nonce: msg_nonce}) do
+    %{"msg_nonce" => msg_nonce}
+  end
 
   defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do
     %{"block_number" => block_number, "index" => index}

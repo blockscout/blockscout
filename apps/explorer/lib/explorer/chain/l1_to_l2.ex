@@ -6,7 +6,6 @@ defmodule Explorer.Chain.L1ToL2 do
           hash: Hash.Full.t(),
           l2_hash: Hash.Full.t(),
           block: integer(),
-          batch_index: integer(),
           timestamp: DateTime.t(),
           tx_origin: %Ecto.Association.NotLoaded{} | Address.t(),
           queue_index: integer(),
@@ -14,14 +13,13 @@ defmodule Explorer.Chain.L1ToL2 do
           gas_limit: Gas.t(),
         }
 
+  @primary_key {:queue_index, :integer, autogenerate: false}
   schema "l1_to_l2" do
     field(:hash, :string)
     field(:l2_hash, :string)
     field(:block, :integer)
-    field(:batch_index, :integer)
     field(:timestamp, :utc_datetime_usec)
     field(:tx_origin, :string)
-    field(:queue_index, :integer)
     field(:target, :string)
     field(:gas_limit, :decimal)
     timestamps()

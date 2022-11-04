@@ -3190,7 +3190,7 @@ defmodule Explorer.Chain do
     #end
   end
 
-  @spec recent_collated_l1_to_l2([paging_options]) :: [TxnBatch.t()]
+  @spec recent_collated_l1_to_l2([paging_options]) :: [L1ToL2.t()]
   def recent_collated_l1_to_l2(options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
       fetch_recent_collated_l1_to_l2(paging_options)
@@ -3327,7 +3327,7 @@ defmodule Explorer.Chain do
 
   defp fetch_l1_to_l2_for_rap do
     L1ToL2
-    |> order_by([l1_to_l2], desc: l1_to_l2.batch_index)
+    |> order_by([l1_to_l2], desc: l1_to_l2.queue_index)
   end
 
   defp fetch_l2_to_l1_for_rap do
