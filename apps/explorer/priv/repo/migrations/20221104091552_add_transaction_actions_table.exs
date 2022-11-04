@@ -13,9 +13,12 @@ defmodule Explorer.Repo.Migrations.AddTransactionActionsTable do
     )
 
     create table(:transaction_actions, primary_key: false) do
-      add(:hash, references(:transactions, column: :hash, on_delete: :delete_all, on_update: :update_all, type: :bytea), null: false)
+      add(:hash, references(:transactions, column: :hash, on_delete: :delete_all, on_update: :update_all, type: :bytea),
+        null: false
+      )
+
       add(:protocol, :transaction_actions_protocol, null: false)
-      add(:data, :jsonb, null: true)
+      add(:data, :map, default: %{}, null: false)
       add(:type, :transaction_actions_type, null: false)
     end
 
