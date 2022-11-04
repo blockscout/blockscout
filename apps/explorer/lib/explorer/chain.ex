@@ -5,8 +5,11 @@ defmodule Explorer.Chain do
 
   import Ecto.Query,
     only: [
+      dynamic: 1,
+      dynamic: 2,
       from: 2,
       join: 4,
+      join: 5,
       limit: 2,
       lock: 2,
       offset: 2,
@@ -66,13 +69,22 @@ defmodule Explorer.Chain do
     Accounts,
     BlockNumber,
     Blocks,
+    ContractsCounter,
+    NewContractsCounter,
+    NewVerifiedContractsCounter,
     Transactions,
-    Uncles
+    Uncles,
+    VerifiedContractsCounter
   }
 
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
+
+  alias Explorer.Counters.{
+    AddressesCounter,
+    AddressesWithBalanceCounter
+  }
+
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.{Helper, Reader}
@@ -80,6 +92,23 @@ defmodule Explorer.Chain do
   alias Dataloader.Ecto, as: DataloaderEcto
 
   @default_paging_options %PagingOptions{page_size: 50}
+
+  @token_transfers_per_transaction_preview 10
+  @token_transfers_neccessity_by_association %{
+    [from_address: :smart_contract] => :optional,
+    [to_address: :smart_contract] => :optional,
+    [from_address: :names] => :optional,
+    [to_address: :names] => :optional,
+    token: :required
+  }
+
+  @method_name_to_id_map %{
+    "approve" => "095ea7b3",
+    "transfer" => "a9059cbb",
+    "multicall" => "5ae401dc",
+    "mint" => "40c10f19",
+    "commit" => "f14fcbc8"
+  }
 
   @max_incoming_transactions_count 10_000
 
@@ -668,9 +697,7 @@ defmodule Explorer.Chain do
   end
 
   def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
-    from(q in base_query,
-      where: 1
-    )
+    base_query
   end
 
   def where_block_number_in_period(base_query, from_block, to_block) do
@@ -780,18 +807,39 @@ defmodule Explorer.Chain do
     end
   end
 
+  def txn_fees(transactions) do
+    Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
+      gas_used
+      |> Decimal.new()
+      |> Decimal.mult(gas_price_to_decimal(gas_price))
+      |> Decimal.add(acc)
+    end)
+  end
+
+  defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
+  defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
+
+  def burned_fees(transactions, base_fee_per_gas) do
+    burned_fee_counter =
+      transactions
+      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
+        gas_used
+        |> Decimal.new()
+        |> Decimal.add(acc)
+      end)
+
+    base_fee_per_gas && Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), burned_fee_counter)
+  end
+
+  defp base_fee_per_gas_to_wei(%Wei{} = wei), do: wei
+  defp base_fee_per_gas_to_wei(base_fee_per_gas), do: %Wei{value: Decimal.new(base_fee_per_gas)}
+
   @uncle_reward_coef 1 / 32
   def block_reward_by_parts(block, transactions) do
     %{hash: block_hash, number: block_number} = block
     base_fee_per_gas = Map.get(block, :base_fee_per_gas)
 
-    txn_fees =
-      Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
-        gas_used
-        |> Decimal.new()
-        |> Decimal.mult(Decimal.new(gas_price))
-        |> Decimal.add(acc)
-      end)
+    txn_fees = txn_fees(transactions)
 
     static_reward =
       Repo.one(
@@ -802,17 +850,9 @@ defmodule Explorer.Chain do
         )
       ) || %Wei{value: Decimal.new(0)}
 
-    burned_fee_counter =
-      transactions
-      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
-        gas_used
-        |> Decimal.new()
-        |> Decimal.add(acc)
-      end)
-
     has_uncles? = is_list(block.uncles) and not Enum.empty?(block.uncles)
 
-    burned_fees = base_fee_per_gas && Wei.mult(%Wei{value: Decimal.new(base_fee_per_gas)}, burned_fee_counter)
+    burned_fees = burned_fees(transactions, base_fee_per_gas)
     uncle_reward = (has_uncles? && Wei.mult(static_reward, Decimal.from_float(@uncle_reward_coef))) || nil
 
     %{
@@ -876,8 +916,10 @@ defmodule Explorer.Chain do
       `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
       the `index` that are passed.
   """
-  @spec block_to_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def block_to_transactions(block_hash, options \\ []) when is_list(options) do
+  @spec block_to_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option], true | false) :: [
+          Transaction.t()
+        ]
+  def block_to_transactions(block_hash, options \\ [], old_ui? \\ true) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     options
@@ -886,8 +928,12 @@ defmodule Explorer.Chain do
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> Repo.all()
+    |> (&if(old_ui?,
+          do: &1,
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+        )).()
   end
 
   @doc """
@@ -977,6 +1023,17 @@ defmodule Explorer.Chain do
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
+  @spec address_hash_to_transaction_count(Hash.Address.t()) :: non_neg_integer()
+  def address_hash_to_transaction_count(address_hash) do
+    query =
+      from(
+        transaction in Transaction,
+        where: transaction.to_address_hash == ^address_hash or transaction.from_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(query, :count, :hash, timeout: :infinity)
+  end
+
   @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_incoming_transaction_gas_usage(address_hash) do
     to_address_query =
@@ -1035,8 +1092,8 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.confirmations(block, block_height: 0)
       {:ok, 1}
   """
-  @spec confirmations(Block.t(), [{:block_height, block_height()}]) ::
-          {:ok, non_neg_integer()} | {:error, :non_consensus}
+  @spec confirmations(Block.t() | nil, [{:block_height, block_height()}]) ::
+          {:ok, non_neg_integer()} | {:error, :non_consensus | :pending}
 
   def confirmations(%Block{consensus: true, number: number}, named_arguments) when is_list(named_arguments) do
     max_consensus_block_number = Keyword.fetch!(named_arguments, :block_height)
@@ -1045,6 +1102,8 @@ defmodule Explorer.Chain do
   end
 
   def confirmations(%Block{consensus: false}, _), do: {:error, :non_consensus}
+
+  def confirmations(nil, _), do: {:error, :pending}
 
   @doc """
   Creates an address.
@@ -2023,6 +2082,41 @@ defmodule Explorer.Chain do
     end
   end
 
+  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we dont't show any token transfers on tx tile in new UI)
+  def preload_token_transfers(
+        %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
+        necessity_by_association,
+        preload_to_detect_tt? \\ true
+      ) do
+    token_transfers =
+      TokenTransfer
+      |> (&if(is_nil(block_hash),
+            do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
+            else:
+              where(
+                &1,
+                [token_transfer],
+                token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
+              )
+          )).()
+      |> limit(^if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1))
+      |> order_by([token_transfer], asc: token_transfer.log_index)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
+
+    %Transaction{transaction | token_transfers: token_transfers}
+  end
+
+  def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
+  end
+
   @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
   those `hashes`.
@@ -2336,8 +2430,14 @@ defmodule Explorer.Chain do
 
     query =
       if filter && filter !== "" do
-        base_query_with_paging
-        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+        case prepare_search_term(filter) do
+          {:some, filter_term} ->
+            base_query_with_paging
+            |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter_term))
+
+          _ ->
+            base_query_with_paging
+        end
       else
         base_query_with_paging
       end
@@ -2464,17 +2564,7 @@ defmodule Explorer.Chain do
 
   @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
   def address_to_transaction_count(address) do
-    if contract?(address) do
-      incoming_transaction_count = address_to_incoming_transaction_count(address.hash)
-
-      if incoming_transaction_count == 0 do
-        total_transactions_sent_by_address(address.hash)
-      else
-        incoming_transaction_count
-      end
-    else
-      total_transactions_sent_by_address(address.hash)
-    end
+    address_hash_to_transaction_count(address.hash)
   end
 
   @spec address_to_token_transfer_count(Address.t()) :: non_neg_integer()
@@ -2512,6 +2602,15 @@ defmodule Explorer.Chain do
   @doc """
   Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
   """
+  def balance_in_usd(_token_balance, %{usd_value: nil}) do
+    nil
+  end
+
+  def balance_in_usd(token_balance, %{usd_value: usd_value, decimals: decimals}) do
+    tokens = CurrencyHelpers.divide_decimals(token_balance.value, decimals)
+    Decimal.mult(tokens, usd_value)
+  end
+
   def balance_in_usd(%{token: %{usd_value: nil}}) do
     nil
   end
@@ -3191,7 +3290,7 @@ defmodule Explorer.Chain do
       iex> newest_first_transactions = 50 |> insert_list(:transaction) |> with_block() |> Enum.reverse()
       iex> oldest_seen = Enum.at(newest_first_transactions, 9)
       iex> paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
-      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
+      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(true, paging_options: paging_options)
       iex> length(recent_collated_transactions)
       10
       iex> hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
@@ -3207,12 +3306,17 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_collated_transactions(options \\ []) when is_list(options) do
+  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option], [String.t()], [
+          :atom
+        ]) :: [
+          Transaction.t()
+        ]
+  def recent_collated_transactions(old_ui?, options \\ [], method_id_filter \\ [], type_filter \\ [])
+      when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_recent_collated_transactions(paging_options, necessity_by_association)
+    fetch_recent_collated_transactions(old_ui?, paging_options, necessity_by_association, method_id_filter, type_filter)
   end
 
   # RAP - random access pagination
@@ -3270,13 +3374,26 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :hash)
   end
 
-  def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
+  def fetch_recent_collated_transactions(
+        old_ui?,
+        paging_options,
+        necessity_by_association,
+        method_id_filter,
+        type_filter
+      ) do
     paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> apply_filter_by_method_id_to_transactions(method_id_filter)
+    |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
+    |> debug("result collated query")
     |> Repo.all()
+    |> (&if(old_ui?,
+          do: &1,
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+        )).()
   end
 
   @doc """
@@ -3303,8 +3420,11 @@ defmodule Explorer.Chain do
       Results will be the transactions older than the `inserted_at` and `hash` that are passed.
 
   """
-  @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ []) when is_list(options) do
+  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false, [String.t()], [
+          :atom
+        ]) :: [Transaction.t()]
+  def recent_pending_transactions(options \\ [], old_ui? \\ true, method_id_filter \\ [], type_filter \\ [])
+      when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -3312,10 +3432,17 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
+    |> apply_filter_by_method_id_to_transactions(method_id_filter)
+    |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
+    |> debug("result pendging query")
     |> Repo.all()
+    |> (&if(old_ui?,
+          do: &1,
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+        )).()
   end
 
   def pending_transactions_query(query) do
@@ -4268,6 +4395,14 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
   end
 
+  defp handle_verified_contracts_paging_options(query, nil), do: query
+
+  defp handle_verified_contracts_paging_options(query, paging_options) do
+    query
+    |> page_verified_contracts(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
   defp handle_token_transfer_paging_options(query, nil), do: query
 
   defp handle_token_transfer_paging_options(query, paging_options) do
@@ -4333,6 +4468,16 @@ defmodule Explorer.Chain do
   end
 
   defp join_association(query, association, necessity) when is_atom(association) do
+    case necessity do
+      :optional ->
+        preload(query, ^association)
+
+      :required ->
+        from(q in query, inner_join: a in assoc(q, ^association), preload: [{^association, a}])
+    end
+  end
+
+  defp join_association(query, association, necessity) do
     case necessity do
       :optional ->
         preload(query, ^association)
@@ -4503,6 +4648,12 @@ defmodule Explorer.Chain do
       ctb.value < ^value or (ctb.value == ^value and t.type < ^type) or
         (ctb.value == ^value and t.type == ^type and t.name < ^name)
     )
+  end
+
+  defp page_verified_contracts(query, %PagingOptions{key: nil}), do: query
+
+  defp page_verified_contracts(query, %PagingOptions{key: {id}}) do
+    where(query, [contract], contract.id < ^id)
   end
 
   @doc """
@@ -5068,8 +5219,8 @@ defmodule Explorer.Chain do
     Repo.one(query)
   end
 
-  @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
-  def address_to_balances_by_day(address_hash) do
+  @spec address_to_balances_by_day(Hash.Address.t(), true | false) :: [balance_by_day]
+  def address_to_balances_by_day(address_hash, api? \\ false) do
     latest_block_timestamp =
       address_hash
       |> CoinBalance.last_coin_balance_timestamp()
@@ -5080,7 +5231,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> Enum.sort_by(fn %{date: d} -> {d.year, d.month, d.day} end)
     |> replace_last_value(latest_block_timestamp)
-    |> normalize_balances_by_day()
+    |> normalize_balances_by_day(api?)
   end
 
   # https://github.com/blockscout/blockscout/issues/2658
@@ -5090,12 +5241,12 @@ defmodule Explorer.Chain do
 
   defp replace_last_value(items, _), do: items
 
-  defp normalize_balances_by_day(balances_by_day) do
+  defp normalize_balances_by_day(balances_by_day, api?) do
     result =
       balances_by_day
       |> Enum.filter(fn day -> day.value end)
-      |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
-      |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :date, fn x -> to_string(x) end) end))).()
+      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :value, fn x -> Wei.to(x, :ether) end) end))).()
 
     today = Date.to_string(NaiveDateTime.utc_now())
 
@@ -6268,5 +6419,224 @@ defmodule Explorer.Chain do
     hash
     |> to_string()
     |> String.downcase()
+  end
+
+  def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
+    recent_pending_transactions(options, false, method_id_filter, type_filter_options)
+  end
+
+  def recent_transactions(options, _, method_id_filter, type_filter_options) do
+    recent_collated_transactions(false, options, method_id_filter, type_filter_options)
+  end
+
+  def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
+    method_ids = Enum.flat_map(filter, &map_name_or_method_id_to_method_id/1)
+
+    if method_ids != [] do
+      query
+      |> where([tx], fragment("SUBSTRING(? FOR 4)", tx.input) in ^method_ids)
+    else
+      query
+    end
+  end
+
+  def apply_filter_by_method_id_to_transactions(query, filter),
+    do: apply_filter_by_method_id_to_transactions(query, [filter])
+
+  defp map_name_or_method_id_to_method_id(string) when is_binary(string) do
+    if id = @method_name_to_id_map[string] do
+      decode_method_id(id)
+    else
+      trimmed =
+        string
+        |> String.replace("0x", "", global: false)
+
+      decode_method_id(trimmed)
+    end
+  end
+
+  defp decode_method_id(method_id) when is_binary(method_id) do
+    case String.length(method_id) == 8 && Base.decode16(method_id, case: :mixed) do
+      {:ok, bytes} ->
+        [bytes]
+
+      _ ->
+        []
+    end
+  end
+
+  def apply_filter_by_tx_type_to_transactions(query, [_ | _] = filter) do
+    {dynamic, modified_query} = apply_filter_by_tx_type_to_transactions_inner(filter, query)
+
+    modified_query
+    |> where(^dynamic)
+  end
+
+  def apply_filter_by_tx_type_to_transactions(query, _filter), do: query
+
+  def apply_filter_by_tx_type_to_transactions_inner(dynamic \\ dynamic(false), filter, query)
+
+  def apply_filter_by_tx_type_to_transactions_inner(dynamic, [type | remain], query) do
+    case type do
+      :contract_call ->
+        dynamic
+        |> filter_contract_call_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(
+          remain,
+          join(query, :inner, [tx], address in assoc(tx, :to_address), as: :to_address)
+        )
+
+      :contract_creation ->
+        dynamic
+        |> filter_contract_creation_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
+
+      :coin_transfer ->
+        dynamic
+        |> filter_transaction_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
+
+      :token_transfer ->
+        dynamic
+        |> filter_token_transfer_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(remain, query)
+
+      :token_creation ->
+        dynamic
+        |> filter_token_creation_dynamic()
+        |> apply_filter_by_tx_type_to_transactions_inner(
+          remain,
+          join(query, :inner, [tx], token in Token,
+            on: token.contract_address_hash == tx.created_contract_address_hash,
+            as: :created_token
+          )
+        )
+    end
+  end
+
+  def apply_filter_by_tx_type_to_transactions_inner(dynamic_query, _, query), do: {dynamic_query, query}
+
+  def filter_contract_creation_dynamic(dynamic) do
+    dynamic([tx], ^dynamic or is_nil(tx.to_address_hash))
+  end
+
+  def filter_transaction_dynamic(dynamic) do
+    dynamic([tx], ^dynamic or tx.value > ^0)
+  end
+
+  def filter_contract_call_dynamic(dynamic) do
+    dynamic([tx, to_address: to_address], ^dynamic or not is_nil(to_address.contract_code))
+  end
+
+  def filter_token_transfer_dynamic(dynamic) do
+    # TokenTransfer.__struct__.__meta__.source
+    dynamic(
+      [tx],
+      ^dynamic or
+        fragment(
+          "NOT (SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NULL",
+          tx.hash
+        )
+    )
+  end
+
+  def filter_token_creation_dynamic(dynamic) do
+    dynamic([tx, created_token: created_token], ^dynamic or (is_nil(tx.to_address_hash) and not is_nil(created_token)))
+  end
+
+  @spec verified_contracts([
+          paging_options | necessity_by_association_option | {:filter, :solidity | :vyper} | {:search, String.t()}
+        ]) :: [SmartContract.t()]
+  def verified_contracts(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    filter = Keyword.get(options, :filter, nil)
+    search_string = Keyword.get(options, :search, nil)
+
+    query = from(contract in SmartContract, select: contract, order_by: [desc: :id])
+
+    query
+    |> filter_contracts(filter)
+    |> search_contracts(search_string)
+    |> handle_verified_contracts_paging_options(paging_options)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  defp search_contracts(basic_query, nil), do: basic_query
+
+  defp search_contracts(basic_query, search_string) do
+    from(contract in basic_query,
+      where:
+        ilike(contract.name, ^"%#{search_string}%") or
+          ilike(fragment("'0x' || encode(?, 'hex')", contract.address_hash), ^"%#{search_string}%")
+    )
+  end
+
+  defp filter_contracts(basic_query, :solidity) do
+    basic_query
+    |> where(is_vyper_contract: ^false)
+  end
+
+  defp filter_contracts(basic_query, :vyper) do
+    basic_query
+    |> where(is_vyper_contract: ^true)
+  end
+
+  defp filter_contracts(basic_query, _), do: basic_query
+
+  def count_verified_contracts do
+    Repo.aggregate(SmartContract, :count, timeout: :infinity)
+  end
+
+  def count_new_verified_contracts do
+    query =
+      from(contract in SmartContract,
+        select: contract.inserted_at,
+        where: fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", contract.inserted_at)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
+
+  def count_contracts do
+    query =
+      from(address in Address,
+        select: address,
+        where: not is_nil(address.contract_code)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
+
+  def count_new_contracts do
+    query =
+      from(tx in Transaction,
+        select: tx,
+        where:
+          tx.status == ^:ok and
+            fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", tx.created_contract_code_indexed_at)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
+
+  def count_verified_contracts_from_cache do
+    VerifiedContractsCounter.fetch()
+  end
+
+  def count_new_verified_contracts_from_cache do
+    NewVerifiedContractsCounter.fetch()
+  end
+
+  def count_contracts_from_cache do
+    ContractsCounter.fetch()
+  end
+
+  def count_new_contracts_from_cache do
+    NewContractsCounter.fetch()
   end
 end

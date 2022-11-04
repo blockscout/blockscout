@@ -81,7 +81,7 @@ defmodule Explorer.Market do
     Enum.map(tokens, fn item ->
       case item do
         {token_balance, token} ->
-          {add_price(token_balance), token}
+          {token_balance, add_price(token)}
 
         token_balance ->
           add_price(token_balance)
