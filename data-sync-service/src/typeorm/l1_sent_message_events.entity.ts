@@ -2,22 +2,25 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class L1SentMessageEvents {
-  @Column({ type: "bytea" })
+  @Column({ type: 'bytea' })
   tx_hash: string;
 
-  @Column({ type: "bigint" })
+  @Column({ type: 'bigint' })
   block_number: string;
 
-  @Column({ type: "bytea" })
+  @Column({ type: 'bytea' })
   target: string;
 
-  @Column({ type: "bytea" })
+  @Column({ type: 'bytea' })
   sender: string;
 
-  @Column({ type: "bytea" })
+  @Column({ type: 'bytea' })
   message: string;
 
-  @Column({ type: "bytea" })
+  @Column({ type: 'boolean' })
+  is_merge: boolean;
+
+  @Column({ type: 'bytea' })
   signature: string;
 
   @PrimaryColumn({ type: 'numeric', precision: 100 })
@@ -26,9 +29,9 @@ export class L1SentMessageEvents {
   @Column({ type: 'numeric', precision: 100 })
   gas_limit: number;
 
-  @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   inserted_at: Date;
 
-  @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 }

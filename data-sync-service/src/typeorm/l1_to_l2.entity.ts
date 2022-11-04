@@ -2,13 +2,13 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class L1ToL2 {
-  @PrimaryColumn({ type: "bytea", name: 'hash' })
+  @PrimaryColumn({ type: 'bytea', name: 'hash' })
   hash: string;
 
-  @Column({ type: "bytea" })
+  @Column({ type: 'bytea' })
   l2_hash: string;
 
-  @Column({ type: "int8" })
+  @Column({ type: 'int8' })
   block: number;
 
   @Column({ type: 'timestamp' })
@@ -17,7 +17,7 @@ export class L1ToL2 {
   @Column({ type: 'bytea' })
   tx_origin: Date;
 
-  @Column({ type: "int8" })
+  @Column({ type: 'int8' })
   queue_index: number;
 
   @Column({ type: 'bytea' })
@@ -28,14 +28,14 @@ export class L1ToL2 {
 
   @Column({ type: 'numeric', precision: 100 })
   gas_limit: number;
-  
+
   @Column({ type: 'numeric', precision: 100 })
   gas_used: number;
 
   @Column({ type: 'numeric', precision: 100 })
   gas_price: number;
-  
-  @Column({ type: "int8" })
+
+  @Column({ type: 'int8' })
   fee_scalar: number;
 
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
@@ -43,5 +43,4 @@ export class L1ToL2 {
 
   @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
   updated_at: Date;
-  
 }

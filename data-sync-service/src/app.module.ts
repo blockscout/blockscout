@@ -27,7 +27,7 @@ import { L2IngestionModule } from './l2Ingestion/l2Ingestion.module';
     ScheduleModule.forRoot(),
     TasksModule,
     L1IngestionModule,
-    L2IngestionModule
+    L2IngestionModule,
   ],
   controllers: [],
   providers: [],

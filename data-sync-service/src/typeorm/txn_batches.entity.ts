@@ -1,21 +1,21 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
-export class L1RelayedMessageEvents {
-  @Column({ type: 'bytea' })
-  tx_hash: string;
+export class TxnBatches {
+  @Column({ type: 'bigint' })
+  batch_index: number;
+
+  @PrimaryColumn({ type: 'bytea', name: 'hash' })
+  hash: string;
 
   @Column({ type: 'bigint' })
-  block_number: string;
+  size: number;
 
-  @PrimaryColumn({ type: 'bytea' })
-  msg_hash: string;
+  @Column({ type: 'bigint' })
+  pre_total_elements: number;
 
-  @Column({ type: 'bytea' })
-  signature: string;
-
-  @Column({ type: 'boolean' })
-  is_merge: boolean;
+  @Column({ type: 'timestamp' })
+  timestamp: Date;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   inserted_at: Date;

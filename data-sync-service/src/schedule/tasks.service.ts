@@ -24,7 +24,6 @@ export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
   async initCache() {
-    console.log('================start init cache================')
     let l1_sent_block_number = await this.cacheManager.get(L1_SENT);
     let l1_relayed_block_number = await this.cacheManager.get(L1_RELAYED);
     let l2_sent_block_number = await this.cacheManager.get(L2_SENT);
@@ -47,7 +46,6 @@ export class TasksService {
     await this.cacheManager.set(L2_RELAYED, Number(l2_relayed_block_number), { ttl: 0 });
     console.log('================end init cache================')
   }
-
   @Interval(2000)
   async l1_sent() {
     try {
@@ -79,7 +77,6 @@ export class TasksService {
       this.logger.error(`error l1 [handle_sync_l1_relayed_message_events]: ${error}`);
     }
   }
-
   @Interval(2000)
   async l2_sent() {
     try {
@@ -109,6 +106,55 @@ export class TasksService {
       await this.cacheManager.set(L2_RELAYED, end);
     } catch (error) {
       this.logger.error(`error l2 [handle_sync_l2_relayed_message_events]: ${error}`);
+    }
+  }
+  @Interval(2000)
+  async state_batch() {
+    try {
+      const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
+      const start = Number(await this.cacheManager.get(L1_RELAYED));
+      const end = Math.min(start + 1000, currentBlockNumber);
+      const result = await this.l1IngestionService.createStateBatchesEvents(start, end);
+      if (result.length > 0) {
+        this.logger.log(`sync [${result.length}] createStateBatchesEvents from block [${start}] to [${end}]`)
+      }
+      await this.cacheManager.set(L1_RELAYED, end);
+    } catch (error) {
+      this.logger.error(`error l2 [state_batch]: ${error}`);
+    }
+  }
+
+  @Interval(2000)
+  async txn_batch() {
+    try {
+      const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
+      const start = Number(await this.cacheManager.get(L1_RELAYED));
+      const end = Math.min(start + 1000, currentBlockNumber);
+      const result = await this.l1IngestionService.createTxnBatchesEvents(start, end);
+      if (result.length > 0) {
+        this.logger.log(`sync [${result.length}] createStateBatchesEvents from block [${start}] to [${end}]`)
+      }
+      await this.cacheManager.set(L1_RELAYED, end);
+    } catch (error) {
+      this.logger.error(`error l2 [state_batch]: ${error}`);
+    }
+  }
+
+  @Interval(2000)
+  async l1l2_merge() {
+    try {
+      await this.l1IngestionService.createL1L2Relation();
+    } catch (error) {
+      this.logger.error(`error l1l2 [handle_L1_l2_merge]: ${error}`);
+    }
+  }
+
+  @Interval(2000)
+  async l2l1_merge() {
+    try {
+      await this.l1IngestionService.createL2L1Relation();
+    } catch (error) {
+      this.logger.error(`error l1l2 [handle_l1l2_tx_status]: ${error}`);
     }
   }
 }

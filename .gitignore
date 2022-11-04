@@ -11,6 +11,7 @@
 /sync-server/db
 /sync-server/.env
 node_modules
+.env_self
 
 # Generated on crash by the VM
 erl_crash.dump
