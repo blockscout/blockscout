@@ -395,8 +395,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
-    # assert to_string(transaction.timestamp) == json["timestamp"]
     assert to_string(transaction.value.value) == json["value"]
+    assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
   end
 
   defp compare_item(%InternalTransaction{} = internal_tx, json) do
@@ -404,6 +405,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert to_string(internal_tx.gas) == json["gas_limit"]
     assert internal_tx.index == json["index"]
     assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
+    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
   end
 
   defp compare_item(%Log{} = log, json) do
@@ -417,14 +420,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
   end
 
-  # %{"from" => %{"hash" => "0x0000000000000000000000000000000000000006", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "to" => %{"hash" => "0x0000000000000000000000000000000000000005", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "token" => %{"address" => "0x000000000000000000000000000000000000000f", "decimals" => "18", "exchange_rate" => nil, "holders" => "", "name" => "Infinite Token", "symbol" => "IT", "type" => "ERC-20"}, "total" => %{"decimals" => "18", "value" => "1"}, "tx_hash" => "0x0000000000000000000000000000000000000000000000000000000000000000", "type" => "token_transfer"}
-
-  # [%{"address" => %{"hash" => "0x0000000000000000000000000000000000000005", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil}, "data" => "0x00", "decoded" => nil, "index" => 1, "smart_contract" => nil, "topics" => [nil, nil, nil, nil]}]
-
-  # [%{"block" => 0, "created_contract" => %{"hash" => nil, "implementation_name" => nil, "is_contract" => false, "is_verified" => nil, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "error" => nil, "from" => %{"hash" => "0x0000000000000000000000000000000000000006", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "gas_limit" => "78918", "index" => 1, "success" => true, "timestamp" => "2022-11-04T08:30:43.672597Z", "to" => %{"hash" => "0x0000000000000000000000000000000000000007", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "transaction_hash" => "0x0000000000000000000000000000000000000000000000000000000000000000", "type" => "delegatecall", "value" => "1"}]
-
-  # %{"base_fee_per_gas" => nil, "block" => 0, "confirmation_duration" => [], "confirmations" => 1, "created_contract" => %{"hash" => nil, "implementation_name" => nil, "is_contract" => false, "is_verified" => nil, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "decoded_input" => nil, "exchange_rate" => nil, "fee" => %{"type" => "actual", "value" => "318163900000000"}, "from" => %{"hash" => "0x0000000000000000000000000000000000000001", "implementation_name" => nil, "is_contract" => false, "is_verified" => nil, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "gas_limit" => "33925", "gas_price" => "8300000000", "gas_used" => "38333", "hash" => "0x0000000000000000000000000000000000000000000000000000000000000000", "max_fee_per_gas" => nil, "max_priority_fee_per_gas" => nil, "method" => nil, "nonce" => 494, "position" => 0, "priority_fee" => nil, "raw_input" => "0x00", "result" => "awaiting_internal_transactions", "revert_reason" => nil, "status" => "error", "timestamp" => "2022-11-03T17:41:27.169732Z", "to" => %{"hash" => "0x0000000000000000000000000000000000000002", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "token_transfers" => [], "token_transfers_overflow" => false, "tx_burnt_fee" => nil, "tx_tag" => nil, "tx_types" => ["coin_transfer"], "type" => nil, "value" => "93734"}
-
   defp check_paginated_response(first_page_resp, second_page_resp, txs) do
     assert Enum.count(first_page_resp["items"]) == 50
     assert first_page_resp["next_page_params"] != nil
@@ -434,13 +429,5 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(txs, 0), Enum.at(second_page_resp["items"], 0))
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
   end
 end
