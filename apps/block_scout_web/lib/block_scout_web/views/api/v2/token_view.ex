@@ -1,7 +1,9 @@
 defmodule BlockScoutWeb.API.V2.TokenView do
+  alias Explorer.Chain.Address
+
   def render("token.json", %{token: token}) do
     %{
-      "address" => token.contract_address_hash,
+      "address" => Address.checksum(token.contract_address_hash),
       "symbol" => token.symbol,
       "name" => token.name,
       "decimals" => token.decimals,

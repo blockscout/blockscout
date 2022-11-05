@@ -1,19 +1,18 @@
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain.{InternalTransaction, Log, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, Log, TokenTransfer, Transaction}
 
   describe "/transactions" do
-    test "empty txs", %{conn: conn} do
+    test "empty list", %{conn: conn} do
       request = get(conn, "/api/v2/transactions")
 
       assert response = json_response(request, 200)
-
       assert response["items"] == []
       assert response["next_page_params"] == nil
     end
 
-    test "non empty txs", %{conn: conn} do
+    test "non empty list", %{conn: conn} do
       1
       |> insert_list(:transaction)
       |> with_block()
@@ -116,6 +115,12 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "return 422 on invalid tx hash", %{conn: conn} do
+      request = get(conn, "/api/v2/transactions/0x/internal-transactions")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
     test "return empty list", %{conn: conn} do
       tx =
         :transaction
@@ -179,7 +184,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       compare_item(internal_tx, Enum.at(response["items"], 0))
     end
 
-    test "return internal transaction with next_page_params", %{conn: conn} do
+    test "return list with next_page_params", %{conn: conn} do
       tx =
         :transaction
         |> insert()
@@ -229,6 +234,12 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "return 422 on invalid tx hash", %{conn: conn} do
+      request = get(conn, "/api/v2/transactions/0x/logs")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
     test "return empty list", %{conn: conn} do
       tx =
         :transaction
@@ -242,7 +253,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
-    test "return relevant internal transaction", %{conn: conn} do
+    test "return relevant log", %{conn: conn} do
       tx =
         :transaction
         |> insert()
@@ -279,7 +290,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       compare_item(log, Enum.at(response["items"], 0))
     end
 
-    test "return internal transaction with next_page_params", %{conn: conn} do
+    test "return list with next_page_params", %{conn: conn} do
       tx =
         :transaction
         |> insert()
@@ -307,6 +318,80 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
+  describe "/transactions/{tx_hash}/token-transfers" do
+    test "return empty list on non existing tx", %{conn: conn} do
+      tx = build(:transaction)
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+    end
+
+    test "return 422 on invalid tx hash", %{conn: conn} do
+      request = get(conn, "/api/v2/transactions/0x/token-transfers")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "return empty list", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+    end
+
+    test "return relevant token transfer", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
+
+      tx_1 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert_list(6, :token_transfer, transaction: tx_1, block: tx_1.block, block_number: tx_1.block_number)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(token_transfer, Enum.at(response["items"], 0))
+    end
+
+    test "return list with next_page_params", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfers =
+        insert_list(51, :token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
+        |> Enum.reverse()
+
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_transfers)
+    end
+  end
+
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
@@ -325,6 +410,14 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert to_string(log.data) == json["data"]
     assert log.index == json["index"]
   end
+
+  defp compare_item(%TokenTransfer{} = token_transfer, json) do
+    assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
+    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+  end
+
+  # %{"from" => %{"hash" => "0x0000000000000000000000000000000000000006", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "to" => %{"hash" => "0x0000000000000000000000000000000000000005", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil, "private_tags" => [], "public_tags" => [], "watchlist_names" => []}, "token" => %{"address" => "0x000000000000000000000000000000000000000f", "decimals" => "18", "exchange_rate" => nil, "holders" => "", "name" => "Infinite Token", "symbol" => "IT", "type" => "ERC-20"}, "total" => %{"decimals" => "18", "value" => "1"}, "tx_hash" => "0x0000000000000000000000000000000000000000000000000000000000000000", "type" => "token_transfer"}
 
   # [%{"address" => %{"hash" => "0x0000000000000000000000000000000000000005", "implementation_name" => nil, "is_contract" => false, "is_verified" => false, "name" => nil}, "data" => "0x00", "decoded" => nil, "index" => 1, "smart_contract" => nil, "topics" => [nil, nil, nil, nil]}]
 

@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def address_with_info(%Address{} = address, _address_hash) do
     %{
-      "hash" => to_string(address),
+      "hash" => Address.checksum(address),
       "is_contract" => is_smart_contract(address),
       "name" => address_name(address),
       "implementation_name" => implementation_name(address),
@@ -40,7 +40,13 @@ defmodule BlockScoutWeb.API.V2.Helper do
   end
 
   def address_with_info(nil, address_hash) do
-    %{"hash" => address_hash, "is_contract" => false, "name" => nil, "implementation_name" => nil, "is_verified" => nil}
+    %{
+      "hash" => Address.checksum(address_hash),
+      "is_contract" => false,
+      "name" => nil,
+      "implementation_name" => nil,
+      "is_verified" => nil
+    }
   end
 
   def address_name(%Address{names: [_ | _] = address_names}) do
