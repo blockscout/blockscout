@@ -24,45 +24,50 @@
           <li class="nav-item dropdown">
             <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
+                <%= render BlockScoutWeb.IconsView, "_blockchain_icon.html" %>
               </span>
-              <%= gettext("Blocks") %>
+              <%= gettext("Blockchain") %>
             </a>
-            <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
-              <%= link to: blocks_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
-                <%= gettext("Blocks") %>
-              <% end %>
-              <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item #{tab_status("uncles", @conn.request_path)}" do %>
-                <%= gettext("Uncles") %>
-              <% end %>
-              <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}" do %>
-                <%= gettext("Forked Blocks (Reorgs)") %>
-              <% end %>
-            </div>
-          </li>
-          <li class="nav-item dropdown" id="activeTransactions">
-            <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
-              </span>
-              <%= gettext("Transactions") %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarBlockchainDropdown">
+              <div class="nav-submenu">
+                <span>
+                  <%= gettext("Blocks") %>
+                </span>
+              </div>
               <%= link(
-                    gettext("Validated"),
-                    class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
-                    to: transaction_path(@conn, :index)
-                  ) %>
+                    gettext("Blocks"),
+                    to: blocks_path(@conn, :index),
+                    class: "dropdown-item #{tab_status("blocks", @conn.request_path)}")%>
+              <%= link(gettext("Uncles"),
+                    to: uncle_path(@conn, :uncle),
+                    class: "dropdown-item #{tab_status("uncles", @conn.request_path)}")%>
+              <%= link(gettext("Forked Blocks (Reorgs)"),
+                    to: reorg_path(@conn, :reorg),
+                    class: "border-bottom dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
+              <div class="nav-submenu">
+                <span>
+                  <%= gettext("Transactions") %>
+                </span>
+              </div>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
               <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
+              <%= link(
+                    gettext("Validated"),
+                    to: transaction_path(@conn, :index),
+                    class: "#{if variant == EthereumJSONRPC.Besu, do: "border-bottom", else: ""} dropdown-item #{tab_status("txs", @conn.request_path)}"
+                  ) %>
+
               <%= if variant !== EthereumJSONRPC.Besu do %>
                 <%= link(
                       gettext("Pending"),
-                      class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
+                      class: "border-bottom dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
                       "data-test": "pending_transactions_link",
                       to: pending_transaction_path(@conn, :index)
                     ) %>
               <% end %>
+              <%= link(gettext("Verified contracts"),
+                    to: verified_contracts_path(@conn, :index),
+                    class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}")%>
             </div>
           </li>
           <li class="nav-item dropdown">
@@ -79,7 +84,7 @@
                     to: tokens_path(@conn, :index)
                   ) %>
               <%= link(
-                    gettext("Ether"),
+                    Explorer.coin_name(),
                     class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
                     to: address_path(@conn, :index)
                   ) %>
@@ -127,12 +132,16 @@
             </a>
             <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
               <%= if apps_menu == true do %>
-                <%= for %{url: url, title: title} <- external_apps_list() do %> 
-                    <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
-                      <span class="external-link-icon">
-                        <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
-                      </span>
-                    </a>
+                <%= for %{url: url, title: title} = app <- apps_list() do %>
+                    <%= if Map.has_key?(app, :embedded?) && app.embedded? do %>
+                      <a href="<%= url %>" class="dropdown-item" target="_self"><%= title %></a>
+                    <% else %>
+                      <a href="<%= url %>" class="dropdown-item" target="_blank"><%= title %>
+                        <span class="external-link-icon">
+                          <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
+                        </span>
+                      </a>
+                    <% end %>
                 <% end %>
               <% end %>
             </div>
@@ -166,13 +175,14 @@
             <% end %>
           </div>
         </li>
-      </ul>
-      <!-- Dark mode changer -->
-      <button class="dark-mode-changer" id="dark-mode-changer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
+        <!-- Dark mode changer -->
+        <button class="dark-mode-changer" id="dark-mode-changer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
             <path fill="#9B62FF" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"/>
-        </svg>
-      </button>
+          </svg>
+        </button>
+        <%= render BlockScoutWeb.LayoutView, "_account_menu_item.html", conn: @conn, current_user: @current_user %>
+      </ul>
       <%= render BlockScoutWeb.LayoutView, "_search.html", conn: @conn, id: "main-search-autocomplete", additional_classes: ["mobile-search-hide"] %>
     </div>
   </div>

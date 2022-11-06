@@ -25,18 +25,6 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   alias Plug.Conn
 
   def init(opts) do
-    APILogger.message(
-      "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by key #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_key])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
-    )
-
     opts
   end
 

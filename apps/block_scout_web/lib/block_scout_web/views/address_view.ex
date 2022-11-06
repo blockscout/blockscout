@@ -4,11 +4,14 @@ defmodule BlockScoutWeb.AddressView do
   require Logger
 
   alias BlockScoutWeb.{AccessHelpers, LayoutView}
+  alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
+
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   @dialyzer :no_match
 
@@ -446,4 +449,33 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
+
+  def tag_name_to_label(tag_name) do
+    tag_name
+    |> String.replace(" ", "-")
+  end
+
+  def fetch_custom_abi(conn, address_hash) do
+    if current_user = current_user(conn) do
+      CustomABI.get_custom_abi_by_identity_id_and_address_hash(address_hash, current_user.id)
+    end
+  end
+
+  def has_address_custom_abi_with_read_functions?(conn, address_hash) do
+    custom_abi = fetch_custom_abi(conn, address_hash)
+
+    check_custom_abi_for_having_read_functions(custom_abi)
+  end
+
+  def check_custom_abi_for_having_read_functions(custom_abi),
+    do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &is_read_function?(&1))
+
+  def has_address_custom_abi_with_write_functions?(conn, address_hash) do
+    custom_abi = fetch_custom_abi(conn, address_hash)
+
+    check_custom_abi_for_having_write_functions(custom_abi)
+  end
+
+  def check_custom_abi_for_having_write_functions(custom_abi),
+    do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
 end

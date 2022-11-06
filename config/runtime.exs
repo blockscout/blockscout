@@ -2,26 +2,29 @@ import Config
 
 import Bitwise
 
+indexer_memory_limit_default = 1
+
 indexer_memory_limit =
   "INDEXER_MEMORY_LIMIT"
-  |> System.get_env("1")
+  |> System.get_env(to_string(indexer_memory_limit_default))
   |> Integer.parse()
   |> case do
     {integer, ""} -> integer
-    _ -> 1
+    _ -> indexer_memory_limit_default
   end
 
 config :indexer,
   memory_limit: indexer_memory_limit <<< 30
 
+indexer_empty_blocks_sanitizer_batch_size_default = 100
+
 indexer_empty_blocks_sanitizer_batch_size =
-  if System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE") do
-    case Integer.parse(System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE")) do
-      {integer, ""} -> integer
-      _ -> 100
-    end
-  else
-    100
+  "INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE"
+  |> System.get_env(to_string(indexer_empty_blocks_sanitizer_batch_size_default))
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> indexer_empty_blocks_sanitizer_batch_size_default
   end
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty_blocks_sanitizer_batch_size
@@ -29,11 +32,23 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty
 config :block_scout_web, :footer,
   chat_link: System.get_env("FOOTER_CHAT_LINK", "https://discord.gg/blockscout"),
   forum_link: System.get_env("FOOTER_FORUM_LINK", "https://forum.poa.network/c/blockscout"),
-  github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/blockscout/blockscout")
+  github_link: System.get_env("FOOTER_GITHUB_LINK", "https://github.com/blockscout/blockscout"),
+  enable_forum_link: System.get_env("FOOTER_ENABLE_FORUM_LINK", "false") == "true"
 
 ######################
 ### BlockScout Web ###
 ######################
+
+# Configures Ueberauth's Auth0 auth provider
+config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
+  domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
+  client_id: System.get_env("ACCOUNT_AUTH0_CLIENT_ID"),
+  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET")
+
+# Configures Ueberauth local settings
+config :ueberauth, Ueberauth,
+  logout_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_URL"),
+  logout_return_to_url: System.get_env("ACCOUNT_AUTH0_LOGOUT_RETURN_URL")
 
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
@@ -54,6 +69,17 @@ config :block_scout_web, BlockScoutWeb.Chain,
   enable_testnet_label: System.get_env("SHOW_TESTNET_LABEL", "false") == "true",
   testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
+verification_max_libraries_default = 10
+
+verification_max_libraries =
+  "CONTRACT_VERIFICATION_MAX_LIBRARIES"
+  |> System.get_env(to_string(verification_max_libraries_default))
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> integer
+    _ -> verification_max_libraries_default
+  end
+
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
   other_explorers: System.get_env("OTHER_EXPLORERS"),
@@ -61,7 +87,7 @@ config :block_scout_web,
   webapp_url: System.get_env("WEBAPP_URL"),
   api_url: System.get_env("API_URL"),
   apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
-  external_apps: System.get_env("EXTERNAL_APPS"),
+  apps: System.get_env("APPS") || System.get_env("EXTERNAL_APPS"),
   gas_price: System.get_env("GAS_PRICE", nil),
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
@@ -73,8 +99,10 @@ config :block_scout_web,
   max_length_to_show_string_without_trimming: System.get_env("MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil),
+  new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
-  json_rpc: System.get_env("JSON_RPC")
+  json_rpc: System.get_env("JSON_RPC"),
+  verification_max_libraries: verification_max_libraries
 
 default_api_rate_limit = 50
 default_api_rate_limit_str = Integer.to_string(default_api_rate_limit)
@@ -142,6 +170,8 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   # days
   coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
 
+config :block_scout_web, BlockScoutWeb.API.V2, enabled: System.get_env("API_V2_ENABLED") == "true"
+
 ########################
 ### Ethereum JSONRPC ###
 ########################
@@ -153,6 +183,9 @@ config :ethereum_jsonrpc,
 
 debug_trace_transaction_timeout = System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s")
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth, debug_trace_transaction_timeout: debug_trace_transaction_timeout
+
+config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
+  type: System.get_env("ETHEREUM_JSONRPC_PENDING_TRANSACTIONS_TYPE", "default")
 
 ################
 ### Explorer ###
@@ -168,8 +201,8 @@ healthy_blocks_period =
   |> :timer.minutes()
 
 config :explorer,
-  coin: System.get_env("COIN") || "RBTC",
-  coin_name: System.get_env("COIN_NAME") || System.get_env("COIN") || "RBTC",
+  coin: System.get_env("COIN", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
+  coin_name: System.get_env("COIN_NAME", nil) || System.get_env("EXCHANGE_RATES_COIN") || "ETH",
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,default",
@@ -203,9 +236,10 @@ address_sum_global_ttl =
   |> System.get_env("")
   |> Integer.parse()
   |> case do
-    {integer, ""} -> :timer.seconds(integer)
-    _ -> :timer.minutes(60)
+    {integer, ""} -> integer
+    _ -> 3600
   end
+  |> :timer.seconds()
 
 config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_global_ttl
 
@@ -308,6 +342,21 @@ config :explorer, Explorer.SmartContract.RustVerifierInterface,
   service_url: System.get_env("RUST_VERIFICATION_SERVICE_URL"),
   enabled: System.get_env("ENABLE_RUST_VERIFICATION_SERVICE") == "true"
 
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
+  api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
+
+config :explorer, Explorer.Mailer,
+  adapter: Bamboo.SendGridAdapter,
+  api_key: System.get_env("ACCOUNT_SENDGRID_API_KEY")
+
+config :explorer, Explorer.Account,
+  enabled: System.get_env("ACCOUNT_ENABLED") == "true",
+  sendgrid: [
+    sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
+    template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
+  ]
+
 ###############
 ### Indexer ###
 ###############
@@ -392,6 +441,22 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 config :indexer, Indexer.Block.Realtime.Supervisor, enabled: System.get_env("DISABLE_REALTIME_INDEXER") != "true"
+
+config :indexer, Indexer.Fetcher.TokenInstance.Supervisor,
+  disabled?: System.get_env("DISABLE_TOKEN_INSTANCE_FETCHER", "false") == "true"
+
+blocks_catchup_fetcher_batch_size_default_str = "10"
+blocks_catchup_fetcher_concurrency_default_str = "10"
+
+{blocks_catchup_fetcher_batch_size, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_BATCH_SIZE", blocks_catchup_fetcher_batch_size_default_str))
+
+{blocks_catchup_fetcher_concurrency, _} =
+  Integer.parse(System.get_env("INDEXER_CATCHUP_BLOCKS_CONCURRENCY", blocks_catchup_fetcher_concurrency_default_str))
+
+config :indexer, Indexer.Block.Catchup.Fetcher,
+  batch_size: blocks_catchup_fetcher_batch_size,
+  concurrency: blocks_catchup_fetcher_concurrency
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

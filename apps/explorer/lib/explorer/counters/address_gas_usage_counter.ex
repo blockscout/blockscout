@@ -11,7 +11,7 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
   @cache_name :address_transactions_gas_usage_counter
   @last_update_key "last_update"
 
-  config = Application.get_env(:explorer, __MODULE__)
+  config = Application.compile_env(:explorer, __MODULE__)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

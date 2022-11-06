@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import}
+  alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
@@ -46,7 +47,12 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
       |> Map.put_new(:timeout, @timeout)
 
     Multi.run(multi, :block_second_degree_relations, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, changes_list, insert_options) end,
+        :block_following,
+        :second_degree_relations,
+        :block_second_degree_relations
+      )
     end)
   end
 
@@ -57,7 +63,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout
         }) ::
-          {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
+          {:ok, nil | %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout} = options) when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)

@@ -1,5 +1,7 @@
 import Config
 
+alias EthereumJSONRPC.Variant
+
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc_value: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
@@ -16,6 +18,10 @@ config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 config :explorer, Explorer.Market.History.Historian, enabled: false
 
 config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.ContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.NewContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
@@ -24,15 +30,7 @@ config :explorer, Explorer.Tracer, disabled?: false
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender
 
-variant =
-  if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "parity"
-  else
-    System.get_env("ETHEREUM_JSONRPC_VARIANT")
-    |> String.split(".")
-    |> List.last()
-    |> String.downcase()
-  end
+variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "#{__DIR__}/../../../explorer/config/test")
 Code.require_file("#{variant}.exs", "#{__DIR__}/../../../indexer/config/test")

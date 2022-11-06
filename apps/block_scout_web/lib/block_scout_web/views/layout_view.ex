@@ -229,11 +229,12 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
-  def external_apps_list do
-    if Application.get_env(:block_scout_web, :external_apps) do
+  def apps_list do
+    apps = Application.get_env(:block_scout_web, :apps)
+
+    if apps do
       try do
-        :block_scout_web
-        |> Application.get_env(:external_apps)
+        apps
         |> Parser.parse!(%{keys: :atoms!})
       rescue
         _ ->
@@ -252,4 +253,29 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   defp validate_url(_), do: :error
+
+  def sign_in_link do
+    if Mix.env() == :test do
+      "/auth/auth0"
+    else
+      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] <> "auth/auth0"
+    end
+  end
+
+  def sign_out_link do
+    client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
+    return_to = Application.get_env(:ueberauth, Ueberauth)[:logout_return_to_url]
+    logout_url = Application.get_env(:ueberauth, Ueberauth)[:logout_url]
+
+    if client_id && return_to && logout_url do
+      params = [
+        client_id: client_id,
+        returnTo: return_to
+      ]
+
+      [logout_url, "?", URI.encode_query(params)]
+    else
+      []
+    end
+  end
 end
