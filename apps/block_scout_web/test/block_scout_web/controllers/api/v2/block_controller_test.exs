@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
-      compare_block(block, Enum.at(response["items"], 0))
+      compare_item(block, Enum.at(response["items"], 0))
     end
 
     test "type=block returns only consensus blocks", %{conn: conn} do
@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response["next_page_params"] == nil
 
       for index <- 0..3 do
-        compare_block(Enum.at(blocks, index), Enum.at(response["items"], index))
+        compare_item(Enum.at(blocks, index), Enum.at(response["items"], index))
       end
     end
 
@@ -108,7 +108,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response["next_page_params"] == nil
 
       for index <- 0..3 do
-        compare_block(Enum.at(reorgs, index), Enum.at(response["items"], index))
+        compare_item(Enum.at(reorgs, index), Enum.at(response["items"], index))
       end
     end
 
@@ -151,7 +151,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response["next_page_params"] == nil
 
       for index <- 0..3 do
-        compare_block(Enum.at(uncles, index), Enum.at(response["items"], index))
+        compare_item(Enum.at(uncles, index), Enum.at(response["items"], index))
       end
     end
 
@@ -207,7 +207,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response_2 = json_response(request_2, 200)
 
       assert response_2 == response_1
-      compare_block(block, response_2)
+      compare_item(block, response_2)
     end
   end
 
@@ -266,29 +266,67 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response_1 = json_response(request, 200)
       assert response_1 == response
     end
+
+    test "get txs with working next_page_params", %{conn: conn} do
+      2
+      |> insert_list(:transaction)
+      |> with_block()
+
+      block = insert(:block)
+
+      txs =
+        51
+        |> insert_list(:transaction)
+        |> with_block(block)
+        |> Enum.reverse()
+
+      request = get(conn, "/api/v2/blocks/#{block.number}/transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/blocks/#{block.number}/transactions", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, txs)
+
+      request_1 = get(conn, "/api/v2/blocks/#{block.hash}/transactions")
+      assert response_1 = json_response(request_1, 200)
+
+      response_1 =
+        Map.replace(
+          response_1,
+          "next_page_params",
+          Map.replace(response_1["next_page_params"], "block_hash_or_number", to_string(block.number))
+        )
+
+      assert response_1 == response
+
+      request_2 = get(conn, "/api/v2/blocks/#{block.hash}/transactions", response_1["next_page_params"])
+      assert response_2 = json_response(request_2, 200)
+      assert response_2 == response_2nd_page
+    end
   end
 
-  def compare_block(%Block{} = block, json) do
+  def compare_item(%Block{} = block, json) do
     assert to_string(block.hash) == json["hash"]
     assert block.number == json["height"]
   end
 
-  defp check_paginated_response(first_page_resp, second_page_resp, blocks) do
-    assert Enum.count(first_page_resp["items"]) == 50
-    assert first_page_resp["next_page_params"] != nil
-    compare_block(Enum.at(blocks, 50), Enum.at(first_page_resp["items"], 0))
-    compare_block(Enum.at(blocks, 1), Enum.at(first_page_resp["items"], 49))
-
-    assert Enum.count(second_page_resp["items"]) == 1
-    assert second_page_resp["next_page_params"] == nil
-    compare_block(Enum.at(blocks, 0), Enum.at(second_page_resp["items"], 0))
-  end
-
-  defp compare_item(%Transaction{} = transaction, json) do
+  def compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
+  end
+
+  defp check_paginated_response(first_page_resp, second_page_resp, list) do
+    assert Enum.count(first_page_resp["items"]) == 50
+    assert first_page_resp["next_page_params"] != nil
+    compare_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
+    compare_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
+
+    assert Enum.count(second_page_resp["items"]) == 1
+    assert second_page_resp["next_page_params"] == nil
+    compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
 end
