@@ -12,7 +12,7 @@ defmodule EthereumJSONRPC.Encoder do
   This is what is expected on the Json RPC data parameter.
   """
   @spec encode_function_call(ABI.FunctionSelector.t(), [term()]) :: String.t()
-  def encode_function_call(function_selector, args) do
+  def encode_function_call(function_selector, args) when is_list(args) do
     parsed_args = parse_args(args)
 
     encoded_args =
@@ -22,6 +22,8 @@ defmodule EthereumJSONRPC.Encoder do
 
     "0x" <> encoded_args
   end
+
+  def encode_function_call(function_selector, args), do: encode_function_call(function_selector, [args])
 
   defp parse_args(args) when is_list(args) do
     args

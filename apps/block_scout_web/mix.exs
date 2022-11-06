@@ -44,6 +44,7 @@ defmodule BlockScoutWeb.Mixfile do
 
   defp extra_applications,
     do: [
+      :ueberauth_auth0,
       :logger,
       :runtime_tools
     ]
@@ -99,11 +100,12 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix_html, "== 3.0.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 2.0"},
+      {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
-      {:poison, "~> 5.0.0"},
+      {:poison, "~> 4.0.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
@@ -127,7 +129,10 @@ defmodule BlockScoutWeb.Mixfile do
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:websocket_client, "~> 1.3"},
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:ex_json_schema, "~> 0.9.1"}
+      {:ex_json_schema, "~> 0.9.1"},
+      {:ueberauth, "~> 0.7"},
+      {:ueberauth_auth0, "~> 2.0"},
+      {:bureaucrat, "~> 0.2.9", only: :test}
     ]
   end
 

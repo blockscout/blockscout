@@ -1,0 +1,143 @@
+div.divider {
+  height: inherit;
+  width: 1px;
+  background: #828ba0;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+input.profile-item {
+  margin-left: 10px; 
+  color: #828ba0; 
+  outline: none;
+}
+
+.header-account {
+  font-size: 18px;
+}
+
+.label-account {
+  font-size: 1rem;
+}
+
+.white {
+  color: #fff;
+}
+
+.card-body-account {
+  max-width: none !important;
+}
+
+.form-input {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.form-checkbox {
+  margin-right: 0.5rem;
+  align-self: center;
+}
+
+.label-checkbox {
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.o-flow-x {
+  overflow-x: auto;
+}
+
+.fs-14 {
+  font-size: 14px;
+}
+
+.acc-link-active { 
+  &:hover, &:focus {
+    background-color: $primary !important;
+    color: #fff !important;  
+  }
+  background-color: $primary;
+  color: #fff;
+}
+
+.table-watchlist {
+  margin: 30px;
+  
+  @include media-breakpoint-down(md) {
+    margin: 0;
+  }
+}
+
+.form-error {
+  display: block;
+  font-size: 13px;
+  line-height: 1.2;
+  padding-top: 10px;
+}
+
+.navbar-account {
+  @include media-breakpoint-down(sm) {
+    max-width: 100%;
+    flex-grow: 1;
+  }
+}
+
+.nav-item.account {
+  @include media-breakpoint-down(sm) {
+    width: auto;
+    display: inline-grid;
+  }
+}
+
+.nav.account {
+  @include media-breakpoint-down(sm) {
+    display: inline;
+  }
+}
+
+li.public-tags-address {
+  list-style: none;
+  display: flex;
+}
+
+input.public-tags-address {
+  flex-basis: 557px;
+  width: auto;
+}
+
+.add-form-field {
+  background: none;
+  border: none;
+  margin-left: 0.5px;
+}
+
+.remove-form-field {
+  background: none;
+  border: none;
+
+  svg {
+    margin-top: 3px;
+  }
+}
+
+.multiple-input-fields-container {
+  padding-inline-start: 0;
+  display: inline-block;
+  margin-bottom: 0;
+}
+
+.line-input {
+  @include media-breakpoint-up(md) {
+    display: flex;
+    justify-content: space-between;
+
+    .form-group {
+      flex-grow: 1;
+      margin-right: 4rem;
+    }
+  }
+}
+
+.mr-4-rem {
+  margin-right: 4rem;
+}

@@ -10,6 +10,31 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
   def publish(address_hash, params) do
     case Verifier.evaluate_authenticity(address_hash, params) do
+      {
+        :ok,
+        %{
+          "abi" => abi_string,
+          "compiler_version" => _,
+          "constructor_arguments" => _,
+          "contract_libraries" => contract_libraries,
+          "contract_name" => contract_name,
+          "evm_version" => _,
+          "file_name" => file_name,
+          "optimization" => _,
+          "optimization_runs" => _,
+          "sources" => sources
+        } = result_params
+      } ->
+        %{^file_name => contract_source_code} = sources
+
+        prepared_params =
+          result_params
+          |> Map.put("contract_source_code", contract_source_code)
+          |> Map.put("external_libraries", contract_libraries)
+          |> Map.put("name", contract_name)
+
+        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
 
