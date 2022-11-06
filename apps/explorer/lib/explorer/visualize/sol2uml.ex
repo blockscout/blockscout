@@ -38,7 +38,6 @@ defmodule Explorer.Visualize.Sol2uml do
     end
   end
 
-
   def proccess_visualizer_response(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, decoded} ->
