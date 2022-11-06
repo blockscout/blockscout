@@ -9,6 +9,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       current_filter: 1
     ]
 
+  import BlockScoutWeb.PagingHelper,
+    only: [token_transfers_types_options: 1]
+
   alias BlockScoutWeb.API.V2.{AddressView, BlockView, TransactionView}
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.TokenBalanceOnDemand
@@ -25,19 +28,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     }
   ]
 
-  @transaction_with_tt_necessity_by_association [
+  @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional,
-      [token_transfers: :token] => :optional,
-      [token_transfers: :to_address] => :optional,
-      [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
+      :to_address => :optional,
+      :from_address => :optional,
+      :block => :optional
     }
   ]
 
@@ -49,6 +44,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> render(:address, %{address: address})
+    end
+  end
+
+  def counters(conn, %{"address_hash" => address_hash_string}) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash)} do
+      {validation_count} = Chain.address_counters(address)
+
+      transactions_from_db = address.transactions_count || 0
+      token_transfers_from_db = address.token_transfers_count || 0
+      address_gas_usage_from_db = address.gas_used || 0
+
+      json(conn, %{
+        transaction_count: to_string(transactions_from_db),
+        token_transfer_count: to_string(token_transfers_from_db),
+        gas_usage_count: to_string(address_gas_usage_from_db),
+        validation_count: to_string(validation_count)
+      })
     end
   end
 
@@ -94,12 +107,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def token_transfers(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
       options =
-        @transaction_with_tt_necessity_by_association
+        @token_transfer_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
+        |> Keyword.merge(token_transfers_types_options(params))
 
       results_plus_one =
-        Chain.address_hash_to_token_transfers(
+        Chain.address_hash_to_token_transfers_new(
           address_hash,
           options
         )
@@ -111,7 +125,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:transactions, %{transactions: transactions, next_page_params: next_page_params})
+      |> render(:token_transfers, %{token_transfers: transactions, next_page_params: next_page_params})
     end
   end
 

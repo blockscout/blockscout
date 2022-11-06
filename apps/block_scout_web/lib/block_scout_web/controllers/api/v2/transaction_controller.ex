@@ -64,15 +64,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     type_filter_options = type_filter_options(params)
 
     full_options =
-      Keyword.merge(
-        [
-          necessity_by_association: @transaction_necessity_by_association
-        ],
-        paging_options(params, filter_options)
-      )
+      [
+        necessity_by_association: @transaction_necessity_by_association
+      ]
+      |> Keyword.merge(paging_options(params, filter_options))
+      |> Keyword.merge(method_filter_options(params))
+      |> Keyword.merge(type_filter_options(params))
 
-    transactions_plus_one =
-      Chain.recent_transactions(full_options, filter_options, method_filter_options, type_filter_options)
+    transactions_plus_one = Chain.recent_transactions(full_options, filter_options)
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
 

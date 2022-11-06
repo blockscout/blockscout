@@ -82,6 +82,9 @@ defmodule Explorer.Chain do
 
   alias Explorer.Counters.{
     AddressesCounter,
+    AddressTransactionsCounter,
+    AddressTransactionsGasUsageCounter,
+    AddressTokenTransfersCounter,
     AddressesWithBalanceCounter
   }
 
@@ -548,6 +551,20 @@ defmodule Explorer.Chain do
     |> Transaction.transactions_with_token_transfers_direction(address_hash)
     |> Transaction.preload_token_transfers(address_hash)
     |> handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
+  @spec address_hash_to_token_transfers_new(Hash.Address.t() | String.t(), Keyword.t()) :: [TokenTransfer.t()]
+  def address_hash_to_token_transfers_new(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    direction = Keyword.get(options, :direction)
+    filters = Keyword.get(options, :token_type)
+    necessity_by_association = Keyword.get(options, :necessity_by_association)
+
+    direction
+    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters)
+    |> join_associations(necessity_by_association)
+    |> TokenTransfer.handle_paging_options(paging_options)
     |> Repo.all()
   end
 
@@ -3311,15 +3328,15 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option], [String.t()], [
-          :atom
-        ]) :: [
+  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option]) :: [
           Transaction.t()
         ]
-  def recent_collated_transactions(old_ui?, options \\ [], method_id_filter \\ [], type_filter \\ [])
+  def recent_collated_transactions(old_ui?, options \\ [])
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    method_id_filter = Keyword.get(options, :method)
+    type_filter = Keyword.get(options, :type)
 
     fetch_recent_collated_transactions(old_ui?, paging_options, necessity_by_association, method_id_filter, type_filter)
   end
@@ -3425,13 +3442,15 @@ defmodule Explorer.Chain do
       Results will be the transactions older than the `inserted_at` and `hash` that are passed.
 
   """
-  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false, [String.t()], [
-          :atom
-        ]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ [], old_ui? \\ true, method_id_filter \\ [], type_filter \\ [])
+  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false) :: [
+          Transaction.t()
+        ]
+  def recent_pending_transactions(options \\ [], old_ui? \\ true)
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    method_id_filter = Keyword.get(options, :method)
+    type_filter = Keyword.get(options, :type)
 
     Transaction
     |> page_pending_transaction(paging_options)
@@ -6325,12 +6344,12 @@ defmodule Explorer.Chain do
     |> String.downcase()
   end
 
-  def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
-    recent_pending_transactions(options, false, method_id_filter, type_filter_options)
+  def recent_transactions(options, [:pending | _]) do
+    recent_pending_transactions(options, false)
   end
 
-  def recent_transactions(options, _, method_id_filter, type_filter_options) do
-    recent_collated_transactions(false, options, method_id_filter, type_filter_options)
+  def recent_transactions(options, _) do
+    recent_collated_transactions(false, options)
   end
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
@@ -6542,5 +6561,54 @@ defmodule Explorer.Chain do
 
   def count_new_contracts_from_cache do
     NewContractsCounter.fetch()
+  end
+
+  def address_counters(address) do
+    validation_count_task =
+      Task.async(fn ->
+        address_to_validation_count(address.hash)
+      end)
+
+    Task.start_link(fn ->
+      transaction_count(address)
+    end)
+
+    Task.start_link(fn ->
+      token_transfers_count(address)
+    end)
+
+    Task.start_link(fn ->
+      gas_usage_count(address)
+    end)
+
+    [
+      validation_count_task
+    ]
+    |> Task.yield_many(:infinity)
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching address counters terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching address counters timed out."
+      end
+    end)
+    |> List.to_tuple()
+  end
+
+  def transaction_count(address) do
+    AddressTransactionsCounter.fetch(address)
+  end
+
+  def token_transfers_count(address) do
+    AddressTokenTransfersCounter.fetch(address)
+  end
+
+  def gas_usage_count(address) do
+    AddressTransactionsGasUsageCounter.fetch(address)
   end
 end
