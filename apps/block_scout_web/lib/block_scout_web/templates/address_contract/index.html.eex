@@ -5,6 +5,7 @@
 <% additional_sources_from_twin = Chain.get_address_verified_twin_contract(@address.hash).additional_sources %>
 <% fully_verified = Chain.smart_contract_fully_verified?(@address.hash)%>
 <% additional_sources = if smart_contract_verified, do: @address.smart_contract_additional_sources, else: additional_sources_from_twin %>
+<% visualize_sol2uml_enabled = Explorer.Visualize.Sol2uml.enabled?() %>
 <section class="container">
   <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
 
@@ -23,7 +24,7 @@
               <div style="display: inline-block;">
                 <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %>
                 <span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
-                  metadata_for_verification.address_hash, 
+                  metadata_for_verification.address_hash,
                   to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%= gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
               </div>
               <%= link(gettext("Verify & Publish"), to: path, class: "button button-primary button-sm float-right ml-3", "data-test": "verify_and_publish") %>
@@ -98,9 +99,20 @@
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= target_contract.file_path || gettext "Contract source code" %></h3>
-            <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
-              <%= gettext "Copy Source Code" %>
-            </button>
+            <div class="d-flex justify-content-end">
+              <%= if visualize_sol2uml_enabled do %>
+              <a href="<%= visualize_sol2uml_path(@conn, :index, address: @address) %>" style="text-decoration: none;">
+                <div class="btn-line">
+                  <div class="badge badge-info mr-1">new</div>
+                  <i class="fa-solid fa-diagram-project mr-1"></i>
+                  <span>Sol2uml</span>
+                </div>
+              </a>
+              <% end %>
+              <button type="button" class="btn-line ml-1" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
+                <%= gettext "Copy Source Code" %>
+              </button>
+            </div>
           </div>
           <pre class="tile-muted tile-code mb-4" id="code_viewer_main" data-additional-sources-length=<%= Enum.count(additional_sources) %>><%= target_contract.contract_source_code %><pre>
         </section>
@@ -171,7 +183,7 @@
               <div class="tile tile-muted mb-4">
                 <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= creation_code(@address) %></code></pre>
               </div>
-            <% end %>    
+            <% end %>
             <%= if fully_verified do %>
               <div class="d-flex justify-content-between align-items-baseline">
                 <h3><%= gettext "Deployed ByteCode" %></h3>

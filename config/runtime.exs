@@ -215,6 +215,10 @@ config :explorer,
       else: Explorer.Chain.Events.DBSender
     )
 
+config :explorer, Explorer.Visualize.Sol2uml,
+  service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
+  enabled: System.get_env("VISUALIZE_SOL2UML_ENABLED") == "true"
+
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
     if(disable_webapp == "true" && disable_indexer == "true",

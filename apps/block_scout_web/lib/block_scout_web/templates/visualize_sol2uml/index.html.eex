@@ -1,0 +1,16 @@
+<section class="container">
+    <div class="card">
+        <div class="card-body fs-14">
+            <div class="card-title lg-card-title mb-2">
+                <h1><%= gettext("UML diagram") %></h1>
+                <%= gettext("For contract") %> <%= link(
+                    @address.hash,
+                    to: address_contract_path(@conn, :index, @address.hash)
+                ) %>
+            </div>
+            <div class="row d-flex justify-content-center">
+                <img src="data:image/svg+xml;base64,<%= @svg %>"/>
+            </div>
+        </div>
+    </div>
+</section>
