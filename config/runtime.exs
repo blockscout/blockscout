@@ -458,6 +458,15 @@ config :indexer, Indexer.Block.Catchup.Fetcher,
   batch_size: blocks_catchup_fetcher_batch_size,
   concurrency: blocks_catchup_fetcher_concurrency
 
+{token_id_migration_first_block, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_FIRST_BLOCK", "0"))
+{token_id_migration_concurrency, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_CONCURRENCY", "1"))
+{token_id_migration_batch_size, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_BATCH_SIZE", "500"))
+
+config :indexer, :token_id_migration,
+  first_block: token_id_migration_first_block,
+  concurrency: token_id_migration_concurrency,
+  batch_size: token_id_migration_batch_size
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do

@@ -26,6 +26,7 @@ defmodule Indexer.Supervisor do
     TokenBalance,
     TokenInstance,
     TokenTotalSupplyOnDemand,
+    TokenTransferTokenIdMigration,
     TokenUpdater,
     UncleBlock
   }
@@ -139,7 +140,8 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {PendingOpsCleaner, [[], []]}
+        {PendingOpsCleaner, [[], []]},
+        {TokenTransferTokenIdMigration.Supervisor, [[]]}
       ]
       |> List.flatten()
 
