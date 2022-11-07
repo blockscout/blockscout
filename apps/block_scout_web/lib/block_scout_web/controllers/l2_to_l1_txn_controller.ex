@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.L2ToL1TxnController do
         |> update_page_parameters(Chain.default_page_size(), Keyword.get(options, :paging_options))
       )
 
-    %{total_transactions_count: transactions_count, l2_to_l1: l2_to_l1_plus_one} =
+    %{total_l2_to_l1_count: l2_to_l1_count, l2_to_l1: l2_to_l1_plus_one} =
       Chain.recent_collated_l2_to_l1_for_rap(full_options)
 
     {l2_to_l1, next_page} =
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.L2ToL1TxnController do
       if fetch_page_number(params) == 1 do
         page_size = Chain.default_page_size()
 
-        pages_limit = transactions_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
+        pages_limit = l2_to_l1_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
 
         case next_page_params(next_page, l2_to_l1, params) do
           nil ->

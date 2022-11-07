@@ -339,12 +339,12 @@ defmodule BlockScoutWeb.Chain do
     %{"batch_index" => batch_index}
   end
 
-  defp paging_params(%L1ToL2{queue_index: queue_index}) do
-    %{"queue_index" => queue_index}
+  defp paging_params(%L1ToL2{block: block, queue_index: queue_index}) do
+    %{"block" => block, "queue_index" => queue_index}
   end
 
-   defp paging_params(%L2ToL1{msg_nonce: msg_nonce}) do
-    %{"msg_nonce" => msg_nonce}
+  defp paging_params(%L2ToL1{block: block, msg_nonce: msg_nonce}) do
+    %{"block" => block, "msg_nonce" => msg_nonce}
   end
 
   defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do

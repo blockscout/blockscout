@@ -1,6 +1,5 @@
 <script>
   function ShowLayoutContainer() {
-
     document.getElementsByClassName("layout-container")[0].style.visibility = "visible";
   }
   window.onload = ShowLayoutContainer()
@@ -11,7 +10,7 @@
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "L1 to L2 Transactions" %></h1>
       <div class="list-top-pagination-container-wrapper">
-        <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.transactions_available_count() == Chain.limit_showing_transactions(), do: Chain.limit_showing_transactions(), else: nil %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.l1_to_l2_available_count() == Chain.limit_showing_transactions(), do: Chain.limit_showing_transactions(), else: nil %>
       </div>
 
       <div data-selector="channel-batching-message" class="d-none">

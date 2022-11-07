@@ -49,7 +49,6 @@ defmodule BlockScoutWeb.L1ToL2TxnController do
   ]
 
   def index(conn, %{"type" => "JSON"} = params) do
-
     options =
       @default_options
       |> Keyword.merge(paging_options(params))
@@ -63,7 +62,7 @@ defmodule BlockScoutWeb.L1ToL2TxnController do
         |> update_page_parameters(Chain.default_page_size(), Keyword.get(options, :paging_options))
       )
 
-    %{total_transactions_count: transactions_count, l1_to_l2: l1_to_l2_plus_one} =
+    %{total_l1_to_l2_count: l1_to_l2_count, l1_to_l2: l1_to_l2_plus_one} =
       Chain.recent_collated_l1_to_l2_for_rap(full_options)
 
     {l1_to_l2, next_page} =
@@ -72,12 +71,11 @@ defmodule BlockScoutWeb.L1ToL2TxnController do
       else
         {l1_to_l2_plus_one, nil}
       end
-
     next_page_params =
       if fetch_page_number(params) == 1 do
         page_size = Chain.default_page_size()
 
-        pages_limit = transactions_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
+        pages_limit = l1_to_l2_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
 
         case next_page_params(next_page, l1_to_l2, params) do
           nil ->

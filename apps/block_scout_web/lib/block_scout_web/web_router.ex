@@ -52,6 +52,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/recent-transactions", RecentTransactionsController, only: [:index])
     resources("/recent-txn-batches", RecentTxnBatchesController, only: [:index])
+    resources("/recent-l1-to-l2-txn", RecentL1ToL2TxnController, only: [:index])
 
     get("/txs", TransactionController, :index)
     get("/state-batch", StateBatchController, :index)

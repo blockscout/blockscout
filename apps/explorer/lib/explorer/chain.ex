@@ -3170,22 +3170,7 @@ defmodule Explorer.Chain do
   def recent_collated_txn_batches(options \\ []) when is_list(options) do
     #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    #if is_nil(paging_options.key) do
-    #  paging_options.page_size
-    #  |> Transactions.take_enough()
-    #  |> case do
-    #    nil ->
-    #      transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
-    #      Transactions.update(transactions)
-    #      transactions
-#
-    #    transactions ->
-    #      transactions
-    #  end
-    #else
       fetch_recent_collated_txn_batches(paging_options)
-    #end
   end
 
   @spec recent_collated_l1_to_l2([paging_options]) :: [L1ToL2.t()]
@@ -3234,31 +3219,36 @@ defmodule Explorer.Chain do
   def recent_collated_state_batches_for_rap(options \\ []) when is_list(options) do
     #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    #total_transactions_count = transactions_available_count()
+
+    state_batch_count = state_batch_available_count()
     fetched_state_batches =fetch_recent_collated_state_batch_for_rap(paging_options)
-    %{total_transactions_count: 1000, state_batches: fetched_state_batches}
+    %{total_transactions_count: state_batch_count, state_batches: fetched_state_batches}
   end
 
   @spec recent_collated_l2_to_l1_for_rap([paging_options]) :: %{
-    :total_transactions_count => non_neg_integer(),
+    :total_l2_to_l1_count => non_neg_integer(),
     :l2_to_l1 => [L2ToL1.t()]
   }
 
   def recent_collated_l2_to_l1_for_rap(options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    l2_to_l1_count = l2_to_l1_available_count()
     fetched_l2_to_l1 =fetch_recent_collated_l2_to_l1_for_rap(paging_options)
-    %{total_transactions_count: 1000, l2_to_l1: fetched_l2_to_l1}
+    %{total_l2_to_l1_count: l2_to_l1_count, l2_to_l1: fetched_l2_to_l1}
   end
 
   @spec recent_collated_l1_to_l2_for_rap([paging_options]) :: %{
-    :total_transactions_count => non_neg_integer(),
+    :total_l1_to_l2_count => non_neg_integer(),
     :l1_to_l2 => [L1ToL2.t()]
   }
 
   def recent_collated_l1_to_l2_for_rap(options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    l1_to_l2_count = l1_to_l2_available_count()
     fetched_l1_to_l2=fetch_recent_collated_l1_to_l2_for_rap(paging_options)
-    %{total_transactions_count: 1000, l1_to_l2: fetched_l1_to_l2}
+    %{total_l1_to_l2_count: l1_to_l2_count, l1_to_l2: fetched_l1_to_l2}
   end
 
   def fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
@@ -3272,25 +3262,26 @@ defmodule Explorer.Chain do
 
   def fetch_recent_collated_l2_to_l1_for_rap(paging_options) do
     fetch_l2_to_l1_for_rap()
-    |> handle_random_access_paging_options(paging_options)
+    |> no_cache_handle_options(paging_options)
     |> Repo.all()
   end
 
   def fetch_recent_collated_l1_to_l2_for_rap(paging_options) do
     fetch_l1_to_l2_for_rap()
-    |> handle_random_access_paging_options(paging_options)
+    |> no_cache_handle_options(paging_options)
     |> Repo.all()
   end
 
   def fetch_recent_collated_state_batch_for_rap(paging_options) do
     fetch_state_batch_for_rap()
-    |> handle_random_access_paging_options(paging_options)
+    |> no_cache_handle_options(paging_options)
     |> Repo.all()
   end
 
   def fetch_recent_collated_txn_batch_for_rap(paging_options) do
     fetch_txn_batch_for_rap()
-    |> handle_random_access_paging_options(paging_options)
+    |> where([txn_batch], not is_nil(txn_batch.batch_index))
+    |> no_cache_handle_options(paging_options)
     |> Repo.all()
   end
 
@@ -3300,13 +3291,11 @@ defmodule Explorer.Chain do
   }
 
   def recent_collated_txn_batches_for_rap(options \\ []) when is_list(options) do
-    #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    #total_transactions_count = transactions_available_count()
+    txn_batch_count = txn_batch_available_count()
     fetched_txn_batches =fetch_recent_collated_txn_batch_for_rap(paging_options)
-    %{total_transactions_count: 1000, txn_batches: fetched_txn_batches}
+    %{total_transactions_count: txn_batch_count, txn_batches: fetched_txn_batches}
   end
-
 
   defp fetch_transactions_for_rap do
     Transaction
@@ -3331,6 +3320,34 @@ defmodule Explorer.Chain do
   defp fetch_l2_to_l1_for_rap do
     L2ToL1
     |> order_by([l2_to_l1], desc: l2_to_l1.msg_nonce)
+  end
+
+  def txn_batch_available_count do
+    TxnBatch
+    |> where([txn_batch], not is_nil(txn_batch.batch_index))
+    |> limit(^@limit_showing_transactions)
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  def state_batch_available_count do
+    StateBatch
+    |> where([state_batch], not is_nil(state_batch.batch_index))
+    |> limit(^@limit_showing_transactions)
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  def l1_to_l2_available_count do
+    L1ToL2
+    |> where([l1_to_l2], not is_nil(l1_to_l2.queue_index))
+    |> limit(^@limit_showing_transactions)
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  def l2_to_l1_available_count do
+    L2ToL1
+    |> where([l2_to_l1], not is_nil(l2_to_l1.msg_nonce))
+    |> limit(^@limit_showing_transactions)
+    |> Repo.aggregate(:count, :hash)
   end
 
   def transactions_available_count do
@@ -4388,6 +4405,28 @@ defmodule Explorer.Chain do
           else: page_transaction(&1, paging_options)
         )).()
     |> handle_page(paging_options)
+  end
+
+  defp no_cache_handle_options(query, paging_options) do
+    query
+    |> no_cache_handle_page(paging_options)
+  end
+
+  defp no_cache_handle_page(query, paging_options) do
+    page_number = paging_options |> Map.get(:page_number, 1) |> proccess_page_number()
+    page_size = Map.get(paging_options, :page_size, @default_page_size)
+    cond do
+      page_in_bounds?(page_number, page_size) && page_number == 1 ->
+        query
+        |> limit(^(page_size + 1))
+      page_in_bounds?(page_number, page_size) ->
+        query
+        |> limit(^page_size)
+        |> offset(^((page_number - 1) * page_size))
+      true ->
+        query
+        |> limit(^(@default_page_size + 1))
+    end
   end
 
   defp handle_page(query, paging_options) do
