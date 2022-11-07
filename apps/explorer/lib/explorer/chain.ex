@@ -4390,7 +4390,12 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
     Transaction
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index,
+      desc: transaction.inserted_at,
+      desc: transaction.hash
+    )
     |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
@@ -4603,7 +4608,10 @@ defmodule Explorer.Chain do
     where(
       query,
       [transaction],
-      transaction.inserted_at < ^inserted_at or (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash)
+      (is_nil(transaction.block_number) and
+         (transaction.inserted_at < ^inserted_at or
+            (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash))) or
+        not is_nil(transaction.block_number)
     )
   end
 
@@ -6351,6 +6359,8 @@ defmodule Explorer.Chain do
   def recent_transactions(options, _) do
     recent_collated_transactions(false, options)
   end
+
+  def apply_filter_by_method_id_to_transactions(query, nil), do: query
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
     method_ids = Enum.flat_map(filter, &map_name_or_method_id_to_method_id/1)

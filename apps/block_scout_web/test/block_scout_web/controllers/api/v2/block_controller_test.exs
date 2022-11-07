@@ -295,13 +295,6 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       request_1 = get(conn, "/api/v2/blocks/#{block.hash}/transactions")
       assert response_1 = json_response(request_1, 200)
 
-      response_1 =
-        Map.replace(
-          response_1,
-          "next_page_params",
-          Map.replace(response_1["next_page_params"], "block_hash_or_number", to_string(block.number))
-        )
-
       assert response_1 == response
 
       request_2 = get(conn, "/api/v2/blocks/#{block.hash}/transactions", response_1["next_page_params"])
