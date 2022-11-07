@@ -260,9 +260,17 @@
       <p style="height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
         Latest L1->L2 Transactions
       </p>
+       <span
+        data-selector="l1-to-l2-list"
+        data-l1-to-l2-path="<%= @l1_to_l2_txn_path %>"
+        style="display:flex;flex-direction:column;padding:0 10px;box-sizing:border-box;"
+      >
+        <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to retry." %>
+          </span>
+        </button>
+      </span>
     </div>
-
-
-    
   </div>
 </section>

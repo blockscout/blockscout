@@ -1,0 +1,25 @@
+<div 
+    data-identifier-hash="<%= @l1_to_l2.queue_index %>"
+    style="width:100%;box-sizing:border-box;height:80px;display:flex;align-items:center;font-size:16px;padding:0;border-bottom:1px solid #e7eaf3;"
+>
+    <span
+        style="width:44px;height:44px;flex:0 0 44px;color: #77838f;background: rgba(119,131,143,.1);font-size:18px;font-weight:500;border-radius:8px;text-align:center;line-height:44px;margin-right:10px;"
+    >
+        TX
+    </span>
+    <div style="margin-bottom:5px;display:flex;flex-direction:column;flex:0 0 120px;">
+        <span>
+            <%= #render "_link.html", batch_index: @l1_to_l2 .block, data_test: "address_hash_link" %>
+            <%=  @l1_to_l2 .block %>
+        </span>
+        <a href="https://goerli.etherscan.io/tx/<%= @l1_to_l2.hash %>" target="_blank">
+            L1 <%= sub_hash_string(@l1_to_l2.hash, 15) %>...
+        </a>
+    </div>
+
+    <div style="margin-bottom:5px;display:flex;flex-direction:column;flex:1;">
+        <a href="https://goerli.etherscan.io/tx/<%= @l1_to_l2.l2_hash %>" target="_blank">
+           L2 <%= sub_hash_string(@l1_to_l2.l2_hash, 15) %>...
+        </a>
+    </div>
+</div>
