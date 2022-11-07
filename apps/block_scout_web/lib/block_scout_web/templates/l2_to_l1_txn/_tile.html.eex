@@ -6,18 +6,18 @@
     <span style="width: 10%;">
        <%= @l2_to_l1.msg_nonce %>
     </span>
-    <a style="width: 30%;" href="#">
+    <a style="width: 20%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-sizing:border-box;padding-right:10px;" href="/address/<%= @l2_to_l1.from_address %>">
       <%= sub_hash_string(@l2_to_l1.from_address) %>...
     </a>
-    <a style="width: 30%;" href="#">
+    <a style="width: 20%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-sizing:border-box;padding-right:10px;" href="/tx/<%= @l2_to_l1.l2_hash %>">
       <%= sub_hash_string(@l2_to_l1.l2_hash) %>...
     </a>
-    <span style="width: 18%;" in-tile data-from-now="<%= block_timestamp(@l2_to_l1) %>"></span>
-    <span style="width: 20%;">
+    <span style="width: 10%;" in-tile data-from-now="<%= block_timestamp(@l2_to_l1) %>"></span>
+    <span style="width: 10%;">
       Relayed
     </span>
-    <a style="width: 30%;" href="https://goerli.etherscan.io/tx/<%= @l2_to_l1.hash %>" target="_blank">
+    <a style="width: 20%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-sizing:border-box;padding-right:10px;" href="https://goerli.etherscan.io/tx/<%= @l2_to_l1.hash %>" target="_blank">
       <%= sub_hash_string(@l2_to_l1.hash) %>...
     </a>
-    <span style="width: 18%;" in-tile data-from-now="<%= block_timestamp(@l2_to_l1) %>"></span>
+    <span style="width: 10%;" in-tile data-from-now="<%= block_timestamp(@l2_to_l1) %>"></span>
 </div>

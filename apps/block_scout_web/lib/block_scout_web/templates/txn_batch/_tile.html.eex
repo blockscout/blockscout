@@ -4,7 +4,8 @@
 >
   
     <span style="width: 18%;">
-      <%= render "_link.html", batch_index: @txn_batch .batch_index, data_test: "address_hash_link" %>
+      <%= @txn_batch .batch_index %>
+      <%= #render "_link.html", batch_index: @txn_batch .batch_index, data_test: "address_hash_link" %>
     </span>
     <span style="width: 18%;" in-tile data-from-now="<%= block_timestamp(@txn_batch ) %>"></span>
     <span style="width: 18%;">
