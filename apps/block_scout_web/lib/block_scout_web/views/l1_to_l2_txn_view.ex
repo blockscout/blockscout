@@ -43,6 +43,10 @@ defmodule BlockScoutWeb.L1ToL2TxnView do
     String.slice(hash, 0..21)
   end
 
+  defp application_config do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Chain)
+  end
+
   def sub_hash_string(hash, length) do
     String.slice(hash, 0..length)
   end

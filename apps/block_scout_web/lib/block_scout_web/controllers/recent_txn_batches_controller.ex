@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.RecentTxnBatchesController do
     if ajax?(conn) do
       recent_txn_batches =
         Chain.recent_collated_txn_batches(
-          paging_options: %PagingOptions{page_size: 5}
+          paging_options: %PagingOptions{page_size: 6}
         )
       txn_batches =
         Enum.map(recent_txn_batches, fn txn_batch ->

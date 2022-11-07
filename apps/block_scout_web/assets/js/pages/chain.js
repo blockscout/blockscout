@@ -26,11 +26,14 @@ export const initialState = {
   blocksError: false,
   transactions: [],
   txnBatches: [],
+  l1ToL2Txn: [],
   transactionsBatch: [],
   transactionsError: false,
   txnBatchesError: false,
+  L1ToL2Error: false,
   transactionsLoading: true,
   txnBatchesLoading: true,
+  L1ToL2Loading: true,
   transactionCount: null,
   totalGasUsageCount: null,
   usdMarketCap: null,
@@ -155,6 +158,15 @@ function baseReducer(state = initialState, action) {
       return Object.assign({}, state, { txnBatchesError: true })
     case 'FINISH_TXN_BATCHES_FETCH':
       return Object.assign({}, state, { txnBatchesLoading: false })
+
+    case 'START_L1_TO_L2_FETCH':
+      return Object.assign({}, state, {L1ToL2Error: false, txnBatchesLoading: true })
+    case 'L1_TO_L2_FETCHED':
+      return Object.assign({}, state, { l1ToL2Txn: [...action.msg.l1ToL2Txn] })
+    case 'L1_TO_L2_FETCH_ERROR':
+      return Object.assign({}, state, { L1ToL2Error: true })
+    case 'FINISH_L1_TO_L2_FETCH':
+      return Object.assign({}, state, { L1ToL2Loading: false })
     default:
       return state
   }
@@ -324,6 +336,29 @@ const elements = {
       listMorph(container, newElements, { key: 'dataset.identifierHash' })
     }
   },
+  '[data-selector="l1-to-l2-list"] [data-selector="error-message"]': {
+    render ($el, state, _oldState) {
+      $el.toggle(state.L1ToL2Error)
+    }
+  },
+  '[data-selector="l1-to-l2-list"] [data-selector="loading-message"]': {
+    render ($el, state, _oldState) {
+      showLoader(state.L1ToL2Loading, $el)
+    }
+  },
+  '[data-selector="l1-to-l2-list"]': {
+    load($el) {
+      return { l1ToL2TxnPath: $el[0].dataset.l1ToL2TxnPath }
+    },
+    render($el, state, oldState) {
+      if (oldState.l1ToL2Txn === state.l1ToL2Txn) return
+      const container = $el[0]
+      const newElements = map(state.l1ToL2Txn, ({ l1ToL2TxnHtml }) => {
+        return $(l1ToL2TxnHtml)[0]
+      })
+      listMorph(container, newElements, { key: 'dataset.identifierHash' })
+    }
+  },
   '[data-selector="channel-batching-count"]': {
     render($el, state, _oldState) {
       const $channelBatching = $('[data-selector="channel-batching-message"]')
@@ -341,6 +376,7 @@ if ($chainDetailsPage.length) {
 
   loadTransactions(store)
   loadTxnBatches(store)
+  loadl1ToL2Txn(store)
   bindTransactionErrorMessage(store)
 
   loadBlocks(store)
@@ -390,6 +426,7 @@ if ($chainDetailsPage.length) {
     event.preventDefault()
     loadTransactions(store)
     loadTxnBatches(store)
+    loadl1ToL2Txn(store)
     $channelBatching.hide()
     store.dispatch({
       type: 'TRANSACTION_BATCH_EXPANDED'
@@ -415,7 +452,14 @@ function loadTxnBatches(store) {
     .always(() => store.dispatch({ type: 'FINISH_TXN_BATCHES_FETCH' }))
 }
 
-
+function loadl1ToL2Txn(store) {
+  const path = '/recent-l1-to-l2-txn'
+  store.dispatch({ type: 'START_L1_TO_L2_FETCH' })
+  $.getJSON(path)
+    .done(response => store.dispatch({ type: 'L1_TO_L2_FETCHED', msg: humps.camelizeKeys(response) }))
+    .fail(() => store.dispatch({ type: 'L1_TO_L2_FETCH_ERROR' }))
+    .always(() => store.dispatch({ type: 'FINISH_L1_TO_L2_FETCH' }))
+}
 
 function bindTransactionErrorMessage(store) {
   $('[data-selector="transactions-list"] [data-selector="error-message"]').on('click', _event => loadTransactions(store))

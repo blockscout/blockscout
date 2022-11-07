@@ -3168,7 +3168,6 @@ defmodule Explorer.Chain do
 
   @spec recent_collated_txn_batches([paging_options]) :: [TxnBatch.t()]
   def recent_collated_txn_batches(options \\ []) when is_list(options) do
-    #necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
       fetch_recent_collated_txn_batches(paging_options)
   end
