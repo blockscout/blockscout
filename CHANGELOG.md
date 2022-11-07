@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6407](https://github.com/blockscout/blockscout/pull/6407) - Indexed ratio for int txs fetching stage
 - [#6324](https://github.com/blockscout/blockscout/pull/6324) - Add verified contracts list page
 - [#6379](https://github.com/blockscout/blockscout/pull/6379) - API v2 for frontend
 - [#6351](https://github.com/blockscout/blockscout/pull/6351) - Enable forum link env var
@@ -39,6 +40,7 @@
 
 ### Chore
 
+- [#6387](https://github.com/blockscout/blockscout/pull/6387) - Fix errors in docker-build and e2e-tests workflows
 - [#6325](https://github.com/blockscout/blockscout/pull/6325) - Set http_only attribute of account authorization cookie to false
 - [#6343](https://github.com/blockscout/blockscout/pull/6343) - Docker-compose persistent logs
 - [#6240](https://github.com/blockscout/blockscout/pull/6240) - Elixir 1.14 support
