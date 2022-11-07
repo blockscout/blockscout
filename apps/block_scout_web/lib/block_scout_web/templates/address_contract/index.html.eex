@@ -100,16 +100,16 @@
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= target_contract.file_path || gettext "Contract source code" %></h3>
             <div class="d-flex justify-content-end">
-              <%= if visualize_sol2uml_enabled do %>
-              <a href="<%= visualize_sol2uml_path(@conn, :index, address: @address) %>" style="text-decoration: none;">
-                <div class="btn-line">
-                  <div class="badge badge-info mr-1">new</div>
-                  <i class="fa-solid fa-diagram-project mr-1"></i>
-                  <span>Sol2uml</span>
-                </div>
-              </a>
+              <%= if visualize_sol2uml_enabled && !target_contract.is_vyper_contract do %>
+              <span data-original-title="Visualize contract code using Sol2Uml JS library" data-placement="top" data-toggle="tooltip">
+                <a class="button button-primary" href="<%= visualize_sol2uml_path(@conn, :index, address: @address) %>">
+                    <div class="badge badge-info mr-1">new</div>
+                    <i class="fa-solid fa-diagram-project mr-1"></i>
+                    <span>Sol2uml</span>
+                </a>
+              </span>
               <% end %>
-              <button type="button" class="btn-line ml-1" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
+              <button type="button" class="btn-line ml-3" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
                 <%= gettext "Copy Source Code" %>
               </button>
             </div>

@@ -8,9 +8,14 @@
                     to: address_contract_path(@conn, :index, @address.hash)
                 ) %>
             </div>
+            <%= if is_nil(@error) do %>
             <div class="row d-flex justify-content-center">
-                <img src="data:image/svg+xml;base64,<%= @svg %>"/>
+                    <img id="img-view" src="data:image/svg+xml;base64,<%= @svg %>"/>
             </div>
+            <% else %>
+            <%= gettext("Cannot visualize contract")%>: <%= @error %>
+            <% end %>
         </div>
     </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/img_viewer.js") %>"></script>
 </section>
