@@ -216,8 +216,8 @@
         Latest L1 Batches
       </p>
       <span 
-        data-selector="transactions-list" 
-        data-transactions-path="<%= @txn_batches_path %>"
+        data-selector="txn-batch-list" 
+        data-txn-batches-path="<%= @txn_batches_path %>"
         style="display:flex;flex-direction:column;padding:0 10px;box-sizing:border-box;"
       >
         <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
