@@ -1,6 +1,5 @@
 <script>
   function ShowLayoutContainer() {
-
     document.getElementsByClassName("layout-container")[0].style.visibility = "visible";
   }
   window.onload = ShowLayoutContainer()
