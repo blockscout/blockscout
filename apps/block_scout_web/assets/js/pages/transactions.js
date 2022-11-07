@@ -85,7 +85,7 @@ if ($transactionListPage.length) {
   window.onbeforeunload = () => {
     window.loading = true
   }
-
+  // Receive new tx from server by websocket
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
 
   connectElements({ store, elements })

@@ -3149,8 +3149,6 @@ defmodule Explorer.Chain do
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    Logger.info('-=-=-=')
-    Logger.info(paging_options)
     if is_nil(paging_options.key) do
       paging_options.page_size
       |> Transactions.take_enough()
@@ -3343,8 +3341,6 @@ defmodule Explorer.Chain do
   end
 
   def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
-    Logger.info('======1')
-    Logger.info(paging_options)
     paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))

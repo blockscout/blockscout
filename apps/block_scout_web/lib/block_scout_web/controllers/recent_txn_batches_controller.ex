@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.RecentTxnBatchesController do
       txn_batches =
         Enum.map(recent_txn_batches, fn txn_batch ->
           %{
-            transaction_html:
+            txn_batches_html:
               View.render_to_string(BlockScoutWeb.TxnBatchView, "_recent_tile.html",
                 txn_batch: txn_batch,
                 conn: conn
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.RecentTxnBatchesController do
           }
         end)
 
-      json(conn, %{transactions: txn_batches})
+      json(conn, %{txn_batches: txn_batches})
     else
       unprocessable_entity(conn)
     end
