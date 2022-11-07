@@ -1,0 +1,25 @@
+<% status = BlockScoutWeb.TransactionView.transaction_status(@transaction) %>
+<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> fade-in" data-test="<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
+  <div class="row" data-test="chain_transaction">
+    <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
+      <span class="tile-label" data-test="transaction_type"> <%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>
+      <div class="tile-status-label ml-2 ml-md-0" data-test="transaction_status"><%= BlockScoutWeb.TransactionView.formatted_result(status) %></div>
+    </div>
+    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+      <%= render BlockScoutWeb.L1ToL2TxnView, "_link.html", transaction_hash: @transaction.hash %>
+      <span class="text-nowrap">
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address), use_custom_tooltip: false %>
+        &rarr;
+        <%= if @transaction.to_address_hash do %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.to_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address), use_custom_tooltip: false %>
+        <% else %>
+          <%= gettext("Contract Address Pending") %>
+        <% end %>
+      </span>
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="tile-title"><%= BlockScoutWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "BNETH" %></span>
+        <span class="ml-0 ml-md-1 text-nowrap"> <%= BlockScoutWeb.TransactionView.formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %></span>
+      </span>
+    </div>
+  </div>
+</div>

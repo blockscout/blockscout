@@ -1,0 +1,438 @@
+<% block = @state_batch.block %>
+<% from_address_hash = @state_batch.from_address_hash %>
+<% to_address_hash = @state_batch.to_address_hash %>
+<% created_address_hash = @state_batch.created_contract_address_hash %>
+<% decoded_input_data = decoded_input_data(@transaction) %>
+<% status = transaction_status(@transaction) %>
+<% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+<% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
+<% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
+<% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
+<%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+<section class="fs-14" data-page="transaction-details" data-page-transaction-hash="<%= @state_batch %>">
+  <div class="row">
+    <div class="col-md-12">
+      <!-- Transaction Details -->
+      <div class="card js-ad-dependant-mb-3">
+        <div class="card-body">
+          <%= cond do %>
+            <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% Enum.member?(circles_addresses_list, created_from_address_hash_str) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% true -> %>
+              <%= nil %>
+          <% end %>
+          <h1 class="card-title">
+            <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
+              <%= gettext "Transaction Details" %>
+            </div>
+          </h1>
+          <%= if status == :pending do %>
+            <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
+              <div class="loading-spinner">
+                <span class="loading-spinner-block-1"></span>
+                <span class="loading-spinner-block-2"></span>
+              </div>
+              <%= gettext("This transaction is pending confirmation.") %>
+            </div>
+          <% end %>
+          <div class="d-flex flex-row">
+            <%= if show_tenderly_link?() do %>
+              <div class="mr-4 mb-4">
+                <%= render BlockScoutWeb.CommonComponentsView, "_tenderly_link.html",
+                    transaction_hash: @state_batch.hash,
+                    tenderly_chain_path: tenderly_chain_path() %>
+              </div>
+            <% end %>
+          </div>
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Unique character string (TxID) assigned to every verified transaction.") %>
+              <%= gettext "Transaction Hash" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10" style="word-break: break-all;">
+              <span class="transaction-details-address" data-test="transaction_detail_hash"><%= @state_batch %> </span>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                  additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                  clipboard_text: @transaction,
+                  aria_label: gettext("Copy Transaction Hash"),
+                  title: gettext("Copy Txn Hash") %>
+            </dd>
+          </dl>
+          <!-- Verify in other explorers -->
+          <!-- <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %> -->
+          <!-- Result -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("Current transaction state: Success, Failed (Error), or Pending (In Process)") %>
+              <%= gettext "Result" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <% formatted_result = BlockScoutWeb.StateBatchView.formatted_result(status) %>
+              <span class="mr-4" data-transaction-status="<%= formatted_result %>"><%= render BlockScoutWeb.CommonComponentsView, "_status_icon.html", status: status %><%= formatted_result %></span>
+            </dd>
+          </dl>
+          <!-- Status -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+              text: gettext("The status of the transaction: Confirmed or Unconfirmed.") %>
+              <%= gettext "Status" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <% formatted_status = BlockScoutWeb.StateBatchView.formatted_status(status) %>
+              <% confirmations = confirmations(@transaction, block_height: @block_height) %>
+              <span class="mr-4">
+                <span data-transaction-status="<%= formatted_status %>">
+                  <%= if status == :pending do %>
+                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["large"] %></span>
+                  <% else %>
+                    <%= render BlockScoutWeb.FormView, "_tag.html", text: formatted_status, additional_classes: ["success", "large"] %></span>
+                  <% end %>
+
+                <%= if confirmations > 0 do %>
+                  <span class="bs-label large ml-2 confirmations-label"><%= gettext "Confirmed by " %><span data-selector="block-confirmations"><%= confirmations %></span><%= " " <> confirmations_ds_name(confirmations) %></span>
+                <% end %>
+              </span>
+            </dd>
+          </dl>
+          <!-- Revert reason -->
+          <%= if status == {:error, "Reverted"} || status == {:error, "execution reverted"} do %>
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("The revert reason of the transaction.") %>
+              <%= gettext "Revert reason" %> </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <%= case BlockScoutWeb.StateBatchView.transaction_revert_reason(@transaction) do %>
+                <% {:error, _contract_not_verified, candidates} when candidates != [] -> %>
+                  <% {:ok, method_id, text, mapping} = Enum.at(candidates, 0) %>
+                  <%= render(BlockScoutWeb.StateBatchView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% {:ok, method_id, text, mapping} -> %>
+                  <%= render(BlockScoutWeb.StateBatchView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
+                <% _ -> %>
+                  <% hex = BlockScoutWeb.StateBatchView.get_pure_transaction_revert_reason(@transaction) %>
+                  <% utf8 = BlockScoutWeb.StateBatchView.decoded_revert_reason(@transaction) %>
+                  <div class="tile tile-muted">
+                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
+                  </div>
+              <% end %>
+            </dd>
+          </dl>
+          <% end %>
+          <!-- Block -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Block number containing the transaction.") %>
+              <%= gettext "Block" %></dt>
+            <dd class="col-sm-9 col-lg-10" data-selector="block-number">
+              <%= if block do %>
+                <%= link(
+                      block,
+                      class: "transaction__link",
+                      to: block_path(@conn, :show, block)
+                    ) %>
+              <% else %>
+                <%= formatted_result(status) %>
+              <% end %>
+            </dd>
+          </dl>
+          <!-- Timestamp -->
+          <%= if block && block.timestamp do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Date & time of transaction inclusion, including length of time for confirmation.") %>
+                <%= gettext "Timestamp" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10" data-selector="block-timestamp">
+                <i class="fa-regular fa-clock"></i>
+                <span>
+                  <span data-from-now="<%= block.timestamp %>"></span>
+                </span>
+                <%= case processing_time_duration(@transaction) do %>
+                  <% :pending -> %>
+                    <% nil %>
+                  <% :unknown -> %>
+                    <% nil %>
+                  <% {:ok, interval_string} -> %>
+                    | <%= gettext("Confirmed within") %> <%= interval_string %>
+                <% end %>
+              </dd>
+            </dl>
+          <% end %>
+          <!-- From -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Address (external or contract) sending the transaction.") %>
+              <%= gettext "From" %></dt>
+            <dd class="col-sm-9 col-lg-10">
+              <%= link(
+                from_address_hash,
+                to: address_path(@conn, :show, from_address_hash)
+              ) %>
+              <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                clipboard_text: from_address_hash,
+                aria_label: gettext("Copy From Address"),
+                title: gettext("Copy From Address") %>
+            </dd>
+          </dl>
+          <!-- To -->
+          <% to_address = @state_batch |> Map.get(:to_address) || @state_batch |> Map.get(:created_contract_address) %>
+          <% recipient_address_hash = to_address_hash || created_address_hash %>
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Address (external or contract) receiving the transaction.") %>
+              <%= if BlockScoutWeb.AddressView.contract?(to_address) && !created_address_hash do %>
+                <%= gettext "Interacted With (To)" %>
+              <% else %>
+                <%= gettext "To" %>
+              <% end %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <%= cond do %>
+                <% created_address_hash -> %>
+                  [<%= gettext("Contract") %>&nbsp;
+                  <%= link(
+                    recipient_address_hash,
+                    to: address_path(@conn, :show, recipient_address_hash)
+                  ) %>
+                  &nbsp;<%= gettext("created") %>]
+                  <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: recipient_address_hash,
+                    aria_label: gettext("Copy To Address"),
+                    title: gettext("Copy To Address") %>
+                <% recipient_address_hash -> %>
+                  <%= link(
+                    recipient_address_hash,
+                    to: address_path(@conn, :show, recipient_address_hash)
+                  ) %>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
+                    clipboard_text: recipient_address_hash,
+                    aria_label: gettext("Copy To Address"),
+                    title: gettext("Copy To Address") %>
+                <% true -> %>
+              <% end %>
+            </dd>
+          </dl>
+          <%= case token_transfer_type(@transaction) do %>
+            <% {_type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
+              <!-- Tokens Transferred -->
+              <% %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations} = aggregate_token_transfers(transaction_with_transfers.token_transfers) %>
+              <%= if Enum.count(transfers) > 0 do %>
+                <dl class="row">
+                  <dt class="col-sm-3 col-lg-2 text-muted">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                      text: gettext("List of token transferred in the transaction.") %>
+                    <%= gettext "Tokens Transferred" %></dt>
+                  <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
+                    <table cellpadding="3" cellspacing="0">
+                      <%= for transfer <- transfers do %>
+                        <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, transfer) %>
+                      <% end %>
+                    </table>
+                  </dd>
+                </dl>
+              <% end %>
+              <!-- Tokens Minted -->
+              <%= if Enum.count(mintings) > 0 do %>
+                <dl class="row">
+                  <dt class="col-sm-3 col-lg-2 text-muted">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                      text: gettext("List of token minted in the transaction.") %>
+                    <%= gettext "Tokens Minted" %>
+                  </dt>
+                  <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
+                    <table cellpadding="3" cellspacing="0">
+                      <%= for minting <- mintings do %>
+                        <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, minting) %>
+                      <% end %>
+                    </table>
+                  </dd>
+                </dl>
+              <% end %>
+              <!-- Tokens Burnt -->
+              <%= if Enum.count(burnings) > 0 do %>
+                <dl class="row">
+                  <dt class="col-sm-3 col-lg-2 text-muted">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                      text: gettext("List of token burnt in the transaction.") %>
+                    <%= gettext "Tokens Burnt" %></dt>
+                  <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
+                  <%= for burning  <- burnings do %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, burning) %>
+                    </table>
+                  <% end %>
+                  </dd>
+                </dl>
+              <% end %>
+
+              <%= if Enum.count(creations) > 0 do %>
+                <dl class="row">
+                  <dt class="col-sm-3 col-lg-2 text-muted">
+                    <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                      text: gettext("List of ERC-1155 tokens created in the transaction.") %>
+                    <%= gettext "Tokens Created" %></dt>
+                  <dd class="col-sm-9 col-lg-10 transfers-list-mobile-container">
+                  <%= for creation  <- creations do %>
+                    <table cellpadding="3" cellspacing="0">
+                      <%= render BlockScoutWeb.StateBatchView, "_total_transfers_from_to.html", Map.put(assigns, :transfer, creation) %>
+                    </table>
+                  <% end %>
+                  </dd>
+                </dl>
+              <% end %>
+            <% _ -> %>
+          <% end %>
+          <!-- Value -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Value sent in the native token (and USD) if applicable.") %>
+              <%= gettext "Value" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
+            <%= if !empty_exchange_rate?(@exchange_rate) do %>
+              (<span class="address-current-balance large"
+                data-wei-value=<%= @state_batch.value.value %>
+                data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
+              </span>)
+            <% end %>
+            </dd>
+          </dl>
+          <!-- Transaction Fee -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Total transaction fee.") %>
+              <%= gettext "Transaction Fee" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10">
+              <%= formatted_fee(@transaction, denomination: :ether) %>
+            </dd>
+          </dl>
+          <!-- Gas Price -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Price per unit of gas specified by the sender. Higher gas prices can prioritize transaction inclusion during times of high usage.") %>
+              <%= gettext "Gas Price" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= gas_price(@transaction, :gwei) %> </dd>
+          </dl>
+          <hr>
+          <!-- Gas Limit -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Maximum gas amount approved for the transaction.") %>
+              <%= gettext "Gas Limit" %>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= format_gas_limit(@state_batch.gas) %> </dd>
+          </dl>
+          <!-- Gas Used by Transaction -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Actual gas amount used by the transaction.") %>
+              <%= gettext "Gas Used by Transaction" %>
+            </dt>
+            <% gas_used_perc = gas_used_perc(@transaction) %>
+            <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
+          </dl>
+          <!-- Nonce, Index in Block -->
+          <dl class="row">
+            <dt class="col-sm-3 col-lg-2 text-muted">
+              <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                text: gettext("Transaction number from the sending address. Each transaction sent from an address increments the nonce by 1.") %>
+              <%= gettext "Nonce" %><span class="index-label ml-2"
+                                          data-toggle="tooltip"
+                                          title="<%= gettext("Index position of Transaction in the block.") %>"><%= gettext "Position" %></span>
+            </dt>
+            <dd class="col-sm-9 col-lg-10"> <%= @state_batch.nonce %><span class="index-label ml-2"><%= if block, do: @state_batch.index, else: formatted_result(status) %></span> </dd>
+          </dl>
+          <%= unless value_transfer?(@transaction) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Binary data included with the transaction. See input / logs below for additional info.") %>
+                <%= gettext "Raw Input" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10">
+                <div class="d-flex mb-3 justify-content-between">
+                  <!-- Dropdown -->
+                  <div class="dropdown">
+                    <button class="btn-dropdown-line large dropdown-toggle" type="button" id="tx-input-decoding-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <%= gettext("Hex (Default)") %>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="transaction-input-decoding-button">
+                      <a href class="dropdown-item large tx-input-dropdown" data-target=".tx-raw-input" data-target-to-hide=".tx-utf8-input" id="tx-dropdown-raw">
+                        <%= gettext("Hex (Default)") %>
+                      </a>
+                      <a href class="dropdown-item large tx-input-dropdown" data-target=".tx-utf8-input" data-target-to-hide=".tx-raw-input" id="tx-dropdown-utf8">
+                        <%= gettext("UTF-8") %>
+                      </a>
+                    </div>
+                  </div>
+                  <div class="btn-copy-tx-raw-input-container">
+                    <!-- Copy Hex input -->
+                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                        id: "tx-raw-input",
+                        additional_classes: ["btn-copy-icon-small", "btn-copy-icon-no-borders", "btn-copy-icon-ml-0", "btn-copy-tx-raw-input", "tx-raw-input"],
+                        clipboard_text: @state_batch.input,
+                        aria_label: gettext("Copy Value"),
+                        title: gettext("Copy Txn Hex Input") %>
+                    <!-- Copy UTF-8 input  -->
+                    <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
+                        additional_classes: ["btn-copy-icon-small", "btn-copy-icon-no-borders", "btn-copy-icon-ml-0", "btn-copy-tx-raw-input", "tx-utf8-input"],
+                        clipboard_text: @state_batch.input.bytes,
+                        aria_label: gettext("Copy Value"),
+                        title: gettext("Copy Txn UTF-8 Input"),
+                        style: "display: none;" %>
+                  </div>
+                </div>
+                <!-- Textarea -->
+                <div class="tx-raw-input">
+                  <div class="tile tile-muted">
+                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @state_batch.input %></code></pre>
+                  </div>
+                </div>
+                <!-- Textfield -->
+                <div class="tx-utf8-input" style="display: none;">
+                  <div class="tile tile-muted">
+                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @state_batch.input.bytes %></code></pre>
+                  </div>
+                </div>
+              </dd>
+            </dl>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
+
+  <%= unless skip_decoding?(@transaction) do %>
+    <div class="row">
+      <div class="col-md-12">
+        <%= render BlockScoutWeb.StateBatchView, "_decoded_input.html", Map.put(assigns, :decoded_input_data, decoded_input_data) %>
+      </div>
+    </div>
+  <% end %>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/transaction.js") %>"></script>
+</section>

@@ -1,0 +1,2 @@
+<%= "TokenID " %><%= render BlockScoutWeb.L2ToL1TxnView, "_link_to_token_instance.html", transfer: @transfer, token_id: @token_id %>
+<%= " " %><%= render BlockScoutWeb.L2ToL1TxnView, "_link_to_token_symbol.html", transfer: @transfer %>

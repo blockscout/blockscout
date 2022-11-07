@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
-
+  require Logger
   import BlockScoutWeb.Chain, only: [paging_options: 1]
 
   alias BlockScoutWeb.{ChainView, Controller}
@@ -55,6 +55,8 @@ defmodule BlockScoutWeb.ChainController do
       transaction_estimated_count: transaction_estimated_count,
       total_gas_usage: total_gas_usage,
       transactions_path: recent_transactions_path(conn, :index),
+      txn_batches_path: recent_txn_batches_path(conn, :index),
+      l1_to_l2_txn_path: recent_l1_to_l2_txn_path(conn, :index),
       transaction_stats: transaction_stats,
       block_count: block_count,
       gas_price: Application.get_env(:block_scout_web, :gas_price)

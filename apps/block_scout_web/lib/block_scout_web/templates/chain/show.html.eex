@@ -207,25 +207,62 @@
 
   <%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>
 
-  <div class="card card-chain-transactions">
-    <div class="card-body">
-      <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
-      <h2 class="card-title lg-card-title"><%= gettext "Transactions" %></h2>
-      <div data-selector="channel-batching-message" style="display: none;">
-        <div data-selector="reload-transactions-button" class="alert alert-info">
-          <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
-        </div>
-      </div>
-      <span data-selector="transactions-list" data-transactions-path="<%= @transactions_path %>">
+  <div 
+    class="card card-chain-transactions"
+    style="display:flex;flex-direction:row;background:#fbfafc;box-shadow:none;"
+  >
+    <div style="flex:1;border:1px solid #e7eaf3;border-radius:5px;box-shadow:0 0 30px 0 rgb(202 199 226 / 50%);">
+      <p style="height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
+        Latest L1 Batches
+      </p>
+      <span 
+        data-selector="txn-batch-list" 
+        data-txn-batches-path="<%= @txn_batches_path %>"
+        style="display:flex;flex-direction:column;padding:0 10px;box-sizing:border-box;"
+      >
         <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
           <span class="alert-link">
             <%= gettext "Something went wrong, click to retry." %>
           </span>
         </button>
-        <div hidden data-selector="loading-message">
-          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
-        </div>
+        
       </span>
     </div>
+    
+
+    <div 
+      style="margin:0 15px;flex:1;border:1px solid #e7eaf3;border-radius:5px;box-shadow:0 0 30px 0 rgb(202 199 226 / 50%);"
+    >
+      <p style="height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
+        Latest Transactions
+      </p>
+      <%# <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %> 
+      <div data-selector="channel-batching-message" style="display: none;">
+        <div data-selector="reload-transactions-button" class="alert alert-info">
+          <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
+        </div>
+      </div>
+      <span 
+        data-selector="transactions-list" 
+        data-transactions-path="<%= @transactions_path %>"
+        style="display:flex;flex-direction:column;padding:0 10px;box-sizing:border-box;"
+      >
+        <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to retry." %>
+          </span>
+        </button>
+       
+      </span>
+    </div>
+
+    <div style="flex:1;border:1px solid #e7eaf3;border-radius:5px;box-shadow:0 0 30px 0 rgb(202 199 226 / 50%);">
+      <p style="height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
+        Latest L1->L2 Transactions
+      </p>
+    </div>
+
+
+    
   </div>
 </section>

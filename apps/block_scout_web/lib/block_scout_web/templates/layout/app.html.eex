@@ -240,6 +240,11 @@
       @view_module != Elixir.BlockScoutWeb.AddressView &&
       @view_module != Elixir.BlockScoutWeb.TokensView &&
       @view_module != Elixir.BlockScoutWeb.TransactionView &&
+      @view_module != Elixir.BlockScoutWeb.TxnBatchView &&
+      @view_module != Elixir.BlockScoutWeb.StateBatchView &&
+      @view_module != Elixir.BlockScoutWeb.StateBatchView &&
+      @view_module != Elixir.BlockScoutWeb.L2ToL1TxnView &&
+      @view_module != Elixir.BlockScoutWeb.L1ToL2TxnView &&
       @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
       @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
       @view_module != Elixir.BlockScoutWeb.TransactionLogView &&

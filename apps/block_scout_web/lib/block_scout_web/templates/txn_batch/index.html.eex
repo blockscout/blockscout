@@ -1,0 +1,60 @@
+<script>
+  function ShowLayoutContainer() {
+
+    document.getElementsByClassName("layout-container")[0].style.visibility = "visible";
+  }
+  window.onload = ShowLayoutContainer()
+</script>
+<section class="container" data-page="transaction-list">
+  <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
+  <div class="card">
+    <div class="card-body" data-async-listing="<%= @current_path %>">
+      <h1 class="card-title list-title-description"><%= gettext "Txn Batches" %></h1>
+      <div class="list-top-pagination-container-wrapper">
+        <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.transactions_available_count() == Chain.limit_showing_transactions(), do: Chain.limit_showing_transactions(), else: nil %>
+      </div>
+
+      <div data-selector="channel-batching-message" class="d-none">
+        <div data-selector="reload-button" class="alert alert-info">
+          <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
+        </div>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost, click to load newer transactions") %>
+
+      <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+      </button>
+
+      <div data-empty-response-message style="display: none;">
+        <div class="tile tile-muted text-center">
+          <span data-selector="empty-internal-transactions-list">
+            <%= gettext "There are no transactions." %>
+          </span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;height:42px;padding:0 10px;font-weight:600;font-size:18px;width:100%;border-top:1px solid #cccccc;border-bottom:2px solid #cccccc">
+        <span style="width: 18%;color:#6c757e;">
+          Txn Batch
+        </span>
+        <span style="width: 18%;color:#6c757e;">
+          Age
+        </span>
+        <span style="width: 18%;color:#6c757e;">
+          Batch Size
+        </span>
+        <span style="width: 30%;color:#6c757e;">
+          L1 Txn Hash
+        </span>
+        <span style="width: 16%;color:#6c757e;">
+          Pre Total Elements
+        </span>
+      </div>
+      <div data-selector="txn-batch-list" data-items>
+        <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "bottom" %>
+
+  </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/validated-transactions.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
+</section>

@@ -1,0 +1,45 @@
+<%= with {:ok, from_address} <- Chain.hash_to_address(@transfer.from_address_hash),
+        {:ok, to_address} <- Chain.hash_to_address(@transfer.to_address_hash) do %>
+<tr>
+        <td style="width: 1%;">
+                <b style="margin-right: 15px;">From</b>
+        </td>
+        <td class="address-mobile" style="word-break: break-all; width: 1%; white-space: nowrap;">
+                <%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false, trimmed: false %>
+        </td>
+        <td style="word-break: break-all; white-space: nowrap;">
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy_for_table.html",
+                        additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders", "btn-copy-token-transfer"],
+                        clipboard_text: from_address,
+                        aria_label: gettext("Copy From Address"),
+                        title: gettext("Copy From Address"),
+                        style: "position: relative;" %>
+        </td>
+</tr>
+<tr>
+        <td style="width: 1%;">
+                <b>To</b>
+        </td>
+        <td class="address-mobile" style="word-break: break-all; width: 1%; white-space: nowrap;">
+                <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                
+        </td>
+        <td style="word-break: break-all; white-space: nowrap;">
+                <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy_for_table.html",
+                additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders", "btn-copy-token-transfer"],
+                clipboard_text: to_address,
+                aria_label: gettext("Copy To Address"),
+                title: gettext("Copy To Address"),
+                style: "position: relative;"%>
+        </td>
+</tr>
+<tr>
+        <td valign="top" style="width: 1%;">
+                <b>For</b>
+        </td>
+        <% end %>       
+        <td class="address-mobile" style="word-break: break-all; white-space: nowrap;">
+                <%= render BlockScoutWeb.L2ToL1TxnView, "_total_transfers.html", transfer: @transfer %>
+        </td>
+</tr>
+<tr><td style="height: 10px;"></td></tr>
