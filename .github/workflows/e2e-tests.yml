@@ -79,8 +79,8 @@ jobs:
     uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
     with:
       blockscoutImage: blockscout/blockscout:pr-${{ needs.push_to_registry.outputs.short-sha }}
-      blockscoutIngressHost: e2e-blockscout
-      frontendIngressHost: e2e-blockscout
-      gethIngressHost: e2e-geth
-      scVerifierIngressHost: e2e-sc-verifier
+      blockscoutIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
+      frontendIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
+      gethIngressHost: e2e-geth-$GITHUB_SHA_SHORT
+      scVerifierIngressHost: e2e-sc-verifier-$GITHUB_SHA_SHORT
     secrets: inherit
