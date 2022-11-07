@@ -3,14 +3,14 @@
     style="width:100%;box-sizing:border-box;height:80px;display:flex;align-items:center;font-size:16px;padding:0;border-bottom:1px solid #e7eaf3;"
 >
     <span
-        style="width:44px;height:44px;flex:0 0 44px;color: #77838f;background: rgba(119,131,143,.1);font-size:18px;font-weight:500;border-radius:8px;text-align:center;line-height:44px;margin-right:5px;"
+        style="width:44px;height:44px;flex:0 0 44px;color: #77838f;background: rgba(119,131,143,.1);font-size:18px;font-weight:500;border-radius:8px;text-align:center;line-height:44px;margin-right:10px;"
     >
         Tx
     </span>
     <div style="flex:1;">
       <div style="display:flex;">
-        <span>
-          <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
+        <span style="margin-right:10px;">
+          Tx#<%= @transaction.block_number %>
         </span>
         <span style="width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:5px;">
           <%= render "_link.html", transaction_hash: @transaction.hash, data_test: "address_hash_link" %>
@@ -22,7 +22,7 @@
         <span style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:5px;">
           <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
         </span>
-        <span>To</span>
+        <span style="margin-left:10px;">To</span>
         <span style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:5px;">
           <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
         </span>

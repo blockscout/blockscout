@@ -51,7 +51,9 @@ defmodule BlockScoutWeb.TxnBatchView do
     String.slice(hash, 0..length)
   end
 
-
+  defp application_config do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Chain)
+  end
 
   def value_transfer?(_), do: false
 
