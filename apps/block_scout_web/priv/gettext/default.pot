@@ -76,7 +76,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:225
+#: lib/block_scout_web/templates/layout/app.html.eex:230
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -3254,11 +3254,6 @@ msgstr ""
 msgid "truffle flattener"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:44
-#, elixir-autogen, elixir-format
-msgid "Indexing Internal Transactions"
-msgstr ""
-
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:5
 #, elixir-autogen, elixir-format
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
@@ -3423,4 +3418,9 @@ msgstr ""
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Verifed contracts, %{subnetwork}, %{coin}"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/app.html.eex:44
+#, elixir-autogen, elixir-format
+msgid "Blocks With Internal Transactions Indexed"
 msgstr ""
