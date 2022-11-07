@@ -1,4 +1,8 @@
 defmodule Explorer.Utility.TokenTransferTokenIdMigratorProgress do
+  @moduledoc """
+  Module is responsible for keeping the current progress of TokenTransfer token_id migration.
+  Full algorithm is in the 'Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor' module doc.
+  """
   use Explorer.Schema
 
   require Logger
@@ -18,12 +22,13 @@ defmodule Explorer.Utility.TokenTransferTokenIdMigratorProgress do
   end
 
   def get_current_progress do
-    from(
-      p in __MODULE__,
-      order_by: [desc: p.updated_at],
-      limit: 1
+    Repo.one(
+      from(
+        p in __MODULE__,
+        order_by: [desc: p.updated_at],
+        limit: 1
+      )
     )
-    |> Repo.one()
   end
 
   def get_last_processed_block_number do

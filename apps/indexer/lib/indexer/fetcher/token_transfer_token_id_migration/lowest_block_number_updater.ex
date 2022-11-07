@@ -1,4 +1,9 @@
 defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.LowestBlockNumberUpdater do
+  @moduledoc """
+  Collects processed block numbers from token id migration workers
+  and updates last_processed_block_number according to them.
+  Full algorithm is in the 'Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor' module doc.
+  """
   use GenServer
 
   alias Explorer.Utility.TokenTransferTokenIdMigratorProgress
@@ -37,16 +42,15 @@ defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.LowestBlockNumberUpdater
           {nil, _} ->
             %{prev_range: range, result: result}
 
-          {%{first: f1, last: l1} = r1, %{first: f2, last: l2} = r2} ->
-            if l1 - 1 <= f2 do
-              %{prev_range: f1..l2, result: result}
-            else
-              %{prev_range: r2, result: result ++ [r1]}
-            end
+          {%{last: l1} = r1, %{first: f2} = r2} when l1 - 1 > f2 ->
+            %{prev_range: r2, result: [r1 | result]}
+
+          {%{first: f1}, %{last: l2}} ->
+            %{prev_range: f1..l2, result: result}
         end
       end)
 
-    result ++ [prev]
+    Enum.reverse([prev | result])
   end
 
   # since ranges are normalized, we need to check only the first range to determine the new last_processed_number

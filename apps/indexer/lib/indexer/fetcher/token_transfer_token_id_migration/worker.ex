@@ -1,4 +1,8 @@
 defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.Worker do
+  @moduledoc """
+  Performs the migration of TokenTransfer token_id to token_ids by batches.
+  Full algorithm is in the 'Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor' module doc.
+  """
   use GenServer
 
   import Ecto.Query
