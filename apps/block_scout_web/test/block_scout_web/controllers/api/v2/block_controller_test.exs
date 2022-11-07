@@ -76,10 +76,12 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         51
         |> insert_list(:block)
 
-      request = get(conn, "/api/v2/blocks", %{"type" => "block"})
+      filter = %{"type" => "block"}
+
+      request = get(conn, "/api/v2/blocks", filter)
       assert response = json_response(request, 200)
 
-      request_2nd_page = get(conn, "/api/v2/blocks", response["next_page_params"])
+      request_2nd_page = get(conn, "/api/v2/blocks", Map.merge(response["next_page_params"], filter))
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
@@ -117,10 +119,11 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         51
         |> insert_list(:block, consensus: false)
 
-      request = get(conn, "/api/v2/blocks", %{"type" => "reorg"})
+      filter = %{"type" => "reorg"}
+      request = get(conn, "/api/v2/blocks", filter)
       assert response = json_response(request, 200)
 
-      request_2nd_page = get(conn, "/api/v2/blocks", response["next_page_params"])
+      request_2nd_page = get(conn, "/api/v2/blocks", Map.merge(response["next_page_params"], filter))
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
@@ -167,10 +170,11 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
           uncle
         end
 
-      request = get(conn, "/api/v2/blocks", %{"type" => "uncle"})
+      filter = %{"type" => "uncle"}
+      request = get(conn, "/api/v2/blocks", filter)
       assert response = json_response(request, 200)
 
-      request_2nd_page = get(conn, "/api/v2/blocks", response["next_page_params"])
+      request_2nd_page = get(conn, "/api/v2/blocks", Map.merge(response["next_page_params"], filter))
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 

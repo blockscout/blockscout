@@ -43,10 +43,10 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def filter_options(%{"filter" => filter}, fallback) do
     filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_atom/1)
-    [status: if(filter == [], do: [fallback], else: filter)]
+    if(filter == [], do: [fallback], else: filter)
   end
 
-  def filter_options(_params, fallback), do: [status: [fallback]]
+  def filter_options(_params, fallback), do: [fallback]
 
   def type_filter_options(%{"type" => type}) do
     [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_atom/1)]
@@ -123,4 +123,16 @@ defmodule BlockScoutWeb.PagingHelper do
       },
       block_type: "Block"
     ]
+
+  def delete_parameters_from_next_page_params(params) when is_map(params) do
+    params
+    |> Map.delete("block_hash_or_number")
+    |> Map.delete("transaction_hash")
+    |> Map.delete("address_hash")
+    |> Map.delete("type")
+    |> Map.delete("method")
+    |> Map.delete("filter")
+  end
+
+  def delete_parameters_from_next_page_params(_), do: nil
 end

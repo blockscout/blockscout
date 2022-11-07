@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [token_transfers_types_options: 1]
+    only: [delete_parameters_from_next_page_params: 1, token_transfers_types_options: 1]
 
   alias BlockScoutWeb.API.V2.{AddressView, BlockView, TransactionView}
   alias Explorer.{Chain, Market}
@@ -95,7 +95,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
       {transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, transactions, params)
+      next_page_params =
+        next_page |> next_page_params(transactions, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -120,7 +121,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       {transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, transactions, params)
+      next_page_params =
+        next_page |> next_page_params(transactions, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -148,7 +150,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
       {internal_transactions, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, internal_transactions, params)
+      next_page_params =
+        next_page |> next_page_params(internal_transactions, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -170,7 +173,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       {logs, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, logs, params)
+      next_page_params = next_page |> next_page_params(logs, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -184,7 +187,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
       {logs, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, logs, params)
+      next_page_params = next_page |> next_page_params(logs, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -211,7 +214,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       results_plus_one = Chain.get_blocks_validated_by_address(full_options, address_hash)
       {blocks, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, blocks, params)
+      next_page_params = next_page |> next_page_params(blocks, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
@@ -228,7 +231,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       {coin_balances, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page_params(next_page, coin_balances, params)
+      next_page_params =
+        next_page |> next_page_params(coin_balances, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
