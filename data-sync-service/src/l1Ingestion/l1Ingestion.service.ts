@@ -346,7 +346,7 @@ export class L1IngestionService {
         l2_hash: tx_hash,
         block: Number(block_number),
         msg_nonce: Number(message_nonce),
-        from_address: sender,
+        from_address: target,
         txn_batch_index: Number(message_nonce),
         state_batch_index: Number(message_nonce),
         timestamp: timestamp,
