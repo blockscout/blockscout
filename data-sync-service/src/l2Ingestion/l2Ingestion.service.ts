@@ -91,7 +91,6 @@ export class L2IngestionService {
     const list = await this.getSentMessageByBlockNumber(startBlock, endBlock);
     let result: any[] = [];
     for(const item of list) {
-      console.log("item====", item)
       const {
         blockNumber,
         transactionHash,
