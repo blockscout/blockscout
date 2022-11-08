@@ -10,9 +10,11 @@
             </div>
             <%= if is_nil(@error) do %>
             <div class="row d-flex justify-content-center">
-                <div id="gallery">
-                    <img src="data:image/svg+xml;base64,<%= @svg %>"/>
-                </div>
+                <span data-toggle="tooltip" data-placement="top" title="Click on image to zoom">
+                    <div id="gallery">
+                        <img src="data:image/svg+xml;base64,<%= @svg %>"/>
+                    </div>
+                </span>
             </div>
             <% else %>
             <%= gettext("Cannot visualize contract")%>: <%= @error %>
