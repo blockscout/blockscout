@@ -14,7 +14,7 @@ defmodule Explorer.Chain.TransactionActions do
   * `hash` - transaction hash
   * `protocol` - name of the action protocol (see possible values for Enum of the db table field)
   * `data` - transaction action details (json formatted)
-  * `error` - type of the action protocol (see possible values for Enum of the db table field)
+  * `type` - type of the action protocol (see possible values for Enum of the db table field)
   """
   @type t :: %__MODULE__{
           hash: Hash.t(),
