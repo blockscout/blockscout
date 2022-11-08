@@ -1,6 +1,6 @@
 <div 
     data-identifier-hash="<%= @transaction.hash %>"
-    style="width:100%;box-sizing:border-box;height:80px;display:flex;align-items:center;font-size:16px;padding:0;border-bottom:1px solid #e7eaf3;"
+    style="width:100%;box-sizing:border-box;height:80px;display:flex;align-items:center;font-size:14px;padding:0;border-bottom:1px solid #e7eaf3;"
 >
     <span
         style="width:44px;height:44px;flex:0 0 44px;color: #77838f;background: rgba(119,131,143,.1);font-size:18px;font-weight:500;border-radius:8px;text-align:center;line-height:44px;margin-right:10px;"
@@ -31,7 +31,7 @@
       <div>
         <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= block_timestamp(@transaction) %>"></span>
         <span 
-          style="position:relative;padding:0 5px 0 18px;letter-spacing:0.8px;border-top-right-radius:6px;border-bottom-right-radius:6px;color:#77838f;background:rgba(119,131,143,.1);"
+          style="font-size:12px;position:relative;padding:0 5px 0 18px;letter-spacing:0.8px;border-top-right-radius:6px;border-bottom-right-radius:6px;color:#77838f;background:rgba(119,131,143,.1);"
         >
           <i style="position:absolute;left:0;top:0;border-top:10px solid transparent;border-bottom: 10px solid transparent;border-left:10px solid #fff;"></i>
           <%= value(@transaction) %>

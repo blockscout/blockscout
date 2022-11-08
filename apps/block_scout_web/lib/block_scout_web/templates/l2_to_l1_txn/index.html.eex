@@ -31,7 +31,7 @@
           </span>
         </div>
       </div>
-      <div style="display:flex;align-items:center;height:42px;padding:0 10px;font-weight:600;font-size:18px;width:100%;border-top:1px solid #cccccc;border-bottom:2px solid #cccccc">
+      <div style="background:#f8fafd;display:flex;align-items:center;height:42px;padding:0 10px;font-weight:500;font-size:16px;width:100%;border-top:1px solid #cccccc;border-bottom:2px solid #cccccc">
         <span style="width: 10%;color:#6c757e;">
           Msg Nonde
         </span>

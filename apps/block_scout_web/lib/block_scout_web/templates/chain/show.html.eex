@@ -212,8 +212,11 @@
     style="display:flex;flex-direction:row;background:#fbfafc;box-shadow:none;"
   >
     <div style="flex:1;border:1px solid #e7eaf3;border-radius:5px;box-shadow:0 0 30px 0 rgb(202 199 226 / 50%);">
-      <p style="height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
-        Latest L1 Batches
+      <p style="font-size:16px;display:flex;justify-content:space-between;align-items:center;height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
+        <span style="font-size:16px;">
+          Latest L1 Batches
+        </span>
+        <a href="/txn-batch" style="font-size:16px;">View All</a>
       </p>
       <span 
         data-selector="txn-batch-list" 
@@ -233,8 +236,11 @@
     <div 
       style="margin:0 15px;flex:1;border:1px solid #e7eaf3;border-radius:5px;box-shadow:0 0 30px 0 rgb(202 199 226 / 50%);"
     >
-      <p style="height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
-        Latest Transactions
+      <p style="font-size:16px;display:flex;justify-content:space-between;align-items:center;height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
+        <span style="font-size:16px;">
+          Latest Transactions
+        </span>
+        <a href="/txs" style="font-size:16px;">View All</a>
       </p>
       <%# <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %> 
       <div data-selector="channel-batching-message" style="display: none;">
@@ -257,8 +263,11 @@
     </div>
 
     <div style="flex:1;border:1px solid #e7eaf3;border-radius:5px;box-shadow:0 0 30px 0 rgb(202 199 226 / 50%);">
-      <p style="height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
-        Latest L1->L2 Transactions
+      <p style="font-size:16px;display:flex;justify-content:space-between;align-items:center;height:46px;padding:0 10px; line-height:46px;color:#4a4f55;font-weight:600;font-size:18px;border-bottom:1px solid #e7eaf3;">
+        <span style="font-size:16px;">
+          Latest L1->L2 Transactions
+        </span>
+        <a href="/l1-to-l2-txn" style="font-size:16px;">View All</a>
       </p>
        <span
         data-selector="l1-to-l2-list"
