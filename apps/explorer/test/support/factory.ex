@@ -839,6 +839,15 @@ defmodule Explorer.Factory do
     }
   end
 
+  def address_coin_balance_factory do
+    %CoinBalance{
+      address: insert(:address),
+      block_number: insert(:block).number,
+      value: Enum.random(1..100_000_000),
+      value_fetched_at: DateTime.utc_now()
+    }
+  end
+
   def address_current_token_balance_factory do
     %CurrentTokenBalance{
       address: build(:address),

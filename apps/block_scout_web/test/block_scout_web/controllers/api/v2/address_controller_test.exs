@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Address.CoinBalance, Block, InternalTransaction, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.CurrentTokenBalance
 
   describe "/addresses/{address_hash}" do
@@ -934,10 +934,74 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
-    # test "get coin balance history" do
-    #   address = insert(:address)
+    test "get coin balance history", %{conn: conn} do
+      address = insert(:address)
 
-    # end
+      insert(:address_coin_balance)
+      acb = insert(:address_coin_balance, address: address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      compare_item(acb, Enum.at(response["items"], 0))
+    end
+
+    test "coin balance history can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      acbs = insert_list(51, :address_coin_balance, address: address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, acbs)
+    end
+  end
+
+  describe "/addresses/{address_hash}/coin-balance-history-by-day" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history-by-day")
+
+      assert response = json_response(request, 200)
+      assert response == []
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/coin-balance-history-by-day")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get coin balance history by day", %{conn: conn} do
+      address = insert(:address)
+      noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
+      block = insert(:block, timestamp: noon, number: 2)
+      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1), number: 1)
+      insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 1000, day: noon)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 2000, day: Timex.shift(noon, days: -1))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history-by-day")
+
+      response = json_response(request, 200)
+
+      assert [
+               %{"date" => _, "value" => "2000"},
+               %{"date" => _, "value" => "1000"},
+               %{"date" => _, "value" => "1000"}
+             ] = response
+    end
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
@@ -972,6 +1036,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(ctb.value) == json["value"]
     assert (ctb.token_id && to_string(ctb.token_id)) == json["token_id"]
     compare_item(ctb.token, json["token"])
+  end
+
+  defp compare_item(%CoinBalance{} = cb, json) do
+    assert to_string(cb.value.value) == json["value"]
+    assert cb.block_number == json["block_number"]
+
+    assert Jason.encode!(Repo.get_by(Block, number: cb.block_number).timestamp) =~
+             String.replace(json["block_timestamp"], "Z", "")
   end
 
   defp compare_item(%Token{} = token, json) do
