@@ -15,10 +15,11 @@ pool_size =
     else: String.to_integer(System.get_env("POOL_SIZE", "50"))
 
 # Configure your database
-config :explorer, Explorer.Repo,
+config :explorer, Explorer.Repo.Local,
   database: database,
   hostname: hostname,
   username: username,
+  priv: "priv/repo",
   url: System.get_env("DATABASE_URL"),
   pool_size: pool_size,
   timeout: :timer.seconds(80)

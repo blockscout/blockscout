@@ -5,7 +5,7 @@ defmodule Indexer.Celo.Telemetry.Helper do
     Filters out changes from the full list of imports to only those that we care about
     This is necessary as Import.all will return a mapping of each Ecto.Multi stage id to count of rows affected
   """
-  def filter_imports(changes) do
+  def filter_imports(changes, _meta) do
     changes
     |> Enum.reduce(%{}, fn import, acc ->
       case take_import(import) do
@@ -50,4 +50,6 @@ defmodule Indexer.Celo.Telemetry.Helper do
   defp take_import({:internal_transactions, _} = itx), do: itx
 
   defp take_import(_), do: nil
+
+  def transform_db_call(_measurements, %{func: function_name}), do: %{function_name => 1}
 end

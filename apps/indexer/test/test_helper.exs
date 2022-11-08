@@ -22,4 +22,4 @@ Mox.defmock(Explorer.Celo.AddressCache.Mock, for: Explorer.Celo.AddressCache)
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()
 
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Local, :manual)

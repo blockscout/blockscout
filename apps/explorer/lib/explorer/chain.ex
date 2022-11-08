@@ -95,6 +95,7 @@ defmodule Explorer.Chain do
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Repo.Remote, as: RemoteRepo
   alias Explorer.SmartContract.{Helper, Reader}
   alias Explorer.Staking.ContractState
 
@@ -2172,47 +2173,6 @@ defmodule Explorer.Chain do
       0
   end
 
-  @doc """
-  Fetches count of last n blocks, last block timestamp, last block number and average gas used in the last minute.
-  Using a single method to fetch and calculate these values for performance reasons (only 2 queries used).
-  """
-  @spec metrics_fetcher(integer | nil) ::
-          {non_neg_integer, non_neg_integer, non_neg_integer, float}
-  def metrics_fetcher(n) do
-    last_block_number = fetch_max_block_number()
-
-    if last_block_number == 0 do
-      {0, 0, 0, 0}
-    else
-      range_start = last_block_number - n + 1
-
-      last_n_blocks_result =
-        SQL.query!(
-          Repo,
-          """
-          SELECT
-          COUNT(*) AS last_n_blocks_count,
-          CAST(EXTRACT(EPOCH FROM (DATE_TRUNC('second', NOW()::timestamp) - MAX(timestamp))) AS INTEGER) AS last_block_age,
-          AVG((gas_used/gas_limit)*100) AS average_gas_used
-          FROM blocks
-          WHERE number BETWEEN $1 AND $2;
-          """,
-          [range_start, last_block_number]
-        )
-
-      {last_n_blocks_count, last_block_age, average_gas_used} =
-        case Map.fetch(last_n_blocks_result, :rows) do
-          {:ok, [[last_n_blocks_count, last_block_age, average_gas_used]]} ->
-            {last_n_blocks_count, last_block_age, average_gas_used}
-
-          _ ->
-            0
-        end
-
-      {last_n_blocks_count, last_block_age, last_block_number, Decimal.to_float(average_gas_used)}
-    end
-  end
-
   @spec fetch_count_consensus_block() :: non_neg_integer
   def fetch_count_consensus_block do
     query =
@@ -3746,7 +3706,7 @@ defmodule Explorer.Chain do
         Logger.warn("Couldn't retrieve tx count from celo_transaction_stats - falling back to PG gc estimation")
 
         %Postgrex.Result{rows: [[rows]]} =
-          SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+          SQL.query!(Repo.Local, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
         rows
 
@@ -4274,9 +4234,9 @@ defmodule Explorer.Chain do
 
     insert_result =
       insert_contract_query_with_additional_sources
-      |> Repo.transaction()
+      |> RemoteRepo.transaction()
 
-    create_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
+    create_address_name(Repo.Remote, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
       {:ok, %{smart_contract: smart_contract}} ->
@@ -6987,7 +6947,7 @@ defmodule Explorer.Chain do
     # Each competitor can have several claimed accounts.
     # Final final score is the sum of account scores modified with the multiplier that is read from Google sheets
     result =
-      SQL.query(Repo, """
+      SQL.query(Repo.Local, """
         SELECT
           competitors.address,
           COALESCE(( SELECT name FROM celo_account WHERE address =  competitors.address), 'Unknown account'),
@@ -7356,78 +7316,6 @@ defmodule Explorer.Chain do
   defp boolean_to_check_result(true), do: :ok
 
   defp boolean_to_check_result(false), do: :not_found
-
-  @spec fetch_number_of_locks :: non_neg_integer()
-  def fetch_number_of_locks do
-    result =
-      SQL.query(Repo, """
-      SELECT COUNT(*) FROM (SELECT blocked_locks.pid     AS blocked_pid,
-           blocked_activity.usename  AS blocked_user,
-           blocking_locks.pid     AS blocking_pid,
-           blocking_activity.usename AS blocking_user,
-           blocked_activity.query    AS blocked_statement,
-           blocking_activity.query   AS current_statement_in_blocking_process
-      FROM  pg_catalog.pg_locks         blocked_locks
-      JOIN pg_catalog.pg_stat_activity blocked_activity  ON blocked_activity.pid = blocked_locks.pid
-      JOIN pg_catalog.pg_locks         blocking_locks
-          ON blocking_locks.locktype = blocked_locks.locktype
-          AND blocking_locks.DATABASE IS NOT DISTINCT FROM blocked_locks.DATABASE
-          AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
-          AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
-          AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
-          AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
-          AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
-          AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
-          AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
-          AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
-          AND blocking_locks.pid != blocked_locks.pid
-      JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
-      WHERE NOT blocked_locks.GRANTED) a;
-      """)
-
-    case result do
-      {:ok, %Postgrex.Result{rows: [[rows]]}} -> rows
-      _ -> 0
-    end
-  end
-
-  @spec fetch_number_of_dead_locks :: non_neg_integer()
-  def fetch_number_of_dead_locks do
-    database =
-      :explorer
-      |> Application.get_env(Explorer.Repo)
-      |> Keyword.get(:database)
-
-    result =
-      SQL.query(
-        Repo,
-        """
-        SELECT deadlocks FROM pg_stat_database where datname = $1;
-        """,
-        [database]
-      )
-
-    case result do
-      {:ok, %Postgrex.Result{rows: [[rows]]}} -> rows
-      _ -> 0
-    end
-  end
-
-  @spec fetch_name_and_duration_of_longest_query :: non_neg_integer()
-  def fetch_name_and_duration_of_longest_query do
-    result =
-      SQL.query(Repo, """
-        SELECT query, NOW() - xact_start AS duration FROM pg_stat_activity
-        WHERE state IN ('idle in transaction', 'active') ORDER BY now() - xact_start DESC LIMIT 1;
-      """)
-
-    {:ok, longest_query_map} = result
-
-    case Map.fetch(longest_query_map, :rows) do
-      {:ok, [[_, longest_query_duration]]} when not is_nil(longest_query_duration) -> longest_query_duration.secs
-      _ -> 0
-    end
-  end
 
   @doc """
   Fetches the first trace from the Parity trace URL.

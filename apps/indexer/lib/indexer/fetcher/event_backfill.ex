@@ -10,6 +10,7 @@ defmodule Indexer.Fetcher.EventBackfill do
   alias Explorer.Chain.Celo.ContractEventTracking
   alias Explorer.Chain.{Hash, Log}
   alias Explorer.Chain.Hash.Address
+  alias Explorer.Repo.Local, as: LocalRepo
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.{EventProcessor, Util}
 
@@ -146,7 +147,7 @@ defmodule Indexer.Fetcher.EventBackfill do
     {:ok, result} =
       Telemetry.wrap(
         :backfill_page_fetch,
-        SQL.query(Repo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size])
+        SQL.query(LocalRepo, @backfill_query, [topic, address_bytes, from_block_number, from_log_index, page_size])
       )
 
     # map raw results back into Explorer.Chain.Log structs

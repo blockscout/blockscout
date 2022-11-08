@@ -4,6 +4,7 @@ defmodule Explorer.Health do
   """
 
   alias Ecto.Adapters.SQL
+  alias Explorer.Repo.Local, as: Repo
 
   @doc """
   Check if app is ready
@@ -63,7 +64,7 @@ defmodule Explorer.Health do
   request
   """
   def database_connection_alive? do
-    SQL.query!(Explorer.Repo, "SELECT 1")
+    SQL.query!(Repo, "SELECT 1")
     true
   rescue
     _e -> false

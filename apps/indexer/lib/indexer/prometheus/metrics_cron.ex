@@ -4,7 +4,7 @@ defmodule Indexer.Prometheus.MetricsCron do
   """
   use GenServer
   alias EthereumJSONRPC.HTTP.RpcResponseEts
-  alias Explorer.Celo.Metrics.BlockchainMetrics
+  alias Explorer.Celo.Metrics.{BlockchainMetrics, DatabaseMetrics}
   alias Explorer.Chain
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.Prometheus.RPCInstrumenter
@@ -94,17 +94,17 @@ defmodule Indexer.Prometheus.MetricsCron do
   end
 
   def number_of_locks do
-    number_of_locks = Chain.fetch_number_of_locks()
+    number_of_locks = DatabaseMetrics.fetch_number_of_locks()
     :telemetry.execute([:indexer, :db, :locks], %{value: number_of_locks})
   end
 
   def number_of_deadlocks do
-    number_of_dead_locks = Chain.fetch_number_of_dead_locks()
+    number_of_dead_locks = DatabaseMetrics.fetch_number_of_dead_locks()
     :telemetry.execute([:indexer, :db, :deadlocks], %{value: number_of_dead_locks})
   end
 
   def longest_query_duration do
-    longest_query_duration = Chain.fetch_name_and_duration_of_longest_query()
+    longest_query_duration = DatabaseMetrics.fetch_name_and_duration_of_longest_query()
     :telemetry.execute([:indexer, :db, :longest_query_duration], %{value: longest_query_duration})
   end
 
@@ -138,7 +138,7 @@ defmodule Indexer.Prometheus.MetricsCron do
 
   def block_age_and_gas_metrics do
     {last_n_blocks_count, last_block_age, last_block_number, average_gas_used} =
-      Chain.metrics_fetcher(config(:metrics_fetcher_blocks_count))
+      BlockchainMetrics.metrics_fetcher(config(:metrics_fetcher_blocks_count))
 
     :telemetry.execute([:indexer, :blocks, :pending], %{
       value: config(:metrics_fetcher_blocks_count) - last_n_blocks_count

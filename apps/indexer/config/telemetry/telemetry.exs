@@ -7,19 +7,39 @@ config :indexer, :telemetry_config, [
   [
     name: [:blockscout, :ingested],
     type: :summary,
-    label: "indexer_import_ingested",
+    metric_id: "indexer_import_ingested",
     meta: %{
       help: "Blockchain primitives ingested via `Import.all` by type",
       metric_labels: [:type],
-      function: &Indexer.Celo.Telemetry.Helper.filter_imports/1
+      function: &Indexer.Celo.Telemetry.Helper.filter_imports/2
     }
   ],
   [
     name: [:blockscout, :chain_event_send],
     type: :counter,
-    label: "indexer_chain_events_sent",
+    metric_id: "indexer_chain_events_sent",
     meta: %{
       help: "Number of chain events sent via pubsub"
+    }
+  ],
+  [
+    name: [:fly_postgres, :local_exec],
+    type: :summary,
+    metric_id: "indexer_local_db_query",
+    meta: %{
+      metric_labels: [:func],
+      help: "DB queries executed against local db",
+      function: &Indexer.Celo.Telemetry.Helper.transform_db_call/2
+    }
+  ],
+  [
+    name: [:fly_postgres, :primary_exec],
+    type: :summary,
+    metric_id: "indexer_remote_db_query",
+    meta: %{
+      metric_labels: [:func],
+      help: "DB queries rpc'd to primary",
+      function: &Indexer.Celo.Telemetry.Helper.transform_db_call/2
     }
   ]
 ]

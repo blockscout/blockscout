@@ -38,7 +38,7 @@ block_transformer =
 
 config :indexer,
   block_transformer: block_transformer,
-  ecto_repos: [Explorer.Repo],
+  ecto_repos: [Explorer.Repo.Local],
   metadata_updater_seconds_interval:
     String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{10 * 60 * 60}"),
   health_check_port: port || 4001,

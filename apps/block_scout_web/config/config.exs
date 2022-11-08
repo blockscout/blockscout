@@ -10,7 +10,7 @@ alias BlockScoutWeb.LoggerBackend
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo],
+  ecto_repos: [Explorer.Repo.Local],
   version: System.get_env("BLOCKSCOUT_VERSION"),
   segment_key: System.get_env("SEGMENT_KEY"),
   release_link: System.get_env("RELEASE_LINK"),

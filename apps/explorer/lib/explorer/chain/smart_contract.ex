@@ -254,7 +254,7 @@ defmodule Explorer.Chain.SmartContract do
       type: Hash.Address
     )
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
   def preload_decompiled_smart_contract(contract) do

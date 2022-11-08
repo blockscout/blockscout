@@ -6,7 +6,8 @@ pool_size =
     else: String.to_integer(System.get_env("POOL_SIZE", "40"))
 
 # Configures the database
-config :explorer, Explorer.Repo,
+config :explorer, Explorer.Repo.Local,
+  priv: "priv/repo",
   url: System.get_env("DATABASE_URL") || "postgresql://postgres:1234@localhost:5432/blockscout",
   username: System.get_env("DATABASE_USER") || "postgres",
   password: System.get_env("DATABASE_PASSWORD") || "1234",

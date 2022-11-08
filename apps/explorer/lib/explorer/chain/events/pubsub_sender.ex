@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Events.PubSubSender do
       PubSub.broadcast(@pubsub_name, @pubsub_topic, {:chain_event, payload})
       Telemetry.event(:chain_event_send, %{payload_size: payload_size})
     else
-      Logger.warn("Notification can't be sent, payload size #{payload_size} exceeds the limit of #{@max_payload}.")
+      Logger.debug("Notification can't be sent, payload size #{payload_size} exceeds the limit of #{@max_payload}.")
     end
   end
 end

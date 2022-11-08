@@ -33,10 +33,10 @@ defmodule Explorer.DataCase do
   setup tags do
     ExVCR.Config.cassette_library_dir("test/support/fixture/vcr_cassettes")
 
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Local)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Local, {:shared, self()})
     end
 
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())

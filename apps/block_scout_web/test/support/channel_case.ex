@@ -29,10 +29,10 @@ defmodule BlockScoutWeb.ChannelCase do
 
   @dialyzer {:nowarn_function, __ex_unit_setup_0: 1}
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Local)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Local, {:shared, self()})
     end
 
     :ok

@@ -18,7 +18,7 @@ ExUnit.start()
 
 Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRates.Source)
 
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Local, :manual)
 
 Absinthe.Test.prime(BlockScoutWeb.Schema)
 
