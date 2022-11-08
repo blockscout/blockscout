@@ -7,6 +7,8 @@ defmodule Explorer.Application do
 
   alias Explorer.Admin
 
+  alias Explorer.Celo.Events.ContractEventStream
+
   alias Explorer.Chain.Cache.{
     Accounts,
     AddressSum,
@@ -96,7 +98,8 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Staking.ContractState),
-      configure(MinMissingBlockNumber)
+      configure(MinMissingBlockNumber),
+      configure(ContractEventStream)
     ]
     |> List.flatten()
   end

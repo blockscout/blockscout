@@ -92,6 +92,15 @@ defmodule Explorer.Celo.ContractEvents.Common do
   def format_address_for_postgres_json("0x" <> rest), do: format_address_for_postgres_json(rest)
   def format_address_for_postgres_json(address), do: "\\x" <> address
 
+  @doc "Standardise addresses for event streaming"
+  def format_address_for_streaming(%Hash{} = address),
+    do: address |> to_string() |> String.downcase()
+
+  def format_address_for_streaming(nil), do: ""
+  def format_address_for_streaming("\\x" <> rest), do: ("0x" <> rest) |> String.downcase()
+  def format_address_for_streaming("0x" <> _rest = address), do: address |> String.downcase()
+  def format_address_for_streaming(address), do: ("0x" <> address) |> String.downcase()
+
   @doc "Alias for format_address_for_postgres_json/1"
   defdelegate fa(address), to: __MODULE__, as: :format_address_for_postgres_json
 

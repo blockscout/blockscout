@@ -10,4 +10,7 @@ defprotocol Explorer.Celo.ContractEvents.EventTransformer do
 
   @doc "Convert an event instance into parameters for CeloContractEvent.changeset/2"
   def to_celo_contract_event_params(event)
+
+  @doc "Convert an event instance into format expected by beanstalkd for event streaming"
+  def to_event_stream_format(event)
 end

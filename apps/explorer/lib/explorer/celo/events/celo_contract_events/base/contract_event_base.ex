@@ -181,6 +181,21 @@ defmodule Explorer.Celo.ContractEvents.Base do
             |> extract_common_event_params()
             |> Map.merge(%{params: event_params})
           end
+
+          def to_event_stream_format(event) do
+            event_params =
+              unquote(Macro.escape(unique_event_properties))
+              |> Enum.map(fn
+                %{name: name, type: :address} -> {name, Map.get(event, name) |> format_address_for_streaming()}
+                %{name: name} -> {name, Map.get(event, name)}
+              end)
+              |> Enum.into(%{})
+
+            event
+            |> extract_common_event_params()
+            |> Map.merge(%{params: event_params})
+            |> Jason.encode!()
+          end
         end
       end
 
