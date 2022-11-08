@@ -33,6 +33,8 @@ config :block_scout_web,
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
+config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: true
+
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   url: [
