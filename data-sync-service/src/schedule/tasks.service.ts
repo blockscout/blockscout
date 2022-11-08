@@ -46,7 +46,7 @@ export class TasksService {
     await this.cacheManager.set(L2_RELAYED, Number(l2_relayed_block_number), { ttl: 0 });
     console.log('================end init cache================')
   }
-  @Interval(2000)
+  @Interval(10000)
   async l1_sent() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
@@ -62,7 +62,7 @@ export class TasksService {
       this.logger.error(`error l1 [handle_sync_l1_sent_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async l1_relayed() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
@@ -77,7 +77,7 @@ export class TasksService {
       this.logger.error(`error l1 [handle_sync_l1_relayed_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async l2_sent() {
     try {
       const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
@@ -93,7 +93,7 @@ export class TasksService {
       this.logger.error(`error l2 [handle_sync_l2_sent_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async l2_relayed() {
     try {
       const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
@@ -108,7 +108,7 @@ export class TasksService {
       this.logger.error(`error l2 [handle_sync_l2_relayed_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async state_batch() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
@@ -124,7 +124,7 @@ export class TasksService {
     }
   }
 
-  @Interval(2000)
+  @Interval(10000)
   async txn_batch() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
@@ -140,7 +140,7 @@ export class TasksService {
     }
   }
 
-  @Interval(2000)
+  @Interval(10000)
   async l1l2_merge() {
     try {
       await this.l1IngestionService.createL1L2Relation();
@@ -149,7 +149,7 @@ export class TasksService {
     }
   }
 
-  @Interval(2000)
+  @Interval(10000)
   async l2l1_merge() {
     try {
       await this.l1IngestionService.createL2L1Relation();
