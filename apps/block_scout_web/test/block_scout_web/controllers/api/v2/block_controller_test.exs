@@ -303,12 +303,12 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     end
   end
 
-  def compare_item(%Block{} = block, json) do
+  defp compare_item(%Block{} = block, json) do
     assert to_string(block.hash) == json["hash"]
     assert block.number == json["height"]
   end
 
-  def compare_item(%Transaction{} = transaction, json) do
+  defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
     assert to_string(transaction.value.value) == json["value"]

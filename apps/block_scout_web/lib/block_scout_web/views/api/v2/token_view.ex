@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "name" => token.name,
       "decimals" => token.decimals,
       "type" => token.type,
-      "holders" => to_string(token.holder_count),
+      "holders" => token.holder_count && to_string(token.holder_count),
       "exchange_rate" => token.usd_value && to_string(token.usd_value)
     }
   end

@@ -224,7 +224,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   def coin_balance_history(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)} do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:not_found, {:ok, _address}, _} <-
+           {:not_found, Chain.hash_to_address(address_hash), :empty_items_with_next_page_params} do
       full_options = paging_options(params)
 
       results_plus_one = Chain.address_to_coin_balances(address_hash, full_options)

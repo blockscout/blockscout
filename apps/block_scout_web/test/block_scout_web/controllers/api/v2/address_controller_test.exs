@@ -1,8 +1,9 @@
 defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, TokenTransfer, Transaction}
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.Address.CurrentTokenBalance
 
   describe "/addresses/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -379,6 +380,564 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
       compare_item(token_transfer, Enum.at(response["items"], 0))
     end
+
+    test "token transfers can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      token_tranfers =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+        end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_tranfers)
+    end
+
+    test ":to token transfers can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      for _ <- 0..50 do
+        tx = insert(:transaction) |> with_block()
+        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+      end
+
+      token_tranfers =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+        end
+
+      filter = %{"filter" => "to"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_tranfers)
+    end
+
+    test ":from token transfers can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      token_tranfers =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+        end
+
+      for _ <- 0..50 do
+        tx = insert(:transaction) |> with_block()
+        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+      end
+
+      filter = %{"filter" => "from"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_tranfers)
+    end
+
+    test ":from + :to tt can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      tt_from =
+        for _ <- 0..49 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+        end
+
+      tt_to =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+        end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(tt_to, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(tt_to, 1), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 50
+      assert response_2nd_page["next_page_params"] != nil
+      compare_item(Enum.at(tt_to, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(tt_from, 49), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(tt_from, 1), Enum.at(response_2nd_page["items"], 49))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", response_2nd_page["next_page_params"])
+      assert response = json_response(request, 200)
+
+      check_paginated_response(response_2nd_page, response, tt_from ++ [Enum.at(tt_to, 0)])
+    end
+
+    test "check token type filters", %{conn: conn} do
+      address = insert(:address)
+
+      erc_20_token = insert(:token, type: "ERC-20")
+
+      erc_20_tt =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address,
+            token_contract_address: erc_20_token.contract_address
+          )
+        end
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      erc_721_tt =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address,
+            token_contract_address: erc_721_token.contract_address
+          )
+        end
+
+      erc_1155_token = insert(:token, type: "ERC-1155")
+
+      erc_1155_tt =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address,
+            token_contract_address: erc_1155_token.contract_address
+          )
+        end
+
+      # -- ERC-20 --
+      filter = %{"type" => "ERC-20"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_20_tt)
+      # -- ------ --
+
+      # -- ERC-721 --
+      filter = %{"type" => "ERC-721"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_721_tt)
+      # -- ------ --
+
+      # -- ERC-1155 --
+      filter = %{"type" => "ERC-1155"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_1155_tt)
+      # -- ------ --
+
+      # two filters simultaneously
+      filter = %{"type" => "ERC-1155,ERC-20"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(erc_1155_tt, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(erc_1155_tt, 1), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 50
+      assert response_2nd_page["next_page_params"] != nil
+      compare_item(Enum.at(erc_1155_tt, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(erc_20_tt, 50), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(erc_20_tt, 2), Enum.at(response_2nd_page["items"], 49))
+
+      request_3rd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/token-transfers",
+          Map.merge(response_2nd_page["next_page_params"], filter)
+        )
+
+      assert response_3rd_page = json_response(request_3rd_page, 200)
+      assert Enum.count(response_3rd_page["items"]) == 2
+      assert response_3rd_page["next_page_params"] == nil
+      compare_item(Enum.at(erc_20_tt, 1), Enum.at(response_3rd_page["items"], 0))
+      compare_item(Enum.at(erc_20_tt, 0), Enum.at(response_3rd_page["items"], 1))
+      # -- ------ --
+    end
+
+    test "type and direction filters at the same time", %{conn: conn} do
+      address = insert(:address)
+
+      erc_20_token = insert(:token, type: "ERC-20")
+
+      erc_20_tt =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address,
+            token_contract_address: erc_20_token.contract_address
+          )
+        end
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      erc_721_tt =
+        for _ <- 0..50 do
+          tx = insert(:transaction) |> with_block()
+
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            to_address: address,
+            token_contract_address: erc_721_token.contract_address
+          )
+        end
+
+      filter = %{"type" => "ERC-721", "filter" => "from"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+
+      filter = %{"type" => "ERC-721", "filter" => "to"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_721_tt)
+
+      filter = %{"type" => "ERC-721,ERC-20", "filter" => "to"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_721_tt)
+
+      filter = %{"type" => "ERC-721,ERC-20", "filter" => "from"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", Map.merge(response["next_page_params"], filter))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_20_tt)
+    end
+  end
+
+  describe "/addresses/{address_hash}/internal-transactions" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/internal-transactions")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get internal tx and filter working", %{conn: conn} do
+      address = insert(:address)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      internal_tx_from =
+        insert(:internal_transaction,
+          transaction: tx,
+          index: 1,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: 1,
+          from_address: address
+        )
+
+      internal_tx_to =
+        insert(:internal_transaction,
+          transaction: tx,
+          index: 2,
+          block_number: tx.block_number,
+          transaction_index: tx.index,
+          block_hash: tx.block_hash,
+          block_index: 2,
+          to_address: address
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 2
+      assert response["next_page_params"] == nil
+
+      compare_item(internal_tx_from, Enum.at(response["items"], 1))
+      compare_item(internal_tx_to, Enum.at(response["items"], 0))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"filter" => "from"})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(internal_tx_from, Enum.at(response["items"], 0))
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"filter" => "to"})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(internal_tx_to, Enum.at(response["items"], 0))
+    end
+
+    test "internal txs can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      itxs_from =
+        for i <- 1..51 do
+          insert(:internal_transaction,
+            transaction: tx,
+            index: i,
+            block_number: tx.block_number,
+            transaction_index: tx.index,
+            block_hash: tx.block_hash,
+            block_index: i,
+            from_address: address
+          )
+        end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, itxs_from)
+
+      itxs_to =
+        for i <- 52..102 do
+          insert(:internal_transaction,
+            transaction: tx,
+            index: i,
+            block_number: tx.block_number,
+            transaction_index: tx.index,
+            block_hash: tx.block_hash,
+            block_index: i,
+            to_address: address
+          )
+        end
+
+      filter = %{"filter" => "to"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/internal-transactions",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, itxs_to)
+
+      filter = %{"filter" => "from"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/internal-transactions",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, itxs_from)
+    end
+  end
+
+  describe "/addresses/{address_hash}/blocks-validated" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/blocks-validated")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get relevant block validated", %{conn: conn} do
+      address = insert(:address)
+      insert(:block)
+      block = insert(:block, miner: address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      compare_item(block, Enum.at(response["items"], 0))
+    end
+
+    test "blocks validated can be paginated", %{conn: conn} do
+      address = insert(:address)
+      insert(:block)
+      blocks = insert_list(51, :block, miner: address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, blocks)
+    end
+  end
+
+  describe "/addresses/{address_hash}/token-balances" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-balances")
+
+      assert response = json_response(request, 200)
+      assert response == []
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/token-balances")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get token balance", %{conn: conn} do
+      address = insert(:address)
+
+      ctbs =
+        for _ <- 0..50 do
+          insert(:address_current_token_balance, address: address) |> Repo.preload([:token])
+        end
+        |> Enum.sort_by(fn x -> x.value end, :desc)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/token-balances")
+
+      assert response = json_response(request, 200)
+
+      for i <- 0..50 do
+        compare_item(Enum.at(ctbs, i), Enum.at(response, i))
+      end
+    end
+  end
+
+  describe "/addresses/{address_hash}/coin-balance-history" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/coin-balance-history")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    # test "get coin balance history" do
+    #   address = insert(:address)
+
+    # end
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
@@ -395,6 +954,36 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
   end
 
+  defp compare_item(%InternalTransaction{} = internal_tx, json) do
+    assert internal_tx.block_number == json["block"]
+    assert to_string(internal_tx.gas) == json["gas_limit"]
+    assert internal_tx.index == json["index"]
+    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
+    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
+  end
+
+  defp compare_item(%Block{} = block, json) do
+    assert to_string(block.hash) == json["hash"]
+    assert block.number == json["height"]
+  end
+
+  defp compare_item(%CurrentTokenBalance{} = ctb, json) do
+    assert to_string(ctb.value) == json["value"]
+    assert (ctb.token_id && to_string(ctb.token_id)) == json["token_id"]
+    compare_item(ctb.token, json["token"])
+  end
+
+  defp compare_item(%Token{} = token, json) do
+    assert Address.checksum(token.contract_address_hash) == json["address"]
+    assert to_string(token.symbol) == json["symbol"]
+    assert to_string(token.name) == json["name"]
+    assert to_string(token.type) == json["type"]
+    assert to_string(token.decimals) == json["decimals"]
+    assert (token.holder_count && to_string(token.holder_count)) == json["holders"]
+    assert Map.has_key?(json, "exchange_rate")
+  end
+
   defp check_paginated_response(first_page_resp, second_page_resp, list) do
     assert Enum.count(first_page_resp["items"]) == 50
     assert first_page_resp["next_page_params"] != nil
@@ -404,5 +993,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
+  end
+
+  defp debug(value, key) do
+    require Logger
+    Logger.configure(truncate: :infinity)
+    Logger.info(key)
+    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
+    value
   end
 end
