@@ -78,7 +78,7 @@
     "xss": "^1.0.14"
   },
   "devDependencies": {
-    "@babel/core": "^7.19.6",
+    "@babel/core": "^7.20.2",
     "@babel/preset-env": "^7.19.4",
     "autoprefixer": "^10.4.13",
     "babel-loader": "^9.1.0",
