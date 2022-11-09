@@ -7,7 +7,7 @@
 <section class="container" data-page="transaction-list">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
-    <div class="card-body" data-async-listing="<%= @current_path %>">
+    <div class="card-body txn-list-container" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "L1 to L2 Transactions" %></h1>
       <div class="list-top-pagination-container-wrapper">
         <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.l1_to_l2_available_count() == Chain.limit_showing_transactions(), do: Chain.limit_showing_transactions(), else: nil %>
@@ -31,26 +31,26 @@
           </span>
         </div>
       </div>
-      <div style="background:#f8fafd;display:flex;align-items:center;height:42px;padding:0 10px;font-weight:500;font-size:16px;width:100%;border-top:1px solid #cccccc;border-bottom:2px solid #cccccc">
-        <span style="width: 10%;color:#6c757e;">
+      <div class="txn-list-table-head-container">
+        <span style="width: 10%;">
           Block No
         </span>
-        <span style="width: 10%;color:#6c757e;">
+        <span style="width: 10%;">
           Queue Index
         </span>
-        <span style="width: 20%;color:#6c757e;">
+        <span style="width: 20%;">
           L2 Tx Hash
         </span>
-        <span style="width: 10%;color:#6c757e;">
+        <span style="width: 10%;">
           Age
         </span>
-        <span style="width: 20%;color:#6c757e;">
+        <span style="width: 20%;">
           L1 Txn Hash
         </span>
-        <span style="width: 20%;color:#6c757e;">
+        <span style="width: 20%;">
           L1 Tx Origin
         </span>
-        <span style="width: 10%;color:#6c757e;">
+        <span style="width: 10%;">
           Gas Limit
         </span>
 

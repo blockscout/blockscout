@@ -1,7 +1,6 @@
 <div
-    class="fade-in"
+    class="fade-in txn-list-table-item"
     data-identifier-hash="<%= @l2_to_l1.msg_nonce %>"
-    style="width:100%;height:42px;display:flex;align-items:center;font-size:14px;padding:0 10px;border-bottom:1px solid #e7eaf3;"
 >
     <span style="width: 10%;">
        <%= @l2_to_l1.msg_nonce %>
