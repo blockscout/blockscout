@@ -1,7 +1,7 @@
-defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.Worker do
+defmodule Explorer.TokenTransferTokenIdMigration.Worker do
   @moduledoc """
   Performs the migration of TokenTransfer token_id to token_ids by batches.
-  Full algorithm is in the 'Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor' module doc.
+  Full algorithm is in the 'Explorer.TokenTransferTokenIdMigration.Supervisor' module doc.
   """
   use GenServer
 
@@ -9,18 +9,18 @@ defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.Worker do
 
   alias Explorer.Chain.TokenTransfer
   alias Explorer.Repo
-  alias Indexer.Fetcher.TokenTransferTokenIdMigration.LowestBlockNumberUpdater
+  alias Explorer.TokenTransferTokenIdMigration.LowestBlockNumberUpdater
 
   @default_batch_size 500
   @interval 10
 
-  def start_link(idx: idx, first_block: first, last_block: last, step: step, name: name) do
-    GenServer.start_link(__MODULE__, %{idx: idx, bottom_block: first, last_block: last, step: step}, name: name)
+  def start_link(idx: idx, first_block: first, last_block: last, step: step) do
+    GenServer.start_link(__MODULE__, %{idx: idx, bottom_block: first, last_block: last, step: step})
   end
 
   @impl true
   def init(%{idx: idx, bottom_block: bottom_block, last_block: last_block, step: step}) do
-    batch_size = Application.get_env(:indexer, :token_id_migration)[:batch_size] || @default_batch_size
+    batch_size = Application.get_env(:explorer, :token_id_migration)[:batch_size] || @default_batch_size
     range = calculate_new_range(last_block, bottom_block, batch_size, idx - 1)
 
     schedule_next_update()

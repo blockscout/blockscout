@@ -2,9 +2,8 @@ defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.WorkerTest do
   use Explorer.DataCase
 
   alias Explorer.Repo
-  alias Indexer.Fetcher.TokenTransferTokenIdMigration.Worker
+  alias Explorer.TokenTransferTokenIdMigration.{LowestBlockNumberUpdater, Worker}
   alias Explorer.Utility.TokenTransferTokenIdMigratorProgress
-  alias Indexer.Fetcher.TokenTransferTokenIdMigration.LowestBlockNumberUpdater
 
   describe "Move TokenTransfer token_id to token_ids" do
     test "Move token_ids and update last processed block number" do

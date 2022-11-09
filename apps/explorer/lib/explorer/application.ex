@@ -5,7 +5,7 @@ defmodule Explorer.Application do
 
   use Application
 
-  alias Explorer.Admin
+  alias Explorer.{Admin, TokenTransferTokenIdMigration}
 
   alias Explorer.Chain.Cache.{
     Accounts,
@@ -68,7 +68,8 @@ defmodule Explorer.Application do
       Transactions,
       Accounts,
       Uncles,
-      {Redix, redix_opts()}
+      {Redix, redix_opts()},
+      {TokenTransferTokenIdMigration.Supervisor, [[]]}
     ]
 
     children = base_children ++ configurable_children()

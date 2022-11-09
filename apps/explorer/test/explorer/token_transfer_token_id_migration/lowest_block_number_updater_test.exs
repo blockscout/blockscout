@@ -1,9 +1,9 @@
-defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.LowestBlockNumberUpdaterTest do
+defmodule Explorer.TokenTransferTokenIdMigration.LowestBlockNumberUpdaterTest do
   use Explorer.DataCase
 
   alias Explorer.Repo
+  alias Explorer.TokenTransferTokenIdMigration.LowestBlockNumberUpdater
   alias Explorer.Utility.TokenTransferTokenIdMigratorProgress
-  alias Indexer.Fetcher.TokenTransferTokenIdMigration.LowestBlockNumberUpdater
 
   describe "Add range and update last processed block number" do
     test "add_range/2" do
