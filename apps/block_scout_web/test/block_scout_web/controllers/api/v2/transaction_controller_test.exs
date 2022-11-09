@@ -416,6 +416,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   defp compare_item(%Log{} = log, json) do
     assert to_string(log.data) == json["data"]
     assert log.index == json["index"]
+    assert Address.checksum(log.address_hash) == json["address"]["hash"]
   end
 
   defp compare_item(%TokenTransfer{} = token_transfer, json) do

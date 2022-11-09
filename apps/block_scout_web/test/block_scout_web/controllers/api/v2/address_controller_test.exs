@@ -2,7 +2,18 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Address.CoinBalance, Block, InternalTransaction, Token, TokenTransfer, Transaction}
+
+  alias Explorer.Chain.{
+    Address,
+    Address.CoinBalance,
+    Block,
+    InternalTransaction,
+    Log,
+    Token,
+    TokenTransfer,
+    Transaction
+  }
+
   alias Explorer.Chain.Address.CurrentTokenBalance
 
   describe "/addresses/{address_hash}" do
@@ -1004,6 +1015,116 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
   end
 
+  describe "/addresses/{address_hash}/logs" do
+    test "get empty list on non existing address", %{conn: conn} do
+      address = build(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/addresses/0x/logs")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "get log", %{conn: conn} do
+      address = insert(:address)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      log =
+        insert(:log,
+          transaction: tx,
+          index: 1,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(log, Enum.at(response["items"], 0))
+    end
+
+    # for some reasons test does not work if run as single test
+    test "logs can paginate", %{conn: conn} do
+      address = insert(:address)
+
+      logs =
+        for x <- 0..50 do
+          tx =
+            :transaction
+            |> insert()
+            |> with_block()
+
+          insert(:log,
+            transaction: tx,
+            index: x,
+            block: tx.block,
+            block_number: tx.block_number,
+            address: address
+          )
+        end
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/logs", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, logs)
+    end
+
+    test "logs can be filtered by topic", %{conn: conn} do
+      address = insert(:address)
+
+      for x <- 0..20 do
+        tx =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        insert(:log,
+          transaction: tx,
+          index: x,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+      end
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      log =
+        insert(:log,
+          transaction: tx,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address,
+          first_topic: "0x123456789123456789"
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=0x123456789123456789")
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(log, Enum.at(response["items"], 0))
+    end
+  end
+
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block"]
@@ -1056,6 +1177,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert Map.has_key?(json, "exchange_rate")
   end
 
+  defp compare_item(%Log{} = log, json) do
+    assert to_string(log.data) == json["data"]
+    assert log.index == json["index"]
+    assert Address.checksum(log.address_hash) == json["address"]["hash"]
+  end
+
   defp check_paginated_response(first_page_resp, second_page_resp, list) do
     assert Enum.count(first_page_resp["items"]) == 50
     assert first_page_resp["next_page_params"] != nil
@@ -1065,13 +1192,5 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
-  end
-
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
   end
 end
