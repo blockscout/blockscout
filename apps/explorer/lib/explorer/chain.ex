@@ -4743,29 +4743,35 @@ defmodule Explorer.Chain do
         select: token.contract_address_hash
       )
 
-    query =
+    token_ids_query =
       from(
         token_transfer in TokenTransfer,
+        select: %{
+          token_contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: fragment("unnest(?)", token_transfer.token_ids)
+        }
+      )
+
+    query =
+      from(
+        transfer in subquery(token_ids_query),
         inner_join: token in subquery(nft_tokens),
-        on: token.contract_address_hash == token_transfer.token_contract_address_hash,
+        on: token.contract_address_hash == transfer.token_contract_address_hash,
         left_join: instance in Instance,
         on:
-          token_transfer.token_contract_address_hash == instance.token_contract_address_hash and
-            (token_transfer.token_id == instance.token_id or
-               fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id)),
-        where:
-          is_nil(instance.token_id) and (not is_nil(token_transfer.token_id) or not is_nil(token_transfer.token_ids)),
+          transfer.token_contract_address_hash == instance.token_contract_address_hash and
+            transfer.token_id == instance.token_id,
+        where: is_nil(instance.token_id),
         select: %{
-          contract_address_hash: token_transfer.token_contract_address_hash,
-          token_id: token_transfer.token_id,
-          token_ids: token_transfer.token_ids
+          contract_address_hash: transfer.token_contract_address_hash,
+          token_id: transfer.token_id
         }
       )
 
     distinct_query =
       from(
         q in subquery(query),
-        distinct: [q.contract_address_hash, q.token_id, q.token_ids]
+        distinct: [q.contract_address_hash, q.token_id]
       )
 
     Repo.stream_reduce(distinct_query, initial, reducer)
@@ -5064,24 +5070,6 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  @spec erc721_token_instance_from_token_id_and_token_address(binary(), Hash.Address.t()) ::
-          {:ok, TokenTransfer.t()} | {:error, :not_found}
-  def erc721_token_instance_from_token_id_and_token_address(token_id, token_contract_address) do
-    query =
-      from(tt in TokenTransfer,
-        left_join: instance in Instance,
-        on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-        where: tt.token_contract_address_hash == ^token_contract_address and tt.token_id == ^token_id,
-        limit: 1,
-        select: %{tt | instance: instance}
-      )
-
-    case Repo.one(query) do
-      nil -> {:error, :not_found}
-      token_instance -> {:ok, token_instance}
-    end
-  end
-
   @spec erc721_or_erc1155_token_instance_from_token_id_and_token_address(binary(), Hash.Address.t()) ::
           {:ok, Instance.t()} | {:error, :not_found}
   def erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, token_contract_address) do
@@ -5294,13 +5282,13 @@ defmodule Explorer.Chain do
     Repo.one!(query, timeout: :infinity)
   end
 
-  @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
+  @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [Instance.t()]
   def address_to_unique_tokens(contract_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     contract_address_hash
-    |> TokenTransfer.address_to_unique_tokens()
-    |> TokenTransfer.page_token_transfer(paging_options)
+    |> Instance.address_to_unique_token_instances()
+    |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
   end
@@ -5724,56 +5712,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 with the given `hash` and `token_id` exists.
+  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
 
   Returns `:ok` if found
 
-      iex> contract_address = insert(:address)
+      iex> token = insert(:token)
       iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
+      iex> insert(:token_instance,
+      ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.check_erc721_token_instance_exists(token_id, contract_address.hash)
-      :ok
-
-  Returns `:not_found` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.check_erc721_token_instance_exists(10, hash)
-      :not_found
-  """
-  @spec check_erc721_token_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) :: :ok | :not_found
-  def check_erc721_token_instance_exists(token_id, hash) do
-    token_id
-    |> erc721_token_instance_exist?(hash)
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 or ERC-1155 with the given `hash` and `token_id` exists.
-
-  Returns `:ok` if found
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, contract_address.hash)
-      :ok
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_ids: [token_id]
-      ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, contract_address.hash)
+      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, token.contract_address_hash)
       :ok
 
   Returns `:not_found` if not found
@@ -5791,59 +5740,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 with the given `hash` and `token_id` exists.
+  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
 
   Returns `true` if found
 
-      iex> contract_address = insert(:address)
+      iex> token = insert(:token)
       iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
+      iex> insert(:token_instance,
+      ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.erc721_token_instance_exist?(token_id, contract_address.hash)
-      true
-
-  Returns `false` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.erc721_token_instance_exist?(10, hash)
-      false
-  """
-  @spec erc721_token_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
-  def erc721_token_instance_exist?(token_id, hash) do
-    query =
-      from(tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^hash and tt.token_id == ^token_id
-      )
-
-    Repo.exists?(query)
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 or ERC-1155 with the given `hash` and `token_id` exists.
-
-  Returns `true` if found
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, contract_address.hash)
-      true
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_ids: [token_id]
-      ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, contract_address.hash)
+      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, token.contract_address_hash)
       true
 
   Returns `false` if not found
@@ -5855,10 +5762,8 @@ defmodule Explorer.Chain do
   @spec erc721_or_erc1155_token_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
   def erc721_or_erc1155_token_instance_exist?(token_id, hash) do
     query =
-      from(tt in TokenTransfer,
-        where:
-          tt.token_contract_address_hash == ^hash and
-            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)))
+      from(i in Instance,
+        where: i.token_contract_address_hash == ^hash and i.token_id == ^Decimal.new(token_id)
       )
 
     Repo.exists?(query)
