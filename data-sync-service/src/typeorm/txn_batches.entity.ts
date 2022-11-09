@@ -12,6 +12,15 @@ export class TxnBatches {
   size: number;
 
   @Column({ type: 'bigint' })
+  l1_block_number: number;
+
+  @Column({ type: 'bigint' })
+  batch_root: string;
+
+  @Column({ type: 'bigint' })
+  extra_data: string;
+
+  @Column({ type: 'bigint' })
   pre_total_elements: number;
 
   @Column({ type: 'timestamp' })
