@@ -97,7 +97,7 @@ config :block_scout_web,
   webapp_url: System.get_env("WEBAPP_URL"),
   api_url: System.get_env("API_URL"),
   apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
-  external_apps: System.get_env("EXTERNAL_APPS"),
+  apps: System.get_env("APPS") || System.get_env("EXTERNAL_APPS"),
   moon_token_addresses: System.get_env("MOON_TOKEN_ADDRESSES"),
   bricks_token_addresses: System.get_env("BRICKS_TOKEN_ADDRESSES"),
   eth_omni_bridge_mediator: System.get_env("ETH_OMNI_BRIDGE_MEDIATOR"),
@@ -434,6 +434,15 @@ config :explorer, Explorer.Account,
     sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
     template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
   ]
+
+{token_id_migration_first_block, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_FIRST_BLOCK", "0"))
+{token_id_migration_concurrency, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_CONCURRENCY", "1"))
+{token_id_migration_batch_size, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_BATCH_SIZE", "500"))
+
+config :explorer, :token_id_migration,
+  first_block: token_id_migration_first_block,
+  concurrency: token_id_migration_concurrency,
+  batch_size: token_id_migration_batch_size
 
 ###############
 ### Indexer ###

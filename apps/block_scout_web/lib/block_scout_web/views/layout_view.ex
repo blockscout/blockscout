@@ -224,10 +224,6 @@ defmodule BlockScoutWeb.LayoutView do
     EnvVarTranslator.map_array_env_var_to_list(:nft)
   end
 
-  def external_apps_list do
-    EnvVarTranslator.map_array_env_var_to_list(:external_apps)
-  end
-
   defp decode_json(data) do
     Jason.decode!(~s(#{data}))
   rescue
@@ -251,6 +247,22 @@ defmodule BlockScoutWeb.LayoutView do
     |> case do
       :error -> ""
       {:ok, url} -> url
+    end
+  end
+
+  def apps_list do
+    apps = Application.get_env(:block_scout_web, :apps)
+
+    if apps do
+      try do
+        apps
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
     end
   end
 

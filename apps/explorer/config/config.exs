@@ -116,6 +116,8 @@ config :explorer, Explorer.Counters.Bridge,
   enable_consolidation: System.get_env("DISABLE_BRIDGE_MARKET_CAP_UPDATER") !== "true",
   update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60
 
+config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: true
+
 config :explorer, Explorer.Chain.Cache.GasUsage,
   enabled: System.get_env("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER") == "true"
 

@@ -164,8 +164,12 @@
                     </a>
                   <% end %>
                   <hr class="menu-hr" />
-                  <%= for %{url: url, title: title} <- external_apps_list() do %> 
-                        <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <%= for %{url: url, title: title} <- apps_list() do %>
+                    <%= if Map.has_key?(app, :embedded?) && app.embedded? do %>
+                      <a href="<%= url %>" class="dropdown-item" target="_self"><%= title %></a>
+                    <% else %>
+                      <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <% end %>
                   <% end %>
                   <hr class="menu-hr" />
                   <a href="https://airtable.com/shr7veBkE77k5p86b" class="dropdown-item" target="_blank"><%= gettext("Add Your App") %></a>
