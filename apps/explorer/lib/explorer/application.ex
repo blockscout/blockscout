@@ -68,8 +68,7 @@ defmodule Explorer.Application do
       Transactions,
       Accounts,
       Uncles,
-      {Redix, redix_opts()},
-      {TokenTransferTokenIdMigration.Supervisor, [[]]}
+      {Redix, redix_opts()}
     ]
 
     children = base_children ++ configurable_children()
@@ -106,7 +105,8 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Tags.AddressTag.Cataloger),
-      configure(MinMissingBlockNumber)
+      configure(MinMissingBlockNumber),
+      configure(TokenTransferTokenIdMigration.Supervisor)
     ]
     |> List.flatten()
   end
