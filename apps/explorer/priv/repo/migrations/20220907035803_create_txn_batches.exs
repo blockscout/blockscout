@@ -4,6 +4,7 @@ defmodule Explorer.Repo.Migrations.CreateTxnBatches do
   def change do
     create table(:txn_batches, primary_key: false) do
       add(:batch_index, :bigint, null: false)
+      add(:block_number, :bigint, null: false)
       add(:hash, :bytea, null: false, primary_key: true)
       add(:size, :bigint, null: false)
       #add(:index, :bigint, null: false)
