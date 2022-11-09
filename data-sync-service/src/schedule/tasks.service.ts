@@ -154,7 +154,7 @@ export class TasksService {
        this.logger.log(`sync txn_batch finished and latest block number is: ${currentBlockNumber}`);
     }
   }
-  @Interval(10000)
+  @Interval(2000)
   async l1l2_merge() {
     try {
       await this.l1IngestionService.createL1L2Relation();
@@ -162,7 +162,7 @@ export class TasksService {
       this.logger.error(`error l1l2 [handle_L1_l2_merge]: ${error}`);
     }
   }
-  @Interval(10000)
+  @Interval(2000)
   async l2l1_merge() {
     try {
       await this.l1IngestionService.createL2L1Relation();
