@@ -5,6 +5,9 @@ export class TxnBatches {
   @Column({ type: 'bigint' })
   batch_index: number;
 
+  @Column({ type: 'bigint' })
+  block_number: string;
+
   @PrimaryColumn({ type: 'bytea', name: 'hash' })
   hash: string;
 

@@ -7,17 +7,10 @@ export class L2Block {
   chain: string;
 
   @Column({ type: 'int8' })
-  l1_send_block: number;
+  l1_block: number;
 
   @Column({ type: 'int8' })
-  l1_relay_block: number;
-
-  @Column({ type: 'int8' })
-  l2_send_block: number;
-
-  @Column({ type: 'int8' })
-  l2_relay_block: number;
-
+  l2_block: number;
 
   @Column({ type: "boolean" })
   active: boolean;

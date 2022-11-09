@@ -31,6 +31,10 @@ export class L1IngestionService {
     private readonly relayedEventsRepository: Repository<L1RelayedMessageEvents>,
     @InjectRepository(L1SentMessageEvents)
     private readonly sentEventsRepository: Repository<L1SentMessageEvents>,
+    @InjectRepository(StateBatches)
+    private readonly stateBatchesRepository: Repository<StateBatches>,
+    @InjectRepository(TxnBatches)
+    private readonly txnBatchesRepository: Repository<TxnBatches>,
     private readonly l2IngestionService: L2IngestionService,
   ) {
     this.entityManager = getManager();
@@ -118,6 +122,20 @@ export class L1IngestionService {
       .getRawOne();
     return Number(result.blockNumber) || 0;
   }
+  async getTxnBatchBlockNumber(): Promise<number> {
+    const result = await this.txnBatchesRepository
+      .createQueryBuilder()
+      .select('Max(block_number)', 'blockNumber')
+      .getRawOne();
+    return Number(result.blockNumber) || 0;
+  }
+  async getStateBatchBlockNumber(): Promise<number> {
+    const result = await this.stateBatchesRepository
+      .createQueryBuilder()
+      .select('Max(block_number)', 'blockNumber')
+      .getRawOne();
+    return Number(result.blockNumber) || 0;
+  }
   async getUnMergeSentEvents() {
     return this.sentEventsRepository.find({ where: { is_merge: false } });
   }
@@ -143,6 +161,7 @@ export class L1IngestionService {
       try {
         const savedResult = await this.entityManager.save(TxnBatches, {
           batch_index: _batchIndex,
+          block_number: blockNumber.toString(),
           hash: transactionHash,
           size: _batchSize,
           pre_total_elements: _prevTotalElements,
@@ -181,6 +200,7 @@ export class L1IngestionService {
       try {
         const savedResult = await this.entityManager.save(StateBatches, {
           batch_index: _batchIndex,
+          block_number: blockNumber.toString(),
           hash: transactionHash,
           size: _batchSize,
           pre_total_elements: _prevTotalElements,
