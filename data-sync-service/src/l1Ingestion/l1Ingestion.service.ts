@@ -127,7 +127,10 @@ export class L1IngestionService {
       startBlock,
       endBlock,
     );
+    console.log('------')
     for (const item of list) {
+      
+      console.log(item)
       const {
         blockNumber,
         transactionHash,
@@ -137,6 +140,7 @@ export class L1IngestionService {
           _batchSize,
           _prevTotalElements,
           _signature,
+          _extraData,
         },
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
@@ -145,6 +149,9 @@ export class L1IngestionService {
           batch_index: _batchIndex,
           hash: transactionHash,
           size: _batchSize,
+          l1_block_number: blockNumber,
+          batch_root: _batchRoot,
+          extra_data: _extraData,
           pre_total_elements: _prevTotalElements,
           timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
@@ -174,7 +181,7 @@ export class L1IngestionService {
           _batchRoot,
           _batchSize,
           _prevTotalElements,
-          _signature,
+          _extraData,
         },
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
@@ -183,6 +190,9 @@ export class L1IngestionService {
           batch_index: _batchIndex,
           hash: transactionHash,
           size: _batchSize,
+          l1_block_number: blockNumber,
+          batch_root: _batchRoot,
+          extra_data: _extraData,
           pre_total_elements: _prevTotalElements,
           timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
