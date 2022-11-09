@@ -164,7 +164,7 @@
                     </a>
                   <% end %>
                   <hr class="menu-hr" />
-                  <%= for %{url: url, title: title} <- apps_list() do %>
+                  <%= for %{url: url, title: title} = app <- apps_list() do %>
                     <%= if Map.has_key?(app, :embedded?) && app.embedded? do %>
                       <a href="<%= url %>" class="dropdown-item" target="_self"><%= title %></a>
                     <% else %>
