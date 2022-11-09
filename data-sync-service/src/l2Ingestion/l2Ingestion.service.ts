@@ -91,7 +91,6 @@ export class L2IngestionService {
     const list = await this.getSentMessageByBlockNumber(startBlock, endBlock);
     let result: any[] = [];
     for(const item of list) {
-      console.log("item====", item)
       const {
         blockNumber,
         transactionHash,
@@ -159,9 +158,9 @@ export class L2IngestionService {
   async syncSentEvents() {
     const startBlockNumber = await this.getSentEventsBlockNumber();
     const currentBlockNumber = await this.getCurrentBlockNumber();
-    for (let i = startBlockNumber; i < currentBlockNumber; i += 1000) {
+    for (let i = startBlockNumber; i < currentBlockNumber; i += 1) {
       const start = i === 0 ? 0 : i + 1;
-      const end = Math.min(i + 1000, currentBlockNumber);
+      const end = Math.min(i + 1, currentBlockNumber);
       const result = await this.createSentEvents(start, end);
       this.logger.log(`sync [${result.length}] l2_sent_message_events from block [${start}] to [${end}]`)
     }
@@ -169,9 +168,9 @@ export class L2IngestionService {
   async syncRelayedEvents() {
     const startBlockNumber = await this.getRelayedEventsBlockNumber();
     const currentBlockNumber = await this.getCurrentBlockNumber();
-    for (let i = startBlockNumber; i < currentBlockNumber; i += 1000) {
+    for (let i = startBlockNumber; i < currentBlockNumber; i += 1) {
       const start = i === 0 ? 0 : i + 1;
-      const end = Math.min(i + 1000, currentBlockNumber);
+      const end = Math.min(i + 1, currentBlockNumber);
       const result = await this.createRelayedEvents(start, end);
       this.logger.log(`sync [${result.length}] l2_relayed_message_events from block [${start}] to [${end}]`)
     }

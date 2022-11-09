@@ -382,9 +382,9 @@ export class L1IngestionService {
   async syncSentEvents() {
     const startBlockNumber = await this.getSentEventsBlockNumber();
     const currentBlockNumber = await this.getCurrentBlockNumber();
-    for (let i = startBlockNumber; i < currentBlockNumber; i += 1000) {
+    for (let i = startBlockNumber; i < currentBlockNumber; i += 10) {
       const start = i === 0 ? 0 : i + 1;
-      const end = Math.min(i + 1000, currentBlockNumber);
+      const end = Math.min(i + 10, currentBlockNumber);
       const result = await this.createSentEvents(start, end);
       this.logger.log(
         `sync [${result.length}] l1_sent_message_events from block [${start}] to [${end}]`,
@@ -394,9 +394,9 @@ export class L1IngestionService {
   async syncRelayedEvents() {
     const startBlockNumber = await this.getRelayedEventsBlockNumber();
     const currentBlockNumber = await this.getCurrentBlockNumber();
-    for (let i = startBlockNumber; i < currentBlockNumber; i += 1000) {
+    for (let i = startBlockNumber; i < currentBlockNumber; i += 10) {
       const start = i === 0 ? 0 : i + 1;
-      const end = Math.min(i + 1000, currentBlockNumber);
+      const end = Math.min(i + 10, currentBlockNumber);
       const result = await this.createRelayedEvents(start, end);
       this.logger.log(
         `sync [${result.length}] l1_relayed_message_events from block [${start}] to [${end}]`,

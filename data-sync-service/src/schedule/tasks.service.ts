@@ -46,13 +46,13 @@ export class TasksService {
     await this.cacheManager.set(L2_RELAYED, Number(l2_relayed_block_number), { ttl: 0 });
     console.log('================end init cache================')
   }
-  @Interval(2000)
+  @Interval(10000)
   async l1_sent() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
       console.log('l1 currentBlockNumber: ', currentBlockNumber);
       const start = Number(await this.cacheManager.get(L1_SENT));
-      const end = Math.min(start + 1000, currentBlockNumber);
+      const end = Math.min(start + 10, currentBlockNumber);
       const result = await this.l1IngestionService.createSentEvents(start, end);
       if (result.length > 0) {
         this.logger.log(`sync [${result.length}] l1_sent_message_events from block [${start}] to [${end}]`)
@@ -62,12 +62,12 @@ export class TasksService {
       this.logger.error(`error l1 [handle_sync_l1_sent_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async l1_relayed() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
       const start = Number(await this.cacheManager.get(L1_RELAYED));
-      const end = Math.min(start + 1000, currentBlockNumber);
+      const end = Math.min(start + 10, currentBlockNumber);
       const result = await this.l1IngestionService.createRelayedEvents(start, end);
       if (result.length > 0) {
         this.logger.log(`sync [${result.length}] l1_relayed_message_events from block [${start}] to [${end}]`)
@@ -77,13 +77,13 @@ export class TasksService {
       this.logger.error(`error l1 [handle_sync_l1_relayed_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async l2_sent() {
     try {
       const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
       console.log('l2 currentBlockNumber: ', currentBlockNumber);
       const start = Number(await this.cacheManager.get(L2_SENT));
-      const end = Math.min(start + 1000, currentBlockNumber);
+      const end = Math.min(start + 1, currentBlockNumber);
       const result = await this.l2IngestionService.createSentEvents(start, end);
       if (result.length > 0) {
         this.logger.log(`sync [${result.length}] l2_sent_message_events from block [${start}] to [${end}]`)
@@ -93,12 +93,12 @@ export class TasksService {
       this.logger.error(`error l2 [handle_sync_l2_sent_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async l2_relayed() {
     try {
       const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
       const start = Number(await this.cacheManager.get(L2_RELAYED));
-      const end = Math.min(start + 1000, currentBlockNumber);
+      const end = Math.min(start + 1, currentBlockNumber);
       const result = await this.l2IngestionService.createRelayedEvents(start, end);
       if (result.length > 0) {
         this.logger.log(`sync [${result.length}] l2_relayed_message_events from block [${start}] to [${end}]`)
@@ -108,12 +108,12 @@ export class TasksService {
       this.logger.error(`error l2 [handle_sync_l2_relayed_message_events]: ${error}`);
     }
   }
-  @Interval(2000)
+  @Interval(10000)
   async state_batch() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
       const start = Number(await this.cacheManager.get(L1_RELAYED));
-      const end = Math.min(start + 1000, currentBlockNumber);
+      const end = Math.min(start + 1, currentBlockNumber);
       const result = await this.l1IngestionService.createStateBatchesEvents(start, end);
       if (result.length > 0) {
         this.logger.log(`sync [${result.length}] createStateBatchesEvents from block [${start}] to [${end}]`)
@@ -124,12 +124,12 @@ export class TasksService {
     }
   }
 
-  @Interval(2000)
+  @Interval(10000)
   async txn_batch() {
     try {
       const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
       const start = Number(await this.cacheManager.get(L1_RELAYED));
-      const end = Math.min(start + 1000, currentBlockNumber);
+      const end = Math.min(start + 1, currentBlockNumber);
       const result = await this.l1IngestionService.createTxnBatchesEvents(start, end);
       if (result.length > 0) {
         this.logger.log(`sync [${result.length}] createStateBatchesEvents from block [${start}] to [${end}]`)
@@ -140,7 +140,7 @@ export class TasksService {
     }
   }
 
-  @Interval(2000)
+  @Interval(10000)
   async l1l2_merge() {
     try {
       await this.l1IngestionService.createL1L2Relation();
@@ -149,7 +149,7 @@ export class TasksService {
     }
   }
 
-  @Interval(2000)
+  @Interval(10000)
   async l2l1_merge() {
     try {
       await this.l1IngestionService.createL2L1Relation();
