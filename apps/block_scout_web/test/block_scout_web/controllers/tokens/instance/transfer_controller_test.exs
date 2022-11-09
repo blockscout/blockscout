@@ -3,11 +3,9 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferControllerTest do
 
   describe "GET token-transfers/2" do
     test "fetches the instance", %{conn: conn} do
-      contract_address = insert(:address)
+      token = insert(:token)
 
-      insert(:token, contract_address: contract_address)
-
-      contract_address_hash = contract_address.hash
+      contract_address_hash = token.contract_address_hash
 
       token_id = Decimal.new(10)
 
