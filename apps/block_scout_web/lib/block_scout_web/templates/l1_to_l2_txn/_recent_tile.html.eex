@@ -1,9 +1,9 @@
 <div 
     data-identifier-hash="<%= @l1_to_l2.queue_index %>"
-    style="width:100%;box-sizing:border-box;height:80px;display:flex;align-items:center;font-size:14px;padding:0;border-bottom:1px solid #e7eaf3;"
+    class="recent-preview-item-content"
 >
     <span
-        style="width:44px;flex:0 0 44px;height:44px;flex:0 0 44px;color: #77838f;background: rgba(119,131,143,.1);font-size:18px;font-weight:500;border-radius:8px;text-align:center;line-height:44px;margin-right:10px;"
+        class="recent-preview-item-content-title"
     >
         Tx
     </span>
@@ -18,14 +18,14 @@
             <a 
                 href="https://goerli.etherscan.io/tx/<%= @l1_to_l2.hash %>" 
                 target="_blank"
-                style="width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"
+                style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"
             >
                 L2 <%= sub_hash_string(@l1_to_l2.hash, 15) %>...
             </a>
             <span style="margin-left:5px;">L2 Tx#</span>
             <a 
                 href="/tx/<%= @l1_to_l2.l2_hash %>"
-                style="width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"
+                style="width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"
             >
                 <%= @l1_to_l2.l2_hash %>...
             </a>

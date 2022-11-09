@@ -8,7 +8,7 @@
 <section class="container" data-page="transaction-list">
   <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
   <div class="card">
-    <div class="card-body" data-async-listing="<%= @current_path %>">
+    <div class="card-body txn-list-container" data-async-listing="<%= @current_path %>">
       <h1 class="card-title list-title-description"><%= gettext "Txn Batches" %></h1>
       <div class="list-top-pagination-container-wrapper">
         <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "top", showing_limit: if Chain.transactions_available_count() == Chain.limit_showing_transactions(), do: Chain.limit_showing_transactions(), else: nil %>
@@ -32,20 +32,20 @@
           </span>
         </div>
       </div>
-      <div style="background:#f8fafd;display:flex;align-items:center;height:42px;padding:0 10px;font-weight:500;font-size:16px;width:100%;border-top:1px solid #cccccc;border-bottom:2px solid #cccccc">
-        <span style="width: 18%;color:#6c757e;">
+      <div class="txn-list-table-head-container">
+        <span style="width: 18%;">
           Txn Batch
         </span>
-        <span style="width: 18%;color:#6c757e;">
+        <span style="width: 18%;">
           Age
         </span>
-        <span style="width: 18%;color:#6c757e;">
+        <span style="width: 18%;">
           Batch Size
         </span>
-        <span style="width: 30%;color:#6c757e;">
+        <span style="width: 30%;">
           L1 Txn Hash
         </span>
-        <span style="width: 16%;color:#6c757e;">
+        <span style="width: 16%;">
           Pre Total Elements
         </span>
       </div>

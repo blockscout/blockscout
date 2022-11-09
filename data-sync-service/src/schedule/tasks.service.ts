@@ -12,7 +12,7 @@ const L2_SENT = 'l2_sent_block_number';
 const L2_RELAYED = 'l2_relayed_block_number';
 const TXN_BATCH = 'txn_batch_block_number'
 const STATE_BATCH= 'state_batch_block_number'
-const SYNC_STEP = 10
+const SYNC_STEP = 1000
 
 @Injectable()
 export class TasksService {
