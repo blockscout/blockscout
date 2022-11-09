@@ -1,5 +1,5 @@
 defmodule Explorer.TokenTransferTokenIdMigration.LowestBlockNumberUpdaterTest do
-  use Explorer.DataCase
+  use Explorer.DataCase, async: false
 
   alias Explorer.Repo
   alias Explorer.TokenTransferTokenIdMigration.LowestBlockNumberUpdater
