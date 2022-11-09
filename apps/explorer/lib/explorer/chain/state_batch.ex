@@ -12,7 +12,7 @@ defmodule Explorer.Chain.StateBatch do
 
   # @optional_attrs ~w(batch_index hash size pre_total_elements timestamp)a
 
-  @required_attrs ~w(batch_index hash size pre_total_elements timestamp)a
+  @required_attrs ~w(batch_index hash size pre_total_elements timestamp l1_block_number batch_root extra_data)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -51,6 +51,9 @@ defmodule Explorer.Chain.StateBatch do
           batch_index: integer(),
           hash: Hash.Full.t(),
           size: integer(),
+          l1_block_number: integer(),
+          batch_root: Hash.Full.t(),
+          extra_data: Hash.Full.t(),
           pre_total_elements: integer(),
           timestamp: DateTime.t(),
         }
@@ -60,6 +63,9 @@ defmodule Explorer.Chain.StateBatch do
     #field(:batch_index, :integer)
     field(:hash, :string)
     field(:size, :decimal)
+    field(:batch_root, :string)
+    field(:extra_data, :string)
+    field(:l1_block_number, :decimal)
     field(:pre_total_elements, :decimal)
     field(:timestamp, :utc_datetime_usec)
 

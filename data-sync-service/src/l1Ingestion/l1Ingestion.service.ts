@@ -127,10 +127,7 @@ export class L1IngestionService {
       startBlock,
       endBlock,
     );
-    console.log('------')
     for (const item of list) {
-      
-      console.log(item)
       const {
         blockNumber,
         transactionHash,
