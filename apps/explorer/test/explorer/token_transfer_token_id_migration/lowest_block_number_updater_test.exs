@@ -7,7 +7,7 @@ defmodule Explorer.TokenTransferTokenIdMigration.LowestBlockNumberUpdaterTest do
 
   describe "Add range and update last processed block number" do
     test "add_range/2" do
-      TokenTransferTokenIdMigratorProgress.update_last_processed_block_number(2000)
+      TokenTransferTokenIdMigratorProgress.update_last_processed_block_number(2000, true)
       LowestBlockNumberUpdater.start_link([])
 
       LowestBlockNumberUpdater.add_range(1000, 500)
