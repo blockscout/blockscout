@@ -155,6 +155,11 @@ $card-tab-icon-color-active: #fff !default;
 
 .card-body {
   padding: $card-horizontal-padding;
+  .recent-tx-list-page{
+    .recent-preview-item-content{
+      display:none;
+    }
+  }
 }
 
 .txn-list-container{
