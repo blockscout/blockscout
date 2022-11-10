@@ -11,6 +11,7 @@ defmodule Indexer.Transform.TransactionActions do
   alias Explorer.Chain.Cache.NetVersion
   alias Explorer.Chain.TransactionActions
   alias Explorer.Repo
+  alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
 
   @mainnet 1
@@ -19,6 +20,48 @@ defmodule Indexer.Transform.TransactionActions do
   @gnosis 100
 
   @uniswap_v3_positions_nft "0xc36442b4a4522e871399cd717abdd847ab11fe88"
+  @uniswap_v3_factory "0x1f98431c8ad98523631ae4a59f267346ea31f984"
+  @uniswap_v3_factory_abi [
+    %{
+      "inputs" => [
+        %{"internalType" => "address", "name" => "", "type" => "address"},
+        %{"internalType" => "address", "name" => "", "type" => "address"},
+        %{"internalType" => "uint24", "name" => "", "type" => "uint24"}
+      ],
+      "name" => "getPool",
+      "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
+  @uniswap_v3_pool_abi [
+    %{
+      "inputs" => [],
+      "name" => "fee",
+      "outputs" => [%{"internalType" => "uint24", "name" => "", "type" => "uint24"}],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "token0",
+      "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "token1",
+      "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
+  @uniswap_v3_pool_functions %{
+    "0dfe1681" => [],
+    "d21220a7" => [],
+    "ddca3f43" => []
+  }
 
   @doc """
   Returns a list of transaction actions given a list of logs.
@@ -32,6 +75,7 @@ defmodule Indexer.Transform.TransactionActions do
     |> logs_group_by_txs()
     |> clear_actions()
 
+    # handle uniswap v3
     actions =
       if Enum.member?([@mainnet, @optimism, @polygon], chain_id) do
         logs
@@ -60,6 +104,9 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap(logs_grouped, actions) do
+    # create a list of UniswapV3Pool legitimate contracts
+    legitimate = uniswap_legitimate_pools(logs_grouped)
+
     # iterate for each transaction
     Enum.reduce(logs_grouped, actions, fn {tx_hash, tx_logs}, actions_acc ->
       # iterate for all logs of the transaction
@@ -108,14 +155,104 @@ defmodule Indexer.Transform.TransactionActions do
             }
           end)
 
+      # go through other actions
+      Enum.reduce(tx_logs, %{}, fn log, acc ->
+        first_topic = String.downcase(log.first_topic)
+
+        if first_topic != "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
+          # check UniswapV3Pool contract is legitimate
+          pool_address = String.downcase(log.address_hash)
+
+          if legitimate[pool_address] do
+            # todo
+          end
+        end
+      end)
+
       new_actions_acc
+    end)
+  end
+
+  defp uniswap_legitimate_pools(logs_grouped) do
+    requests =
+      logs_grouped
+      |> Enum.reduce(%{}, fn {_tx_hash, tx_logs}, addresses_acc ->
+        Enum.reduce(tx_logs, addresses_acc, fn log, acc ->
+          first_topic = String.downcase(log.first_topic)
+
+          if first_topic != "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
+            pool_address = String.downcase(log.address_hash)
+
+            if not Map.has_key?(acc, pool_address) do
+              Map.put(acc, pool_address, true)
+            else
+              acc
+            end
+          else
+            acc
+          end
+        end)
+      end)
+      |> Enum.map(fn {pool_address, _} ->
+        Enum.map(["0dfe1681", "d21220a7", "ddca3f43"], fn method_id ->
+          %{
+            contract_address: pool_address,
+            method_id: method_id,
+            args: []
+          }
+        end)
+      end)
+      |> List.flatten()
+
+    responses = Reader.query_contracts(requests, @uniswap_v3_pool_abi)
+
+    requests =
+      Enum.zip(requests, responses)
+      |> Enum.reduce(%{}, fn {request, {_status, response} = resp}, acc ->
+        response =
+          case response do
+            [item] -> item
+            items -> items
+          end
+
+        acc = Map.put_new(acc, request.contract_address, %{token0: "", token1: "", fee: ""})
+        item = Map.put(acc[request.contract_address], atomized_key(request.method_id), response)
+        Map.put(acc, request.contract_address, item)
+      end)
+      |> Enum.map(fn {pool_address, pool} ->
+        %{
+          pool_address: pool_address,
+          contract_address: @uniswap_v3_factory,
+          method_id: "1698ee82",
+          args: [pool.token0, pool.token1, pool.fee]
+        }
+      end)
+
+    responses = Reader.query_contracts(requests, @uniswap_v3_factory_abi)
+
+    Enum.zip(requests, responses)
+    |> Enum.reduce(%{}, fn {request, {_status, response} = resp}, acc ->
+      is_ok =
+        if Map.has_key?(acc, request.pool_address) do
+          acc[request.pool_address]
+        else
+          response =
+            case response do
+              [item] -> item
+              items -> items
+            end
+
+          request.pool_address == String.downcase(response)
+        end
+
+      Map.put(acc, request.pool_address, is_ok)
     end)
   end
 
   defp clear_actions(logs_grouped) do
     logs_grouped
     |> Enum.each(fn {tx_hash, _} ->
-      from(ta in TransactionActions, where: ta.hash == ^tx_hash) |> Repo.delete_all
+      from(ta in TransactionActions, where: ta.hash == ^tx_hash) |> Repo.delete_all()
     end)
   end
 
@@ -132,6 +269,15 @@ defmodule Indexer.Transform.TransactionActions do
   # defp encode_address_hash(binary) do
   #   "0x" <> Base.encode16(binary, case: :lower)
   # end
+
+  defp atomized_key("token0"), do: :token0
+  defp atomized_key("token1"), do: :token1
+  defp atomized_key("fee"), do: :fee
+  defp atomized_key("getPool"), do: :getPool
+  defp atomized_key("0dfe1681"), do: :token0
+  defp atomized_key("d21220a7"), do: :token1
+  defp atomized_key("ddca3f43"), do: :fee
+  defp atomized_key("1698ee82"), do: :getPool
 
   defp logs_group_by_txs(logs) do
     logs
