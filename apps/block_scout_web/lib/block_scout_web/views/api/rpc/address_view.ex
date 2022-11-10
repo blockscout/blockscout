@@ -173,13 +173,20 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_token_transfer(%{token_type: "ERC-721"} = token_transfer) do
     token_transfer
     |> prepare_common_token_transfer()
-    |> Map.put_new(:tokenID, token_transfer.token_id)
+    |> Map.put_new(:tokenID, List.first(token_transfer.token_ids))
+  end
+
+  defp prepare_token_transfer(%{token_type: "ERC-1155", token_ids: [token_id]} = token_transfer) do
+    token_transfer
+    |> prepare_common_token_transfer()
+    |> Map.put_new(:tokenID, token_id)
   end
 
   defp prepare_token_transfer(%{token_type: "ERC-1155"} = token_transfer) do
     token_transfer
     |> prepare_common_token_transfer()
-    |> Map.put_new(:tokenID, token_transfer.token_id)
+    |> Map.put_new(:tokenIDs, token_transfer.token_ids)
+    |> Map.put_new(:values, token_transfer.amounts)
   end
 
   defp prepare_token_transfer(%{token_type: "ERC-20"} = token_transfer) do

@@ -241,6 +241,16 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
+  @doc """
+  Broadcast the percentage of pending block operations indexed so far.
+  """
+  def broadcast_internal_transactions_indexed_ratio(ratio, finished?) do
+    Endpoint.broadcast("blocks:indexing_internal_transactions", "index_status", %{
+      ratio: Decimal.to_string(ratio),
+      finished: finished?
+    })
+  end
+
   defp broadcast_latest_block?(block, last_broadcasted_block_number) do
     cond do
       last_broadcasted_block_number == 0 || last_broadcasted_block_number == block.number - 1 ||
