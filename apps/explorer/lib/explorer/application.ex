@@ -5,7 +5,7 @@ defmodule Explorer.Application do
 
   use Application
 
-  alias Explorer.Admin
+  alias Explorer.{Admin, TokenTransferTokenIdMigration}
 
   alias Explorer.Chain.Cache.{
     Accounts,
@@ -109,7 +109,8 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Tags.AddressTag.Cataloger),
-      configure(MinMissingBlockNumber)
+      configure(MinMissingBlockNumber),
+      configure(TokenTransferTokenIdMigration.Supervisor)
     ]
     |> List.flatten()
   end

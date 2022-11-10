@@ -20,6 +20,8 @@
 ### Fixes
 
 - [#6380](https://github.com/blockscout/blockscout/pull/6380) - Fix btn-dropdown-line class styles
+- [#6391](https://github.com/blockscout/blockscout/pull/6391), [#6427](https://github.com/blockscout/blockscout/pull/6427) - TokenTransfer token_id -> token_ids migration
+- [#6420](https://github.com/blockscout/blockscout/pull/6420) - Fix address logs search
 - [#6390](https://github.com/blockscout/blockscout/pull/6390) - Fix transactions responses in API v2
 - [#6357](https://github.com/blockscout/blockscout/pull/6357), [#6409](https://github.com/blockscout/blockscout/pull/6409) - Fix definitions of NETWORK_PATH, API_PATH, SOCKET_ROOT: process trailing slash
 - [#6338](https://github.com/blockscout/blockscout/pull/6338) - Fix token search with space

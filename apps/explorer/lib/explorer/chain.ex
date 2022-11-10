@@ -665,7 +665,7 @@ defmodule Explorer.Chain do
 
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
-    base_query =
+    base =
       from(log in Log,
         inner_join: transaction in Transaction,
         on: transaction.hash == log.transaction_hash,
@@ -678,6 +678,10 @@ defmodule Explorer.Chain do
         where: log.address_hash == ^address_hash,
         select: log
       )
+
+    base_query =
+      base
+      |> filter_topic(options)
 
     wrapped_query =
       from(
@@ -692,7 +696,6 @@ defmodule Explorer.Chain do
       )
 
     wrapped_query
-    |> filter_topic(options)
     |> where_block_number_in_period(from_block, to_block)
     |> limit(^paging_options.page_size)
     |> Repo.all()
@@ -5340,6 +5343,14 @@ defmodule Explorer.Chain do
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
+    |> Enum.map(fn instance ->
+      owner =
+        instance
+        |> Instance.owner_query()
+        |> Repo.one()
+
+      %{instance | owner: owner}
+    end)
   end
 
   @spec data() :: Dataloader.Ecto.t()

@@ -43,7 +43,7 @@ defmodule Explorer.Utility.TokenTransferTokenIdMigratorProgress do
     end
   end
 
-  def update_last_processed_block_number(block_number) do
+  def update_last_processed_block_number(block_number, force \\ false) do
     case get_current_progress() do
       nil ->
         %{last_processed_block_number: block_number}
@@ -51,7 +51,7 @@ defmodule Explorer.Utility.TokenTransferTokenIdMigratorProgress do
         |> Repo.insert()
 
       progress ->
-        if progress.last_processed_block_number < block_number do
+        if not force and progress.last_processed_block_number < block_number do
           Logger.error(
             "TokenTransferTokenIdMigratorProgress new block_number is above the last one. Last: #{progress.last_processed_block_number}, new: #{block_number}"
           )

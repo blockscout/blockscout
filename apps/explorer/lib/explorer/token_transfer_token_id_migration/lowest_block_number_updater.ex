@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.LowestBlockNumberUpdater do
+defmodule Explorer.TokenTransferTokenIdMigration.LowestBlockNumberUpdater do
   @moduledoc """
   Collects processed block numbers from token id migration workers
   and updates last_processed_block_number according to them.

@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor do
+defmodule Explorer.TokenTransferTokenIdMigration.Supervisor do
   @moduledoc """
   Supervises parts of token id migration process.
 
@@ -35,8 +35,8 @@ defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor do
   """
   use Supervisor
 
+  alias Explorer.TokenTransferTokenIdMigration.{LowestBlockNumberUpdater, Worker}
   alias Explorer.Utility.TokenTransferTokenIdMigratorProgress
-  alias Indexer.Fetcher.TokenTransferTokenIdMigration.{LowestBlockNumberUpdater, Worker}
 
   @default_first_block 0
   @default_workers_count 1
@@ -47,20 +47,17 @@ defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor do
 
   @impl true
   def init(_) do
-    first_block = Application.get_env(:indexer, :token_id_migration)[:first_block] || @default_first_block
+    first_block = Application.get_env(:explorer, :token_id_migration)[:first_block] || @default_first_block
     last_block = TokenTransferTokenIdMigratorProgress.get_last_processed_block_number()
 
     if last_block > first_block do
-      workers_count = Application.get_env(:indexer, :token_id_migration)[:concurrency] || @default_workers_count
+      workers_count = Application.get_env(:explorer, :token_id_migration)[:concurrency] || @default_workers_count
 
       workers =
         Enum.map(1..workers_count, fn id ->
-          worker_name = build_worker_name(id)
-
           Supervisor.child_spec(
-            {Worker,
-             idx: id, first_block: first_block, last_block: last_block, step: workers_count - 1, name: worker_name},
-            id: worker_name,
+            {Worker, idx: id, first_block: first_block, last_block: last_block, step: workers_count - 1},
+            id: {Worker, id},
             restart: :transient
           )
         end)
@@ -70,6 +67,4 @@ defmodule Indexer.Fetcher.TokenTransferTokenIdMigration.Supervisor do
       :ignore
     end
   end
-
-  defp build_worker_name(worker_id), do: :"#{Worker}_#{worker_id}"
 end
