@@ -83,7 +83,7 @@
     "autoprefixer": "^10.4.13",
     "babel-loader": "^9.1.0",
     "copy-webpack-plugin": "^11.0.0",
-    "css-loader": "^5.2.7",
+    "css-loader": "^6.7.1",
     "css-minimizer-webpack-plugin": "^4.2.2",
     "eslint": "^8.27.0",
     "eslint-config-standard": "^17.0.0",
