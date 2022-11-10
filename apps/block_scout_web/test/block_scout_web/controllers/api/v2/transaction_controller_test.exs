@@ -3,6 +3,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   alias Explorer.Chain.{Address, InternalTransaction, Log, TokenTransfer, Transaction}
 
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
+
+    :ok
+  end
+
   describe "/transactions" do
     test "empty list", %{conn: conn} do
       request = get(conn, "/api/v2/transactions")

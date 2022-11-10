@@ -73,6 +73,7 @@ defmodule Explorer.Chain do
     NewContractsCounter,
     NewVerifiedContractsCounter,
     Transactions,
+    TransactionsApiV2,
     Uncles,
     VerifiedContractsCounter
   }
@@ -82,10 +83,10 @@ defmodule Explorer.Chain do
 
   alias Explorer.Counters.{
     AddressesCounter,
-    AddressTransactionsCounter,
-    AddressTransactionsGasUsageCounter,
+    AddressesWithBalanceCounter,
     AddressTokenTransfersCounter,
-    AddressesWithBalanceCounter
+    AddressTransactionsCounter,
+    AddressTransactionsGasUsageCounter
   }
 
   alias Explorer.Market.MarketHistoryCache
@@ -3338,8 +3339,45 @@ defmodule Explorer.Chain do
     method_id_filter = Keyword.get(options, :method)
     type_filter = Keyword.get(options, :type)
 
-    fetch_recent_collated_transactions(old_ui?, paging_options, necessity_by_association, method_id_filter, type_filter)
+    if is_nil(paging_options.key) and (method_id_filter == [] || is_nil(method_id_filter)) and
+         (type_filter == [] || is_nil(type_filter)) do
+      old_ui?
+      |> take_enough_from_txs_cache(paging_options.page_size)
+      |> case do
+        nil ->
+          transactions =
+            fetch_recent_collated_transactions(
+              old_ui?,
+              paging_options,
+              necessity_by_association,
+              method_id_filter,
+              type_filter
+            )
+
+          update_transactions_cache(old_ui?, transactions)
+          transactions
+
+        transactions ->
+          transactions
+      end
+    else
+      fetch_recent_collated_transactions(
+        old_ui?,
+        paging_options,
+        necessity_by_association,
+        method_id_filter,
+        type_filter
+      )
+    end
   end
+
+  defp take_enough_from_txs_cache(old_ui?, amount)
+  defp take_enough_from_txs_cache(true, amount), do: Transactions.take_enough(amount)
+  defp take_enough_from_txs_cache(false, amount), do: TransactionsApiV2.take_enough(amount)
+
+  defp update_transactions_cache(old_ui?, txs)
+  defp update_transactions_cache(true, txs), do: Transactions.update(txs)
+  defp update_transactions_cache(false, txs), do: TransactionsApiV2.update(txs)
 
   # RAP - random access pagination
   @spec recent_collated_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
@@ -4643,6 +4681,20 @@ defmodule Explorer.Chain do
   end
 
   defp page_search_results(query, %PagingOptions{key: nil}), do: query
+
+  defp page_search_results(query, %PagingOptions{
+         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+       })
+       when holder_count in [nil, ""] do
+    where(
+      query,
+      [item],
+      (item.name > ^name and item.type == ^item_type) or
+        (item.name == ^name and item.inserted_at < ^inserted_at and
+           item.type == ^item_type) or
+        item.type != ^item_type
+    )
+  end
 
   # credo:disable-for-next-line
   defp page_search_results(query, %PagingOptions{

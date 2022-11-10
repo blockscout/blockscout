@@ -170,6 +170,13 @@ defmodule Explorer.Factory do
     }
   end
 
+  def unique_address_name_factory do
+    %Address.Name{
+      address: build(:address),
+      name: sequence("FooContract")
+    }
+  end
+
   def unfetched_balance_factory do
     %CoinBalance{
       address_hash: address_hash(),
@@ -642,6 +649,10 @@ defmodule Explorer.Factory do
     }
   end
 
+  def unique_token_factory do
+    Map.replace(token_factory(), :name, sequence("Infinite Token"))
+  end
+
   def token_transfer_log_factory do
     token_contract_address = build(:address)
     to_address = build(:address)
@@ -809,6 +820,10 @@ defmodule Explorer.Factory do
     }
   end
 
+  def unique_smart_contract_factory do
+    Map.replace(smart_contract_factory(), :name, sequence("SimpleStorage"))
+  end
+
   def decompiled_smart_contract_factory do
     contract_code_info = contract_code_info()
 
@@ -849,6 +864,16 @@ defmodule Explorer.Factory do
   end
 
   def address_current_token_balance_factory do
+    %CurrentTokenBalance{
+      address: build(:address),
+      token_contract_address_hash: insert(:token).contract_address_hash,
+      block_number: block_number(),
+      value: Enum.random(1..100_000),
+      value_fetched_at: DateTime.utc_now()
+    }
+  end
+
+  def address_current_token_balance_with_token_id_factory do
     %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,

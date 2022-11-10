@@ -41,6 +41,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def token_transfers_types_options(_), do: [token_type: []]
 
+  # sobelow_skip ["DOS.StringToAtom"]
   def filter_options(%{"filter" => filter}, fallback) do
     filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_atom/1)
     if(filter == [], do: [fallback], else: filter)
@@ -48,6 +49,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def filter_options(_params, fallback), do: [fallback]
 
+  # sobelow_skip ["DOS.StringToAtom"]
   def type_filter_options(%{"type" => type}) do
     [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_atom/1)]
   end
@@ -66,7 +68,6 @@ defmodule BlockScoutWeb.PagingHelper do
     |> parse_filter(allowed_labels)
   end
 
-  # sobelow_skip ["DOS.StringToAtom"]
   def parse_filter(filter, allowed_labels) when is_binary(filter) do
     filter
     |> String.split(",")

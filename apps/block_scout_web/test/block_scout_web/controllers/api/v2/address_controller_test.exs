@@ -524,7 +524,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       erc_721_token = insert(:token, type: "ERC-721")
 
       erc_721_tt =
-        for _ <- 0..50 do
+        for x <- 0..50 do
           tx = insert(:transaction) |> with_block()
 
           insert(:token_transfer,
@@ -532,14 +532,15 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             from_address: address,
-            token_contract_address: erc_721_token.contract_address
+            token_contract_address: erc_721_token.contract_address,
+            token_ids: [x]
           )
         end
 
       erc_1155_token = insert(:token, type: "ERC-1155")
 
       erc_1155_tt =
-        for _ <- 0..50 do
+        for x <- 0..50 do
           tx = insert(:transaction) |> with_block()
 
           insert(:token_transfer,
@@ -547,7 +548,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             from_address: address,
-            token_contract_address: erc_1155_token.contract_address
+            token_contract_address: erc_1155_token.contract_address,
+            token_ids: [x]
           )
         end
 
@@ -647,7 +649,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       erc_721_token = insert(:token, type: "ERC-721")
 
       erc_721_tt =
-        for _ <- 0..50 do
+        for x <- 0..50 do
           tx = insert(:transaction) |> with_block()
 
           insert(:token_transfer,
@@ -655,7 +657,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             to_address: address,
-            token_contract_address: erc_721_token.contract_address
+            token_contract_address: erc_721_token.contract_address,
+            token_ids: [x]
           )
         end
 
@@ -914,7 +917,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       ctbs =
         for _ <- 0..50 do
-          insert(:address_current_token_balance, address: address) |> Repo.preload([:token])
+          insert(:address_current_token_balance_with_token_id, address: address) |> Repo.preload([:token])
         end
         |> Enum.sort_by(fn x -> x.value end, :desc)
 
