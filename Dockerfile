@@ -1,5 +1,5 @@
 # Extend from the official Elixir image.
-FROM elixir:1.13.0
+FROM elixir:1.13.3
 
 ENV MIX_ENV=prod
 
