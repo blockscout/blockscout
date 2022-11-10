@@ -71,6 +71,8 @@ const elements = {
   },
   '[data-selector="channel-batching-count"]': {
     render ($el, state) {
+      console.log('-1-1-1-1')
+      console.log(state.transactionsBatch)
       const $channelBatching = $('[data-selector="channel-batching-message"]')
       if (!state.internalTransactionsBatch.length) return $channelBatching.hide()
       $channelBatching.show()

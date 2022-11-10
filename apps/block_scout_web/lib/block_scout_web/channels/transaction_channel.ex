@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.TransactionChannel do
     rendered_transaction =
       View.render_to_string(
         TransactionView,
-        "_tile.html",
+        "_recent_tile.html",
         transaction: transaction,
         burn_address_hash: @burn_address_hash,
         conn: socket
