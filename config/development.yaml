@@ -29,20 +29,11 @@ kubernetes:
       type: recreate
     kind: deployment
     replicas: 1
-    # hpa:
-    #   antiAffinity:
-    #     type: required
-    #     conditions:
-    #       - key: app
-    #         value: blockscout
-    #   maxReplicas: 5
-    #   minReplicas: 1
-    #   targetCPUUtilizationPercentage: 50
     envs:
     - name: ETHEREUM_JSONRPC_WS_URL
-      value: wss://testnet.cloudwalk.io/ws
+      value: 'ws://tracing-0.tracing.substrate-development.svc.cluster.local:9946'
     - name: ETHEREUM_JSONRPC_HTTP_URL
-      value: https://rpc.testnet.cloudwalk.io
+      value: 'http://tracing-0.tracing.substrate-development.svc.cluster.local:9934'
     - name: ETHEREUM_JSONRPC_VARIANT
       value: geth
     - name: PORT
@@ -50,7 +41,7 @@ kubernetes:
     - name: NETWORK
       value: "CloudWalk"
     - name: SUBNETWORK
-      value: "Testnet"
+      value: "Devnet"
     - name: SUPPORTED_CHAINS
       value: '[ { "title": "CloudWalk Mainnet", "url": "https://explorer.mainnet.cloudwalk.io/", "test_net?": false }, { "title": "CloudWalk Testnet", "url": "https://explorer.testnet.cloudwalk.io/", "test_net?": true } ]'
     - name: LOGO
@@ -61,10 +52,6 @@ kubernetes:
       value: '5'
     - name: POOL_SIZE_API
       value: '5'
-    - name: INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER
-      value: 'true'
-    - name: INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER
-      value: 'true'
     - name: BLOCKSCOUT_VERSION
       value: 4.1.1-beta
     - name: RELEASE_LINK
@@ -82,7 +69,7 @@ kubernetes:
         port: "4000"
         path: "/metrics"
       healthcheck:
-        initialDelaySeconds: 300
+        initialDelaySeconds: 120
         interval: 10
         path: /
         port: 4000
