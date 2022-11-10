@@ -55,7 +55,7 @@ defmodule EthereumJSONRPC.Geth do
   Fetches the pending transactions from the Geth node.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_pending_transactions(json_rpc_named_arguments), do:
+  def fetch_pending_transactions(json_rpc_named_arguments) do
    with {:ok, transaction_data} <-
           %{id: 1, method: "txpool_content", params: []} |> request() |> json_rpc(json_rpc_named_arguments) do
      transactions_params =
@@ -76,7 +76,7 @@ defmodule EthereumJSONRPC.Geth do
 
      {:ok, transactions_params}
    end
- end
+  end
 
   defp debug_trace_transaction_requests(id_to_params) when is_map(id_to_params) do
     Enum.map(id_to_params, fn {id, %{hash_data: hash_data}} ->
