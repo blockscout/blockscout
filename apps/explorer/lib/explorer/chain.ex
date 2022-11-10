@@ -721,8 +721,9 @@ defmodule Explorer.Chain do
     )
   end
 
-  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block),
-    do: base_query
+  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
+    base_query
+  end
 
   def where_block_number_in_period(base_query, from_block, to_block) do
     from(q in base_query,
@@ -831,18 +832,39 @@ defmodule Explorer.Chain do
     end
   end
 
+  def txn_fees(transactions) do
+    Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
+      gas_used
+      |> Decimal.new()
+      |> Decimal.mult(gas_price_to_decimal(gas_price))
+      |> Decimal.add(acc)
+    end)
+  end
+
+  defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
+  defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
+
+  def burned_fees(transactions, base_fee_per_gas) do
+    burned_fee_counter =
+      transactions
+      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
+        gas_used
+        |> Decimal.new()
+        |> Decimal.add(acc)
+      end)
+
+    base_fee_per_gas && Wei.mult(base_fee_per_gas_to_wei(base_fee_per_gas), burned_fee_counter)
+  end
+
+  defp base_fee_per_gas_to_wei(%Wei{} = wei), do: wei
+  defp base_fee_per_gas_to_wei(base_fee_per_gas), do: %Wei{value: Decimal.new(base_fee_per_gas)}
+
   @uncle_reward_coef 1 / 32
   def block_reward_by_parts(block, transactions) do
     %{hash: block_hash, number: block_number} = block
     base_fee_per_gas = Map.get(block, :base_fee_per_gas)
 
-    txn_fees =
-      Enum.reduce(transactions, Decimal.new(0), fn %{gas_used: gas_used, gas_price: gas_price}, acc ->
-        gas_used
-        |> Decimal.new()
-        |> Decimal.mult(Decimal.new(gas_price))
-        |> Decimal.add(acc)
-      end)
+    txn_fees = txn_fees(transactions)
 
     static_reward =
       Repo.one(
@@ -853,17 +875,9 @@ defmodule Explorer.Chain do
         )
       ) || %Wei{value: Decimal.new(0)}
 
-    burned_fee_counter =
-      transactions
-      |> Enum.reduce(Decimal.new(0), fn %{gas_used: gas_used}, acc ->
-        gas_used
-        |> Decimal.new()
-        |> Decimal.add(acc)
-      end)
-
     has_uncles? = is_list(block.uncles) and not Enum.empty?(block.uncles)
 
-    burned_fees = base_fee_per_gas && Wei.mult(%Wei{value: Decimal.new(base_fee_per_gas)}, burned_fee_counter)
+    burned_fees = burned_fees(transactions, base_fee_per_gas)
     uncle_reward = (has_uncles? && Wei.mult(static_reward, Decimal.from_float(@uncle_reward_coef))) || nil
 
     %{
@@ -1284,13 +1298,17 @@ defmodule Explorer.Chain do
     end
   end
 
+  def finished_blocks_indexing?(indexed_ratio_blocks) do
+    Decimal.compare(indexed_ratio_blocks, 1) !== :lt
+  end
+
   @doc """
   Checks if indexing of blocks and internal transactions finished aka full indexing
   """
   @spec finished_indexing?(Decimal.t()) :: boolean()
-  def finished_indexing?(indexed_ratio) do
-    case Decimal.compare(indexed_ratio, 1) do
-      :lt -> false
+  def finished_indexing?(indexed_ratio_blocks) do
+    case finished_blocks_indexing?(indexed_ratio_blocks) do
+      false -> false
       _ -> Chain.finished_internal_transactions_indexing?()
     end
   end
@@ -2093,9 +2111,11 @@ defmodule Explorer.Chain do
     end
   end
 
+  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we dont't show any token transfers on tx tile in new UI)
   def preload_token_transfers(
         %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
-        necessity_by_association
+        necessity_by_association,
+        preload_to_detect_tt? \\ true
       ) do
     token_transfers =
       TokenTransfer
@@ -2108,7 +2128,7 @@ defmodule Explorer.Chain do
                 token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
               )
           )).()
-      |> limit(^(@token_transfers_per_transaction_preview + 1))
+      |> limit(^if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1))
       |> order_by([token_transfer], asc: token_transfer.log_index)
       |> join_associations(necessity_by_association)
       |> Repo.all()
@@ -2182,17 +2202,17 @@ defmodule Explorer.Chain do
       ...>   insert(:block, number: index)
       ...>   Process.sleep(200)
       ...> end
-      iex> Explorer.Chain.indexed_ratio()
+      iex> Explorer.Chain.indexed_ratio_blocks()
       Decimal.new(1, 50, -2)
 
   If there are no blocks, the percentage is 0.
 
-      iex> Explorer.Chain.indexed_ratio()
+      iex> Explorer.Chain.indexed_ratio_blocks()
       Decimal.new(0)
 
   """
-  @spec indexed_ratio() :: Decimal.t()
-  def indexed_ratio do
+  @spec indexed_ratio_blocks() :: Decimal.t()
+  def indexed_ratio_blocks do
     %{min: min, max: max} = BlockNumber.get_all()
 
     min_blockchain_block_number =
@@ -2207,6 +2227,31 @@ defmodule Explorer.Chain do
 
       _ ->
         result = Decimal.div(max - min + 1, max - min_blockchain_block_number + 1)
+
+        result
+        |> Decimal.round(2, :down)
+        |> Decimal.min(Decimal.new(1))
+    end
+  end
+
+  @spec indexed_ratio_internal_transactions() :: Decimal.t()
+  def indexed_ratio_internal_transactions do
+    %{max: max} = BlockNumber.get_all()
+    count = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
+
+    min_blockchain_trace_block_number =
+      case Integer.parse(Application.get_env(:indexer, :trace_first_block)) do
+        {block_number, _} -> block_number
+        _ -> 0
+      end
+
+    case max do
+      0 ->
+        Decimal.new(0)
+
+      _ ->
+        full_blocks_range = max - min_blockchain_trace_block_number + 1
+        result = Decimal.div(full_blocks_range - count, full_blocks_range)
 
         result
         |> Decimal.round(2, :down)
@@ -3292,7 +3337,7 @@ defmodule Explorer.Chain do
       iex> newest_first_transactions = 50 |> insert_list(:transaction) |> with_block() |> Enum.reverse()
       iex> oldest_seen = Enum.at(newest_first_transactions, 9)
       iex> paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
-      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
+      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(true, paging_options: paging_options)
       iex> length(recent_collated_transactions)
       10
       iex> hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
@@ -3308,14 +3353,17 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions([paging_options | necessity_by_association_option], [String.t()], [:atom]) :: [
+  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option], [String.t()], [
+          :atom
+        ]) :: [
           Transaction.t()
         ]
-  def recent_collated_transactions(options \\ [], method_id_filter \\ [], type_filter \\ []) when is_list(options) do
+  def recent_collated_transactions(old_ui?, options \\ [], method_id_filter \\ [], type_filter \\ [])
+      when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter, type_filter)
+    fetch_recent_collated_transactions(old_ui?, paging_options, necessity_by_association, method_id_filter, type_filter)
   end
 
   # RAP - random access pagination
@@ -3373,16 +3421,26 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :hash)
   end
 
-  def fetch_recent_collated_transactions(paging_options, necessity_by_association, method_id_filter, type_filter) do
+  def fetch_recent_collated_transactions(
+        old_ui?,
+        paging_options,
+        necessity_by_association,
+        method_id_filter,
+        type_filter
+      ) do
     paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
+    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> debug("result collated query")
     |> Repo.all()
-    |> Enum.map(fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+    |> (&if(old_ui?,
+          do: &1,
+          else: Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_neccessity_by_association) end)
+        )).()
   end
 
   @doc """
@@ -4376,6 +4434,8 @@ defmodule Explorer.Chain do
 
   defp handle_paging_options(query, nil), do: query
 
+  defp handle_paging_options(query, %PagingOptions{key: nil, page_size: nil}), do: query
+
   defp handle_paging_options(query, paging_options) do
     query
     |> page_transaction(paging_options)
@@ -4732,29 +4792,35 @@ defmodule Explorer.Chain do
         select: token.contract_address_hash
       )
 
-    query =
+    token_ids_query =
       from(
         token_transfer in TokenTransfer,
+        select: %{
+          token_contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: fragment("unnest(?)", token_transfer.token_ids)
+        }
+      )
+
+    query =
+      from(
+        transfer in subquery(token_ids_query),
         inner_join: token in subquery(nft_tokens),
-        on: token.contract_address_hash == token_transfer.token_contract_address_hash,
+        on: token.contract_address_hash == transfer.token_contract_address_hash,
         left_join: instance in Instance,
         on:
-          token_transfer.token_contract_address_hash == instance.token_contract_address_hash and
-            (token_transfer.token_id == instance.token_id or
-               fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id)),
-        where:
-          is_nil(instance.token_id) and (not is_nil(token_transfer.token_id) or not is_nil(token_transfer.token_ids)),
+          transfer.token_contract_address_hash == instance.token_contract_address_hash and
+            transfer.token_id == instance.token_id,
+        where: is_nil(instance.token_id),
         select: %{
-          contract_address_hash: token_transfer.token_contract_address_hash,
-          token_id: token_transfer.token_id,
-          token_ids: token_transfer.token_ids
+          contract_address_hash: transfer.token_contract_address_hash,
+          token_id: transfer.token_id
         }
       )
 
     distinct_query =
       from(
         q in subquery(query),
-        distinct: [q.contract_address_hash, q.token_id, q.token_ids]
+        distinct: [q.contract_address_hash, q.token_id]
       )
 
     Repo.stream_reduce(distinct_query, initial, reducer)
@@ -5053,24 +5119,6 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  @spec erc721_token_instance_from_token_id_and_token_address(binary(), Hash.Address.t()) ::
-          {:ok, TokenTransfer.t()} | {:error, :not_found}
-  def erc721_token_instance_from_token_id_and_token_address(token_id, token_contract_address) do
-    query =
-      from(tt in TokenTransfer,
-        left_join: instance in Instance,
-        on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-        where: tt.token_contract_address_hash == ^token_contract_address and tt.token_id == ^token_id,
-        limit: 1,
-        select: %{tt | instance: instance}
-      )
-
-    case Repo.one(query) do
-      nil -> {:error, :not_found}
-      token_instance -> {:ok, token_instance}
-    end
-  end
-
   @spec erc721_or_erc1155_token_instance_from_token_id_and_token_address(binary(), Hash.Address.t()) ::
           {:ok, Instance.t()} | {:error, :not_found}
   def erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, token_contract_address) do
@@ -5184,14 +5232,20 @@ defmodule Explorer.Chain do
     end
   end
 
+  def get_token_balance(address_hash, token_contract_address_hash, block_number) do
+    query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number)
+
+    Repo.one(query)
+  end
+
   def get_coin_balance(address_hash, block_number) do
     query = CoinBalance.fetch_coin_balance(address_hash, block_number)
 
     Repo.one(query)
   end
 
-  @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
-  def address_to_balances_by_day(address_hash) do
+  @spec address_to_balances_by_day(Hash.Address.t(), true | false) :: [balance_by_day]
+  def address_to_balances_by_day(address_hash, api? \\ false) do
     latest_block_timestamp =
       address_hash
       |> CoinBalance.last_coin_balance_timestamp()
@@ -5202,7 +5256,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
     |> Enum.sort_by(fn %{date: d} -> {d.year, d.month, d.day} end)
     |> replace_last_value(latest_block_timestamp)
-    |> normalize_balances_by_day()
+    |> normalize_balances_by_day(api?)
   end
 
   # https://github.com/blockscout/blockscout/issues/2658
@@ -5212,12 +5266,12 @@ defmodule Explorer.Chain do
 
   defp replace_last_value(items, _), do: items
 
-  defp normalize_balances_by_day(balances_by_day) do
+  defp normalize_balances_by_day(balances_by_day, api?) do
     result =
       balances_by_day
       |> Enum.filter(fn day -> day.value end)
-      |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
-      |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :date, fn x -> to_string(x) end) end))).()
+      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :value, fn x -> Wei.to(x, :ether) end) end))).()
 
     today = Date.to_string(NaiveDateTime.utc_now())
 
@@ -5277,13 +5331,13 @@ defmodule Explorer.Chain do
     Repo.one!(query, timeout: :infinity)
   end
 
-  @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
+  @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [Instance.t()]
   def address_to_unique_tokens(contract_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     contract_address_hash
-    |> TokenTransfer.address_to_unique_tokens()
-    |> TokenTransfer.page_token_transfer(paging_options)
+    |> Instance.address_to_unique_token_instances()
+    |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
   end
@@ -5707,56 +5761,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 with the given `hash` and `token_id` exists.
+  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
 
   Returns `:ok` if found
 
-      iex> contract_address = insert(:address)
+      iex> token = insert(:token)
       iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
+      iex> insert(:token_instance,
+      ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.check_erc721_token_instance_exists(token_id, contract_address.hash)
-      :ok
-
-  Returns `:not_found` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.check_erc721_token_instance_exists(10, hash)
-      :not_found
-  """
-  @spec check_erc721_token_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) :: :ok | :not_found
-  def check_erc721_token_instance_exists(token_id, hash) do
-    token_id
-    |> erc721_token_instance_exist?(hash)
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 or ERC-1155 with the given `hash` and `token_id` exists.
-
-  Returns `:ok` if found
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, contract_address.hash)
-      :ok
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_ids: [token_id]
-      ...> )
-      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, contract_address.hash)
+      iex> Explorer.Chain.check_erc721_or_erc1155_token_instance_exists(token_id, token.contract_address_hash)
       :ok
 
   Returns `:not_found` if not found
@@ -5774,59 +5789,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 with the given `hash` and `token_id` exists.
+  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
 
   Returns `true` if found
 
-      iex> contract_address = insert(:address)
+      iex> token = insert(:token)
       iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
+      iex> insert(:token_instance,
+      ...>  token_contract_address_hash: token.contract_address_hash,
       ...>  token_id: token_id
       ...> )
-      iex> Explorer.Chain.erc721_token_instance_exist?(token_id, contract_address.hash)
-      true
-
-  Returns `false` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.erc721_token_instance_exist?(10, hash)
-      false
-  """
-  @spec erc721_token_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
-  def erc721_token_instance_exist?(token_id, hash) do
-    query =
-      from(tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^hash and tt.token_id == ^token_id
-      )
-
-    Repo.exists?(query)
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` of type ERC-721 or ERC-1155 with the given `hash` and `token_id` exists.
-
-  Returns `true` if found
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, contract_address.hash)
-      true
-
-      iex> contract_address = insert(:address)
-      iex> token_id = 10
-      iex> insert(:token_transfer,
-      ...>  from_address: contract_address,
-      ...>  token_contract_address: contract_address,
-      ...>  token_ids: [token_id]
-      ...> )
-      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, contract_address.hash)
+      iex> Explorer.Chain.erc721_or_erc1155_token_instance_exist?(token_id, token.contract_address_hash)
       true
 
   Returns `false` if not found
@@ -5838,10 +5811,8 @@ defmodule Explorer.Chain do
   @spec erc721_or_erc1155_token_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
   def erc721_or_erc1155_token_instance_exist?(token_id, hash) do
     query =
-      from(tt in TokenTransfer,
-        where:
-          tt.token_contract_address_hash == ^hash and
-            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)))
+      from(i in Instance,
+        where: i.token_contract_address_hash == ^hash and i.token_id == ^Decimal.new(token_id)
       )
 
     Repo.exists?(query)
@@ -6583,7 +6554,7 @@ defmodule Explorer.Chain do
   end
 
   def recent_transactions(options, _, method_id_filter, type_filter_options) do
-    recent_collated_transactions(options, method_id_filter, type_filter_options)
+    recent_collated_transactions(false, options, method_id_filter, type_filter_options)
   end
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do

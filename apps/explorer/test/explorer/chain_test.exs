@@ -137,20 +137,22 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "ERC721_token_instance_from_token_id_and_token_address/2" do
+  describe "ERC721_or_ERC1155_token_instance_from_token_id_and_token_address/2" do
     test "return ERC721 token instance" do
-      contract_address = insert(:address)
+      token = insert(:token)
 
       token_id = 10
 
-      insert(:token_transfer,
-        from_address: contract_address,
-        token_contract_address: contract_address,
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
         token_id: token_id
       )
 
       assert {:ok, result} =
-               Chain.erc721_token_instance_from_token_id_and_token_address(token_id, contract_address.hash)
+               Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+                 token_id,
+                 token.contract_address_hash
+               )
 
       assert result.token_id == Decimal.new(token_id)
     end
@@ -1474,7 +1476,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "indexed_ratio/0" do
+  describe "indexed_ratio_blocks/0" do
     setup do
       on_exit(fn ->
         Application.put_env(:indexer, :first_block, "")
@@ -1486,11 +1488,11 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert Decimal.compare(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
+      assert Decimal.compare(Chain.indexed_ratio_blocks(), Decimal.from_float(0.5)) == :eq
     end
 
     test "returns 0 if no blocks" do
-      assert Decimal.new(0) == Chain.indexed_ratio()
+      assert Decimal.new(0) == Chain.indexed_ratio_blocks()
     end
 
     test "returns 1.0 if fully indexed blocks" do
@@ -1499,7 +1501,7 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
+      assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
@@ -1510,7 +1512,49 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
+      assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
+    end
+  end
+
+  describe "indexed_ratio_internal_transactions/0" do
+    setup do
+      on_exit(fn ->
+        Application.put_env(:indexer, :trace_first_block, "")
+      end)
+    end
+
+    test "returns indexed ratio" do
+      for index <- 0..9 do
+        block = insert(:block, number: index)
+
+        if index === 0 || index === 5 || index === 7 do
+          insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+        end
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), Decimal.from_float(0.7)) == :eq
+    end
+
+    test "returns 0 if no blocks" do
+      assert Decimal.new(0) == Chain.indexed_ratio_internal_transactions()
+    end
+
+    test "returns 1.0 if no pending block operations" do
+      for index <- 0..9 do
+        insert(:block, number: index)
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), 1) == :eq
+    end
+
+    test "returns 1.0 if fully indexed blocks with internal transactions starting from given TRACE_FIRST_BLOCK" do
+      Application.put_env(:indexer, :trace_first_block, "5")
+
+      for index <- 5..9 do
+        insert(:block, number: index)
+      end
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), 1) == :eq
     end
   end
 
@@ -3841,12 +3885,12 @@ defmodule Explorer.ChainTest do
 
   describe "recent_collated_transactions/1" do
     test "with no collated transactions it returns an empty list" do
-      assert [] == Explorer.Chain.recent_collated_transactions()
+      assert [] == Explorer.Chain.recent_collated_transactions(true)
     end
 
     test "it excludes pending transactions" do
       insert(:transaction)
-      assert [] == Explorer.Chain.recent_collated_transactions()
+      assert [] == Explorer.Chain.recent_collated_transactions(true)
     end
 
     test "returns a list of recent collated transactions" do
@@ -3858,7 +3902,7 @@ defmodule Explorer.ChainTest do
 
       oldest_seen = Enum.at(newest_first_transactions, 9)
       paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
-      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
+      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(true, paging_options: paging_options)
 
       assert length(recent_collated_transactions) == 10
       assert hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
@@ -3884,7 +3928,7 @@ defmodule Explorer.ChainTest do
         block: transaction.block
       )
 
-      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())
+      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions(true))
       assert fetched_transaction.hash == transaction.hash
       assert length(fetched_transaction.token_transfers) == 2
     end
@@ -4849,41 +4893,15 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
-        )
-
-      assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
-      assert result.token_id == token_transfer.token_id
-      assert result.contract_address_hash == token_transfer.token_contract_address_hash
-    end
-
-    test "reduces with given reducer and accumulator for ERC-1155 token" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-1155")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      token_transfer =
-        insert(
-          :token_transfer,
-          block_number: 1000,
-          to_address: build(:address),
-          transaction: transaction,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_id: nil,
           token_ids: [11]
         )
 
       assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
-      assert result.token_ids == token_transfer.token_ids
+      assert result.token_id == List.first(token_transfer.token_ids)
       assert result.contract_address_hash == token_transfer.token_contract_address_hash
     end
 
-    test "does not fetch token transfers without token id or token_ids" do
+    test "does not fetch token transfers without token_ids" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
 
@@ -4899,7 +4917,6 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         token_contract_address: token_contract_address,
         token: token,
-        token_id: nil,
         token_ids: nil
       )
 
@@ -4923,11 +4940,11 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
+          token_ids: [11]
         )
 
       insert(:token_instance,
-        token_id: token_transfer.token_id,
+        token_id: List.first(token_transfer.token_ids),
         token_contract_address_hash: token_transfer.token_contract_address_hash
       )
 
@@ -5284,7 +5301,7 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 29
+          token_ids: [29]
         )
 
       second_page =
@@ -5295,17 +5312,17 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
+          token_ids: [11]
         )
 
-      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
+      paging_options = %PagingOptions{key: {List.first(first_page.token_ids)}, page_size: 1}
 
       unique_tokens_ids_paginated =
         token_contract_address.hash
         |> Chain.address_to_unique_tokens(paging_options: paging_options)
         |> Enum.map(& &1.token_id)
 
-      assert unique_tokens_ids_paginated == [second_page.token_id]
+      assert unique_tokens_ids_paginated == [List.first(second_page.token_ids)]
     end
   end
 

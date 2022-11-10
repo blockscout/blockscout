@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
-  alias BlockScoutWeb.Plug.CheckAccountAPI
+  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2}
 
   pipeline :api do
     plug(:accepts, ["json"])
@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :api_v2 do
+    plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
   end
@@ -94,6 +95,8 @@ defmodule BlockScoutWeb.ApiRouter do
 
     alias BlockScoutWeb.API.V2
 
+    get("/search", V2.SearchController, :search)
+
     scope "/config" do
       get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
     end
@@ -118,6 +121,25 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash/token-balances", V2.AddressController, :token_balances)
       get("/:address_hash/transactions", V2.AddressController, :transactions)
       get("/:address_hash/token-transfers", V2.AddressController, :token_transfers)
+      get("/:address_hash/internal-transactions", V2.AddressController, :internal_transactions)
+      get("/:address_hash/logs", V2.AddressController, :logs)
+      get("/:address_hash/blocks-validated", V2.AddressController, :blocks_validated)
+      get("/:address_hash/coin-balance-history", V2.AddressController, :coin_balance_history)
+      get("/:address_hash/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
+    end
+
+    scope "/main-page" do
+      get("/blocks", V2.MainPageController, :blocks)
+      get("/transactions", V2.MainPageController, :transactions)
+    end
+
+    scope "/stats" do
+      get("/", V2.StatsController, :stats)
+
+      scope "/charts" do
+        get("/transactions", V2.StatsController, :transactions_chart)
+        get("/market", V2.StatsController, :market_chart)
+      end
     end
   end
 
@@ -125,9 +147,10 @@ defmodule BlockScoutWeb.ApiRouter do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
     alias BlockScoutWeb.API.V1.HealthController
-    alias BlockScoutWeb.SearchController
+    alias BlockScoutWeb.API.V2.SearchController
 
-    get("/search", SearchController, :api_search_result)
+    # leave the same endpoint in v1 in order to keep backward compatibility
+    get("/search", SearchController, :search)
     get("/health", HealthController, :health)
     get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
 

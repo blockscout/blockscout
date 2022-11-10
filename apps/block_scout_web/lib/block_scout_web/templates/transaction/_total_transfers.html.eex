@@ -1,13 +1,13 @@
 <%= case token_transfer_amount(@transfer) do %>
     <% {:ok, :erc721_instance} -> %>
-        <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @transfer.token_id %>
+        <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: List.first(@transfer.token_ids) %>
     <% {:ok, :erc1155_instance, value} -> %>
         <% transfer_type = Chain.get_token_transfer_type(@transfer) %>
         <%= if transfer_type == :token_spawning do %>
-            <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @transfer.token_id %>
+            <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: List.first(@transfer.token_ids) %>
         <% else %>
             <%= "#{value} " %>
-            <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: @transfer.token_id %>
+            <%= render BlockScoutWeb.TransactionView, "_transfer_token_with_id.html", transfer: @transfer, token_id: List.first(@transfer.token_ids) %>
         <% end %>
     <% {:ok, :erc1155_instance, values, token_ids, _decimals} -> %>
         <% values_ids = Enum.zip(values, token_ids) %>

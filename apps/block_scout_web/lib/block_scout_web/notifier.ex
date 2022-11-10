@@ -183,7 +183,7 @@ defmodule BlockScoutWeb.Notifier do
     today = Date.utc_today()
 
     [{:history_size, history_size}] =
-      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, 30)
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, {:history_size, 30})
 
     x_days_back = Date.add(today, -1 * history_size)
 
@@ -236,6 +236,16 @@ defmodule BlockScoutWeb.Notifier do
   """
   def broadcast_blocks_indexed_ratio(ratio, finished?) do
     Endpoint.broadcast("blocks:indexing", "index_status", %{
+      ratio: Decimal.to_string(ratio),
+      finished: finished?
+    })
+  end
+
+  @doc """
+  Broadcast the percentage of pending block operations indexed so far.
+  """
+  def broadcast_internal_transactions_indexed_ratio(ratio, finished?) do
+    Endpoint.broadcast("blocks:indexing_internal_transactions", "index_status", %{
       ratio: Decimal.to_string(ratio),
       finished: finished?
     })
@@ -370,8 +380,6 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_token_transfer(token_transfer, event) do
-    Endpoint.broadcast("token_transfers:#{token_transfer.transaction_hash}", event, %{})
-
     Endpoint.broadcast("addresses:#{token_transfer.from_address_hash}", event, %{
       address: token_transfer.from_address,
       token_transfer: token_transfer

@@ -87,7 +87,7 @@ config :block_scout_web,
   webapp_url: System.get_env("WEBAPP_URL"),
   api_url: System.get_env("API_URL"),
   apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
-  external_apps: System.get_env("EXTERNAL_APPS"),
+  apps: System.get_env("APPS") || System.get_env("EXTERNAL_APPS"),
   gas_price: System.get_env("GAS_PRICE", nil),
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
@@ -169,6 +169,8 @@ config :block_scout_web,
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   # days
   coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
+
+config :block_scout_web, BlockScoutWeb.API.V2, enabled: System.get_env("API_V2_ENABLED") == "true"
 
 ########################
 ### Ethereum JSONRPC ###
@@ -455,6 +457,15 @@ blocks_catchup_fetcher_concurrency_default_str = "10"
 config :indexer, Indexer.Block.Catchup.Fetcher,
   batch_size: blocks_catchup_fetcher_batch_size,
   concurrency: blocks_catchup_fetcher_concurrency
+
+{token_id_migration_first_block, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_FIRST_BLOCK", "0"))
+{token_id_migration_concurrency, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_CONCURRENCY", "1"))
+{token_id_migration_batch_size, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_BATCH_SIZE", "500"))
+
+config :indexer, :token_id_migration,
+  first_block: token_id_migration_first_block,
+  concurrency: token_id_migration_concurrency,
+  batch_size: token_id_migration_batch_size
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

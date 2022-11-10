@@ -3,7 +3,8 @@ defmodule BlockScoutWeb.GasTrackerSpendersDayController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{ChainController, GasTrackerView}
+  alias BlockScoutWeb.API.V2.Helper
+  alias BlockScoutWeb.GasTrackerView
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Cache.GasUsage
   alias Phoenix.View
@@ -73,7 +74,7 @@ defmodule BlockScoutWeb.GasTrackerSpendersDayController do
   end
 
   def index(conn, _params) do
-    transaction_stats = ChainController.get_transaction_stats()
+    transaction_stats = Helper.get_transaction_stats()
     total_gas_usage = GasUsage.total()
 
     chart_data_paths = %{
