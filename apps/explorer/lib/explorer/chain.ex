@@ -628,7 +628,7 @@ defmodule Explorer.Chain do
 
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
-    base_query =
+    base =
       from(log in Log,
         inner_join: transaction in Transaction,
         on: transaction.hash == log.transaction_hash,
@@ -643,6 +643,10 @@ defmodule Explorer.Chain do
         select: log
       )
 
+    base_query =
+      base
+      |> filter_topic(options)
+
     wrapped_query =
       from(
         log in subquery(base_query),
@@ -656,7 +660,6 @@ defmodule Explorer.Chain do
       )
 
     wrapped_query
-    |> filter_topic(options)
     |> where_block_number_in_period(from_block, to_block)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
