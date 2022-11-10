@@ -1,7 +1,6 @@
 <div
-    class="fade-in"
+    class="fade-in txn-list-table-item"
     data-identifier-hash="<%= @l1_to_l2.queue_index %>"
-    style="width:100%;height:42px;display:flex;align-items:center;font-size:14px;padding:0 10px;border-bottom:1px solid #e7eaf3;"
 >
   
     <span style="width: 10%;">
@@ -10,10 +9,9 @@
     <span style="width: 10%;">
       <%= @l1_to_l2.queue_index %>
     </span>
-    
-    <span style="width: 20%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-sizing:border-box;padding-right:10px;">
-      <%= render "_link.html", transaction_hash: @l1_to_l2.l2_hash, data_test: "address_hash_link" %>
-    </span>
+    <a style="width: 20%;" href="/tx/<%= @l1_to_l2.l2_hash %>" >
+         <%= sub_hash_string(@l1_to_l2.l2_hash) %>...
+       </a>
      <span style="width: 10%;" in-tile data-from-now="<%= block_timestamp(@l1_to_l2) %>">
     </span>
      <a style="width: 20%;" href="https://goerli.etherscan.io/tx/<%= @l1_to_l2.hash %>" target="_blank">

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.UserSocket do
   channel("exchange_rate:*", BlockScoutWeb.ExchangeRateChannel)
   channel("rewards:*", BlockScoutWeb.RewardChannel)
   # Prevent socket push temporary
-  #channel("transactions:*", BlockScoutWeb.TransactionChannel)
+  channel("transactions:*", BlockScoutWeb.TransactionChannel)
   channel("tokens:*", BlockScoutWeb.TokenChannel)
 
   def connect(%{"locale" => locale}, socket) do
