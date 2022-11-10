@@ -4,7 +4,8 @@ FROM elixir:1.13.3
 ENV MIX_ENV=prod
 
 # Create app directory
-RUN git clone https://github.com/cloudwalk/blockscout.git
+#RUN git clone https://github.com/cloudwalk/blockscout.git
+COPY . .
 WORKDIR /blockscout
 
 #
