@@ -107,11 +107,10 @@ defmodule Explorer.Etherscan.Logs do
         on: log.transaction_hash == transaction.hash,
         where: transaction.block_number >= ^prepared_filter.from_block,
         where: transaction.block_number <= ^prepared_filter.to_block,
-        # ezcw: removed to fetch of the events produced by internal transactions
-        #        where:
-        #          transaction.to_address_hash == ^address_hash or
-        #            transaction.from_address_hash == ^address_hash or
-        #            transaction.created_contract_address_hash == ^address_hash,
+        where:
+          transaction.to_address_hash == ^address_hash or
+            transaction.from_address_hash == ^address_hash or
+            transaction.created_contract_address_hash == ^address_hash,
         select: map(log, ^@log_fields),
         select_merge: %{
           gas_price: transaction.gas_price,

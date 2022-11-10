@@ -55,28 +55,28 @@ defmodule EthereumJSONRPC.Geth do
   Fetches the pending transactions from the Geth node.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_pending_transactions(json_rpc_named_arguments), do: :ignore # ezcw: ignore for now
-#    with {:ok, transaction_data} <-
-#           %{id: 1, method: "txpool_content", params: []} |> request() |> json_rpc(json_rpc_named_arguments) do
-#      transactions_params =
-#        transaction_data["pending"]
-#        |> Enum.flat_map(fn {_address, nonce_transactions_map} ->
-#          nonce_transactions_map
-#          |> Enum.map(fn {_nonce, transaction} ->
-#            transaction
-#          end)
-#        end)
-#        |> Transactions.to_elixir()
-#        |> Transactions.elixir_to_params()
-#        |> Enum.map(fn params ->
-#          # txpool_content always returns transaction with 0x0000000000000000000000000000000000000000000000000000000000000000 value in block hash and index is null.
-#          # https://github.com/ethereum/go-ethereum/issues/19897
-#          %{params | block_hash: nil, index: nil}
-#        end)
-#
-#      {:ok, transactions_params}
-#    end
-#  end
+  def fetch_pending_transactions(json_rpc_named_arguments), do:
+   with {:ok, transaction_data} <-
+          %{id: 1, method: "txpool_content", params: []} |> request() |> json_rpc(json_rpc_named_arguments) do
+     transactions_params =
+       transaction_data["pending"]
+       |> Enum.flat_map(fn {_address, nonce_transactions_map} ->
+         nonce_transactions_map
+         |> Enum.map(fn {_nonce, transaction} ->
+           transaction
+         end)
+       end)
+       |> Transactions.to_elixir()
+       |> Transactions.elixir_to_params()
+       |> Enum.map(fn params ->
+         # txpool_content always returns transaction with 0x0000000000000000000000000000000000000000000000000000000000000000 value in block hash and index is null.
+         # https://github.com/ethereum/go-ethereum/issues/19897
+         %{params | block_hash: nil, index: nil}
+       end)
+
+     {:ok, transactions_params}
+   end
+ end
 
   defp debug_trace_transaction_requests(id_to_params) when is_map(id_to_params) do
     Enum.map(id_to_params, fn {id, %{hash_data: hash_data}} ->
