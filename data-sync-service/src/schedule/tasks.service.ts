@@ -71,7 +71,7 @@ export class TasksService {
        } else {
          this.logger.log(`sync l1_sent_message_events from block [${start}] to [${end}]`)
        }
-       await this.cacheManager.set(L1_SENT, end);
+       await this.cacheManager.set(L1_SENT, end, { ttl: 0 });
     } else {
        this.logger.log(`sync l1_sent finished and latest block number is: ${currentBlockNumber}`);
     }
@@ -89,7 +89,7 @@ export class TasksService {
         } else {
            this.logger.log(`sync l1_relayed_message_events from block [${start}] to [${end}]`)
         }
-        await this.cacheManager.set(L1_RELAYED, end);
+        await this.cacheManager.set(L1_RELAYED, end, { ttl: 0 });
      } else {
         this.logger.log(`sync l1_relayed finished and latest block number is: ${currentBlockNumber}`);
      }
@@ -107,7 +107,7 @@ export class TasksService {
        } else {
          this.logger.log(`sync l2_sent_message_events from block [${start}] to [${end}]`)
        }
-       await this.cacheManager.set(L2_SENT, end);
+       await this.cacheManager.set(L2_SENT, end, { ttl: 0 });
     } else {
       this.logger.log(`sync l2_sent finished and latest block number is: ${currentBlockNumber}`);
     }
@@ -125,7 +125,7 @@ export class TasksService {
        } else {
           this.logger.log(`sync l2_relayed_message_events from block [${start}] to [${end}]`)
        }
-      await this.cacheManager.set(L2_RELAYED, end);
+      await this.cacheManager.set(L2_RELAYED, end, { ttl: 0 });
     } else {
        this.logger.log(`sync l2_relayed finished and latest block number is: ${currentBlockNumber}`);
     }
@@ -143,7 +143,7 @@ export class TasksService {
         } else {
            this.logger.log(`sync state batch from block [${start}] to [${end}]`)
         }
-        await this.cacheManager.set(STATE_BATCH, end);
+        await this.cacheManager.set(STATE_BATCH, end, { ttl: 0 });
      } else {
         this.logger.log(`sync state_batch finished and latest block number is: ${currentBlockNumber}`);
      }
@@ -161,7 +161,7 @@ export class TasksService {
        } else {
            this.logger.log(`sync txn batch from block [${start}] to [${end}]`)
        }
-       await this.cacheManager.set(TXN_BATCH, end);
+       await this.cacheManager.set(TXN_BATCH, end, { ttl: 0 });
     } else {
        this.logger.log(`sync txn_batch finished and latest block number is: ${currentBlockNumber}`);
     }
