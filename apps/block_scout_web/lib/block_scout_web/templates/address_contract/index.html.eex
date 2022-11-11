@@ -103,9 +103,11 @@
               <%= if visualize_sol2uml_enabled && !target_contract.is_vyper_contract do %>
               <span data-original-title="Visualize contract code using Sol2Uml JS library" data-placement="top" data-toggle="tooltip">
                 <a class="button button-primary" href="<%= visualize_sol2uml_path(@conn, :index, address: @address) %>">
-                    <div class="badge badge-info mr-1">new</div>
-                    <i class="fa-solid fa-diagram-project mr-1"></i>
-                    <span>Sol2uml</span>
+                    <div class="d-flex align-items-center">
+                      <i class="fa-solid fa-diagram-project mr-1"></i>
+                      <span class="mr-1">Sol2uml</span>
+                      <div class="badge badge-info">new</div>
+                    </div>
                 </a>
               </span>
               <% end %>
