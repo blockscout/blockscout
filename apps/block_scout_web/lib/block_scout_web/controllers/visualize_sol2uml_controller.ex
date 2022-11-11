@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
         |> Enum.map(fn additional_source -> {additional_source.file_name, additional_source.contract_source_code} end)
         |> Enum.into(%{})
         |> Map.merge(%{
-          address.smart_contract.file_path => address.smart_contract.contract_source_code
+          get_contract_filename(address.smart_contract.file_path) => address.smart_contract.contract_source_code
         })
 
       params = %{
@@ -38,6 +38,10 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
       _ -> not_found(conn)
     end
   end
+
+  def get_contract_filename(nil), do: "main.sol"
+  def get_contract_filename(filename), do: filename
+
 
   def index(conn, params) do
     not_found(conn)

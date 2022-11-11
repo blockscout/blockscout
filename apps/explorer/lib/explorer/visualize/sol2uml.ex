@@ -54,7 +54,7 @@ defmodule Explorer.Visualize.Sol2uml do
 
   def proccess_visualizer_response(other), do: {:error, other}
 
-  def visualize_contracts_url, do: "#{base_api_url()}" <> "/solidity:visualizeContracts"
+  def visualize_contracts_url, do: "#{base_api_url()}" <> "/solidity:visualize-contracts"
 
   def base_api_url, do: "#{base_url()}" <> "/api/v1"
 
