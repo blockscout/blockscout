@@ -1,4 +1,4 @@
-<div class="card fs-14 <%= if assigns[:additional_container_classes] do @additional_container_classes |> Enum.join(" ") end %>" style="<%= if assigns[:style] do @style end %>">
+<div class="card fs-14 <%= if assigns[:additional_container_classes] do @additional_container_classes |> Enum.join(" ") end %>" <%= if assigns[:additional_container_attributes] do @additional_container_attributes end %> style="<%= if assigns[:style] do @style end %>">
   <div class="card-body <%= if assigns[:additional_body_classes] do @additional_body_classes |> Enum.join(" ") end %>" style="padding: 1rem;">
     <div class="row">
       <div class="col-sm-6 col-md-10 col-lg-11" style="width: 90%;">

@@ -16,7 +16,7 @@ const grid = {
 
 function xAxe (fontColor) {
   return {
-    grid: grid,
+    grid,
     type: 'time',
     time: {
       unit: 'day',
@@ -57,7 +57,7 @@ const gasUsageConfig = {
   },
   options: {
     layout: {
-      padding: padding
+      padding
     },
     interaction: {
       intersect: false,
@@ -67,7 +67,7 @@ const gasUsageConfig = {
       x: xAxe(gasUsageFontColor),
       gasUsage: {
         position: 'right',
-        grid: grid,
+        grid,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => formatValue(value),
@@ -77,7 +77,7 @@ const gasUsageConfig = {
       }
     },
     plugins: {
-      legend: legend,
+      legend,
       tooltip: {
         mode: 'index',
         intersect: false,

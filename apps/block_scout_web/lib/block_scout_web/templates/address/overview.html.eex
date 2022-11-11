@@ -1,7 +1,8 @@
 <%= if System.get_env("ALERT_TO_ADDRESSES") do %>
   <% address_alert_message = address_alert(@address) %>
+  <% address_hash_str = Base.encode16(@address.hash.bytes) %>
   <%= if address_alert_message do %>
-    <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: address_alert(@address), additional_container_classes: ["mb-2", "js-warning-alert"], additional_body_classes: ["alert-danger-etherscan", "border-radius-10"], additional_button_classes: ["js-btn-close-warning", "black-x"] %>
+    <%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn, message: address_alert(@address), additional_container_classes: ["mb-2", "js-address-warning-alert"], additional_container_attributes: "data-address=#{address_hash_str}", additional_body_classes: ["alert-danger-etherscan", "border-radius-10"], additional_button_classes: ["js-address-btn-close-warning", "black-x"] %>
   <% end %>
 <% end %>
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
