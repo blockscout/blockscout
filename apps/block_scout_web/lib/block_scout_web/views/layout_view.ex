@@ -258,7 +258,7 @@ defmodule BlockScoutWeb.LayoutView do
     if Mix.env() == :test do
       "/auth/auth0"
     else
-      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] <> "auth/auth0"
+      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] <> "/auth/auth0"
     end
   end
 
