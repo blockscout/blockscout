@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       paging_options: 2,
       filter_options: 2,
       method_filter_options: 1,
+      token_transfers_types_options: 1,
       type_filter_options: 1
     ]
 
@@ -33,8 +34,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [from_address: :names] => :optional,
     [to_address: :names] => :optional,
     from_address: :required,
-    to_address: :required,
-    token: :required
+    to_address: :required
   }
 
   @internal_transaction_neccessity_by_association [
@@ -149,12 +149,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def token_transfers(conn, %{"transaction_hash" => transaction_hash_string} = params) do
     with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)} do
       full_options =
-        Keyword.merge(
-          [
-            necessity_by_association: @token_transfers_neccessity_by_association
-          ],
-          paging_options(params)
-        )
+        [necessity_by_association: @token_transfers_neccessity_by_association]
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(token_transfers_types_options(params))
 
       token_transfers_plus_one = Chain.transaction_to_token_transfers(transaction_hash, full_options)
 

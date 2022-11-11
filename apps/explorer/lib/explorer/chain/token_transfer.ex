@@ -342,7 +342,7 @@ defmodule Explorer.Chain.TokenTransfer do
   def filter_by_type(query, []), do: query
 
   def filter_by_type(query, token_types) when is_list(token_types) do
-    where(query, [tt, token], token.type in ^token_types)
+    where(query, [token: token], token.type in ^token_types)
   end
 
   def filter_by_type(query, _), do: query

@@ -16,6 +16,7 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
+      preload: 3,
       select: 2,
       select: 3,
       subquery: 1,
@@ -2119,14 +2120,6 @@ defmodule Explorer.Chain do
 
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
   those `hashes`.
@@ -3448,7 +3441,6 @@ defmodule Explorer.Chain do
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> debug("result collated query")
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
@@ -3499,7 +3491,6 @@ defmodule Explorer.Chain do
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> debug("result pendging query")
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
@@ -3730,6 +3721,7 @@ defmodule Explorer.Chain do
   def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = options |> Keyword.get(:paging_options, @default_paging_options) |> Map.put(:asc_order, true)
+    token_type = Keyword.get(options, :token_type)
 
     TokenTransfer
     |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
@@ -3738,6 +3730,9 @@ defmodule Explorer.Chain do
       transaction.hash == ^transaction_hash and token_transfer.block_hash == transaction.block_hash and
         token_transfer.block_number == transaction.block_number
     )
+    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+    |> preload([token: token], [{:token, token}])
+    |> TokenTransfer.filter_by_type(token_type)
     |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([token_transfer], asc: token_transfer.log_index)

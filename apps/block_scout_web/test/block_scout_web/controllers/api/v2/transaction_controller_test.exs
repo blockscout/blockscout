@@ -401,6 +401,143 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       check_paginated_response(response, response_2nd_page, token_transfers)
     end
+
+    test "check filters", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      erc_1155_token = insert(:token, type: "ERC-1155")
+
+      erc_1155_tt =
+        for x <- 0..50 do
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            token_contract_address: erc_1155_token.contract_address,
+            token_ids: [x]
+          )
+        end
+        |> Enum.reverse()
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      erc_721_tt =
+        for x <- 0..50 do
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            token_contract_address: erc_721_token.contract_address,
+            token_ids: [x]
+          )
+        end
+        |> Enum.reverse()
+
+      erc_20_token = insert(:token, type: "ERC-20")
+
+      erc_20_tt =
+        for _ <- 0..50 do
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            token_contract_address: erc_20_token.contract_address
+          )
+        end
+        |> Enum.reverse()
+
+      # -- ERC-20 --
+      filter = %{"type" => "ERC-20"}
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_20_tt)
+      # -- ------ --
+
+      # -- ERC-721 --
+      filter = %{"type" => "ERC-721"}
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_721_tt)
+      # -- ------ --
+
+      # -- ERC-1155 --
+      filter = %{"type" => "ERC-1155"}
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, erc_1155_tt)
+      # -- ------ --
+
+      # two filters simultaneously
+      filter = %{"type" => "ERC-1155,ERC-20"}
+      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(erc_1155_tt, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(erc_1155_tt, 1), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 50
+      assert response_2nd_page["next_page_params"] != nil
+      compare_item(Enum.at(erc_1155_tt, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(erc_20_tt, 50), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(erc_20_tt, 2), Enum.at(response_2nd_page["items"], 49))
+
+      request_3rd_page =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers",
+          Map.merge(response_2nd_page["next_page_params"], filter)
+        )
+
+      assert response_3rd_page = json_response(request_3rd_page, 200)
+      assert Enum.count(response_3rd_page["items"]) == 2
+      assert response_3rd_page["next_page_params"] == nil
+      compare_item(Enum.at(erc_20_tt, 1), Enum.at(response_3rd_page["items"], 0))
+      compare_item(Enum.at(erc_20_tt, 0), Enum.at(response_3rd_page["items"], 1))
+    end
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
