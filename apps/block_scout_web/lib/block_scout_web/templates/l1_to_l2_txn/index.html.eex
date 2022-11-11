@@ -55,7 +55,7 @@
         </span>
 
       </div>
-      <div data-selector="transactions-list" data-items>
+      <div data-selector="transactions-list" data-items class="recent-tx-list-page">
         <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_rap_pagination_container.html", position: "bottom" %>
