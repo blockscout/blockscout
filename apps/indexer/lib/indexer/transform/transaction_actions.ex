@@ -19,6 +19,7 @@ defmodule Indexer.Transform.TransactionActions do
   @polygon 137
   @gnosis 100
 
+  @null_address "0x0000000000000000000000000000000000000000"
   @uniswap_v3_positions_nft "0xc36442b4a4522e871399cd717abdd847ab11fe88"
   @uniswap_v3_factory "0x1f98431c8ad98523631ae4a59f267346ea31f984"
   @uniswap_v3_factory_abi [
@@ -204,49 +205,63 @@ defmodule Indexer.Transform.TransactionActions do
       end)
       |> List.flatten()
 
-    responses = Reader.query_contracts(requests, @uniswap_v3_pool_abi)
+    max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
+    responses = read_contracts_with_retries(requests, @uniswap_v3_pool_abi, max_retries)
 
-    requests =
-      Enum.zip(requests, responses)
-      |> Enum.reduce(%{}, fn {request, {_status, response} = resp}, acc ->
-        response =
-          case response do
-            [item] -> item
-            items -> items
-          end
-
-        acc = Map.put_new(acc, request.contract_address, %{token0: "", token1: "", fee: ""})
-        item = Map.put(acc[request.contract_address], atomized_key(request.method_id), response)
-        Map.put(acc, request.contract_address, item)
-      end)
-      |> Enum.map(fn {pool_address, pool} ->
-        %{
-          pool_address: pool_address,
-          contract_address: @uniswap_v3_factory,
-          method_id: "1698ee82",
-          args: [pool.token0, pool.token1, pool.fee]
-        }
-      end)
-
-    responses = Reader.query_contracts(requests, @uniswap_v3_factory_abi)
-
-    Enum.zip(requests, responses)
-    |> Enum.reduce(%{}, fn {request, {_status, response} = resp}, acc ->
-      is_ok =
-        if Map.has_key?(acc, request.pool_address) do
-          acc[request.pool_address]
-        else
+    if Enum.count(requests) != Enum.count(responses) do
+      Logger.error(fn -> "Cannot read Uniswap V3 Pool contract(s)" end)
+      %{}
+    else
+      requests =
+        Enum.zip(requests, responses)
+        |> Enum.reduce(%{}, fn {request, {_status, response} = resp}, acc ->
           response =
             case response do
               [item] -> item
               items -> items
             end
 
-          request.pool_address == String.downcase(response)
-        end
+          acc = Map.put_new(acc, request.contract_address, %{token0: "", token1: "", fee: ""})
+          item = Map.put(acc[request.contract_address], atomized_key(request.method_id), response)
+          Map.put(acc, request.contract_address, item)
+        end)
+        |> Enum.map(fn {pool_address, pool} ->
+          token0 = if not is_address_correct?(pool.token0), do: @null_address, else: pool.token0
+          token1 = if not is_address_correct?(pool.token1), do: @null_address, else: pool.token1
+          fee = if pool.fee == "", do: 0, else: pool.fee
+          %{
+            pool_address: pool_address,
+            contract_address: @uniswap_v3_factory,
+            method_id: "1698ee82",
+            args: [token0, token1, fee]
+          }
+        end)
 
-      Map.put(acc, request.pool_address, is_ok)
-    end)
+      responses = read_contracts_with_retries(requests, @uniswap_v3_factory_abi, max_retries)
+
+      if Enum.count(requests) != Enum.count(responses) do
+        Logger.error(fn -> "Cannot read Uniswap V3 Factory contract" end)
+        %{}
+      else
+        Enum.zip(requests, responses)
+        |> Enum.reduce(%{}, fn {request, {_status, response} = resp}, acc ->
+          is_ok =
+            if Map.has_key?(acc, request.pool_address) do
+              acc[request.pool_address]
+            else
+              response =
+                case response do
+                  [item] -> item
+                  items -> items
+                end
+
+              request.pool_address == String.downcase(response)
+            end
+
+          Map.put(acc, request.pool_address, is_ok)
+        end)
+      end
+    end
   end
 
   defp clear_actions(logs_grouped) do
@@ -279,6 +294,10 @@ defmodule Indexer.Transform.TransactionActions do
   defp atomized_key("ddca3f43"), do: :fee
   defp atomized_key("1698ee82"), do: :getPool
 
+  defp is_address_correct?(address) do
+    String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
+  end
+
   defp logs_group_by_txs(logs) do
     logs
     |> Enum.reduce(%{}, fn log, acc ->
@@ -291,6 +310,17 @@ defmodule Indexer.Transform.TransactionActions do
 
       Map.put(acc, log.transaction_hash, acc[log.transaction_hash] ++ [log])
     end)
+  end
+
+  defp read_contracts_with_retries(_requests, _abi, 0), do: []
+
+  defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
+    responses = Reader.query_contracts(requests, abi)
+    if Enum.any?(responses, fn {status, _} -> status == :error end) do
+      read_contracts_with_retries(requests, abi, retries_left - 1)
+    else
+      responses
+    end
   end
 
   defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
