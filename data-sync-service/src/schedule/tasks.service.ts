@@ -12,7 +12,7 @@ const L2_SENT = 'l2_sent_block_number';
 const L2_RELAYED = 'l2_relayed_block_number';
 const TXN_BATCH = 'txn_batch_block_number'
 const STATE_BATCH= 'state_batch_block_number'
-const SYNC_STEP = 1000
+const SYNC_STEP = 100
 
 @Injectable()
 export class TasksService {
@@ -63,11 +63,13 @@ export class TasksService {
     const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
     console.log('l1 sent currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(L1_SENT));
-    const end = start + SYNC_STEP
-    if (currentBlockNumber >= end) {
+    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
+    if (currentBlockNumber > start) {
        const result = await this.l1IngestionService.createSentEvents(start + 1, end);
        if (result.length > 0) {
          this.logger.log(`sync [${result.length}] l1_sent_message_events from block [${start}] to [${end}]`)
+       } else {
+         this.logger.log(`sync l1_sent_message_events from block [${start}] to [${end}]`)
        }
        await this.cacheManager.set(L1_SENT, end);
     } else {
@@ -79,11 +81,13 @@ export class TasksService {
      const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
      console.log('l1 relayed currentBlockNumber: ', currentBlockNumber);
      const start = Number(await this.cacheManager.get(L1_RELAYED));
-     const end = start + SYNC_STEP
-     if (currentBlockNumber >= end) {
+     const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
+     if (currentBlockNumber > start) {
         const result = await this.l1IngestionService.createRelayedEvents(start + 1, end);
         if (result.length > 0) {
           this.logger.log(`sync [${result.length}] l1_relayed_message_events from block [${start}] to [${end}]`)
+        } else {
+           this.logger.log(`sync l1_relayed_message_events from block [${start}] to [${end}]`)
         }
         await this.cacheManager.set(L1_RELAYED, end);
      } else {
@@ -95,11 +99,13 @@ export class TasksService {
     const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
     console.log('l2 sent currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(L2_SENT));
-    const end = start + SYNC_STEP
-    if (currentBlockNumber >= end) {
+    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
+    if (currentBlockNumber > start) {
        const result = await this.l2IngestionService.createSentEvents(start + 1, end);
        if (result.length > 0) {
          this.logger.log(`sync [${result.length}] l2_sent_message_events from block [${start}] to [${end}]`)
+       } else {
+         this.logger.log(`sync l2_sent_message_events from block [${start}] to [${end}]`)
        }
        await this.cacheManager.set(L2_SENT, end);
     } else {
@@ -111,11 +117,13 @@ export class TasksService {
     const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
     console.log('l2 relayed currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(L2_RELAYED));
-    const end = start + SYNC_STEP
-    if (currentBlockNumber >= end) {
+    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
+    if (currentBlockNumber > start) {
        const result = await this.l2IngestionService.createRelayedEvents(start + 1, end);
        if (result.length > 0) {
           this.logger.log(`sync [${result.length}] l2_relayed_message_events from block [${start}] to [${end}]`)
+       } else {
+          this.logger.log(`sync l2_relayed_message_events from block [${start}] to [${end}]`)
        }
       await this.cacheManager.set(L2_RELAYED, end);
     } else {
@@ -127,11 +135,13 @@ export class TasksService {
      const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
      console.log('state batch currentBlockNumber: ', currentBlockNumber);
      const start = Number(await this.cacheManager.get(STATE_BATCH));
-     const end = start + SYNC_STEP;
-     if (currentBlockNumber >= end) {
+     const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
+     if (currentBlockNumber > start) {
         const result = await this.l1IngestionService.createStateBatchesEvents(start + 1, end);
         if (result.length > 0) {
            this.logger.log(`sync [${result.length}] state batch from block [${start}] to [${end}]`)
+        } else {
+           this.logger.log(`sync state batch from block [${start}] to [${end}]`)
         }
         await this.cacheManager.set(STATE_BATCH, end);
      } else {
@@ -143,11 +153,13 @@ export class TasksService {
     const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
     console.log('txn batch currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(TXN_BATCH));
-    const end = start + SYNC_STEP
-    if (currentBlockNumber >= end) {
+    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
+    if (currentBlockNumber > start) {
        const result = await this.l1IngestionService.createTxnBatchesEvents(start + 1, end);
        if (result.length > 0) {
            this.logger.log(`sync [${result.length}] txn batch from block [${start}] to [${end}]`)
+       } else {
+           this.logger.log(`sync txn batch from block [${start}] to [${end}]`)
        }
        await this.cacheManager.set(TXN_BATCH, end);
     } else {
