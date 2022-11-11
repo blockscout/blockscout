@@ -68,13 +68,13 @@ defmodule Indexer.Transform.TokenTransfersTest do
             from_address_hash: truncated_hash(log_3.second_topic),
             to_address_hash: truncated_hash(log_3.third_topic),
             token_contract_address_hash: log_3.address_hash,
-            token_id: 183,
+            token_ids: [183],
             transaction_hash: log_3.transaction_hash,
             token_type: "ERC-721",
             block_hash: log_3.block_hash
           },
           %{
-            token_id: nil,
+            token_ids: nil,
             amount: Decimal.new(17_000_000_000_000_000_000),
             block_number: log_1.block_number,
             log_index: log_1.index,
@@ -122,7 +122,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             to_address_hash: "0xbe8cdfc13ffda20c844ac3da2b53a23ac5787f1e",
             block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
             token_contract_address_hash: log.address_hash,
-            token_id: 14_939,
+            token_ids: [14_939],
             transaction_hash: log.transaction_hash,
             token_type: "ERC-721"
           }
@@ -158,8 +158,9 @@ defmodule Indexer.Transform.TokenTransfersTest do
                    log_index: 2,
                    to_address_hash: "0x9c978f4cfa1fe13406bcc05baf26a35716f881dd",
                    token_contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
-                   token_id:
-                     7_237_005_577_332_282_011_952_059_972_634_123_378_909_214_838_582_411_639_295_170_840_059_424_276_480,
+                   token_ids: [
+                     7_237_005_577_332_282_011_952_059_972_634_123_378_909_214_838_582_411_639_295_170_840_059_424_276_480
+                   ],
                    token_type: "ERC-1155",
                    transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8"
                  }
@@ -198,7 +199,6 @@ defmodule Indexer.Transform.TokenTransfersTest do
                    log_index: 2,
                    to_address_hash: "0x6c943470780461b00783ad530a53913bd2c104d3",
                    token_contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
-                   token_id: nil,
                    token_ids: [680_564_733_841_876_926_926_749_214_863_536_422_912],
                    token_type: "ERC-1155",
                    transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
