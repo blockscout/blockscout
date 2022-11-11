@@ -115,9 +115,11 @@ defmodule BlockScoutWeb.Schema.Types do
   """
   node object(:token_transfer, id_fetcher: &token_transfer_id_fetcher/2) do
     field(:amount, :decimal)
+    field(:amounts, list_of(:decimal))
     field(:block_number, :integer)
     field(:log_index, :integer)
     field(:token_id, :decimal)
+    field(:token_ids, list_of(:decimal))
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
     field(:token_contract_address_hash, :address_hash)
