@@ -12,7 +12,7 @@ const L2_SENT = 'l2_sent_block_number';
 const L2_RELAYED = 'l2_relayed_block_number';
 const TXN_BATCH = 'txn_batch_block_number'
 const STATE_BATCH= 'state_batch_block_number'
-const SYNC_STEP = 100
+const SYNC_STEP = 10
 
 @Injectable()
 export class TasksService {
@@ -60,11 +60,16 @@ export class TasksService {
   }
   @Interval(2000)
   async l1_sent() {
+    let end = 0;
     const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
     console.log('l1 sent currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(L1_SENT));
-    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
-    if (currentBlockNumber > start) {
+    if ((currentBlockNumber - start) >  SYNC_STEP) {
+       end = start + SYNC_STEP
+    } else {
+       end = start - SYNC_STEP > currentBlockNumber ? start - SYNC_STEP : currentBlockNumber;
+    }
+    if (currentBlockNumber > (start + 1)) {
        const result = await this.l1IngestionService.createSentEvents(start + 1, end);
        if (result.length > 0) {
          this.logger.log(`sync [${result.length}] l1_sent_message_events from block [${start}] to [${end}]`)
@@ -78,11 +83,16 @@ export class TasksService {
   }
   @Interval(2000)
   async l1_relayed() {
+     let end = 0;
      const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
      console.log('l1 relayed currentBlockNumber: ', currentBlockNumber);
      const start = Number(await this.cacheManager.get(L1_RELAYED));
-     const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
-     if (currentBlockNumber > start) {
+     if ((currentBlockNumber - start) >  SYNC_STEP) {
+        end = start + SYNC_STEP
+     } else {
+        end = start - SYNC_STEP > currentBlockNumber ? start - SYNC_STEP : currentBlockNumber;
+     }
+     if (currentBlockNumber > (start + 1)) {
         const result = await this.l1IngestionService.createRelayedEvents(start + 1, end);
         if (result.length > 0) {
           this.logger.log(`sync [${result.length}] l1_relayed_message_events from block [${start}] to [${end}]`)
@@ -96,11 +106,16 @@ export class TasksService {
   }
   @Interval(2000)
   async l2_sent() {
+    let end = 0;
     const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
     console.log('l2 sent currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(L2_SENT));
-    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
-    if (currentBlockNumber > start) {
+    if ((currentBlockNumber - start) >  SYNC_STEP) {
+       end = start + SYNC_STEP
+    } else {
+       end = start - SYNC_STEP > currentBlockNumber ? start - SYNC_STEP : currentBlockNumber;
+    }
+    if (currentBlockNumber > (start + 1)) {
        const result = await this.l2IngestionService.createSentEvents(start + 1, end);
        if (result.length > 0) {
          this.logger.log(`sync [${result.length}] l2_sent_message_events from block [${start}] to [${end}]`)
@@ -114,11 +129,16 @@ export class TasksService {
   }
   @Interval(2000)
   async l2_relayed() {
+    let end = 0;
     const currentBlockNumber = await this.l2IngestionService.getCurrentBlockNumber();
     console.log('l2 relayed currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(L2_RELAYED));
-    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
-    if (currentBlockNumber > start) {
+    if ((currentBlockNumber - start) >  SYNC_STEP) {
+       end = start + SYNC_STEP
+    } else {
+       end = start - SYNC_STEP > currentBlockNumber ? start - SYNC_STEP : currentBlockNumber;
+    }
+    if (currentBlockNumber > (start + 1)) {
        const result = await this.l2IngestionService.createRelayedEvents(start + 1, end);
        if (result.length > 0) {
           this.logger.log(`sync [${result.length}] l2_relayed_message_events from block [${start}] to [${end}]`)
@@ -132,16 +152,21 @@ export class TasksService {
   }
   @Interval(2000)
   async state_batch() {
+     let end = 0;
      const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
      console.log('state batch currentBlockNumber: ', currentBlockNumber);
      const start = Number(await this.cacheManager.get(STATE_BATCH));
-     const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
-     if (currentBlockNumber > start) {
+     if ((currentBlockNumber - start) >  SYNC_STEP) {
+        end = start + SYNC_STEP
+     } else {
+        end = start - SYNC_STEP > currentBlockNumber ? start - SYNC_STEP : currentBlockNumber;
+     }
+     if (currentBlockNumber >= (start + 1)) {
         const result = await this.l1IngestionService.createStateBatchesEvents(start + 1, end);
         if (result.length > 0) {
            this.logger.log(`sync [${result.length}] state batch from block [${start}] to [${end}]`)
         } else {
-           this.logger.log(`sync state batch from block [${start}] to [${end}]`)
+           this.logger.log(`sync state_batch from block [${start}] to [${end}]`)
         }
         await this.cacheManager.set(STATE_BATCH, end, { ttl: 0 });
      } else {
@@ -150,16 +175,21 @@ export class TasksService {
   }
   @Interval(2000)
   async txn_batch() {
+    let end = 0;
     const currentBlockNumber = await this.l1IngestionService.getCurrentBlockNumber();
     console.log('txn batch currentBlockNumber: ', currentBlockNumber);
     const start = Number(await this.cacheManager.get(TXN_BATCH));
-    const end = start + SYNC_STEP > currentBlockNumber ? start + SYNC_STEP : currentBlockNumber;
-    if (currentBlockNumber > start) {
+    if ((currentBlockNumber - start) >  SYNC_STEP) {
+        end = start + SYNC_STEP
+    } else {
+        end = start - SYNC_STEP > currentBlockNumber ? start - SYNC_STEP : currentBlockNumber;
+    }
+    if (currentBlockNumber >= (start + 1)) {
        const result = await this.l1IngestionService.createTxnBatchesEvents(start + 1, end);
        if (result.length > 0) {
            this.logger.log(`sync [${result.length}] txn batch from block [${start}] to [${end}]`)
        } else {
-           this.logger.log(`sync txn batch from block [${start}] to [${end}]`)
+           this.logger.log(`sync txn_batch from block [${start}] to [${end}]`)
        }
        await this.cacheManager.set(TXN_BATCH, end, { ttl: 0 });
     } else {
