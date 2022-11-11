@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.GasTrackerController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.AccessHelpers
+  alias BlockScoutWeb.API.V2.Helper
   alias Explorer.Chain.Cache.GasUsage
 
   def index(conn, params) do

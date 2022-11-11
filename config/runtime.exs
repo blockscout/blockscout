@@ -127,6 +127,7 @@ config :block_scout_web,
   new_tags: System.get_env("NEW_TAGS"),
   chain_id: System.get_env("CHAIN_ID"),
   json_rpc: System.get_env("JSON_RPC"),
+  alert_to_addresses: System.get_env("ALERT_TO_ADDRESSES"),
   verification_max_libraries: verification_max_libraries
 
 config :block_scout_web, :gas_tracker,

@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.AddressView do
   }
 
   alias Explorer.Chain.Block.Reward
+  alias Explorer.EnvVarTranslator
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
@@ -597,4 +598,31 @@ defmodule BlockScoutWeb.AddressView do
 
   def check_custom_abi_for_having_write_functions(custom_abi),
     do: !is_nil(custom_abi) && Enum.any?(custom_abi.abi, &Writer.write_function?(&1))
+
+  def address_alert(target_address) do
+    alert_to_addresses = EnvVarTranslator.map_array_env_var_to_list(:alert_to_addresses)
+
+    alert_to_address =
+      alert_to_addresses
+      |> Enum.find(fn %{addresses: address_strings_array, message: _} ->
+        probe_address_string = find_address_in_array(address_strings_array, target_address)
+
+        if probe_address_string, do: true, else: false
+      end)
+
+    alert_to_address && alert_to_address.message
+  end
+
+  defp find_address_in_array(address_strings_array, target_address) do
+    address_strings_array
+    |> Enum.find(fn address_string ->
+      case Chain.string_to_address_hash(address_string) do
+        {:ok, probe_address} ->
+          probe_address.bytes == target_address.hash.bytes
+
+        _ ->
+          false
+      end
+    end)
+  end
 end

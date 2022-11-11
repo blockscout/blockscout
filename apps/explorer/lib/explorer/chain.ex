@@ -72,10 +72,10 @@ defmodule Explorer.Chain do
     Accounts,
     BlockNumber,
     Blocks,
-    TokenExchangeRate,
     ContractsCounter,
     NewContractsCounter,
     NewVerifiedContractsCounter,
+    TokenExchangeRate,
     Transactions,
     Uncles,
     VerifiedContractsCounter
