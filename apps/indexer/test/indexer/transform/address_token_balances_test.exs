@@ -25,7 +25,7 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
         from_address_hash: from_address_hash,
         to_address_hash: to_address_hash,
         token_contract_address_hash: token_contract_address_hash,
-        token_id: nil,
+        token_ids: nil,
         token_type: "ERC-20"
       }
 
@@ -49,7 +49,7 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
         to_address_hash: to_address_hash,
         token_contract_address_hash: token_contract_address_hash,
         token_type: "ERC-721",
-        token_id: nil
+        token_ids: nil
       }
 
       params_set = AddressTokenBalances.params_set(%{token_transfers_params: [token_transfer_params]})

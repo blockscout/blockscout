@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.Application do
   use Application
 
   alias BlockScoutWeb.API.APILogger
-  alias BlockScoutWeb.Counters.BlocksIndexedCounter
+  alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
   alias BlockScoutWeb.{Endpoint, Prometheus}
   alias BlockScoutWeb.RealtimeEventHandler
 
@@ -35,7 +35,8 @@ defmodule BlockScoutWeb.Application do
       child_spec(Endpoint, []),
       {Absinthe.Subscription, Endpoint},
       {RealtimeEventHandler, name: RealtimeEventHandler},
-      {BlocksIndexedCounter, name: BlocksIndexedCounter}
+      {BlocksIndexedCounter, name: BlocksIndexedCounter},
+      {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter}
     ]
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]

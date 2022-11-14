@@ -110,8 +110,8 @@ defmodule Explorer.Chain.TokenTransfer do
       type: Hash.Full
     )
 
-    has_one(
-      :instance,
+    has_many(
+      :instances,
       Instance,
       foreign_key: :token_contract_address_hash,
       references: :token_contract_address_hash
@@ -177,7 +177,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash,
-        where: tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
+        where: fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         where: not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
         order_by: [desc: tt.block_number]
@@ -208,7 +208,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         where:
           tt.token_contract_address_hash == ^token_address_hash and
-            (tt.token_id == ^token_id or fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id))),
+            fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)),
         select: fragment("COUNT(*)")
       )
 
@@ -218,11 +218,11 @@ defmodule Explorer.Chain.TokenTransfer do
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}, asc_order: true}) do
-    where(query, [tt], tt.token_id > ^token_id)
+    where(query, [tt], fragment("?[1] > ?", tt.token_ids, ^token_id))
   end
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
-    where(query, [tt], tt.token_id < ^token_id)
+    where(query, [tt], fragment("?[1] < ?", tt.token_ids, ^token_id))
   end
 
   def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}, asc_order: true}) do
@@ -302,29 +302,6 @@ defmodule Explorer.Chain.TokenTransfer do
       query,
       [tt],
       tt.block_number < ^block_number
-    )
-  end
-
-  @doc """
-  Innventory tab query.
-  A token ERC-721 is considered unique because it corresponds to the possession
-  of a specific asset.
-
-  To find out its current owner, it is necessary to look at the token last
-  transfer.
-  """
-  @spec address_to_unique_tokens(Hash.Address.t()) :: Ecto.Query.t()
-  def address_to_unique_tokens(contract_address_hash) do
-    from(
-      tt in TokenTransfer,
-      left_join: instance in Instance,
-      on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-      where: tt.token_contract_address_hash == ^contract_address_hash,
-      where: tt.to_address_hash != ^"0x0000000000000000000000000000000000000000",
-      order_by: [desc: tt.block_number],
-      distinct: [desc: tt.token_id],
-      preload: [:to_address],
-      select: %{tt | instance: instance}
     )
   end
 end
