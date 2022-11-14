@@ -179,129 +179,9 @@ defmodule Indexer.Transform.TransactionActions do
           else
             token_address = legitimate[pool_address]
 
-            # try to read token symbols and decimals from the cache
-            token_data =
-              token_address
-              |> Enum.reduce(%{}, fn address, token_data_acc ->
-                Map.put(token_data_acc, address, get_token_data_from_cache(address))
-              end)
+            token_data = get_token_data(token_address)
 
-            # a list of token addresses which we should select from the database
-            select_tokens_from_db =
-              token_data
-              |> Enum.reduce([], fn {address, data}, select ->
-                if is_nil(data.symbol) or is_nil(data.decimals) do
-                  select ++ [address]
-                else
-                  select
-                end
-              end)
-
-            token_data =
-              if Enum.count(select_tokens_from_db) == 0 do
-                token_data
-              else
-                # try to read token symbols and decimals from the database and then save to the cache
-                query =
-                  from(
-                    t in Token,
-                    where: t.contract_address_hash in ^select_tokens_from_db,
-                    select: {t.symbol, t.decimals, t.contract_address_hash}
-                  )
-
-                query
-                |> Repo.all()
-                |> Enum.reduce(token_data, fn {symbol, decimals, contract_address_hash}, token_data_acc ->
-                  contract_address_hash = String.downcase(Hash.to_string(contract_address_hash))
-
-                  symbol =
-                    if is_nil(symbol) or symbol == "" do
-                      # if db field is empty, take it from the cache
-                      token_data_acc[contract_address_hash].symbol
-                    else
-                      symbol
-                    end
-
-                  decimals =
-                    if is_nil(decimals) do
-                      # if db field is empty, take it from the cache
-                      token_data_acc[contract_address_hash].decimals
-                    else
-                      decimals
-                    end
-
-                  new_data = %{symbol: symbol, decimals: decimals}
-
-                  :ets.insert(:tokens_data_cache, {contract_address_hash, new_data})
-
-                  Map.put(token_data_acc, contract_address_hash, new_data)
-                end)
-              end
-
-            # if tokens are not in the cache, nor in the DB, read them through RPC
-            read_tokens_from_rpc =
-              token_data
-              |> Enum.reduce([], fn {address, data}, read ->
-                if is_nil(data.symbol) or data.symbol == "" or is_nil(data.decimals) do
-                  read ++ [address]
-                else
-                  read
-                end
-              end)
-
-            token_data =
-              if Enum.count(read_tokens_from_rpc) == 0 do
-                token_data
-              else
-                # try to read token symbols and decimals from RPC and then save to the cache
-                requests =
-                  read_tokens_from_rpc
-                  |> Enum.map(fn token_contract_address ->
-                    Enum.map(["95d89b41", "313ce567"], fn method_id ->
-                      %{
-                        contract_address: token_contract_address,
-                        method_id: method_id,
-                        args: []
-                      }
-                    end)
-                  end)
-                  |> List.flatten()
-
-                max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
-                responses = read_contracts_with_retries(requests, @erc20_abi, max_retries)
-
-                if Enum.count(requests) != Enum.count(responses) do
-                  Logger.error(fn -> "Cannot read symbol and decimals of an ERC-20 token contract" end)
-                  token_data
-                else
-                  Enum.zip(requests, responses)
-                  |> Enum.reduce(token_data, fn {request, {_status, response} = _resp}, token_data_acc ->
-                    response =
-                      case response do
-                        [item] -> item
-                        items -> items
-                      end
-
-                    data = token_data_acc[request.contract_address]
-
-                    new_data =
-                      if atomized_key(request.method_id) == :symbol do
-                        %{data | symbol: response}
-                      else
-                        %{data | decimals: response}
-                      end
-
-                    :ets.insert(:tokens_data_cache, {request.contract_address, new_data})
-
-                    Map.put(token_data_acc, request.contract_address, new_data)
-                  end)
-                end
-              end
-
-            if Enum.any?(token_data, fn {_, token} ->
-                 is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals)
-               end) do
-              # token data is not available, so skip this event
+            if token_data === false do
               acc
             else
               token0_address = Enum.at(token_address, 0)
@@ -337,6 +217,7 @@ defmodule Indexer.Transform.TransactionActions do
                     }
                   ]
                 else
+                  # todo
                   []
                 end
             end
@@ -374,7 +255,7 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap_legitimate_pools(logs_grouped) do
-    requests =
+    pools =
       logs_grouped
       |> Enum.reduce(%{}, fn {_tx_hash, tx_logs}, addresses_acc ->
         Enum.reduce(tx_logs, addresses_acc, fn log, acc ->
@@ -389,7 +270,11 @@ defmodule Indexer.Transform.TransactionActions do
           end
         end)
       end)
+
+    requests =
+      pools
       |> Enum.map(fn {pool_address, _} ->
+        # we will call token0(), token1(), fee() public getters
         Enum.map(["0dfe1681", "d21220a7", "ddca3f43"], fn method_id ->
           %{
             contract_address: pool_address,
@@ -401,10 +286,13 @@ defmodule Indexer.Transform.TransactionActions do
       |> List.flatten()
 
     max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
-    responses = read_contracts_with_retries(requests, @uniswap_v3_pool_abi, max_retries)
+    {responses, error_messages} = read_contracts_with_retries(requests, @uniswap_v3_pool_abi, max_retries)
 
-    if Enum.count(requests) != Enum.count(responses) do
-      Logger.error(fn -> "Cannot read Uniswap V3 Pool contract(s)" end)
+    if Enum.count(error_messages) != 0 or Enum.count(requests) != Enum.count(responses) do
+      Logger.error(
+        "Cannot read Uniswap V3 Pool contract public getters: token0(), token1(), fee(). Error messages: #{Enum.join(error_messages, ", ")}. Pools: #{Enum.join(Map.keys(pools), ", ")}"
+      )
+
       %{}
     else
       requests =
@@ -425,6 +313,7 @@ defmodule Indexer.Transform.TransactionActions do
           token1 = if not is_address_correct?(pool.token1), do: @null_address, else: String.downcase(pool.token1)
           fee = if pool.fee == "", do: 0, else: pool.fee
 
+          # we will call getPool(token0, token1, fee) public getter
           %{
             pool_address: pool_address,
             contract_address: @uniswap_v3_factory,
@@ -433,10 +322,13 @@ defmodule Indexer.Transform.TransactionActions do
           }
         end)
 
-      responses = read_contracts_with_retries(requests, @uniswap_v3_factory_abi, max_retries)
+      {responses, error_messages} = read_contracts_with_retries(requests, @uniswap_v3_factory_abi, max_retries)
 
-      if Enum.count(requests) != Enum.count(responses) do
-        Logger.error(fn -> "Cannot read Uniswap V3 Factory contract" end)
+      if Enum.count(error_messages) != 0 or Enum.count(requests) != Enum.count(responses) do
+        Logger.error(
+          "Cannot read Uniswap V3 Factory contract getPool public getter. Error messages: #{Enum.join(error_messages, ", ")}"
+        )
+
         %{}
       else
         Enum.zip(requests, responses)
@@ -493,10 +385,143 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp fractional(%Decimal{} = amount, decimals) do
+    # todo: check for negative amounts
     amount.sign
     |> Decimal.new(amount.coef, amount.exp - decimals)
     |> Decimal.normalize()
     |> Decimal.to_string(:normal)
+  end
+
+  defp get_token_data(token_address) do
+    token_data =
+      token_address
+      |> Enum.reduce(%{}, fn address, token_data_acc ->
+        Map.put(token_data_acc, address, get_token_data_from_cache(address))
+      end)
+
+    # a list of token addresses which we should select from the database
+    select_tokens_from_db =
+      token_data
+      |> Enum.reduce([], fn {address, data}, select ->
+        if is_nil(data.symbol) or is_nil(data.decimals) do
+          select ++ [address]
+        else
+          select
+        end
+      end)
+
+    token_data =
+      if Enum.count(select_tokens_from_db) == 0 do
+        token_data
+      else
+        # try to read token symbols and decimals from the database and then save to the cache
+        query =
+          from(
+            t in Token,
+            where: t.contract_address_hash in ^select_tokens_from_db,
+            select: {t.symbol, t.decimals, t.contract_address_hash}
+          )
+
+        query
+        |> Repo.all()
+        |> Enum.reduce(token_data, fn {symbol, decimals, contract_address_hash}, token_data_acc ->
+          contract_address_hash = String.downcase(Hash.to_string(contract_address_hash))
+
+          symbol =
+            if is_nil(symbol) or symbol == "" do
+              # if db field is empty, take it from the cache
+              token_data_acc[contract_address_hash].symbol
+            else
+              symbol
+            end
+
+          decimals =
+            if is_nil(decimals) do
+              # if db field is empty, take it from the cache
+              token_data_acc[contract_address_hash].decimals
+            else
+              decimals
+            end
+
+          new_data = %{symbol: symbol, decimals: decimals}
+
+          :ets.insert(:tokens_data_cache, {contract_address_hash, new_data})
+
+          Map.put(token_data_acc, contract_address_hash, new_data)
+        end)
+      end
+
+    # if tokens are not in the cache, nor in the DB, read them through RPC
+    read_tokens_from_rpc =
+      token_data
+      |> Enum.reduce([], fn {address, data}, read ->
+        if is_nil(data.symbol) or data.symbol == "" or is_nil(data.decimals) do
+          read ++ [address]
+        else
+          read
+        end
+      end)
+
+    token_data =
+      if Enum.count(read_tokens_from_rpc) == 0 do
+        token_data
+      else
+        # try to read token symbols and decimals from RPC and then save to the cache
+        requests =
+          read_tokens_from_rpc
+          |> Enum.map(fn address ->
+            # we will call symbol() and decimals() public getters
+            Enum.map(["95d89b41", "313ce567"], fn method_id ->
+              %{
+                contract_address: address,
+                method_id: method_id,
+                args: []
+              }
+            end)
+          end)
+          |> List.flatten()
+
+        max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
+        {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, max_retries)
+
+        if Enum.count(error_messages) != 0 or Enum.count(requests) != Enum.count(responses) do
+          Logger.error(
+            "Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(read_tokens_from_rpc, ", ")}"
+          )
+
+          token_data
+        else
+          Enum.zip(requests, responses)
+          |> Enum.reduce(token_data, fn {request, {_status, response} = _resp}, token_data_acc ->
+            response =
+              case response do
+                [item] -> item
+                items -> items
+              end
+
+            data = token_data_acc[request.contract_address]
+
+            new_data =
+              if atomized_key(request.method_id) == :symbol do
+                %{data | symbol: response}
+              else
+                %{data | decimals: response}
+              end
+
+            :ets.insert(:tokens_data_cache, {request.contract_address, new_data})
+
+            Map.put(token_data_acc, request.contract_address, new_data)
+          end)
+        end
+      end
+
+    if Enum.any?(token_data, fn {_, token} ->
+         is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals)
+       end) do
+      false
+    else
+      token_data
+    end
   end
 
   defp get_token_data_from_cache(address) do
@@ -525,15 +550,29 @@ defmodule Indexer.Transform.TransactionActions do
     end)
   end
 
-  defp read_contracts_with_retries(_requests, _abi, 0), do: []
-
   defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
     responses = Reader.query_contracts(requests, abi)
 
-    if Enum.any?(responses, fn {status, _} -> status == :error end) do
-      read_contracts_with_retries(requests, abi, retries_left - 1)
+    error_messages =
+      Enum.reduce(responses, [], fn {status, error_message}, acc ->
+        acc ++
+          if status == :error do
+            [error_message]
+          else
+            []
+          end
+      end)
+
+    if Enum.count(error_messages) == 0 do
+      {responses, []}
     else
-      responses
+      retries_left = retries_left - 1
+
+      if retries_left == 0 do
+        {[], Enum.uniq(error_messages)}
+      else
+        read_contracts_with_retries(requests, abi, retries_left)
+      end
     end
   end
 
