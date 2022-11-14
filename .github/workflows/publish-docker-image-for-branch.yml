@@ -8,7 +8,7 @@ name: Publish Docker image for specific chain branches
 on:
   push:
     branches:
-      - polygon-supernets-stg
+      - production-polygon-supernets-stg
 env:
   OTP_VERSION: '24.3.4.1'
   ELIXIR_VERSION: '1.13.4'
