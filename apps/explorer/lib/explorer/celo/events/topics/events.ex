@@ -120,9 +120,6 @@ defmodule Explorer.Celo.Events do
   def attestation_completed_event,
     do: @attestation_completed
 
-  def median_updated_event,
-    do: @median_updated
-
   def oracle_reported_event,
     do: @oracle_reported
 
