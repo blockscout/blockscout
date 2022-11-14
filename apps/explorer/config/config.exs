@@ -134,7 +134,8 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Celo.Events.ContractEventStream, enabled: System.get_env("ENABLE_EVENT_STREAM", nil) != nil
+config :explorer, Explorer.Celo.Events.ContractEventStream,
+  enabled: System.get_env("ENABLE_EVENT_STREAM", "false") == "true"
 
 bridge_market_cap_update_interval =
   if System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
