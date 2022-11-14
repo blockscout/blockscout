@@ -158,15 +158,18 @@ defmodule Indexer.Transform.TransactionActions do
             token_address = legitimate[pool_address]
 
             # try to read token symbols and decimals from the cache
-            token_data = Enum.map(token_address, &get_token_data_from_cache/1)
+            token_data =
+              token_address
+              |> Enum.reduce(%{}, fn address, token_data_acc ->
+                Map.put(token_data_acc, address, get_token_data_from_cache(address))
+              end)
 
             # a list of token addresses which we should select from the database
             select_tokens_from_db =
               token_data
-              |> Enum.with_index()
-              |> Enum.reduce([], fn {data, i}, select ->
+              |> Enum.reduce([], fn {address, data}, select ->
                 if is_nil(data.symbol) or is_nil(data.decimals) do
-                  select ++ [Enum.at(token_address, i)]
+                  select ++ [address]
                 else
                   select
                 end
@@ -188,17 +191,10 @@ defmodule Indexer.Transform.TransactionActions do
                 |> Enum.reduce(token_data, fn {symbol, decimals, contract_address_hash}, token_data_acc ->
                   contract_address_hash = String.downcase(Hash.to_string(contract_address_hash))
 
-                  index =
-                    if contract_address_hash == Enum.at(token_address, 0) do
-                      0
-                    else
-                      1
-                    end
-
                   symbol =
                     if is_nil(symbol) or symbol == "" do
                       # if db field is empty, take it from the cache
-                      Enum.at(token_data_acc, index).symbol
+                      token_data_acc[contract_address_hash].symbol
                     else
                       symbol
                     end
@@ -206,7 +202,7 @@ defmodule Indexer.Transform.TransactionActions do
                   decimals =
                     if is_nil(decimals) do
                       # if db field is empty, take it from the cache
-                      Enum.at(token_data_acc, index).decimals
+                      token_data_acc[contract_address_hash].decimals
                     else
                       decimals
                     end
@@ -215,17 +211,16 @@ defmodule Indexer.Transform.TransactionActions do
 
                   :ets.insert(:tokens_data_cache, {contract_address_hash, new_data})
 
-                  List.replace_at(token_data_acc, index, new_data)
+                  Map.put(token_data_acc, contract_address_hash, new_data)
                 end)
               end
 
             # if tokens are not in the cache, nor in the DB, read them through RPC
             read_tokens_from_rpc = 
               token_data
-              |> Enum.with_index()
-              |> Enum.reduce([], fn {data, i}, read ->
+              |> Enum.reduce([], fn {address, data}, read ->
                 if is_nil(data.symbol) or data.symbol == "" or is_nil(data.decimals) do
-                  read ++ [Enum.at(token_address, i)]
+                  read ++ [address]
                 else
                   read
                 end
@@ -264,14 +259,7 @@ defmodule Indexer.Transform.TransactionActions do
                         items -> items
                       end
 
-                    index =
-                      if request.contract_address == Enum.at(token_address, 0) do
-                        0
-                      else
-                        1
-                      end
-
-                    data = Enum.at(token_data_acc, index)
+                    data = token_data_acc[request.contract_address]
 
                     new_data =
                       if atomized_key(request.method_id) == :symbol do
@@ -282,17 +270,20 @@ defmodule Indexer.Transform.TransactionActions do
 
                     :ets.insert(:tokens_data_cache, {request.contract_address, new_data})
 
-                    List.replace_at(token_data_acc, index, new_data)
+                    Map.put(token_data_acc, request.contract_address, new_data)
                   end)
                 end
               end
 
-            if Enum.any?(token_data, fn token -> is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals) end) do
+            if Enum.any?(token_data, fn {_, token} -> is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals) end) do
               # token data is not available, so skip this event
               acc
             else
-              token0_symbol = uniswap_clarify_token_symbol(Enum.at(token_data, 0).symbol, chain_id)
-              token1_symbol = uniswap_clarify_token_symbol(Enum.at(token_data, 1).symbol, chain_id)
+              token0_symbol = uniswap_clarify_token_symbol(token_data[Enum.at(token_address, 0)].symbol, chain_id)
+              token1_symbol = uniswap_clarify_token_symbol(token_data[Enum.at(token_address, 1)].symbol, chain_id)
+
+              Logger.warn("token0_symbol = #{token0_symbol}")
+              Logger.warn("token1_symbol = #{token1_symbol}")
 
               # todo
 
