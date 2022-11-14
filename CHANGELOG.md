@@ -15,12 +15,13 @@
 - [#6168](https://github.com/blockscout/blockscout/pull/6168) - Token instance fetcher checks instance owner and updates current token balance
 - [#6209](https://github.com/blockscout/blockscout/pull/6209) - Add metrics for block import stages, runners, steps
 - [#6257](https://github.com/blockscout/blockscout/pull/6257), [#6276](https://github.com/blockscout/blockscout/pull/6276) - DISABLE_TOKEN_INSTANCE_FETCHER env variable
-- [#6391](https://github.com/blockscout/blockscout/pull/6391) - TokenTransfer token_id -> token_ids migration
+- [#6391](https://github.com/blockscout/blockscout/pull/6391), [#6427](https://github.com/blockscout/blockscout/pull/6427) - TokenTransfer token_id -> token_ids migration
 
 ### Fixes
 
+- [#6420](https://github.com/blockscout/blockscout/pull/6420) - Fix address logs search
 - [#6390](https://github.com/blockscout/blockscout/pull/6390) - Fix transactions responses in API v2
-- [#6357](https://github.com/blockscout/blockscout/pull/6357), [#6409](https://github.com/blockscout/blockscout/pull/6409) - Fix definitions of NETWORK_PATH, API_PATH, SOCKET_ROOT: process trailing slash
+- [#6357](https://github.com/blockscout/blockscout/pull/6357), [#6409](https://github.com/blockscout/blockscout/pull/6409), [#6428](https://github.com/blockscout/blockscout/pull/6428) - Fix definitions of NETWORK_PATH, API_PATH, SOCKET_ROOT: process trailing slash
 - [#6338](https://github.com/blockscout/blockscout/pull/6338) - Fix token search with space
 - [#6329](https://github.com/blockscout/blockscout/pull/6329) - Prevent logger from truncating response from rust verifier service in case of an error
 - [#6309](https://github.com/blockscout/blockscout/pull/6309) - Fix read contract bug and change address tx count
