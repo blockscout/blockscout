@@ -57,7 +57,26 @@ defmodule Indexer.Transform.TransactionActions do
       "type" => "function"
     }
   ]
-  @erc20_abi [%{"constant"=>true,"inputs"=>[],"name"=>"symbol","outputs"=>[%{"name"=>"","type"=>"string"}],"payable"=>false,"stateMutability"=>"view","type"=>"function"},%{"constant"=>true,"inputs"=>[],"name"=>"decimals","outputs"=>[%{"name"=>"","type"=>"uint8"}],"payable"=>false,"stateMutability"=>"view","type"=>"function"}]
+  @erc20_abi [
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "symbol",
+      "outputs" => [%{"name" => "", "type" => "string"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "decimals",
+      "outputs" => [%{"name" => "", "type" => "uint8"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
 
   @doc """
   Returns a list of transaction actions given a list of logs.
@@ -127,18 +146,21 @@ defmodule Indexer.Transform.TransactionActions do
 
       actions_acc =
         Enum.reduce(mint_nft_ids, actions_acc, fn {to, ids}, acc ->
-          acc ++ [%{
-            hash: tx_hash,
-            protocol: "uniswap_v3",
-            data: %{
-              name: "Uniswap V3: Positions NFT",
-              symbol: "UNI-V3-POS",
-              address: @uniswap_v3_positions_nft,
-              to: to,
-              ids: ids
-            },
-            type: "mint_nft"
-          }]
+          acc ++
+            [
+              %{
+                hash: tx_hash,
+                protocol: "uniswap_v3",
+                data: %{
+                  name: "Uniswap V3: Positions NFT",
+                  symbol: "UNI-V3-POS",
+                  address: @uniswap_v3_positions_nft,
+                  to: to,
+                  ids: ids
+                },
+                type: "mint_nft"
+              }
+            ]
         end)
 
       # go through other actions
@@ -180,11 +202,12 @@ defmodule Indexer.Transform.TransactionActions do
                 token_data
               else
                 # try to read token symbols and decimals from the database and then save to the cache
-                query = from(
-                  t in Token,
-                  where: t.contract_address_hash in ^select_tokens_from_db,
-                  select: {t.symbol, t.decimals, t.contract_address_hash}
-                )
+                query =
+                  from(
+                    t in Token,
+                    where: t.contract_address_hash in ^select_tokens_from_db,
+                    select: {t.symbol, t.decimals, t.contract_address_hash}
+                  )
 
                 query
                 |> Repo.all()
@@ -216,7 +239,7 @@ defmodule Indexer.Transform.TransactionActions do
               end
 
             # if tokens are not in the cache, nor in the DB, read them through RPC
-            read_tokens_from_rpc = 
+            read_tokens_from_rpc =
               token_data
               |> Enum.reduce([], fn {address, data}, read ->
                 if is_nil(data.symbol) or data.symbol == "" or is_nil(data.decimals) do
@@ -275,19 +298,47 @@ defmodule Indexer.Transform.TransactionActions do
                 end
               end
 
-            if Enum.any?(token_data, fn {_, token} -> is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals) end) do
+            if Enum.any?(token_data, fn {_, token} ->
+                 is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals)
+               end) do
               # token data is not available, so skip this event
               acc
             else
-              token0_symbol = uniswap_clarify_token_symbol(token_data[Enum.at(token_address, 0)].symbol, chain_id)
-              token1_symbol = uniswap_clarify_token_symbol(token_data[Enum.at(token_address, 1)].symbol, chain_id)
+              token0_address = Enum.at(token_address, 0)
+              token0_symbol = uniswap_clarify_token_symbol(token_data[token0_address].symbol, chain_id)
+              token0_decimals = token_data[token0_address].decimals
+              token1_address = Enum.at(token_address, 1)
+              token1_symbol = uniswap_clarify_token_symbol(token_data[token1_address].symbol, chain_id)
+              token1_decimals = token_data[token1_address].decimals
 
-              Logger.warn("token0_symbol = #{token0_symbol}")
-              Logger.warn("token1_symbol = #{token1_symbol}")
+              acc ++
+                if first_topic == "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde" do
+                  # this is Mint event
 
-              # todo
+                  [_sender, _amount, amount0, amount1] =
+                    decode_data(log.data, [:address, {:uint, 128}, {:uint, 256}, {:uint, 256}])
 
-              acc
+                  amount0 = fractional(Decimal.new(amount0), token0_decimals)
+                  amount1 = fractional(Decimal.new(amount1), token1_decimals)
+
+                  [
+                    %{
+                      hash: tx_hash,
+                      protocol: "uniswap_v3",
+                      data: %{
+                        amount0: amount0,
+                        symbol0: token0_symbol,
+                        address0: token0_address,
+                        amount1: amount1,
+                        symbol1: token1_symbol,
+                        address1: token1_address
+                      },
+                      type: "mint"
+                    }
+                  ]
+                else
+                  []
+                end
             end
           end
         end
@@ -373,6 +424,7 @@ defmodule Indexer.Transform.TransactionActions do
           token0 = if not is_address_correct?(pool.token0), do: @null_address, else: String.downcase(pool.token0)
           token1 = if not is_address_correct?(pool.token1), do: @null_address, else: String.downcase(pool.token1)
           fee = if pool.fee == "", do: 0, else: pool.fee
+
           %{
             pool_address: pool_address,
             contract_address: @uniswap_v3_factory,
@@ -395,7 +447,9 @@ defmodule Indexer.Transform.TransactionActions do
               items -> items
             end
 
-          Map.put(acc, request.pool_address,
+          Map.put(
+            acc,
+            request.pool_address,
             if request.pool_address == String.downcase(response) do
               [token0, token1, _] = request.args
               [token0, token1]
@@ -438,6 +492,13 @@ defmodule Indexer.Transform.TransactionActions do
     |> TypeDecoder.decode_raw(types)
   end
 
+  defp fractional(%Decimal{} = amount, decimals) do
+    amount.sign
+    |> Decimal.new(amount.coef, amount.exp - decimals)
+    |> Decimal.normalize()
+    |> Decimal.to_string(:normal)
+  end
+
   defp get_token_data_from_cache(address) do
     with [{_, value}] <- :ets.lookup(:tokens_data_cache, address) do
       value
@@ -468,6 +529,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
     responses = Reader.query_contracts(requests, abi)
+
     if Enum.any?(responses, fn {status, _} -> status == :error end) do
       read_contracts_with_retries(requests, abi, retries_left - 1)
     else
