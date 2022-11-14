@@ -20,8 +20,8 @@ defmodule Indexer.Fetcher.BlockReward do
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.BlockReward.Supervisor, as: BlockRewardSupervisor
-  # alias Indexer.Fetcher.CoinBalance
-  # alias Indexer.Transform.{AddressCoinBalances, AddressCoinBalancesDaily, Addresses}
+  alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Transform.{AddressCoinBalances, AddressCoinBalancesDaily, Addresses}
   alias Indexer.Transform.Addresses
 
   @behaviour BufferedTask
@@ -264,30 +264,30 @@ defmodule Indexer.Fetcher.BlockReward do
 
   defp import_block_reward_params(block_rewards_params) when is_list(block_rewards_params) do
     addresses_params = Addresses.extract_addresses(%{block_reward_contract_beneficiaries: block_rewards_params})
-    # address_coin_balances_params_set = AddressCoinBalances.params_set(%{beneficiary_params: block_rewards_params})
+    address_coin_balances_params_set = AddressCoinBalances.params_set(%{beneficiary_params: block_rewards_params})
 
-    # address_coin_balances_params_with_block_timestamp =
-    #   block_rewards_params
-    #   |> Enum.map(fn block_rewards_param ->
-    #     %{
-    #       address_hash: block_rewards_param.address_hash,
-    #       block_number: block_rewards_param.block_number,
-    #       block_timestamp: block_rewards_param.block_timestamp
-    #     }
-    #   end)
-    #   |> Enum.into(MapSet.new())
+    address_coin_balances_params_with_block_timestamp =
+      block_rewards_params
+      |> Enum.map(fn block_rewards_param ->
+        %{
+          address_hash: block_rewards_param.address_hash,
+          block_number: block_rewards_param.block_number,
+          block_timestamp: block_rewards_param.block_timestamp
+        }
+      end)
+      |> Enum.into(MapSet.new())
 
-    # address_coin_balances_params_with_block_timestamp_set = %{
-    #   address_coin_balances_params_with_block_timestamp: address_coin_balances_params_with_block_timestamp
-    # }
+    address_coin_balances_params_with_block_timestamp_set = %{
+      address_coin_balances_params_with_block_timestamp: address_coin_balances_params_with_block_timestamp
+    }
 
-    # address_coin_balances_daily_params_set =
-    #   AddressCoinBalancesDaily.params_set(address_coin_balances_params_with_block_timestamp_set)
+    address_coin_balances_daily_params_set =
+      AddressCoinBalancesDaily.params_set(address_coin_balances_params_with_block_timestamp_set)
 
     Chain.import(%{
       addresses: %{params: addresses_params},
-      # address_coin_balances: %{params: address_coin_balances_params_set},
-      # address_coin_balances_daily: %{params: address_coin_balances_daily_params_set},
+      address_coin_balances: %{params: address_coin_balances_params_set},
+      address_coin_balances_daily: %{params: address_coin_balances_daily_params_set},
       block_rewards: %{params: block_rewards_params}
     })
   end

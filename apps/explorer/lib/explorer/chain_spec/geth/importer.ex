@@ -6,7 +6,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
 
   require Logger
 
-  # alias EthereumJSONRPC.Blocks
+  alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address, as: AddressHash
 
@@ -19,20 +19,20 @@ defmodule Explorer.ChainSpec.Geth.Importer do
       end)
       |> Enum.to_list()
 
-    # json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    # {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
-    #   EthereumJSONRPC.fetch_blocks_by_range(1..1, json_rpc_named_arguments)
+    {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
+      EthereumJSONRPC.fetch_blocks_by_range(1..1, json_rpc_named_arguments)
 
-    # day = DateTime.to_date(timestamp)
+    day = DateTime.to_date(timestamp)
 
-    # balance_daily_params =
-    #   chain_spec
-    #   |> genesis_accounts()
-    #   |> Stream.map(fn balance_map ->
-    #     Map.put(balance_map, :day, day)
-    #   end)
-    #   |> Enum.to_list()
+    balance_daily_params =
+      chain_spec
+      |> genesis_accounts()
+      |> Stream.map(fn balance_map ->
+        Map.put(balance_map, :day, day)
+      end)
+      |> Enum.to_list()
 
     address_params =
       balance_params
@@ -42,8 +42,8 @@ defmodule Explorer.ChainSpec.Geth.Importer do
       |> Enum.to_list()
 
     params = %{
-      # address_coin_balances: %{params: balance_params},
-      # address_coin_balances_daily: %{params: balance_daily_params},
+      address_coin_balances: %{params: balance_params},
+      address_coin_balances_daily: %{params: balance_daily_params},
       addresses: %{params: address_params}
     }
 
