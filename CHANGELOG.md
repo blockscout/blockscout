@@ -16,6 +16,8 @@
 - [#6209](https://github.com/blockscout/blockscout/pull/6209) - Add metrics for block import stages, runners, steps
 - [#6257](https://github.com/blockscout/blockscout/pull/6257), [#6276](https://github.com/blockscout/blockscout/pull/6276) - DISABLE_TOKEN_INSTANCE_FETCHER env variable
 - [#6324](https://github.com/blockscout/blockscout/pull/6324) - Add verified contracts list page
+- [#6391](https://github.com/blockscout/blockscout/pull/6391), [#6427](https://github.com/blockscout/blockscout/pull/6427) - TokenTransfer token_id -> token_ids migration
+- [#6443](https://github.com/blockscout/blockscout/pull/6443) - Drop internal transactions order index
 
 ### Fixes
 
