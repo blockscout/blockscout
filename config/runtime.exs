@@ -467,6 +467,16 @@ config :indexer, Indexer.Block.Catchup.Fetcher,
   batch_size: blocks_catchup_fetcher_batch_size,
   concurrency: blocks_catchup_fetcher_concurrency
 
+{internal_transaction_fetcher_batch_size, _} =
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "10"))
+
+{internal_transaction_fetcher_concurrency, _} =
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", "4"))
+
+config :indexer, Indexer.Fetcher.InternalTransaction,
+  batch_size: internal_transaction_fetcher_batch_size,
+  concurrency: internal_transaction_fetcher_concurrency
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
