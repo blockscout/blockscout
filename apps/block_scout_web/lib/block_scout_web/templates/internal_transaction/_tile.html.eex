@@ -21,7 +21,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= BlockScoutWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "BNETH" %>
+          <%= BlockScoutWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "BIT" %>
         </span>
       </span>
     </div>

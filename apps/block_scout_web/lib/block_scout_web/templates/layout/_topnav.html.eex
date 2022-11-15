@@ -93,7 +93,7 @@
                     to: tokens_path(@conn, :index)
                   ) %>
               <%= link(
-                    gettext("BNETH"),
+                    gettext("BIT"),
                     class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
                     to: address_path(@conn, :index)
                   ) %>

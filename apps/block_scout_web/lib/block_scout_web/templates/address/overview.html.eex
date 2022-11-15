@@ -176,7 +176,7 @@
                     data-placement="top"
                     data-toggle="tooltip"
                     data-html="true"
-                    title='<%= "@ " <> usd_value <> "/" <> gettext("BNETH") %>'
+                    title='<%= "@ " <> usd_value <> "/" <> gettext("BIT") %>'
                   >
                   </span>)
                 </span>
