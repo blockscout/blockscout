@@ -63,7 +63,7 @@ msgstr ""
 msgid "%{subnetwork} Explorer - BlockScout"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:350
+#: lib/block_scout_web/views/transaction_view.ex:347
 #, elixir-autogen, elixir-format
 msgid "(Awaiting internal transactions for status)"
 msgstr ""
@@ -76,7 +76,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:225
+#: lib/block_scout_web/templates/layout/app.html.eex:230
 #, elixir-autogen, elixir-format
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
@@ -580,7 +580,7 @@ msgstr ""
 msgid "Compiler version"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:343
+#: lib/block_scout_web/views/transaction_view.ex:340
 #, elixir-autogen, elixir-format
 msgid "Confirmed"
 msgstr ""
@@ -660,12 +660,12 @@ msgstr ""
 msgid "Contract Address Pending"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:458
+#: lib/block_scout_web/views/transaction_view.ex:455
 #, elixir-autogen, elixir-format
 msgid "Contract Call"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:455
+#: lib/block_scout_web/views/transaction_view.ex:452
 #, elixir-autogen, elixir-format
 msgid "Contract Creation"
 msgstr ""
@@ -1042,12 +1042,12 @@ msgstr ""
 msgid "EIP-1167"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:215
+#: lib/block_scout_web/views/transaction_view.ex:212
 #, elixir-autogen, elixir-format
 msgid "ERC-1155 "
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:213
+#: lib/block_scout_web/views/transaction_view.ex:210
 #, elixir-autogen, elixir-format
 msgid "ERC-20 "
 msgstr ""
@@ -1057,7 +1057,7 @@ msgstr ""
 msgid "ERC-20 tokens (beta)"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:214
+#: lib/block_scout_web/views/transaction_view.ex:211
 #, elixir-autogen, elixir-format
 msgid "ERC-721 "
 msgstr ""
@@ -1148,12 +1148,12 @@ msgstr ""
 msgid "Error trying to fetch balances."
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:354
+#: lib/block_scout_web/views/transaction_view.ex:351
 #, elixir-autogen, elixir-format
 msgid "Error: %{reason}"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:352
+#: lib/block_scout_web/views/transaction_view.ex:349
 #, elixir-autogen, elixir-format
 msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
@@ -1436,7 +1436,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
 #: lib/block_scout_web/views/address_view.ex:364
-#: lib/block_scout_web/views/transaction_view.ex:513
+#: lib/block_scout_web/views/transaction_view.ex:510
 #, elixir-autogen, elixir-format
 msgid "Internal Transactions"
 msgstr ""
@@ -1541,7 +1541,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
 #: lib/block_scout_web/views/address_view.ex:375
-#: lib/block_scout_web/views/transaction_view.ex:514
+#: lib/block_scout_web/views/transaction_view.ex:511
 #, elixir-autogen, elixir-format
 msgid "Logs"
 msgstr ""
@@ -1569,7 +1569,7 @@ msgstr ""
 msgid "Max Priority Fee per Gas"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:320
+#: lib/block_scout_web/views/transaction_view.ex:317
 #, elixir-autogen, elixir-format
 msgid "Max of"
 msgstr ""
@@ -1858,8 +1858,8 @@ msgid "Parent Hash"
 msgstr ""
 
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:62
-#: lib/block_scout_web/views/transaction_view.ex:349
-#: lib/block_scout_web/views/transaction_view.ex:387
+#: lib/block_scout_web/views/transaction_view.ex:346
+#: lib/block_scout_web/views/transaction_view.ex:384
 #, elixir-autogen, elixir-format
 msgid "Pending"
 msgstr ""
@@ -1985,7 +1985,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
 #: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:7
-#: lib/block_scout_web/views/transaction_view.ex:515
+#: lib/block_scout_web/views/transaction_view.ex:512
 #, elixir-autogen, elixir-format
 msgid "Raw Trace"
 msgstr ""
@@ -2267,7 +2267,7 @@ msgid "Submit an Issue"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:8
-#: lib/block_scout_web/views/transaction_view.ex:351
+#: lib/block_scout_web/views/transaction_view.ex:348
 #, elixir-autogen, elixir-format
 msgid "Success"
 msgstr ""
@@ -2543,13 +2543,13 @@ msgid "Token"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:3
-#: lib/block_scout_web/views/transaction_view.ex:449
+#: lib/block_scout_web/views/transaction_view.ex:446
 #, elixir-autogen, elixir-format
 msgid "Token Burning"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:7
-#: lib/block_scout_web/views/transaction_view.ex:450
+#: lib/block_scout_web/views/transaction_view.ex:447
 #, elixir-autogen, elixir-format
 msgid "Token Creation"
 msgstr ""
@@ -2577,14 +2577,14 @@ msgid "Token ID"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:5
-#: lib/block_scout_web/views/transaction_view.ex:448
+#: lib/block_scout_web/views/transaction_view.ex:445
 #, elixir-autogen, elixir-format
 msgid "Token Minting"
 msgstr ""
 
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:9
 #: lib/block_scout_web/templates/common_components/_token_transfer_type_display_name.html.eex:11
-#: lib/block_scout_web/views/transaction_view.ex:451
+#: lib/block_scout_web/views/transaction_view.ex:448
 #, elixir-autogen, elixir-format
 msgid "Token Transfer"
 msgstr ""
@@ -2600,7 +2600,7 @@ msgstr ""
 #: lib/block_scout_web/views/address_view.ex:366
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:197
 #: lib/block_scout_web/views/tokens/overview_view.ex:39
-#: lib/block_scout_web/views/transaction_view.ex:512
+#: lib/block_scout_web/views/transaction_view.ex:509
 #, elixir-autogen, elixir-format
 msgid "Token Transfers"
 msgstr ""
@@ -2705,7 +2705,7 @@ msgstr ""
 #: lib/block_scout_web/templates/account/tag_transaction/form.html.eex:11
 #: lib/block_scout_web/templates/account/tag_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:19
-#: lib/block_scout_web/views/transaction_view.ex:461
+#: lib/block_scout_web/views/transaction_view.ex:458
 #, elixir-autogen, elixir-format
 msgid "Transaction"
 msgstr ""
@@ -2844,7 +2844,7 @@ msgstr ""
 msgid "Uncles"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:342
+#: lib/block_scout_web/views/transaction_view.ex:339
 #, elixir-autogen, elixir-format
 msgid "Unconfirmed"
 msgstr ""
@@ -3254,11 +3254,6 @@ msgstr ""
 msgid "truffle flattener"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/app.html.eex:44
-#, elixir-autogen, elixir-format
-msgid "Indexing Internal Transactions"
-msgstr ""
-
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:5
 #, elixir-autogen, elixir-format
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
@@ -3302,7 +3297,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:29
 #: lib/block_scout_web/templates/transaction_state/index.html.eex:6
-#: lib/block_scout_web/views/transaction_view.ex:516
+#: lib/block_scout_web/views/transaction_view.ex:513
 #, elixir-autogen, elixir-format
 msgid "State changes"
 msgstr ""
@@ -3423,4 +3418,9 @@ msgstr ""
 #: lib/block_scout_web/templates/verified_contracts/_metatags.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "Verifed contracts, %{subnetwork}, %{coin}"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/app.html.eex:44
+#, elixir-autogen, elixir-format
+msgid "Blocks With Internal Transactions Indexed"
 msgstr ""

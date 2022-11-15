@@ -677,6 +677,7 @@ defmodule BlockScoutWeb.Etherscan do
   }
 
   @token_id_type %{
+    name: "Token ID",
     type: "integer",
     definition: "id of token",
     example: ~s("0")
@@ -867,8 +868,21 @@ defmodule BlockScoutWeb.Etherscan do
         definition: "The transferred amount.",
         example: ~s("663046792267785498951364")
       },
+      values: %{
+        type: "array",
+        array_type: %{
+          name: "Transferred amount",
+          type: "integer",
+          definition: "The transferred amount of particular token instance."
+        },
+        definition: "Transferred amounts of token instances in ERC-1155 batch transfer corresponding to tokenIDs field."
+      },
       tokenName: @token_name_type,
       tokenID: @token_id_type,
+      tokenIDs: %{
+        type: "array",
+        array_type: @token_id_type
+      },
       tokenSymbol: @token_symbol_type,
       tokenDecimal: @token_decimal_type,
       transactionIndex: @transaction_index_type,

@@ -35,7 +35,7 @@ defmodule Indexer.Fetcher.TokenInstanceTest do
       end)
 
       TokenInstance.run(
-        [%{contract_address_hash: token_contract_address_hash, token_id: nil, token_ids: [token_id]}],
+        [%{contract_address_hash: token_contract_address_hash, token_id: token_id}],
         nil
       )
 
@@ -70,7 +70,7 @@ defmodule Indexer.Fetcher.TokenInstanceTest do
       end)
 
       TokenInstance.run(
-        [%{contract_address_hash: token_contract_address_hash, token_id: token_id, token_ids: nil}],
+        [%{contract_address_hash: token_contract_address_hash, token_id: token_id}],
         nil
       )
 

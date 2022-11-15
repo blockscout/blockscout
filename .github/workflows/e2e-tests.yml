@@ -1,13 +1,17 @@
-name: Publish Docker image on every push to master branch
+name: Run E2E tests k8s
 
 on:
-  push:
-    branches:
-      - master
+  # push:
+  pull_request:
+  workflow_dispatch:
+
 env:
-  OTP_VERSION: '24.3.4.1'
-  ELIXIR_VERSION: '1.13.4'
-  NEXT_RELEASE_VERSION: 5.0.0
+  K8S_LOCAL_PORT: ${{ secrets.K8S_LOCAL_PORT }}
+  K8S_HOST: ${{ secrets.K8S_HOST }}
+  BASTION_HOST: ${{ secrets.BASTION_HOST }}
+  K8S_PORT: ${{ secrets.K8S_PORT }}
+  USERNAME: ${{ secrets.USERNAME }}
+  BASTION_SSH_KEY: ${{secrets.BASTION_SSH_KEY}}
 
 jobs:
   push_to_registry:
@@ -43,7 +47,6 @@ jobs:
 
       - name: Add outputs
         run: |
-          echo "::set-output name=release-version::${{ env.NEXT_RELEASE_VERSION }}"
           echo "::set-output name=short-sha::${{ env.SHORT_SHA }}"
         id: output-step
 
@@ -53,9 +56,9 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.NEXT_RELEASE_VERSION }}-prerelease-${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=blockscout/blockscout:pr-buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:pr-buildcache,mode=max
+          tags: blockscout/blockscout:pr-${{ env.SHORT_SHA }}
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_READ_API=false
@@ -70,11 +73,12 @@ jobs:
             DISABLE_BRIDGE_MARKET_CAP_UPDATER=false
             CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL=
             SOCKET_ROOT=
-  tests:
+
+  deploy_and_tests:
     needs: push_to_registry
     uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
     with:
-      blockscoutImage: blockscout/blockscout:${{ needs.push_to_registry.outputs.release-version }}-prerelease-${{ needs.push_to_registry.outputs.short-sha }}
+      blockscoutImage: blockscout/blockscout:pr-${{ needs.push_to_registry.outputs.short-sha }}
       blockscoutIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
       frontendIngressHost: e2e-blockscout-$GITHUB_SHA_SHORT
       gethIngressHost: e2e-geth-$GITHUB_SHA_SHORT

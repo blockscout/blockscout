@@ -357,6 +357,15 @@ config :explorer, Explorer.Account,
     template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
   ]
 
+{token_id_migration_first_block, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_FIRST_BLOCK", "0"))
+{token_id_migration_concurrency, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_CONCURRENCY", "1"))
+{token_id_migration_batch_size, _} = Integer.parse(System.get_env("TOKEN_ID_MIGRATION_BATCH_SIZE", "500"))
+
+config :explorer, :token_id_migration,
+  first_block: token_id_migration_first_block,
+  concurrency: token_id_migration_concurrency,
+  batch_size: token_id_migration_batch_size
+
 ###############
 ### Indexer ###
 ###############
