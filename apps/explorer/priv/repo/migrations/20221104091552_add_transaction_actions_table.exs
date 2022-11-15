@@ -12,7 +12,7 @@ defmodule Explorer.Repo.Migrations.AddTransactionActionsTable do
       "DROP TYPE transaction_actions_type"
     )
 
-    create table(:transaction_actions, primary_key: false) do
+    create table(:transaction_actions) do
       add(:hash, references(:transactions, column: :hash, on_delete: :delete_all, on_update: :update_all, type: :bytea),
         null: false
       )

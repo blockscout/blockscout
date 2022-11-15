@@ -91,7 +91,7 @@ defmodule Indexer.Transform.TransactionActions do
     |> clear_actions()
 
     # handle uniswap v3
-    actions =
+    tx_actions =
       if Enum.member?([@mainnet, @optimism, @polygon], chain_id) do
         logs
         |> uniswap_filter_logs()
@@ -101,7 +101,7 @@ defmodule Indexer.Transform.TransactionActions do
         actions
       end
 
-    %{transaction_actions: actions}
+    %{transaction_actions: tx_actions}
   end
 
   defp uniswap(logs_grouped, actions, chain_id) do
@@ -126,16 +126,9 @@ defmodule Indexer.Transform.TransactionActions do
 
             if from == "0x0000000000000000000000000000000000000000" do
               to = truncate_address_hash(log.third_topic)
-              [tokenId] = decode_data(log.fourth_topic, [{:uint, 256}])
-
-              mint_nft_ids =
-                if not Map.has_key?(acc, to) do
-                  Map.put(acc, to, [])
-                else
-                  acc
-                end
-
-              Map.put(mint_nft_ids, to, mint_nft_ids[to] ++ [to_string(tokenId)])
+              [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
+              mint_nft_ids = Map.put_new(acc, to, [])
+              Map.put(mint_nft_ids, to, mint_nft_ids[to] ++ [to_string(token_id)])
             else
               acc
             end
@@ -173,7 +166,7 @@ defmodule Indexer.Transform.TransactionActions do
           # check UniswapV3Pool contract is legitimate
           pool_address = String.downcase(log.address_hash)
 
-          if Enum.count(legitimate[pool_address]) == 0 do
+          if Enum.empty?(legitimate[pool_address]) do
             # this is not legitimate uniswap pool, so skip this event
             acc
           else
@@ -184,41 +177,26 @@ defmodule Indexer.Transform.TransactionActions do
             if token_data === false do
               acc
             else
-              token0_address = Enum.at(token_address, 0)
-              token0_symbol = uniswap_clarify_token_symbol(token_data[token0_address].symbol, chain_id)
-              token0_decimals = token_data[token0_address].decimals
-              token1_address = Enum.at(token_address, 1)
-              token1_symbol = uniswap_clarify_token_symbol(token_data[token1_address].symbol, chain_id)
-              token1_decimals = token_data[token1_address].decimals
-
               acc ++
-                if first_topic == "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde" do
-                  # this is Mint event
+                case first_topic do
+                  "0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde" ->
+                    # this is Mint event
+                    uniswap_handle_mint_event(log, token_address, token_data, chain_id)
 
-                  [_sender, _amount, amount0, amount1] =
-                    decode_data(log.data, [:address, {:uint, 128}, {:uint, 256}, {:uint, 256}])
+                  "0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c" ->
+                    # this is Burn event
+                    uniswap_handle_burn_event(log, token_address, token_data, chain_id)
 
-                  amount0 = fractional(Decimal.new(amount0), token0_decimals)
-                  amount1 = fractional(Decimal.new(amount1), token1_decimals)
+                  "0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0" ->
+                    # this is Collect event
+                    uniswap_handle_collect_event(log, token_address, token_data, chain_id)
 
-                  [
-                    %{
-                      hash: tx_hash,
-                      protocol: "uniswap_v3",
-                      data: %{
-                        amount0: amount0,
-                        symbol0: token0_symbol,
-                        address0: token0_address,
-                        amount1: amount1,
-                        symbol1: token1_symbol,
-                        address1: token1_address
-                      },
-                      type: "mint"
-                    }
-                  ]
-                else
-                  # todo
-                  []
+                  "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67" ->
+                    # this is Swap event
+                    uniswap_handle_swap_event(log, token_address, token_data, chain_id)
+
+                  _ ->
+                    []
                 end
             end
           end
@@ -252,6 +230,80 @@ defmodule Indexer.Transform.TransactionActions do
         (first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" &&
            String.downcase(log.address_hash) == @uniswap_v3_positions_nft)
     end)
+  end
+
+  defp uniswap_handle_burn_event(log, token_address, token_data, chain_id) do
+    [_amount, amount0, amount1] = decode_data(log.data, [{:uint, 128}, {:uint, 256}, {:uint, 256}])
+
+    uniswap_handle_event("burn", amount0, amount1, log, token_address, token_data, chain_id)
+  end
+
+  defp uniswap_handle_collect_event(log, token_address, token_data, chain_id) do
+    [_recipient, amount0, amount1] = decode_data(log.data, [:address, {:uint, 128}, {:uint, 128}])
+
+    uniswap_handle_event("collect", amount0, amount1, log, token_address, token_data, chain_id)
+  end
+
+  defp uniswap_handle_mint_event(log, token_address, token_data, chain_id) do
+    [_sender, _amount, amount0, amount1] = decode_data(log.data, [:address, {:uint, 128}, {:uint, 256}, {:uint, 256}])
+
+    uniswap_handle_event("mint", amount0, amount1, log, token_address, token_data, chain_id)
+  end
+
+  defp uniswap_handle_swap_event(log, token_address, token_data, chain_id) do
+    [amount0, amount1, _sqrt_price_x96, _liquidity, _tick] =
+      decode_data(log.data, [{:int, 256}, {:int, 256}, {:uint, 160}, {:uint, 128}, {:int, 24}])
+
+    uniswap_handle_event("swap", amount0, amount1, log, token_address, token_data, chain_id)
+  end
+
+  defp uniswap_handle_event(type, amount0, amount1, log, token_address, token_data, chain_id) do
+    address0 = Enum.at(token_address, 0)
+    decimals0 = token_data[address0].decimals
+    symbol0 = uniswap_clarify_token_symbol(token_data[address0].symbol, chain_id)
+    address1 = Enum.at(token_address, 1)
+    decimals1 = token_data[address1].decimals
+    symbol1 = uniswap_clarify_token_symbol(token_data[address1].symbol, chain_id)
+
+    amount0 = fractional(Decimal.new(amount0), decimals0)
+    amount1 = fractional(Decimal.new(amount1), decimals1)
+
+    {new_amount0, new_symbol0, new_address0, new_amount1, new_symbol1, new_address1, is_error} =
+      if type == "swap" do
+        cond do
+          String.first(amount0) === "-" and String.first(amount1) !== "-" ->
+            {amount1, symbol1, address1, String.slice(amount0, 1, String.length(amount0) - 1), symbol0, address0, false}
+
+          String.first(amount1) === "-" and String.first(amount0) !== "-" ->
+            {amount0, symbol0, address0, String.slice(amount1, 1, String.length(amount1) - 1), symbol1, address1, false}
+
+          true ->
+            Logger.error("Invalid Swap event in tx #{log.transaction_hash}. Log index: #{log.index}")
+            {amount0, symbol0, address0, amount1, symbol1, address1, true}
+        end
+      else
+        {amount0, symbol0, address0, amount1, symbol1, address1, false}
+      end
+
+    if is_error do
+      []
+    else
+      [
+        %{
+          hash: log.transaction_hash,
+          protocol: "uniswap_v3",
+          data: %{
+            amount0: new_amount0,
+            symbol0: new_symbol0,
+            address0: new_address0,
+            amount1: new_amount1,
+            symbol1: new_symbol1,
+            address1: new_address1
+          },
+          type: type
+        }
+      ]
+    end
   end
 
   defp uniswap_legitimate_pools(logs_grouped) do
@@ -296,7 +348,8 @@ defmodule Indexer.Transform.TransactionActions do
       %{}
     else
       requests =
-        Enum.zip(requests, responses)
+        requests
+        |> Enum.zip(responses)
         |> Enum.reduce(%{}, fn {request, {_status, response} = _resp}, acc ->
           response =
             case response do
@@ -309,8 +362,8 @@ defmodule Indexer.Transform.TransactionActions do
           Map.put(acc, request.contract_address, item)
         end)
         |> Enum.map(fn {pool_address, pool} ->
-          token0 = if not is_address_correct?(pool.token0), do: @null_address, else: String.downcase(pool.token0)
-          token1 = if not is_address_correct?(pool.token1), do: @null_address, else: String.downcase(pool.token1)
+          token0 = if is_address_correct?(pool.token0), do: String.downcase(pool.token0), else: @null_address
+          token1 = if is_address_correct?(pool.token1), do: String.downcase(pool.token1), else: @null_address
           fee = if pool.fee == "", do: 0, else: pool.fee
 
           # we will call getPool(token0, token1, fee) public getter
@@ -331,7 +384,8 @@ defmodule Indexer.Transform.TransactionActions do
 
         %{}
       else
-        Enum.zip(requests, responses)
+        requests
+        |> Enum.zip(responses)
         |> Enum.reduce(%{}, fn {request, {_status, response} = _resp}, acc ->
           response =
             case response do
@@ -370,7 +424,7 @@ defmodule Indexer.Transform.TransactionActions do
   defp clear_actions(logs_grouped) do
     logs_grouped
     |> Enum.each(fn {tx_hash, _} ->
-      from(ta in TransactionActions, where: ta.hash == ^tx_hash) |> Repo.delete_all()
+      Repo.delete_all(from(ta in TransactionActions, where: ta.hash == ^tx_hash))
     end)
   end
 
@@ -385,7 +439,6 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp fractional(%Decimal{} = amount, decimals) do
-    # todo: check for negative amounts
     amount.sign
     |> Decimal.new(amount.coef, amount.exp - decimals)
     |> Decimal.normalize()
@@ -393,7 +446,7 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp get_token_data(token_address) do
-    token_data =
+    token_data_from_cache =
       token_address
       |> Enum.reduce(%{}, fn address, token_data_acc ->
         Map.put(token_data_acc, address, get_token_data_from_cache(address))
@@ -401,7 +454,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     # a list of token addresses which we should select from the database
     select_tokens_from_db =
-      token_data
+      token_data_from_cache
       |> Enum.reduce([], fn {address, data}, select ->
         if is_nil(data.symbol) or is_nil(data.decimals) do
           select ++ [address]
@@ -411,8 +464,8 @@ defmodule Indexer.Transform.TransactionActions do
       end)
 
     token_data =
-      if Enum.count(select_tokens_from_db) == 0 do
-        token_data
+      if Enum.empty?(select_tokens_from_db) do
+        token_data_from_cache
       else
         # try to read token symbols and decimals from the database and then save to the cache
         query =
@@ -424,7 +477,7 @@ defmodule Indexer.Transform.TransactionActions do
 
         query
         |> Repo.all()
-        |> Enum.reduce(token_data, fn {symbol, decimals, contract_address_hash}, token_data_acc ->
+        |> Enum.reduce(token_data_from_cache, fn {symbol, decimals, contract_address_hash}, token_data_acc ->
           contract_address_hash = String.downcase(Hash.to_string(contract_address_hash))
 
           symbol =
@@ -462,8 +515,8 @@ defmodule Indexer.Transform.TransactionActions do
         end
       end)
 
-    token_data =
-      if Enum.count(read_tokens_from_rpc) == 0 do
+    result_token_data =
+      if Enum.empty?(read_tokens_from_rpc) do
         token_data
       else
         # try to read token symbols and decimals from RPC and then save to the cache
@@ -491,7 +544,8 @@ defmodule Indexer.Transform.TransactionActions do
 
           token_data
         else
-          Enum.zip(requests, responses)
+          requests
+          |> Enum.zip(responses)
           |> Enum.reduce(token_data, fn {request, {_status, response} = _resp}, token_data_acc ->
             response =
               case response do
@@ -515,19 +569,18 @@ defmodule Indexer.Transform.TransactionActions do
         end
       end
 
-    if Enum.any?(token_data, fn {_, token} ->
+    if Enum.any?(result_token_data, fn {_, token} ->
          is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals)
        end) do
       false
     else
-      token_data
+      result_token_data
     end
   end
 
   defp get_token_data_from_cache(address) do
-    with [{_, value}] <- :ets.lookup(:tokens_data_cache, address) do
-      value
-    else
+    case :ets.lookup(:tokens_data_cache, address) do
+      [{_, value}] -> value
       _ -> %{symbol: nil, decimals: nil}
     end
   end
@@ -539,13 +592,7 @@ defmodule Indexer.Transform.TransactionActions do
   defp logs_group_by_txs(logs) do
     logs
     |> Enum.reduce(%{}, fn log, acc ->
-      acc =
-        if not Map.has_key?(acc, log.transaction_hash) do
-          Map.put(acc, log.transaction_hash, [])
-        else
-          acc
-        end
-
+      acc = Map.put_new(acc, log.transaction_hash, [])
       Map.put(acc, log.transaction_hash, acc[log.transaction_hash] ++ [log])
     end)
   end
@@ -563,7 +610,7 @@ defmodule Indexer.Transform.TransactionActions do
           end
       end)
 
-    if Enum.count(error_messages) == 0 do
+    if Enum.empty?(error_messages) do
       {responses, []}
     else
       retries_left = retries_left - 1

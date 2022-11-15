@@ -23,7 +23,6 @@ defmodule Explorer.Chain.TransactionActions do
           type: String.t()
         }
 
-  @primary_key false
   schema "transaction_actions" do
     field(:protocol, Ecto.Enum, values: [:uniswap_v3, :"opensea_v1.1", :wrapping, :approval, :zkbob])
     field(:data, :map)
