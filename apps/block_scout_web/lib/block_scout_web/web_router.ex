@@ -494,7 +494,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/token-counters", Tokens.TokenController, :token_counters)
 
-    get("/vis/sol2uml", VisualizeSol2umlController, :index)
+    get("/visualize/sol2uml", VisualizeSol2umlController, :index)
 
     get("/*path", PageNotFoundController, :index)
   end

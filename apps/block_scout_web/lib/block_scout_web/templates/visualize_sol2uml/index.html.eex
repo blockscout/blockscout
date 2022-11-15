@@ -12,7 +12,7 @@
             <div class="row d-flex justify-content-center">
                 <span data-toggle="tooltip" data-placement="top" title="Click on image to zoom">
                     <div id="gallery">
-                        <img src="data:image/svg+xml;base64,<%= @svg %>"/>
+                        <img src="data:image/svg+xml;base64,<%= @svg %>" style="max-width: 100%; max-height: 100%;"/>
                     </div>
                 </span>
             </div>
@@ -21,5 +21,5 @@
             <% end %>
         </div>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/img_viewer.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/img-viewer.js") %>"></script>
 </section>

@@ -19,8 +19,9 @@ defmodule Explorer.Visualize.Sol2uml do
       {:ok, %Response{body: body, status_code: 200}} ->
         proccess_visualizer_response(body)
 
-      {:ok, %Response{body: body, status_code: _}} ->
-        proccess_visualizer_response(body)
+      {:ok, %Response{body: body, status_code: status_code}} ->
+        Logger.error(fn -> ["Invalid status code from visualizer: #{status_code}. body: ", inspect(body)] end)
+        {:error, "failed to visualize contract"}
 
       {:error, error} ->
         old_truncate = Application.get_env(:logger, :truncate)

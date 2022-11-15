@@ -6,18 +6,15 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
   def index(conn, %{"address" => address_hash_string}) do
     address_options = [
       necessity_by_association: %{
-        :contracts_creation_internal_transaction => :optional,
-        :names => :optional,
-        :smart_contract => :optional,
-        :token => :optional,
-        :contracts_creation_transaction => :optional
+        :smart_contract => :optional
       }
     ]
 
     with true <- Sol2uml.enabled?(),
-         true <- Chain.smart_contract_fully_verified?(address_hash_string),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
+         # check that contract is verified. partial and twin verification is ok for this case
+         false <- is_nil(address.smart_contract) do
       sources =
         address.smart_contract_additional_sources
         |> Enum.map(fn additional_source -> {additional_source.file_name, additional_source.contract_source_code} end)
@@ -39,11 +36,10 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
     end
   end
 
-  def get_contract_filename(nil), do: "main.sol"
-  def get_contract_filename(filename), do: filename
-
-
-  def index(conn, params) do
+  def index(conn, _) do
     not_found(conn)
   end
+
+  def get_contract_filename(nil), do: "main.sol"
+  def get_contract_filename(filename), do: filename
 end

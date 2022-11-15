@@ -57,7 +57,7 @@ const appJs =
       'admin-tasks': './js/pages/admin/tasks.js',
       'token-contract': './js/pages/token_contract.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
-      'img_viewer': './js/pages/img_viewer.js',
+      'img-viewer': './js/pages/img_viewer.js',
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',
