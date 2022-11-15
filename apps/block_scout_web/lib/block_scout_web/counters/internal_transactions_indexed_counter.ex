@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
+defmodule BlockScoutWeb.Counters.InternalTransactionsIndexedCounter do
   @moduledoc """
-  Module responsible for fetching and consolidating the number blocks indexed.
+  Module responsible for fetching and consolidating the number pending block operations (internal transactions) indexed.
 
   It loads the count asynchronously in a time interval.
   """
@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   @enabled Keyword.get(config, :enabled)
 
   @doc """
-  Starts a process to periodically update the % of blocks indexed.
+  Starts a process to periodically update the % of internal transactions indexed.
   """
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   @impl true
   def init(args) do
     if @enabled do
-      Task.start_link(&calculate_blocks_indexed/0)
+      Task.start_link(&calculate_internal_transactions_indexed/0)
 
       schedule_next_consolidation()
     end
@@ -35,21 +35,21 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
     {:ok, args}
   end
 
-  def calculate_blocks_indexed do
-    indexed_ratio_blocks = Chain.indexed_ratio_blocks()
+  def calculate_internal_transactions_indexed do
+    indexed_ratio_internal_transactions = Chain.indexed_ratio_internal_transactions()
 
-    finished? = Chain.finished_indexing?(indexed_ratio_blocks)
+    finished? = Chain.finished_indexing?(indexed_ratio_internal_transactions)
 
-    Notifier.broadcast_blocks_indexed_ratio(indexed_ratio_blocks, finished?)
+    Notifier.broadcast_internal_transactions_indexed_ratio(indexed_ratio_internal_transactions, finished?)
   end
 
   defp schedule_next_consolidation do
-    Process.send_after(self(), :calculate_blocks_indexed, :timer.minutes(5))
+    Process.send_after(self(), :calculate_internal_transactions_indexed, :timer.minutes(7))
   end
 
   @impl true
-  def handle_info(:calculate_blocks_indexed, state) do
-    calculate_blocks_indexed()
+  def handle_info(:calculate_internal_transactions_indexed, state) do
+    calculate_internal_transactions_indexed()
 
     schedule_next_consolidation()
 
