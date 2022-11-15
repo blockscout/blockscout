@@ -8,8 +8,8 @@ import Config
 network_path =
   "NETWORK_PATH"
   |> System.get_env("/")
-  |> (&(if !String.ends_with?(&1, "/") do
-          &1 <> "/"
+  |> (&(if String.ends_with?(&1, "/") do
+          String.trim_trailing(&1, "/")
         else
           &1
         end)).()
@@ -17,8 +17,8 @@ network_path =
 api_path =
   "API_PATH"
   |> System.get_env("/")
-  |> (&(if !String.ends_with?(&1, "/") do
-          &1 <> "/"
+  |> (&(if String.ends_with?(&1, "/") do
+          String.trim_trailing(&1, "/")
         else
           &1
         end)).()
@@ -32,6 +32,8 @@ config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
+
+config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: true
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
