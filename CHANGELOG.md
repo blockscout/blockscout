@@ -40,6 +40,7 @@
 - [#6223](https://github.com/blockscout/blockscout/pull/6223) - Fix coin_id test
 - [#6336](https://github.com/blockscout/blockscout/pull/6336) - Fix sending request on each key in token search
 - [#6327](https://github.com/blockscout/blockscout/pull/6327) - Fix and refactor address logs page and search
+- [#6449](https://github.com/blockscout/blockscout/pull/6449) - Search min_missing_block_number from zero
 
 ### Chore
 
