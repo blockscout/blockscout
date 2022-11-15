@@ -152,7 +152,7 @@ defmodule Explorer.Account.Notify.SummaryTest do
         :token_transfer
         |> insert(
           transaction: tx,
-          token_id: 42,
+          token_ids: [42],
           token_contract_address: token.contract_address
         )
         |> Repo.preload([
@@ -198,7 +198,7 @@ defmodule Explorer.Account.Notify.SummaryTest do
         :token_transfer
         |> insert(
           transaction: tx,
-          token_id: 42,
+          token_ids: [42],
           token_contract_address: token.contract_address
         )
         |> Repo.preload([
@@ -244,7 +244,6 @@ defmodule Explorer.Account.Notify.SummaryTest do
         :token_transfer
         |> insert(
           transaction: tx,
-          token_id: nil,
           token_ids: [23, 42],
           token_contract_address: token.contract_address
         )
