@@ -101,7 +101,7 @@
           <%= if Helper.payable?(function) do %>
             <div class="form-group pr-3 d-flex">
               <input type="number" name="function_input" tx-value
-              data-toggle="tooltip" title='Amount in native token <<%= gettext("BNETH")%>>' class="form-control form-control-sm address-input-sm" placeholder='value(<%= gettext("BNETH")%>)' min="0" step="1e-18" />
+              data-toggle="tooltip" title='Amount in native token <<%= gettext("BIT")%>>' class="form-control form-control-sm address-input-sm" placeholder='value(<%= gettext("BIT")%>)' min="0" step="1e-18" />
             </div>
           <% end %>
 
@@ -143,7 +143,7 @@
                       <span class="py-2 px-2">
                         <input class="wei-ether" type="checkbox" autocomplete="off">
                         <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                        <span class="d-none" data-conversion-text-eth><%= gettext("BNETH")%></span>
+                        <span class="d-none" data-conversion-text-eth><%= gettext("BIT")%></span>
                       </span>
                     </div>
                   </div>

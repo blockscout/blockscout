@@ -79,6 +79,6 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   defp display_unit(:wei), do: gettext("Wei")
   defp display_unit(:gwei), do: gettext("Gwei")
-  defp display_unit(:ether), do: gettext("BNETH")
+  defp display_unit(:ether), do: gettext("BIT")
   defp display_unit(:bit), do: l1_token_symbol()
 end
