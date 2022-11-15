@@ -5,11 +5,6 @@
 # is restricted to this project.
 import Config
 
-require Logger
-
-Logger.info('=========')
-Logger.info(System.get_env("L1_TOKEN_SYMBOL"))
-Logger.info('=========')
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
