@@ -32,10 +32,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
   Internal transactions are an expensive upstream operation. The number of
   results to fetch is configured by `@max_batch_size` and represents the number
   of transaction hashes to request internal transactions in a single JSONRPC
-  request. Defaults to `#{@max_batch_size}`.
+  request. Defaults to `#{@default_max_batch_size}`.
 
   The `@max_concurrency` attribute configures the  number of concurrent requests
-  of `@max_batch_size` to allow against the JSONRPC. Defaults to `#{@max_concurrency}`.
+  of `@max_batch_size` to allow against the JSONRPC. Defaults to `#{@default_max_concurrency}`.
 
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
