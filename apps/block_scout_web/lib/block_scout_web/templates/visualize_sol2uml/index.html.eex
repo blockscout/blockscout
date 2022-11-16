@@ -1,25 +1,28 @@
 <section class="container">
     <div class="card">
-        <div class="card-body fs-14">
+        <div class="card-body fs-14" data-async-contract-svg="<%= @get_svg_path %>">
             <div class="card-title lg-card-title mb-2">
                 <h1><%= gettext("UML diagram") %></h1>
                 <%= gettext("For contract") %> <%= link(
-                    @address.hash,
-                    to: address_contract_path(@conn, :index, @address.hash)
+                    @address,
+                    to: address_contract_path(@conn, :index, @address)
                 ) %>
             </div>
-            <%= if is_nil(@error) do %>
             <div class="row d-flex justify-content-center">
-                <span data-toggle="tooltip" data-placement="top" title="Click on image to zoom">
-                    <div id="gallery">
-                        <img src="data:image/svg+xml;base64,<%= @svg %>" style="max-width: 100%; max-height: 100%;"/>
-                    </div>
+                <span class="loading-spinner" id="spinner">
+                    <span class="loading-spinner-block-1"></span>
+                    <span class="loading-spinner-block-2"></span>
                 </span>
+
+                <div data-selector="contract-image">
+                    <span data-toggle="tooltip" data-placement="top" title="Click on image to zoom">
+                    <div id="gallery">
+                         <img src="" style="max-width: 100%; max-height: 100%;">
+                    </div>
+                 </span>
+                </div>
             </div>
-            <% else %>
-            <%= gettext("Cannot visualize contract")%>: <%= @error %>
-            <% end %>
         </div>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/img-viewer.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/sol2uml.js") %>"></script>
 </section>
