@@ -33,7 +33,8 @@ config :block_scout_web,
   permanent_light_mode_enabled: ConfigHelper.parse_bool_env_var("PERMANENT_LIGHT_MODE_ENABLED"),
   display_token_icons: ConfigHelper.parse_bool_env_var("DISPLAY_TOKEN_ICONS"),
   hide_block_miner: ConfigHelper.parse_bool_env_var("HIDE_BLOCK_MINER"),
-  show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK")
+  show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK"),
+  ens_metadata_server: System.get_env("ENS_METADATA_SERVER")
 
 network_path =
   "NETWORK_PATH"
@@ -351,6 +352,13 @@ config :explorer, Explorer.Account,
     template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
   ]
 
+config :explorer, Explorer.ENS.NameRetriever,
+  enabled:
+    System.get_env("ENABLE_ENS") == "true" &&
+      (System.get_env("ENS_REGISTRY_ADDRESS") != nil || System.get_env("ENS_RESOLVER_ADDRESS") != nil),
+  registry_address: System.get_env("ENS_REGISTRY_ADDRESS"),
+  resolver_address: System.get_env("ENS_RESOLVER_ADDRESS")
+
 config :explorer, :token_id_migration,
   first_block: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_FIRST_BLOCK", 0),
   concurrency: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_CONCURRENCY", 1),
@@ -427,6 +435,11 @@ config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_EMPTY_BLOCKS_SANITIZER")
+
+config :indexer, Indexer.Fetcher.ENSName.Supervisor,
+  disabled?:
+    !(System.get_env("ENABLE_ENS") == "true" &&
+       (System.get_env("ENS_REGISTRY_ADDRESS") != nil || System.get_env("ENS_RESOLVER_ADDRESS") != nil))
 
 config :indexer, Indexer.Block.Realtime.Supervisor,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_REALTIME_INDEXER")
