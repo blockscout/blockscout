@@ -34,7 +34,7 @@ The repo contains built-in configs for different clients without needing to buil
 
 - Erigon: `docker-compose -f docker-compose-no-build-erigon.yml up -d`
 - Geth: `docker-compose -f docker-compose-no-build-geth.yml up -d`
-- Nethermind, OpenEthereum: `docker-compose -f docker-compose-no-build-nethermind up -d`
+- Nethermind, OpenEthereum: `docker-compose -f docker-compose-no-build-nethermind.yml up -d`
 - Ganache: `docker-compose -f docker-compose-no-build-ganache.yml up -d`
 - HardHat network: `docker-compose -f docker-compose-no-build-hardhat-network.yml up -d`
 - Running explorer only without DB: `docker-compose -f docker-compose-no-build-no-db-container.yml up -d`. In this case, one container is created - for the explorer itself. It assumes DB credentials are provided through the `DATABASE_URL` environment variable.
