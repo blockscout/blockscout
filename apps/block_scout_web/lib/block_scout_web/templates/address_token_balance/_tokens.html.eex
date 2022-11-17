@@ -43,7 +43,7 @@
               <span data-selector="token-balance-usd" data-usd-value="<%= lp_token_balance_usd %>"></span>
             </p>
           <% else %>
-            <%= if token_balance.token.usd_value do %>
+            <%= if token.usd_value do %>
               <p class="mb-0 col-md-6 text-right usd-total">
                 <span data-selector="token-balance-usd" data-usd-value="<%= Chain.balance_in_usd(token_balance, token) %>"></span>
               </p>
