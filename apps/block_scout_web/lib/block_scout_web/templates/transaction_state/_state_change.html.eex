@@ -1,7 +1,6 @@
-<!-- <%= @address.hash %> -->
 <% coin_or_transfer = if @coin_or_token_transfers == :coin, do: :coin, else: elem(List.first(@coin_or_token_transfers), 1)%>
 <%= if coin_or_transfer != :coin and coin_or_transfer.token.type != "ERC-20" or has_diff?(@balance_diff) do %>
-  <tr>
+  <tr data-identifier-hash="<%= @address && @address.hash %>">
     <%= if @address.hash == @burn_address_hash do %>
       <td class="stakes-td">
         <dt class="text-muted">
