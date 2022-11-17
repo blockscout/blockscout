@@ -19,7 +19,7 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.2.0",
+    "@fortawesome/fontawesome-free": "^6.2.1",
     "@sentry/browser": "^5.29.2",
     "@sentry/tracing": "^5.29.2",
     "@tarekraafat/autocomplete.js": "^10.2.7",
@@ -28,7 +28,7 @@
     "bignumber.js": "^9.1.0",
     "bootstrap": "^4.6.0",
     "chart.js": "^3.9.1",
-    "chartjs-adapter-luxon": "^1.2.0",
+    "chartjs-adapter-luxon": "^1.2.1",
     "clipboard": "^2.0.11",
     "core-js": "^3.26.1",
     "crypto-browserify": "^3.12.0",
