@@ -1,4 +1,3 @@
-<%= link(@batch_index,
-    to: transaction_path(BlockScoutWeb.Endpoint, :show, @batch_index),
-    "data-test": "transaction_hash_link",
-    class: "text-truncate") %>
+<%= link(
+    @batch_index,
+    to: state_batch_path(BlockScoutWeb.Endpoint, :show, @batch_index)) %>

@@ -3296,6 +3296,24 @@ defmodule Explorer.Chain do
     %{total_transactions_count: txn_batch_count, txn_batches: fetched_txn_batches}
   end
 
+  @spec txn_batch_detail(integer()) :: %{
+    :txn_batch => TxnBatch.t()
+  }
+
+  def txn_batch_detail(batch_index) do
+    txn_batch =fetch_txn_batch(batch_index)
+    %{txn_batch: txn_batch}
+  end
+
+  @spec state_batch_detail(integer()) :: %{
+    :state_batch => StateBatch.t()
+  }
+
+  def state_batch_detail(batch_index) do
+    state_batch =fetch_state_batch(batch_index)
+    %{state_batch: state_batch}
+  end
+
   defp fetch_transactions_for_rap do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
@@ -3309,6 +3327,20 @@ defmodule Explorer.Chain do
   defp fetch_txn_batch_for_rap do
     TxnBatch
     |> order_by([txn_batch], desc: txn_batch.batch_index)
+  end
+
+  defp fetch_txn_batch(batch_index) do
+    TxnBatch
+    |> where([txn_batch], txn_batch.batch_index == ^batch_index)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp fetch_state_batch(batch_index) do
+    StateBatch
+    |> where([state_batch], state_batch.batch_index == ^batch_index)
+    |> limit(1)
+    |> Repo.one()
   end
 
   defp fetch_l1_to_l2_for_rap do

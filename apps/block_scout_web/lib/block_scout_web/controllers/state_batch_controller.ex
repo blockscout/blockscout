@@ -116,4 +116,13 @@ defmodule BlockScoutWeb.StateBatchController do
     )
   end
 
+  def show(conn, %{"batch_index" => batch_index}) do
+    %{state_batch: state_batch} = Chain.state_batch_detail(batch_index);
+    render(
+          conn,
+          "overview.html",
+          state_batch: state_batch
+        )
+  end
+
 end
