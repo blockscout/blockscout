@@ -54,6 +54,12 @@
 	}
 }
 
+.actions-list-mobile-container {
+	@include media-breakpoint-down(sm) {
+		margin-top: 0.5rem;
+	}
+}
+
 .transfers-list-mobile-container {
 	@include media-breakpoint-down(sm) {
 		margin-top: 0.5rem;

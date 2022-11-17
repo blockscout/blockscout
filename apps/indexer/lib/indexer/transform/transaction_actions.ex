@@ -158,6 +158,8 @@ defmodule Indexer.Transform.TransactionActions do
     if first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
       []
     else
+      # Logger.warn("tx_hash: #{log.transaction_hash}")
+
       # check UniswapV3Pool contract is legitimate
       pool_address = String.downcase(log.address_hash)
 
@@ -198,6 +200,8 @@ defmodule Indexer.Transform.TransactionActions do
   end
 
   defp uniswap_handle_mint_nft_actions(tx_hash, tx_logs, actions_acc) do
+    first_log = Enum.at(tx_logs, 0)
+
     tx_logs
     |> Enum.reduce(%{}, fn log, acc ->
       first_topic = String.downcase(log.first_topic)
@@ -227,7 +231,8 @@ defmodule Indexer.Transform.TransactionActions do
           symbol: "UNI-V3-POS",
           address: @uniswap_v3_positions_nft,
           to: to,
-          ids: ids
+          ids: ids,
+          block_number: first_log.block_number
         },
         type: "mint_nft"
       }
@@ -302,7 +307,8 @@ defmodule Indexer.Transform.TransactionActions do
             address0: new_address0,
             amount1: new_amount1,
             symbol1: new_symbol1,
-            address1: new_address1
+            address1: new_address1,
+            block_number: log.block_number
           },
           type: type
         }

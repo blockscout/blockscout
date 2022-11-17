@@ -1,0 +1,11 @@
+<%= if @action.protocol == :uniswap_v3 do %>
+  <%= if @action.type == :mint_nft do %>
+    <i class="fa fa-caret-right" style="font-size:10px"></i>
+    <%= gettext("Mint of %{name} (%{symbol}) To %{to}", name: Map.get(@action.data, "name"), symbol: Map.get(@action.data, "symbol"), to: Map.get(@action.data, "to")) %><br />
+    <% token_ids = Map.get(@action.data, "ids") %>
+    <%= for id <- token_ids do %>
+      &nbsp;&nbsp; <i class="fa fa-caret-right" style="font-size:10px"></i>
+      <%= gettext("%{qty} of Token ID [%{id}]", qty: 1, id: id) %><br />
+    <% end %>
+  <% end %>
+<% end %>

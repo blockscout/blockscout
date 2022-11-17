@@ -432,7 +432,22 @@ defmodule Indexer.Transform.Addresses do
           (entity_items = Map.get(fetched_data, entity_key)) != nil,
           do: extract_addresses_from_collection(entity_items, entity_fields, state)
 
+    tx_actions_addresses =
+      fetched_data
+      |> Map.get(:transaction_actions, [])
+      |> Enum.map(fn tx_action ->
+        block_number = Map.get(tx_action.data, :block_number)
+
+        tx_action.data
+        |> find_tx_action_addresses()
+        |> Enum.map(fn address ->
+          %{:fetched_coin_balance_block_number => block_number, :hash => address}
+        end)
+      end)
+      |> List.flatten()
+
     addresses
+    |> Enum.concat(tx_actions_addresses)
     |> List.flatten()
     |> merge_addresses()
   end
@@ -441,6 +456,30 @@ defmodule Indexer.Transform.Addresses do
     do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields, state))
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
+
+  defp find_tx_action_addresses(data, accumulator \\ []) do
+    map = is_map(data)
+
+    if map or is_list(data) do
+      Enum.reduce(data, accumulator, fn item, acc ->
+        value =
+          if map do
+            {_field, value} = item
+            value
+          else
+            item
+          end
+
+        cond do
+          is_list(value) or is_map(value) -> find_tx_action_addresses(value, acc)
+          is_address?(value) -> [value | acc]
+          true -> acc
+        end
+      end)
+    else
+      accumulator
+    end
+  end
 
   def merge_addresses(addresses) when is_list(addresses) do
     addresses
@@ -526,4 +565,12 @@ defmodule Indexer.Transform.Addresses do
   defp max_nil_last(first_integer, second_integer)
        when is_integer(first_integer) and is_integer(second_integer),
        do: max(first_integer, second_integer)
+
+  defp is_address?(value) do
+    if is_binary(value) do
+      String.match?(value, ~r/^0x[[:xdigit:]]{40}$/i)
+    else
+      false
+    end
+  end
 end

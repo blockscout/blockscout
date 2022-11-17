@@ -149,7 +149,8 @@ defmodule Indexer.Block.Fetcher do
              logs: logs,
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
-             transactions: transactions_with_receipts
+             transactions: transactions_with_receipts,
+             transaction_actions: transaction_actions
            }),
          coin_balances_params_set =
            %{
@@ -168,6 +169,8 @@ defmodule Indexer.Block.Fetcher do
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         transaction_actions =
+           Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          {:ok, inserted} <-
            __MODULE__.import(
              state,

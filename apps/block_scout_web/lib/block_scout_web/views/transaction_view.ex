@@ -62,6 +62,10 @@ defmodule BlockScoutWeb.TransactionView do
     if type, do: {type, transaction_with_transfers_filtered}, else: {nil, transaction_with_transfers_filtered}
   end
 
+  def transaction_actions(transaction) do
+    Repo.preload(transaction, :transaction_actions)
+  end
+
   def aggregate_token_transfers(token_transfers) do
     %{
       transfers: {ft_transfers, nft_transfers},

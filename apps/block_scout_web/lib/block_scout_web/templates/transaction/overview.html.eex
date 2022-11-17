@@ -192,6 +192,21 @@
               </dd>
             </dl>
           <% end %>
+          <!-- Transaction Action -->
+          <% %{transaction_actions: transaction_actions} = transaction_actions(@transaction) %>
+          <%= if not Enum.empty?(transaction_actions) do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("Highlighted events of the transaction.") %>
+                <%= gettext "Transaction Action" %></dt>
+              <dd class="col-sm-9 col-lg-10 actions-list-mobile-container">
+                <%= for action <- transaction_actions do %>
+                  <%= render BlockScoutWeb.TransactionView, "_actions.html", Map.put(assigns, :action, action) %>
+                <% end %>
+              </dd>
+            </dl>
+          <% end %>
           <!-- From -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
