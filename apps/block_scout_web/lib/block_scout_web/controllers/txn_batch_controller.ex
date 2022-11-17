@@ -123,4 +123,13 @@ defmodule BlockScoutWeb.TxnBatchController do
     )
   end
 
+  def show(conn, %{"batch_index" => batch_index}) do
+    %{txn_batch: txn_batch} = Chain.txn_batch_detail(batch_index);
+    render(
+          conn,
+          "overview.html",
+          txn_batch: txn_batch
+        )
+  end
+
 end

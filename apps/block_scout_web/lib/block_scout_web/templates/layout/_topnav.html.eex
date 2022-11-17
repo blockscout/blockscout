@@ -49,22 +49,22 @@
               ) %>
               <%= link(
                 gettext("L1 to L2 Txns"),
-                class: "dropdown-item #{tab_status("l1-to-l2-txn", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("l1-to-l2-txns", @conn.request_path)}",
                 to: l1_to_l2_txn_path(@conn, :index)
               ) %>
               <%= link(
                 gettext("L2 to L1 Txns"),
-                class: "dropdown-item #{tab_status("l2-to-l1-txn", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("l2-to-l1-txns", @conn.request_path)}",
                 to: l2_to_l1_txn_path(@conn, :index)
               ) %>
               <%= link(
                 gettext("L1 Txn Batches"),
-                class: "dropdown-item #{tab_status("txn-batch", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("txn-batches", @conn.request_path)}",
                 to: txn_batch_path(@conn, :index)
               ) %>
               <%= link(
                 gettext("L1 State Batches"),
-                class: "dropdown-item #{tab_status("state-batch", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("state-batches", @conn.request_path)}",
                 to: state_batch_path(@conn, :index)
               ) %>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
@@ -93,7 +93,7 @@
                     to: tokens_path(@conn, :index)
                   ) %>
               <%= link(
-                    gettext("BNETH"),
+                    gettext("BIT"),
                     class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
                     to: address_path(@conn, :index)
                   ) %>

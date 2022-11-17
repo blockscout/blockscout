@@ -9,7 +9,7 @@ import Config
 config :block_scout_web,
   namespace: BlockScoutWeb,
   ecto_repos: [Explorer.Repo],
-  l1_token_symbol: System.get_env("L1_TOKEN_SYMBOL") || "BNETH"
+  l1_token_symbol: System.get_env("L1_TOKEN_SYMBOL") || "BIT"
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
