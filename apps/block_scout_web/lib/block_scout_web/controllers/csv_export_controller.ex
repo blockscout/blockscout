@@ -29,7 +29,8 @@ defmodule BlockScoutWeb.CsvExportController do
       "internal-transactions",
       "transactions",
       "token-transfers",
-      "logs"
+      "logs",
+      "epoch-transactions"
     ]
   end
 end

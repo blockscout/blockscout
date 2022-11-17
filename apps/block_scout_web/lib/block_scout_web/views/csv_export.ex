@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.CsvExportView do
       "transactions" -> "transactions"
       "token-transfers" -> "token transfers"
       "logs" -> "logs"
+      "epoch-transactions" -> "epoch transactions"
       _ -> ""
     end
   end
@@ -20,6 +21,7 @@ defmodule BlockScoutWeb.CsvExportView do
       "transactions" -> :transactions_csv
       "token-transfers" -> :token_transfers_csv
       "logs" -> :logs_csv
+      "epoch-transactions" -> :epoch_transactions_csv
       _ -> ""
     end
   end

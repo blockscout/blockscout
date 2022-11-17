@@ -436,6 +436,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
 
+    get("/epoch-transactions-csv", AddressTransactionController, :epoch_transactions_csv)
+
     get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
 
     get("/logs-csv", AddressTransactionController, :logs_csv)

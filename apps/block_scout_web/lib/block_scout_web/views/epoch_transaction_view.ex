@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.EpochTransactionView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Celo.{EpochUtil, Util}
+  alias Explorer.Celo.EpochUtil
   alias Explorer.Chain
   alias Explorer.Chain.Wei
 
@@ -15,16 +15,7 @@ defmodule BlockScoutWeb.EpochTransactionView do
   end
 
   def get_reward_currency_address_hash(reward_type) do
-    with {:ok, address_string} <-
-           Util.get_address(
-             case reward_type do
-               "voter" -> "GoldToken"
-               _ -> "StableToken"
-             end
-           ),
-         {:ok, address_hash} <- Chain.string_to_address_hash(address_string) do
-      address_hash
-    end
+    reward_type |> EpochUtil.get_reward_currency_address_hash()
   end
 
   def wei_to_ether_rounded(%Wei{value: value} = amount) do

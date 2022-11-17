@@ -2,6 +2,8 @@ defmodule Explorer.Celo.EpochUtil do
   @moduledoc """
   Utilities epoch related functionality
   """
+  alias Explorer.Celo.Util
+  alias Explorer.Chain
   alias Explorer.Chain.CeloElectionRewards
 
   def epoch_by_block_number(bn) do
@@ -26,6 +28,19 @@ defmodule Explorer.Celo.EpochUtil do
       CeloElectionRewards.get_epoch_transaction_count_for_block(bn) + additional_transactions_count
     else
       0
+    end
+  end
+
+  def get_reward_currency_address_hash(reward_type) do
+    with {:ok, address_string} <-
+           Util.get_address(
+             case reward_type do
+               "voter" -> "GoldToken"
+               _ -> "StableToken"
+             end
+           ),
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_string) do
+      address_hash
     end
   end
 end

@@ -177,6 +177,33 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   def token_transfers_csv(conn, _), do: not_found(conn)
 
+  def epoch_transactions_csv(conn, %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period
+      })
+      when is_binary(address_hash_string) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      {:ok, conn} =
+        conn
+        |> put_resp_content_type("application/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=epoch_transactions.csv")
+        |> send_chunked(200)
+        |> then(&CSV.export_epoch_transactions(address, from_period, to_period, &1))
+
+      conn
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def epoch_transactions_csv(conn, _), do: not_found(conn)
+
   def transactions_csv(conn, %{
         "address_id" => address_hash_string,
         "from_period" => from_period,
