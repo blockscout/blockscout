@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.CoinBalance do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Fetcher.CoinBalance.Supervisor, as: CoinBalanceSupervisor
 
   use BufferedTask
 
@@ -34,9 +35,13 @@ defmodule Indexer.Fetcher.CoinBalance do
           %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
         ]) :: :ok
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
-    entries = Enum.map(balance_fields, &entry/1)
+    if CoinBalanceSupervisor.disabled?() do
+      :ok
+    else
+      entries = Enum.map(balance_fields, &entry/1)
 
-    BufferedTask.buffer(__MODULE__, entries)
+      BufferedTask.buffer(__MODULE__, entries)
+    end
   end
 
   @doc false
