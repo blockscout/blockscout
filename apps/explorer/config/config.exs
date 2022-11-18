@@ -62,7 +62,7 @@ config :explorer, Explorer.Chain.Cache.BlockNumber,
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 address_sum_global_ttl =
-  "ADDRESS_SUM_CACHE_PERIOD"
+  "CACHE_ADDRESS_SUM_PERIOD"
   |> System.get_env("")
   |> Integer.parse()
   |> case do
@@ -81,8 +81,8 @@ config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
   global_ttl: address_sum_global_ttl
 
 balances_update_interval =
-  if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
-    case Integer.parse(System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do
+  if System.get_env("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
+    case Integer.parse(System.get_env("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do
       {integer, ""} -> integer
       _ -> nil
     end
@@ -136,10 +136,12 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
 
 config :explorer, Explorer.Celo.Events.ContractEventStream,
   enabled: System.get_env("ENABLE_EVENT_STREAM", "false") == "true"
+config :explorer, Explorer.Chain.Cache.GasUsage,
+  enabled: System.get_env("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER") == "true"
 
 bridge_market_cap_update_interval =
-  if System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
-    case Integer.parse(System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL")) do
+  if System.get_env("CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
+    case Integer.parse(System.get_env("CACHE_BRIDGE_MARKET_CAP_UPDATE_INTERVAL")) do
       {integer, ""} -> integer
       _ -> nil
     end

@@ -79,7 +79,6 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.{
     Accounts,
-    BlockCount,
     BlockNumber,
     Blocks,
     TokenExchangeRate,
@@ -2173,30 +2172,8 @@ defmodule Explorer.Chain do
       0
   end
 
-  @spec fetch_count_consensus_block() :: non_neg_integer
-  def fetch_count_consensus_block do
-    query =
-      from(block in Block,
-        select: count(block.hash),
-        where: block.consensus == true
-      )
-
-    Repo.one!(query, timeout: :infinity) || 0
-  end
-
   def fetch_block_by_hash(block_hash) do
     Repo.get(Block, block_hash)
-  end
-
-  @spec fetch_sum_gas_used() :: non_neg_integer
-  def fetch_sum_gas_used do
-    query =
-      from(
-        t0 in Transaction,
-        select: fragment("SUM(t0.gas_used)")
-      )
-
-    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @doc """
@@ -3723,24 +3700,6 @@ defmodule Explorer.Chain do
       0
     else
       total_gas
-    end
-  end
-
-  @doc """
-  Estimated count of `t:Explorer.Chain.Block.t/0`.
-
-  Estimated count of consensus blocks.
-  """
-  @spec block_estimated_count() :: non_neg_integer()
-  def block_estimated_count do
-    cached_value = BlockCount.get_count()
-
-    if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
-
-      trunc(count * 0.90)
-    else
-      cached_value
     end
   end
 
