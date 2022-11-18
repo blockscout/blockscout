@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#6444](https://github.com/blockscout/blockscout/pull/6444) - Add support for yul verification via rust microservice
 - [#6440](https://github.com/blockscout/blockscout/pull/6440) - Add support for base64 encoded NFT metadata
 - [#6407](https://github.com/blockscout/blockscout/pull/6407) - Indexed ratio for int txs fetching stage
 - [#6324](https://github.com/blockscout/blockscout/pull/6324) - Add verified contracts list page
@@ -20,10 +21,12 @@
 - [#6443](https://github.com/blockscout/blockscout/pull/6443) - Drop internal transactions order index
 - [#6450](https://github.com/blockscout/blockscout/pull/6450) - INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE and INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY env variables
 - [#6454](https://github.com/blockscout/blockscout/pull/6454) - INDEXER_RECEIPTS_BATCH_SIZE, INDEXER_RECEIPTS_CONCURRENCY, INDEXER_COIN_BALANCES_BATCH_SIZE, INDEXER_COIN_BALANCES_CONCURRENCY env variables
+- [#6476](https://github.com/blockscout/blockscout/pull/6476) - Update token balances indexes
 
 ### Fixes
 
 - [#6127](https://github.com/blockscout/blockscout/pull/6127) - No missing blocks in UI on the main page
+- [#6475](https://github.com/blockscout/blockscout/pull/6475) - Fix token name with unicode graphemes shortening
 - [#6420](https://github.com/blockscout/blockscout/pull/6420) - Fix address logs search
 - [#6390](https://github.com/blockscout/blockscout/pull/6390) - Fix transactions responses in API v2
 - [#6357](https://github.com/blockscout/blockscout/pull/6357), [#6409](https://github.com/blockscout/blockscout/pull/6409), [#6428](https://github.com/blockscout/blockscout/pull/6428) - Fix definitions of NETWORK_PATH, API_PATH, SOCKET_ROOT: process trailing slash
