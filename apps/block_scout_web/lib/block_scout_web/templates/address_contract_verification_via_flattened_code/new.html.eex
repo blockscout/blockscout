@@ -15,6 +15,10 @@
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
 
+        <%= if RustVerifierInterface.enabled?() do %>
+          <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_yul_contracts_switcher.html", f: f %>
+        <% end %>
+
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: gettext "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name." %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
