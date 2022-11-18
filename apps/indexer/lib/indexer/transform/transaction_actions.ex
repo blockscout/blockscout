@@ -9,7 +9,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain.Cache.NetVersion
-  alias Explorer.Chain.{Hash, Token, TransactionActions}
+  alias Explorer.Chain.{Address, Hash, Token, TransactionActions}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
 
@@ -19,8 +19,8 @@ defmodule Indexer.Transform.TransactionActions do
   @gnosis 100
 
   @null_address "0x0000000000000000000000000000000000000000"
-  @uniswap_v3_positions_nft "0xc36442b4a4522e871399cd717abdd847ab11fe88"
-  @uniswap_v3_factory "0x1f98431c8ad98523631ae4a59f267346ea31f984"
+  @uniswap_v3_positions_nft "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+  @uniswap_v3_factory "0x1F98431c8aD98523631AE4a59f267346ea31F984"
   @uniswap_v3_factory_abi [
     %{
       "inputs" => [
@@ -148,7 +148,7 @@ defmodule Indexer.Transform.TransactionActions do
         first_topic
       ) ||
         (first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" &&
-           String.downcase(log.address_hash) == @uniswap_v3_positions_nft)
+           String.downcase(log.address_hash) == String.downcase(@uniswap_v3_positions_nft))
     end)
   end
 
@@ -230,7 +230,7 @@ defmodule Indexer.Transform.TransactionActions do
           name: "Uniswap V3: Positions NFT",
           symbol: "UNI-V3-POS",
           address: @uniswap_v3_positions_nft,
-          to: to,
+          to: Address.checksum(to),
           ids: ids,
           block_number: first_log.block_number
         },
@@ -304,10 +304,10 @@ defmodule Indexer.Transform.TransactionActions do
           data: %{
             amount0: new_amount0,
             symbol0: new_symbol0,
-            address0: new_address0,
+            address0: Address.checksum(new_address0),
             amount1: new_amount1,
             symbol1: new_symbol1,
-            address1: new_address1,
+            address1: Address.checksum(new_address1),
             block_number: log.block_number
           },
           type: type
