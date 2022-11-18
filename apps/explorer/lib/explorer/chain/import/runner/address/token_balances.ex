@@ -70,25 +70,8 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
-    changes_list_with_token_id =
-      changes_list
-      |> Enum.map(fn change ->
-        updated_change =
-          change
-          |> (&if(Map.has_key?(&1, :token_id), do: &1, else: Map.put(&1, :token_id, 1))).()
-          |> (&if(Map.get(&1, :token_type) == "ERC-721",
-                do:
-                  &1
-                  |> Map.put(:value, 1)
-                  |> Map.put(:value_fetched_at, Timex.now()),
-                else: &1
-              )).()
-
-        updated_change
-      end)
-
     ordered_changes_list =
-      changes_list_with_token_id
+      changes_list
       |> Enum.group_by(fn %{
                             address_hash: address_hash,
                             token_contract_address_hash: token_contract_address_hash,
@@ -99,9 +82,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
         if Enum.count(grouped_address_token_balances) > 1 do
-          Enum.max_by(grouped_address_token_balances, fn token_balance ->
-            Map.get(token_balance, :value_fetched_at)
-          end)
+          Enum.max_by(grouped_address_token_balances, fn balance -> Map.get(balance, :value_fetched_at) end)
         else
           Enum.at(grouped_address_token_balances, 0)
         end
@@ -114,8 +95,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           repo,
           ordered_changes_list,
           conflict_target:
-            {:unsafe_fragment,
-             ~s<(address_hash, token_contract_address_hash, token_id, block_number) WHERE token_id IS NOT NULL>},
+            {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, 0), block_number)>},
           on_conflict: on_conflict,
           for: TokenBalance,
           returning: true,
@@ -135,7 +115,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       token_balance in TokenBalance,
       update: [
         set: [
-          value: fragment("EXCLUDED.value"),
+          value: fragment("COALESCE(EXCLUDED.value, ?)", token_balance.value),
           value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
           token_type: fragment("EXCLUDED.token_type"),
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
@@ -143,9 +123,8 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         ]
       ],
       where:
-        fragment("EXCLUDED.value IS NOT NULL") and
-          (is_nil(token_balance.value_fetched_at) or
-             fragment("? < EXCLUDED.value_fetched_at", token_balance.value_fetched_at))
+        is_nil(token_balance.value_fetched_at) or fragment("EXCLUDED.value_fetched_at IS NULL") or
+          fragment("? < EXCLUDED.value_fetched_at", token_balance.value_fetched_at)
     )
   end
 end

@@ -250,27 +250,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-    changes_list_with_token_id =
-      changes_list
-      |> Enum.map(fn change ->
-        updated_change =
-          cond do
-            Map.has_key?(change, :token_id) ->
-              change
-
-            Map.get(change, :token_type) == "ERC-20" ->
-              Map.put(change, :token_id, 1)
-
-            true ->
-              Logger.error("Current token balance params has no token_id, change: #{inspect(change)}")
-              Map.put(change, :token_id, 1)
-          end
-
-        updated_change
-      end)
-
     ordered_changes_list =
-      changes_list_with_token_id
+      changes_list
       |> Enum.group_by(fn %{
                             address_hash: address_hash,
                             token_contract_address_hash: token_contract_address_hash,
@@ -279,16 +260,18 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         {address_hash, token_contract_address_hash, token_id}
       end)
       |> Enum.map(fn {_, grouped_address_token_balances} ->
-        Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
+        Enum.max_by(grouped_address_token_balances, fn balance ->
+          {Map.get(balance, :block_number), Map.get(balance, :value_fetched_at)}
+        end)
       end)
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
-    {:ok, inserted_changes_list_with_token_id} =
+    {:ok, inserted_changes_list} =
       if Enum.count(ordered_changes_list) > 0 do
         Import.insert_changes_list(
           repo,
           ordered_changes_list,
-          conflict_target: [:address_hash, :token_contract_address_hash, :token_id],
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, 0))>},
           on_conflict: on_conflict,
           for: CurrentTokenBalance,
           returning: true,
@@ -301,7 +284,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
     Logger.info("### Address_current_token_balances insert_changes_list FINISHED ###")
 
-    inserted_changes_list_with_token_id
+    inserted_changes_list
   end
 
   defp default_on_conflict do
@@ -320,10 +303,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       ],
       where:
         fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-          (fragment("EXCLUDED.value IS NOT NULL") and
+          (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+             fragment("EXCLUDED.value IS NOT NULL") and
              (is_nil(current_token_balance.value_fetched_at) or
-                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)) and
-             fragment("? = EXCLUDED.block_number", current_token_balance.block_number))
+                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))
     )
   end
 
