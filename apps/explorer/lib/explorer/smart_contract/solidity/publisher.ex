@@ -51,7 +51,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           |> Map.put("external_libraries", contract_libraries)
           |> Map.put("name", contract_name)
 
-        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+        publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
         params_with_constructor_arguments =
@@ -245,7 +245,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       verified_via_sourcify: params["verified_via_sourcify"],
       partially_verified: params["partially_verified"],
       is_vyper_contract: false,
-      autodetect_constructor_args: params["autodetect_constructor_args"]
+      autodetect_constructor_args: params["autodetect_constructor_args"],
+      is_yul: params["is_yul"] || false
     }
   end
 
