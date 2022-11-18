@@ -3,4 +3,5 @@ defmodule BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView do
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
+  alias Explorer.SmartContract.RustVerifierInterface
 end
