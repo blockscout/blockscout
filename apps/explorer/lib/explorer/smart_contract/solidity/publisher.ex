@@ -7,7 +7,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   alias Explorer.Celo.PubSub
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.CompilerVersion
+  alias Explorer.SmartContract.{CompilerVersion, Helper}
   alias Explorer.SmartContract.Solidity.Verifier
 
   @doc """
@@ -106,7 +106,10 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, json_verification \\ false) do
-    attrs = attributes(address_hash, params)
+    attrs =
+      address_hash
+      |> attributes(params)
+      |> Helper.add_contract_code_md5()
 
     changeset =
       SmartContract.invalid_contract_changeset(
