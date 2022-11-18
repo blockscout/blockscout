@@ -427,7 +427,13 @@ defmodule Indexer.BufferedTask do
         {%BoundQueue{maximum_size: maximum_size} = new_bound_queue, remaining_entries} ->
           Logger.warn(fn ->
             [
-              "BufferedTask #{process(self())} bound queue is at maximum size (#{to_string(maximum_size)}) and #{remaining_entries |> Enum.count() |> to_string()} entries could not be added."
+              "BufferedTask ",
+              process(self()),
+              " bound queue is at maximum size (",
+              to_string(maximum_size),
+              ") and ",
+              remaining_entries |> Enum.count() |> to_string(),
+              " entries could not be added."
             ]
           end)
 
@@ -471,7 +477,9 @@ defmodule Indexer.BufferedTask do
        when maximum_size != nil do
     Logger.info(fn ->
       [
-        "BufferedTask #{process(self())} ran out of work, but work queue was shrunk to save memory, so restoring lost work from `c:init/2`."
+        "BufferedTask ",
+        process(self()),
+        " ran out of work, but work queue was shrunk to save memory, so restoring lost work from `c:init/2`."
       ]
     end)
 

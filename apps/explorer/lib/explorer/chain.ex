@@ -5420,43 +5420,35 @@ defmodule Explorer.Chain do
          {:ok, "0x" <> token1_encoded} <-
            token1_signature
            |> Contract.eth_call_request(foreign_token_address_hash, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         token0_hash <- parse_contract_response(token0_encoded, :address),
+         token1_hash <- parse_contract_response(token1_encoded, :address),
+         false <- is_nil(token0_hash),
+         false <- is_nil(token1_hash),
+         token0_hash_str <- "0x" <> Base.encode16(token0_hash, case: :lower),
+         token1_hash_str <- "0x" <> Base.encode16(token1_hash, case: :lower),
+         {:ok, "0x" <> token0_name_encoded} <-
+           name_signature
+           |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_name_encoded} <-
+           name_signature
+           |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token0_symbol_encoded} <-
+           symbol_signature
+           |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_symbol_encoded} <-
+           symbol_signature
+           |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-      token0_hash = parse_contract_response(token0_encoded, :address)
-      token1_hash = parse_contract_response(token1_encoded, :address)
+      token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
+      token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
+      token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
+      token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
 
-      if token0_hash && token1_hash do
-        token0_hash_str = "0x" <> Base.encode16(token0_hash, case: :lower)
-        token1_hash_str = "0x" <> Base.encode16(token1_hash, case: :lower)
-
-        with {:ok, "0x" <> token0_name_encoded} <-
-               name_signature
-               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token1_name_encoded} <-
-               name_signature
-               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token0_symbol_encoded} <-
-               symbol_signature
-               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token1_symbol_encoded} <-
-               symbol_signature
-               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-          token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
-          token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
-          token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
-          token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
-
-          "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
-        else
-          _ ->
-            nil
-        end
-      else
-        nil
-      end
+      "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
     else
       _ ->
         nil
@@ -5563,16 +5555,14 @@ defmodule Explorer.Chain do
       |> parse_contract_response({:uint, 256})
       |> Decimal.new()
 
-    with {:ok, "0x" <> token_encoded} <-
-           token_signature
-           |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
-           |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-      token_hash = parse_contract_response(token_encoded, :address)
-
-      if token_hash do
-        token_hash_str = "0x" <> Base.encode16(token_hash, case: :lower)
-
-        with {:ok, "0x" <> token_decimals_encoded} <-
+    case token_signature
+         |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+         |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+      {:ok, "0x" <> token_encoded} ->
+        with token_hash <- parse_contract_response(token_encoded, :address),
+             false <- is_nil(token_hash),
+             token_hash_str <- "0x" <> Base.encode16(token_hash, case: :lower),
+             {:ok, "0x" <> token_decimals_encoded} <-
                decimals_signature
                |> Contract.eth_call_request(token_hash_str, 1, nil, nil)
                |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
@@ -5609,8 +5599,9 @@ defmodule Explorer.Chain do
             end
 
           {:ok, token_cap_usd}
+        else
+          _ -> :error
         end
-      end
     end
   end
 

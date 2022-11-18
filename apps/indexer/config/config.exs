@@ -118,21 +118,6 @@ config :logger, :logger_backend, level: :error
 #       block_number step count error_count shrunk import_id transaction_id)a,
 #  metadata_filter: [application: :indexer]
 
-indexer_empty_blocks_sanitizer_batch_size =
-  if System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE") do
-    case Integer.parse(System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE")) do
-      {integer, ""} -> integer
-      _ -> 100
-    end
-  else
-    100
-  end
-
-config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
-  disabled?: System.get_env("INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER", "false") == "true"
-
-config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty_blocks_sanitizer_batch_size
-
 import_config "telemetry/telemetry.exs"
 
 # Import environment specific config. This must remain at the bottom
