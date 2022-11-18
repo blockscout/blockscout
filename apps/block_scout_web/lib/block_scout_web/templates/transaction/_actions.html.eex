@@ -1,43 +1,89 @@
 <%= if @action.protocol == :uniswap_v3 do %>
   <%= if @action.type == :mint_nft do %>
-    <i class="fa fa-caret-right" style="font-size:10px"></i>
+    <span style="margin-bottom: 4px; display: inline-block">
+      <i class="fa fa-caret-right" style="font-size:10px"></i>
 
-    <% address_string = Map.get(@action.data, "address") %>
-    <% {address_hash_status, address_hash} = Chain.string_to_address_hash(address_string) %>
-    <% {address_status, address} = Chain.hash_to_address(address_hash) %>
-    <% address = if address_hash_status == :ok and address_status == :ok do %>
-      <%= render BlockScoutWeb.AddressView, "_link.html", address: address, contract: BlockScoutWeb.AddressView.contract?(address), use_custom_tooltip: false, trimmed: false %>
-    <% else %>
-      <%= link to: address_path(BlockScoutWeb.Endpoint, :show, address_string), "data-test": "address_hash_link" do %>
-        <% name = Map.get(@action.data, "name") %>
-        <span data-toggle="tooltip" data-placement="top" title="<%= name %>">
-          <span class="d-none d-md-none d-lg-inline d-xl-inline"><%= AddressView.short_string(name, 15) %></span>
-          <span class="d-inline d-md-inline d-lg-none d-xl-none"><%= AddressView.short_string(name, 5) %></span>
-        </span>
+      <% address_string = Map.get(@action.data, "address") %>
+      <% {address_hash_status, address_hash} = Chain.string_to_address_hash(address_string) %>
+      <% {address_status, address} = Chain.hash_to_address(address_hash) %>
+      <% address = if address_hash_status == :ok and address_status == :ok do %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: address, contract: BlockScoutWeb.AddressView.contract?(address), use_custom_tooltip: false, trimmed: false %>
+      <% else %>
+        <%= link to: address_path(BlockScoutWeb.Endpoint, :show, address_string), "data-test": "address_hash_link" do %>
+          <% name = Map.get(@action.data, "name") %>
+          <span data-toggle="tooltip" data-placement="top" title="<%= name %>">
+            <span class="d-none d-md-none d-lg-inline d-xl-inline"><%= AddressView.short_string(name, 15) %></span>
+            <span class="d-inline d-md-inline d-lg-none d-xl-none"><%= AddressView.short_string(name, 5) %></span>
+          </span>
 
-        <% symbol = Map.get(@action.data, "symbol") %>
-        <span data-toggle="tooltip" data-placement="top" title="<%= symbol %>">
-          <span class="d-none d-md-none d-lg-inline d-xl-inline">(<%= AddressView.short_string(symbol, 15) %>)</span>
-          <span class="d-inline d-md-inline d-lg-none d-xl-none">(<%= AddressView.short_string(symbol, 5) %>)</span>
+          <% symbol = Map.get(@action.data, "symbol") %>
+          <span data-toggle="tooltip" data-placement="top" title="<%= symbol %>">
+            <span class="d-none d-md-none d-lg-inline d-xl-inline">(<%= AddressView.short_string(symbol, 15) %>)</span>
+            <span class="d-inline d-md-inline d-lg-none d-xl-none">(<%= AddressView.short_string(symbol, 5) %>)</span>
+          </span>
+        <% end %>
+      <% end %>
+
+      <% to_address = Map.get(@action.data, "to") %>
+      <% to = link to: address_path(BlockScoutWeb.Endpoint, :show, to_address), "data-test": "address_hash_link" do %>
+        <span data-toggle="tooltip" data-placement="top" title="<%= to_address %>">
+          <span class="d-none d-md-none d-xl-inline"><%= to_address %></span>
+          <span class="d-md-inline-block d-xl-none"><%= BlockScoutWeb.AddressView.trimmed_hash(to_address) %></span>
         </span>
       <% end %>
-    <% end %>
-
-    <% to_address = Map.get(@action.data, "to") %>
-    <% to = link to: address_path(BlockScoutWeb.Endpoint, :show, to_address), "data-test": "address_hash_link" do %>
-      <span data-toggle="tooltip" data-placement="top" title="<%= to_address %>">
-        <span class="d-none d-md-none d-xl-inline"><%= to_address %></span>
-        <span class="d-md-inline-block d-xl-none"><%= BlockScoutWeb.AddressView.trimmed_hash(to_address) %></span>
-      </span>
-    <% end %>
-    <%= gettext("Mint of %{address} To %{to}", address: safe_to_string(address), to: safe_to_string(to)) |> raw() %>
+      <%= gettext("Mint of %{address} <span class=\"text-muted\">To</span> %{to}", address: safe_to_string(address), to: safe_to_string(to)) |> raw() %>
+    </span>
     <br />
 
     <% token_ids = Map.get(@action.data, "ids") %>
     <%= for id <- token_ids do %>
-      &nbsp;&nbsp; <i class="fa fa-caret-right" style="font-size:10px"></i>
-      <% link_to_id = link id, to: token_instance_path(BlockScoutWeb.Endpoint, :show, address_string, id), "data-test": "token_link" %>
-      <%= gettext("%{qty} of Token ID [%{link_to_id}]", qty: 1, link_to_id: safe_to_string(link_to_id)) |> raw() %><br />
+      <span style="margin-bottom: 4px; margin-left: 10px; display: inline-block">
+        <i class="fa fa-caret-right" style="font-size:10px"></i>
+        <% link_to_id = link id, to: token_instance_path(BlockScoutWeb.Endpoint, :show, address_string, id), "data-test": "token_link" %>
+        <%= gettext("%{qty} of <span class=\"text-muted\">Token ID [%{link_to_id}]</span>", qty: 1, link_to_id: safe_to_string(link_to_id)) |> raw() %>
+      </span>
+      <br />
     <% end %>
+  <% end %>
+  <%= if Enum.member?([:mint, :burn, :collect, :swap], @action.type) do %>
+    <span style="margin-bottom: 4px; display: inline-block">
+      <% amount0 = Map.get(@action.data, "amount0") %>
+      <% amount0 = BlockScoutWeb.CldrHelper.Number.to_string!(Decimal.new(amount0), format: "#,##0.##################") %>
+      <% amount1 = Map.get(@action.data, "amount1") %>
+      <% amount1 = BlockScoutWeb.CldrHelper.Number.to_string!(Decimal.new(amount1), format: "#,##0.##################") %>
+
+      <% symbol0 = Map.get(@action.data, "symbol0") %>
+      <% address0 = Map.get(@action.data, "address0") %>
+      <% symbol1 = Map.get(@action.data, "symbol1") %>
+      <% address1 = Map.get(@action.data, "address1") %>
+      
+      <i class="fa fa-caret-right" style="font-size:10px"></i>
+      
+      <% symbol0 = if symbol0 != "Ether" do %>
+        <%= link(symbol0, to: token_path(BlockScoutWeb.Endpoint, :show, address0), "data-test": "token_link") %>
+      <% else %>
+        <%= symbol0 %>
+      <% end %>
+      
+      <% symbol1 = if symbol1 != "Ether" do %>
+        <%= link(symbol1, to: token_path(BlockScoutWeb.Endpoint, :show, address1), "data-test": "token_link") %>
+      <% else %>
+        <%= symbol1 %>
+      <% end %>
+
+      <%= if @action.type == :mint do %>
+        <%= gettext("<span class=\"text-muted\">Add</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">Liquidity To Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+      <% end %>
+      <%= if @action.type == :burn do %>
+        <%= gettext("<span class=\"text-muted\">Remove</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">Liquidity From Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+      <% end %>
+      <%= if @action.type == :collect do %>
+        <%= gettext("<span class=\"text-muted\">Collect</span> %{amount0} %{symbol0} <span class=\"text-muted\">And</span> %{amount1} %{symbol1} <span class=\"text-muted\">From Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+      <% end %>
+      <%= if @action.type == :swap do %>
+        <%= gettext("<span class=\"text-muted\">Swap</span> %{amount0} %{symbol0} <span class=\"text-muted\">For</span> %{amount1} %{symbol1} <span class=\"text-muted\">On Uniswap V3</span>", amount0: amount0, symbol0: safe_to_string(symbol0), amount1: amount1, symbol1: safe_to_string(symbol1)) |> raw() %>
+      <% end %>
+    </span>
+    <br />
   <% end %>
 <% end %>

@@ -90,6 +90,11 @@ defmodule Indexer.Transform.TransactionActions do
     |> logs_group_by_txs()
     |> clear_actions()
 
+    # create tokens cache if not exists
+    if :ets.whereis(:tokens_data_cache) == :undefined do
+      :ets.new(:tokens_data_cache, [:set, :named_table, :public, read_concurrency: true, write_concurrency: true])
+    end
+
     # handle uniswap v3
     tx_actions =
       if Enum.member?([@mainnet, @optimism, @polygon], chain_id) do
@@ -107,11 +112,6 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap(logs_grouped, actions, chain_id) do
     # create a list of UniswapV3Pool legitimate contracts
     legitimate = uniswap_legitimate_pools(logs_grouped)
-
-    # create tokens cache if not exists
-    if :ets.whereis(:tokens_data_cache) == :undefined do
-      :ets.new(:tokens_data_cache, [:named_table, :private])
-    end
 
     # iterate for each transaction
     Enum.reduce(logs_grouped, actions, fn {tx_hash, tx_logs}, actions_acc ->
@@ -158,8 +158,6 @@ defmodule Indexer.Transform.TransactionActions do
     if first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" do
       []
     else
-      # Logger.warn("tx_hash: #{log.transaction_hash}")
-
       # check UniswapV3Pool contract is legitimate
       pool_address = String.downcase(log.address_hash)
 
@@ -274,8 +272,8 @@ defmodule Indexer.Transform.TransactionActions do
     decimals1 = token_data[address1].decimals
     symbol1 = uniswap_clarify_token_symbol(token_data[address1].symbol, chain_id)
 
-    amount0 = fractional(Decimal.new(amount0), decimals0)
-    amount1 = fractional(Decimal.new(amount1), decimals1)
+    amount0 = fractional(Decimal.new(amount0), Decimal.new(decimals0))
+    amount1 = fractional(Decimal.new(amount1), Decimal.new(decimals1))
 
     {new_amount0, new_symbol0, new_address0, new_amount1, new_symbol1, new_address1, is_error} =
       if type == "swap" do
@@ -470,9 +468,9 @@ defmodule Indexer.Transform.TransactionActions do
     |> TypeDecoder.decode_raw(types)
   end
 
-  defp fractional(%Decimal{} = amount, decimals) do
+  defp fractional(%Decimal{} = amount, %Decimal{} = decimals) do
     amount.sign
-    |> Decimal.new(amount.coef, amount.exp - decimals)
+    |> Decimal.new(amount.coef, amount.exp - Decimal.to_integer(decimals))
     |> Decimal.normalize()
     |> Decimal.to_string(:normal)
   end
@@ -502,8 +500,10 @@ defmodule Indexer.Transform.TransactionActions do
       Map.put(
         acc,
         address,
-        case :ets.lookup(:tokens_data_cache, address) do
-          [{_, value}] -> value
+        with info when info != :undefined <- :ets.info(:tokens_data_cache),
+             [{_, value}] <- :ets.lookup(:tokens_data_cache, address) do
+          value
+        else
           _ -> %{symbol: nil, decimals: nil}
         end
       )
