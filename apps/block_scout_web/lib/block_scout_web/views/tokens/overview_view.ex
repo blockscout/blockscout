@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   def smart_contract_with_read_only_functions?(
         %Token{contract_address: %Address{smart_contract: %SmartContract{}}} = token
       ) do
-    Enum.any?(token.contract_address.smart_contract.abi, &Helper.queriable_method?(&1))
+    Enum.any?(token.contract_address.smart_contract.abi || [], &Helper.queriable_method?(&1))
   end
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
         contract_address: %Address{smart_contract: %SmartContract{}} = address
       }) do
     Enum.any?(
-      address.smart_contract.abi,
+      address.smart_contract.abi || [],
       &Writer.write_function?(&1)
     )
   end
