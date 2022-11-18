@@ -3446,3 +3446,8 @@ msgstr ""
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Sources *.sol or *.yul files"
 msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_yul_contracts_switcher.html.eex:3
+#, elixir-autogen, elixir-format
+msgid "Is Yul contract"
+msgstr ""

@@ -1,6 +1,6 @@
 <div class="smart-contract-form-group">
   <div class="smart-contract-form-group-inner-wrapper">
-    <%= label @f, "Is yul contract" %>
+    <%= label @f, :is_yul, gettext("Is Yul contract") %>
     <div class="center-column">
       <div class="form-radios-group">
         <div class="radio-big">
