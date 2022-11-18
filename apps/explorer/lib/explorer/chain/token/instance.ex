@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Token.Instance
   alias Explorer.PagingOptions
 
@@ -28,7 +28,8 @@ defmodule Explorer.Chain.Token.Instance do
     field(:token_id, :decimal, primary_key: true)
     field(:metadata, :map)
     field(:error, :string)
-    field(:owner, Hash.Address, virtual: true)
+
+    belongs_to(:owner, Address, references: :hash, define_field: false)
 
     belongs_to(
       :token,
@@ -61,15 +62,8 @@ defmodule Explorer.Chain.Token.Instance do
   def address_to_unique_token_instances(contract_address_hash) do
     from(
       i in Instance,
-      left_join: tt in TokenTransfer,
-      on:
-        tt.token_contract_address_hash == i.token_contract_address_hash and
-          fragment("? @> ARRAY[?::decimal]", tt.token_ids, i.token_id),
-      join: to_address in assoc(tt, :to_address),
       where: i.token_contract_address_hash == ^contract_address_hash,
-      order_by: [desc: tt.block_number],
-      distinct: [desc: i.token_id],
-      select: %{i | owner: to_address}
+      order_by: [desc: i.token_id]
     )
   end
 
@@ -82,4 +76,17 @@ defmodule Explorer.Chain.Token.Instance do
   end
 
   def page_token_instance(query, _), do: query
+
+  def owner_query(%Instance{token_contract_address_hash: token_contract_address_hash, token_id: token_id}) do
+    from(
+      tt in TokenTransfer,
+      join: to_address in assoc(tt, :to_address),
+      where:
+        tt.token_contract_address_hash == ^token_contract_address_hash and
+          fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^token_id),
+      order_by: [desc: tt.block_number],
+      limit: 1,
+      select: to_address
+    )
+  end
 end

@@ -628,7 +628,7 @@ defmodule Explorer.Chain do
 
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
-    base_query =
+    base =
       from(log in Log,
         inner_join: transaction in Transaction,
         on: transaction.hash == log.transaction_hash,
@@ -643,6 +643,10 @@ defmodule Explorer.Chain do
         select: log
       )
 
+    base_query =
+      base
+      |> filter_topic(options)
+
     wrapped_query =
       from(
         log in subquery(base_query),
@@ -656,7 +660,6 @@ defmodule Explorer.Chain do
       )
 
     wrapped_query
-    |> filter_topic(options)
     |> where_block_number_in_period(from_block, to_block)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
@@ -3006,11 +3009,6 @@ defmodule Explorer.Chain do
   def fetch_min_missing_block_cache do
     max_block_number = BlockNumber.get_max()
 
-    min_missing_block_number =
-      "min_missing_block_number"
-      |> Chain.get_last_fetched_counter()
-      |> Decimal.to_integer()
-
     if max_block_number > 0 do
       query =
         from(b in Block,
@@ -3018,11 +3016,10 @@ defmodule Explorer.Chain do
             missing_range in fragment(
               """
                 (SELECT b1.number
-                FROM generate_series((?)::integer, (?)::integer) AS b1(number)
+                FROM generate_series(0, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
                   (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
               """,
-              ^min_missing_block_number,
               ^max_block_number
             ),
           on: b.number == missing_range.number,
@@ -5291,6 +5288,14 @@ defmodule Explorer.Chain do
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
+    |> Enum.map(fn instance ->
+      owner =
+        instance
+        |> Instance.owner_query()
+        |> Repo.one()
+
+      %{instance | owner: owner}
+    end)
   end
 
   @spec data() :: Dataloader.Ecto.t()
