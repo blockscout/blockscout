@@ -213,7 +213,7 @@
         <span style="font-size:16px;" class="tile-title">
           Latest L1 Batches
         </span>
-        <a href="/txn-batch" style="font-size:16px;">View All</a>
+        <a href="/txn-batches" style="font-size:16px;">View All</a>
       </p>
       <span 
         data-selector="txn-batch-list" 
@@ -267,7 +267,7 @@
         <span style="font-size:16px;" class="tile-title">
           Latest L1->L2 Transactions
         </span>
-        <a href="/l1-to-l2-txn" style="font-size:16px;">View All</a>
+        <a href="/l1-to-l2-txns" style="font-size:16px;">View All</a>
       </p>
        <span
         data-selector="l1-to-l2-list"
