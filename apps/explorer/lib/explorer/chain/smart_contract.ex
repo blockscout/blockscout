@@ -197,11 +197,12 @@ defmodule Explorer.Chain.SmartContract do
   * `partially_verified` - whether contract verified using partial matched source code or not.
   * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
   * `file_path` - show the filename or path to the file of the contract source file
-  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified 
+  * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
   * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
   * `implementation_name` - name of the proxy implementation
   * `autodetect_constructor_args` - field was added for storing user's choice
+  * `is_yul` - field was added for storing user's choice
   """
 
   @type t :: %Explorer.Chain.SmartContract{
@@ -221,7 +222,8 @@ defmodule Explorer.Chain.SmartContract do
           bytecode_checked_at: DateTime.t(),
           contract_code_md5: String.t(),
           implementation_name: String.t() | nil,
-          autodetect_constructor_args: boolean | nil
+          autodetect_constructor_args: boolean | nil,
+          is_yul: boolean | nil
         }
 
   schema "smart_contracts" do
@@ -243,6 +245,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:contract_code_md5, :string)
     field(:implementation_name, :string)
     field(:autodetect_constructor_args, :boolean, virtual: true)
+    field(:is_yul, :boolean, virtual: true)
 
     has_many(
       :decompiled_smart_contracts,
@@ -291,7 +294,6 @@ defmodule Explorer.Chain.SmartContract do
       :compiler_version,
       :optimization,
       :contract_source_code,
-      :abi,
       :address_hash,
       :contract_code_md5
     ])
@@ -431,6 +433,7 @@ defmodule Explorer.Chain.SmartContract do
     %__MODULE__{}
     |> changeset(Map.from_struct(twin_contract))
     |> Changeset.put_change(:autodetect_constructor_args, true)
+    |> Changeset.put_change(:is_yul, false)
     |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
   end
 
@@ -443,6 +446,7 @@ defmodule Explorer.Chain.SmartContract do
     |> Changeset.put_change(:compiler_version, "latest")
     |> Changeset.put_change(:contract_source_code, "")
     |> Changeset.put_change(:autodetect_constructor_args, true)
+    |> Changeset.put_change(:is_yul, false)
   end
 
   def merge_twin_vyper_contract_with_changeset(
