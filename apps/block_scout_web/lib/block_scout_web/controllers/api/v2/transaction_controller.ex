@@ -37,6 +37,16 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     to_address: :required
   }
 
+  @token_transfers_in_tx_neccessity_by_association %{
+    [from_address: :smart_contract] => :optional,
+    [to_address: :smart_contract] => :optional,
+    [from_address: :names] => :optional,
+    [to_address: :names] => :optional,
+    from_address: :required,
+    to_address: :required,
+    token: :required
+  }
+
   @internal_transaction_neccessity_by_association [
     necessity_by_association: %{
       [created_contract_address: :names] => :optional,
@@ -57,7 +67,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
               transaction_hash,
               necessity_by_association: @transaction_necessity_by_association
             )},
-         preloaded <- Chain.preload_token_transfers(transaction, @token_transfers_neccessity_by_association, false) do
+         preloaded <-
+           Chain.preload_token_transfers(transaction, @token_transfers_in_tx_neccessity_by_association, false) do
       conn
       |> put_status(200)
       |> render(:transaction, %{transaction: preloaded})
