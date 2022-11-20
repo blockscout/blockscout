@@ -76,7 +76,7 @@ msgstr ""
 msgid "(query)"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:5
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:4
 #, elixir-autogen, elixir-format
 msgid ") may be added for each contract. Click the Add Library button to add an additional one."
 msgstr ""
@@ -97,7 +97,7 @@ msgstr ""
 msgid "A block producer who successfully included the block onto the blockchain."
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:5
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:4
 #, elixir-autogen, elixir-format
 msgid "A library name called in the .sol file. Multiple libraries (up to "
 msgstr ""
@@ -1910,6 +1910,8 @@ msgstr ""
 msgid "Only the first"
 msgstr ""
 
+#: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:40
+#: lib/block_scout_web/templates/address_contract_verification_via_multi_part_files/new.html.eex:32
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:69
 #, elixir-autogen, elixir-format
 msgid "Optimization"
@@ -2431,7 +2433,7 @@ msgstr ""
 msgid "Test Networks"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:11
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_library_first.html.eex:9
 #, elixir-autogen, elixir-format
 msgid "The 0x library address. This can be found in the generated json file or Truffle output (if using truffle)."
 msgstr ""
@@ -3460,4 +3462,19 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:77
 #, elixir-autogen, elixir-format
 msgid "truffle flattener"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_include_nightly_builds_field.html.eex:3
+#, elixir-autogen, elixir-format
+msgid "Include nightly builds"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_include_nightly_builds_field.html.eex:19
+#, elixir-autogen, elixir-format
+msgid "Select yes if you want to show nightly builds."
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract_verification_common_fields/_fetch_constructor_args.html.eex:3
+#, elixir-autogen, elixir-format
+msgid "Try to fetch constructor arguments automatically"
 msgstr ""

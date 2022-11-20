@@ -1,10 +1,10 @@
 <% library_name = "library" <> to_string(@index) <>  "_name" |> String.to_atom() %>
 <div class="smart-contract-form-group">
-    <div class="smart-contract-form-group-inner-wrapper">
-    <%= label :external_libraries, @library, gettext("Library") <> " " <> to_string(@index) <> " " <> gettext("Name") %>
-    <div class="center-column">
-        <%= text_input :external_libraries, library_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
-    </div>
-    <div class="smart-contract-form-group-tooltip"><%= if assigns[:tooltip_text] do @tooltip_text end %></div>
-    </div>
+  <div class="smart-contract-form-group-inner-wrapper">
+  <%= label :external_libraries, library_name, gettext("Library") <> " " <> to_string(@index) <> " " <> gettext("Name") %>
+  <div class="center-column">
+    <%= text_input :external_libraries, library_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+  </div>
+  <div class="smart-contract-form-group-tooltip"><%= if assigns[:tooltip_text] do @tooltip_text end %></div>
+  </div>
 </div>
