@@ -724,7 +724,7 @@ msgid "Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:138
+#: lib/block_scout_web/templates/address_contract/index.html.eex:134
 msgid "Contract ABI"
 msgstr ""
 
@@ -750,8 +750,8 @@ msgid "Contract Creation"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:154
-#: lib/block_scout_web/templates/address_contract/index.html.eex:169
+#: lib/block_scout_web/templates/address_contract/index.html.eex:150
+#: lib/block_scout_web/templates/address_contract/index.html.eex:165
 msgid "Contract Creation Code"
 msgstr ""
 
@@ -793,7 +793,7 @@ msgid "Contracts"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:160
+#: lib/block_scout_web/templates/address_contract/index.html.eex:156
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
 
@@ -803,7 +803,7 @@ msgid "Contribute"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:140
+#: lib/block_scout_web/templates/address_contract/index.html.eex:136
 msgid "Copy ABI"
 msgstr ""
 
@@ -816,8 +816,8 @@ msgid "Copy Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:156
-#: lib/block_scout_web/templates/address_contract/index.html.eex:172
+#: lib/block_scout_web/templates/address_contract/index.html.eex:152
+#: lib/block_scout_web/templates/address_contract/index.html.eex:168
 msgid "Copy Contract Creation Code"
 msgstr ""
 
@@ -827,8 +827,8 @@ msgid "Copy Decompiled Contract Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:199
-#: lib/block_scout_web/templates/address_contract/index.html.eex:209
+#: lib/block_scout_web/templates/address_contract/index.html.eex:195
+#: lib/block_scout_web/templates/address_contract/index.html.eex:205
 msgid "Copy Deployed ByteCode"
 msgstr ""
 
@@ -863,7 +863,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:114
-#: lib/block_scout_web/templates/address_contract/index.html.eex:127
+#: lib/block_scout_web/templates/address_contract/index.html.eex:125
 msgid "Copy Source Code"
 msgstr ""
 
@@ -1038,8 +1038,8 @@ msgid "Delegators’ Staked Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:197
-#: lib/block_scout_web/templates/address_contract/index.html.eex:205
+#: lib/block_scout_web/templates/address_contract/index.html.eex:193
+#: lib/block_scout_web/templates/address_contract/index.html.eex:201
 msgid "Deployed ByteCode"
 msgstr ""
 
@@ -1062,7 +1062,7 @@ msgid "Difficulty"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:161
+#: lib/block_scout_web/templates/address_contract/index.html.eex:157
 msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
 
@@ -1231,7 +1231,7 @@ msgid "Export Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:240
+#: lib/block_scout_web/templates/address_contract/index.html.eex:236
 msgid "External libraries"
 msgstr ""
 
@@ -3158,9 +3158,9 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:27
-#: lib/block_scout_web/templates/address_contract/index.html.eex:29 lib/block_scout_web/templates/address_contract/index.html.eex:176
-#: lib/block_scout_web/templates/address_contract/index.html.eex:182 lib/block_scout_web/templates/address_contract/index.html.eex:213
-#: lib/block_scout_web/templates/address_contract/index.html.eex:219 lib/block_scout_web/templates/smart_contract/_functions.html.eex:14
+#: lib/block_scout_web/templates/address_contract/index.html.eex:29 lib/block_scout_web/templates/address_contract/index.html.eex:172
+#: lib/block_scout_web/templates/address_contract/index.html.eex:178 lib/block_scout_web/templates/address_contract/index.html.eex:209
+#: lib/block_scout_web/templates/address_contract/index.html.eex:215 lib/block_scout_web/templates/smart_contract/_functions.html.eex:14
 msgid "Verify & Publish"
 msgstr ""
 

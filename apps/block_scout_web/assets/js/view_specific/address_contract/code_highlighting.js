@@ -1,9 +1,25 @@
-import hljs from 'highlight.js/lib/core'
-import hljsDefineSolidity from 'highlightjs-solidity'
+import ace from '../../lib/ace/src-min/ace'
+import '../../lib/ace/src-min/mode-csharp'
+import '../../lib/ace/src-min/theme-chrome'
 
-hljsDefineSolidity(hljs)
+/* eslint-disable-next-line */
+const Mode = ace.require('ace/mode/csharp').Mode
 
-// only activate highlighting on pages with this selector
-if (document.querySelectorAll('[data-activate-highlight]').length > 0) {
-  hljs.highlightAll()
+const codeMain = document.getElementById('code_viewer_main')
+const code = codeMain.textContent
+const editor = ace.edit('code_viewer_main')
+editor.session.setMode(new Mode())
+editor.setTheme('ace/theme/chrome')
+editor.setValue(code, -1)
+editor.setOptions({ maxLines: 40, readOnly: true })
+
+const len = codeMain.data('additional-sources-length')
+for (let i = 0; i < len; i++) {
+  const tag = 'code_viewer_' + i
+  const code = document.getElementById(tag).textContent
+  const editor = ace.edit(tag)
+  editor.session.setMode(new Mode())
+  editor.setTheme('ace/theme/chrome')
+  editor.setValue(code, -1)
+  editor.setOptions({ maxLines: 40, readOnly: true })
 }

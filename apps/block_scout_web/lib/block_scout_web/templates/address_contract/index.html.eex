@@ -114,12 +114,10 @@
               <%= gettext "Copy Source Code" %>
             </button>
           </div>
-          <div class="tile tile-muted mb-4">
-            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(target_contract.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
-          </div>
+          <pre class="tile-muted tile-code mb-4" id="code_viewer_main" data-additional-sources-length=<%= Enum.count(additional_sources) %>><%= target_contract.contract_source_code %><pre>
         </section>
 
-        <%= Enum.map(additional_sources, fn additional_source -> %>
+        <%= additional_sources |> Enum.with_index() |> Enum.map(fn {additional_source, index} -> %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= additional_source.file_name %></h3>
@@ -127,9 +125,7 @@
                 <%= gettext "Copy Source Code" %>
               </button>
             </div>
-            <div class="tile tile-muted mb-4">
-              <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(additional_source.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
-            </div>
+            <pre class="tile-muted tile-code mb-4" id="code_viewer_<%= index %>"><%= additional_source.contract_source_code %><pre>
           </section>
         <% end)%>
 

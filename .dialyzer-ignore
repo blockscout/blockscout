@@ -28,8 +28,8 @@ lib/explorer/exchange_rates/source.ex:110
 lib/explorer/exchange_rates/source.ex:113
 lib/explorer/smart_contract/verifier.ex:89
 lib/explorer/smart_contract/solidity/verifier.ex:162
-lib/block_scout_web/templates/address_contract/index.html.eex:174
-lib/block_scout_web/templates/address_contract/index.html.eex:211
+lib/block_scout_web/templates/address_contract/index.html.eex:170
+lib/block_scout_web/templates/address_contract/index.html.eex:207
 lib/explorer/staking/stake_snapshotting.ex:15: Function do_snapshotting/7 has no local return
 lib/explorer/staking/stake_snapshotting.ex:147
 lib/explorer/third_party_integrations/sourcify.ex:109
