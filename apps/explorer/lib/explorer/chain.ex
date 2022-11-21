@@ -4203,6 +4203,30 @@ defmodule Explorer.Chain do
     |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
+  def get_verified_twin_contract(%Explorer.Chain.Address{} = target_address) do
+    case target_address do
+      %{contract_code: %Chain.Data{bytes: contract_code_bytes}} ->
+        target_address_hash = target_address.hash
+
+        contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
+
+        verified_contract_twin_query =
+          from(
+            smart_contract in SmartContract,
+            where: smart_contract.contract_code_md5 == ^contract_code_md5,
+            where: smart_contract.address_hash != ^target_address_hash,
+            select: smart_contract,
+            limit: 1
+          )
+
+        verified_contract_twin_query
+        |> Repo.one(timeout: 10_000)
+
+      _ ->
+        nil
+    end
+  end
+
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
   which were verified previously, returns a single t:SmartContract.t/0
@@ -4216,24 +4240,8 @@ defmodule Explorer.Chain do
 
   def get_address_verified_twin_contract(%Explorer.Chain.Hash{} = address_hash) do
     with target_address <- Repo.get(Address, address_hash),
-         false <- is_nil(target_address),
-         %{contract_code: %Chain.Data{bytes: contract_code_bytes}} <- target_address do
-      target_address_hash = target_address.hash
-
-      contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
-
-      verified_contract_twin_query =
-        from(
-          smart_contract in SmartContract,
-          where: smart_contract.contract_code_md5 == ^contract_code_md5,
-          where: smart_contract.address_hash != ^target_address_hash,
-          select: smart_contract,
-          limit: 1
-        )
-
-      verified_contract_twin =
-        verified_contract_twin_query
-        |> Repo.one(timeout: 10_000)
+         false <- is_nil(target_address) do
+      verified_contract_twin = get_verified_twin_contract(target_address)
 
       verified_contract_twin_additional_sources = get_contract_additional_sources(verified_contract_twin)
 
