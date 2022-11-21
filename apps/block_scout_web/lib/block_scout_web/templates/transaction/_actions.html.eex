@@ -1,7 +1,7 @@
 <%= if @action.protocol == :uniswap_v3 do %>
   <%= if @action.type == :mint_nft do %>
-    <span style="margin-bottom: 4px; display: inline-block">
-      <i class="fa fa-caret-right" style="font-size:10px"></i>
+    <span class="actions-item">
+      <i class="fa fa-caret-right"></i>
 
       <% address_string = Map.get(@action.data, "address") %>
       <% {address_hash_status, address_hash} = Chain.string_to_address_hash(address_string) %>
@@ -37,8 +37,8 @@
 
     <% token_ids = Map.get(@action.data, "ids") %>
     <%= for id <- token_ids do %>
-      <span style="margin-bottom: 4px; margin-left: 10px; display: inline-block">
-        <i class="fa fa-caret-right" style="font-size:10px"></i>
+      <span class="actions-item subitem">
+        <i class="fa fa-caret-right"></i>
         <% link_to_id = link id, to: token_instance_path(BlockScoutWeb.Endpoint, :show, address_string, id), "data-test": "token_link" %>
         <%= gettext("%{qty} of <span class=\"text-muted\">Token ID [%{link_to_id}]</span>", qty: 1, link_to_id: safe_to_string(link_to_id)) |> raw() %>
       </span>
@@ -46,7 +46,7 @@
     <% end %>
   <% end %>
   <%= if Enum.member?([:mint, :burn, :collect, :swap], @action.type) do %>
-    <span style="margin-bottom: 4px; display: inline-block">
+    <span class="actions-item">
       <% amount0 = Map.get(@action.data, "amount0") %>
       <% amount0 = BlockScoutWeb.CldrHelper.Number.to_string!(Decimal.new(amount0), format: "#,##0.##################") %>
       <% amount1 = Map.get(@action.data, "amount1") %>
@@ -57,7 +57,7 @@
       <% symbol1 = Map.get(@action.data, "symbol1") %>
       <% address1 = Map.get(@action.data, "address1") %>
       
-      <i class="fa fa-caret-right" style="font-size:10px"></i>
+      <i class="fa fa-caret-right"></i>
       
       <% symbol0 = if symbol0 != "Ether" do %>
         <%= link(symbol0, to: token_path(BlockScoutWeb.Endpoint, :show, address0), "data-test": "token_link") %>
