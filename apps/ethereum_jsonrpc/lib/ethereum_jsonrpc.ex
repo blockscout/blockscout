@@ -320,7 +320,7 @@ defmodule EthereumJSONRPC do
   end
 
   def block_numbers_in_range(block_numbers) do
-    min_block = trace_first_block_to_fetch()
+    min_block = first_block_to_fetch(:trace_first_block)
 
     block_numbers
     |> Enum.filter(fn block_number ->
@@ -497,10 +497,6 @@ defmodule EthereumJSONRPC do
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, Blocks.from_responses(responses, id_to_params)}
     end
-  end
-
-  defp trace_first_block_to_fetch do
-    first_block_to_fetch(:trace_first_block)
   end
 
   def first_block_to_fetch(config) do

@@ -69,10 +69,13 @@ ENV DISABLE_WRITE_API=${DISABLE_WRITE_API} \
     SOURCIFY_SERVER_URL=${SOURCIFY_SERVER_URL} \
     SOURCIFY_REPO_URL=${SOURCIFY_REPO_URL}
 
+ARG COIN
 RUN if [ "$COIN" != "" ]; then \
         sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
-        sed -i '/msgid "Ether"/{n;s/msgstr ""/msgstr "${COIN}"/g}' apps/block_scout_web/priv/gettext/default.pot; \
-        sed -i '/msgid "Ether"/{n;s/msgstr ""/msgstr "${COIN}"/g}' apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
+        sed -i "/msgid \"Ether\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/default.pot; \
+        sed -i "/msgid \"Ether\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
+        sed -i "/msgid \"ETH\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/default.pot; \
+        sed -i "/msgid \"ETH\"/{n;s/msgstr \"\"/msgstr \"${COIN}\"/g}" apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; \
     fi
 
 # Invalidate cache via modifying build args on compilation
