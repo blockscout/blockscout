@@ -20,6 +20,7 @@ defmodule Explorer.Repo.Migrations.AddTransactionActionsTable do
       add(:protocol, :transaction_actions_protocol, null: false)
       add(:data, :map, default: %{}, null: false)
       add(:type, :transaction_actions_type, null: false)
+      add(:log_index, :integer, null: false)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end

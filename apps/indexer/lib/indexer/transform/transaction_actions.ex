@@ -211,8 +211,12 @@ defmodule Indexer.Transform.TransactionActions do
         if from == "0x0000000000000000000000000000000000000000" do
           to = truncate_address_hash(log.third_topic)
           [token_id] = decode_data(log.fourth_topic, [{:uint, 256}])
-          mint_nft_ids = Map.put_new(acc, to, [])
-          Map.put(mint_nft_ids, to, Enum.reverse([to_string(token_id) | Enum.reverse(mint_nft_ids[to])]))
+          mint_nft_ids = Map.put_new(acc, to, %{ids: [], log_index: log.index})
+
+          Map.put(mint_nft_ids, to, %{
+            ids: Enum.reverse([to_string(token_id) | Enum.reverse(mint_nft_ids[to].ids)]),
+            log_index: mint_nft_ids[to].log_index
+          })
         else
           acc
         end
@@ -220,7 +224,7 @@ defmodule Indexer.Transform.TransactionActions do
         acc
       end
     end)
-    |> Enum.reduce(actions_acc, fn {to, ids}, acc ->
+    |> Enum.reduce(actions_acc, fn {to, %{ids: ids, log_index: log_index}}, acc ->
       action = %{
         hash: tx_hash,
         protocol: "uniswap_v3",
@@ -232,7 +236,8 @@ defmodule Indexer.Transform.TransactionActions do
           ids: ids,
           block_number: first_log.block_number
         },
-        type: "mint_nft"
+        type: "mint_nft",
+        log_index: log_index
       }
 
       Enum.reverse([action | Enum.reverse(acc)])
@@ -308,7 +313,8 @@ defmodule Indexer.Transform.TransactionActions do
             address1: Address.checksum(new_address1),
             block_number: log.block_number
           },
-          type: type
+          type: type,
+          log_index: log.index
         }
       ]
     end

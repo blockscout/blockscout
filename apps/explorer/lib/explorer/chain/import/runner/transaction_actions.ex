@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Import.Runner.TransactionActions do
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
     # Enforce TransactionActions ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.hash, &1.log_index})
 
     {:ok, inserted} =
       Import.insert_changes_list(
