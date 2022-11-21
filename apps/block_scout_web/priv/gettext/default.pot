@@ -690,7 +690,7 @@ msgstr ""
 msgid "Contract"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:137
+#: lib/block_scout_web/templates/address_contract/index.html.eex:152
 #, elixir-autogen, elixir-format
 msgid "Contract ABI"
 msgstr ""
@@ -720,8 +720,8 @@ msgstr ""
 msgid "Contract Creation"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:154
 #: lib/block_scout_web/templates/address_contract/index.html.eex:169
+#: lib/block_scout_web/templates/address_contract/index.html.eex:184
 #, elixir-autogen, elixir-format
 msgid "Contract Creation Code"
 msgstr ""
@@ -769,7 +769,7 @@ msgstr ""
 msgid "Contracts"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:160
+#: lib/block_scout_web/templates/address_contract/index.html.eex:175
 #, elixir-autogen, elixir-format
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
@@ -779,7 +779,7 @@ msgstr ""
 msgid "Contribute"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:139
+#: lib/block_scout_web/templates/address_contract/index.html.eex:154
 #, elixir-autogen, elixir-format
 msgid "Copy ABI"
 msgstr ""
@@ -811,8 +811,8 @@ msgstr ""
 msgid "Copy Contract Address"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:156
-#: lib/block_scout_web/templates/address_contract/index.html.eex:172
+#: lib/block_scout_web/templates/address_contract/index.html.eex:171
+#: lib/block_scout_web/templates/address_contract/index.html.eex:187
 #, elixir-autogen, elixir-format
 msgid "Copy Contract Creation Code"
 msgstr ""
@@ -822,8 +822,8 @@ msgstr ""
 msgid "Copy Decompiled Contract Code"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:193
-#: lib/block_scout_web/templates/address_contract/index.html.eex:203
+#: lib/block_scout_web/templates/address_contract/index.html.eex:208
+#: lib/block_scout_web/templates/address_contract/index.html.eex:218
 #, elixir-autogen, elixir-format
 msgid "Copy Deployed ByteCode"
 msgstr ""
@@ -1031,8 +1031,8 @@ msgstr ""
 msgid "Delegate Call"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:191
-#: lib/block_scout_web/templates/address_contract/index.html.eex:199
+#: lib/block_scout_web/templates/address_contract/index.html.eex:206
+#: lib/block_scout_web/templates/address_contract/index.html.eex:214
 #, elixir-autogen, elixir-format
 msgid "Deployed ByteCode"
 msgstr ""
@@ -1062,7 +1062,7 @@ msgstr ""
 msgid "Difficulty"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:161
+#: lib/block_scout_web/templates/address_contract/index.html.eex:176
 #, elixir-autogen, elixir-format
 msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
@@ -1260,7 +1260,7 @@ msgstr ""
 msgid "Export Data"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:228
+#: lib/block_scout_web/templates/address_contract/index.html.eex:243
 #, elixir-autogen, elixir-format
 msgid "External libraries"
 msgstr ""
@@ -3126,8 +3126,8 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address_contract/index.html.eex:28
 #: lib/block_scout_web/templates/address_contract/index.html.eex:30
-#: lib/block_scout_web/templates/address_contract/index.html.eex:177
-#: lib/block_scout_web/templates/address_contract/index.html.eex:208
+#: lib/block_scout_web/templates/address_contract/index.html.eex:192
+#: lib/block_scout_web/templates/address_contract/index.html.eex:223
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:14
 #, elixir-autogen, elixir-format
 msgid "Verify & Publish"
@@ -3477,4 +3477,14 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_common_fields/_fetch_constructor_args.html.eex:3
 #, elixir-autogen, elixir-format
 msgid "Try to fetch constructor arguments automatically"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract/index.html.eex:137
+#, elixir-autogen, elixir-format
+msgid "Compiler Settings"
+msgstr ""
+
+#: lib/block_scout_web/templates/address_contract/index.html.eex:139
+#, elixir-autogen, elixir-format
+msgid "Copy Compiler Settings"
 msgstr ""

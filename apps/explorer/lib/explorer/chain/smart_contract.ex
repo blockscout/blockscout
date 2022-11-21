@@ -201,6 +201,7 @@ defmodule Explorer.Chain.SmartContract do
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
   * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
   * `implementation_name` - name of the proxy implementation
+  * `settings` - raw compilation parameters
   * `autodetect_constructor_args` - field was added for storing user's choice
   * `is_yul` - field was added for storing user's choice
   """
@@ -222,6 +223,7 @@ defmodule Explorer.Chain.SmartContract do
           bytecode_checked_at: DateTime.t(),
           contract_code_md5: String.t(),
           implementation_name: String.t() | nil,
+          compiler_settings: map() | nil,
           autodetect_constructor_args: boolean | nil,
           is_yul: boolean | nil
         }
@@ -244,6 +246,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
     field(:contract_code_md5, :string)
     field(:implementation_name, :string)
+    field(:compiler_settings, :map)
     field(:autodetect_constructor_args, :boolean, virtual: true)
     field(:is_yul, :boolean, virtual: true)
 
@@ -287,7 +290,8 @@ defmodule Explorer.Chain.SmartContract do
       :is_changed_bytecode,
       :bytecode_checked_at,
       :contract_code_md5,
-      :implementation_name
+      :implementation_name,
+      :compiler_settings
     ])
     |> validate_required([
       :name,
