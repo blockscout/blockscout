@@ -270,7 +270,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         Import.insert_changes_list(
           repo,
           ordered_changes_list,
-          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, 0))>},
+          conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>},
           on_conflict: on_conflict,
           for: CurrentTokenBalance,
           returning: true,
