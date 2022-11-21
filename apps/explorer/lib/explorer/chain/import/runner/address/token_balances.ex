@@ -95,7 +95,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           repo,
           ordered_changes_list,
           conflict_target:
-            {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, 0), block_number)>},
+            {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1), block_number)>},
           on_conflict: on_conflict,
           for: TokenBalance,
           returning: true,
