@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  L2ToL1,
   L2RelayedMessageEvents,
   L2SentMessageEvents,
 } from 'src/typeorm';
@@ -17,91 +18,78 @@ export class L2IngestionService {
   crossDomainMessengerContract: any;
   constructor(
     private configService: ConfigService,
-    @InjectRepository(L2RelayedMessageEvents) private readonly relayedEventsRepository: Repository<L2RelayedMessageEvents>,
-    @InjectRepository(L2SentMessageEvents) private readonly sentEventsRepository: Repository<L2SentMessageEvents>,
+    @InjectRepository(L2RelayedMessageEvents)
+    private readonly relayedEventsRepository: Repository<L2RelayedMessageEvents>,
+    @InjectRepository(L2SentMessageEvents)
+    private readonly sentEventsRepository: Repository<L2SentMessageEvents>,
   ) {
     this.entityManager = getManager();
     const web3 = new Web3(
-      new Web3.providers.HttpProvider(
-        configService.get('L2_RPC')
-      )
+      new Web3.providers.HttpProvider(configService.get('L2_RPC')),
     );
     const crossDomainMessengerContract = new web3.eth.Contract(
       ABI as any,
-      configService.get('L2_CROSS_DOMAIN_MESSENGER_ADDRESS')
+      configService.get('L2_CROSS_DOMAIN_MESSENGER_ADDRESS'),
     );
     this.crossDomainMessengerContract = crossDomainMessengerContract;
     this.web3 = web3;
     // this.sync();
   }
   async getSentMessageByBlockNumber(fromBlock: number, toBlock: number) {
-    return this.crossDomainMessengerContract.getPastEvents(
-      'SentMessage',
-      {
-        fromBlock,
-        toBlock,
-      }
-    )
+    return this.crossDomainMessengerContract.getPastEvents('SentMessage', {
+      fromBlock,
+      toBlock,
+    });
   }
   async getRelayedMessageByBlockNumber(fromBlock: number, toBlock: number) {
-    return this.crossDomainMessengerContract.getPastEvents(
-      'RelayedMessage',
-      {
-        fromBlock,
-        toBlock,
-      }
-    )
+    return this.crossDomainMessengerContract.getPastEvents('RelayedMessage', {
+      fromBlock,
+      toBlock,
+    });
   }
-  verifyDomainCalldataHash({
-    target,
-    sender,
-    message,
-    messageNonce
-  }): string {
-    const xDomainCalldata = this.web3.eth.abi.encodeFunctionCall({
-      name: 'relayMessage',
-      type: 'function',
-      inputs: [
-        { type: 'address',name: 'target'},
-        { type: 'address',name: 'sender'},
-        { type: 'bytes',name: 'message'},
-        { type: 'uint256',name: 'messageNonce'},
-      ]
-    }, [
-      target,
-      sender,
-      message,
-      messageNonce
-    ])
-    const xDomainCalldataHash = Web3.utils.keccak256(xDomainCalldata)
+  verifyDomainCalldataHash({ target, sender, message, messageNonce }): string {
+    const xDomainCalldata = this.web3.eth.abi.encodeFunctionCall(
+      {
+        name: 'relayMessage',
+        type: 'function',
+        inputs: [
+          { type: 'address', name: 'target' },
+          { type: 'address', name: 'sender' },
+          { type: 'bytes', name: 'message' },
+          { type: 'uint256', name: 'messageNonce' },
+        ],
+      },
+      [target, sender, message, messageNonce],
+    );
+    const xDomainCalldataHash = Web3.utils.keccak256(xDomainCalldata);
     return xDomainCalldataHash;
   }
   async getCurrentBlockNumber(): Promise<number> {
-    return this.web3.eth.getBlockNumber()
+    return this.web3.eth.getBlockNumber();
   }
   async getSentEventsBlockNumber(): Promise<number> {
-    const result = await this.sentEventsRepository.createQueryBuilder().select('Max(block_number)', 'blockNumber').getRawOne();
+    const result = await this.sentEventsRepository
+      .createQueryBuilder()
+      .select('Max(block_number)', 'blockNumber')
+      .getRawOne();
     return Number(result.blockNumber) || 0;
   }
   async getRelayedEventsBlockNumber(): Promise<number> {
-    const result = await this.relayedEventsRepository.createQueryBuilder().select('Max(block_number)', 'blockNumber').getRawOne();
+    const result = await this.relayedEventsRepository
+      .createQueryBuilder()
+      .select('Max(block_number)', 'blockNumber')
+      .getRawOne();
     return Number(result.blockNumber) || 0;
   }
   async createSentEvents(startBlock, endBlock) {
     const list = await this.getSentMessageByBlockNumber(startBlock, endBlock);
-    let result: any[] = [];
-    for(const item of list) {
+    const result: any[] = [];
+    for (const item of list) {
       const {
         blockNumber,
         transactionHash,
-        returnValues: {
-          target,
-          sender,
-          message,
-          messageNonce,
-          gasLimit
-        },
-        signature
+        returnValues: { target, sender, message, messageNonce, gasLimit },
+        signature,
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
       try {
@@ -116,41 +104,69 @@ export class L2IngestionService {
           signature,
           timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+          updated_at: new Date().toISOString(),
+        });
+        await this.entityManager.save(L2ToL1, {
+          hash: null,
+          l2_hash: transactionHash,
+          block: blockNumber,
+          msg_nonce: Number(messageNonce),
+          from_address: target,
+          txn_batch_index: Number(messageNonce),
+          state_batch_index: Number(messageNonce),
+          timestamp: new Date(Number(timestamp) * 1000).toISOString(),
+          status: 'Waiting',
+          gas_limit: gasLimit,
+          inserted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
         result.push(savedResult);
-        this.logger.log(`l2 createSentEvents success:${JSON.stringify(savedResult)}`);
+        this.logger.log(
+          `l2 createSentEvents success:${JSON.stringify(savedResult)}`,
+        );
       } catch (error) {
-        this.logger.error(`l2 createSentEvents blocknumber:${blockNumber} ${error}`);
+        this.logger.error(
+          `l2 createSentEvents blocknumber:${blockNumber} ${error}`,
+        );
       }
     }
     return result;
   }
   async createRelayedEvents(startBlock, endBlock) {
-    const list = await this.getRelayedMessageByBlockNumber(startBlock, endBlock);
-    let result: any = [];
-    for(const item of list) {
+    const list = await this.getRelayedMessageByBlockNumber(
+      startBlock,
+      endBlock,
+    );
+    const result: any = [];
+    for (const item of list) {
       const {
         blockNumber,
         transactionHash,
         returnValues: { msgHash },
-        signature
+        signature,
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
       try {
-        const savedResult = await this.entityManager.save(L2RelayedMessageEvents, {
-          tx_hash: transactionHash,
-          block_number: blockNumber.toString(),
-          msg_hash: msgHash,
-          signature,
-          timestamp: new Date(Number(timestamp) * 1000).toISOString(),
-          inserted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        const savedResult = await this.entityManager.save(
+          L2RelayedMessageEvents,
+          {
+            tx_hash: transactionHash,
+            block_number: blockNumber.toString(),
+            msg_hash: msgHash,
+            signature,
+            timestamp: new Date(Number(timestamp) * 1000).toISOString(),
+            inserted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        );
         result.push(savedResult);
-        this.logger.log(`l2 createRelayedEvents success:${JSON.stringify(savedResult)}`);
+        this.logger.log(
+          `l2 createRelayedEvents success:${JSON.stringify(savedResult)}`,
+        );
       } catch (error) {
-        this.logger.error(`l2 createRelayedEvents blocknumber:${blockNumber} ${error}`);
+        this.logger.error(
+          `l2 createRelayedEvents blocknumber:${blockNumber} ${error}`,
+        );
       }
     }
     return result;
@@ -162,7 +178,9 @@ export class L2IngestionService {
       const start = i === 0 ? 0 : i + 1;
       const end = Math.min(i + 1, currentBlockNumber);
       const result = await this.createSentEvents(start, end);
-      this.logger.log(`sync [${result.length}] l2_sent_message_events from block [${start}] to [${end}]`)
+      this.logger.log(
+        `sync [${result.length}] l2_sent_message_events from block [${start}] to [${end}]`,
+      );
     }
   }
   async syncRelayedEvents() {
@@ -172,7 +190,9 @@ export class L2IngestionService {
       const start = i === 0 ? 0 : i + 1;
       const end = Math.min(i + 1, currentBlockNumber);
       const result = await this.createRelayedEvents(start, end);
-      this.logger.log(`sync [${result.length}] l2_relayed_message_events from block [${start}] to [${end}]`)
+      this.logger.log(
+        `sync [${result.length}] l2_relayed_message_events from block [${start}] to [${end}]`,
+      );
     }
   }
   async sync() {
@@ -190,17 +210,17 @@ export class L2IngestionService {
   }
   async getRelayedEventByMsgHash(msgHash: string) {
     return this.relayedEventsRepository.findOne({
-      where: { msg_hash: msgHash }
+      where: { msg_hash: msgHash },
     });
   }
   async getRelayedEventByTxHash(txHash: string) {
     return this.relayedEventsRepository.findOne({
-      where: { tx_hash: txHash }
+      where: { tx_hash: txHash },
     });
   }
   async getSentEventByTxHash(txHash: string) {
     return this.sentEventsRepository.findOne({
-      where: { tx_hash: txHash }
+      where: { tx_hash: txHash },
     });
   }
 }

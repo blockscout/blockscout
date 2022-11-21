@@ -7,8 +7,10 @@ import {
   L1RelayedMessageEvents,
   L1SentMessageEvents,
   StateBatches,
-  TxnBatches, L2RelayedMessageEvents, L2SentMessageEvents
-} from "src/typeorm";
+  TxnBatches,
+  L2RelayedMessageEvents,
+  L2SentMessageEvents,
+} from 'src/typeorm';
 import { Repository, getManager, EntityManager, getConnection } from 'typeorm';
 import Web3 from 'web3';
 import CMGABI from '../abi/L1CrossDomainMessenger.json';
@@ -87,6 +89,9 @@ export class L1IngestionService {
       fromBlock,
       toBlock,
     });
+  }
+  async getSccTotalElements() {
+    return this.sccContract.methods.getTotalElements().call();
   }
   verifyDomainCalldataHash({ target, sender, message, messageNonce }): string {
     const xDomainCalldata = this.web3.eth.abi.encodeFunctionCall(
@@ -344,56 +349,47 @@ export class L1IngestionService {
   }
   async createL2L1Relation() {
     const sentList = await this.l2IngestionService.getUnMergeSentEvents();
-    for (const item of sentList) {
-      const {
-        tx_hash,
-        timestamp,
-        block_number,
-        gas_limit,
-        target,
-        sender,
-        message,
-        message_nonce,
-      } = item;
+    for (let i = 0; i < sentList.length; i++) {
       const msgHash = this.l2IngestionService.verifyDomainCalldataHash({
-        target: target.toString(),
-        sender: sender.toString(),
-        message: message.toString(),
-        messageNonce: message_nonce.toString(),
+        target: sentList[i].target.toString(),
+        sender: sentList[i].sender.toString(),
+        message: sentList[i].message.toString(),
+        messageNonce: sentList[i].message_nonce.toString(),
       });
       const relayedResult = await this.getRelayedEventByMsgHash(msgHash);
-      let l1_hash = 'unknown';
       if (relayedResult) {
-        l1_hash = relayedResult.tx_hash;
+        console.log('relayedResult.tx_hash', relayedResult.tx_hash);
+        await this.entityManager
+          .createQueryBuilder()
+          .update(L2ToL1)
+          .set({ hash: relayedResult.tx_hash, status: 'Relayed' })
+          .where('l2_hash = :l2_hash', { l2_hash: sentList[i].tx_hash })
+          .execute();
+        await this.entityManager
+          .createQueryBuilder()
+          .update(L2SentMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: sentList[i].tx_hash })
+          .execute();
+        await this.entityManager
+          .createQueryBuilder()
+          .update(L1RelayedMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
+          .execute();
       } else {
-        continue;
+        const totalElements = await this.getSccTotalElements();
+        // todo: must add challenger time for it
+        if (totalElements > sentList[i].block_number) {
+          await this.entityManager
+            .createQueryBuilder()
+            .update(L2ToL1)
+            .set({ status: 'Ready for Relay' })
+            .where('l2_hash = :l2_hash', { l2_hash: sentList[i].tx_hash })
+            .andWhere('status = :status', { status: 'Waiting' })
+            .execute();
+        }
       }
-      await this.entityManager.save(L2ToL1, {
-        hash: l1_hash,
-        l2_hash: tx_hash,
-        block: Number(block_number),
-        msg_nonce: Number(message_nonce),
-        from_address: target,
-        txn_batch_index: Number(message_nonce),
-        state_batch_index: Number(message_nonce),
-        timestamp: timestamp,
-        status: '',
-        gas_limit: gas_limit,
-        inserted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      await this.entityManager
-        .createQueryBuilder()
-        .update(L2SentMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: item.tx_hash })
-        .execute();
-      await this.entityManager
-        .createQueryBuilder()
-        .update(L1RelayedMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
-        .execute();
     }
   }
   async syncSentEvents() {
