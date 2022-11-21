@@ -2,15 +2,7 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
-      <%= if logo() do %>
-        <img class="navbar-logo" id="navbar-logo" src="<%= static_path(@conn, logo()) %>" alt="<%= subnetwork_title() %>" />
-      <% end %>
-      <%= if logo_text() do %>
-        <span class="logo-text <%= unless logo(), do: "no-logo" %>"> <%= logo_text() %> </span>
-      <% end %>
-      <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:enable_testnet_label] do %>
-        <%= render BlockScoutWeb.FormView, "_tag.html", text: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:testnet_label_text], additional_classes: ["testnet-label", "ml-2"] %>
-      <% end %>
+        <img class="navbar-logo" style="height:40px;width:155px;" id="navbar-logo" src="/images/mantle_logo.png" alt="<%= subnetwork_title() %>" />
     <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
@@ -50,22 +42,22 @@
               ) %>
               <%= link(
                 gettext("L1 to L2 Txns"),
-                class: "dropdown-item #{tab_status("l1-to-l2-txn", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("l1-to-l2-txns", @conn.request_path)}",
                 to: l1_to_l2_txn_path(@conn, :index)
               ) %>
               <%= link(
                 gettext("L2 to L1 Txns"),
-                class: "dropdown-item #{tab_status("l2-to-l1-txn", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("l2-to-l1-txns", @conn.request_path)}",
                 to: l2_to_l1_txn_path(@conn, :index)
               ) %>
               <%= link(
                 gettext("L1 Txn Batches"),
-                class: "dropdown-item #{tab_status("txn-batch", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("txn-batches", @conn.request_path)}",
                 to: txn_batch_path(@conn, :index)
               ) %>
               <%= link(
                 gettext("L1 State Batches"),
-                class: "dropdown-item #{tab_status("state-batch", @conn.request_path)}",
+                class: "dropdown-item #{tab_status("state-batches", @conn.request_path)}",
                 to: state_batch_path(@conn, :index)
               ) %>
               <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
