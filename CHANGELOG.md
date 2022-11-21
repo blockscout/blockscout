@@ -1,12 +1,15 @@
 ## Current
 
 ### Features
+- [#5505](https://github.com/blockscout/blockscout/pull/5505) - Manage debug_traceTransaction JSON RPC method timeout
 - [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
 - [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
 - [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
 - [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5508](https://github.com/blockscout/blockscout/pull/5508) - Hide indexing banner if we fetched internal transactions from TRACE_FIRST_BLOCK
+- [#5504](https://github.com/blockscout/blockscout/pull/5504) - Extend TRACE_FIRST_BLOCK env var to geth variant
 - [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
 - [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
 - [#5482](https://github.com/blockscout/blockscout/pull/5482) - Fix for querying of the contract read functions
@@ -36,6 +39,7 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5506](https://github.com/blockscout/blockscout/pull/5506) - Refactor config files
 - [#5480](https://github.com/blockscout/blockscout/pull/5480) - Remove duplicate of balances_params_to_address_params function
 - [#5473](https://github.com/blockscout/blockscout/pull/5473) - Refactor daily coin balances fetcher
 - [#5458](https://github.com/blockscout/blockscout/pull/5458) - Decrease min safe polling period for realtime fetcher
