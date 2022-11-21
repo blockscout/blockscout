@@ -43,8 +43,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{"method_id" => method_id, "method_call" => text, "parameters" => prepare_method_mapping(mapping)}
   end
 
-  def render("revert_reason.json", %{raw: raw, decoded: decoded}) do
-    %{"raw" => raw, "decoded" => decoded}
+  def render("revert_reason.json", %{raw: raw}) do
+    %{"raw" => raw}
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params, conn: conn}) do
@@ -287,8 +287,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
         _ ->
           hex = TransactionView.get_pure_transaction_revert_reason(transaction)
-          utf8 = TransactionView.decoded_revert_reason(transaction)
-          render(__MODULE__, "revert_reason.json", raw: hex, decoded: utf8)
+          render(__MODULE__, "revert_reason.json", raw: hex)
       end
     end
   end
