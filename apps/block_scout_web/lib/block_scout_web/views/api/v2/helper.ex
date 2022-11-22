@@ -10,6 +10,10 @@ defmodule BlockScoutWeb.API.V2.Helper do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2, get_tags_on_address: 1]
 
+  def address_with_info(_, _, nil) do
+    nil
+  end
+
   def address_with_info(conn, address, address_hash) do
     %{
       personal_tags: private_tags,
@@ -27,7 +31,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def address_with_info(%Address{} = address, _address_hash) do
     %{
-      "hash" => to_string(address),
+      "hash" => Address.checksum(address),
       "is_contract" => is_smart_contract(address),
       "name" => address_name(address),
       "implementation_name" => implementation_name(address),
@@ -39,8 +43,18 @@ defmodule BlockScoutWeb.API.V2.Helper do
     address_with_info(nil, address_hash)
   end
 
+  def address_with_info(nil, nil) do
+    nil
+  end
+
   def address_with_info(nil, address_hash) do
-    %{"hash" => address_hash, "is_contract" => false, "name" => nil, "implementation_name" => nil, "is_verified" => nil}
+    %{
+      "hash" => Address.checksum(address_hash),
+      "is_contract" => false,
+      "name" => nil,
+      "implementation_name" => nil,
+      "is_verified" => nil
+    }
   end
 
   def address_name(%Address{names: [_ | _] = address_names}) do

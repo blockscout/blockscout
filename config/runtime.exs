@@ -326,6 +326,10 @@ config :explorer, Explorer.Chain.Cache.Transactions,
   ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
 
+config :explorer, Explorer.Chain.Cache.TransactionsApiV2,
+  ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
+
 config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))

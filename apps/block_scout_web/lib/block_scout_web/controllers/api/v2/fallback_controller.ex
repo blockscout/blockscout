@@ -10,6 +10,11 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: "Invalid parameter(s)"})
   end
 
+  def call(conn, {:not_found, _, :empty_items_with_next_page_params}) do
+    conn
+    |> json(%{"items" => [], "next_page_params" => nil})
+  end
+
   def call(conn, {:not_found, _}) do
     conn
     |> put_status(:not_found)
