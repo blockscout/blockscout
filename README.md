@@ -20,7 +20,7 @@ Currently available full-featured block explorers (Etherscan, Etherchain, Blockc
 
 ## Supported Projects
 
-BlockScout supports a number of projects. Hosted instances include POA Network, Gnosis Chain, Ethereum Classic, Sokol & Kovan testnets, and other EVM chains. 
+BlockScout supports a number of projects. Hosted instances include POA Network, Gnosis Chain, Ethereum Classic, Mantle Network, and other EVM chains. 
 
 - [List of hosted mainnets, testnets, and additional chains using BlockScout](https://docs.blockscout.com/for-projects/supported-projects)
 - [Hosted instance versions](https://docs.blockscout.com/about/use-cases/hosted-blockscout)
@@ -28,7 +28,7 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
 ## Getting Started
 
-### Elixir Services
+### 1. Elixir Services
 
 See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
@@ -37,7 +37,7 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
-### Node Services
+### 2. Node Services
 
 [development and deployment](https://github.com/mantlenetworkio/blockscout/blob/master/data-sync-service/README.md)
 
