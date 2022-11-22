@@ -19,6 +19,8 @@ import SCCABI from '../abi/StateCommitmentChain.json';
 
 import { L2IngestionService } from './../l2Ingestion/l2Ingestion.service';
 
+const FraudProofWindow = 0;
+
 @Injectable()
 export class L1IngestionService {
   private readonly logger = new Logger(L1IngestionService.name);
@@ -349,6 +351,8 @@ export class L1IngestionService {
   }
   async createL2L1Relation() {
     const sentList = await this.l2IngestionService.getUnMergeSentEvents();
+    const latestBlock = await this.getCurrentBlockNumber()
+    const { timestamp } = await this.web3.eth.getBlock(latestBlock);
     for (let i = 0; i < sentList.length; i++) {
       const msgHash = this.l2IngestionService.verifyDomainCalldataHash({
         target: sentList[i].target.toString(),
@@ -379,8 +383,8 @@ export class L1IngestionService {
           .execute();
       } else {
         const totalElements = await this.getSccTotalElements();
-        // todo: must add challenger time for it
-        if (totalElements > sentList[i].block_number) {
+        const ltimestamp = Number(sentList[i].timestamp) / 1000
+        if (totalElements > sentList[i].block_number && ltimestamp + FraudProofWindow >= timestamp) {
           await this.entityManager
             .createQueryBuilder()
             .update(L2ToL1)
@@ -479,3 +483,5 @@ export class L1IngestionService {
     return result;
   }
 }
+// 1669086144
+// 1669033024000
