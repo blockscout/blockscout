@@ -66,7 +66,7 @@
                           @contract_abi
                         end
                     end %>
-        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= function_abi %>" data-implementation-abi="<%= function_abi %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+        <form class="form-inline" data-function-form data-action="<%= if @action == "write", do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, Address.checksum(@address.hash)) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= function_abi %>" data-implementation-abi="<%= function_abi %>" data-chain-id="<%= Application.get_env(:block_scout_web, :chain_id) %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
