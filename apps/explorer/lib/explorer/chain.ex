@@ -6657,8 +6657,6 @@ defmodule Explorer.Chain do
   def filter_token_creation_dynamic(dynamic) do
     dynamic([tx, created_token: created_token], ^dynamic or (is_nil(tx.to_address_hash) and not is_nil(created_token)))
   end
-<<<<<<< HEAD
-=======
 
   @spec verified_contracts([
           paging_options | necessity_by_association_option | {:filter, :solidity | :vyper} | {:search, String.t()}
@@ -6804,5 +6802,4 @@ defmodule Explorer.Chain do
   def gas_usage_count(address) do
     AddressTransactionsGasUsageCounter.fetch(address)
   end
->>>>>>> origin/master
 end
