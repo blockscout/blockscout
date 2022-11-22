@@ -6,7 +6,7 @@
 - [#6440](https://github.com/blockscout/blockscout/pull/6440) - Add support for base64 encoded NFT metadata
 - [#6407](https://github.com/blockscout/blockscout/pull/6407) - Indexed ratio for int txs fetching stage
 - [#6324](https://github.com/blockscout/blockscout/pull/6324) - Add verified contracts list page
-- [#6379](https://github.com/blockscout/blockscout/pull/6379) - API v2 for frontend
+- [#6379](https://github.com/blockscout/blockscout/pull/6379), [#6429](https://github.com/blockscout/blockscout/pull/6429) - API v2 for frontend
 - [#6351](https://github.com/blockscout/blockscout/pull/6351) - Enable forum link env var
 - [#6316](https://github.com/blockscout/blockscout/pull/6316) - Copy public tags functionality to master
 - [#6196](https://github.com/blockscout/blockscout/pull/6196) - INDEXER_CATCHUP_BLOCKS_BATCH_SIZE and INDEXER_CATCHUP_BLOCKS_CONCURRENCY env varaibles
@@ -21,7 +21,7 @@
 - [#6443](https://github.com/blockscout/blockscout/pull/6443) - Drop internal transactions order index
 - [#6450](https://github.com/blockscout/blockscout/pull/6450) - INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE and INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY env variables
 - [#6454](https://github.com/blockscout/blockscout/pull/6454) - INDEXER_RECEIPTS_BATCH_SIZE, INDEXER_RECEIPTS_CONCURRENCY, INDEXER_COIN_BALANCES_BATCH_SIZE, INDEXER_COIN_BALANCES_CONCURRENCY env variables
-- [#6476](https://github.com/blockscout/blockscout/pull/6476) - Update token balances indexes
+- [#6476](https://github.com/blockscout/blockscout/pull/6476), [#6484](https://github.com/blockscout/blockscout/pull/6484) - Update token balances indexes
 
 ### Fixes
 
@@ -48,6 +48,7 @@
 - [#6336](https://github.com/blockscout/blockscout/pull/6336) - Fix sending request on each key in token search
 - [#6327](https://github.com/blockscout/blockscout/pull/6327) - Fix and refactor address logs page and search
 - [#6449](https://github.com/blockscout/blockscout/pull/6449) - Search min_missing_block_number from zero
+- [#6492](https://github.com/blockscout/blockscout/pull/6492) - Remove token instance owner fetching
 
 ### Chore
 

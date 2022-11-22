@@ -23,7 +23,7 @@ defmodule Explorer.Repo.Migrations.ModifyAddressCurrentTokenBalancesIndexes do
     create_if_not_exists(
       unique_index(
         :address_current_token_balances,
-        [:address_hash, :token_contract_address_hash, "COALESCE(token_id, 0)"],
+        [:address_hash, :token_contract_address_hash, "COALESCE(token_id, -1)"],
         name: :fetched_current_token_balances
       )
     )
