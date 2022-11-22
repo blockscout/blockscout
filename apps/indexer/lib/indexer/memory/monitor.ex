@@ -157,7 +157,7 @@ defmodule Indexer.Memory.Monitor do
 
       {:error, :minimum_size} ->
         Logger.error(fn ->
-          [process(pid) | " is at its minimum size and could not shrink."]
+          [process(pid), " is at its minimum size and could not shrink."]
         end)
 
         shrink(tail)

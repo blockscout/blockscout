@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.AddressView do
   require Logger
 
   alias BlockScoutWeb.{AccessHelpers, LayoutView}
-  alias Explorer.{Chain, CustomContractsHelpers}
+  alias Explorer.{Chain, CustomContractsHelpers, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -240,9 +240,11 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   @doc """
-  Returns the primary name of an address if available.
+  Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
-  def primary_name(%Address{names: [_ | _] = address_names}) do
+  def primary_name(_, second_time? \\ false)
+
+  def primary_name(%Address{names: [_ | _] = address_names}, _second_time?) do
     case Enum.find(address_names, &(&1.primary == true)) do
       nil ->
         %Address.Name{name: name} = Enum.at(address_names, 0)
@@ -253,9 +255,11 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
-  def primary_name(%Address{names: _} = _address) do
-    nil
+  def primary_name(%Address{names: _} = address, false) do
+    primary_name(Repo.preload(address, [:names]), true)
   end
+
+  def primary_name(%Address{names: _}, true), do: nil
 
   def implementation_name(%Address{smart_contract: %{implementation_name: implementation_name}}),
     do: implementation_name

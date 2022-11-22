@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
   alias Indexer.Transform.Addresses
 
   use BufferedTask
@@ -119,7 +120,7 @@ defmodule Indexer.Fetcher.ContractCode do
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
     |> case do
       {:ok, fetched_balances} ->
-        balance_addresses_params = balances_params_to_address_params(fetched_balances.params_list)
+        balance_addresses_params = CoinBalanceFetcher.balances_params_to_address_params(fetched_balances.params_list)
 
         merged_addresses_params = Addresses.merge_addresses(addresses_params ++ balance_addresses_params)
 
@@ -152,16 +153,6 @@ defmodule Indexer.Fetcher.ContractCode do
 
         {:retry, entries}
     end
-  end
-
-  def balances_params_to_address_params(balances_params) do
-    balances_params
-    |> Enum.group_by(fn %{address_hash: address_hash} -> address_hash end)
-    |> Map.values()
-    |> Stream.map(&Enum.max_by(&1, fn %{block_number: block_number} -> block_number end))
-    |> Enum.map(fn %{address_hash: address_hash, block_number: block_number, value: value} ->
-      %{hash: address_hash, fetched_coin_balance_block_number: block_number, fetched_coin_balance: value}
-    end)
   end
 
   defp coin_balances_request_params(entries) do

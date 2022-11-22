@@ -8,18 +8,12 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
 
   alias Ecto.Changeset
   alias Explorer.Chain.BridgedToken
+  alias Explorer.Counters.Helper
   alias Explorer.ExchangeRates.Source
   alias Explorer.Repo
 
   @cache_name :token_exchange_rate
   @last_update_key "last_update"
-
-  @ets_opts [
-    :set,
-    :named_table,
-    :public,
-    read_concurrency: true
-  ]
 
   config = Application.get_env(:explorer, Explorer.Chain.Cache.TokenExchangeRate)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
@@ -62,7 +56,10 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
       end)
     end
 
-    cached_value = fetch_from_cache(cache_key(address_hash_str))
+    cached_value =
+      address_hash_str
+      |> cache_key()
+      |> fetch_from_cache()
 
     if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
       fetch_from_db(token_hash)
@@ -80,7 +77,10 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
       end)
     end
 
-    cached_value = fetch_from_cache(cache_key(symbol))
+    cached_value =
+      symbol
+      |> cache_key()
+      |> fetch_from_cache()
 
     if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
       fetch_from_db(token_hash)
@@ -97,18 +97,22 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
 
     cond do
       is_nil(updated_at) -> true
-      current_time() - updated_at > cache_period -> true
+      Helper.current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
 
   defp value_is_empty?(symbol_or_address_hash_str) do
-    value = fetch_from_cache(cache_key(symbol_or_address_hash_str))
+    value =
+      symbol_or_address_hash_str
+      |> cache_key()
+      |> fetch_from_cache()
+
     is_nil(value) || value == 0
   end
 
   defp update_cache_by_symbol(token_hash, symbol) do
-    put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", current_time())
+    put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", Helper.current_time())
 
     exchange_rate = fetch_token_exchange_rate(symbol)
 
@@ -117,7 +121,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   end
 
   defp update_cache_by_address_hash_str(token_hash, address_hash_str) do
-    put_into_cache("#{cache_key(address_hash_str)}_#{@last_update_key}", current_time())
+    put_into_cache("#{cache_key(address_hash_str)}_#{@last_update_key}", Helper.current_time())
 
     exchange_rate = fetch_token_exchange_rate_by_address(address_hash_str)
 
@@ -145,16 +149,6 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     end
   end
 
-  defp fetch_from_cache(key) do
-    case :ets.lookup(@cache_name, key) do
-      [{_, value}] ->
-        value
-
-      [] ->
-        0
-    end
-  end
-
   defp fetch_from_db(nil), do: nil
 
   defp fetch_from_db(token_hash) do
@@ -165,6 +159,10 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     else
       nil
     end
+  end
+
+  defp fetch_from_cache(key) do
+    Helper.fetch_from_cache(key, @cache_name)
   end
 
   def put_into_cache(key, value) do
@@ -193,28 +191,17 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     |> Repo.one()
   end
 
-  defp current_time do
-    utc_now = DateTime.utc_now()
-
-    DateTime.to_unix(utc_now, :millisecond)
-  end
-
   def cache_table_exists? do
     :ets.whereis(@cache_name) !== :undefined
   end
 
   def create_cache_table do
-    unless cache_table_exists?() do
-      :ets.new(@cache_name, @ets_opts)
-    end
+    Helper.create_cache_table(@cache_name)
   end
 
   def enable_consolidation?, do: @enable_consolidation
 
   defp token_exchange_rate_cache_period do
-    case Integer.parse(System.get_env("TOKEN_EXCHANGE_RATE_CACHE_PERIOD", "")) do
-      {secs, ""} -> :timer.seconds(secs)
-      _ -> :timer.hours(1)
-    end
+    Helper.cache_period("CACHE_TOKEN_EXCHANGE_RATE_PERIOD", 1)
   end
 end

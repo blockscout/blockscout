@@ -79,7 +79,6 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.{
     Accounts,
-    BlockCount,
     BlockNumber,
     Blocks,
     TokenExchangeRate,
@@ -1171,6 +1170,11 @@ defmodule Explorer.Chain do
     else
       with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
            min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
+        min_block_number =
+          min_block_number
+          |> Decimal.max(EthereumJSONRPC.first_block_to_fetch(:trace_first_block))
+          |> Decimal.to_integer()
+
         query =
           from(
             b in Block,
@@ -2173,30 +2177,8 @@ defmodule Explorer.Chain do
       0
   end
 
-  @spec fetch_count_consensus_block() :: non_neg_integer
-  def fetch_count_consensus_block do
-    query =
-      from(block in Block,
-        select: count(block.hash),
-        where: block.consensus == true
-      )
-
-    Repo.one!(query, timeout: :infinity) || 0
-  end
-
   def fetch_block_by_hash(block_hash) do
     Repo.get(Block, block_hash)
-  end
-
-  @spec fetch_sum_gas_used() :: non_neg_integer
-  def fetch_sum_gas_used do
-    query =
-      from(
-        t0 in Transaction,
-        select: fragment("SUM(t0.gas_used)")
-      )
-
-    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @doc """
@@ -3723,24 +3705,6 @@ defmodule Explorer.Chain do
       0
     else
       total_gas
-    end
-  end
-
-  @doc """
-  Estimated count of `t:Explorer.Chain.Block.t/0`.
-
-  Estimated count of consensus blocks.
-  """
-  @spec block_estimated_count() :: non_neg_integer()
-  def block_estimated_count do
-    cached_value = BlockCount.get_count()
-
-    if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
-
-      trunc(count * 0.90)
-    else
-      cached_value
     end
   end
 
@@ -5420,43 +5384,35 @@ defmodule Explorer.Chain do
          {:ok, "0x" <> token1_encoded} <-
            token1_signature
            |> Contract.eth_call_request(foreign_token_address_hash, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         token0_hash <- parse_contract_response(token0_encoded, :address),
+         token1_hash <- parse_contract_response(token1_encoded, :address),
+         false <- is_nil(token0_hash),
+         false <- is_nil(token1_hash),
+         token0_hash_str <- "0x" <> Base.encode16(token0_hash, case: :lower),
+         token1_hash_str <- "0x" <> Base.encode16(token1_hash, case: :lower),
+         {:ok, "0x" <> token0_name_encoded} <-
+           name_signature
+           |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_name_encoded} <-
+           name_signature
+           |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token0_symbol_encoded} <-
+           symbol_signature
+           |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_symbol_encoded} <-
+           symbol_signature
+           |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-      token0_hash = parse_contract_response(token0_encoded, :address)
-      token1_hash = parse_contract_response(token1_encoded, :address)
+      token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
+      token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
+      token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
+      token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
 
-      if token0_hash && token1_hash do
-        token0_hash_str = "0x" <> Base.encode16(token0_hash, case: :lower)
-        token1_hash_str = "0x" <> Base.encode16(token1_hash, case: :lower)
-
-        with {:ok, "0x" <> token0_name_encoded} <-
-               name_signature
-               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token1_name_encoded} <-
-               name_signature
-               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token0_symbol_encoded} <-
-               symbol_signature
-               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-             {:ok, "0x" <> token1_symbol_encoded} <-
-               symbol_signature
-               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-               |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-          token0_name = parse_contract_response(token0_name_encoded, :string, {:bytes, 32})
-          token1_name = parse_contract_response(token1_name_encoded, :string, {:bytes, 32})
-          token0_symbol = parse_contract_response(token0_symbol_encoded, :string, {:bytes, 32})
-          token1_symbol = parse_contract_response(token1_symbol_encoded, :string, {:bytes, 32})
-
-          "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
-        else
-          _ ->
-            nil
-        end
-      else
-        nil
-      end
+      "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
     else
       _ ->
         nil
@@ -5563,16 +5519,14 @@ defmodule Explorer.Chain do
       |> parse_contract_response({:uint, 256})
       |> Decimal.new()
 
-    with {:ok, "0x" <> token_encoded} <-
-           token_signature
-           |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
-           |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-      token_hash = parse_contract_response(token_encoded, :address)
-
-      if token_hash do
-        token_hash_str = "0x" <> Base.encode16(token_hash, case: :lower)
-
-        with {:ok, "0x" <> token_decimals_encoded} <-
+    case token_signature
+         |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+         |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+      {:ok, "0x" <> token_encoded} ->
+        with token_hash <- parse_contract_response(token_encoded, :address),
+             false <- is_nil(token_hash),
+             token_hash_str <- "0x" <> Base.encode16(token_hash, case: :lower),
+             {:ok, "0x" <> token_decimals_encoded} <-
                decimals_signature
                |> Contract.eth_call_request(token_hash_str, 1, nil, nil)
                |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
@@ -5609,8 +5563,9 @@ defmodule Explorer.Chain do
             end
 
           {:ok, token_cap_usd}
+        else
+          _ -> :error
         end
-      end
     end
   end
 
@@ -7370,7 +7325,7 @@ defmodule Explorer.Chain do
 
   def gnosis_safe_contract?(abi) when is_nil(abi), do: false
 
-  @spec get_implementation_address_hash(Hash.Address.t(), list()) :: String.t() | nil
+  @spec get_implementation_address_hash(Hash.Address.t(), list()) :: {String.t() | nil, String.t() | nil}
   def get_implementation_address_hash(proxy_address_hash, abi)
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
     implementation_method_abi =
@@ -7401,7 +7356,7 @@ defmodule Explorer.Chain do
   end
 
   def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
-    nil
+    {nil, nil}
   end
 
   defp get_implementation_address_hash_eip_1967(proxy_address_hash) do
@@ -7558,7 +7513,7 @@ defmodule Explorer.Chain do
               "0x0000000000000000000000000000000000000000000000000000000000000000",
               @burn_address_hash_str
             ],
-       do: empty_address_hash_string
+       do: {empty_address_hash_string, nil}
 
   defp save_implementation_name(implementation_address_hash_string, proxy_address_hash)
        when is_binary(implementation_address_hash_string) do
@@ -7569,14 +7524,14 @@ defmodule Explorer.Chain do
       |> update(set: [implementation_name: ^name])
       |> Repo.update_all([])
 
-      implementation_address_hash_string
+      {implementation_address_hash_string, name}
     else
       _ ->
-        implementation_address_hash_string
+        {implementation_address_hash_string, nil}
     end
   end
 
-  defp save_implementation_name(other, _), do: other
+  defp save_implementation_name(other, _), do: {other, nil}
 
   defp abi_decode_address_output(nil), do: nil
 
@@ -7627,7 +7582,7 @@ defmodule Explorer.Chain do
 
   def get_implementation_abi_from_proxy(proxy_address_hash, abi)
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    implementation_address_hash_string = get_implementation_address_hash(proxy_address_hash, abi)
+    {implementation_address_hash_string, _name} = get_implementation_address_hash(proxy_address_hash, abi)
     get_implementation_abi(implementation_address_hash_string)
   end
 
@@ -7731,7 +7686,8 @@ defmodule Explorer.Chain do
     if transaction_index == 0 do
       0
     else
-      {:ok, traces} = fetch_block_internal_transactions([block_number], json_rpc_named_arguments)
+      filtered_block_numbers = EthereumJSONRPC.block_numbers_in_range([block_number])
+      {:ok, traces} = fetch_block_internal_transactions(filtered_block_numbers, json_rpc_named_arguments)
 
       sorted_traces =
         traces

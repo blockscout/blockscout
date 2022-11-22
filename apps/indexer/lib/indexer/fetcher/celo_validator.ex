@@ -68,7 +68,7 @@ defmodule Indexer.Fetcher.CeloValidator do
   defp group_to_member_aux(entry) do
     case AccountReader.validator_group_members(entry.address) do
       {:ok, res} ->
-        Enum.map(res, fn a -> entry(%{address: "0x" <> Base.encode16(a, lower: true)}) end)
+        Enum.map(res, fn a -> entry(%{address: "0x" <> Base.encode16(a, case: :lower)}) end)
 
       _ ->
         []

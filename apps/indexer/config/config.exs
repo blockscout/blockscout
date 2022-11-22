@@ -1,7 +1,7 @@
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Config module.
 import Config
-
+alias Indexer.Celo.Utils
 alias Indexer.LoggerBackend
 
 block_transformers = %{
@@ -40,7 +40,7 @@ config :indexer,
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo.Local],
   metadata_updater_seconds_interval:
-    String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{10 * 60 * 60}"),
+    String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{2 * 24 * 60 * 60}"),
   health_check_port: port || 4001,
   first_block: System.get_env("FIRST_BLOCK") || "",
   last_block: System.get_env("LAST_BLOCK") || "",
@@ -53,26 +53,24 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
     System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
       System.get_env("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER", "false") == "true"
 
+token_balance_on_demand_fetcher_threshold_minutes = System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")
+
 token_balance_on_demand_fetcher_threshold =
-  if System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES") do
-    case Integer.parse(System.get_env("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")) do
-      {integer, ""} -> integer
-      _ -> 60
-    end
-  else
-    60
+  case token_balance_on_demand_fetcher_threshold_minutes &&
+         Integer.parse(token_balance_on_demand_fetcher_threshold_minutes) do
+    {integer, ""} -> integer
+    _ -> 60
   end
 
 config :indexer, Indexer.Fetcher.TokenBalanceOnDemand, threshold: token_balance_on_demand_fetcher_threshold
 
+coin_balance_on_demand_fetcher_threshold_minutes = System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")
+
 coin_balance_on_demand_fetcher_threshold =
-  if System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES") do
-    case Integer.parse(System.get_env("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD_MINUTES")) do
-      {integer, ""} -> integer
-      _ -> 60
-    end
-  else
-    60
+  case coin_balance_on_demand_fetcher_threshold_minutes &&
+         Integer.parse(coin_balance_on_demand_fetcher_threshold_minutes) do
+    {integer, ""} -> integer
+    _ -> 60
   end
 
 config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on_demand_fetcher_threshold
@@ -81,11 +79,18 @@ config :indexer, Indexer.Fetcher.CoinBalanceOnDemand, threshold: coin_balance_on
 if System.get_env("POS_STAKING_CONTRACT") do
   config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 else
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: false
+  config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
+    disabled?: System.get_env("INDEXER_DISABLE_BLOCK_REWARD_FETCHER", "false") == "true"
 end
 
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER", "false") == "true"
+
+config :indexer, Indexer.Fetcher.CoinBalance.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER", "false") == "true"
+
+config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
+  disabled?: System.get_env("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER", "false") == "true"
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
@@ -110,21 +115,6 @@ config :logger, :logger_backend, level: :error
 #    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
 #       block_number step count error_count shrunk import_id transaction_id)a,
 #  metadata_filter: [application: :indexer]
-
-indexer_empty_blocks_sanitizer_batch_size =
-  if System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE") do
-    case Integer.parse(System.get_env("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE")) do
-      {integer, ""} -> integer
-      _ -> 100
-    end
-  else
-    100
-  end
-
-config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
-  disabled?: System.get_env("INDEXER_DISABLE_EMPTY_BLOCK_SANITIZER", "false") == "true"
-
-config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer, batch_size: indexer_empty_blocks_sanitizer_batch_size
 
 import_config "telemetry/telemetry.exs"
 

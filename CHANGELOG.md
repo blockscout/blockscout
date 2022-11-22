@@ -1,17 +1,34 @@
 ## Current
 
 ### Features
+- [#5515](https://github.com/blockscout/blockscout/pull/5515) - Integrate ace editor to display contract sources
+- [#5505](https://github.com/blockscout/blockscout/pull/5505) - Manage debug_traceTransaction JSON RPC method timeout
+- [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
 - [#5312](https://github.com/blockscout/blockscout/pull/5312) - Add OpenZeppelin proxy storage slot
 - [#5302](https://github.com/blockscout/blockscout/pull/5302) - Add specific tx receipt fields for the GoQuorum client
-- [#5268](https://github.com/blockscout/blockscout/pull/5268) - Contract names display improvement
+- [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5513](https://github.com/blockscout/blockscout/pull/5513) - Do not fill pending blocks ops with block numbers below TRACE_FIRST_BLOCK
+- [#5508](https://github.com/blockscout/blockscout/pull/5508) - Hide indexing banner if we fetched internal transactions from TRACE_FIRST_BLOCK
+- [#5504](https://github.com/blockscout/blockscout/pull/5504) - Extend TRACE_FIRST_BLOCK env var to geth variant
+- [#5488](https://github.com/blockscout/blockscout/pull/5488) - Split long contract output to multiple lines
+- [#5487](https://github.com/blockscout/blockscout/pull/5487) - Fix array displaying in decoded constructor args
+- [#5482](https://github.com/blockscout/blockscout/pull/5482) - Fix for querying of the contract read functions
+- [#5455](https://github.com/blockscout/blockscout/pull/5455) - Fix unverified_smart_contract function: add md5 of bytecode to the changeset
+- [#5454](https://github.com/blockscout/blockscout/pull/5454) - Docker: Fix the qemu-x86_64 signal 11 error on Apple Silicon
+- [#5443](https://github.com/blockscout/blockscout/pull/5443) - Geth: display tx revert reason
+- [#5420](https://github.com/blockscout/blockscout/pull/5420) - Deduplicate addresses and coin balances before inserting to the DB
+- [#5416](https://github.com/blockscout/blockscout/pull/5416) - Fix getsourcecode for EOA addresses
+- [#5413](https://github.com/blockscout/blockscout/pull/5413) - Fix params encoding for read contracts methods
+- [#5411](https://github.com/blockscout/blockscout/pull/5411) - Fix character_not_in_repertoire error for tx revert reason
+- [#5410](https://github.com/blockscout/blockscout/pull/5410) - Handle exited realtime fetcher
 - [#5383](https://github.com/blockscout/blockscout/pull/5383) - Fix reload transactions button
 - [#5381](https://github.com/blockscout/blockscout/pull/5381), [#5397](https://github.com/blockscout/blockscout/pull/5397) - Fix exchange rate broadcast error
 - [#5375](https://github.com/blockscout/blockscout/pull/5375) - Fix pending transactions fetcher
 - [#5374](https://github.com/blockscout/blockscout/pull/5374) - Return all ERC-1155's token instances in tokenList api endpoint
 - [#5342](https://github.com/blockscout/blockscout/pull/5342) - Fix 500 error on NF token page with nil metadata
-- [#5319](https://github.com/blockscout/blockscout/pull/5319), [#5357](https://github.com/blockscout/blockscout/pull/5357) - Empty blocks sanitizer performance improvement
+- [#5319](https://github.com/blockscout/blockscout/pull/5319), [#5357](https://github.com/blockscout/blockscout/pull/5357), [#5425](https://github.com/blockscout/blockscout/pull/5425) - Empty blocks sanitizer performance improvement
 - [#5310](https://github.com/blockscout/blockscout/pull/5310) - Fix flash on reload in dark mode
 - [#5306](https://github.com/blockscout/blockscout/pull/5306) - Fix indexer bug
 - [#5300](https://github.com/blockscout/blockscout/pull/5300), [#5305](https://github.com/blockscout/blockscout/pull/5305) - Token instance page: general video improvements
@@ -24,6 +41,17 @@
 - [#5239](https://github.com/blockscout/blockscout/pull/5239) - Add accounting for block rewards in `getblockreward` api method
 
 ### Chore
+- [#5506](https://github.com/blockscout/blockscout/pull/5506) - Refactor config files
+- [#5480](https://github.com/blockscout/blockscout/pull/5480) - Remove duplicate of balances_params_to_address_params function
+- [#5473](https://github.com/blockscout/blockscout/pull/5473) - Refactor daily coin balances fetcher
+- [#5458](https://github.com/blockscout/blockscout/pull/5458) - Decrease min safe polling period for realtime fetcher
+- [#5456](https://github.com/blockscout/blockscout/pull/5456) - Ignore arbitrary block details fields for custom Ethereum clients
+- [#5450](https://github.com/blockscout/blockscout/pull/5450) - Logging error in publishing of smart-contract
+- [#5433](https://github.com/blockscout/blockscout/pull/5433) - Caching modules refactoring
+- [#5419](https://github.com/blockscout/blockscout/pull/5419) - Add check if address exists for some api methods
+- [#5408](https://github.com/blockscout/blockscout/pull/5408) - Update websocket_client hex package
+- [#5407](https://github.com/blockscout/blockscout/pull/5407) - Update hackney, certifi, tzdata
+- [#5369](https://github.com/blockscout/blockscout/pull/5369) - Manage indexer memory limit
 - [#5368](https://github.com/blockscout/blockscout/pull/5368) - Refactoring from SourcifyFilePathBackfiller
 - [#5367](https://github.com/blockscout/blockscout/pull/5367) - Resolve Prototype Pollution in minimist dependency
 - [#5366](https://github.com/blockscout/blockscout/pull/5366) - Fix Vyper smart-contract verification form tooltips
@@ -40,6 +68,7 @@
 - [#5287](https://github.com/blockscout/blockscout/pull/5287) - Docker: modify native token symbol
 - [#5286](https://github.com/blockscout/blockscout/pull/5286) - Change namespace for one of the SmartContractViewTest test
 - [#5260](https://github.com/blockscout/blockscout/pull/5260) - Makefile release task to prerelease and release task
+- [#5082](https://github.com/blockscout/blockscout/pull/5082) - Elixir 1.12 -> 1.13
 
 
 ## 4.1.2-beta

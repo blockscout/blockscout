@@ -286,12 +286,12 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   describe "normalize_args/1" do
     test "converts argument when is a number" do
-      assert ["0x00"] = Reader.normalize_args(["0"])
+      assert [0] = Reader.normalize_args(["0"])
 
       assert ["0x798465571ae21a184a272f044f991ad1d5f87a3f"] =
                Reader.normalize_args(["0x798465571ae21a184a272f044f991ad1d5f87a3f"])
 
-      assert ["0x7b"] = Reader.normalize_args(["123"])
+      assert [123] = Reader.normalize_args(["123"])
     end
 
     test "converts argument when is a boolean" do
