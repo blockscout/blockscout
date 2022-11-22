@@ -29,3 +29,15 @@ export function fullPath (path) {
   const networkPath = document.body.dataset.networkPath || '/'
   return `${networkPath}${path}`.replace('//', '/')
 }
+
+export function escapeHtml (text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }
+
+  return text.replace(/[&<>"']/g, function (m) { return map[m] })
+}

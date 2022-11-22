@@ -3621,6 +3621,8 @@ defmodule Explorer.Chain do
     Hash.Address.cast(string)
   end
 
+  def string_to_address_hash(_), do: :error
+
   @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
 
@@ -3646,6 +3648,8 @@ defmodule Explorer.Chain do
     Hash.Full.cast(string)
   end
 
+  def string_to_block_hash(_), do: :error
+
   @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
 
@@ -3670,6 +3674,8 @@ defmodule Explorer.Chain do
   def string_to_transaction_hash(string) when is_binary(string) do
     Hash.Full.cast(string)
   end
+
+  def string_to_transaction_hash(_), do: :error
 
   @doc """
   Estimated count of `t:Explorer.Chain.Transaction.t/0`.

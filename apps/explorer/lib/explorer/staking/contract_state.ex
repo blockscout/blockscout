@@ -163,7 +163,7 @@ defmodule Explorer.Staking.ContractState do
            contracts: %{
              staking: staking_contract_address
            }
-         }, {:continue, []}}
+         }, {:stop, "The archive node is unavailable"}}
     end
   end
 
