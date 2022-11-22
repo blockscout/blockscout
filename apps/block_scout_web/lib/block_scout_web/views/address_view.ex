@@ -178,6 +178,21 @@ defmodule BlockScoutWeb.AddressView do
     to_string(hash)
   end
 
+  def ens_name(_, second_time? \\ false)
+
+  def ens_name(%Address{names: [_ | _] = address_names}, _second_time?) do
+    case Enum.find(address_names, &(&1.metadata["type"] == "ens")) do
+      nil -> nil
+      %{name: name} -> name
+    end
+  end
+
+  def ens_name(%Address{names: _} = address, false) do
+    ens_name(Repo.preload(address, [:names]), true)
+  end
+
+  def ens_name(%Address{names: _}, true), do: nil
+
   @doc """
   Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
