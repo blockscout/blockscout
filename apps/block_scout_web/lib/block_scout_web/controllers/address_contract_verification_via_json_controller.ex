@@ -11,23 +11,23 @@ defmodule BlockScoutWeb.AddressContractVerificationViaJsonController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
-    address_path =
+    address_contract_path =
       conn
-      |> address_path(:show, address_hash_string)
+      |> address_contract_path(:index, address_hash_string)
       |> Controller.full_path()
 
     if Chain.smart_contract_fully_verified?(address_hash_string) do
-      redirect(conn, to: address_path)
+      redirect(conn, to: address_contract_path)
     else
       case Sourcify.check_by_address(address_hash_string) do
         {:ok, _verified_status} ->
           case get_metadata_and_publish(address_hash_string, conn) do
             :update_submitted ->
               conn
-              |> render("submitted.html", address_string: address_hash_string, path: address_path)
+              |> render("submitted.html", address_string: address_hash_string, path: address_contract_path)
 
             _ ->
-              redirect(conn, to: address_path)
+              redirect(conn, to: address_contract_path)
           end
 
         _ ->

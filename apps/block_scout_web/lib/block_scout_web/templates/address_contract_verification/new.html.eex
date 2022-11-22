@@ -9,7 +9,7 @@
           [],
           fn f -> %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f, is_verified: Chain.smart_contract_verified?(@address_hash) %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f, read_only: false, is_verified: Chain.smart_contract_verified?(@address_hash) %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">

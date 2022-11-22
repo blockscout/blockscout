@@ -2,9 +2,8 @@ import $ from 'jquery'
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete'
 import { DateTime } from 'luxon'
 import { appendTokenIcon } from './token_icon'
-import { escapeHtml } from './utils'
+import { escapeHtml, fullPath } from './utils'
 import xss from 'xss'
-import { fullPath } from './utils'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
 const dataSrc = async (query, id) => {

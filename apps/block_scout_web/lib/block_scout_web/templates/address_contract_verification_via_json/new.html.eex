@@ -7,7 +7,7 @@
         address_verify_contract_via_json_path(@conn, :create, @address_hash),
         [id: "metadata-json-dropzone-form"],
         fn f -> %>
-      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
+      <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
 
       <div class="smart-contract-form-group">
         <div class="smart-contract-form-group-inner-wrapper">
