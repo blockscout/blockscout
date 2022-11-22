@@ -97,20 +97,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                   %Explorer.Chain.Address.CurrentTokenBalance{
                     address_hash: ^address_hash,
                     block_number: ^block_number,
-                    token_contract_address_hash: ^token_erc_20_contract_address_hash,
-                    value: ^value_3,
-                    token_id: ^token_id_3
-                  },
-                  %Explorer.Chain.Address.CurrentTokenBalance{
-                    address_hash: ^address_hash,
-                    block_number: ^block_number,
-                    token_contract_address_hash: ^token_erc_721_contract_address_hash,
-                    value: ^value_5,
-                    token_id: nil
-                  },
-                  %Explorer.Chain.Address.CurrentTokenBalance{
-                    address_hash: ^address_hash,
-                    block_number: ^block_number,
                     token_contract_address_hash: ^token_contract_address_hash,
                     value: ^value_1,
                     token_id: ^token_id_1
@@ -121,6 +107,20 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     token_contract_address_hash: ^token_contract_address_hash,
                     value: ^value_2,
                     token_id: ^token_id_2
+                  },
+                  %Explorer.Chain.Address.CurrentTokenBalance{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
+                    token_contract_address_hash: ^token_erc_20_contract_address_hash,
+                    value: ^value_3,
+                    token_id: ^token_id_3
+                  },
+                  %Explorer.Chain.Address.CurrentTokenBalance{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
+                    token_contract_address_hash: ^token_erc_721_contract_address_hash,
+                    value: ^value_5,
+                    token_id: nil
                   }
                 ],
                 address_current_token_balances_update_token_holder_counts: [
@@ -172,7 +172,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                      block_number: block_number,
                      token_contract_address_hash: token_erc_721.contract_address_hash,
                      value: value_4,
-                     value_fetched_at: DateTime.utc_now(),
+                     value_fetched_at: DateTime.add(DateTime.utc_now(), -1),
                      token_id: token_id_4,
                      token_type: "ERC-721"
                    },

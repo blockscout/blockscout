@@ -324,6 +324,10 @@ config :explorer, Explorer.Chain.Cache.Transactions,
   ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
 
+config :explorer, Explorer.Chain.Cache.TransactionsApiV2,
+  ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
+
 config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: if(disable_indexer == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(disable_indexer == "true", do: :timer.seconds(5))
@@ -405,6 +409,13 @@ config :indexer,
   trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
 
+{receipts_batch_size, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_BATCH_SIZE", "250"))
+{receipts_concurrency, _} = Integer.parse(System.get_env("INDEXER_RECEIPTS_CONCURRENCY", "10"))
+
+config :indexer,
+  receipts_batch_size: receipts_batch_size,
+  receipts_concurrency: receipts_concurrency
+
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
     System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
@@ -466,6 +477,24 @@ blocks_catchup_fetcher_concurrency_default_str = "10"
 config :indexer, Indexer.Block.Catchup.Fetcher,
   batch_size: blocks_catchup_fetcher_batch_size,
   concurrency: blocks_catchup_fetcher_concurrency
+
+{internal_transaction_fetcher_batch_size, _} =
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", "10"))
+
+{internal_transaction_fetcher_concurrency, _} =
+  Integer.parse(System.get_env("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", "4"))
+
+config :indexer, Indexer.Fetcher.InternalTransaction,
+  batch_size: internal_transaction_fetcher_batch_size,
+  concurrency: internal_transaction_fetcher_concurrency
+
+{coin_balance_fetcher_batch_size, _} = Integer.parse(System.get_env("INDEXER_COIN_BALANCES_BATCH_SIZE", "500"))
+
+{coin_balance_fetcher_concurrency, _} = Integer.parse(System.get_env("INDEXER_COIN_BALANCES_CONCURRENCY", "4"))
+
+config :indexer, Indexer.Fetcher.CoinBalance,
+  batch_size: coin_balance_fetcher_batch_size,
+  concurrency: coin_balance_fetcher_concurrency
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
