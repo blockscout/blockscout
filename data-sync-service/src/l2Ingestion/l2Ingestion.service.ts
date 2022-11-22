@@ -92,8 +92,12 @@ export class L2IngestionService {
         signature,
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
       try {
-        const savedResult = await this.entityManager.save(L2SentMessageEvents, {
+        const savedResult = await queryRunner.manager.save(L2SentMessageEvents, {
           tx_hash: transactionHash,
           block_number: blockNumber.toString(),
           target,
@@ -105,8 +109,8 @@ export class L2IngestionService {
           timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
-        await this.entityManager.save(L2ToL1, {
+        })
+        await queryRunner.manager.save(L2ToL1, {
           hash: null,
           l2_hash: transactionHash,
           block: blockNumber,
@@ -119,15 +123,19 @@ export class L2IngestionService {
           gas_limit: gasLimit,
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
         result.push(savedResult);
         this.logger.log(
           `l2 createSentEvents success:${JSON.stringify(savedResult)}`,
         );
+        await queryRunner.commitTransaction()
       } catch (error) {
         this.logger.error(
           `l2 createSentEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction()
+      } finally {
+        await queryRunner.release()
       }
     }
     return result;
@@ -146,8 +154,12 @@ export class L2IngestionService {
         signature,
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
       try {
-        const savedResult = await this.entityManager.save(
+        const savedResult = await queryRunner.manager.save(
           L2RelayedMessageEvents,
           {
             tx_hash: transactionHash,
@@ -158,15 +170,19 @@ export class L2IngestionService {
             inserted_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-        );
+        )
         result.push(savedResult);
         this.logger.log(
           `l2 createRelayedEvents success:${JSON.stringify(savedResult)}`,
         );
+        await queryRunner.commitTransaction()
       } catch (error) {
         this.logger.error(
           `l2 createRelayedEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction()
+      } finally {
+        await queryRunner.release()
       }
     }
     return result;
