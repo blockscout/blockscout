@@ -43,8 +43,7 @@ defmodule BlockScoutWeb.TransactionStateController do
           [from_address: :names] => :optional,
           [to_address: :names] => :optional,
           from_address: :required,
-          to_address: :required,
-          token: :required
+          to_address: :required
         },
         # we need to consider all token transfers in block to show whole state change of transaction
         paging_options: %PagingOptions{key: nil, page_size: nil}

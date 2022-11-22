@@ -16,6 +16,7 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
+      preload: 3,
       select: 2,
       select: 3,
       subquery: 1,
@@ -73,6 +74,7 @@ defmodule Explorer.Chain do
     NewContractsCounter,
     NewVerifiedContractsCounter,
     Transactions,
+    TransactionsApiV2,
     Uncles,
     VerifiedContractsCounter
   }
@@ -82,7 +84,10 @@ defmodule Explorer.Chain do
 
   alias Explorer.Counters.{
     AddressesCounter,
-    AddressesWithBalanceCounter
+    AddressesWithBalanceCounter,
+    AddressTokenTransfersCounter,
+    AddressTransactionsCounter,
+    AddressTransactionsGasUsageCounter
   }
 
   alias Explorer.Market.MarketHistoryCache
@@ -585,6 +590,20 @@ defmodule Explorer.Chain do
     |> Transaction.transactions_with_token_transfers_direction(address_hash)
     |> Transaction.preload_token_transfers(address_hash)
     |> handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
+  @spec address_hash_to_token_transfers_new(Hash.Address.t() | String.t(), Keyword.t()) :: [TokenTransfer.t()]
+  def address_hash_to_token_transfers_new(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    direction = Keyword.get(options, :direction)
+    filters = Keyword.get(options, :token_type)
+    necessity_by_association = Keyword.get(options, :necessity_by_association)
+
+    direction
+    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters)
+    |> join_associations(necessity_by_association)
+    |> TokenTransfer.handle_paging_options(paging_options)
     |> Repo.all()
   end
 
@@ -2141,14 +2160,6 @@ defmodule Explorer.Chain do
 
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
 
-  defp debug(value, key) do
-    require Logger
-    Logger.configure(truncate: :infinity)
-    Logger.info(key)
-    Logger.info(Kernel.inspect(value, limit: :infinity, printable_limit: :infinity))
-    value
-  end
-
   @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
   those `hashes`.
@@ -3350,18 +3361,55 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option], [String.t()], [
-          :atom
-        ]) :: [
+  @spec recent_collated_transactions(true | false, [paging_options | necessity_by_association_option]) :: [
           Transaction.t()
         ]
-  def recent_collated_transactions(old_ui?, options \\ [], method_id_filter \\ [], type_filter \\ [])
+  def recent_collated_transactions(old_ui?, options \\ [])
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    method_id_filter = Keyword.get(options, :method)
+    type_filter = Keyword.get(options, :type)
 
-    fetch_recent_collated_transactions(old_ui?, paging_options, necessity_by_association, method_id_filter, type_filter)
+    if is_nil(paging_options.key) and (method_id_filter == [] || is_nil(method_id_filter)) and
+         (type_filter == [] || is_nil(type_filter)) do
+      old_ui?
+      |> take_enough_from_txs_cache(paging_options.page_size)
+      |> case do
+        nil ->
+          transactions =
+            fetch_recent_collated_transactions(
+              old_ui?,
+              paging_options,
+              necessity_by_association,
+              method_id_filter,
+              type_filter
+            )
+
+          update_transactions_cache(old_ui?, transactions)
+          transactions
+
+        transactions ->
+          transactions
+      end
+    else
+      fetch_recent_collated_transactions(
+        old_ui?,
+        paging_options,
+        necessity_by_association,
+        method_id_filter,
+        type_filter
+      )
+    end
   end
+
+  defp take_enough_from_txs_cache(old_ui?, amount)
+  defp take_enough_from_txs_cache(true, amount), do: Transactions.take_enough(amount)
+  defp take_enough_from_txs_cache(false, amount), do: TransactionsApiV2.take_enough(amount)
+
+  defp update_transactions_cache(old_ui?, txs)
+  defp update_transactions_cache(true, txs), do: Transactions.update(txs)
+  defp update_transactions_cache(false, txs), do: TransactionsApiV2.update(txs)
 
   # RAP - random access pagination
   @spec recent_collated_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
@@ -3432,7 +3480,6 @@ defmodule Explorer.Chain do
     |> apply_filter_by_tx_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> debug("result collated query")
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
@@ -3464,13 +3511,15 @@ defmodule Explorer.Chain do
       Results will be the transactions older than the `inserted_at` and `hash` that are passed.
 
   """
-  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false, [String.t()], [
-          :atom
-        ]) :: [Transaction.t()]
-  def recent_pending_transactions(options \\ [], old_ui? \\ true, method_id_filter \\ [], type_filter \\ [])
+  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false) :: [
+          Transaction.t()
+        ]
+  def recent_pending_transactions(options \\ [], old_ui? \\ true)
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    method_id_filter = Keyword.get(options, :method)
+    type_filter = Keyword.get(options, :type)
 
     Transaction
     |> page_pending_transaction(paging_options)
@@ -3481,7 +3530,6 @@ defmodule Explorer.Chain do
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> debug("result pendging query")
     |> Repo.all()
     |> (&if(old_ui?,
           do: &1,
@@ -3712,6 +3760,7 @@ defmodule Explorer.Chain do
   def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = options |> Keyword.get(:paging_options, @default_paging_options) |> Map.put(:asc_order, true)
+    token_type = Keyword.get(options, :token_type)
 
     TokenTransfer
     |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
@@ -3720,6 +3769,9 @@ defmodule Explorer.Chain do
       transaction.hash == ^transaction_hash and token_transfer.block_hash == transaction.block_hash and
         token_transfer.block_number == transaction.block_number
     )
+    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+    |> preload([token: token], [{:token, token}])
+    |> TokenTransfer.filter_by_type(token_type)
     |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([token_transfer], asc: token_transfer.log_index)
@@ -4410,7 +4462,12 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
     Transaction
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index,
+      desc: transaction.inserted_at,
+      desc: transaction.hash
+    )
     |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
@@ -4627,7 +4684,10 @@ defmodule Explorer.Chain do
     where(
       query,
       [transaction],
-      transaction.inserted_at < ^inserted_at or (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash)
+      (is_nil(transaction.block_number) and
+         (transaction.inserted_at < ^inserted_at or
+            (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash))) or
+        not is_nil(transaction.block_number)
     )
   end
 
@@ -4659,6 +4719,20 @@ defmodule Explorer.Chain do
   end
 
   defp page_search_results(query, %PagingOptions{key: nil}), do: query
+
+  defp page_search_results(query, %PagingOptions{
+         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+       })
+       when holder_count in [nil, ""] do
+    where(
+      query,
+      [item],
+      (item.name > ^name and item.type == ^item_type) or
+        (item.name == ^name and item.inserted_at < ^inserted_at and
+           item.type == ^item_type) or
+        item.type != ^item_type
+    )
+  end
 
   # credo:disable-for-next-line
   defp page_search_results(query, %PagingOptions{
@@ -6459,108 +6533,15 @@ defmodule Explorer.Chain do
     |> String.downcase()
   end
 
-  @spec verified_contracts([
-          paging_options | necessity_by_association_option | {:filter, :solidity | :vyper} | {:search, String.t()}
-        ]) :: [SmartContract.t()]
-  def verified_contracts(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    filter = Keyword.get(options, :filter, nil)
-    search_string = Keyword.get(options, :search, nil)
-
-    query = from(contract in SmartContract, select: contract, order_by: [desc: :inserted_at])
-
-    query
-    |> filter_contracts(filter)
-    |> search_contracts(search_string)
-    |> handle_verified_contracts_paging_options(paging_options)
-    |> join_associations(necessity_by_association)
-    |> Repo.all()
+  def recent_transactions(options, [:pending | _]) do
+    recent_pending_transactions(options, false)
   end
 
-  defp search_contracts(basic_query, nil), do: basic_query
-
-  defp search_contracts(basic_query, search_string) do
-    from(contract in basic_query,
-      where: ilike(contract.name, ^"%#{search_string}%"),
-      or_where: ilike(fragment("'0x' || encode(?, 'hex')", contract.address_hash), ^"%#{search_string}%")
-    )
+  def recent_transactions(options, _) do
+    recent_collated_transactions(false, options)
   end
 
-  defp filter_contracts(basic_query, :solidity) do
-    basic_query
-    |> where(is_vyper_contract: ^false)
-  end
-
-  defp filter_contracts(basic_query, :vyper) do
-    basic_query
-    |> where(is_vyper_contract: ^true)
-  end
-
-  defp filter_contracts(basic_query, _), do: basic_query
-
-  def count_verified_contracts do
-    Repo.aggregate(SmartContract, :count, timeout: :infinity)
-  end
-
-  def count_new_verified_contracts do
-    query =
-      from(contract in SmartContract,
-        select: contract.inserted_at,
-        where: fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", contract.inserted_at)
-      )
-
-    query
-    |> Repo.aggregate(:count, timeout: :infinity)
-  end
-
-  def count_contracts do
-    query =
-      from(address in Address,
-        select: address,
-        where: not is_nil(address.contract_code)
-      )
-
-    query
-    |> Repo.aggregate(:count, timeout: :infinity)
-  end
-
-  def count_new_contracts do
-    query =
-      from(tx in Transaction,
-        select: tx,
-        where:
-          tx.status == ^:ok and
-            fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", tx.created_contract_code_indexed_at)
-      )
-
-    query
-    |> Repo.aggregate(:count, timeout: :infinity)
-  end
-
-  def count_verified_contracts_from_cache do
-    VerifiedContractsCounter.fetch()
-  end
-
-  def count_new_verified_contracts_from_cache do
-    NewVerifiedContractsCounter.fetch()
-  end
-
-  def count_contracts_from_cache do
-    ContractsCounter.fetch()
-  end
-
-  def count_new_contracts_from_cache do
-    NewContractsCounter.fetch()
-  end
-
-  def recent_transactions(options, [:pending | _], method_id_filter, type_filter_options) do
-    recent_pending_transactions(options, false, method_id_filter, type_filter_options)
-  end
-
-  def recent_transactions(options, _, method_id_filter, type_filter_options) do
-    recent_collated_transactions(false, options, method_id_filter, type_filter_options)
-  end
+  def apply_filter_by_method_id_to_transactions(query, nil), do: query
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
     method_ids = Enum.flat_map(filter, &map_name_or_method_id_to_method_id/1)
@@ -6676,4 +6657,152 @@ defmodule Explorer.Chain do
   def filter_token_creation_dynamic(dynamic) do
     dynamic([tx, created_token: created_token], ^dynamic or (is_nil(tx.to_address_hash) and not is_nil(created_token)))
   end
+<<<<<<< HEAD
+=======
+
+  @spec verified_contracts([
+          paging_options | necessity_by_association_option | {:filter, :solidity | :vyper} | {:search, String.t()}
+        ]) :: [SmartContract.t()]
+  def verified_contracts(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    filter = Keyword.get(options, :filter, nil)
+    search_string = Keyword.get(options, :search, nil)
+
+    query = from(contract in SmartContract, select: contract, order_by: [desc: :id])
+
+    query
+    |> filter_contracts(filter)
+    |> search_contracts(search_string)
+    |> handle_verified_contracts_paging_options(paging_options)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  defp search_contracts(basic_query, nil), do: basic_query
+
+  defp search_contracts(basic_query, search_string) do
+    from(contract in basic_query,
+      where:
+        ilike(contract.name, ^"%#{search_string}%") or
+          ilike(fragment("'0x' || encode(?, 'hex')", contract.address_hash), ^"%#{search_string}%")
+    )
+  end
+
+  defp filter_contracts(basic_query, :solidity) do
+    basic_query
+    |> where(is_vyper_contract: ^false)
+  end
+
+  defp filter_contracts(basic_query, :vyper) do
+    basic_query
+    |> where(is_vyper_contract: ^true)
+  end
+
+  defp filter_contracts(basic_query, _), do: basic_query
+
+  def count_verified_contracts do
+    Repo.aggregate(SmartContract, :count, timeout: :infinity)
+  end
+
+  def count_new_verified_contracts do
+    query =
+      from(contract in SmartContract,
+        select: contract.inserted_at,
+        where: fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", contract.inserted_at)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
+
+  def count_contracts do
+    query =
+      from(address in Address,
+        select: address,
+        where: not is_nil(address.contract_code)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
+
+  def count_new_contracts do
+    query =
+      from(tx in Transaction,
+        select: tx,
+        where:
+          tx.status == ^:ok and
+            fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", tx.created_contract_code_indexed_at)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
+
+  def count_verified_contracts_from_cache do
+    VerifiedContractsCounter.fetch()
+  end
+
+  def count_new_verified_contracts_from_cache do
+    NewVerifiedContractsCounter.fetch()
+  end
+
+  def count_contracts_from_cache do
+    ContractsCounter.fetch()
+  end
+
+  def count_new_contracts_from_cache do
+    NewContractsCounter.fetch()
+  end
+
+  def address_counters(address) do
+    validation_count_task =
+      Task.async(fn ->
+        address_to_validation_count(address.hash)
+      end)
+
+    Task.start_link(fn ->
+      transaction_count(address)
+    end)
+
+    Task.start_link(fn ->
+      token_transfers_count(address)
+    end)
+
+    Task.start_link(fn ->
+      gas_usage_count(address)
+    end)
+
+    [
+      validation_count_task
+    ]
+    |> Task.yield_many(:infinity)
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching address counters terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching address counters timed out."
+      end
+    end)
+    |> List.to_tuple()
+  end
+
+  def transaction_count(address) do
+    AddressTransactionsCounter.fetch(address)
+  end
+
+  def token_transfers_count(address) do
+    AddressTokenTransfersCounter.fetch(address)
+  end
+
+  def gas_usage_count(address) do
+    AddressTransactionsGasUsageCounter.fetch(address)
+  end
+>>>>>>> origin/master
 end

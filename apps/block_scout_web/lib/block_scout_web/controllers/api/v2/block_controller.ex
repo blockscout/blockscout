@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   import BlockScoutWeb.Chain,
     only: [next_page_params: 3, paging_options: 1, put_key_value_to_paging_options: 3, split_list_by_page: 1]
 
-  import BlockScoutWeb.PagingHelper, only: [select_block_type: 1]
+  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1, select_block_type: 1]
 
   alias BlockScoutWeb.API.V2.TransactionView
   alias BlockScoutWeb.BlockTransactionController
@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
-    next_page_params = next_page_params(next_page, blocks, params)
+    next_page_params = next_page |> next_page_params(blocks, params) |> delete_parameters_from_next_page_params()
 
     conn
     |> put_status(200)
@@ -70,7 +70,10 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-      next_page_params = next_page_params(next_page, transactions, params)
+      next_page_params =
+        next_page
+        |> next_page_params(transactions, params)
+        |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
