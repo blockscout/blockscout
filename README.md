@@ -39,7 +39,7 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 
 ### 2. Node Services
 
-[development and deployment](https://github.com/mantlenetworkio/blockscout/blob/master/data-sync-service/README.md)
+- [development and deployment](https://github.com/mantlenetworkio/blockscout/blob/master/data-sync-service/README.md)
 
 ## Acknowledgements
 
