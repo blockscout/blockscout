@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.ENSName do
   alias Explorer.Chain
   alias Explorer.ENS.NameRetriever
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.ENSName.Supervisor, as: ENSNameSupervisor
 
   @behaviour BufferedTask
 
@@ -75,35 +76,24 @@ defmodule Indexer.Fetcher.ENSName do
 
         :ok
     end
-
-    :ok
   end
 
   @doc """
   Fetches ENS name data asynchronously.
   """
   def async_fetch(addresses) when is_list(addresses) do
-    if enabled() do
-      data =
-        addresses
-        |> Enum.uniq()
-
-      BufferedTask.buffer(__MODULE__, data)
-    else
+    if ENSNameSupervisor.disabled?() do
       :ok
+    else
+      BufferedTask.buffer(__MODULE__, Enum.uniq(addresses))
     end
   end
 
   def async_fetch(data) do
-    if enabled() do
-      BufferedTask.buffer(__MODULE__, data)
-    else
+    if ENSNameSupervisor.disabled?() do
       :ok
+    else
+      BufferedTask.buffer(__MODULE__, data)
     end
-  end
-
-  defp enabled do
-    Application.get_env(:indexer, Indexer.Fetcher.ENSName.Supervisor)
-    |> Keyword.get(:disabled?) == false
   end
 end

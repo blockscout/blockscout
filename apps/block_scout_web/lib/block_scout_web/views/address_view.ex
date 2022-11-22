@@ -495,7 +495,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract_interaction_disabled?, do: Application.get_env(:block_scout_web, :contract)[:disable_interaction]
 
-  def ens_avatar_url(address) do
-    "#{Application.get_env(:block_scout_web, :ens_metadata_server)}/avatar/#{primary_name(address)}"
+  def ens_avatar_url(address_name) do
+    case Application.get_env(:block_scout_web, :ens_metadata_server) do
+      nil -> ""
+      ens_metadata_server -> "#{ens_metadata_server}/avatar/#{address_name}"
+    end
   end
 end

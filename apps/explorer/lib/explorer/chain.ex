@@ -1576,55 +1576,25 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp search_name_query(string) do
-    from(address in Address,
-      left_join: address_name in Address.Name,
-      on: address.hash == address_name.address_hash,
-      where: ilike(address_name.name, ^"%#{string}%"),
-      select: %{
-        address_hash: address.hash,
-        tx_hash: fragment("CAST(NULL AS bytea)"),
-        block_hash: fragment("CAST(NULL AS bytea)"),
-        foreign_token_hash: fragment("CAST(NULL AS bytea)"),
-        foreign_chain_id: ^nil,
-        type: "address",
-        name: address_name.name,
-        symbol: ^nil,
-        holder_count: ^nil,
-        inserted_at: address.inserted_at,
-        block_number: 0
-      }
-    )
-  end
-
   defp search_ens_name_query(string) do
-    case NameRetriever.fetch_address_of(string) do
-      {:ok, address} ->
-        case Chain.string_to_address_hash(address) do
-          {:ok, address_hash} ->
-            from(address in Address,
-              where: address.hash == ^address_hash,
-              select: %{
-                address_hash: address.hash,
-                tx_hash: fragment("CAST(NULL AS bytea)"),
-                block_hash: fragment("CAST(NULL AS bytea)"),
-                foreign_token_hash: fragment("CAST(NULL AS bytea)"),
-                foreign_chain_id: ^nil,
-                type: "address",
-                name: ^string,
-                symbol: ^nil,
-                holder_count: ^nil,
-                inserted_at: address.inserted_at,
-                block_number: 0
-              }
-            )
-
-          _ ->
-            nil
-        end
-
-      _ ->
-        nil
+    with {:ok, address} <- NameRetriever.fetch_address_of(string),
+         {:ok, address_hash} <- string_to_address_hash(address) do
+      from(address in Address,
+        where: address.hash == ^address_hash,
+        select: %{
+          address_hash: address.hash,
+          tx_hash: fragment("CAST(NULL AS bytea)"),
+          block_hash: fragment("CAST(NULL AS bytea)"),
+          type: "address",
+          name: ^string,
+          symbol: ^nil,
+          holder_count: ^nil,
+          inserted_at: address.inserted_at,
+          block_number: 0
+        }
+      )
+    else
+      _ -> nil
     end
   end
 
@@ -1702,15 +1672,13 @@ defmodule Explorer.Chain do
         contracts_query = search_contract_query(term)
         tx_query = search_tx_query(string)
         address_query = search_address_query(string)
-        name_query = search_name_query(string)
         ens_name_query = search_ens_name_query(string)
         block_query = search_block_query(string)
 
         basic_query =
           from(
             tokens in subquery(tokens_query),
-            union: ^contracts_query,
-            union: ^name_query
+            union: ^contracts_query
           )
 
         query =

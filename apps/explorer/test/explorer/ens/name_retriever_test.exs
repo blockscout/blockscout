@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.EnsNameTest do
+defmodule Explorer.ENS.NameRetrieverTest do
   require Logger
 
   use EthereumJSONRPC.Case
@@ -8,7 +8,6 @@ defmodule Indexer.Fetcher.EnsNameTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.Token
-  alias Indexer.Fetcher.Token, as: TokenFetcher
 
   alias Explorer.ENS
 
@@ -42,10 +41,6 @@ defmodule Indexer.Fetcher.EnsNameTest do
       assert Base.encode16(ENS.NameRetriever.namehash("b69d54a4e31f24afdd9eb1b53f8319ac83c646c9.addr.reverse"),
                case: :lower
              ) == "5af16006ad8cc8ec19f624c12ea9e30511c080ae88071401a57c0e00be6471ca"
-
-      # Logger.warn(Base.encode16(ExKeccak.hash_256("resolver(bytes32)"), case: :lower))
-      # Logger.warn(Base.encode16(ExKeccak.hash_256("name(bytes32)"), case: :lower))
-      # Logger.warn(Base.encode16(ExKeccak.hash_256("addr(bytes32)"), case: :lower))
     end
 
     test "ENS disabled test", %{json_rpc_named_arguments: json_rpc_named_arguments} do

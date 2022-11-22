@@ -28,13 +28,17 @@ defmodule Indexer.ENSNameSanitizerTest do
       insert(:address_name, address: normal_address, name: "beef")
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        configuration = Application.get_env(:explorer, Explorer.ENS.NameRetriever)
+        retriever_configuration = Application.get_env(:explorer, Explorer.ENS.NameRetriever)
 
         Application.put_env(:explorer, Explorer.ENS.NameRetriever,
           enabled: true,
           registry_address: "0xcfb86556760d03942ebf1ba88a9870e67d77b627",
           resolver_address: "0x1ba19b976fefc1c9c684f2b821e494a380f45a0f"
         )
+
+        fetcher_configuration = Application.get_env(:indexer, Indexer.Fetcher.ENSName.Supervisor)
+
+        Application.put_env(:indexer, Indexer.Fetcher.ENSName.Supervisor, disabled?: false)
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn [
@@ -128,20 +132,9 @@ defmodule Indexer.ENSNameSanitizerTest do
         assert is_nil(Repo.one(from(n in Address.Name, where: n.address_hash == ^ens_unset_address.hash)))
         assert !is_nil(Repo.one(from(n in Address.Name, where: n.address_hash == ^normal_address.hash)))
 
-        Application.put_env(:explorer, Explorer.ENS.NameRetriever, configuration)
+        Application.put_env(:explorer, Explorer.ENS.NameRetriever, retriever_configuration)
+        Application.put_env(:indexer, Indexer.Fetcher.ENSName.Supervisor, fetcher_configuration)
       end
     end
-
-    # test "re-schedules deletion" do
-    #   start_supervised!({ENSNameSanitizer, [[interval: :timer.seconds(1)], [name: :PendingOpsTest]]})
-
-    #   block = insert(:block, consensus: false)
-
-    #   insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
-
-    #   Process.sleep(2_000)
-
-    #   assert is_nil(Repo.one(from(block in PendingBlockOperation, where: block.block_hash == ^block.hash)))
-    # end
   end
 end

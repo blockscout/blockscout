@@ -1,10 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.ENSController do
   use BlockScoutWeb, :controller
-
   use Explorer.Schema
 
   alias Explorer.Chain
-
   alias Explorer.ENS.NameRetriever
 
   def ensaddress(conn, params) do

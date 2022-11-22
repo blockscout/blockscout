@@ -44,7 +44,7 @@
           <div style="display: flex; align-items: center; gap: 15px">
             <%= if address_name do %>
               <div>
-                <img onerror="this.onerror=null; this.remove();" style="width: 64px" src="<%= ens_avatar_url(@address) %>">
+                <img onerror="this.onerror=null; this.remove();" style="width: 64px" src="<%= ens_avatar_url(address_name) %>">
               </div>
             <% end %>
             <div>

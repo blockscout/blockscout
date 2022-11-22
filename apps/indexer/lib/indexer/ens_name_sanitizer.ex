@@ -11,6 +11,7 @@ defmodule Indexer.ENSNameSanitizer do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address
   alias Explorer.ENS.NameRetriever
+  alias Indexer.Fetcher.ENSName.Supervisor, as: ENSNameSupervisor
   import Ecto.Query, only: [from: 2]
 
   @interval :timer.hours(1)
@@ -41,7 +42,7 @@ defmodule Indexer.ENSNameSanitizer do
       interval: opts[:interval] || @interval
     }
 
-    if enabled() do
+    unless ENSNameSupervisor.disabled?() do
       Process.send_after(self(), :sanitize_ens_names, state.interval)
     end
 
@@ -99,10 +100,5 @@ defmodule Indexer.ENSNameSanitizer do
       "ENS names are sanitized. Total: #{Enum.count(name_list_from_db)}, dropped: #{Enum.sum(deleted_counts)}",
       fetcher: :address_names
     )
-  end
-
-  defp enabled do
-    Application.get_env(:indexer, Indexer.Fetcher.ENSName.Supervisor)
-    |> Keyword.get(:disabled?) == false
   end
 end
