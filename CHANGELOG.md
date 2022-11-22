@@ -1,6 +1,17 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
+
+### Chore
+- [#5536](https://github.com/blockscout/blockscout/pull/5536) - NPM audit fix
+
+
+## 4.1.3-beta
+
+### Features
 - [#5515](https://github.com/blockscout/blockscout/pull/5515) - Integrate ace editor to display contract sources
 - [#5505](https://github.com/blockscout/blockscout/pull/5505) - Manage debug_traceTransaction JSON RPC method timeout
 - [#5491](https://github.com/blockscout/blockscout/pull/5491) - Sequential blocks broadcast on the main page
@@ -9,6 +20,8 @@
 - [#5268](https://github.com/blockscout/blockscout/pull/5268), [#5313](https://github.com/blockscout/blockscout/pull/5313) - Contract names display improvement
 
 ### Fixes
+- [#5528](https://github.com/blockscout/blockscout/pull/5528) - Token balances fetcher retry
+- [#5524](https://github.com/blockscout/blockscout/pull/5524) - ContractState module resistance to unresponsive archive node
 - [#5513](https://github.com/blockscout/blockscout/pull/5513) - Do not fill pending blocks ops with block numbers below TRACE_FIRST_BLOCK
 - [#5508](https://github.com/blockscout/blockscout/pull/5508) - Hide indexing banner if we fetched internal transactions from TRACE_FIRST_BLOCK
 - [#5504](https://github.com/blockscout/blockscout/pull/5504) - Extend TRACE_FIRST_BLOCK env var to geth variant
