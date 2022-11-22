@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
   @allowed_type_labels ["coin_transfer", "contract_call", "contract_creation", "token_transfer", "token_creation"]
+  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
     with {block_number, ""} <- Integer.parse(block_number_string),
@@ -32,23 +33,34 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
-  def filter_options(%{"filter" => filter}) do
-    parse_filter(filter, @allowed_filter_labels)
+  def token_transfers_types_options(%{"type" => filters}) do
+    [
+      token_type: filters |> String.upcase() |> parse_filter(@allowed_token_transfer_type_labels)
+    ]
   end
 
-  def filter_options(_params), do: []
+  def token_transfers_types_options(_), do: [token_type: []]
 
+  # sobelow_skip ["DOS.StringToAtom"]
+  def filter_options(%{"filter" => filter}, fallback) do
+    filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_atom/1)
+    if(filter == [], do: [fallback], else: filter)
+  end
+
+  def filter_options(_params, fallback), do: [fallback]
+
+  # sobelow_skip ["DOS.StringToAtom"]
   def type_filter_options(%{"type" => type}) do
-    parse_filter(type, @allowed_type_labels)
+    [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_atom/1)]
   end
 
-  def type_filter_options(_params), do: []
+  def type_filter_options(_params), do: [type: []]
 
   def method_filter_options(%{"method" => method}) do
-    parse_method_filter(method)
+    [method: parse_method_filter(method)]
   end
 
-  def method_filter_options(_params), do: []
+  def method_filter_options(_params), do: [method: []]
 
   def parse_filter("[" <> filter, allowed_labels) do
     filter
@@ -56,13 +68,11 @@ defmodule BlockScoutWeb.PagingHelper do
     |> parse_filter(allowed_labels)
   end
 
-  # sobelow_skip ["DOS.StringToAtom"]
   def parse_filter(filter, allowed_labels) when is_binary(filter) do
     filter
     |> String.split(",")
     |> Enum.filter(fn label -> Enum.member?(allowed_labels, label) end)
     |> Enum.uniq()
-    |> Enum.map(&String.to_atom/1)
   end
 
   def parse_method_filter("[" <> filter) do
@@ -114,4 +124,16 @@ defmodule BlockScoutWeb.PagingHelper do
       },
       block_type: "Block"
     ]
+
+  def delete_parameters_from_next_page_params(params) when is_map(params) do
+    params
+    |> Map.delete("block_hash_or_number")
+    |> Map.delete("transaction_hash")
+    |> Map.delete("address_hash")
+    |> Map.delete("type")
+    |> Map.delete("method")
+    |> Map.delete("filter")
+  end
+
+  def delete_parameters_from_next_page_params(_), do: nil
 end

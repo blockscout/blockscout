@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
           [from_address: :smart_contract] => :optional,
           [to_address: :smart_contract] => :optional
         },
-        paging_options: %PagingOptions{page_size: 5}
+        paging_options: %PagingOptions{page_size: 6}
       )
 
     conn
