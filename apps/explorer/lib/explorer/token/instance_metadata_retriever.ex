@@ -158,7 +158,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   def fetch_json(%{@uri => {:ok, ["data:application/json," <> json]}}, hex_token_id) do
     decoded_json = URI.decode(json)
 
-    fetch_json(%{@token_uri => {:ok, [decoded_json]}}, hex_token_id)
+    fetch_json(%{@uri => {:ok, [decoded_json]}}, hex_token_id)
   rescue
     e ->
       Logger.debug(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
@@ -166,6 +166,40 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       )
 
       {:error, json}
+  end
+
+  def fetch_json(%{@token_uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
+    case Base.url_decode64(base64_encoded_json) do
+      {:ok, base64_decoded} ->
+        fetch_json(%{@token_uri => {:ok, [base64_decoded]}}, hex_token_id)
+
+      _ ->
+        {:error, base64_encoded_json}
+    end
+  rescue
+    e ->
+      Logger.debug(["Unknown metadata format base64 #{inspect(base64_encoded_json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
+
+      {:error, base64_encoded_json}
+  end
+
+  def fetch_json(%{@uri => {:ok, ["data:application/json;base64," <> base64_encoded_json]}}, hex_token_id) do
+    case Base.url_decode64(base64_encoded_json) do
+      {:ok, base64_decoded} ->
+        fetch_json(%{@uri => {:ok, [base64_decoded]}}, hex_token_id)
+
+      _ ->
+        {:error, base64_encoded_json}
+    end
+  rescue
+    e ->
+      Logger.debug(["Unknown metadata format base64 #{inspect(base64_encoded_json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
+
+      {:error, base64_encoded_json}
   end
 
   def fetch_json(%{@token_uri => {:ok, ["ipfs://ipfs/" <> ipfs_uid]}}, hex_token_id) do
