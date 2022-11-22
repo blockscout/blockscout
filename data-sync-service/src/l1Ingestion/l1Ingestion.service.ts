@@ -166,8 +166,13 @@ export class L1IngestionService {
         },
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
+
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
       try {
-        const savedResult = await this.entityManager.save(TxnBatches, {
+        const savedResult = await queryRunner.manager.save(TxnBatches, {
           batch_index: _batchIndex,
           block_number: blockNumber.toString(),
           hash: transactionHash,
@@ -179,12 +184,16 @@ export class L1IngestionService {
           timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
         result.push(savedResult);
+        await queryRunner.commitTransaction()
       } catch (error) {
         this.logger.error(
           `l1 createTxnBatchesEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction()
+      } finally {
+        await queryRunner.release()
       }
     }
     return result;
@@ -208,8 +217,13 @@ export class L1IngestionService {
         },
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
+      
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
       try {
-        const savedResult = await this.entityManager.save(StateBatches, {
+        const savedResult = await queryRunner.manager.save(StateBatches, {
           batch_index: _batchIndex,
           block_number: blockNumber.toString(),
           hash: transactionHash,
@@ -221,12 +235,16 @@ export class L1IngestionService {
           timestamp: new Date(Number(timestamp) * 1000).toISOString(),
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
         result.push(savedResult);
+        await queryRunner.commitTransaction()
       } catch (error) {
         this.logger.error(
           `l1 createStateBatchesEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction()
+      } finally {
+        await queryRunner.release()
       }
     }
     return result;
@@ -241,8 +259,12 @@ export class L1IngestionService {
         returnValues: { target, sender, message, messageNonce, gasLimit },
         signature,
       } = item;
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
       try {
-        const savedResult = await this.entityManager.save(L1SentMessageEvents, {
+        const savedResult = await queryRunner.manager.save(L1SentMessageEvents, {
           tx_hash: transactionHash,
           block_number: blockNumber.toString(),
           target,
@@ -253,12 +275,16 @@ export class L1IngestionService {
           signature,
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
         result.push(savedResult);
+        await queryRunner.commitTransaction()
       } catch (error) {
         this.logger.error(
           `l1 createSentEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction()
+      } finally {
+        await queryRunner.release()
       }
     }
     return result;
@@ -276,8 +302,13 @@ export class L1IngestionService {
         returnValues: { msgHash },
         signature,
       } = item;
+      
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
       try {
-        const savedResult = await this.entityManager.save(
+        const savedResult = await queryRunner.manager.save(
           L1RelayedMessageEvents,
           {
             tx_hash: transactionHash,
@@ -287,12 +318,16 @@ export class L1IngestionService {
             inserted_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-        );
+        )
         result.push(savedResult);
+        await queryRunner.commitTransaction()
       } catch (error) {
         this.logger.error(
           `l1 createRelayedEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction()
+      } finally {
+        await queryRunner.release()
       }
     }
     return result;
@@ -323,30 +358,46 @@ export class L1IngestionService {
       } else {
         continue;
       }
-      await this.entityManager.save(L1ToL2, {
-        hash: tx_hash,
-        l2_hash: l2_hash,
-        block: Number(block_number),
-        timestamp: relayedResult.timestamp,
-        tx_origin: sender,
-        queue_index: Number(message_nonce.toString()),
-        target: sender,
-        gas_limit: gas_limit,
-        inserted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      await this.entityManager
-        .createQueryBuilder()
-        .update(L1SentMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: item.tx_hash })
-        .execute();
-      await this.entityManager
-        .createQueryBuilder()
-        .update(L2RelayedMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
-        .execute();
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
+      try {
+        // execute some operations on this transaction:
+        await queryRunner.manager.save(L1ToL2, {
+          hash: tx_hash,
+          l2_hash: l2_hash,
+          block: Number(block_number),
+          timestamp: relayedResult.timestamp,
+          tx_origin: sender,
+          queue_index: Number(message_nonce.toString()),
+          target: sender,
+          gas_limit: gas_limit,
+          inserted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L1SentMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: item.tx_hash })
+          .execute();
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L2RelayedMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
+          .execute();
+        // commit transaction now:
+        await queryRunner.commitTransaction()
+      } catch (err) {
+          // since we have errors let's rollback changes we made
+          await queryRunner.rollbackTransaction()
+      } finally {
+          // you need to release query runner which is manually created:
+          await queryRunner.release()
+      }
+
     }
   }
   async createL2L1Relation() {
@@ -361,38 +412,49 @@ export class L1IngestionService {
         messageNonce: sentList[i].message_nonce.toString(),
       });
       const relayedResult = await this.getRelayedEventByMsgHash(msgHash);
-      if (relayedResult) {
-        console.log('relayedResult.tx_hash', relayedResult.tx_hash);
-        await this.entityManager
-          .createQueryBuilder()
-          .update(L2ToL1)
-          .set({ hash: relayedResult.tx_hash, status: 'Relayed' })
-          .where('l2_hash = :l2_hash', { l2_hash: sentList[i].tx_hash })
-          .execute();
-        await this.entityManager
-          .createQueryBuilder()
-          .update(L2SentMessageEvents)
-          .set({ is_merge: true })
-          .where('tx_hash = :tx_hash', { tx_hash: sentList[i].tx_hash })
-          .execute();
-        await this.entityManager
-          .createQueryBuilder()
-          .update(L1RelayedMessageEvents)
-          .set({ is_merge: true })
-          .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
-          .execute();
-      } else {
-        const totalElements = await this.getSccTotalElements();
-        const ltimestamp = Number(sentList[i].timestamp) / 1000
-        if (totalElements > sentList[i].block_number && ltimestamp + FraudProofWindow >= timestamp) {
-          await this.entityManager
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner()
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
+      try {
+        if (relayedResult) {
+          console.log('relayedResult.tx_hash', relayedResult.tx_hash);
+          await queryRunner.manager
             .createQueryBuilder()
             .update(L2ToL1)
-            .set({ status: 'Ready for Relay' })
+            .set({ hash: relayedResult.tx_hash, status: 'Relayed' })
             .where('l2_hash = :l2_hash', { l2_hash: sentList[i].tx_hash })
-            .andWhere('status = :status', { status: 'Waiting' })
             .execute();
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(L2SentMessageEvents)
+            .set({ is_merge: true })
+            .where('tx_hash = :tx_hash', { tx_hash: sentList[i].tx_hash })
+            .execute();
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(L1RelayedMessageEvents)
+            .set({ is_merge: true })
+            .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
+            .execute();
+        } else {
+          const totalElements = await this.getSccTotalElements();
+          const ltimestamp = Number(sentList[i].timestamp) / 1000
+          if (totalElements > sentList[i].block_number && ltimestamp + FraudProofWindow >= timestamp) {
+            await queryRunner.manager
+              .createQueryBuilder()
+              .update(L2ToL1)
+              .set({ status: 'Ready for Relay' })
+              .where('l2_hash = :l2_hash', { l2_hash: sentList[i].tx_hash })
+              .andWhere('status = :status', { status: 'Waiting' })
+              .execute();
+          }
         }
+        await queryRunner.commitTransaction()
+      } catch (error) {
+        await queryRunner.rollbackTransaction()
+      } finally {
+        await queryRunner.release()
       }
     }
   }
