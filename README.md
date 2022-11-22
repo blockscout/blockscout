@@ -28,6 +28,8 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
 ## Getting Started
 
+### Elixir Services
+
 See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
 - [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
@@ -35,6 +37,9 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
+### Node Services
+
+[development and deployment](https://github.com/mantlenetworkio/blockscout/blob/master/data-sync-service/README.md)
 
 ## Acknowledgements
 
