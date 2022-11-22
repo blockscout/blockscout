@@ -50,9 +50,21 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
         "gas_prices" => gas_prices,
         "static_gas_price" => gas_price,
-        "market_cap" => Helper.market_cap(market_cap_type, exchange_rate)
+        "market_cap" => Helper.market_cap(market_cap_type, exchange_rate),
+        "network_utilization_percentage" => network_utilization_percentage()
       }
     )
+  end
+
+  defp network_utilization_percentage do
+    {gas_used, gas_limit} =
+      Enum.reduce(Chain.list_blocks(), {Decimal.new(0), Decimal.new(0)}, fn block, {gas_used, gas_limit} ->
+        {Decimal.add(gas_used, block.gas_used), Decimal.add(gas_limit, block.gas_limit)}
+      end)
+
+    if Decimal.compare(gas_limit, 0) == :eq,
+      do: 0,
+      else: gas_used |> Decimal.div(gas_limit) |> Decimal.mult(100) |> Decimal.to_float()
   end
 
   def transactions_chart(conn, _params) do
