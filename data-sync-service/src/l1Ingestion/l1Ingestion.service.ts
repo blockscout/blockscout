@@ -405,32 +405,28 @@ export class L1IngestionService {
     }
   }
   async handleWaitTransaction() {
-    const waitTxList = await this.getL2toL1WaitTx('Waiting');
     // const latestBlock = await this.getCurrentBlockNumber();
     // const { timestamp } = await this.web3.eth.getBlock(latestBlock);
-    for (let i = 0; i < waitTxList.length; i++) {
-      const totalElements = await this.getSccTotalElements();
-      // const lTimestamp = Number(waitTxList[i].timestamp) / 1000;
+    const totalElements = await this.getSccTotalElements();
+    // const lTimestamp = Number(waitTxList[i].timestamp) / 1000;
+    const dataSource = getConnection();
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
       // todo: lTimestamp + FraudProofWindow >= timestamp
-      if (totalElements > waitTxList[i].block) {
-        const dataSource = getConnection();
-        const queryRunner = dataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
-        try {
-          await queryRunner.manager
-            .createQueryBuilder()
-            .update(L2ToL1)
-            .set({ status: 'Ready for Relay' })
-            .where('l2_hash = :l2_hash', { l2_hash: waitTxList[i].l2_hash })
-            .execute();
-          await queryRunner.commitTransaction();
-        } catch (error) {
-          await queryRunner.rollbackTransaction();
-        } finally {
-          await queryRunner.release();
-        }
-      }
+      await queryRunner.manager
+        .createQueryBuilder()
+        .update(L2ToL1)
+        .set({ status: 'Ready for Relay' })
+        .where('block <= :block', { block: totalElements })
+        .andWhere('status = :status', { status: 'Waiting' })
+        .execute();
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
   }
   async createL2L1Relation() {
