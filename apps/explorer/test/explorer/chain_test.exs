@@ -1124,6 +1124,112 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "block_to_gas_used_by_1559_txs/1" do
+    test "sum of gas_usd from all transactions including glegacy" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 0,
+        max_priority_fee_per_gas: 3
+      )
+
+      insert(:transaction,
+        gas_used: 6,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 2
+      )
+
+      assert Decimal.new(10) == Chain.block_to_gas_used_by_1559_txs(block.hash)
+    end
+  end
+
+  describe "block_to_priority_fee_of_1559_txs/1" do
+    test "with transactions: tx.max_fee_per_gas = 0" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 0,
+        max_priority_fee_per_gas: 3
+      )
+
+      assert Decimal.new(0) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas >= tx.max_priority_fee_per_gas" do
+      block = insert(:block, base_fee_per_gas: 1)
+
+      insert(:transaction,
+        gas_used: 3,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 5,
+        max_priority_fee_per_gas: 1
+      )
+
+      assert Decimal.new(3) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas < tx.max_priority_fee_per_gas" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 5,
+        max_priority_fee_per_gas: 3
+      )
+
+      assert Decimal.new(4) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with legacy transactions" do
+      block = insert(:block, base_fee_per_gas: 1)
+
+      insert(:transaction,
+        gas_price: 5,
+        gas_used: 6,
+        cumulative_gas_used: 6,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1
+      )
+
+      assert Decimal.new(24) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "0 in blockchain with no EIP-1559 implemented" do
+      block = insert(:block, base_fee_per_gas: nil)
+
+      insert(:transaction,
+        gas_price: 1,
+        gas_used: 4,
+        cumulative_gas_used: 4,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1
+      )
+
+      assert 0 == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+  end
+
   describe "block_to_transaction_count/1" do
     test "without transactions" do
       block = insert(:block)

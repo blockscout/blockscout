@@ -5,6 +5,8 @@
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
+- [#5592](https://github.com/blockscout/blockscout/pull/5592) - Burn fees for legacy transactions
 - [#5568](https://github.com/blockscout/blockscout/pull/5568) - Add regexp for ipfs checking
 - [#5567](https://github.com/blockscout/blockscout/pull/5567) - Sanitize token name and symbol before insert into DB, display in the application
 - [#5564](https://github.com/blockscout/blockscout/pull/5564) - Add fallback clauses to `string_to_..._hash` functions

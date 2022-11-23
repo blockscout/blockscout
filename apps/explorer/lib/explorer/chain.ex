@@ -894,7 +894,6 @@ defmodule Explorer.Chain do
       from(
         tx in Transaction,
         where: tx.block_hash == ^block_hash,
-        where: not is_nil(tx.max_priority_fee_per_gas),
         select: sum(tx.gas_used)
       )
 
@@ -908,31 +907,44 @@ defmodule Explorer.Chain do
   @spec block_to_priority_fee_of_1559_txs(Hash.Full.t()) :: Decimal.t()
   def block_to_priority_fee_of_1559_txs(block_hash) do
     block = Repo.get_by(Block, hash: block_hash)
-    %Wei{value: base_fee_per_gas} = block.base_fee_per_gas
 
-    query =
-      from(
-        tx in Transaction,
-        where: tx.block_hash == ^block_hash,
-        where: not is_nil(tx.max_priority_fee_per_gas),
-        select:
-          sum(
-            fragment(
-              "CASE
-                WHEN ? = 0 THEN 0
-                WHEN ? < ? THEN ?
-                ELSE ? END",
-              tx.max_fee_per_gas,
-              tx.max_fee_per_gas - ^base_fee_per_gas,
-              tx.max_priority_fee_per_gas,
-              (tx.max_fee_per_gas - ^base_fee_per_gas) * tx.gas_used,
-              tx.max_priority_fee_per_gas * tx.gas_used
-            )
+    case block.base_fee_per_gas do
+      %Wei{value: base_fee_per_gas} ->
+        query =
+          from(
+            tx in Transaction,
+            where: tx.block_hash == ^block_hash,
+            select:
+              sum(
+                fragment(
+                  "CASE
+                    WHEN COALESCE(?,?) = 0 THEN 0
+                    WHEN COALESCE(?,?) - ? < COALESCE(?,?) THEN (COALESCE(?,?) - ?) * ?
+                    ELSE COALESCE(?,?) * ? END",
+                  tx.max_fee_per_gas,
+                  tx.gas_price,
+                  tx.max_fee_per_gas,
+                  tx.gas_price,
+                  ^base_fee_per_gas,
+                  tx.max_priority_fee_per_gas,
+                  tx.gas_price,
+                  tx.max_fee_per_gas,
+                  tx.gas_price,
+                  ^base_fee_per_gas,
+                  tx.gas_used,
+                  tx.max_priority_fee_per_gas,
+                  tx.gas_price,
+                  tx.gas_used
+                )
+              )
           )
-      )
 
-    result = Repo.one(query)
-    if result, do: result, else: 0
+        result = Repo.one(query)
+        if result, do: result, else: 0
+
+      _ ->
+        0
+    end
   end
 
   @doc """
