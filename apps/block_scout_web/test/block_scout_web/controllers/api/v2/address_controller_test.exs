@@ -42,7 +42,15 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "name" => nil,
         "private_tags" => [],
         "public_tags" => [],
-        "watchlist_names" => []
+        "watchlist_names" => [],
+        "creator_address_hash" => nil,
+        "creation_tx_hash" => nil,
+        "token" => nil,
+        "coin_balance" => nil,
+        "exchange_rate" => nil,
+        "implementation_name" => nil,
+        "implementation_address" => nil,
+        "block_number_balance_updated_at" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
