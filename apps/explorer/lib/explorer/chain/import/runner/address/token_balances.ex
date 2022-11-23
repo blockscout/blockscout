@@ -72,6 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
       changes_list
+      |> Enum.map(fn change -> Map.put_new(change, :token_id, nil) end)
       |> Enum.group_by(fn %{
                             address_hash: address_hash,
                             token_contract_address_hash: token_contract_address_hash,
