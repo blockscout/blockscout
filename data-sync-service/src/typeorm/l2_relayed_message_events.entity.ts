@@ -2,27 +2,27 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class L2RelayedMessageEvents {
-  @Column({ type: "bytea" })
+  @Column({ type: 'bytea' })
   tx_hash: string;
 
-  @Column({ type: "bigint" })
+  @Column({ type: 'bigint' })
   block_number: string;
 
-  @PrimaryColumn({ type: "bytea" })
+  @PrimaryColumn({ type: 'bytea' })
   msg_hash: string;
 
-  @Column({ type: "bytea" })
+  @Column({ type: 'bytea' })
   signature: string;
 
-  @Column({ type: "boolean" })
+  @Column({ type: 'boolean' })
   is_merge: boolean;
 
   @Column({ type: 'timestamp' })
   timestamp: Date;
 
-  @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   inserted_at: Date;
 
-  @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 }

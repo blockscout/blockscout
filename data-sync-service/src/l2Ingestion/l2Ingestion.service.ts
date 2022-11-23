@@ -2,11 +2,11 @@ import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  L2ToL1,
   L2RelayedMessageEvents,
   L2SentMessageEvents,
+  L2ToL1,
 } from 'src/typeorm';
-import { Repository, getManager, EntityManager, getConnection } from 'typeorm';
+import { EntityManager, getConnection, getManager, Repository } from 'typeorm';
 import Web3 from 'web3';
 import ABI from '../abi/L2CrossDomainMessenger.json';
 
@@ -27,11 +27,10 @@ export class L2IngestionService {
     const web3 = new Web3(
       new Web3.providers.HttpProvider(configService.get('L2_RPC')),
     );
-    const crossDomainMessengerContract = new web3.eth.Contract(
+    this.crossDomainMessengerContract = new web3.eth.Contract(
       ABI as any,
       configService.get('L2_CROSS_DOMAIN_MESSENGER_ADDRESS'),
     );
-    this.crossDomainMessengerContract = crossDomainMessengerContract;
     this.web3 = web3;
     // this.sync();
   }
@@ -61,8 +60,7 @@ export class L2IngestionService {
       },
       [target, sender, message, messageNonce],
     );
-    const xDomainCalldataHash = Web3.utils.keccak256(xDomainCalldata);
-    return xDomainCalldataHash;
+    return Web3.utils.keccak256(xDomainCalldata);
   }
   async getCurrentBlockNumber(): Promise<number> {
     return this.web3.eth.getBlockNumber();
@@ -93,26 +91,36 @@ export class L2IngestionService {
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
       const dataSource = getConnection();
-      const queryRunner = dataSource.createQueryRunner()
-      await queryRunner.connect()
-      await queryRunner.startTransaction()
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       try {
-        const savedResult = await queryRunner.manager.save(L2SentMessageEvents, {
-          tx_hash: transactionHash,
-          block_number: blockNumber.toString(),
-          target,
-          sender,
-          message,
-          message_nonce: messageNonce,
-          gas_limit: gasLimit,
-          signature,
-          timestamp: new Date(Number(timestamp) * 1000).toISOString(),
-          inserted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        const savedResult = await queryRunner.manager.save(
+          L2SentMessageEvents,
+          {
+            tx_hash: transactionHash,
+            block_number: blockNumber.toString(),
+            target,
+            sender,
+            message,
+            message_nonce: messageNonce,
+            gas_limit: gasLimit,
+            signature,
+            timestamp: new Date(Number(timestamp) * 1000).toISOString(),
+            inserted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        );
+        const msgHash = this.verifyDomainCalldataHash({
+          target: target.toString(),
+          sender: sender.toString(),
+          message: message.toString(),
+          messageNonce: messageNonce.toString(),
+        });
         await queryRunner.manager.save(L2ToL1, {
           hash: null,
           l2_hash: transactionHash,
+          msg_hash: msgHash,
           block: blockNumber,
           msg_nonce: Number(messageNonce),
           from_address: target,
@@ -123,19 +131,19 @@ export class L2IngestionService {
           gas_limit: gasLimit,
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
+        });
         result.push(savedResult);
         this.logger.log(
           `l2 createSentEvents success:${JSON.stringify(savedResult)}`,
         );
-        await queryRunner.commitTransaction()
+        await queryRunner.commitTransaction();
       } catch (error) {
         this.logger.error(
           `l2 createSentEvents blocknumber:${blockNumber} ${error}`,
         );
-        await queryRunner.rollbackTransaction()
+        await queryRunner.rollbackTransaction();
       } finally {
-        await queryRunner.release()
+        await queryRunner.release();
       }
     }
     return result;
@@ -155,9 +163,9 @@ export class L2IngestionService {
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
       const dataSource = getConnection();
-      const queryRunner = dataSource.createQueryRunner()
-      await queryRunner.connect()
-      await queryRunner.startTransaction()
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       try {
         const savedResult = await queryRunner.manager.save(
           L2RelayedMessageEvents,
@@ -170,19 +178,19 @@ export class L2IngestionService {
             inserted_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-        )
+        );
         result.push(savedResult);
         this.logger.log(
           `l2 createRelayedEvents success:${JSON.stringify(savedResult)}`,
         );
-        await queryRunner.commitTransaction()
+        await queryRunner.commitTransaction();
       } catch (error) {
         this.logger.error(
           `l2 createRelayedEvents blocknumber:${blockNumber} ${error}`,
         );
-        await queryRunner.rollbackTransaction()
+        await queryRunner.rollbackTransaction();
       } finally {
-        await queryRunner.release()
+        await queryRunner.release();
       }
     }
     return result;
@@ -227,6 +235,11 @@ export class L2IngestionService {
   async getRelayedEventByMsgHash(msgHash: string) {
     return this.relayedEventsRepository.findOne({
       where: { msg_hash: msgHash },
+    });
+  }
+  async getRelayedEventByIsMerge(is_merge: boolean) {
+    return this.relayedEventsRepository.find({
+      where: { is_merge: is_merge },
     });
   }
   async getRelayedEventByTxHash(txHash: string) {

@@ -1,8 +1,8 @@
 import { Injectable, Logger, Inject, CACHE_MANAGER } from '@nestjs/common';
 import { Cache } from 'cache-manager';
-import { Cron, Interval, Timeout } from '@nestjs/schedule';
-import { L1IngestionService } from './../l1Ingestion/l1Ingestion.service';
-import { L2IngestionService } from './../l2Ingestion/l2Ingestion.service';
+import { Interval } from '@nestjs/schedule';
+import { L1IngestionService } from '../l1Ingestion/l1Ingestion.service';
+import { L2IngestionService } from '../l2Ingestion/l2Ingestion.service';
 import { ConfigService } from '@nestjs/config';
 
 const L1_SENT = 'l1_sent_block_number';
@@ -309,6 +309,15 @@ export class TasksService {
       await this.l1IngestionService.createL2L1Relation();
     } catch (error) {
       this.logger.error(`error l1l2 [handle_l1_l2__merge]: ${error}`);
+    }
+  }
+  @Interval(2000)
+  async l2l1_merge_waiting() {
+    try {
+      this.logger.log(`l2l1_merge_waiting to l2_to_l1 table`);
+      await this.l1IngestionService.handleWaitTransaction();
+    } catch (error) {
+      this.logger.error(`error l1l2 [handle_l2l1_merge_waiting]: ${error}`);
     }
   }
 }
