@@ -1,8 +1,8 @@
 export default {
   pageTitle: 'data sync service Monitoring ',
-  // 配置端口
+  // port config
   port: 3000,
-  // 这里记得加全局路由 '/api'
+  // router '/api'
   path: '/status',
   ignoreStartsWith: '/health/alive',
   spans: [
