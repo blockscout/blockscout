@@ -119,7 +119,7 @@ defmodule Indexer.Block.FetcherTest do
               unprefixed_celo_token_address_hash,
               event_first_topic,
               event_data,
-              19
+              18
             )
 
           variant ->
