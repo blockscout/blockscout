@@ -3358,7 +3358,7 @@ defmodule Explorer.ChainTest do
 
       assert [
                %TokenTransfer{
-                 token: %Ecto.Association.NotLoaded{},
+                 token: %Token{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
              ] = Chain.transaction_to_token_transfers(transaction.hash)
