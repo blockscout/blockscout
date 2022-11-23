@@ -40,7 +40,11 @@ defmodule BlockScoutWeb.L1ToL2TxnView do
   def block_timestamp(%L1ToL2{timestamp: time}), do: time
 
   def sub_hash_string(hash) do
-    String.slice(hash, 0..21)
+    if hash do
+       String.slice(hash, 0..21)
+    else
+      'Null'
+    end
   end
 
   defp application_config do

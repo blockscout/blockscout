@@ -326,7 +326,11 @@ defmodule BlockScoutWeb.L2ToL1TxnView do
   def block_timestamp(%L2ToL1{timestamp: time}), do: time
 
   def sub_hash_string(hash) do
-    String.slice(hash, 0..21)
+    if hash do
+       String.slice(hash, 0..21)
+    else
+      'Null'
+    end
   end
 
   def sub_hash_string(hash, length) do
