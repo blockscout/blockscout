@@ -366,11 +366,9 @@ export class L1IngestionService {
     const unMergeTxList =
       await this.l2IngestionService.getRelayedEventByIsMerge(false);
     for (let i = 0; i < unMergeTxList.length; i++) {
-      console.log('unMergeTxList', unMergeTxList[i].msg_hash);
       const l1ToL2Transaction = await this.getL1ToL2TxByMsgHash(
         unMergeTxList[i].msg_hash,
       );
-      console.log('l1ToL2Transaction', l1ToL2Transaction.msg_hash);
       const dataSource = getConnection();
       const queryRunner = dataSource.createQueryRunner();
       await queryRunner.connect();
@@ -412,7 +410,7 @@ export class L1IngestionService {
     // const { timestamp } = await this.web3.eth.getBlock(latestBlock);
     for (let i = 0; i < waitTxList.length; i++) {
       const totalElements = await this.getSccTotalElements();
-      const lTimestamp = Number(waitTxList[i].timestamp) / 1000;
+      // const lTimestamp = Number(waitTxList[i].timestamp) / 1000;
       // todo: lTimestamp + FraudProofWindow >= timestamp
       if (totalElements > waitTxList[i].block) {
         const dataSource = getConnection();

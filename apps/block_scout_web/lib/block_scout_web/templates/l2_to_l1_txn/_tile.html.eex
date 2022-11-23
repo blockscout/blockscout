@@ -15,8 +15,14 @@
     <span style="width: 10%;">
       <%= @l2_to_l1.status %>
     </span>
-    <a style="width: 20%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-sizing:border-box;padding-right:10px;" href="https://goerli.etherscan.io/tx/<%= @l2_to_l1.hash %>" target="_blank">
-      <%= sub_hash_string(@l2_to_l1.hash) %>...
-    </a>
+    <%= if @l2_to_l1.hash == nil do %>
+      <a style="width: 20%; text-align: center">
+         <p style="margin-right: 30px">NULL</p>
+      </a>
+    <% else %>
+      <a style="width: 20%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-sizing:border-box;padding-right:10px;" href="https://goerli.etherscan.io/tx/<%= @l2_to_l1.hash %>" target="_blank">
+         <%= sub_hash_string(@l2_to_l1.hash) %>...
+      </a>
+    <% end %>
     <span style="width: 10%;" in-tile data-from-now="<%= block_timestamp(@l2_to_l1) %>"></span>
 </div>
