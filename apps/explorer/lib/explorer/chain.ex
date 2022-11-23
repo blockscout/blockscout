@@ -32,7 +32,6 @@ defmodule Explorer.Chain do
   alias ABI.TypeDecoder
   alias Ecto.{Changeset, Multi}
 
-  alias EthereumJSONRPC.Contract
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
 
   alias Explorer.Counters.LastFetchedCounter
@@ -90,7 +89,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.SmartContract.{Helper, Reader}
+  alias Explorer.SmartContract.Helper
 
   alias Dataloader.Ecto, as: DataloaderEcto
 

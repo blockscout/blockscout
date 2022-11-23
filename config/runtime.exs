@@ -213,7 +213,7 @@ config :explorer,
     if(disable_webapp != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    )
+    ),
   enable_caching_implementation_data_of_proxy: true,
   avg_block_time_as_ttl_cached_implementation_data_of_proxy: true,
   fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(4),
