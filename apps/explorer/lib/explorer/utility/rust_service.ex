@@ -1,4 +1,7 @@
 defmodule Explorer.Utility.RustService do
+  @moduledoc """
+  Module is responsible for common utils related to rust microservices.
+  """
   def base_url(module) do
     url = Application.get_env(:explorer, module)[:service_url]
 
