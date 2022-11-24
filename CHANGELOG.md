@@ -28,6 +28,7 @@
 
 - [#6380](https://github.com/blockscout/blockscout/pull/6380) - Fix btn-dropdown-line class styles
 - [#6391](https://github.com/blockscout/blockscout/pull/6391), [#6427](https://github.com/blockscout/blockscout/pull/6427) - TokenTransfer token_id -> token_ids migration
+- [#6473](https://github.com/blockscout/blockscout/pull/6473) - Fix state changes for contract creation transactions
 - [#6475](https://github.com/blockscout/blockscout/pull/6475) - Fix token name with unicode graphemes shortening
 - [#6420](https://github.com/blockscout/blockscout/pull/6420) - Fix address logs search
 - [#6390](https://github.com/blockscout/blockscout/pull/6390) - Fix transactions responses in API v2
