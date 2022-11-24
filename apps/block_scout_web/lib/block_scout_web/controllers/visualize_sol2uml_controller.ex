@@ -40,10 +40,17 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
   end
 
   def index(conn, %{"address" => address_hash_string}) do
+    address_options = [
+      necessity_by_association: %{
+        :smart_contract => :optional
+      }
+    ]
+
     with true <- Sol2uml.enabled?(),
-         {:ok, _} <- Chain.string_to_address_hash(address_hash_string) do
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       render(conn, "index.html",
-        address: address_hash_string,
+        address: address,
         get_svg_path: visualize_sol2uml_path(conn, :index, %{"type" => "JSON", "address" => address_hash_string})
       )
     else

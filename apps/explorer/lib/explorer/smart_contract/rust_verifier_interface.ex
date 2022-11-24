@@ -137,14 +137,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def base_api_url, do: "#{base_url()}" <> "/api/v1"
 
   def base_url do
-    url = Application.get_env(:explorer, __MODULE__)[:service_url]
-
-    if String.ends_with?(url, "/") do
-      url
-      |> String.slice(0..(String.length(url) - 2))
-    else
-      url
-    end
+    Explorer.Utility.RustService.base_url(__MODULE__)
   end
 
   def enabled?, do: Application.get_env(:explorer, __MODULE__)[:enabled]

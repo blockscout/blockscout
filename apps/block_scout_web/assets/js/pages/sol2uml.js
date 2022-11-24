@@ -25,7 +25,6 @@ const elements = {
   '[data-selector="contract-image"]': {
     render ($el, state, oldState) {
       if (state.contract_svg) {
-        console.log('Got svg from server')
         $('#spinner').hide()
         $('#gallery img').attr('src', 'data:image/svg+xml;base64,' + state.contract_svg)
         const gallery = document.getElementById('gallery')
@@ -49,10 +48,8 @@ const elements = {
         viewer.update()
         $el.show()
       } else if (state.visualize_error) {
-        console.log('Got error from server')
-
         $('#spinner').hide()
-        $el.empty().text('Cannot visalize contract: ' + state.visualize_error)
+        $el.empty().text('Cannot visualize contract: ' + state.visualize_error)
         $el.show()
       } else {
         $('#spinner').show()

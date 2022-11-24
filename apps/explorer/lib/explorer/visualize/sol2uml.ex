@@ -5,7 +5,7 @@ defmodule Explorer.Visualize.Sol2uml do
   alias HTTPoison.Response
   require Logger
 
-  @post_timeout :infinity
+  @post_timeout 60_000
   @request_error_msg "Error while sending request to visualizer microservice"
 
   def visualize_contracts(body) do
@@ -60,14 +60,7 @@ defmodule Explorer.Visualize.Sol2uml do
   def base_api_url, do: "#{base_url()}" <> "/api/v1"
 
   def base_url do
-    url = Application.get_env(:explorer, __MODULE__)[:service_url]
-
-    if String.ends_with?(url, "/") do
-      url
-      |> String.slice(0..(String.length(url) - 2))
-    else
-      url
-    end
+    Explorer.Utility.RustService.base_url(__MODULE__)
   end
 
   def enabled?, do: Application.get_env(:explorer, __MODULE__)[:enabled]
