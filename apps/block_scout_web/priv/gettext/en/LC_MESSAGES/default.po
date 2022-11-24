@@ -1319,7 +1319,7 @@ msgstr ""
 msgid "For any existing contracts in the database, insert all ABI entries into the contract_methods table. Use this in case you have verified smart contracts before early March 2019 and you want other contracts with the same functions to show those ABI's as candidate matches."
 msgstr ""
 
-#: lib/block_scout_web/templates/visualize_sol2uml/index.html.eex:6
+#: lib/block_scout_web/templates/visualize_sol2uml/index.html.eex:7
 #, elixir-autogen, elixir-format
 msgid "For contract"
 msgstr ""
