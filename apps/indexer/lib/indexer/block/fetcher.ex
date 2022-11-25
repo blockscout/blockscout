@@ -256,7 +256,7 @@ defmodule Indexer.Block.Fetcher do
 
          # fetch block reward beneficiaries
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
-          fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
+           fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
 
          # fold celo transfers into list of token transfers (treat native chain asset as erc-20)
          tokens = [%{contract_address_hash: celo_token, type: "ERC-20"} | normal_tokens],
