@@ -439,7 +439,7 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions(from_block, to_block)
+    |> fetch_transactions(from_block, to_block, true)
   end
 
   defp transactions_block_numbers_at_address(address_hash, options) do
@@ -4383,16 +4383,36 @@ defmodule Explorer.Chain do
     if Repo.one(query), do: true, else: false
   end
 
-  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil) do
+  defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, is_address? \\ false) do
     Transaction
+    |> order_for_transactions(paging_options, is_address?)
+    |> where_block_number_in_period(from_block, to_block)
+    |> handle_paging_options(paging_options)
+  end
+
+  defp order_for_transactions(query, %PagingOptions{is_pending_tx: true}, true) do
+    query
     |> order_by([transaction],
       desc: transaction.block_number,
       desc: transaction.index,
       desc: transaction.inserted_at,
       desc: transaction.hash
     )
-    |> where_block_number_in_period(from_block, to_block)
-    |> handle_paging_options(paging_options)
+  end
+
+  defp order_for_transactions(query, %PagingOptions{key: nil}, true) do
+    query
+    |> order_by([transaction],
+      desc: transaction.block_number,
+      desc: transaction.index,
+      desc: transaction.inserted_at,
+      desc: transaction.hash
+    )
+  end
+
+  defp order_for_transactions(query, _, _) do
+    query
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   defp fetch_transactions_in_ascending_order_by_index(paging_options) do
