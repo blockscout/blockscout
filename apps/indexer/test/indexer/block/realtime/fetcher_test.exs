@@ -785,7 +785,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
-        |> expect(:json_rpc, 4, fn
+        |> expect(:json_rpc, 3, fn
           [
             %{
               id: 0,
