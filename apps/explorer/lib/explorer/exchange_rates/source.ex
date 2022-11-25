@@ -2,8 +2,8 @@ defmodule Explorer.ExchangeRates.Source do
   @moduledoc """
   Behaviour for fetching exchange rates from external sources.
   """
-  alias Explorer.ExchangeRates.{Source, Token}
   alias Explorer.ExchangeRates.Source.CoinGecko
+  alias Explorer.ExchangeRates.Token
   alias HTTPoison.{Error, Response}
 
   @doc """
