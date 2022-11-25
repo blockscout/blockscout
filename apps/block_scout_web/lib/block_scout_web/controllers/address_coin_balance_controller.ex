@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   alias BlockScoutWeb.{AccessHelpers, AddressCoinBalanceView, Controller}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -84,7 +84,13 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
       {:error, :not_found} ->
         {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
-        address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
+
+        address = %Chain.Address{
+          hash: address_hash,
+          smart_contract: nil,
+          token: nil,
+          fetched_coin_balance: %Wei{value: Decimal.new(0)}
+        }
 
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->

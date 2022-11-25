@@ -67,11 +67,7 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
 
       assert Enum.all?(second_page_token_balances, fn token_balance ->
                Enum.any?(token_balance_tiles, fn tile ->
-<<<<<<< HEAD
                  String.contains?(tile, to_string(Address.checksum(token_balance.address_hash)))
-=======
-                 String.contains?(tile, Address.checksum(token_balance.address_hash))
->>>>>>> 4b7ac2b1ce5d6489ae2279f2aa3769700328d120
                end)
              end)
     end
