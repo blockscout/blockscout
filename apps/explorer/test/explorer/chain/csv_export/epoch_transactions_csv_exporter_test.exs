@@ -159,7 +159,9 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
                          _,
                          epoch_tx_type,
                          _,
-                         from_address,
+                         validator_address,
+                         _,
+                         validator_group_address,
                          _,
                          to_address,
                          _,
@@ -183,7 +185,8 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
             block_number: block_number,
             timestamp: timestamp,
             epoch_tx_type: epoch_tx_type,
-            from_address: from_address,
+            validator_address: validator_address,
+            validator_group_address: validator_group_address,
             to_address: to_address,
             tx_currency: tx_currency,
             tx_currency_contract_address: tx_currency_contract_address,
@@ -199,7 +202,8 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
       assert result_voter.block_number == to_string(block.number)
       assert result_voter.timestamp == to_string(voter_reward.block_timestamp)
       assert result_voter.epoch_tx_type == "Voter Rewards"
-      assert result_voter.from_address == from_address_hash_voter |> normalize_address()
+      assert result_voter.validator_address == "N/A"
+      assert result_voter.validator_group_address == from_address_hash_voter |> normalize_address()
       assert result_voter.to_address == to_address.hash |> normalize_address()
       assert result_voter.tx_currency == "CELO"
       assert result_voter.tx_currency_contract_address == celo_address |> normalize_address()
@@ -213,7 +217,8 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
       assert result_voter_2.block_number == to_string(block_2.number)
       assert result_voter_2.timestamp == to_string(voter_reward_2.block_timestamp)
       assert result_voter_2.epoch_tx_type == "Voter Rewards"
-      assert result_voter_2.from_address == from_address_hash_voter |> normalize_address()
+      assert result_voter_2.validator_address == "N/A"
+      assert result_voter_2.validator_group_address == from_address_hash_voter |> normalize_address()
       assert result_voter_2.to_address == to_address.hash |> normalize_address()
       assert result_voter_2.tx_currency == "CELO"
       assert result_voter_2.tx_currency_contract_address == celo_address |> normalize_address()
@@ -227,7 +232,8 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
       assert result_validator.block_number == to_string(block_2.number)
       assert result_validator.timestamp == to_string(validator_reward.block_timestamp)
       assert result_validator.epoch_tx_type == "Validator Rewards"
-      assert result_validator.from_address == from_address_hash_validator |> normalize_address()
+      assert result_validator.validator_address == "N/A"
+      assert result_validator.validator_group_address == from_address_hash_validator |> normalize_address()
       assert result_validator.to_address == to_address.hash |> normalize_address()
       assert result_validator.tx_currency == "cUSD"
       assert result_validator.tx_currency_contract_address == cusd_address |> normalize_address()
@@ -241,7 +247,8 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
       assert result_group.block_number == to_string(block.number)
       assert result_group.timestamp == to_string(group_reward.block_timestamp)
       assert result_group.epoch_tx_type == "Validator Group Rewards"
-      assert result_group.from_address == from_address_hash_group |> normalize_address()
+      assert result_group.validator_address == from_address_hash_group |> normalize_address()
+      assert result_group.validator_group_address == "N/A"
       assert result_group.to_address == to_address.hash |> normalize_address()
       assert result_group.tx_currency == "cUSD"
       assert result_group.tx_currency_contract_address == cusd_address |> normalize_address()

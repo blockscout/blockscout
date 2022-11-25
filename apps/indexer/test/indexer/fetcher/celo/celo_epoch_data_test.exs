@@ -8,7 +8,13 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
   import Mox
 
   alias Explorer.Celo.ContractEvents.Common.TransferEvent
-  alias Explorer.Celo.ContractEvents.Election.ValidatorGroupVoteActivatedEvent
+
+  alias Explorer.Celo.ContractEvents.Election.{
+    ValidatorGroupVoteActivatedEvent,
+    ValidatorGroupVoteCastEvent,
+    ValidatorGroupActiveVoteRevokedEvent
+  }
+
   alias Explorer.Celo.ContractEvents.Validators.ValidatorEpochPaymentDistributedEvent
 
   alias Explorer.Chain.{
@@ -168,6 +174,64 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       }
 
       assert CeloEpochDataFetcher.get_voter_rewards(argument) == argument
+    end
+  end
+
+  describe "get_voter_rewards when revoked all votes block before" do
+    setup [:setup_voter_rewards_when_revoked_block_before]
+
+    test "calculates the rewards", %{
+      block_number: block_number,
+      block_timestamp: block_timestamp,
+      voter_hash: voter_hash,
+      group_hash: group_hash
+    } do
+      assert CeloEpochDataFetcher.get_voter_rewards(%{
+               block_number: block_number,
+               block_timestamp: block_timestamp
+             }) == %{
+               block_number: block_number,
+               block_timestamp: block_timestamp,
+               voter_rewards: [
+                 %{
+                   account_hash: voter_hash,
+                   associated_account_hash: group_hash,
+                   amount: 0,
+                   block_number: block_number,
+                   block_timestamp: block_timestamp,
+                   reward_type: "voter"
+                 }
+               ]
+             }
+    end
+  end
+
+  describe "get_voter_rewards when revoked at the epoch block" do
+    setup [:setup_voter_rewards_when_revoked_at_epoch_block]
+
+    test "calculates the rewards", %{
+      block_number: block_number,
+      block_timestamp: block_timestamp,
+      voter_hash: voter_hash,
+      group_hash: group_hash
+    } do
+      assert CeloEpochDataFetcher.get_voter_rewards(%{
+               block_number: block_number,
+               block_timestamp: block_timestamp
+             }) == %{
+               block_number: block_number,
+               block_timestamp: block_timestamp,
+               voter_rewards: [
+                 %{
+                   account_hash: voter_hash,
+                   associated_account_hash: group_hash,
+                   amount: 0,
+                   block_number: block_number,
+                   block_timestamp: block_timestamp,
+                   reward_type: "voter"
+                 }
+               ]
+             }
     end
   end
 
@@ -945,8 +1009,11 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     %Block{number: second_to_last_block_in_epoch_number} =
       second_to_last_block_in_epoch = insert(:block, number: 172_799)
 
-    %Block{hash: last_block_in_epoch_hash, number: last_block_in_epoch_number} = insert(:block, number: 172_800)
+    %Block{hash: last_block_in_epoch_hash, number: last_block_in_epoch_number} =
+      last_block_in_epoch = insert(:block, number: 172_800)
+
     log = insert(:log, block: second_to_last_block_in_epoch)
+    log_2 = insert(:log, block: last_block_in_epoch)
 
     insert(:celo_pending_epoch_operations, block_number: last_block_in_epoch_number)
 
@@ -955,6 +1022,18 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
         __block_number: second_to_last_block_in_epoch_number,
         __contract_address_hash: contract_hash,
         __log_index: log.index,
+        account: voter_hash,
+        group: group_hash,
+        units: 10000,
+        value: 650
+      }
+    })
+
+    insert(:contract_event, %{
+      event: %ValidatorGroupVoteActivatedEvent{
+        __block_number: last_block_in_epoch_number,
+        __contract_address_hash: contract_hash,
+        __log_index: log_2.index,
         account: voter_hash,
         group: group_hash,
         units: 10000,
@@ -1152,6 +1231,229 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     )
 
     context
+  end
+
+  defp setup_voter_rewards_when_revoked_block_before(context) do
+    set_test_addresses(%{
+      "Election" => "0x8d6677192144292870907e3fa8a5527fe55a7ff6"
+    })
+
+    voter_address = insert(:address)
+    group_1_address = insert(:address)
+    group_2_address = insert(:address)
+
+    insert(:celo_account, address: group_1_address.hash)
+    insert(:celo_account, address: group_2_address.hash)
+
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_hash} = insert(:core_contract)
+
+    epoch_block_number = 1_503_360
+
+    epoch_block_minus_2 = insert(:block, number: epoch_block_number - 2)
+    epoch_block_minus_1 = insert(:block, number: epoch_block_number - 1)
+    epoch_block = insert(:block, number: epoch_block_number)
+
+    log_gold_activated = insert(:log, block: epoch_block_minus_2)
+    log_gold_revoked = insert(:log, block: epoch_block_minus_1)
+    log_vote_cast = insert(:log, block: epoch_block)
+
+    insert(:celo_pending_epoch_operations, block_number: epoch_block.number)
+
+    insert(:contract_event, %{
+      event: %ValidatorGroupVoteActivatedEvent{
+        __block_number: epoch_block_minus_2.number,
+        __contract_address_hash: contract_hash,
+        __log_index: log_gold_activated.index,
+        account: voter_address.hash,
+        group: group_1_address.hash,
+        units: 10000,
+        value: 10_086_602_138_784_356_627_809
+      }
+    })
+
+    insert(:contract_event, %{
+      event: %ValidatorGroupActiveVoteRevokedEvent{
+        __block_number: epoch_block_minus_1.number,
+        __contract_address_hash: contract_hash,
+        __log_index: log_gold_revoked.index,
+        account: voter_address.hash,
+        group: group_1_address.hash,
+        units: 10000,
+        value: 10_086_602_138_784_356_627_809
+      }
+    })
+
+    insert(:contract_event, %{
+      event: %ValidatorGroupVoteCastEvent{
+        __block_number: epoch_block.number,
+        __contract_address_hash: contract_hash,
+        __log_index: log_vote_cast.index,
+        account: voter_address.hash,
+        group: group_2_address.hash,
+        value: 10_086_602_138_784_356_627_809
+      }
+    })
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getActiveVotesForGroupByAccount,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: _, to: _}, _]
+           }
+         ],
+         _epoch_block_minus_1 ->
+        {
+          :ok,
+          [
+            %{
+              id: getActiveVotesForGroupByAccount,
+              jsonrpc: "2.0",
+              result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        }
+      end
+    )
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getActiveVotesForGroupByAccount,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: _, to: _}, _]
+           }
+         ],
+         _epoch_block ->
+        {
+          :ok,
+          [
+            %{
+              id: getActiveVotesForGroupByAccount,
+              jsonrpc: "2.0",
+              result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        }
+      end
+    )
+
+    Map.merge(context, %{
+      block_number: epoch_block.number,
+      block_timestamp: epoch_block.timestamp,
+      voter_hash: voter_address.hash,
+      group_hash: group_1_address.hash
+    })
+  end
+
+  defp setup_voter_rewards_when_revoked_at_epoch_block(context) do
+    set_test_addresses(%{
+      "Election" => "0x8d6677192144292870907e3fa8a5527fe55a7ff6"
+    })
+
+    voter_address = insert(:address)
+    group_address = insert(:address)
+
+    insert(:celo_account, address: group_address.hash)
+
+    %Explorer.Chain.CeloCoreContract{address_hash: contract_hash} = insert(:core_contract)
+
+    epoch_block_number = 1_503_360
+
+    epoch_block_minus_2 = insert(:block, number: epoch_block_number - 2)
+    epoch_block = insert(:block, number: epoch_block_number)
+
+    log_gold_activated = insert(:log, block: epoch_block_minus_2)
+    log_gold_revoked = insert(:log, block: epoch_block)
+
+    insert(:celo_pending_epoch_operations, block_number: epoch_block.number)
+
+    insert(:contract_event, %{
+      event: %ValidatorGroupVoteActivatedEvent{
+        __block_number: epoch_block_minus_2.number,
+        __contract_address_hash: contract_hash,
+        __log_index: log_gold_activated.index,
+        account: voter_address.hash,
+        group: group_address.hash,
+        units: 10000,
+        value: 30_120_571_306_491_184_705_084
+      }
+    })
+
+    insert(:contract_event, %{
+      event: %ValidatorGroupActiveVoteRevokedEvent{
+        __block_number: epoch_block.number,
+        __contract_address_hash: contract_hash,
+        __log_index: log_gold_revoked.index,
+        account: voter_address.hash,
+        group: group_address.hash,
+        units: 10000,
+        value: 30_120_571_306_491_184_705_084
+      }
+    })
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getActiveVotesForGroupByAccount,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: _, to: _}, _]
+           }
+         ],
+         _epoch_block_minus_1 ->
+        {
+          :ok,
+          [
+            %{
+              id: getActiveVotesForGroupByAccount,
+              jsonrpc: "2.0",
+              result: "0x000000000000000000000000000000000000000000000660d6e5b1a09e906e3c"
+            }
+          ]
+        }
+      end
+    )
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: getActiveVotesForGroupByAccount,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [%{data: _, to: _}, _]
+           }
+         ],
+         _epoch_block ->
+        {
+          :ok,
+          [
+            %{
+              id: getActiveVotesForGroupByAccount,
+              jsonrpc: "2.0",
+              result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        }
+      end
+    )
+
+    Map.merge(context, %{
+      block_number: epoch_block.number,
+      block_timestamp: epoch_block.timestamp,
+      voter_hash: voter_address.hash,
+      group_hash: group_address.hash
+    })
   end
 
   defp count(schema) do

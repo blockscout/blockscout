@@ -3711,11 +3711,6 @@ msgid "cLabs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:204
-msgid "Activated CELO Balance"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:216
 msgid "Amount of CELO that’s in the process of being unlocked (3 days)"
 msgstr ""
@@ -3773,4 +3768,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_current_coin_balance.html.eex:11
 msgid "Ether"
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address/overview.html.eex:204
+msgid "Voting CELO Balance"
 msgstr ""

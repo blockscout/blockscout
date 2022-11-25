@@ -21,11 +21,12 @@ defmodule Explorer.Export.CSV.EpochTransactionExporter do
     "BlockNumber",
     "TimestampUTC",
     "EpochTxType",
-    "FromAddress",
+    "ValidatorAddress",
+    "ValidatorGroupAddress",
     "ToAddress",
     "Type",
     "LockedGold",
-    "ActivatedGold",
+    "VotingGold",
     "Value",
     "ValueInWei",
     "TokenSymbol",
@@ -84,15 +85,17 @@ defmodule Explorer.Export.CSV.EpochTransactionExporter do
       to_string(epoch_transaction.timestamp),
       #      "EpochTxType",
       epoch_transaction.epoch_tx_type |> reward_type_to_human_readable,
-      #      "FromAddress",
-      to_string(epoch_transaction.from_address),
+      #      "ValidatorAddress",
+      epoch_transaction.from_address |> validator_address_if_applicable(epoch_transaction.epoch_tx_type),
+      #      "ValidatorGroupAddress",
+      epoch_transaction.from_address |> validator_group_address_if_applicable(epoch_transaction.epoch_tx_type),
       #      "ToAddress",
       to_string(epoch_transaction.to_address),
       #      "Type",
       "IN",
       #      "LockedGold",
       epoch_transaction.locked_gold |> locked_or_activated_gold_when_applicable(epoch_transaction.epoch_tx_type),
-      #      "ActivatedGold",
+      #      "VotingGold",
       epoch_transaction.activated_gold |> locked_or_activated_gold_when_applicable(epoch_transaction.epoch_tx_type),
       #      "Value",
       epoch_transaction.value_wei |> Wei.to(:ether),
@@ -104,6 +107,12 @@ defmodule Explorer.Export.CSV.EpochTransactionExporter do
       epoch_transaction.epoch_tx_type |> EpochUtil.get_reward_currency_address_hash()
     ]
   end
+
+  defp validator_address_if_applicable(validator_address, "group"), do: validator_address |> to_string()
+  defp validator_address_if_applicable(_validator_address, _reward_type), do: "N/A"
+
+  defp validator_group_address_if_applicable(_group_address, "group"), do: "N/A"
+  defp validator_group_address_if_applicable(group_address, _reward_type), do: group_address |> to_string()
 
   # Unlikely case when there's no locked/activated gold data for a particular account
   defp locked_or_activated_gold_when_applicable(nil = _value, "voter"), do: "unknown"

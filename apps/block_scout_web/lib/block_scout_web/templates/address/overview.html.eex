@@ -201,7 +201,7 @@
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("Amount of locked CELO that has been activated to vote for validator(s)") %>
-              <%= gettext("Activated CELO Balance") %>
+              <%= gettext("Voting CELO Balance") %>
             </dt>
             <dd class="col-sm-8 col-md-8 col-lg-9">
               <%= wei_to_ether_rounded(@vote_activated_gold) %> <%= gettext "CELO" %>

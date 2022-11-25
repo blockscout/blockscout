@@ -132,7 +132,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
         plus_revoked_minus_activated_votes =
           VoterRewards.subtract_activated_add_revoked(%{
             account_hash: account_group_pair.account_hash,
-            block_number: block_number - 1,
+            block_number: block_number,
             group_hash: account_group_pair.group_hash
           })
 
