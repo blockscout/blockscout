@@ -107,6 +107,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/withdraw",
+        AddressWithdrawController,
+        only: [:index],
+        as: :withdraw
+      )
+
+      resources(
         "/validations",
         AddressValidationController,
         only: [:index],

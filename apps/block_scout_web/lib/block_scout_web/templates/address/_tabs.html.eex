@@ -38,9 +38,9 @@
       ) %>
       <%= link(
         gettext("Withdraw"),
-        class: "card-tab #{tab_status("internal-transactions", @conn.request_path)}",
-        "data-test": "internal_transactions_tab_link",
-        to: AccessHelpers.get_path(@conn, :address_internal_transaction_path, :index, @address.hash)
+        class: "card-tab #{tab_status("withdraw", @conn.request_path)}",
+        "data-test": "withdraw_tab_link",
+        to: AccessHelpers.get_path(@conn, :address_withdraw_path, :index, @address.hash)
       ) %>
   <%= link(
         gettext("Coin Balance History"),

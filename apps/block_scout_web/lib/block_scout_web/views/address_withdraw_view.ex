@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.AddressDepositView do
+defmodule BlockScoutWeb.AddressWithdrawView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.AccessHelpers
