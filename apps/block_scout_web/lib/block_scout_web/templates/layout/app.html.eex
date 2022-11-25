@@ -254,6 +254,8 @@
       @view_module != Elixir.BlockScoutWeb.AddressTokenTransferView &&
       @view_module != Elixir.BlockScoutWeb.AddressTokenView &&
       @view_module != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.AddressDepositView &&
+      @view_module != Elixir.BlockScoutWeb.AddressDepositView &&
       @view_module != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
       @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
       @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
