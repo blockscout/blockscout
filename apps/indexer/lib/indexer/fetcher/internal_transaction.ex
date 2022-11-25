@@ -119,7 +119,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
     |> case do
       {:ok, internal_transactions_params} ->
-        import_internal_transaction(internal_transactions_params, filtered_unique_numbers)
+        safe_import_internal_transaction(internal_transactions_params, filtered_unique_numbers)
 
       {:error, reason} ->
         Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
@@ -181,6 +181,14 @@ defmodule Indexer.Fetcher.InternalTransaction do
       _, error_or_ignore ->
         error_or_ignore
     end)
+  end
+
+  defp safe_import_internal_transaction(internal_transactions_params, block_numbers) do
+    import_internal_transaction(internal_transactions_params, block_numbers)
+  rescue
+    Postgrex.Error ->
+      handle_foreign_key_violation(internal_transactions_params, block_numbers)
+      {:retry, block_numbers}
   end
 
   defp import_internal_transaction(internal_transactions_params, unique_numbers) do
@@ -263,6 +271,18 @@ defmodule Indexer.Fetcher.InternalTransaction do
       else
         internal_transaction_param
       end
+    end)
+  end
+
+  defp handle_foreign_key_violation(internal_transactions_params, block_numbers) do
+    Chain.remove_blocks_consensus(block_numbers)
+    transaction_hashes = Enum.map(internal_transactions_params, &to_string(&1.transaction_hash))
+
+    Logger.error(fn ->
+      [
+        "foreign_key_violation on internal transactions import, foreign transactions hashes: ",
+        Enum.join(transaction_hashes, ", ")
+      ]
     end)
   end
 

@@ -3259,6 +3259,19 @@ defmodule Explorer.Chain do
     end
   end
 
+  def remove_blocks_consensus(block_numbers) do
+    numbers = List.wrap(block_numbers)
+
+    query =
+      from(
+        block in Block,
+        where: block.number in ^numbers,
+        where: block.consensus
+      )
+
+    Repo.update_all(query, set: [consensus: false])
+  end
+
   @doc """
   Calculates the ranges of missing consensus blocks in `range`.
 
