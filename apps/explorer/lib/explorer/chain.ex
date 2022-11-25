@@ -74,7 +74,6 @@ defmodule Explorer.Chain do
     NewContractsCounter,
     NewVerifiedContractsCounter,
     Transactions,
-    TransactionsApiV2,
     Uncles,
     VerifiedContractsCounter
   }
@@ -3371,45 +3370,14 @@ defmodule Explorer.Chain do
     method_id_filter = Keyword.get(options, :method)
     type_filter = Keyword.get(options, :type)
 
-    if is_nil(paging_options.key) and (method_id_filter == [] || is_nil(method_id_filter)) and
-         (type_filter == [] || is_nil(type_filter)) do
-      old_ui?
-      |> take_enough_from_txs_cache(paging_options.page_size)
-      |> case do
-        nil ->
-          transactions =
-            fetch_recent_collated_transactions(
-              old_ui?,
-              paging_options,
-              necessity_by_association,
-              method_id_filter,
-              type_filter
-            )
-
-          update_transactions_cache(old_ui?, transactions)
-          transactions
-
-        transactions ->
-          transactions
-      end
-    else
-      fetch_recent_collated_transactions(
-        old_ui?,
-        paging_options,
-        necessity_by_association,
-        method_id_filter,
-        type_filter
-      )
-    end
+    fetch_recent_collated_transactions(
+      old_ui?,
+      paging_options,
+      necessity_by_association,
+      method_id_filter,
+      type_filter
+    )
   end
-
-  defp take_enough_from_txs_cache(old_ui?, amount)
-  defp take_enough_from_txs_cache(true, amount), do: Transactions.take_enough(amount)
-  defp take_enough_from_txs_cache(false, amount), do: TransactionsApiV2.take_enough(amount)
-
-  defp update_transactions_cache(old_ui?, txs)
-  defp update_transactions_cache(true, txs), do: Transactions.update(txs)
-  defp update_transactions_cache(false, txs), do: TransactionsApiV2.update(txs)
 
   # RAP - random access pagination
   @spec recent_collated_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
