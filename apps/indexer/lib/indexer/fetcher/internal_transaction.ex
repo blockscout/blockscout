@@ -276,7 +276,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp handle_foreign_key_violation(internal_transactions_params, block_numbers) do
     Chain.remove_blocks_consensus(block_numbers)
-    transaction_hashes = Enum.map(internal_transactions_params, &to_string(&1.transaction_hash))
+
+    transaction_hashes =
+      internal_transactions_params
+      |> Enum.map(&to_string(&1.transaction_hash))
+      |> Enum.uniq()
 
     Logger.error(fn ->
       [
