@@ -6,9 +6,12 @@ import entities from './typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { L1IngestionModule } from './l1Ingestion/l1Ingestion.module';
 import { L2IngestionModule } from './l2Ingestion/l2Ingestion.module';
+import { StatusMonitorModule } from 'nest-status-monitor';
+import statusMonitorConfig from './config/statusMonitor';
 
 @Module({
   imports: [
+    StatusMonitorModule.setUp(statusMonitorConfig),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

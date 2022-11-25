@@ -3388,7 +3388,7 @@ defmodule Explorer.Chain do
     L2ToL1
     |> where([l2_to_l1], not is_nil(l2_to_l1.msg_nonce))
     |> limit(^@limit_showing_transactions)
-    |> Repo.aggregate(:count, :hash)
+    |> Repo.aggregate(:count, :l2_hash)
   end
 
   def transactions_available_count do

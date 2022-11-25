@@ -8,6 +8,9 @@ export class L2ToL1 {
   @PrimaryColumn({ type: 'bytea', name: 'l2_hash' })
   l2_hash: string;
 
+  @Column({ type: 'bytea' })
+  msg_hash: string;
+
   @Column({ type: 'int8' })
   block: number;
 

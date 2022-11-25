@@ -13,7 +13,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // app.use(require('express-status-monitor')());
   await app.listen(3000);
 }
 bootstrap();

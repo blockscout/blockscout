@@ -1,21 +1,25 @@
 import { ConfigService } from '@nestjs/config';
-import { Injectable, Logger, Inject, CACHE_MANAGER } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  L1ToL2,
-  L2ToL1,
   L1RelayedMessageEvents,
   L1SentMessageEvents,
+  L1ToL2,
+  L2RelayedMessageEvents,
+  L2SentMessageEvents,
+  L2ToL1,
   StateBatches,
-  TxnBatches, L2RelayedMessageEvents, L2SentMessageEvents
-} from "src/typeorm";
-import { Repository, getManager, EntityManager, getConnection } from 'typeorm';
+  TxnBatches,
+} from 'src/typeorm';
+import { EntityManager, getConnection, getManager, Repository } from 'typeorm';
 import Web3 from 'web3';
 import CMGABI from '../abi/L1CrossDomainMessenger.json';
 import CTCABI from '../abi/CanonicalTransactionChain.json';
 import SCCABI from '../abi/StateCommitmentChain.json';
 
-import { L2IngestionService } from './../l2Ingestion/l2Ingestion.service';
+import { L2IngestionService } from '../l2Ingestion/l2Ingestion.service';
+
+const FraudProofWindow = 0;
 
 @Injectable()
 export class L1IngestionService {
@@ -35,6 +39,10 @@ export class L1IngestionService {
     private readonly stateBatchesRepository: Repository<StateBatches>,
     @InjectRepository(TxnBatches)
     private readonly txnBatchesRepository: Repository<TxnBatches>,
+    @InjectRepository(L2ToL1)
+    private readonly txnL2ToL1Repository: Repository<L2ToL1>,
+    @InjectRepository(L1ToL2)
+    private readonly txnL1ToL2Repository: Repository<L1ToL2>,
     private readonly l2IngestionService: L2IngestionService,
   ) {
     this.entityManager = getManager();
@@ -88,6 +96,9 @@ export class L1IngestionService {
       toBlock,
     });
   }
+  async getSccTotalElements() {
+    return this.sccContract.methods.getTotalElements().call();
+  }
   verifyDomainCalldataHash({ target, sender, message, messageNonce }): string {
     const xDomainCalldata = this.web3.eth.abi.encodeFunctionCall(
       {
@@ -102,8 +113,7 @@ export class L1IngestionService {
       },
       [target, sender, message, messageNonce],
     );
-    const xDomainCalldataHash = Web3.utils.keccak256(xDomainCalldata);
-    return xDomainCalldataHash;
+    return Web3.utils.keccak256(xDomainCalldata);
   }
   async getCurrentBlockNumber(): Promise<number> {
     return this.web3.eth.getBlockNumber();
@@ -139,6 +149,9 @@ export class L1IngestionService {
   async getUnMergeSentEvents() {
     return this.sentEventsRepository.find({ where: { is_merge: false } });
   }
+  async getL2toL1WaitTx(status) {
+    return this.txnL2ToL1Repository.find({ where: { status: status } });
+  }
   async createTxnBatchesEvents(startBlock, endBlock) {
     const result: any[] = [];
     const list = await this.getCtcTransactionBatchAppendedByBlockNumber(
@@ -159,8 +172,13 @@ export class L1IngestionService {
         },
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
+
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       try {
-        const savedResult = await this.entityManager.save(TxnBatches, {
+        const savedResult = await queryRunner.manager.save(TxnBatches, {
           batch_index: _batchIndex,
           block_number: blockNumber.toString(),
           hash: transactionHash,
@@ -174,10 +192,14 @@ export class L1IngestionService {
           updated_at: new Date().toISOString(),
         });
         result.push(savedResult);
+        await queryRunner.commitTransaction();
       } catch (error) {
         this.logger.error(
           `l1 createTxnBatchesEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
       }
     }
     return result;
@@ -201,8 +223,13 @@ export class L1IngestionService {
         },
       } = item;
       const { timestamp } = await this.web3.eth.getBlock(blockNumber);
+
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       try {
-        const savedResult = await this.entityManager.save(StateBatches, {
+        const savedResult = await queryRunner.manager.save(StateBatches, {
           batch_index: _batchIndex,
           block_number: blockNumber.toString(),
           hash: transactionHash,
@@ -216,10 +243,14 @@ export class L1IngestionService {
           updated_at: new Date().toISOString(),
         });
         result.push(savedResult);
+        await queryRunner.commitTransaction();
       } catch (error) {
         this.logger.error(
           `l1 createStateBatchesEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
       }
     }
     return result;
@@ -234,24 +265,56 @@ export class L1IngestionService {
         returnValues: { target, sender, message, messageNonce, gasLimit },
         signature,
       } = item;
+      const { timestamp } = await this.web3.eth.getBlock(blockNumber);
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       try {
-        const savedResult = await this.entityManager.save(L1SentMessageEvents, {
-          tx_hash: transactionHash,
-          block_number: blockNumber.toString(),
-          target,
-          sender,
-          message,
-          message_nonce: messageNonce,
+        const savedResult = await queryRunner.manager.save(
+          L1SentMessageEvents,
+          {
+            tx_hash: transactionHash,
+            block_number: blockNumber.toString(),
+            target,
+            sender,
+            message,
+            message_nonce: messageNonce,
+            gas_limit: gasLimit,
+            signature,
+            inserted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        );
+        const msgHash = this.verifyDomainCalldataHash({
+          target: target.toString(),
+          sender: sender.toString(),
+          message: message.toString(),
+          messageNonce: messageNonce.toString(),
+        });
+        await queryRunner.manager.save(L1ToL2, {
+          hash: transactionHash,
+          l2_hash: null,
+          msg_hash: msgHash,
+          block: blockNumber,
+          timestamp: new Date(Number(timestamp) * 1000).toISOString(),
+          tx_origin: sender,
+          queue_index: Number(messageNonce),
+          target: sender,
           gas_limit: gasLimit,
-          signature,
+          status: 'Ready for Relay',
           inserted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
         result.push(savedResult);
+        await queryRunner.commitTransaction();
       } catch (error) {
         this.logger.error(
           `l1 createSentEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
       }
     }
     return result;
@@ -269,8 +332,13 @@ export class L1IngestionService {
         returnValues: { msgHash },
         signature,
       } = item;
+
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       try {
-        const savedResult = await this.entityManager.save(
+        const savedResult = await queryRunner.manager.save(
           L1RelayedMessageEvents,
           {
             tx_hash: transactionHash,
@@ -282,118 +350,120 @@ export class L1IngestionService {
           },
         );
         result.push(savedResult);
+        await queryRunner.commitTransaction();
       } catch (error) {
         this.logger.error(
           `l1 createRelayedEvents blocknumber:${blockNumber} ${error}`,
         );
+        await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
       }
     }
     return result;
   }
   async createL1L2Relation() {
-    const sentList = await this.getUnMergeSentEvents();
-    for (const item of sentList) {
-      const {
-        tx_hash,
-        block_number,
-        gas_limit,
-        target,
-        sender,
-        message,
-        message_nonce,
-      } = item;
-      const msgHash = this.verifyDomainCalldataHash({
-        target: target.toString(),
-        sender: sender.toString(),
-        message: message.toString(),
-        messageNonce: message_nonce.toString(),
-      });
-      const relayedResult =
-        await this.l2IngestionService.getRelayedEventByMsgHash(msgHash);
-      let l2_hash = 'unknown';
-      if (relayedResult) {
-        l2_hash = relayedResult.tx_hash;
-      } else {
-        continue;
+    const unMergeTxList =
+      await this.l2IngestionService.getRelayedEventByIsMerge(false);
+    for (let i = 0; i < unMergeTxList.length; i++) {
+      const l1ToL2Transaction = await this.getL1ToL2TxByMsgHash(
+        unMergeTxList[i].msg_hash,
+      );
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      try {
+        // execute some operations on this transaction:
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L1ToL2)
+          .set({ l2_hash: unMergeTxList[i].tx_hash, status: 'Relayed' })
+          .where('hash = :hash', { hash: l1ToL2Transaction.hash })
+          .execute();
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L1SentMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: l1ToL2Transaction.hash })
+          .execute();
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L2RelayedMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: unMergeTxList[i].tx_hash })
+          .execute();
+        // commit transaction now:
+        await queryRunner.commitTransaction();
+      } catch (err) {
+        // since we have errors let's rollback changes we made
+        await queryRunner.rollbackTransaction();
+      } finally {
+        // you need to release query runner which is manually created:
+        await queryRunner.release();
       }
-      await this.entityManager.save(L1ToL2, {
-        hash: tx_hash,
-        l2_hash: l2_hash,
-        block: Number(block_number),
-        timestamp: relayedResult.timestamp,
-        tx_origin: sender,
-        queue_index: Number(message_nonce.toString()),
-        target: sender,
-        gas_limit: gas_limit,
-        inserted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      await this.entityManager
+    }
+  }
+  async handleWaitTransaction() {
+    // const latestBlock = await this.getCurrentBlockNumber();
+    // const { timestamp } = await this.web3.eth.getBlock(latestBlock);
+    const totalElements = await this.getSccTotalElements();
+    // const lTimestamp = Number(waitTxList[i].timestamp) / 1000;
+    const dataSource = getConnection();
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      // todo: lTimestamp + FraudProofWindow >= timestamp
+      await queryRunner.manager
         .createQueryBuilder()
-        .update(L1SentMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: item.tx_hash })
+        .update(L2ToL1)
+        .set({ status: 'Ready for Relay' })
+        .where('block <= :block', { block: totalElements })
+        .andWhere('status = :status', { status: 'Waiting' })
         .execute();
-      await this.entityManager
-        .createQueryBuilder()
-        .update(L2RelayedMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
-        .execute();
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
   }
   async createL2L1Relation() {
-    const sentList = await this.l2IngestionService.getUnMergeSentEvents();
-    for (const item of sentList) {
-      const {
-        tx_hash,
-        timestamp,
-        block_number,
-        gas_limit,
-        target,
-        sender,
-        message,
-        message_nonce,
-      } = item;
-      const msgHash = this.l2IngestionService.verifyDomainCalldataHash({
-        target: target.toString(),
-        sender: sender.toString(),
-        message: message.toString(),
-        messageNonce: message_nonce.toString(),
-      });
-      const relayedResult = await this.getRelayedEventByMsgHash(msgHash);
-      let l1_hash = 'unknown';
-      if (relayedResult) {
-        l1_hash = relayedResult.tx_hash;
-      } else {
-        continue;
+    const unMergeTxList = await this.getRelayedEventByIsMerge(false);
+    for (let i = 0; i < unMergeTxList.length; i++) {
+      const l2ToL1Transaction = await this.getL2ToL1TxByMsgHash(
+        unMergeTxList[i].msg_hash,
+      );
+      const dataSource = getConnection();
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      try {
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L2ToL1)
+          .set({ hash: unMergeTxList[i].tx_hash, status: 'Relayed' })
+          .where('l2_hash = :l2_hash', { l2_hash: l2ToL1Transaction.l2_hash })
+          .execute();
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L2SentMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: l2ToL1Transaction.l2_hash })
+          .execute();
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update(L1RelayedMessageEvents)
+          .set({ is_merge: true })
+          .where('tx_hash = :tx_hash', { tx_hash: unMergeTxList[i].tx_hash })
+          .execute();
+        await queryRunner.commitTransaction();
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
       }
-      await this.entityManager.save(L2ToL1, {
-        hash: l1_hash,
-        l2_hash: tx_hash,
-        block: Number(block_number),
-        msg_nonce: Number(message_nonce),
-        from_address: target,
-        txn_batch_index: Number(message_nonce),
-        state_batch_index: Number(message_nonce),
-        timestamp: timestamp,
-        status: '',
-        gas_limit: gas_limit,
-        inserted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      await this.entityManager
-        .createQueryBuilder()
-        .update(L2SentMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: item.tx_hash })
-        .execute();
-      await this.entityManager
-        .createQueryBuilder()
-        .update(L1RelayedMessageEvents)
-        .set({ is_merge: true })
-        .where('tx_hash = :tx_hash', { tx_hash: relayedResult.tx_hash })
-        .execute();
     }
   }
   async syncSentEvents() {
@@ -426,6 +496,21 @@ export class L1IngestionService {
   }
   async getRelayedEventByMsgHash(msgHash: string) {
     return this.relayedEventsRepository.findOne({
+      where: { msg_hash: msgHash },
+    });
+  }
+  async getRelayedEventByIsMerge(is_merge: boolean) {
+    return this.relayedEventsRepository.find({
+      where: { is_merge: is_merge },
+    });
+  }
+  async getL2ToL1TxByMsgHash(msgHash: string) {
+    return this.txnL2ToL1Repository.findOne({
+      where: { msg_hash: msgHash },
+    });
+  }
+  async getL1ToL2TxByMsgHash(msgHash: string) {
+    return this.txnL1ToL2Repository.findOne({
       where: { msg_hash: msgHash },
     });
   }

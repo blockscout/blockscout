@@ -14,19 +14,21 @@ For questions, comments and feature requests see the [discussions section](https
 
 ## About BlockScout
 
-BlockScout is an Elixir application that allows users to search transactions, view accounts and balances, and verify smart contracts on the Ethereum network including all forks and sidechains.
+BlockScout is an Elixir application that allows users to search transactions, view accounts and balances, and verify smart contracts on the Ethereum network including all forks and sidechains. It also supports Layer 2 network for mantle.
 
 Currently available full-featured block explorers (Etherscan, Etherchain, Blockchair) are closed systems which are not independently verifiable.  As Ethereum sidechains continue to proliferate in both private and public settings, transparent, open-source tools are needed to analyze and validate transactions.
 
 ## Supported Projects
 
-BlockScout supports a number of projects. Hosted instances include POA Network, Gnosis Chain, Ethereum Classic, Sokol & Kovan testnets, and other EVM chains. 
+BlockScout supports a number of projects. Hosted instances include POA Network, Gnosis Chain, Ethereum Classic, Mantle Network, and other EVM chains. 
 
 - [List of hosted mainnets, testnets, and additional chains using BlockScout](https://docs.blockscout.com/for-projects/supported-projects)
 - [Hosted instance versions](https://docs.blockscout.com/about/use-cases/hosted-blockscout)
 
 
 ## Getting Started
+
+### 1. Elixir Services
 
 See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
@@ -35,6 +37,9 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
+### 2. Node Services
+
+- [development and deployment](https://github.com/mantlenetworkio/blockscout/blob/master/data-sync-service/README.md)
 
 ## Acknowledgements
 
