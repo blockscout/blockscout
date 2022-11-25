@@ -24,8 +24,8 @@ lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:20
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/explorer/smart_contract/reader.ex:467
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
-lib/explorer/exchange_rates/source.ex:110
-lib/explorer/exchange_rates/source.ex:113
+lib/explorer/exchange_rates/source.ex:116
+lib/explorer/exchange_rates/source.ex:119
 lib/explorer/smart_contract/verifier.ex:89
 lib/explorer/smart_contract/solidity/verifier.ex:223
 lib/block_scout_web/templates/address_contract/index.html.eex:170
