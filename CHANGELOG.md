@@ -29,7 +29,7 @@
 - [#6473](https://github.com/blockscout/blockscout/pull/6473) - Fix state changes for contract creation transactions
 - [#6475](https://github.com/blockscout/blockscout/pull/6475) - Fix token name with unicode graphemes shortening
 - [#6420](https://github.com/blockscout/blockscout/pull/6420) - Fix address logs search
-- [#6390](https://github.com/blockscout/blockscout/pull/6390), [#6502](https://github.com/blockscout/blockscout/pull/6502) - Fix transactions responses in API v2
+- [#6390](https://github.com/blockscout/blockscout/pull/6390), [#6502](https://github.com/blockscout/blockscout/pull/6502), [#6511](https://github.com/blockscout/blockscout/pull/6511) - Fix transactions responses in API v2
 - [#6357](https://github.com/blockscout/blockscout/pull/6357), [#6409](https://github.com/blockscout/blockscout/pull/6409), [#6428](https://github.com/blockscout/blockscout/pull/6428) - Fix definitions of NETWORK_PATH, API_PATH, SOCKET_ROOT: process trailing slash
 - [#6338](https://github.com/blockscout/blockscout/pull/6338) - Fix token search with space
 - [#6329](https://github.com/blockscout/blockscout/pull/6329) - Prevent logger from truncating response from rust verifier service in case of an error
