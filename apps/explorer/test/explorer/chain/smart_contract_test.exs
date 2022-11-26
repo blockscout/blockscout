@@ -15,7 +15,7 @@ defmodule Explorer.Chain.SmartContractTest do
       smart_contract = insert(:smart_contract)
 
       Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
-      Application.put_env(:explorer, :implementation_data_fetching_time_out, :timer.seconds(20))
+      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
 
       refute smart_contract.implementation_fetched_at
 
@@ -63,7 +63,7 @@ defmodule Explorer.Chain.SmartContractTest do
       implementation_smart_contract = insert(:smart_contract, name: "proxy")
 
       Application.put_env(:explorer, :fallback_ttl_cached_implementation_data_of_proxy, :timer.seconds(20))
-      Application.put_env(:explorer, :implementation_data_fetching_time_out, :timer.seconds(20))
+      Application.put_env(:explorer, :implementation_data_fetching_timeout, :timer.seconds(20))
 
       refute smart_contract.implementation_fetched_at
 

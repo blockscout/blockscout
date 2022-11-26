@@ -561,9 +561,9 @@ defmodule Explorer.Chain.SmartContract do
     if check_implementation_refetch_neccessity(implementation_fetched_at) do
       get_implementation_address_hash_task = Task.async(fn -> get_implementation_address_hash(address_hash, abi) end)
 
-      time_out = Application.get_env(:explorer, :implementation_data_fetching_time_out)
+      timeout = Application.get_env(:explorer, :implementation_data_fetching_timeout)
 
-      case Task.yield(get_implementation_address_hash_task, time_out) ||
+      case Task.yield(get_implementation_address_hash_task, timeout) ||
              Task.ignore(get_implementation_address_hash_task) do
         {:ok, {:empty, :empty}} ->
           {nil, nil}
@@ -678,7 +678,7 @@ defmodule Explorer.Chain.SmartContract do
         {:ok, implementation_logic_address} ->
           {:ok, implementation_logic_address}
 
-        {:error, _} ->
+        _ ->
           {:ok, nil}
       end
 
@@ -722,7 +722,7 @@ defmodule Explorer.Chain.SmartContract do
             {:ok, beacon_contract_address}
         end
 
-      {:error, _} ->
+      _ ->
         {:ok, nil}
     end
   end
@@ -745,7 +745,7 @@ defmodule Explorer.Chain.SmartContract do
       {:ok, logic_contract_address} ->
         {:ok, logic_contract_address}
 
-      {:error, _} ->
+      _ ->
         {:ok, nil}
     end
   end
@@ -787,7 +787,7 @@ defmodule Explorer.Chain.SmartContract do
         {:ok, logic_contract_address} ->
           {:ok, logic_contract_address}
 
-        {:error, _} ->
+        _ ->
           {:ok, nil}
       end
 

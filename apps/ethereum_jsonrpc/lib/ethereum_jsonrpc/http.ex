@@ -113,13 +113,18 @@ defmodule EthereumJSONRPC.HTTP do
 
           {:error, {:bad_gateway, request_url}}
 
-        status_code ->
+        _ ->
           named_arguments
           |> DecodeError.exception()
-          |> Exception.message()
+          |> DecodeError.message()
           |> Logger.error()
 
-          {:error, {:bad_response, status_code}}
+          request_url =
+            named_arguments
+            |> Keyword.fetch!(:request)
+            |> Keyword.fetch!(:url)
+
+          {:error, {:bad_response, request_url}}
       end
     end
   end

@@ -217,7 +217,7 @@ config :explorer,
   enable_caching_implementation_data_of_proxy: true,
   avg_block_time_as_ttl_cached_implementation_data_of_proxy: true,
   fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(4),
-  implementation_data_fetching_time_out: :timer.seconds(2)
+  implementation_data_fetching_timeout: :timer.seconds(2)
 
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: System.get_env("VISUALIZE_SOL2UML_SERVICE_URL"),
