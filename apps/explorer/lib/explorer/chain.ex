@@ -36,7 +36,7 @@ defmodule Explorer.Chain do
   alias EthereumJSONRPC.Contract
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
 
-  alias Explorer.Counters.LastFetchedCounter
+  alias Explorer.Counters.{LastFetchedCounter, TokenHoldersCounter, TokenTransfersCounter}
 
   alias Explorer.Chain
 
@@ -6629,5 +6629,35 @@ defmodule Explorer.Chain do
 
   def gas_usage_count(address) do
     AddressTransactionsGasUsageCounter.fetch(address)
+  end
+
+  def fetch_token_counters(address_hash, timeout) do
+    total_token_transfers_task =
+      Task.async(fn ->
+        TokenTransfersCounter.fetch(address_hash)
+      end)
+
+    total_token_holders_task =
+      Task.async(fn ->
+        TokenHoldersCounter.fetch(address_hash)
+      end)
+
+    [total_token_transfers_task, total_token_holders_task]
+    |> Task.yield_many(timeout)
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          Logger.warn("Query fetching token counters terminated: #{inspect(reason)}")
+          0
+
+        nil ->
+          Logger.warn("Query fetching token counters timed out.")
+          0
+      end
+    end)
+    |> List.to_tuple()
   end
 end

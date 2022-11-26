@@ -119,15 +119,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           options
         )
 
-      {transactions, next_page} = split_list_by_page(results_plus_one)
+      {token_transfers, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params =
-        next_page |> next_page_params(transactions, params) |> delete_parameters_from_next_page_params()
+        next_page |> next_page_params(token_transfers, params) |> delete_parameters_from_next_page_params()
 
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:token_transfers, %{token_transfers: transactions, next_page_params: next_page_params})
+      |> render(:token_transfers, %{token_transfers: token_transfers, next_page_params: next_page_params})
     end
   end
 
