@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   end
 
   def indexing_status(conn, _params) do
-    indexed_ratio_blocks = Explorer.Chain.indexed_ratio_blocks()
+    indexed_ratio_blocks = Chain.indexed_ratio_blocks()
     finished_indexing_blocks = Chain.finished_blocks_indexing?(indexed_ratio_blocks)
 
     json(conn, %{

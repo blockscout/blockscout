@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TokenView do
-  alias Explorer.Chain.Address
   alias BlockScoutWeb.API.V2.Helper
+  alias Explorer.Chain.Address
 
   def render("token.json", %{token: token}) do
     %{
