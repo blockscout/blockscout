@@ -63,6 +63,7 @@
     "path-parser": "^6.1.0",
     "phoenix": "file:../../../deps/phoenix",
     "phoenix_html": "file:../../../deps/phoenix_html",
+    "photoswipe": "^5.3.3",
     "pikaday": "^1.8.2",
     "popper.js": "^1.14.7",
     "reduce-reducers": "^1.0.4",
@@ -75,6 +76,7 @@
     "util": "^0.12.5",
     "web3": "^1.8.1",
     "web3modal": "^1.9.10",
+    "viewerjs": "^1.11.1",
     "xss": "^1.0.14"
   },
   "devDependencies": {
