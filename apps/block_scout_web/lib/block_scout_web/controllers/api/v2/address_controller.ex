@@ -57,10 +57,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       address_gas_usage_from_db = address.gas_used || 0
 
       json(conn, %{
-        transaction_count: to_string(transactions_from_db),
-        token_transfer_count: to_string(token_transfers_from_db),
+        transactions_count: to_string(transactions_from_db),
+        token_transfers_count: to_string(token_transfers_from_db),
         gas_usage_count: to_string(address_gas_usage_from_db),
-        validation_count: to_string(validation_count)
+        validations_count: to_string(validation_count)
       })
     end
   end

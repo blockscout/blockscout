@@ -82,10 +82,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/counters")
 
       assert %{
-               "transaction_count" => "0",
-               "token_transfer_count" => "0",
+               "transactions_count" => "0",
+               "token_transfers_count" => "0",
                "gas_usage_count" => "0",
-               "validation_count" => "0"
+               "validations_count" => "0"
              } = json_response(request, 200)
     end
 
@@ -121,10 +121,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       gas_used = to_string(tx_from.gas_used)
 
       assert %{
-               "transaction_count" => "2",
-               "token_transfer_count" => "2",
+               "transactions_count" => "2",
+               "token_transfers_count" => "2",
                "gas_usage_count" => ^gas_used,
-               "validation_count" => "1"
+               "validations_count" => "1"
              } = json_response(request, 200)
     end
   end

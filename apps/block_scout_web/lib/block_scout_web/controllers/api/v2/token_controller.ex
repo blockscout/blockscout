@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, _}} <- {:not_found, Chain.token_from_address_hash(address_hash)} do
       {transfer_count, token_holder_count} = Chain.fetch_token_counters(address_hash, 30_000)
 
-      json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
+      json(conn, %{transfers_count: to_string(transfer_count), token_holders_count: to_string(token_holder_count)})
     end
   end
 
