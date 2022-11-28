@@ -202,7 +202,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 .dashboard-banner-network-plain-container {
   align-items: center;
   align-self: flex-end;
-  background-color: $dashboard-banner-network-plain-container-background-color;
+  background-color: transparent;
   border-top-left-radius: 10px;
   display: flex;
   height: $dashboard-banner-network-plain-container-height;
@@ -234,7 +234,7 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
   }
 
   &::after {
-    background-color: $dashboard-banner-network-plain-container-background-color;
+    background-color: transparent;
     bottom: 0;
     content: "";
     display: block;
