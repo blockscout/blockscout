@@ -13,7 +13,7 @@ export class StateBatches {
 
   @Column({ type: 'bigint' })
   size: number;
-  
+
   @Column({ type: 'bigint' })
   l1_block_number: number;
 

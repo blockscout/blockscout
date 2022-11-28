@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
-
+require Logger
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
 

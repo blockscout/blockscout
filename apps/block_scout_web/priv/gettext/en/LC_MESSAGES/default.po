@@ -406,6 +406,18 @@ msgid "Coin Balance History"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:34
+#: lib/block_scout_web/views/address_view.ex:370
+msgid "Withdraw"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:34
+#: lib/block_scout_web/views/address_view.ex:370
+msgid "Deposit"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:55
 msgid "Collapse"
 msgstr ""

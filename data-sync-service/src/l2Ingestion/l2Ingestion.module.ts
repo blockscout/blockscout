@@ -8,6 +8,6 @@ import { L2RelayedMessageEvents, L2SentMessageEvents } from 'src/typeorm';
     TypeOrmModule.forFeature([L2RelayedMessageEvents, L2SentMessageEvents]),
   ],
   providers: [L2IngestionService],
-  exports: [L2IngestionService]
+  exports: [L2IngestionService],
 })
 export class L2IngestionModule {}

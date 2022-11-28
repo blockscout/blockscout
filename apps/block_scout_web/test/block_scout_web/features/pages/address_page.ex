@@ -43,6 +43,10 @@ defmodule BlockScoutWeb.AddressPage do
     click(session, css("[data-test='internal_transactions_tab_link']"))
   end
 
+  def click_deposit(session) do
+    click(session, css("[data-test='deposit_tab_link']"))
+  end
+
   def click_tokens(session) do
     click(session, css("[data-test='tokens_tab_link']"))
   end

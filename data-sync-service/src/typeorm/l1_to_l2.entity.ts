@@ -8,6 +8,9 @@ export class L1ToL2 {
   @Column({ type: 'bytea' })
   l2_hash: string;
 
+  @Column({ type: 'bytea' })
+  msg_hash: string;
+
   @Column({ type: 'int8' })
   block: number;
 
@@ -26,9 +29,12 @@ export class L1ToL2 {
   @Column({ type: 'numeric', precision: 100 })
   gas_limit: number;
 
-  @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
+  @Column({ type: 'varchar', length: 255 })
+  status: string;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   inserted_at: Date;
 
-  @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP"})
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 }
