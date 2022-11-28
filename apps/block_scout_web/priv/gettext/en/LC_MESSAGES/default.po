@@ -315,7 +315,7 @@ msgid "Available Now:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:122
+#: lib/block_scout_web/templates/chain/show.html.eex:114
 msgid "Average block time"
 msgstr ""
 
@@ -447,7 +447,7 @@ msgid "Blockchain"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:175
+#: lib/block_scout_web/templates/chain/show.html.eex:167
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:29
 msgid "Blocks"
 msgstr ""
@@ -1332,7 +1332,9 @@ msgid "GraphQL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:51
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:11
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:20 lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:21
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:22 lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:38
 #: lib/block_scout_web/views/block_view.ex:24 lib/block_scout_web/views/wei_helpers.ex:79
 msgid "Gwei"
 msgstr ""
@@ -1599,7 +1601,7 @@ msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:60
+#: lib/block_scout_web/templates/chain/show.html.eex:51
 #: lib/block_scout_web/templates/layout/app.html.eex:50 lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
 #: lib/block_scout_web/views/address_view.ex:200
 msgid "Market Cap"
@@ -1704,7 +1706,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:46
-#: lib/block_scout_web/templates/chain/show.html.eex:236 lib/block_scout_web/templates/pending_transaction/index.html.eex:12
+#: lib/block_scout_web/templates/chain/show.html.eex:228 lib/block_scout_web/templates/pending_transaction/index.html.eex:12
 #: lib/block_scout_web/templates/transaction/index.html.eex:18
 msgid "More transactions have come in"
 msgstr ""
@@ -2248,7 +2250,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token/index.html.eex:60 lib/block_scout_web/templates/address_token_transfer/index.html.eex:58
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:50 lib/block_scout_web/templates/address_validation/index.html.eex:20
 #: lib/block_scout_web/templates/block_epoch_transaction/index.html.eex:13 lib/block_scout_web/templates/block_transaction/index.html.eex:15
-#: lib/block_scout_web/templates/chain/show.html.eex:179 lib/block_scout_web/templates/pending_transaction/index.html.eex:17
+#: lib/block_scout_web/templates/chain/show.html.eex:171 lib/block_scout_web/templates/pending_transaction/index.html.eex:17
 #: lib/block_scout_web/templates/stakes/_table.html.eex:49 lib/block_scout_web/templates/tokens/holder/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/instance/holder/index.html.eex:23 lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:22 lib/block_scout_web/templates/tokens/transfer/index.html.eex:21
@@ -2259,7 +2261,7 @@ msgid "Something went wrong, click to reload."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:242
+#: lib/block_scout_web/templates/chain/show.html.eex:234
 msgid "Something went wrong, click to retry."
 msgstr ""
 
@@ -2837,7 +2839,7 @@ msgid "Total Difficulty"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:152
+#: lib/block_scout_web/templates/chain/show.html.eex:144
 msgid "Total blocks"
 msgstr ""
 
@@ -2857,7 +2859,7 @@ msgid "Total transaction fee."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:131
+#: lib/block_scout_web/templates/chain/show.html.eex:123
 msgid "Total transactions"
 msgstr ""
 
@@ -2928,7 +2930,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:266 lib/block_scout_web/templates/address/overview.html.eex:272
 #: lib/block_scout_web/templates/address/overview.html.eex:280 lib/block_scout_web/templates/address_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/block/_tabs.html.eex:4 lib/block_scout_web/templates/block/overview.html.eex:79
-#: lib/block_scout_web/templates/chain/show.html.eex:233 lib/block_scout_web/templates/stats/index.html.eex:32
+#: lib/block_scout_web/templates/chain/show.html.eex:225 lib/block_scout_web/templates/stats/index.html.eex:32
 #: lib/block_scout_web/views/address_view.ex:426
 msgid "Transactions"
 msgstr ""
@@ -2967,7 +2969,6 @@ msgid "Tx Gas Limit:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/layout/app.html.eex:53
 msgid "Tx/day"
 msgstr ""
@@ -3191,12 +3192,12 @@ msgid "Via Sourcify: Sources and metadata JSON file"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:174
+#: lib/block_scout_web/templates/chain/show.html.eex:166
 msgid "View All Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:232
+#: lib/block_scout_web/templates/chain/show.html.eex:224
 msgid "View All Transactions"
 msgstr ""
 
@@ -3262,7 +3263,7 @@ msgid "Wallet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:160
+#: lib/block_scout_web/templates/chain/show.html.eex:152
 msgid "Wallet addresses"
 msgstr ""
 
@@ -3768,4 +3769,30 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:204
 msgid "Voting CELO Balance"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:21
+msgid "Average"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/chain/show.html.eex:83
+msgid "Daily Transactions"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:22
+msgid "Fast"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:3
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:18
+msgid "Gas tracker"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:20
+msgid "Slow"
 msgstr ""

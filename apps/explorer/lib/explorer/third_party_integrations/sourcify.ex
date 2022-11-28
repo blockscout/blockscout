@@ -264,19 +264,6 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
-  defp file_is_compilation_target(name, target_name) do
-    name = String.downcase(name)
-    target_name = String.downcase(target_name)
-
-    cond do
-      name == target_name -> true
-      # compilation target appears to be replace spaces with underscores
-      # https://github.com/celo-org/data-services/issues/151
-      String.replace(target_name, ~r/\s/, "_") == name -> true
-      true -> false
-    end
-  end
-
   defp parse_json_from_sourcify_for_insertion(verification_metadata_json) do
     %{"name" => _, "content" => content} = verification_metadata_json
     content_json = decode_json(content)
