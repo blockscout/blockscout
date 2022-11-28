@@ -1223,8 +1223,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
       assert {:ok,
               %{
                 abi: abi,
-                constructor_arguments:
-                  "000000000000000000000000fb5a36f0e12cef9f88d95f0e02cad4ba183336dc0000000000000000000000000000000000000000000000000000000000000032"
+                constructor_arguments: ^constructor_arguments
               }} = Verifier.evaluate_authenticity(contract_address.hash, params)
 
       assert abi != nil

@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.SmartContract
-  alias Explorer.{Chain, Factory}
+  alias Explorer.Chain
+  # alias Explorer.{Chain, Factory}
 
   import Mox
 
@@ -835,21 +836,21 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     })
   end
 
-  defp verify_schema do
-    resolve_schema(%{
-      "type" => "object",
-      "properties" => %{
-        "Address" => %{"type" => "string"},
-        "SourceCode" => %{"type" => "string"},
-        "ABI" => %{"type" => "string"},
-        "ContractName" => %{"type" => "string"},
-        "CompilerVersion" => %{"type" => "string"},
-        "DecompiledSourceCode" => %{"type" => "string"},
-        "DecompilerVersion" => %{"type" => "string"},
-        "OptimizationUsed" => %{"type" => "string"}
-      }
-    })
-  end
+  # defp verify_schema do
+  #   resolve_schema(%{
+  #     "type" => "object",
+  #     "properties" => %{
+  #       "Address" => %{"type" => "string"},
+  #       "SourceCode" => %{"type" => "string"},
+  #       "ABI" => %{"type" => "string"},
+  #       "ContractName" => %{"type" => "string"},
+  #       "CompilerVersion" => %{"type" => "string"},
+  #       "DecompiledSourceCode" => %{"type" => "string"},
+  #       "DecompilerVersion" => %{"type" => "string"},
+  #       "OptimizationUsed" => %{"type" => "string"}
+  #     }
+  #   })
+  # end
 
   defp resolve_schema(result) do
     %{

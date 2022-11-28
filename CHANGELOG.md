@@ -7,7 +7,9 @@
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
 ### Fixes
+- [#5635](https://github.com/blockscout/blockscout/pull/5635) - Set CoinGecko source in exchange_rates_source function fix in case of token_bridge
 - [#5629](https://github.com/blockscout/blockscout/pull/5629) - Fix empty coin balance for empty address
+- [#5612](https://github.com/blockscout/blockscout/pull/5612) - Fix token transfers order
 - [#5626](https://github.com/blockscout/blockscout/pull/5626) - Fix vyper compiler versions order
 - [#5603](https://github.com/blockscout/blockscout/pull/5603) - Fix failing verification attempts
 - [#5598](https://github.com/blockscout/blockscout/pull/5598) - Fix token dropdown
@@ -18,6 +20,8 @@
 - [#5538](https://github.com/blockscout/blockscout/pull/5538) - Fix internal transaction's tile bug
 
 ### Chore
+- [#5651](https://github.com/blockscout/blockscout/pull/5651) - Gnosis chain rebranded theme and generalization of chart legend colors definition
+- [#5640](https://github.com/blockscout/blockscout/pull/5640) - Clean up and fix tests, reduce amount of warnings
 - [#5625](https://github.com/blockscout/blockscout/pull/5625) - Get rid of some redirects to checksummed address url
 - [#5623](https://github.com/blockscout/blockscout/pull/5623) - Allow hyphen in DB password
 - [#5543](https://github.com/blockscout/blockscout/pull/5543) - Increase max_restarts to 1_000 (from 3 by default) for explorer, block_scout_web supervisors

@@ -122,7 +122,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:229
+#: lib/block_scout_web/templates/layout/app.html.eex:235
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -3765,7 +3765,7 @@ msgstr ""
 msgid "View previous block"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:204
 msgid "Voting CELO Balance"
 msgstr ""

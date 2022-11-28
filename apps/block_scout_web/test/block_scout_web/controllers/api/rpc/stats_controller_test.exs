@@ -272,11 +272,11 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     })
   end
 
-  defp ethsupply_schema do
-    resolve_schema(%{
-      "type" => ["string", "null"]
-    })
-  end
+  # defp ethsupply_schema do
+  #   resolve_schema(%{
+  #     "type" => ["string", "null"]
+  #   })
+  # end
 
   defp ethsupplyexchange_schema do
     resolve_schema(%{

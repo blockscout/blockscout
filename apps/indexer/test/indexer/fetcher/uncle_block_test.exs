@@ -199,7 +199,8 @@ defmodule Indexer.Fetcher.UncleBlockTest do
          ]}
       end)
 
-      assert {:retry, _} = UncleBlock.run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments})
+      assert {:retry, [^entry]} =
+               UncleBlock.run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments})
     end
   end
 
