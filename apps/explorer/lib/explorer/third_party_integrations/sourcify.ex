@@ -239,28 +239,44 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
                                              full_params_acc ->
         compilation_target_file_name = Map.get(full_params_acc, "compilation_target_file_name")
 
-        if String.downcase(name) == String.downcase(compilation_target_file_name) do
-          %{
-            "params_to_publish" => extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish")),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => Map.get(full_params_acc, "secondary_sources"),
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
+        base_params = %{
+          "abi" => Map.get(full_params_acc, "abi"),
+          "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
+          "compilation_target_file_name" => compilation_target_file_name
+        }
+
+        if file_is_compilation_target(name, compilation_target_file_name) do
+          to_publish = extract_primary_source_code(content, Map.get(full_params_acc, "params_to_publish"))
+          secondary_sources = Map.get(full_params_acc, "secondary_sources")
+
+          base_params
+          |> Map.put("params_to_publish", to_publish)
+          |> Map.put("secondary_sources", secondary_sources)
         else
+          to_publish = Map.get(full_params_acc, "params_to_publish")
+
           secondary_sources = [
             prepare_additional_source(address_hash_string, param) | Map.get(full_params_acc, "secondary_sources")
           ]
 
-          %{
-            "params_to_publish" => Map.get(full_params_acc, "params_to_publish"),
-            "abi" => Map.get(full_params_acc, "abi"),
-            "secondary_sources" => secondary_sources,
-            "compilation_target_file_path" => Map.get(full_params_acc, "compilation_target_file_path"),
-            "compilation_target_file_name" => compilation_target_file_name
-          }
+          base_params
+          |> Map.put("params_to_publish", to_publish)
+          |> Map.put("secondary_sources", secondary_sources)
         end
       end)
+    end
+  end
+
+  defp file_is_compilation_target(name, target_name) do
+    name = String.downcase(name)
+    target_name = String.downcase(target_name)
+
+    cond do
+      name == target_name -> true
+      # compilation target appears to be replace spaces with underscores
+      # https://github.com/celo-org/data-services/issues/151
+      String.replace(target_name, ~r/\s/, "_") == name -> true
+      true -> false
     end
   end
 
