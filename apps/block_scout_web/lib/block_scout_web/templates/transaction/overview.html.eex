@@ -228,6 +228,9 @@
               <% end %>
             </dd>
           </dl>
+          <span>
+          <%= @transaction.block %>
+          </span>
           <%= case token_transfer_type(@transaction) do %>
             <% {_type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
               <!-- Tokens Transferred -->

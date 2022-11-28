@@ -100,6 +100,20 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/deposit",
+        AddressDepositController,
+        only: [:index],
+        as: :deposit
+      )
+
+      resources(
+        "/withdraw",
+        AddressWithdrawController,
+        only: [:index],
+        as: :withdraw
+      )
+
+      resources(
         "/validations",
         AddressValidationController,
         only: [:index],

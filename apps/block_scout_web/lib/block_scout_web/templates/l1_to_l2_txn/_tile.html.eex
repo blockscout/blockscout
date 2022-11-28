@@ -9,10 +9,16 @@
     <span style="width: 10%;">
       <%= @l1_to_l2.queue_index %>
     </span>
-    <a style="width: 20%;" href="/tx/<%= @l1_to_l2.l2_hash %>" >
+    <%= if @l1_to_l2.l2_hash == nil do %>
+      <a style="width: 20%; text-align: center">
+         <p style="margin-right: 30px">NULL</p>
+      </a>
+    <% else %>
+      <a style="width: 20%;" href="/tx/<%= @l1_to_l2.l2_hash %>" >
          <%= sub_hash_string(@l1_to_l2.l2_hash) %>...
-       </a>
-     <span style="width: 10%;" in-tile data-from-now="<%= block_timestamp(@l1_to_l2) %>">
+      </a>
+    <% end %>
+    <span style="width: 10%;" in-tile data-from-now="<%= block_timestamp(@l1_to_l2) %>">
     </span>
      <a style="width: 20%;" href="https://goerli.etherscan.io/tx/<%= @l1_to_l2.hash %>" target="_blank">
          <%= sub_hash_string(@l1_to_l2.hash) %>...

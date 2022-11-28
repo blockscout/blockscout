@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.TransactionController do
     TransactionTokenTransferController,
     TransactionView
   }
-
+require Logger
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.ExchangeRates.Token

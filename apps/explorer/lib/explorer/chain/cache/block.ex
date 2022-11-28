@@ -30,15 +30,14 @@ defmodule Explorer.Chain.Cache.Block do
   """
   @spec estimated_count() :: non_neg_integer()
   def estimated_count do
-    cached_value = __MODULE__.get_count()
-
-    if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
-
-      trunc(count * 0.90)
-    else
-      cached_value
-    end
+    #cached_value = __MODULE__.get_count()
+    # TODO(Jayce) Cache of count of transactions is wrong now, hide cache temporary
+   # if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT count(*) from blocks")
+      #trunc(count * 0.90)
+    #else
+      count
+    #end
   end
 
   defp handle_fallback(:count) do

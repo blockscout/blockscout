@@ -725,6 +725,40 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
+  def transactions_deposit(address_hash, burn_address_hash) do
+    query = from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.to_address_hash == ^address_hash,
+      where: tt.from_address_hash == ^burn_address_hash,
+      distinct: :hash
+    )
+
+    from(
+      t in subquery(query),
+      order_by: [desc: t.block_number, desc: t.index],
+      preload: [:from_address, :to_address, :created_contract_address, :block]
+    )
+  end
+
+  def transactions_withdraw(address_hash, burn_address_hash) do
+    query = from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.from_address_hash == ^address_hash,
+      where: tt.to_address_hash == ^burn_address_hash,
+      distinct: :hash
+    )
+
+    from(
+      t in subquery(query),
+      order_by: [desc: t.block_number, desc: t.index],
+      preload: [:from_address, :to_address, :created_contract_address, :block]
+    )
+  end
+
   defp transactions_with_token_transfers_query_direction(:from, address_hash) do
     from(
       t in Transaction,

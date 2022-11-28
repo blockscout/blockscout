@@ -1,0 +1,52 @@
+<section class="container">
+  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path %>
+
+  <section data-page="address-token-transfers" id="transfers">
+    <div class="card">
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
+      <div data-async-load data-async-listing="<%= @current_path %>" class="card-body" data-no-self-calls>
+
+        <%= if assigns[:token] do %>
+        <h2 class="card-title">
+          <span class="text-muted"><%= gettext "Tokens" %></span> / <%= token_name(@token) %>
+        </h2>
+        <% end %>
+
+        <%= if !assigns[:token] do %>
+        <div class="clearfix">
+          <h2 class="card-title float-left">
+            Deposit
+          </h2>
+          <div class="top-pagination-outer-container float-right">
+            <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+          </div>
+        </div>
+        <% end %>
+
+        <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
+          <span><%= gettext "There are no withdraw for this address." %></span>
+        </div>
+
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to reload." %>
+          </span>
+        </button>
+
+        <div data-items>
+          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+        </div>
+
+        <div class="transaction-bottom-panel">
+          <%= render BlockScoutWeb.CommonComponentsView, "_csv_export_button.html", address: Address.checksum(@address.hash), type: "token-transfers", conn: @conn %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        </div>
+
+      </div>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address-token-transfers.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
+  </section>
+</section>
