@@ -261,8 +261,8 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    Chain.proxy_contract?(address.hash, address.smart_contract.abi)
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}) do
+    SmartContract.proxy_contract?(smart_contract)
   end
 
   def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
