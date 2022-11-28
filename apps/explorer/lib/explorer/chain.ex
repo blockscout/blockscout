@@ -552,6 +552,26 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @spec address_deposit_transactions(Hash.Address.t(),Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
+  def address_deposit_transactions(address_hash, burn_address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    Transaction.transactions_deposit(address_hash, burn_address_hash)
+    |> Transaction.preload_token_transfers(address_hash)
+    |> handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
+  @spec address_withdraw_transactions(Hash.Address.t(),Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
+  def address_withdraw_transactions(address_hash, burn_address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    Transaction.transactions_withdraw(address_hash, burn_address_hash)
+    |> Transaction.preload_token_transfers(address_hash)
+    |> handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
   @doc """
   address_hash_to_token_transfers_including_contract/2 function returns token transfers on address (to/from/contract).
   It is used by CSV export of token transfers button.

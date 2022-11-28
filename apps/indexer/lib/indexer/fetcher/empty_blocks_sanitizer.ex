@@ -56,9 +56,10 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
         :sanitize_empty_blocks,
         %{interval: interval, json_rpc_named_arguments: json_rpc_named_arguments} = state
       ) do
-    Logger.info("Start sanitizing of empty blocks. Batch size is #{limit()}",
-      fetcher: :empty_blocks_to_refetch
-    )
+    # TODO (Jayce) debug code
+    #Logger.info("Start sanitizing of empty blocks. Batch size is #{limit()}",
+    #  fetcher: :empty_blocks_to_refetch
+    #)
 
     sanitize_empty_blocks(json_rpc_named_arguments)
 
@@ -96,10 +97,11 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
           |> Enum.count()
 
         if transactions_count > 0 do
-          Logger.info(
-            "Block with number #{block_number} and hash #{to_string(block_hash)} is full of transactions. We should set consensus=false for it in order to refetch.",
-            fetcher: :empty_blocks_to_refetch
-          )
+          # TODO (Jayce) debug code
+          #Logger.info(
+          #  "Block with number #{block_number} and hash #{to_string(block_hash)} is full of transactions. We should set consensus=false for it in order to refetch.",
+          #  fetcher: :empty_blocks_to_refetch
+          #)
 
           Blocks.invalidate_consensus_blocks([block_number])
         else
@@ -112,10 +114,10 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
         end
       end
     end)
-
-    Logger.info("Batch of empty blocks is sanitized",
-      fetcher: :empty_blocks_to_refetch
-    )
+    # TODO (Jayce) debug code
+    #Logger.info("Batch of empty blocks is sanitized",
+    #  fetcher: :empty_blocks_to_refetch
+    #)
   end
 
   defp set_is_empty_for_block(block_hash, is_empty) do
