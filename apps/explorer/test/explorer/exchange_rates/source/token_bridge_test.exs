@@ -1,6 +1,7 @@
 defmodule Explorer.ExchangeRates.Source.TokenBridgeTest do
   use Explorer.DataCase
 
+  alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.Source.CoinGecko
   alias Explorer.ExchangeRates.Source.TokenBridge
   alias Explorer.ExchangeRates.Token
@@ -27,6 +28,7 @@ defmodule Explorer.ExchangeRates.Source.TokenBridgeTest do
     setup do
       bypass = Bypass.open()
       Application.put_env(:explorer, :coin, "POA")
+      Application.put_env(:explorer, ExchangeRates, source: "coin_gecko")
       Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
 
       {:ok, bypass: bypass}

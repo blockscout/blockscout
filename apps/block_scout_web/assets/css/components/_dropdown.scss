@@ -143,3 +143,7 @@ $dropdown-menu-item-hover-background: rgba($secondary, 0.1) !default;
 #swapDropdownMenu {
   -webkit-appearance: caret;
 }
+
+.flex-grow-2 {
+  flex-grow: 2;
+}

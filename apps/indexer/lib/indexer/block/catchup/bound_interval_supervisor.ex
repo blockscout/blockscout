@@ -269,7 +269,20 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
           task: %Task{ref: ref}
         } = state
       ) do
-    Logger.info("Index had to catch up, but the but request is timing out, so retrying immediately.")
+    Logger.info("Index had to catch up, but the request is timing out, so retrying immediately.")
+
+    send(self(), :catchup_index)
+
+    {:noreply, %__MODULE__{state | task: nil}}
+  end
+
+  def handle_info(
+        {_ref1, {:error, :enetunreach}},
+        %__MODULE__{
+          task: _
+        } = state
+      ) do
+    Logger.info("Index had to catch up, but the request is timing out, so retrying immediately.")
 
     send(self(), :catchup_index)
 

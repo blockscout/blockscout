@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.Application do
       ]
       |> cluster_process(Application.get_env(:block_scout_web, :environment))
 
-    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor]
+    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
     Supervisor.start_link(children, opts)
   end
 

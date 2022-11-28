@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.13"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "~> 2.10"},
+      {:phoenix_html, "== 3.0.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 2.0"},
       # use `:cowboy` for WebServer with `:plug`
@@ -131,7 +131,6 @@ defmodule BlockScoutWeb.Mixfile do
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:websocket_client, "~> 1.3"},
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:phoenix_form_awesomplete, "~> 0.1.4"},
       {:ex_json_schema, "~> 0.6.2"},
       # Log json format
       {:logger_json, "~> 3.2"},

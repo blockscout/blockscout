@@ -1,11 +1,6 @@
-<% metadata_for_verification = Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
-<% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "" %>
-<% optimization_runs_value = if metadata_for_verification, do: metadata_for_verification.optimization_runs, else: "200" %>
-<% optimization = if metadata_for_verification, do: metadata_for_verification.optimization, else: true %>
-<% evm_version = if metadata_for_verification, do: metadata_for_verification.evm_version, else: "default" %>
-<% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
-<% contract_source_code_value = if metadata_for_verification, do: metadata_for_verification.contract_source_code, else: "" %>
-<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
+<% metadata_for_verification = if assigns[:retrying], do: nil, else: Chain.get_address_verified_twin_contract(@address_hash).verified_contract %>
+<% changeset = (if assigns[:retrying], do: @changeset, else: SmartContract.merge_twin_contract_with_changeset(metadata_for_verification, @changeset)) |> SmartContract.address_to_checksum_address() %>
+<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: changeset.changes.autodetect_constructor_args %>
 <% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
   <%= render BlockScoutWeb.CommonComponentsView, "_channel_disconnected_message.html", text: gettext("Connection Lost") %>
@@ -13,24 +8,24 @@
   <div class="new-smart-contract-form">
       <h1 class="smart-contract-title"><%= gettext "New Solidity Smart Contract Verification" %></h1>
 
-      <%= form_for @changeset,
+      <%= form_for changeset,
           address_contract_verification_path(@conn, :create),
           [],
           fn f -> %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", address_hash: @address_hash, f: f %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_address_field.html", f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name.", contract_name_value: contract_name_value %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_contract_name_field.html", f: f, tooltip: "Must match the name specified in the code. For example, in <span class=\"tooltip-quote\">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name." %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_include_nightly_builds_field.html", f: f %>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_version: compiler_version, compiler_versions: @compiler_versions, tooltip: "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_compiler_field.html", f: f, compiler_versions: @compiler_versions, tooltip: "The compiler version is specified in <span class=\"tooltip-quote\">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class=\"tooltip-quote\">solc —version</span> to check." %>
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label :evm_version, :evm_version, gettext("EVM Version") %>
             <div class="center-column">
-              <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", selected: evm_version, "aria-describedby": "evm-version-help-block" %>
+              <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", "aria-describedby": "evm-version-help-block" %>
             </div>
             <div class="smart-contract-form-group-tooltip">The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version. <a href="https://forum.poa.network/t/smart-contract-verification-evm-version-details/2318" target="_blank">EVM version details</a>.</div>
           </div>
@@ -42,12 +37,12 @@
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
-                  <%= radio_button f, :optimization, false, checked: !optimization, class: "form-check-input optimization-false" %>
+                  <%= radio_button f, :optimization, false, class: "form-check-input optimization-false" %>
                   <div class="radio-icon"></div>
                   <%= label :smart_contract_optimization, :false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
-                  <%= radio_button f, :optimization, true, checked: optimization, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
+                  <%= radio_button f, :optimization, true, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
                   <div class="radio-icon"></div>
                   <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "radio-text" %>
                 </div>
@@ -58,11 +53,11 @@
           </div>
         </div>
 
-        <div class="smart-contract-form-group optimization-runs">
+        <div class="smart-contract-form-group optimization-runs" style="<%= if !changeset.changes.optimization, do: "display: none;"%>">
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :name, gettext("Optimization runs") %>
             <div class="center-column">
-              <%= text_input f, :optimization_runs, value: 200, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs", value: optimization_runs_value %>
+              <%= text_input f, :optimization_runs, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs" %>
             </div>
             <div class="smart-contract-form-group-tooltip"></div>
           </div>
@@ -72,14 +67,14 @@
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :contract_source_code, gettext("Enter the Solidity Contract Code") %>
             <div class="center-column">
-              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block", value: contract_source_code_value %>
+              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
               <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger form-error", "data-test": "contract-source-code-error" %>
             </div>
             <div class="smart-contract-form-group-tooltip">We recommend using flattened code. This is necessary if your code utilizes a library or inherits dependencies. Use the <a href="https://github.com/poanetwork/solidity-flattener" target="_blank">POA solidity flattener or the <a href="https://www.npmjs.com/package/truffle-flattener" target="_blank">truffle flattener</a>.</div>
           </div>
         </div>
 
-        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_fetch_constructor_args.html", f: f, fetch_constructor_arguments_automatically: fetch_constructor_arguments_automatically %>
+        <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_fetch_constructor_args.html", f: f %>
 
         <%= render BlockScoutWeb.AddressContractVerificationCommonFieldsView, "_constructor_args.html", f: f, display_constructor_arguments_text_area: display_constructor_arguments_text_area %>
 

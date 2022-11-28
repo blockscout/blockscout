@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.Tokens.HolderControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  alias Explorer.Chain.Hash
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Hash}
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do

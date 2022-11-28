@@ -1124,6 +1124,112 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "block_to_gas_used_by_1559_txs/1" do
+    test "sum of gas_usd from all transactions including glegacy" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 0,
+        max_priority_fee_per_gas: 3
+      )
+
+      insert(:transaction,
+        gas_used: 6,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 2
+      )
+
+      assert Decimal.new(10) == Chain.block_to_gas_used_by_1559_txs(block.hash)
+    end
+  end
+
+  describe "block_to_priority_fee_of_1559_txs/1" do
+    test "with transactions: tx.max_fee_per_gas = 0" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 0,
+        max_priority_fee_per_gas: 3
+      )
+
+      assert Decimal.new(0) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas >= tx.max_priority_fee_per_gas" do
+      block = insert(:block, base_fee_per_gas: 1)
+
+      insert(:transaction,
+        gas_used: 3,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 5,
+        max_priority_fee_per_gas: 1
+      )
+
+      assert Decimal.new(3) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas < tx.max_priority_fee_per_gas" do
+      block = insert(:block, base_fee_per_gas: 4)
+
+      insert(:transaction,
+        gas_used: 4,
+        cumulative_gas_used: 3,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1,
+        max_fee_per_gas: 5,
+        max_priority_fee_per_gas: 3
+      )
+
+      assert Decimal.new(4) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "with legacy transactions" do
+      block = insert(:block, base_fee_per_gas: 1)
+
+      insert(:transaction,
+        gas_price: 5,
+        gas_used: 6,
+        cumulative_gas_used: 6,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1
+      )
+
+      assert Decimal.new(24) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+
+    test "0 in blockchain with no EIP-1559 implemented" do
+      block = insert(:block, base_fee_per_gas: nil)
+
+      insert(:transaction,
+        gas_price: 1,
+        gas_used: 4,
+        cumulative_gas_used: 4,
+        block_number: block.number,
+        block_hash: block.hash,
+        index: 1
+      )
+
+      assert 0 == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+    end
+  end
+
   describe "block_to_transaction_count/1" do
     test "without transactions" do
       block = insert(:block)
@@ -3501,6 +3607,48 @@ defmodule Explorer.ChainTest do
 
     test "with block without transactions", %{block: block, emission_reward: emission_reward} do
       assert emission_reward.reward == Chain.block_reward(block.number)
+    end
+  end
+
+  describe "block_reward_by_parts/1" do
+    setup do
+      {:ok, emission_reward: insert(:emission_reward)}
+    end
+
+    test "without uncles", %{emission_reward: %{reward: reward, block_range: range}} do
+      block = build(:block, number: range.from, base_fee_per_gas: 5, uncles: [])
+
+      tx1 = build(:transaction, gas_price: 1, gas_used: 1, block_number: block.number, block_hash: block.hash)
+      tx2 = build(:transaction, gas_price: 1, gas_used: 2, block_number: block.number, block_hash: block.hash)
+
+      tx3 =
+        build(:transaction,
+          gas_price: 1,
+          gas_used: 3,
+          block_number: block.number,
+          block_hash: block.hash,
+          max_priority_fee_per_gas: 1
+        )
+
+      expected_txn_fees = %Wei{value: Decimal.new(6)}
+      expected_burned_fees = %Wei{value: Decimal.new(30)}
+      expected_uncle_reward = %Wei{value: Decimal.new(0)}
+
+      assert %{
+               static_reward: ^reward,
+               txn_fees: ^expected_txn_fees,
+               burned_fees: ^expected_burned_fees,
+               uncle_reward: ^expected_uncle_reward
+             } = Chain.block_reward_by_parts(block, [tx1, tx2, tx3])
+    end
+
+    test "with uncles", %{emission_reward: %{reward: reward, block_range: range}} do
+      block =
+        build(:block, number: range.from, uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"])
+
+      expected_uncle_reward = Wei.mult(reward, Decimal.from_float(1 / 32))
+
+      assert %{uncle_reward: ^expected_uncle_reward} = Chain.block_reward_by_parts(block, [])
     end
   end
 

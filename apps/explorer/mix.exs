@@ -89,6 +89,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
+      {:phoenix_html, "== 3.0.4"},
       {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
@@ -112,6 +113,7 @@ defmodule Explorer.Mixfile do
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
       {:tesla, "~> 1.3.3"},
+      {:cbor, "~> 1.0"},
       # Log json format
       {:logger_json, "~> 3.2"},
       {:observer_cli, "~> 1.6"},

@@ -60,7 +60,8 @@ defmodule BlockScoutWeb.Notifier do
             ChangesetView
             |> View.render_to_string("error.json",
               changeset: changeset,
-              conn: conn
+              conn: conn,
+              retrying: true
             )
 
           {:error, result}

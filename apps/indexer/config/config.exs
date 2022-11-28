@@ -46,7 +46,8 @@ config :indexer,
   last_block: System.get_env("LAST_BLOCK") || "",
   metrics_enabled: System.get_env("METRICS_ENABLED") || false,
   trace_first_block: System.get_env("TRACE_FIRST_BLOCK") || "",
-  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || ""
+  trace_last_block: System.get_env("TRACE_LAST_BLOCK") || "",
+  fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block")
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?:
