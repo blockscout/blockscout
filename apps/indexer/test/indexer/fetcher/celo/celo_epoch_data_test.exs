@@ -24,7 +24,6 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     CeloElectionRewards,
     CeloEpochRewards,
     CeloPendingEpochOperation,
-    Hash,
     Wei
   }
 
@@ -181,15 +180,18 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     setup [:setup_voter_rewards_when_revoked_block_before]
 
     test "calculates the rewards", %{
+      block_hash: block_hash,
       block_number: block_number,
       block_timestamp: block_timestamp,
       voter_hash: voter_hash,
       group_hash: group_hash
     } do
       assert CeloEpochDataFetcher.get_voter_rewards(%{
+               block_hash: block_hash,
                block_number: block_number,
                block_timestamp: block_timestamp
              }) == %{
+               block_hash: block_hash,
                block_number: block_number,
                block_timestamp: block_timestamp,
                voter_rewards: [
@@ -197,6 +199,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    account_hash: voter_hash,
                    associated_account_hash: group_hash,
                    amount: 0,
+                   block_hash: block_hash,
                    block_number: block_number,
                    block_timestamp: block_timestamp,
                    reward_type: "voter"
@@ -210,15 +213,18 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     setup [:setup_voter_rewards_when_revoked_at_epoch_block]
 
     test "calculates the rewards", %{
+      block_hash: block_hash,
       block_number: block_number,
       block_timestamp: block_timestamp,
       voter_hash: voter_hash,
       group_hash: group_hash
     } do
       assert CeloEpochDataFetcher.get_voter_rewards(%{
+               block_hash: block_hash,
                block_number: block_number,
                block_timestamp: block_timestamp
              }) == %{
+               block_hash: block_hash,
                block_number: block_number,
                block_timestamp: block_timestamp,
                voter_rewards: [
@@ -226,6 +232,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    account_hash: voter_hash,
                    associated_account_hash: group_hash,
                    amount: 0,
+                   block_hash: block_hash,
                    block_number: block_number,
                    block_timestamp: block_timestamp,
                    reward_type: "voter"
@@ -241,10 +248,12 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     test "it fetches them from the db for a block", context do
       assert CeloEpochDataFetcher.get_validator_and_group_rewards(%{
                block_number: context.block_number,
-               block_timestamp: context.block_timestamp
+               block_timestamp: context.block_timestamp,
+               block_hash: context.block_hash
              }) == %{
                block_number: context.block_number,
                block_timestamp: context.block_timestamp,
+               block_hash: context.block_hash,
                validator_rewards: [
                  %{
                    account_hash: context.validator_1_hash,
@@ -252,6 +261,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.group_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "validator"
                  },
                  %{
@@ -260,6 +270,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.group_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "validator"
                  }
                ],
@@ -270,6 +281,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.validator_1_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "group"
                  },
                  %{
@@ -278,6 +290,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.validator_2_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "group"
                  }
                ]
@@ -292,6 +305,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       assert CeloEpochDataFetcher.get_validator_and_group_rewards(%{
                block_number: context.block_number,
                block_timestamp: context.block_timestamp,
+               block_hash: context.block_hash,
                validator_rewards: [
                  %{
                    account_hash: context.validator_1_hash,
@@ -299,6 +313,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.group_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "validator"
                  },
                  %{
@@ -307,12 +322,14 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.group_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "validator"
                  }
                ]
              }) == %{
                block_number: context.block_number,
                block_timestamp: context.block_timestamp,
+               block_hash: context.block_hash,
                group_rewards: [
                  %{
                    account_hash: context.group_hash,
@@ -320,6 +337,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.validator_1_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "group"
                  },
                  %{
@@ -328,6 +346,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.validator_2_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "group"
                  }
                ],
@@ -338,6 +357,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.group_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "validator"
                  },
                  %{
@@ -346,6 +366,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                    associated_account_hash: context.group_hash,
                    block_number: context.block_number,
                    block_timestamp: context.block_timestamp,
+                   block_hash: context.block_hash,
                    reward_type: "validator"
                  }
                ]
@@ -503,6 +524,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
             associated_account_hash: group_hash,
             block_number: block_number,
             block_timestamp: ~U[2022-05-10 14:18:54.093055Z],
+            block_hash: block_hash,
             reward_type: "voter"
           }
         ],
@@ -513,6 +535,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
             associated_account_hash: group_hash,
             block_number: block_number,
             block_timestamp: ~U[2022-05-10 14:18:54.093055Z],
+            block_hash: block_hash,
             reward_type: "validator"
           }
         ],
@@ -523,6 +546,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
             associated_account_hash: validator_hash,
             block_number: block_number,
             block_timestamp: ~U[2022-05-10 14:18:54.093055Z],
+            block_hash: block_hash,
             reward_type: "group"
           }
         ]
@@ -637,9 +661,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
       block: %{
         number: block_number,
         hash: block_hash
-      },
-      address_1_hash: address_1_hash,
-      address_2_hash: address_2_hash
+      }
     } do
       assert CeloEpochDataFetcher.get_accounts_epochs(%{
                block_number: block_number,
@@ -900,7 +922,8 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     %Address{hash: group_hash} = insert(:address)
     %Explorer.Chain.CeloCoreContract{address_hash: contract_hash} = insert(:core_contract)
 
-    %Block{number: block_number, timestamp: block_timestamp} = block = insert(:block, number: 10_679_040)
+    %Block{number: block_number, timestamp: block_timestamp, hash: block_hash} =
+      block = insert(:block, number: 10_679_040)
 
     log_1 = insert(:log, block: block, index: 1)
     log_2 = insert(:log, block: block, index: 2)
@@ -933,6 +956,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     Map.merge(context, %{
       block_number: block_number,
       block_timestamp: block_timestamp,
+      block_hash: block_hash,
       group_hash: group_hash,
       validator_1_hash: validator_1_hash,
       validator_2_hash: validator_2_hash
@@ -1003,7 +1027,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
 
     %Address{hash: voter_hash} = insert(:address)
     %Address{hash: group_hash} = insert(:address)
-    insert(:celo_account, address: group_hash)
+
     %Explorer.Chain.CeloCoreContract{address_hash: contract_hash} = insert(:core_contract)
 
     %Block{number: second_to_last_block_in_epoch_number} =
@@ -1345,6 +1369,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     )
 
     Map.merge(context, %{
+      block_hash: epoch_block.hash,
       block_number: epoch_block.number,
       block_timestamp: epoch_block.timestamp,
       voter_hash: voter_address.hash,
@@ -1449,6 +1474,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     )
 
     Map.merge(context, %{
+      block_hash: epoch_block.hash,
       block_number: epoch_block.number,
       block_timestamp: epoch_block.timestamp,
       voter_hash: voter_address.hash,

@@ -24,6 +24,7 @@ defmodule Explorer.Factory do
     CeloContractEvent,
     CeloCoreContract,
     CeloElectionRewards,
+    CeloEpochRewards,
     CeloPendingEpochOperation,
     CeloVoterVotes,
     ContractMethod,
@@ -824,8 +825,17 @@ defmodule Explorer.Factory do
       amount: Decimal.new(1),
       associated_account_hash: address_hash(),
       block_number: block_number(),
+      block_hash: block_hash(),
       block_timestamp: DateTime.utc_now(),
       reward_type: "voter"
+    }
+  end
+
+  def celo_epoch_rewards_factory do
+    %CeloEpochRewards{
+      block_number: block_number(),
+      block_hash: block_hash(),
+      epoch_number: round(block_number() / 17_280)
     }
   end
 

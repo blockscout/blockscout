@@ -65,6 +65,7 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
           account_hash: to_address.hash,
           associated_account_hash: from_address_hash_voter,
           block_number: block.number,
+          block_hash: block.hash,
           block_timestamp: block.timestamp,
           amount: 123_456_789_012_345_678_901,
           reward_type: "voter"
@@ -87,6 +88,7 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
           associated_account_hash: from_address_hash_voter,
           block_number: block_2.number,
           block_timestamp: block_2.timestamp,
+          block_hash: block_2.hash,
           amount: 123_456_789_012_345_678_901,
           reward_type: "voter"
         )
@@ -98,6 +100,7 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
         associated_account_hash: from_address_hash_voter,
         block_number: ignored_block_before.number,
         block_timestamp: ignored_block_before.timestamp,
+        block_hash: ignored_block_before.hash,
         amount: 123_456_789_012_345_678_901,
         reward_type: "voter"
       )
@@ -108,6 +111,7 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
         associated_account_hash: from_address_hash_voter,
         block_number: ignored_block_after.number,
         block_timestamp: ignored_block_after.timestamp,
+        block_hash: ignored_block_after.hash,
         amount: 123_456_789_012_345_678_901,
         reward_type: "voter"
       )
@@ -119,6 +123,7 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
           associated_account_hash: from_address_hash_validator,
           block_number: block_2.number,
           block_timestamp: block_2.timestamp,
+          block_hash: block_2.hash,
           amount: 456_789_012_345_678_901_234,
           reward_type: "validator"
         )
@@ -130,6 +135,7 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
         account_hash: from_address_hash_validator,
         block_number: block.number,
         block_timestamp: block.timestamp,
+        block_hash: block.hash,
         amount: 789_012_345_678_901_234_567,
         reward_type: "validator"
       )
@@ -141,6 +147,7 @@ defmodule Explorer.CSV.Export.EpochTransactionsCsvExporterTest do
           associated_account_hash: from_address_hash_group,
           block_number: block.number,
           block_timestamp: block.timestamp,
+          block_hash: block.hash,
           amount: 789_012_345_678_901_234_567,
           reward_type: "group"
         )

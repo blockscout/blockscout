@@ -1,7 +1,7 @@
-defmodule BlockScoutWeb.GenericPagingOptionsTest do
+defmodule Explorer.GenericPagingOptionsTest do
   use Explorer.DataCase
 
-  alias BlockScoutWeb.GenericPagingOptions
+  alias Explorer.GenericPagingOptions
 
   describe "extract_paging_options_from_params/4" do
     test "provides default values for no order fields" do
@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.GenericPagingOptionsTest do
                  30,
                  ["count"],
                  "asc",
-                 10
+                 30
                )
     end
 
@@ -140,6 +140,59 @@ defmodule BlockScoutWeb.GenericPagingOptionsTest do
                  ["txns", "name", "date"],
                  "desc",
                  10
+               )
+    end
+
+    test "does not allow to provide negative page number or page size" do
+      assert %{
+               order_dir: "desc",
+               order_field: "txns",
+               page_number: 1,
+               page_size: 10
+             } ==
+               GenericPagingOptions.extract_paging_options_from_params(
+                 %{
+                   "page_number" => "-2",
+                   "page_size" => "-1"
+                 },
+                 101,
+                 ["txns", "name", "date"],
+                 "desc",
+                 10
+               )
+    end
+  end
+
+  describe "extract_paging_options_from_params/2" do
+    test "does not allow to exceed default page size" do
+      assert %{
+               order_dir: nil,
+               order_field: nil,
+               page_number: 1,
+               page_size: 100
+             } ==
+               GenericPagingOptions.extract_paging_options_from_params(
+                 %{
+                   "page_number" => "1",
+                   "page_size" => "101"
+                 },
+                 100
+               )
+    end
+
+    test "does not allow to provide negative page number or page size" do
+      assert %{
+               order_dir: nil,
+               order_field: nil,
+               page_number: 1,
+               page_size: 100
+             } ==
+               GenericPagingOptions.extract_paging_options_from_params(
+                 %{
+                   "page_number" => "-1",
+                   "page_size" => "-101"
+                 },
+                 100
                )
     end
   end
