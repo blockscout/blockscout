@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.VerifiedContractsController do
 
   import Ecto.Query
 
-  alias BlockScoutWeb.GenericPagingOptions, as: PagingOptions
   alias BlockScoutWeb.VerifiedContractsView
   alias Explorer.Chain.{SmartContract, SmartContractTransactionCount}
+  alias Explorer.GenericPagingOptions, as: PagingOptions
 
   @default_page_size 50
 

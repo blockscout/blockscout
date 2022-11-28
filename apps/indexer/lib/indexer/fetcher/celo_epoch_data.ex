@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
 
   def get_voter_rewards(%{voter_rewards: _voter_rewards} = block_with_rewards), do: block_with_rewards
 
-  def get_voter_rewards(%{block_number: block_number, block_timestamp: block_timestamp} = block) do
+  def get_voter_rewards(%{block_number: block_number, block_timestamp: block_timestamp, block_hash: block_hash} = block) do
     account_group_pairs = ValidatorGroupVoteActivatedEvent.get_account_group_pairs_with_activated_votes(block_number)
 
     voter_rewards =
@@ -144,6 +144,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
           amount: reward_value,
           associated_account_hash: account_group_pair.group_hash,
           block_number: block_number,
+          block_hash: block_hash,
           block_timestamp: block_timestamp,
           reward_type: "voter"
         }
@@ -174,7 +175,9 @@ defmodule Indexer.Fetcher.CeloEpochData do
       ),
       do: block_with_rewards
 
-  def get_validator_and_group_rewards(%{block_number: block_number, block_timestamp: block_timestamp} = block) do
+  def get_validator_and_group_rewards(
+        %{block_number: block_number, block_timestamp: block_timestamp, block_hash: block_hash} = block
+      ) do
     validator_and_group_rewards =
       ValidatorEpochPaymentDistributedEvent.get_validator_and_group_rewards_for_block(block_number)
 
@@ -186,6 +189,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
           associated_account_hash: reward.group,
           block_number: block_number,
           block_timestamp: block_timestamp,
+          block_hash: block_hash,
           reward_type: "validator"
         }
       end)
@@ -198,6 +202,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
           associated_account_hash: reward.validator,
           block_number: block_number,
           block_timestamp: block_timestamp,
+          block_hash: block_hash,
           reward_type: "group"
         }
       end)

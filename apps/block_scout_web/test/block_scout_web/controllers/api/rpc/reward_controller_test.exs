@@ -104,10 +104,10 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %Address{hash: group_hash} = insert(:address)
       insert(:celo_account, address: group_hash)
 
-      %Block{number: block_1_number, timestamp: block_1_timestamp} =
+      %Block{number: block_1_number, timestamp: block_1_timestamp, hash: block_1_hash} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-01T17:42:43.162804Z])
 
-      %Block{number: block_2_number, timestamp: block_2_timestamp} =
+      %Block{number: block_2_number, timestamp: block_2_timestamp, hash: block_2_hash} =
         insert(:block, number: 17_280 * 2, timestamp: ~U[2022-01-02T17:42:43.162804Z])
 
       insert(
@@ -116,7 +116,8 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         amount: 80,
         associated_account_hash: group_hash,
         block_number: block_1_number,
-        block_timestamp: block_1_timestamp
+        block_timestamp: block_1_timestamp,
+        block_hash: block_1_hash
       )
 
       insert(
@@ -125,7 +126,8 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         amount: 20,
         associated_account_hash: group_hash,
         block_number: block_2_number,
-        block_timestamp: block_2_timestamp
+        block_timestamp: block_2_timestamp,
+        block_hash: block_2_hash
       )
 
       expected_result = %{
@@ -246,10 +248,10 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %Address{hash: group_hash} = insert(:address)
       %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
 
-      %Block{number: block_1_number, timestamp: block_1_timestamp} =
+      %Block{number: block_1_number, timestamp: block_1_timestamp, hash: block_1_hash} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
 
-      %Block{number: block_2_number, timestamp: block_2_timestamp} =
+      %Block{number: block_2_number, timestamp: block_2_timestamp, hash: block_2_hash} =
         insert(:block, number: 17_280 * 2, timestamp: ~U[2022-01-06T17:42:43.162804Z])
 
       insert(
@@ -258,7 +260,8 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         amount: 80,
         associated_account_hash: group_hash,
         block_number: block_1_number,
-        block_timestamp: block_1_timestamp
+        block_timestamp: block_1_timestamp,
+        block_hash: block_1_hash
       )
 
       insert(
@@ -267,7 +270,8 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         amount: 20,
         associated_account_hash: group_hash,
         block_number: block_2_number,
-        block_timestamp: block_2_timestamp
+        block_timestamp: block_2_timestamp,
+        block_hash: block_2_hash
       )
 
       expected_result = %{
@@ -388,7 +392,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %Address{hash: group_hash} = insert(:address)
       %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
 
-      %Block{number: block_number, timestamp: block_timestamp} =
+      %Block{number: block_number, timestamp: block_timestamp, hash: block_hash} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
 
       insert(
@@ -398,6 +402,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         associated_account_hash: group_hash,
         block_number: block_number,
         block_timestamp: block_timestamp,
+        block_hash: block_hash,
         reward_type: "validator"
       )
 
@@ -408,6 +413,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         associated_account_hash: group_hash,
         block_number: block_number,
         block_timestamp: block_timestamp,
+        block_hash: block_hash,
         reward_type: "validator"
       )
 
@@ -451,7 +457,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %Address{hash: group_hash} = insert(:address)
       %CeloAccount{name: group_name} = insert(:celo_account, address: group_hash)
 
-      %Block{number: block_number, timestamp: block_timestamp} =
+      %Block{number: block_number, timestamp: block_timestamp, hash: block_hash} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
 
       insert(
@@ -461,6 +467,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         associated_account_hash: group_hash,
         block_number: block_number,
         block_timestamp: block_timestamp,
+        block_hash: block_hash,
         reward_type: "validator"
       )
 
@@ -471,6 +478,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         associated_account_hash: group_hash,
         block_number: block_number,
         block_timestamp: block_timestamp,
+        block_hash: block_hash,
         reward_type: "validator"
       )
 
@@ -601,7 +609,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
       %CeloAccount{name: validator_1_name} = insert(:celo_account, address: validator_1_hash)
       %CeloAccount{name: validator_2_name} = insert(:celo_account, address: validator_2_hash)
 
-      %Block{number: block_number, timestamp: block_timestamp} =
+      %Block{number: block_number, timestamp: block_timestamp, hash: block_hash} =
         insert(:block, number: 17_280, timestamp: ~U[2022-01-05T17:42:43.162804Z])
 
       insert(
@@ -611,6 +619,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         associated_account_hash: validator_1_hash,
         block_number: block_number,
         block_timestamp: block_timestamp,
+        block_hash: block_hash,
         reward_type: "group"
       )
 
@@ -621,6 +630,7 @@ defmodule BlockScoutWeb.API.RPC.RewardControllerTest do
         associated_account_hash: validator_2_hash,
         block_number: block_number,
         block_timestamp: block_timestamp,
+        block_hash: block_hash,
         reward_type: "group"
       )
 
