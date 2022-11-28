@@ -172,7 +172,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   defp base_url do
-    config(:base_url) || "https://pro-api.coingecko.com/api/v3"
+    config(:base_url) || "https://api.coingecko.com/api/v3"
   end
 
   defp get_btc_price(currency \\ "usd") do
