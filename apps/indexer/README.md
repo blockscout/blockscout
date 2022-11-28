@@ -21,6 +21,7 @@ Some data has to be extracted from already fetched data, and there're several tr
 - `address_coin_balances`: detects coin balance-changing entities (transactions, minted blocks, etc) to create coin balance entities for further fetching
 - `token_transfers`: parses logs to extract token transfers
 - `mint_transfers`: parses logs to extract token mint transfers
+- `transaction_actions`: parses logs to extract transaction actions
 - `address_token_balances`: creates token balance entities for futher fetching, based on detected token transfers
 - `blocks`: extracts block signer hash from additional data for Clique chains
 
@@ -36,6 +37,7 @@ Both block fetchers retrieve/extract the blocks themselves and the following add
 - `transactions`
 - `logs`
 - `token_transfers`
+- `transaction_actions`
 - `addresses`
 
 The following stubs for further async fetching are inserted as well:

@@ -27,6 +27,7 @@ defmodule Indexer.Supervisor do
     TokenInstance,
     TokenTotalSupplyOnDemand,
     TokenUpdater,
+    TransactionAction,
     UncleBlock
   }
 
@@ -119,6 +120,8 @@ defmodule Indexer.Supervisor do
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
          ]},
+        {TransactionAction.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenBalance.Supervisor,

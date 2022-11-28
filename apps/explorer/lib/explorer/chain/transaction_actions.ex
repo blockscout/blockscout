@@ -9,6 +9,7 @@ defmodule Explorer.Chain.TransactionActions do
   }
 
   @required_attrs ~w(hash protocol data type log_index)a
+  @supported_protocols [:uniswap_v3, :"opensea_v1.1", :wrapping, :approval, :zkbob]
 
   @typedoc """
   * `hash` - transaction hash
@@ -26,7 +27,7 @@ defmodule Explorer.Chain.TransactionActions do
         }
 
   schema "transaction_actions" do
-    field(:protocol, Ecto.Enum, values: [:uniswap_v3, :"opensea_v1.1", :wrapping, :approval, :zkbob])
+    field(:protocol, Ecto.Enum, values: @supported_protocols)
     field(:data, :map)
 
     field(:type, Ecto.Enum,
@@ -60,5 +61,9 @@ defmodule Explorer.Chain.TransactionActions do
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:hash)
+  end
+
+  def supported_protocols() do
+    @supported_protocols
   end
 end

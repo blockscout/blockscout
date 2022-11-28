@@ -81,14 +81,14 @@ defmodule Indexer.Transform.TransactionActions do
   @doc """
   Returns a list of transaction actions given a list of logs.
   """
-  def parse(logs) do
+  def parse(logs, protocols_to_rewrite \\ []) do
     actions = []
 
     chain_id = NetVersion.get_version()
 
     logs
     |> logs_group_by_txs()
-    |> clear_actions()
+    |> clear_actions(protocols_to_rewrite)
 
     # create tokens cache if not exists
     if :ets.whereis(:tokens_data_cache) == :undefined do
@@ -457,10 +457,17 @@ defmodule Indexer.Transform.TransactionActions do
   defp atomized_key("95d89b41"), do: :symbol
   defp atomized_key("313ce567"), do: :decimals
 
-  defp clear_actions(logs_grouped) do
+  defp clear_actions(logs_grouped, protocols_to_clear) do
     logs_grouped
     |> Enum.each(fn {tx_hash, _} ->
-      Repo.delete_all(from(ta in TransactionActions, where: ta.hash == ^tx_hash))
+      query =
+        if Enum.empty?(protocols_to_clear) do
+          from(ta in TransactionActions, where: ta.hash == ^tx_hash)
+        else
+          from(ta in TransactionActions, where: ta.hash == ^tx_hash and ta.protocol in ^protocols_to_clear)
+        end
+
+      Repo.delete_all(query)
     end)
   end
 
@@ -652,10 +659,13 @@ defmodule Indexer.Transform.TransactionActions do
 
   defp logs_group_by_txs(logs) do
     logs
-    |> Enum.reduce(%{}, fn log, acc ->
-      acc = Map.put_new(acc, log.transaction_hash, [])
-      Map.put(acc, log.transaction_hash, Enum.reverse([log | Enum.reverse(acc[log.transaction_hash])]))
-    end)
+    |> Enum.group_by(& &1.transaction_hash)
+
+    # logs
+    # |> Enum.reduce(%{}, fn log, acc ->
+    #   acc = Map.put_new(acc, log.transaction_hash, [])
+    #   Map.put(acc, log.transaction_hash, Enum.reverse([log | Enum.reverse(acc[log.transaction_hash])]))
+    # end)
   end
 
   defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
