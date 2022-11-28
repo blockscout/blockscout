@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     get("/health", HealthController, :health)
     get("/health/liveness", HealthController, :alive?)
+    get("/gas-price-oracle", V1.GasPriceOracleController, :gas_price_oracle)
 
     if Application.get_env(:block_scout_web, __MODULE__)[:reading_enabled] do
       get("/supply", V1.SupplyController, :supply)
