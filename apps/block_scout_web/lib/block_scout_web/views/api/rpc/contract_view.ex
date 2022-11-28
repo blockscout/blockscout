@@ -52,6 +52,18 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     |> set_external_libraries(contract)
     |> set_verified_contract_data(contract, address, optimization)
     |> set_proxy_info(contract)
+    |> set_compiler_settings(contract)
+  end
+
+  defp set_compiler_settings(contract_output, contract) when contract == %{}, do: contract_output
+
+  defp set_compiler_settings(contract_output, contract) do
+    if is_nil(contract.compiler_settings) do
+      contract_output
+    else
+      contract_output
+      |> Map.put(:CompilerSettings, contract.compiler_settings)
+    end
   end
 
   defp set_proxy_info(contract_output, contract) when contract == %{} do

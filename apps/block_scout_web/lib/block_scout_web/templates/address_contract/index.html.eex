@@ -131,7 +131,22 @@
           </section>
         <% end)%>
 
-        <%= if !is_nil(target_contract.abi) do %>>
+        <%= if !is_nil(target_contract.compiler_settings) do %>
+          <section>
+            <div class="d-flex justify-content-between align-items-baseline">
+              <h3><%= gettext "Compiler Settings" %></h3>
+              <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(target_contract.compiler_settings) %>" aria-label="Copy Compiler Settings">
+                <%= gettext "Copy Compiler Settings" %>
+              </button>
+            </div>
+            <div class="tile tile-muted mb-4">
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(target_contract.compiler_settings) %></code>
+              </pre>
+            </div>
+          </section>
+        <% end %>
+
+        <%= if !is_nil(target_contract.abi) do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "Contract ABI" %></h3>

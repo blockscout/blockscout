@@ -48,7 +48,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HTTPoison.post(url, Jason.encode!(normalize_creation_bytecode(body)), headers, recv_timeout: @post_timeout) do
       {:ok, %Response{body: body, status_code: 200}} ->
         proccess_verifier_response(body)
 
@@ -124,6 +124,10 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def proccess_verifier_response(%{"versions" => versions}), do: {:ok, versions}
 
   def proccess_verifier_response(other), do: {:error, other}
+
+  def normalize_creation_bytecode(%{"creation_bytecode" => ""} = map), do: Map.replace(map, "creation_bytecode", nil)
+
+  def normalize_creation_bytecode(map), do: map
 
   def multiple_files_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/multiple-files"
 
