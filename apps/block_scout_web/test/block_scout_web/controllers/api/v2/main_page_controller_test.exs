@@ -50,6 +50,18 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
     end
   end
 
+  describe "/main-page/indexing-status" do
+    test "get indexing status", %{conn: conn} do
+      request = get(conn, "/api/v2/main-page/indexing-status")
+      assert request = json_response(request, 200)
+
+      assert Map.has_key?(request, "finished_indexing_blocks")
+      assert Map.has_key?(request, "finished_indexing")
+      assert Map.has_key?(request, "indexed_blocks_ratio")
+      assert Map.has_key?(request, "indexed_inernal_transactions_ratio")
+    end
+  end
+
   defp compare_item(%Block{} = block, json) do
     assert to_string(block.hash) == json["hash"]
     assert block.number == json["height"]
