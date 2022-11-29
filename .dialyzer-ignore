@@ -43,3 +43,4 @@ lib/indexer/buffered_task.ex:402
 lib/indexer/buffered_task.ex:451
 lib/indexer/memory/monitor.ex:160
 lib/indexer/fetcher/internal_transaction.ex:235
+
