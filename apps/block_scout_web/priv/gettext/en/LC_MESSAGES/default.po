@@ -144,7 +144,7 @@ msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:109
 msgid "APIs"
 msgstr ""
 
@@ -189,13 +189,13 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:28 lib/block_scout_web/templates/address_transaction/index.html.eex:22
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:21 lib/block_scout_web/views/address_internal_transaction_view.ex:11
-#: lib/block_scout_web/views/address_token_transfer_view.ex:11 lib/block_scout_web/views/address_transaction_view.ex:11
+#: lib/block_scout_web/views/address_internal_transaction_view.ex:11 lib/block_scout_web/views/address_token_transfer_view.ex:11
+#: lib/block_scout_web/views/address_transaction_view.ex:11
 msgid "All"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:61
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:64
 msgid "All Tokens"
 msgstr ""
 
@@ -339,13 +339,13 @@ msgid "BlockScout provides analytics data, API, and Smart Contract tools for the
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:24
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:27
 msgid "Blockchain"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:152
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:28
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:31
 msgid "Blocks"
 msgstr ""
 
@@ -430,11 +430,6 @@ msgid "Carbon Offset Fund"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
-msgid "Change Network"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:38
 msgid "Chat"
 msgstr ""
@@ -507,7 +502,7 @@ msgid "Confirmed within"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:154
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:157
 msgid "Connect"
 msgstr ""
 
@@ -623,7 +618,7 @@ msgid "Contract source code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:57
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:60
 msgid "Contracts"
 msgstr ""
 
@@ -986,7 +981,7 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:120
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:123
 msgid "Eth RPC"
 msgstr ""
 
@@ -1029,17 +1024,12 @@ msgid "Failed to decode log data."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:24
-msgid "Favorites"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/_balance_dropdown.html.eex:7
 msgid "Fetching tokens..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:195
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:198
 msgid "Finance Tools"
 msgstr ""
 
@@ -1079,7 +1069,7 @@ msgid "Gas Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:203
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:206
 msgid "Gas Tracker"
 msgstr ""
 
@@ -1111,7 +1101,7 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:110
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:113
 msgid "GraphQL"
 msgstr ""
 
@@ -1246,7 +1236,7 @@ msgid "Last Balance Update"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:160
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:163
 msgid "Learn"
 msgstr ""
 
@@ -1257,7 +1247,7 @@ msgid "Learn more"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:168
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:171
 msgid "Learn, Borrow, Earn"
 msgstr ""
 
@@ -1345,11 +1335,6 @@ msgid "Main Networks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
-msgid "Mainnet"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:51
 #: lib/block_scout_web/templates/layout/app.html.eex:47 lib/block_scout_web/templates/tokens/overview/_details.html.eex:82
 #: lib/block_scout_web/views/address_view.ex:200
@@ -1419,7 +1404,7 @@ msgid "Module"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:136
 msgid "More"
 msgstr ""
 
@@ -1447,7 +1432,7 @@ msgid "Must be set to:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:175
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:178
 msgid "NFT"
 msgstr ""
 
@@ -1594,7 +1579,7 @@ msgid "Pending Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:39
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:42
 msgid "Pending Txs"
 msgstr ""
 
@@ -1664,7 +1649,7 @@ msgid "Query"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:115
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:118
 msgid "RPC"
 msgstr ""
 
@@ -1716,7 +1701,7 @@ msgid "Reset"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:187
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:190
 msgid "Resources"
 msgstr ""
 
@@ -1778,11 +1763,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_search.html.eex:3
 msgid "Search by address, token symbol name, transaction hash, or block number"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
-msgid "Search network"
 msgstr ""
 
 #, elixir-format
@@ -1889,7 +1869,7 @@ msgid "Sources and Metadata JSON"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:181
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:184
 msgid "Spend"
 msgstr ""
 
@@ -1899,7 +1879,7 @@ msgid "Static Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:84
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:87
 msgid "Stats"
 msgstr ""
 
@@ -1920,7 +1900,7 @@ msgid "Success"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:139
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:142
 msgid "Swap"
 msgstr ""
 
@@ -1933,11 +1913,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:62
 msgid "Test Networks"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
-msgid "Testnet"
 msgstr ""
 
 #, elixir-format
@@ -2180,7 +2155,7 @@ msgid "To see accurate decoded input data, the contract must be verified."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:13
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:16
 msgid "Toggle navigation"
 msgstr ""
 
@@ -2279,7 +2254,7 @@ msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:46
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:49
 msgid "Top Celo Holders"
 msgstr ""
 
@@ -2466,11 +2441,6 @@ msgid "Unique character string (TxID) assigned to every verified transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
-msgid "Use the search box to find a hosted network, or select from the list of available networks below."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:392
 msgid "User defined maximum fee (tip) per unit of gas paid to validator for transaction prioritization."
 msgstr ""
@@ -2492,7 +2462,7 @@ msgid "Validated Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:31
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:34
 msgid "Validated Txs"
 msgstr ""
 
@@ -2563,7 +2533,7 @@ msgid "Verified"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:66
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:69
 #: lib/block_scout_web/templates/verified_contracts/index.html.eex:17
 msgid "Verified Contracts"
 msgstr ""
@@ -2590,7 +2560,7 @@ msgid "Verify & publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:71
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:74
 msgid "Verify Contract"
 msgstr ""
 
@@ -2677,7 +2647,7 @@ msgid "Waiting for transaction's confirmation..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:146
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:149
 msgid "Wallet"
 msgstr ""
 
@@ -2970,7 +2940,7 @@ msgid "Locked CELO Balance"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:93
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:96
 msgid "MakerDojo"
 msgstr ""
 
@@ -3010,7 +2980,7 @@ msgid "Voting Addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:88
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:91
 msgid "cLabs"
 msgstr ""
 

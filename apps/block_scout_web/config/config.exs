@@ -26,7 +26,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
   logo_footer: System.get_env("LOGO_FOOTER", "/images/celo_logo.svg"),
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false,
-  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true"
+  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
+  enable_testnet_label: System.get_env("SHOW_TESTNET_LABEL", "false") == "true",
+  testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
