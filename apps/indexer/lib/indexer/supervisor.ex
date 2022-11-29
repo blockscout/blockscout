@@ -7,8 +7,6 @@ defmodule Indexer.Supervisor do
 
   alias Explorer.Celo.InternalTransactionCache
 
-  alias Explorer.Chain
-
   alias Indexer.{
     Block,
     PendingOpsCleaner,
@@ -172,7 +170,6 @@ defmodule Indexer.Supervisor do
       {CeloEpochData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
     ]
 
-
     metrics_enabled = Application.get_env(:indexer, :metrics_enabled)
 
     fetchers_with_metrics =
@@ -182,9 +179,9 @@ defmodule Indexer.Supervisor do
           {Task.Supervisor, name: Indexer.Prometheus.MetricsCron.TaskSupervisor}
         ]
 
-        metrics_processes ++ fetchers_with_amb_bridge_mediators
+        metrics_processes ++ basic_fetchers
       else
-        fetchers_with_amb_bridge_mediators
+        basic_fetchers
       end
 
     Supervisor.init(

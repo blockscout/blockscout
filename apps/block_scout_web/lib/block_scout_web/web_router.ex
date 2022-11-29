@@ -81,7 +81,6 @@ defmodule BlockScoutWeb.WebRouter do
     resources("/tokens", TokensController, only: [:index])
 
     resources "/address", AddressController, only: [:show], private: %{validate: %{"address_id" => :is_address}} do
-
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
 
       resources(
