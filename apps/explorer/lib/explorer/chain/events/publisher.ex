@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Events.Publisher do
   alias Explorer.Celo.Events.ContractEventStream
 
   # Tags from import runner phase
-  @allowed_events ~w(addresses address_coin_balances address_token_balances blocks block_rewards internal_transactions celo_contract_event last_block_number staking_update token_transfers transactions contract_verification_result)a
+  @allowed_events ~w(addresses address_coin_balances address_token_balances blocks block_rewards internal_transactions celo_contract_event last_block_number token_transfers transactions contract_verification_result)a
 
   def broadcast(_data, false), do: :ok
 

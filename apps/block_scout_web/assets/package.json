@@ -107,8 +107,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "/css/app.scss": "<rootDir>/__mocks__/css/app.scss.js",
-      "/css/stakes.scss": "<rootDir>/__mocks__/css/app.scss.js"
+      "/css/app.scss": "<rootDir>/__mocks__/css/app.scss.js"
     }
   }
 }

@@ -11,11 +11,8 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.{
     Block,
-    CalcLpTokensTotalLiqudity,
     PendingOpsCleaner,
-    PendingTransactionsSanitizer,
-    SetAmbBridgedMetadataForTokens,
-    SetOmniBridgedMetadataForTokens
+    PendingTransactionsSanitizer
   }
 
   alias Indexer.Block.{Catchup, Realtime}
@@ -175,22 +172,6 @@ defmodule Indexer.Supervisor do
       {CeloEpochData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
     ]
 
-    fetchers_with_bridged_tokens =
-      if Chain.bridged_tokens_enabled?() do
-        fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
-        [{CalcLpTokensTotalLiqudity, [[], []]} | fetchers_with_omni_status]
-      else
-        basic_fetchers
-      end
-
-    amb_bridge_mediators = Application.get_env(:block_scout_web, :amb_bridge_mediators)
-
-    fetchers_with_amb_bridge_mediators =
-      if amb_bridge_mediators && amb_bridge_mediators !== "" do
-        [{SetAmbBridgedMetadataForTokens, [[], []]} | fetchers_with_bridged_tokens]
-      else
-        fetchers_with_bridged_tokens
-      end
 
     metrics_enabled = Application.get_env(:indexer, :metrics_enabled)
 

@@ -25,10 +25,10 @@ defmodule BlockScoutWeb.EpochTransactionView do
       &Decimal.round(
         &1,
         cond do
-          Decimal.cmp(value, Decimal.new(10_000_000_000_000)) == :lt -> 2
-          Decimal.cmp(value, Decimal.new(100_000_000_000_000)) == :lt -> 5
-          Decimal.cmp(value, Decimal.new(1_000_000_000_000_000)) == :lt -> 4
-          Decimal.cmp(value, Decimal.new(10_000_000_000_000_000)) == :lt -> 3
+          Decimal.compare(value, Decimal.new(10_000_000_000_000)) == :lt -> 2
+          Decimal.compare(value, Decimal.new(100_000_000_000_000)) == :lt -> 5
+          Decimal.compare(value, Decimal.new(1_000_000_000_000_000)) == :lt -> 4
+          Decimal.compare(value, Decimal.new(10_000_000_000_000_000)) == :lt -> 3
           true -> 2
         end
       )

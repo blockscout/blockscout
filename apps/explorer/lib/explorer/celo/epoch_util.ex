@@ -19,7 +19,7 @@ defmodule Explorer.Celo.EpochUtil do
   def calculate_epoch_transaction_count_for_block(bn, epoch_rewards) do
     if is_epoch_block?(bn) do
       additional_transactions_count =
-        if Decimal.cmp(epoch_rewards.reserve_bolster.value, 0) == :gt do
+        if Decimal.compare(epoch_rewards.reserve_bolster.value, 0) == :gt do
           3
         else
           2

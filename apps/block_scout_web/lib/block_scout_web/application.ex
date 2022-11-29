@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.{CampaignBannerCache, LoggerBackend}
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.{RealtimeEventHandler, StakingEventHandler}
+  alias BlockScoutWeb.{RealtimeEventHandler}
   alias Prometheus.{Exporter, GenericInstrumenter}
 
   def start(_type, _args) do
@@ -29,7 +29,6 @@ defmodule BlockScoutWeb.Application do
         child_spec(Endpoint, []),
         {Absinthe.Subscription, Endpoint},
         {RealtimeEventHandler, name: RealtimeEventHandler},
-        {StakingEventHandler, name: StakingEventHandler},
         {BlocksIndexedCounter, name: BlocksIndexedCounter},
         {CampaignBannerCache, name: CampaignBannerCache}
       ]

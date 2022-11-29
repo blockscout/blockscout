@@ -5240,7 +5240,7 @@ defmodule Explorer.ChainTest do
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
-        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end
@@ -5788,173 +5788,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "staking_pools/3" do
-    test "validators staking pools" do
-      inserted_validator = insert(:staking_pool, is_active: true, is_validator: true)
-      insert(:staking_pool, is_active: true, is_validator: false)
-
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [%{pool: gotten_validator}] = Chain.staking_pools(:validator, options)
-      assert inserted_validator.staking_address_hash == gotten_validator.staking_address_hash
-    end
-
-    test "active staking pools" do
-      inserted_pool = insert(:staking_pool, is_active: true)
-      insert(:staking_pool, is_active: false)
-
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [%{pool: gotten_pool}] = Chain.staking_pools(:active, options)
-      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
-    end
-
-    test "all active staking pools ordered by staking_address" do
-      address1 = Factory.address_hash()
-      address2 = Factory.address_hash()
-      address3 = Factory.address_hash()
-
-      assert address1 < address2 and address2 < address3
-
-      # insert pools in descending order
-      insert(:staking_pool, is_active: true, staking_address_hash: address3)
-      insert(:staking_pool, is_active: true, staking_address_hash: address2)
-      insert(:staking_pool, is_active: true, staking_address_hash: address1)
-
-      # get all active pools in ascending order
-      assert [%{pool: pool1}, %{pool: pool2}, %{pool: pool3}] = Chain.staking_pools(:active, :all)
-      assert pool1.staking_address_hash == address1
-      assert pool2.staking_address_hash == address2
-      assert pool3.staking_address_hash == address3
-    end
-
-    test "staking pools ordered by stakes_ratio, is_active, and staking_address_hash" do
-      address1 = Factory.address_hash()
-      address2 = Factory.address_hash()
-      address3 = Factory.address_hash()
-      address4 = Factory.address_hash()
-      address5 = Factory.address_hash()
-      address6 = Factory.address_hash()
-
-      assert address1 < address2 and address2 < address3 and address3 < address4 and address4 < address5 and
-               address5 < address6
-
-      # insert pools in descending order
-      insert(:staking_pool, is_validator: true, is_active: false, staking_address_hash: address6, stakes_ratio: 0)
-      insert(:staking_pool, is_validator: true, is_active: false, staking_address_hash: address5, stakes_ratio: 0)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address4, stakes_ratio: 30)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address3, stakes_ratio: 60)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address2, stakes_ratio: 5)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address1, stakes_ratio: 5)
-
-      # get all pools in the order `desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash`
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [
-               %{pool: pool1},
-               %{pool: pool2},
-               %{pool: pool3},
-               %{pool: pool4},
-               %{pool: pool5},
-               %{pool: pool6}
-             ] = Chain.staking_pools(:validator, options)
-
-      assert pool1.staking_address_hash == address3
-      assert pool2.staking_address_hash == address4
-      assert pool3.staking_address_hash == address1
-      assert pool4.staking_address_hash == address2
-      assert pool5.staking_address_hash == address5
-      assert pool6.staking_address_hash == address6
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true)
-      inserted_pool = insert(:staking_pool, is_active: false)
-
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [%{pool: gotten_pool}] = Chain.staking_pools(:inactive, options)
-      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
-    end
-  end
-
-  describe "staking_pools_count/1" do
-    test "validators staking pools" do
-      insert(:staking_pool, is_active: true, is_validator: true)
-      insert(:staking_pool, is_active: true, is_validator: false)
-
-      assert Chain.staking_pools_count(:validator) == 1
-    end
-
-    test "active staking pools" do
-      insert(:staking_pool, is_active: true)
-      insert(:staking_pool, is_active: false)
-
-      assert Chain.staking_pools_count(:active) == 1
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true)
-      insert(:staking_pool, is_active: false)
-
-      assert Chain.staking_pools_count(:inactive) == 1
-    end
-  end
-
-  describe "delegators_count_sum/1" do
-    test "validators pools" do
-      insert(:staking_pool, is_active: true, is_validator: true, delegators_count: 10)
-      insert(:staking_pool, is_active: true, is_validator: false, delegators_count: 7)
-      insert(:staking_pool, is_active: true, is_validator: true, delegators_count: 5)
-
-      assert Chain.delegators_count_sum(:validator) == 15
-    end
-
-    test "active staking pools" do
-      insert(:staking_pool, is_active: true, delegators_count: 10)
-      insert(:staking_pool, is_active: true, delegators_count: 7)
-      insert(:staking_pool, is_active: false, delegators_count: 5)
-
-      assert Chain.delegators_count_sum(:active) == 17
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true, delegators_count: 10)
-      insert(:staking_pool, is_active: true, delegators_count: 7)
-      insert(:staking_pool, is_active: false, delegators_count: 5)
-      insert(:staking_pool, is_active: false, delegators_count: 1)
-
-      assert Chain.delegators_count_sum(:inactive) == 6
-    end
-  end
-
-  describe "total_staked_amount_sum/1" do
-    test "validators pools" do
-      insert(:staking_pool, is_active: true, is_validator: true, total_staked_amount: 10)
-      insert(:staking_pool, is_active: true, is_validator: false, total_staked_amount: 7)
-      insert(:staking_pool, is_active: true, is_validator: true, total_staked_amount: 5)
-
-      assert Chain.total_staked_amount_sum(:validator) == Decimal.new("15")
-    end
-
-    test "active staking pools" do
-      insert(:staking_pool, is_active: true, total_staked_amount: 10)
-      insert(:staking_pool, is_active: true, total_staked_amount: 7)
-      insert(:staking_pool, is_active: false, total_staked_amount: 5)
-
-      assert Chain.total_staked_amount_sum(:active) == Decimal.new("17")
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true, total_staked_amount: 10)
-      insert(:staking_pool, is_active: true, total_staked_amount: 7)
-      insert(:staking_pool, is_active: false, total_staked_amount: 5)
-      insert(:staking_pool, is_active: false, total_staked_amount: 1)
-
-      assert Chain.total_staked_amount_sum(:inactive) == Decimal.new("6")
-    end
-  end
-
   describe "fetch_first_trace/2" do
     test "fetched first trace", %{
       json_rpc_named_arguments: json_rpc_named_arguments
@@ -6391,18 +6224,6 @@ defmodule Explorer.ChainTest do
       implementation_abi = Chain.get_implementation_abi("0x" <> implementation_contract_address_hash_string)
 
       assert implementation_abi == @implementation_abi
-    end
-
-    test "get_total_staked_and_ordered should return just nil in case of invalid input and some response otherwise" do
-      assert Chain.get_total_staked_and_ordered(nil) == nil
-      assert Chain.get_total_staked_and_ordered(%{}) == nil
-      assert Chain.get_total_staked_and_ordered("") == nil
-      assert Chain.get_total_staked_and_ordered([]) == nil
-
-      assert Chain.get_total_staked_and_ordered("0x3f7c51ef174ee8a62e3fcfb0947aa90c97bd2784") == %{
-               stake_amount: Decimal.new(0),
-               ordered_withdraw: Decimal.new(0)
-             }
     end
   end
 

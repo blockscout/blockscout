@@ -39,9 +39,7 @@ defmodule Explorer.Factory do
     Token,
     TokenTransfer,
     Token.Instance,
-    Transaction,
-    StakingPool,
-    StakingPoolsDelegator
+    Transaction
   }
 
   alias Explorer.SmartContract.Helper
@@ -807,38 +805,6 @@ defmodule Explorer.Factory do
     %Administrator{
       role: "owner",
       user: build(:user)
-    }
-  end
-
-  def staking_pool_factory do
-    wei_per_ether = 1_000_000_000_000_000_000
-
-    %StakingPool{
-      staking_address_hash: address_hash(),
-      mining_address_hash: address_hash(),
-      banned_until: 0,
-      delegators_count: 0,
-      is_active: true,
-      is_banned: false,
-      is_validator: true,
-      total_staked_amount: wei_per_ether * 500,
-      self_staked_amount: wei_per_ether * 500,
-      was_banned_count: 0,
-      was_validator_count: 1
-    }
-  end
-
-  def staking_pools_delegator_factory do
-    wei_per_ether = 1_000_000_000_000_000_000
-
-    %StakingPoolsDelegator{
-      staking_address_hash: address_hash(),
-      address_hash: address_hash(),
-      max_ordered_withdraw_allowed: wei_per_ether * 100,
-      max_withdraw_allowed: wei_per_ether * 50,
-      ordered_withdraw: wei_per_ether * 600,
-      stake_amount: wei_per_ether * 200,
-      ordered_withdraw_epoch: 2
     }
   end
 

@@ -28,8 +28,6 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
       Runner.CeloUnlocked,
       Runner.CeloWallets,
       Runner.ExchangeRate,
-      Runner.StakingPools,
-      Runner.StakingPoolsDelegators,
       Runner.Address.CoinBalancesDaily
     ]
 

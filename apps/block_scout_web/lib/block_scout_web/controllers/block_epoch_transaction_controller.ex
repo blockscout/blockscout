@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.BlockEpochTransactionController do
     items = [community_transaction_json, carbon_transaction_json]
 
     items_with_rewards_bolster =
-      if Decimal.cmp(epoch_rewards.reserve_bolster.value, 0) == :gt do
+      if Decimal.compare(epoch_rewards.reserve_bolster.value, 0) == :gt do
         reserve_bolster_epoch_transaction = %{
           address: addresses[:reserve],
           amount: get_reserve_bolster_amount(epoch_rewards),

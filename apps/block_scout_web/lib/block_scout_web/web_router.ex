@@ -47,10 +47,6 @@ defmodule BlockScoutWeb.WebRouter do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
 
-    get("/validators", StakesController, :index, as: :validators, assigns: %{filter: :validator})
-    get("/active-pools", StakesController, :index, as: :active_pools, assigns: %{filter: :active})
-    get("/inactive-pools", StakesController, :index, as: :inactive_pools, assigns: %{filter: :inactive})
-
     resources("/pending-transactions", PendingTransactionController, only: [:index])
 
     resources("/recent-transactions", RecentTransactionsController, only: [:index])
@@ -84,9 +80,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/tokens", TokensController, only: [:index])
 
-    resources("/bridged-tokens", BridgedTokensController, only: [:index, :show])
-
     resources "/address", AddressController, only: [:show], private: %{validate: %{"address_id" => :is_address}} do
+
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
 
       resources(

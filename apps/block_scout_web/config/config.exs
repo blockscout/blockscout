@@ -26,12 +26,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   logo_footer: System.get_env("LOGO_FOOTER", "/images/celo_logo.svg"),
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false,
-  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
-  staking_enabled_in_menu: System.get_env("ENABLE_POS_STAKING_IN_MENU", "false") == "true",
-  show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
-  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
-  # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
-  staking_pool_list_refresh_interval: 5
+  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true"
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
@@ -56,6 +51,7 @@ config :block_scout_web,
   bsc_omni_bridge_mediator: System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"),
   amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
   foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
+  external_apps: System.get_env("EXTERNAL_APPS"),
   gas_price: System.get_env("GAS_PRICE", nil),
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),

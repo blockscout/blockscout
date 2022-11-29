@@ -33,13 +33,12 @@ defmodule BlockScoutWeb.AddressTokenController do
       items =
         tokens
         |> Market.add_price()
-        |> Enum.map(fn {token_balance, bridged_token, token} ->
+        |> Enum.map(fn {token_balance, token} ->
           View.render_to_string(
             AddressTokenView,
             "_tokens.html",
             token_balance: token_balance,
             token: token,
-            bridged_token: bridged_token,
             address: address,
             conn: conn
           )
