@@ -120,6 +120,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
         Conn.resp(conn, 200, @coins_list)
       end)
 
+      Application.put_env(:explorer, :coin, "POA")
       assert CoinGecko.coin_id() == {:ok, "poa-network"}
     end
 
