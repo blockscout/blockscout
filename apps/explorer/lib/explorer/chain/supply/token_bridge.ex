@@ -60,7 +60,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     total_market_cap_from_token_bridge = token_bridge_market_cap(%{usd_value: usd_value})
     total_market_cap_from_omni = total_market_cap_from_omni_bridge()
 
-    if Decimal.cmp(total_market_cap_from_omni, 0) == :gt do
+    if Decimal.compare(total_market_cap_from_omni, 0) == :gt do
       Decimal.add(total_market_cap_from_token_bridge, total_market_cap_from_omni)
     else
       total_market_cap_from_token_bridge
@@ -104,7 +104,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     total_coins_from_token_bridge = get_total_coins_from_token_bridge()
     total_market_cap_from_omni = total_market_cap_from_omni_bridge()
 
-    if Decimal.cmp(total_coins_from_token_bridge, 0) == :gt && Decimal.cmp(total_market_cap_from_omni, 0) == :gt do
+    if Decimal.compare(total_coins_from_token_bridge, 0) == :gt && Decimal.compare(total_market_cap_from_omni, 0) == :gt do
       total_coins_from_omni_bridge = Decimal.div(total_market_cap_from_omni, usd_value)
       Decimal.add(total_coins_from_token_bridge, total_coins_from_omni_bridge)
     else
@@ -229,7 +229,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
             TokenExchangeRateCache.fetch(bridged_token_hash, foreign_token_contract_address_hash)
 
           bridged_token_price =
-            if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
+            if bridged_token_price_from_cache && Decimal.compare(bridged_token_price_from_cache, 0) == :gt do
               bridged_token_price_from_cache
             else
               TokenExchangeRateCache.fetch_token_exchange_rate_by_address(foreign_token_contract_address_hash)

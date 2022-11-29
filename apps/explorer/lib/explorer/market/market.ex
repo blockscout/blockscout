@@ -114,7 +114,7 @@ defmodule Explorer.Market do
 
       if bridged_token do
         if bridged_token.foreign_chain_id do
-          if Decimal.cmp(bridged_token.foreign_chain_id, Decimal.new(1)) == :eq, do: bridged_token, else: false
+          if Decimal.compare(bridged_token.foreign_chain_id, Decimal.new(1)) == :eq, do: bridged_token, else: false
         else
           false
         end

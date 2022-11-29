@@ -70,7 +70,7 @@ defmodule Explorer.Mixfile do
       {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
-      {:decimal, "~> 1.9"},
+      {:decimal, "~> 2.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       # `override: true` for `ex_machina` compatibility
       {:ecto, "~> 3.3", override: true},

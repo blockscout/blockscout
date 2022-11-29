@@ -87,7 +87,7 @@
       <span class="mr-4">
         <span data-test="tvl">
           <% usd_val = bridged_token_usd_cap(@bridged_token, @token) %>
-          <%= if Decimal.cmp(usd_val, 0) == :gt do %>
+          <%= if Decimal.compare(usd_val, 0) == :gt do %>
             <%= ChainView.format_usd_value(usd_val) %>
           <% end %>
         </span>

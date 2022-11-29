@@ -208,7 +208,7 @@
                 text: gettext("The total gas amount used in the block and its percentage of gas filled in the block.") %>
                 <%= gettext("Gas Used") %>
               </dt>
-              <dd class="col-sm-9 col-lg-10"><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %> | <%= if Decimal.cmp(@block.gas_limit, 0) == :eq, do: "0%", else: ((Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%")) %></dd>
+              <dd class="col-sm-9 col-lg-10"><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %> | <%= if Decimal.compare(@block.gas_limit, 0) == :eq, do: "0%", else: ((Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%")) %></dd>
             </dl>
             <!-- Gas Limit -->
             <dl class="row">

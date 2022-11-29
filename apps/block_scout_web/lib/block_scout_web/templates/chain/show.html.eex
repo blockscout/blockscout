@@ -57,9 +57,9 @@
                   <%= if token_bridge_supply?() do %>
                     <% token_bridge_market_cap = total_market_cap_from_token_bridge(@exchange_rate) %>
                     <% omni_bridge_market_cap = total_market_cap_from_omni_bridge() %>
-                    <% formatted_total_market_cap = if Decimal.cmp(total_market_cap, 0) == :gt, do: format_currency_value(total_market_cap), else: "N/A" %>
-                    <% formatted_token_bridge_market_cap = if Decimal.cmp(token_bridge_market_cap, 0) == :gt, do: format_currency_value(token_bridge_market_cap), else: "N/A" %>
-                    <% formatted_omni_bridge_market_cap = if Decimal.cmp(omni_bridge_market_cap, 0) == :gt, do: format_currency_value(omni_bridge_market_cap), else: "N/A" %>
+                    <% formatted_total_market_cap = if Decimal.compare(total_market_cap, 0) == :gt, do: format_currency_value(total_market_cap), else: "N/A" %>
+                    <% formatted_token_bridge_market_cap = if Decimal.compare(token_bridge_market_cap, 0) == :gt, do: format_currency_value(token_bridge_market_cap), else: "N/A" %>
+                    <% formatted_omni_bridge_market_cap = if Decimal.compare(omni_bridge_market_cap, 0) == :gt, do: format_currency_value(omni_bridge_market_cap), else: "N/A" %>
                     <span
                       data-toggle="tooltip"
                       data-placement="top"
