@@ -147,7 +147,7 @@ defmodule Explorer.Chain.CeloElectionRewards do
         where: rewards.reward_type in ^reward_type_list
       )
 
-    query |> where_non_zero_reward()
+    query
   end
 
   def base_api_address_query do
@@ -377,7 +377,6 @@ defmodule Explorer.Chain.CeloElectionRewards do
     query = base_sample_rewards_for_block_number(block_number, reward_type)
 
     query
-    |> where_non_zero_reward()
     |> Repo.all()
   end
 
@@ -386,11 +385,8 @@ defmodule Explorer.Chain.CeloElectionRewards do
 
     query
     |> limit(^limit)
-    |> where_non_zero_reward()
     |> Repo.all()
   end
-
-  defp where_non_zero_reward(query), do: query |> where([reward], reward.amount > ^%Wei{value: Decimal.new(0)})
 
   def get_epoch_transaction_count_for_block(block_number) do
     query = from(reward in __MODULE__, select: count(fragment("*")), where: reward.block_number == ^block_number)

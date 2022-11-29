@@ -182,9 +182,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     test "calculates the rewards", %{
       block_hash: block_hash,
       block_number: block_number,
-      block_timestamp: block_timestamp,
-      voter_hash: voter_hash,
-      group_hash: group_hash
+      block_timestamp: block_timestamp
     } do
       assert CeloEpochDataFetcher.get_voter_rewards(%{
                block_hash: block_hash,
@@ -194,17 +192,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                block_hash: block_hash,
                block_number: block_number,
                block_timestamp: block_timestamp,
-               voter_rewards: [
-                 %{
-                   account_hash: voter_hash,
-                   associated_account_hash: group_hash,
-                   amount: 0,
-                   block_hash: block_hash,
-                   block_number: block_number,
-                   block_timestamp: block_timestamp,
-                   reward_type: "voter"
-                 }
-               ]
+               voter_rewards: []
              }
     end
   end
@@ -215,9 +203,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
     test "calculates the rewards", %{
       block_hash: block_hash,
       block_number: block_number,
-      block_timestamp: block_timestamp,
-      voter_hash: voter_hash,
-      group_hash: group_hash
+      block_timestamp: block_timestamp
     } do
       assert CeloEpochDataFetcher.get_voter_rewards(%{
                block_hash: block_hash,
@@ -227,17 +213,7 @@ defmodule Indexer.Fetcher.CeloEpochDataTest do
                block_hash: block_hash,
                block_number: block_number,
                block_timestamp: block_timestamp,
-               voter_rewards: [
-                 %{
-                   account_hash: voter_hash,
-                   associated_account_hash: group_hash,
-                   amount: 0,
-                   block_hash: block_hash,
-                   block_number: block_number,
-                   block_timestamp: block_timestamp,
-                   reward_type: "voter"
-                 }
-               ]
+               voter_rewards: []
              }
     end
   end

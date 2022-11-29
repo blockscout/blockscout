@@ -150,7 +150,7 @@ defmodule Indexer.Fetcher.CeloEpochData do
         }
       end)
 
-    Map.merge(block, %{voter_rewards: voter_rewards})
+    Map.merge(block, %{voter_rewards: voter_rewards |> Enum.filter(fn reward -> reward.amount > 0 end)})
   end
 
   def calculate_voter_rewards(after_rewards_votes, before_rewards_votes, nil = _votes_plus_revoked_minus_activated),
