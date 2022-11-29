@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.{CampaignBannerCache, LoggerBackend}
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.{RealtimeEventHandler}
+  alias BlockScoutWeb.RealtimeEventHandler
   alias Prometheus.{Exporter, GenericInstrumenter}
 
   def start(_type, _args) do
