@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Helper do
   SmartContract helper functions
   """
 
+  import Ecto.Query
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.SmartContract
   alias Phoenix.HTML
