@@ -16,7 +16,7 @@ defmodule Indexer.Transform.TransactionActions do
   @mainnet 1
   @optimism 10
   @polygon 137
-  @gnosis 100
+  # @gnosis 100
 
   @null_address "0x0000000000000000000000000000000000000000"
   @uniswap_v3_positions_nft "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
