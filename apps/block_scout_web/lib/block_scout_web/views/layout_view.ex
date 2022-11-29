@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.LayoutView do
       title: subnetwork_title() <> ": <Issue Title>"
     ]
 
-    issue_url = "#{Application.get_env(:block_scout_web, :footer)[:github_link]}/blockscout/issues/new"
+    issue_url = "#{Application.get_env(:block_scout_web, :footer)[:github_link]}/issues/new"
 
     [issue_url, "?", URI.encode_query(params)]
   end
