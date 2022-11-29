@@ -4,6 +4,33 @@ defmodule Explorer.Repo.Migrations.AddTxsIndexes do
   @disable_migration_lock true
 
   def change do
+    drop_if_exists(
+      index(
+        :transactions,
+        [:from_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", :hash],
+        name: "transactions_from_address_hash_recent_collated_index",
+        concurrently: true
+      )
+    )
+
+    drop_if_exists(
+      index(
+        :transactions,
+        [:to_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", :hash],
+        name: "transactions_to_address_hash_recent_collated_index",
+        concurrently: true
+      )
+    )
+
+    drop_if_exists(
+      index(
+        :transactions,
+        [:created_contract_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", :hash],
+        name: "transactions_created_contract_address_hash_recent_collated_index",
+        concurrently: true
+      )
+    )
+
     create_if_not_exists(
       index(
         :transactions,

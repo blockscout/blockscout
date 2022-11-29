@@ -4385,12 +4385,12 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, is_address? \\ false) do
     Transaction
-    |> order_for_transactions(paging_options, is_address?)
+    |> order_for_transactions(is_address?)
     |> where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
 
-  defp order_for_transactions(query, %PagingOptions{is_pending_tx: true}, true) do
+  defp order_for_transactions(query, true) do
     query
     |> order_by([transaction],
       desc: transaction.block_number,
@@ -4400,17 +4400,7 @@ defmodule Explorer.Chain do
     )
   end
 
-  defp order_for_transactions(query, %PagingOptions{key: nil}, true) do
-    query
-    |> order_by([transaction],
-      desc: transaction.block_number,
-      desc: transaction.index,
-      desc: transaction.inserted_at,
-      asc: transaction.hash
-    )
-  end
-
-  defp order_for_transactions(query, _, _) do
+  defp order_for_transactions(query, _) do
     query
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
