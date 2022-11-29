@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Migrations.AddTxsIndexes do
   @disable_migration_lock true
 
   def change do
-    create(
+    create_if_not_exists(
       index(
         :transactions,
         [
@@ -19,7 +19,7 @@ defmodule Explorer.Repo.Migrations.AddTxsIndexes do
       )
     )
 
-    create(
+    create_if_not_exists(
       index(
         :transactions,
         [:to_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", "inserted_at DESC", "hash DESC"],
@@ -28,7 +28,7 @@ defmodule Explorer.Repo.Migrations.AddTxsIndexes do
       )
     )
 
-    create(
+    create_if_not_exists(
       index(
         :transactions,
         [
