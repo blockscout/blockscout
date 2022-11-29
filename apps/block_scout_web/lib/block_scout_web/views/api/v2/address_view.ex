@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.ExchangeRates.Token
 
   def render("message.json", assigns) do
@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     {implementation_address, implementation_name} =
       with true <- is_proxy,
-           {address, name} <- Chain.get_implementation_address_hash(address.hash, address.smart_contract.abi),
+           {address, name} <- SmartContract.get_implementation_address_hash(address.smart_contract),
            false <- is_nil(address),
            {:ok, address_hash} <- Chain.string_to_address_hash(address),
            checksummed_address <- Address.checksum(address_hash) do
