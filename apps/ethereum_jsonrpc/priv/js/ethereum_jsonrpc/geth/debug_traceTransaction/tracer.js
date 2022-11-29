@@ -442,7 +442,7 @@
     },
 
     putGas(call) {
-        let gasBigInt = call.gasBigInt;
+        const gasBigInt = call.gasBigInt;
         delete call.gasBigInt;
 
         if (gasBigInt === undefined) {
@@ -453,7 +453,7 @@
     },
 
     putGasUsed(call) {
-        let gasUsedBigInt = call.gasUsedBigInt;
+        const gasUsedBigInt = call.gasUsedBigInt;
         delete call.gasUsedBigInt;
 
         if (gasUsedBigInt === undefined) {
