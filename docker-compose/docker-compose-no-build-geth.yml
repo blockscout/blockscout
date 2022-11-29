@@ -32,7 +32,7 @@ services:
         BLOCK_TRANSFORMER: 'clique'
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
-        ECTO_USE_SSL: false
+        ECTO_USE_SSL: 'false'
     ports:
       - 4000:4000
 

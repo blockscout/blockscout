@@ -35,9 +35,8 @@ defmodule Indexer.Transform.Blocks do
     recover_pub_key(signature_hash, decode(signature))
   end
 
-  # Signature hash calculated from the block header.
-  # Needed for PoA-based chains
-  defp signature_hash(block) do
+  # Get EIP-1559 compatible block header
+  defp get_header_data(block) do
     header_data = [
       decode(block.parent_hash),
       decode(block.sha3_uncles),
@@ -55,6 +54,19 @@ defmodule Indexer.Transform.Blocks do
       decode(block.mix_hash),
       decode(block.nonce)
     ]
+
+    if Map.has_key?(block, :base_fee_per_gas) do
+      # credo:disable-for-next-line
+      header_data ++ [block.base_fee_per_gas]
+    else
+      header_data
+    end
+  end
+
+  # Signature hash calculated from the block header.
+  # Needed for PoA-based chains
+  defp signature_hash(block) do
+    header_data = get_header_data(block)
 
     ExKeccak.hash_256(ExRLP.encode(header_data))
   end

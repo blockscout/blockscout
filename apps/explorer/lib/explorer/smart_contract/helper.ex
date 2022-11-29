@@ -5,7 +5,7 @@ defmodule Explorer.SmartContract.Helper do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.SmartContract
-  import Ecto.Query
+  alias Phoenix.HTML
 
   def queriable_method?(method) do
     method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"
@@ -140,5 +140,14 @@ defmodule Explorer.SmartContract.Helper do
     :md5
     |> :crypto.hash(bytes)
     |> Base.encode16(case: :lower)
+  end
+
+  def sanitize_input(nil), do: nil
+
+  def sanitize_input(input) do
+    input
+    |> HTML.html_escape()
+    |> HTML.safe_to_string()
+    |> String.trim()
   end
 end
