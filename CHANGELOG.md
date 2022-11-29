@@ -4,6 +4,7 @@
 - [#5699](https://github.com/blockscout/blockscout/pull/5699) - Switch to basic (non-pro) API endpoint for Coingecko requests, if API key is not provided
 
 ### Fixes
+- [#5723](https://github.com/blockscout/blockscout/pull/5723) - Add nil clause for Data.to_string/1
 - [#5714](https://github.com/blockscout/blockscout/pull/5714) - Add clause for EthereumJSONRPC.Transaction.elixir_to_params/1 when gas_price is missing in the response
 - [#5697](https://github.com/blockscout/blockscout/pull/5697) - Gas price oracle: ignore gas price rounding for values less than 0.01
 - [#5690](https://github.com/blockscout/blockscout/pull/5690) - Allow special characters for password in DB URL parser
@@ -38,6 +39,7 @@
 - [#5656](https://github.com/blockscout/blockscout/pull/5656) - Gas price oracle
 - [#5613](https://github.com/blockscout/blockscout/pull/5613) - Exchange rates CoinMarketCap source module
 - [#5588](https://github.com/blockscout/blockscout/pull/5588) - Add broadcasting of coin balance
+- [#5560](https://github.com/blockscout/blockscout/pull/5560) - Manual fetch benefeciaries
 - [#5479](https://github.com/blockscout/blockscout/pull/5479) - Remake of solidity verifier module; Verification UX improvements
 - [#5540](https://github.com/blockscout/blockscout/pull/5540) - Tx page: scroll to selected tab's data
 
