@@ -3450,7 +3450,7 @@ defmodule Explorer.Chain do
     |> pending_transactions_query()
     |> apply_filter_by_method_id_to_transactions(method_id_filter)
     |> apply_filter_by_tx_type_to_transactions(type_filter)
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.inserted_at, asc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> Repo.all()
@@ -4396,7 +4396,7 @@ defmodule Explorer.Chain do
       desc: transaction.block_number,
       desc: transaction.index,
       desc: transaction.inserted_at,
-      desc: transaction.hash
+      asc: transaction.hash
     )
   end
 
@@ -4406,7 +4406,7 @@ defmodule Explorer.Chain do
       desc: transaction.block_number,
       desc: transaction.index,
       desc: transaction.inserted_at,
-      desc: transaction.hash
+      asc: transaction.hash
     )
   end
 
@@ -4625,7 +4625,7 @@ defmodule Explorer.Chain do
       [transaction],
       (is_nil(transaction.block_number) and
          (transaction.inserted_at < ^inserted_at or
-            (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash))) or
+            (transaction.inserted_at == ^inserted_at and transaction.hash > ^hash))) or
         not is_nil(transaction.block_number)
     )
   end
