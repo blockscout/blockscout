@@ -107,14 +107,21 @@ defmodule Indexer.Supervisor do
 
     realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
 
+    realtime_fetcher =
+      if Application.get_env(:indexer, Realtime.Supervisor)[:enabled] do
+        [
+          {Realtime.Supervisor,
+           [
+             %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
+             [name: Realtime.Supervisor]
+           ]}
+        ]
+      else
+        []
+      end
+
     basic_fetchers = [
       # Root fetchers
-      {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
-      {Realtime.Supervisor,
-       [
-         %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
-         [name: Realtime.Supervisor]
-       ]},
       {Catchup.Supervisor,
        [
          %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
@@ -184,8 +191,15 @@ defmodule Indexer.Supervisor do
         basic_fetchers
       end
 
+    all_fetchers =
+      [
+        {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
+      ] ++
+        realtime_fetcher ++
+        fetchers_with_metrics
+
     Supervisor.init(
-      fetchers_with_metrics,
+      all_fetchers,
       strategy: :one_for_one
     )
   end

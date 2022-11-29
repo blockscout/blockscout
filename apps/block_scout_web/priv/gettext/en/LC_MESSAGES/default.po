@@ -176,11 +176,6 @@ msgid "Address (external or contract) sending the transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:164
-msgid "Address balance in CELO (doesn't include ERC20, ERC721, ERC1155 tokens)."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/index.html.eex:4
 #: lib/block_scout_web/templates/stats/index.html.eex:17
 msgid "Addresses"
@@ -3068,4 +3063,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/gas_price_oracle_legend_item.html.eex:20
 msgid "Slow"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:164
+msgid "Address balance in"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:164
+msgid "doesn't include ERC20, ERC721, ERC1155 tokens)."
 msgstr ""
