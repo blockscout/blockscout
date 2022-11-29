@@ -18,7 +18,7 @@ config :explorer, Explorer.Repo.Local,
   # deactivate ecto logs for test output
   log: false
 
-config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc_value: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
