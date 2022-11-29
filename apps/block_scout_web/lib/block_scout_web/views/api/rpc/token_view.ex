@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.RPC.RPCView
-  alias BlockScoutWeb.BridgedTokensView
 
   def render("gettoken.json", %{token: token}) do
     RPCView.render("show.json", data: prepare_token(token))
@@ -15,11 +14,6 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
 
   def render("gettokenholders.json", %{token_holders: token_holders}) do
     data = Enum.map(token_holders, &prepare_token_holder/1)
-    RPCView.render("show.json", data: data)
-  end
-
-  def render("bridgedtokenlist.json", %{bridged_tokens: bridged_tokens}) do
-    data = Enum.map(bridged_tokens, &prepare_bridged_token/1)
     RPCView.render("show.json", data: data)
   end
 
@@ -88,27 +82,6 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     %{
       "address" => to_string(token_holder.address_hash),
       "value" => token_holder.value
-    }
-  end
-
-  defp prepare_bridged_token([]) do
-    %{}
-  end
-
-  defp prepare_bridged_token([token, bridged_token]) do
-    total_supply = divide_decimals(token.total_supply, token.decimals)
-    usd_value = BridgedTokensView.bridged_token_usd_cap(bridged_token, token)
-
-    %{
-      "foreignChainId" => bridged_token.foreign_chain_id,
-      "foreignTokenContractAddressHash" => bridged_token.foreign_token_contract_address_hash,
-      "homeContractAddressHash" => token.contract_address_hash,
-      "homeDecimals" => token.decimals,
-      "homeHolderCount" => if(token.holder_count, do: to_string(token.holder_count), else: "0"),
-      "homeName" => token.name,
-      "homeSymbol" => token.symbol,
-      "homeTotalSupply" => total_supply,
-      "homeUsdValue" => usd_value
     }
   end
 end

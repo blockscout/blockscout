@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.ChainView do
   import Number.Currency, only: [number_to_currency: 2]
 
   alias BlockScoutWeb.LayoutView
-  alias Explorer.Chain.Supply.TokenBridge
+  alias Explorer.Chain.Cache.GasPriceOracle
 
   def combined_network_title do
     sub = LayoutView.subnetwork_title()
@@ -33,18 +33,6 @@ defmodule BlockScoutWeb.ChainView do
 
   defp market_cap(module, exchange_rate) do
     module.market_cap(exchange_rate)
-  end
-
-  defp total_market_cap_from_token_bridge(%{usd_value: usd_value}) do
-    TokenBridge.token_bridge_market_cap(%{usd_value: usd_value})
-  end
-
-  defp total_market_cap_from_omni_bridge do
-    TokenBridge.total_market_cap_from_omni_bridge()
-  end
-
-  defp token_bridge_supply? do
-    if System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false
   end
 
   def format_usd_value(nil), do: ""
@@ -94,5 +82,18 @@ defmodule BlockScoutWeb.ChainView do
 
   def format_currency_value(value, symbol) when is_float(value) do
     "#{number_to_currency(value, unit: symbol, precision: 0)}"
+  end
+
+  defp gas_prices do
+    case GasPriceOracle.get_gas_prices() do
+      {:ok, gas_prices} ->
+        gas_prices
+
+      nil ->
+        nil
+
+      _ ->
+        nil
+    end
   end
 end

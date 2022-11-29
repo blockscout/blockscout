@@ -1,7 +1,0 @@
-<title>
-  <%= gettext("%{subnetwork} Staking DApp - BlockScout", subnetwork: BlockScoutWeb.LayoutView.subnetwork_title()) %>
-</title>
-<%= if assigns[:token] do %>
-  <meta name="keywords" content="<%= "#{BlockScoutWeb.LayoutView.subnetwork_title()} #{@token.symbol} staking app" %>">
-  <meta name="description" content="<%= gettext "DApp for Staking %{symbol} tokens", symbol: @token.symbol %>">
-<% end %>

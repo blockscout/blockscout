@@ -36,7 +36,6 @@ const appJs =
   {
     entry: {
       'app': './js/app.js',
-      'stakes': './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
       'balance-chart-loader': './js/balance-chart-loader.js',
       'chain': './js/pages/chain.js',

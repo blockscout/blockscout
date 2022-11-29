@@ -1511,7 +1511,9 @@ defmodule Explorer.ChainTest do
     test "returns the correct address if it exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.hash_to_address(address.hash)
+      assert {:ok, address_from_db} = Chain.hash_to_address(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "has_decompiled_code? is true if there are decompiled contracts" do
@@ -1560,14 +1562,16 @@ defmodule Explorer.ChainTest do
     test "returns an address if it already exists" do
       address = insert(:address)
 
-      assert {:ok, address} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert {:ok, address_from_db} = Chain.find_or_insert_address_from_hash(address.hash)
+      assert address_from_db.hash == address.hash
+      assert address_from_db.inserted_at == address.inserted_at
     end
 
     test "returns an address if it doesn't exist" do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: hash}} = Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: ^hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -1644,7 +1648,7 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert Decimal.cmp(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
+      assert Decimal.compare(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
     end
 
     test "returns 0 if no blocks" do
@@ -1657,7 +1661,7 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      assert Decimal.cmp(Chain.indexed_ratio(), 1) == :eq
+      assert Decimal.compare(Chain.indexed_ratio(), 1) == :eq
     end
   end
 
@@ -3488,6 +3492,186 @@ defmodule Explorer.ChainTest do
                }
              ] = Chain.transaction_to_token_transfers(transaction.hash)
     end
+
+    test "token transfers ordered by ASC log_index" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer_0 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 0
+        )
+
+      token_transfer_4 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 4
+        )
+
+      token_transfer_2 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 2
+        )
+
+      token_transfer_1 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 1
+        )
+
+      token_transfer_3 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 3
+        )
+
+      token_transfers_sorted =
+        [token_transfer_0, token_transfer_1, token_transfer_2, token_transfer_3, token_transfer_4]
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_unsorted =
+        [token_transfer_1, token_transfer_0, token_transfer_2, token_transfer_3, token_transfer_4]
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_sorted ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_unsorted !=
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+    end
+
+    test "token transfers can be paginated" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer_0 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 0
+        )
+
+      token_transfer_4 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 4
+        )
+
+      token_transfer_2 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 2
+        )
+
+      token_transfer_1 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 1
+        )
+
+      token_transfer_3 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 3
+        )
+
+      token_transfer_6 =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          log_index: 6
+        )
+
+      token_transfers_first_page =
+        [token_transfer_0, token_transfer_1, token_transfer_2] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_second_page =
+        [token_transfer_2, token_transfer_3, token_transfer_4] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      token_transfers_third_page =
+        [token_transfer_4, token_transfer_6] |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_first_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_second_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   key: {transaction.block_number, 1},
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_third_page ==
+               transaction.hash
+               |> Chain.transaction_to_token_transfers(
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 },
+                 paging_options: %PagingOptions{
+                   key: {transaction.block_number, 3},
+                   page_size: 3
+                 }
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.log_index})
+    end
   end
 
   describe "value/2" do
@@ -4174,7 +4358,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
+      assert {:ok, %SmartContract{}} =
                Chain.update_smart_contract(%{address_hash: address.hash, partially_verified: false})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
@@ -4190,7 +4374,7 @@ defmodule Explorer.ChainTest do
       assert sc_before_call.name == Map.get(valid_attrs, :name)
       assert sc_before_call.partially_verified == Map.get(valid_attrs, :partially_verified)
 
-      assert {:ok, %SmartContract{} = smart_contract} = Chain.update_smart_contract(%{address_hash: address.hash})
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash})
 
       sc_after_call = Repo.get_by(SmartContract, address_hash: address.hash)
       assert sc_after_call.name == Map.get(valid_attrs, :name)
@@ -4216,8 +4400,7 @@ defmodule Explorer.ChainTest do
                  el.contract_source_code == Map.get(src, :contract_source_code)
              end)
 
-      assert {:ok, %SmartContract{} = smart_contract} =
-               Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
+      assert {:ok, %SmartContract{}} = Chain.update_smart_contract(%{address_hash: address.hash}, [], changed_sources)
 
       sc_after_call = Repo.get_by(Address, hash: address.hash) |> Repo.preload(:smart_contract_additional_sources)
 
@@ -4774,7 +4957,11 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
-      assert smart_contract = result.contract_address.smart_contract
+      assert address.smart_contract.address_hash == result.contract_address.smart_contract.address_hash
+      assert address.smart_contract.contract_code_md5 == result.contract_address.smart_contract.contract_code_md5
+      assert address.smart_contract.abi == result.contract_address.smart_contract.abi
+      assert address.smart_contract.contract_source_code == result.contract_address.smart_contract.contract_source_code
+      assert address.smart_contract.name == result.contract_address.smart_contract.name
     end
   end
 
@@ -5040,7 +5227,7 @@ defmodule Explorer.ChainTest do
         cataloged: true
       }
 
-      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+      assert {:ok, _updated_token} = Chain.update_token(token, update_params)
     end
   end
 
@@ -5053,7 +5240,7 @@ defmodule Explorer.ChainTest do
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
-        |> Enum.map(fn {token_balance, _, _} -> token_balance.address_hash end)
+        |> Enum.map(fn {token_balance, _} -> token_balance.address_hash end)
 
       assert token_balances == [current_token_balance.address_hash]
     end
@@ -5195,6 +5382,48 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.hash)
 
       assert result == [transaction.hash]
+    end
+
+    test "correct ordering for token transfers (ASC log_index)" do
+      address = insert(:address)
+      token = insert(:token)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        amount: 2,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 2
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 0
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        log_index: 1
+      )
+
+      assert [result] = Chain.address_to_transactions_with_token_transfers(address.hash, token.contract_address_hash)
+
+      assert [{transaction.hash, 0}, {transaction.hash, 1}, {transaction.hash, 2}] ==
+               result.token_transfers |> Enum.map(&{&1.transaction_hash, &1.log_index})
     end
   end
 
@@ -5556,173 +5785,6 @@ defmodule Explorer.ChainTest do
       end
 
       refute Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
-    end
-  end
-
-  describe "staking_pools/3" do
-    test "validators staking pools" do
-      inserted_validator = insert(:staking_pool, is_active: true, is_validator: true)
-      insert(:staking_pool, is_active: true, is_validator: false)
-
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [%{pool: gotten_validator}] = Chain.staking_pools(:validator, options)
-      assert inserted_validator.staking_address_hash == gotten_validator.staking_address_hash
-    end
-
-    test "active staking pools" do
-      inserted_pool = insert(:staking_pool, is_active: true)
-      insert(:staking_pool, is_active: false)
-
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [%{pool: gotten_pool}] = Chain.staking_pools(:active, options)
-      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
-    end
-
-    test "all active staking pools ordered by staking_address" do
-      address1 = Factory.address_hash()
-      address2 = Factory.address_hash()
-      address3 = Factory.address_hash()
-
-      assert address1 < address2 and address2 < address3
-
-      # insert pools in descending order
-      insert(:staking_pool, is_active: true, staking_address_hash: address3)
-      insert(:staking_pool, is_active: true, staking_address_hash: address2)
-      insert(:staking_pool, is_active: true, staking_address_hash: address1)
-
-      # get all active pools in ascending order
-      assert [%{pool: pool1}, %{pool: pool2}, %{pool: pool3}] = Chain.staking_pools(:active, :all)
-      assert pool1.staking_address_hash == address1
-      assert pool2.staking_address_hash == address2
-      assert pool3.staking_address_hash == address3
-    end
-
-    test "staking pools ordered by stakes_ratio, is_active, and staking_address_hash" do
-      address1 = Factory.address_hash()
-      address2 = Factory.address_hash()
-      address3 = Factory.address_hash()
-      address4 = Factory.address_hash()
-      address5 = Factory.address_hash()
-      address6 = Factory.address_hash()
-
-      assert address1 < address2 and address2 < address3 and address3 < address4 and address4 < address5 and
-               address5 < address6
-
-      # insert pools in descending order
-      insert(:staking_pool, is_validator: true, is_active: false, staking_address_hash: address6, stakes_ratio: 0)
-      insert(:staking_pool, is_validator: true, is_active: false, staking_address_hash: address5, stakes_ratio: 0)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address4, stakes_ratio: 30)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address3, stakes_ratio: 60)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address2, stakes_ratio: 5)
-      insert(:staking_pool, is_validator: true, is_active: true, staking_address_hash: address1, stakes_ratio: 5)
-
-      # get all pools in the order `desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash`
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [
-               %{pool: pool1},
-               %{pool: pool2},
-               %{pool: pool3},
-               %{pool: pool4},
-               %{pool: pool5},
-               %{pool: pool6}
-             ] = Chain.staking_pools(:validator, options)
-
-      assert pool1.staking_address_hash == address3
-      assert pool2.staking_address_hash == address4
-      assert pool3.staking_address_hash == address1
-      assert pool4.staking_address_hash == address2
-      assert pool5.staking_address_hash == address5
-      assert pool6.staking_address_hash == address6
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true)
-      inserted_pool = insert(:staking_pool, is_active: false)
-
-      options = %PagingOptions{page_size: 20, page_number: 1}
-
-      assert [%{pool: gotten_pool}] = Chain.staking_pools(:inactive, options)
-      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
-    end
-  end
-
-  describe "staking_pools_count/1" do
-    test "validators staking pools" do
-      insert(:staking_pool, is_active: true, is_validator: true)
-      insert(:staking_pool, is_active: true, is_validator: false)
-
-      assert Chain.staking_pools_count(:validator) == 1
-    end
-
-    test "active staking pools" do
-      insert(:staking_pool, is_active: true)
-      insert(:staking_pool, is_active: false)
-
-      assert Chain.staking_pools_count(:active) == 1
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true)
-      insert(:staking_pool, is_active: false)
-
-      assert Chain.staking_pools_count(:inactive) == 1
-    end
-  end
-
-  describe "delegators_count_sum/1" do
-    test "validators pools" do
-      insert(:staking_pool, is_active: true, is_validator: true, delegators_count: 10)
-      insert(:staking_pool, is_active: true, is_validator: false, delegators_count: 7)
-      insert(:staking_pool, is_active: true, is_validator: true, delegators_count: 5)
-
-      assert Chain.delegators_count_sum(:validator) == 15
-    end
-
-    test "active staking pools" do
-      insert(:staking_pool, is_active: true, delegators_count: 10)
-      insert(:staking_pool, is_active: true, delegators_count: 7)
-      insert(:staking_pool, is_active: false, delegators_count: 5)
-
-      assert Chain.delegators_count_sum(:active) == 17
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true, delegators_count: 10)
-      insert(:staking_pool, is_active: true, delegators_count: 7)
-      insert(:staking_pool, is_active: false, delegators_count: 5)
-      insert(:staking_pool, is_active: false, delegators_count: 1)
-
-      assert Chain.delegators_count_sum(:inactive) == 6
-    end
-  end
-
-  describe "total_staked_amount_sum/1" do
-    test "validators pools" do
-      insert(:staking_pool, is_active: true, is_validator: true, total_staked_amount: 10)
-      insert(:staking_pool, is_active: true, is_validator: false, total_staked_amount: 7)
-      insert(:staking_pool, is_active: true, is_validator: true, total_staked_amount: 5)
-
-      assert Chain.total_staked_amount_sum(:validator) == Decimal.new("15")
-    end
-
-    test "active staking pools" do
-      insert(:staking_pool, is_active: true, total_staked_amount: 10)
-      insert(:staking_pool, is_active: true, total_staked_amount: 7)
-      insert(:staking_pool, is_active: false, total_staked_amount: 5)
-
-      assert Chain.total_staked_amount_sum(:active) == Decimal.new("17")
-    end
-
-    test "inactive staking pools" do
-      insert(:staking_pool, is_active: true, total_staked_amount: 10)
-      insert(:staking_pool, is_active: true, total_staked_amount: 7)
-      insert(:staking_pool, is_active: false, total_staked_amount: 5)
-      insert(:staking_pool, is_active: false, total_staked_amount: 1)
-
-      assert Chain.total_staked_amount_sum(:inactive) == Decimal.new("6")
     end
   end
 
@@ -6162,18 +6224,6 @@ defmodule Explorer.ChainTest do
       implementation_abi = Chain.get_implementation_abi("0x" <> implementation_contract_address_hash_string)
 
       assert implementation_abi == @implementation_abi
-    end
-
-    test "get_total_staked_and_ordered should return just nil in case of invalid input and some response otherwise" do
-      assert Chain.get_total_staked_and_ordered(nil) == nil
-      assert Chain.get_total_staked_and_ordered(%{}) == nil
-      assert Chain.get_total_staked_and_ordered("") == nil
-      assert Chain.get_total_staked_and_ordered([]) == nil
-
-      assert Chain.get_total_staked_and_ordered("0x3f7c51ef174ee8a62e3fcfb0947aa90c97bd2784") == %{
-               stake_amount: Decimal.new(0),
-               ordered_withdraw: Decimal.new(0)
-             }
     end
   end
 

@@ -57,7 +57,6 @@ The following async fetchers are launched for importing missing data:
 - `token_balance`
 - `token`
 - `contract_code`
-- `staking_pools`
 - `celo_accounts`
 - `celo_validators`
 - `celo_validator_groups`
@@ -82,7 +81,6 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 - `token_balance`: for `address_token_balances` with null `value_fetched_at`. Also upserts `address_current_token_balances`
 - `token`: for `tokens` with `cataloged == false`
 - `contract_code`: for `transactions` with non-null `created_contract_address_hash` and null `created_contract_code_indexed_at`
-- `staking_pools`: for fetching staking pools
 - `celo_accounts`: for fetching Celo accounts
 - `celo_validators`: for fetching Celo validators
 - `celo_validator_groups`: for fetching Celo validator pools
@@ -102,11 +100,7 @@ After all deployed instances get all needed data, these fetchers should be depre
 
 ## Memory Usage
 
-The work queues for building the index of all blocks, balances (coin and token), and internal transactions can grow quite large.   By default, the soft-limit is 1 GiB, which can be changed in `config/config.exs`:
-
-```
-config :indexer, memory_limit: 1 <<< 30
-```
+The work queues for building the index of all blocks, balances (coin and token), and internal transactions can grow quite large.   By default, the soft-limit is 1 GiB, which can be changed by setting `INDEXER_MEMORY_LIMIT` environment variable https://docs.blockscout.com/for-developers/developer-faqs/how-do-i-update-memory-consumption-to-fix-indexer-memory-errors#updating-memory-consumption.
 
 Memory usage is checked once per minute.  If the soft-limit is reached, the shrinkable work queues will shed half their load.  The shed load will be restored from the database, the same as when a restart of the server occurs, so rebuilding the work queue will be slower, but use less memory.
 

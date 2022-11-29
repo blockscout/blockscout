@@ -1,5 +1,0 @@
-<span class="stakes-control js-move-stake <%= if assigns[:extra_class] do @extra_class end %>" data-address="<%= to_string(@address) %>" data-placement="top" data-toggle="tooltip" title="Move">
-    <svg class="stakes-control-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
-        <path fill-rule="evenodd" d="M15 16H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h4.347l1.778 2H2v1h12v-1H8.875l1.778-2H15a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1zm0-11H9v3.532l1.252-1.253a1.028 1.028 0 1 1 1.455 1.456l-2.909 2.91c-.038.038-.087.054-.129.085a.945.945 0 0 1-.653.27h-.032a.971.971 0 0 1-.713-.315c-.006-.005-.013-.006-.018-.011L4.326 8.745A1.036 1.036 0 0 1 5.79 7.281L7 8.492V5H1a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1zm-1-3H2v1h12V2z"/>
-    </svg>
-</span>

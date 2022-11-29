@@ -29,9 +29,9 @@ services:
         ETHEREUM_JSONRPC_VARIANT: 'geth'
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: true
+        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
         DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
-        ECTO_USE_SSL: false
+        ECTO_USE_SSL: 'false'
     ports:
       - 4000:4000
 

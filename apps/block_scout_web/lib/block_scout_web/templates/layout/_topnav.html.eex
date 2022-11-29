@@ -1,4 +1,3 @@
-<% staking_enabled_in_menu = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled_in_menu] %>
 <% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
 <% stats_enabled = Application.get_env(:block_scout_web, :stats_enabled) %>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
@@ -50,65 +49,31 @@
                   ) %>
             </div>
           </li>
-          <%= if Chain.bridged_tokens_enabled?() do %>
-            <li class="nav-item dropdown">
-              <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
-                </span>
-                <%= gettext("Tokens") %>
-              </a>
-              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
-                <%= link(
-                      gettext("All"),
-                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
-                      to: tokens_path(@conn, :index)
-                    ) %>
-                <%= link(
-                      gettext("Bridged from Ethereum"),
-                      class: "dropdown-item #{tab_status("bridged-tokens/eth", @conn.request_path)}",
-                      to: bridged_tokens_path(@conn, :show, :eth),
-                      style: "white-space: nowrap;"
-                    ) %>
-                <%= link(
-                      gettext("Bridged from BSC"),
-                      class: "dropdown-item #{tab_status("bridged-tokens/bsc", @conn.request_path)}",
-                      to: bridged_tokens_path(@conn, :show, :bsc)
-                    ) %>
-                <%= link(
-                      gettext("CELO"),
-                      class: "dropdown-item #{tab_status("accounts", @conn.request_path)}",
-                      to: address_path(@conn, :index)
-                    ) %>
-              </div>
-            </li>
-          <% else %>
-            <li class="nav-item dropdown">
-              <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <span class="nav-link-icon">
-                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
-                </span>
-                <%= gettext("Contracts") %>
-              </a>
-              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
-                <%= link(
-                      gettext("All Tokens"),
-                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
-                      to: tokens_path(@conn, :index)
-                    ) %>
+          <li class="nav-item dropdown">
+            <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+              </span>
+              <%= gettext("Contracts") %>
+            </a>
+            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
               <%= link(
-                    gettext("Verified Contracts"),
-                    class: "dropdown-item #{tab_status("verified-contracts", @conn.request_path)}",
-                    to: verified_contracts_path(@conn, :index)
-                ) %>
-              <%= link(
-                    gettext("Verify Contract"),
-                    class: "dropdown-item #{tab_status("verify-new-contract", @conn.request_path)}",
-                    to: verify_contract_path(@conn, :new)
-                ) %>
-              </div>
-            </li>
-          <% end %>
+                    gettext("All Tokens"),
+                    class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
+                    to: tokens_path(@conn, :index)
+                  ) %>
+            <%= link(
+                  gettext("Verified Contracts"),
+                  class: "dropdown-item #{tab_status("verified-contracts", @conn.request_path)}",
+                  to: verified_contracts_path(@conn, :index)
+              ) %>
+            <%= link(
+                  gettext("Verify Contract"),
+                  class: "dropdown-item #{tab_status("verify-new-contract", @conn.request_path)}",
+                  to: verify_contract_path(@conn, :new)
+              ) %>
+            </div>
+          </li>
         <% end %>
         <%= if stats_enabled do %>
           <li class="nav-item dropdown">
@@ -230,13 +195,6 @@
                     <h3 class="apps-menu-header pl-2"><b><%= gettext("Finance Tools") %></b></h3>
                     <%= for %{url: url, title: title} <- finance_tools_list() do %>
                     <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
-                    <% end %>
-                  </div>
-                  <div class="col-xs-12 col-md-3 col-lg-3">
-                    <%= if staking_enabled_in_menu do %>
-                    <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                      <%= gettext("Staking on xDai") %>
-                    </a>
                     <% end %>
                   </div>
                   <div class="col-xs-12 col-md-3 col-lg-3">

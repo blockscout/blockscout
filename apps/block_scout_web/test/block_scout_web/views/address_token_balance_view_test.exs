@@ -22,9 +22,9 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
       token_balance_a = build(:token_balance, token: build(:token, type: "ERC-1155"), token_type: "ERC-20")
       token_balance_b = build(:token_balance, token: build(:token, type: "ERC-1155"), token_type: "ERC-721")
 
-      token_balances = [{token_balance_a, %{}, %{}}, {token_balance_b, %{}, %{}}]
+      token_balances = [{token_balance_a, %{}}, {token_balance_b, %{}}]
 
-      assert AddressTokenBalanceView.filter_by_type(token_balances, "ERC-20") == [{token_balance_a, %{}, %{}}]
+      assert AddressTokenBalanceView.filter_by_type(token_balances, "ERC-20") == [{token_balance_a, %{}}]
     end
   end
 
@@ -118,23 +118,23 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
         )
 
       token_balances = [
-        {token_balance_a, %{}, token_balance_a.token},
-        {token_balance_b, %{}, token_balance_b.token},
-        {token_balance_c, %{}, token_balance_c.token},
-        {token_balance_d, %{}, token_balance_d.token},
-        {token_balance_e, %{}, token_balance_e.token},
-        {token_balance_f, %{}, token_balance_f.token},
-        {token_balance_g, %{}, token_balance_g.token}
+        {token_balance_a, token_balance_a.token},
+        {token_balance_b, token_balance_b.token},
+        {token_balance_c, token_balance_c.token},
+        {token_balance_d, token_balance_d.token},
+        {token_balance_e, token_balance_e.token},
+        {token_balance_f, token_balance_f.token},
+        {token_balance_g, token_balance_g.token}
       ]
 
       expected = [
-        {token_balance_b, %{}, token_balance_b.token},
-        {token_balance_a, %{}, token_balance_a.token},
-        {token_balance_c, %{}, token_balance_c.token},
-        {token_balance_d, %{}, token_balance_d.token},
-        {token_balance_g, %{}, token_balance_g.token},
-        {token_balance_e, %{}, token_balance_e.token},
-        {token_balance_f, %{}, token_balance_f.token}
+        {token_balance_b, token_balance_b.token},
+        {token_balance_a, token_balance_a.token},
+        {token_balance_c, token_balance_c.token},
+        {token_balance_d, token_balance_d.token},
+        {token_balance_g, token_balance_g.token},
+        {token_balance_e, token_balance_e.token},
+        {token_balance_f, token_balance_f.token}
       ]
 
       assert AddressTokenBalanceView.sort_by_usd_value_and_name(token_balances) == expected
@@ -152,7 +152,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       result = Chain.balance_in_usd(token_balance)
 
-      assert Decimal.cmp(result, 30) == :eq
+      assert Decimal.compare(result, 30) == :eq
     end
 
     test "return nil if usd_value is not present" do
@@ -176,7 +176,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       result = Chain.balance_in_usd(token_balance)
 
-      assert Decimal.cmp(result, Decimal.from_float(0.3)) == :eq
+      assert Decimal.compare(result, Decimal.from_float(0.3)) == :eq
     end
   end
 end

@@ -5,7 +5,7 @@
 	data-display-token-icons="<%= System.get_env("DISPLAY_TOKEN_ICONS") %>"
 >
   <div class="card">
-    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>" data-no-self-calls>
 	  <h1 class="card-title list-title-description"><%= gettext "Tokens" %></h1>
 
 	<div class="list-top-pagination-container-wrapper tokens-list-search-input-outer-container d-flex" style="float: right;">

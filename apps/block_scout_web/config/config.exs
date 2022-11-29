@@ -26,12 +26,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   logo_footer: System.get_env("LOGO_FOOTER", "/images/celo_logo.svg"),
   logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false,
-  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
-  staking_enabled_in_menu: System.get_env("ENABLE_POS_STAKING_IN_MENU", "false") == "true",
-  show_staking_warning: System.get_env("SHOW_STAKING_WARNING", "false") == "true",
-  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true",
-  # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
-  staking_pool_list_refresh_interval: 5
+  show_maintenance_alert: System.get_env("SHOW_MAINTENANCE_ALERT", "false") == "true"
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
@@ -138,14 +133,14 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
 
 # Configures History
 price_chart_config =
-  if System.get_env("SHOW_PRICE_CHART", "true") != "false" do
+  if System.get_env("SHOW_PRICE_CHART", "false") != "false" do
     %{market: [:price, :market_cap]}
   else
     %{}
   end
 
 tx_chart_config =
-  if System.get_env("SHOW_TXS_CHART", "false") == "true" do
+  if System.get_env("SHOW_TXS_CHART", "true") == "true" do
     %{transactions: [:transactions_per_day]}
   else
     %{}

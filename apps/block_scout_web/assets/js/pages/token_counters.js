@@ -85,6 +85,10 @@ function updateCounters () {
 }
 
 if ($('[data-page="token-holders-list"]').length) {
+  window.onbeforeunload = () => {
+    window.loading = true
+  }
+
   createAsyncLoadStore(reducer, initialState, null)
 }
 

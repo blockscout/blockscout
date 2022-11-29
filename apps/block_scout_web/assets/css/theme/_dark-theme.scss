@@ -105,7 +105,7 @@ $dark-stakes-banned-background: #3e314c;
 	// hero stats
 
 	.layout-container .dashboard-banner-container {
-		background-color: $dark-light-bg;
+		background-color: $dark-light-bg !important;
 	}
 	.dashboard-banner-network-plain-container,
 	.dashboard-banner-network-plain-container::after {
@@ -115,14 +115,33 @@ $dark-stakes-banned-background: #3e314c;
 	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-label {
 		color: $labels-dark;
 	}
-	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(1)::before {
-		background-color: $dark-primary;
-	}
 	.dashboard-banner-network-stats-item::before {
 		background-color: $dark-secondary;
 	}
-	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(2)::before {
-		background-color: $dark-secondary;
+	.dashboard-banner-chart-legend .dashboard-banner-chart-legend-item {
+		&.price-per-day {
+			&::before {
+			  background-color: $dark-primary;
+			}
+		  }
+	  
+		  &.gas-price-oracle {
+			&::before {
+			  background-color: $dark-primary;
+			}
+		  }
+	  
+		  &.market-cap-per-day {
+			&::before {
+			  background-color:$dark-secondary;
+			}
+		  }
+	  
+		  &.tx-per-day {
+			&::before {
+			  background-color: $dashboard-line-color-transactions;
+			}
+		  }
 	}
 
 	// main container, layout, cards
@@ -297,6 +316,9 @@ $dark-stakes-banned-background: #3e314c;
 	}
 	.dropdown-item.active {
 		background-color: $dark-primary;
+	}
+	.dropdown-item.active.header,	.dropdown-item.header:hover,	.dropdown-item.header:focus {
+		background-color: $dark-light !important;
 	}
 	.btn-dropdown-line {
 		background-color: $dark-light;
@@ -1166,6 +1188,6 @@ $dark-stakes-banned-background: #3e314c;
 }
 
 .dark-theme-applied .btn-no-border-link-to-tems {
-	border-color: $dark-primary !important;
-	color: $dark-primary !important;
+	border-color: $dark-primary;
+	color: $dark-primary;
 }

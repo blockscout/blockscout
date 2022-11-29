@@ -190,7 +190,7 @@ defmodule BlockScoutWeb.AddressView do
       do: ""
 
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
-    if Decimal.cmp(total_supply, 0) == :gt do
+    if Decimal.compare(total_supply, 0) == :gt do
       balance
       |> Wei.to(:ether)
       |> Decimal.div(Decimal.new(total_supply))
@@ -513,22 +513,6 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_is_gnosis_safe_proxy?(_address), do: false
-
-  def is_omni_bridge?(nil), do: false
-
-  def is_omni_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-
-    address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
-      address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
-  end
-
-  def is_amb_bridge?(nil), do: false
-
-  def is_amb_bridge?(address_hash) do
-    address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
-  end
 
   def wei_to_ether_rounded(amount), do: amount |> Wei.to(:ether) |> then(&Decimal.round(&1, 2))
 end
