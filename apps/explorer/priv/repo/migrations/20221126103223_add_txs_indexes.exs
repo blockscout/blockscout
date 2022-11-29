@@ -12,7 +12,7 @@ defmodule Explorer.Repo.Migrations.AddTxsIndexes do
           "block_number DESC NULLS FIRST",
           "index DESC NULLS FIRST",
           "inserted_at DESC",
-          "hash DESC"
+          "hash ASC"
         ],
         name: "transactions_from_address_hash_with_pending_index",
         concurrently: true
@@ -22,7 +22,7 @@ defmodule Explorer.Repo.Migrations.AddTxsIndexes do
     create_if_not_exists(
       index(
         :transactions,
-        [:to_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", "inserted_at DESC", "hash DESC"],
+        [:to_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", "inserted_at DESC", "hash ASC"],
         name: "transactions_to_address_hash_with_pending_index",
         concurrently: true
       )
@@ -36,7 +36,7 @@ defmodule Explorer.Repo.Migrations.AddTxsIndexes do
           "block_number DESC NULLS FIRST",
           "index DESC NULLS FIRST",
           "inserted_at DESC",
-          "hash DESC"
+          "hash ASC"
         ],
         name: "transactions_created_contract_address_hash_with_pending_index",
         concurrently: true
