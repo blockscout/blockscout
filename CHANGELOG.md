@@ -7,7 +7,7 @@
 
 ### Fixes
 - [#5768](https://github.com/blockscout/blockscout/pull/5768) - Outstanding rows limit for missing blocks query (catchup fetcher)
-- [#5737](https://github.com/blockscout/blockscout/pull/5737) - Fix double requests; Fix token balances dropdown view
+- [#5737](https://github.com/blockscout/blockscout/pull/5737), [#5772](https://github.com/blockscout/blockscout/pull/5772) - Fix double requests; Fix token balances dropdown view
 - [#5723](https://github.com/blockscout/blockscout/pull/5723) - Add nil clause for Data.to_string/1
 - [#5714](https://github.com/blockscout/blockscout/pull/5714) - Add clause for EthereumJSONRPC.Transaction.elixir_to_params/1 when gas_price is missing in the response
 - [#5697](https://github.com/blockscout/blockscout/pull/5697) - Gas price oracle: ignore gas price rounding for values less than 0.01
