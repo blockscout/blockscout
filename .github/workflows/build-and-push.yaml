@@ -2,10 +2,10 @@ name: Build and Push
 on:
   push:
     branches:
-      - '**'
+      - "**"
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 env:
   # DOCKER_IMAGE: ""
@@ -17,8 +17,7 @@ jobs:
     outputs:
       image: ${{ steps.set.outputs.image }}
     steps:
-      -
-        uses: actions/github-script@v4
+      - uses: actions/github-script@v4
         id: set
         with:
           script: |-
@@ -37,15 +36,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      -
-        uses: dysnix/find-latest-tag@v1
+      - uses: dysnix/find-latest-tag@v1
         id: latest
         with:
           regex: '^v\d'
           compared-to-tag: ${{ github.ref }}
           repository: ${{ github.repository }}
-      -
-        name: Docker meta
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
@@ -55,24 +52,20 @@ jobs:
           tags: |
             type=ref,event=tag
             type=ref,event=branch
-      -
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      -
-        name: Cache Docker layers
+      - name: Cache Docker layers
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-${{ github.event.before }}
-      -
-        uses: docker/login-action@v1
+      - uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Build
+      - name: Build
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -82,8 +75,7 @@ jobs:
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
-      -
-        # Temp fix
+      - # Temp fix
         # https://github.com/docker/build-push-action/issues/252
         # https://github.com/moby/buildkit/issues/1896
         name: Move cache
