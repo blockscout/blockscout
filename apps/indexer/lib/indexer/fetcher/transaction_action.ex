@@ -155,6 +155,8 @@ defmodule Indexer.Fetcher.TransactionAction do
   end
 
   defp init_fetching(opts, first_block, last_block) do
+    Logger.metadata(fetcher: :transaction_action)
+
     first_block = parse_integer(first_block)
     last_block = parse_integer(last_block)
 
@@ -179,7 +181,14 @@ defmodule Indexer.Fetcher.TransactionAction do
           |> Enum.map(&String.trim(&1))
           |> Enum.filter(&Enum.member?(supported_protocols, &1))
 
-        init_log(first_block, last_block, protocols)
+        Logger.info(
+          "Running #{__MODULE__} for the block range #{first_block}..#{last_block} and " <>
+            if(Enum.empty?(protocols),
+              do: "all protocols.",
+              else: "the following protocols: #{Enum.join(protocols, ", ")}."
+            )
+        )
+
         init_last_block_processed()
 
         state =
@@ -192,15 +201,6 @@ defmodule Indexer.Fetcher.TransactionAction do
 
         {:ok, state}
     end
-  end
-
-  defp init_log(first_block, last_block, protocols) do
-    Logger.metadata(fetcher: :transaction_action)
-
-    Logger.info(
-      "Running #{__MODULE__} for the block range #{first_block}..#{last_block} and " <>
-        if(Enum.empty?(protocols), do: "all protocols.", else: "the following protocols: #{Enum.join(protocols, ", ")}.")
-    )
   end
 
   defp init_last_block_processed do
