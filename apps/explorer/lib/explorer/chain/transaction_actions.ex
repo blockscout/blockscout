@@ -63,7 +63,7 @@ defmodule Explorer.Chain.TransactionActions do
     |> foreign_key_constraint(:hash)
   end
 
-  def supported_protocols() do
+  def supported_protocols do
     @supported_protocols
   end
 end

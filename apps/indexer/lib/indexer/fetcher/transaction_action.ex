@@ -38,8 +38,6 @@ defmodule Indexer.Fetcher.TransactionAction do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
-    Logger.metadata(fetcher: :transaction_action)
-
     opts =
       :indexer
       |> Application.get_all_env()
@@ -50,58 +48,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
     cond do
       !is_nil(first_block) and !is_nil(last_block) ->
-        first_block = parse_integer(first_block)
-        last_block = parse_integer(last_block)
-
-        cond do
-          is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block ->
-            {:stop, "Correct block range must be provided to #{__MODULE__}."}
-
-          last_block > (max_block_number = Chain.fetch_max_block_number()) ->
-            {:stop,
-             "The last block number (#{last_block}) provided to #{__MODULE__} is incorrect as it exceeds max block number available in DB (#{max_block_number})."}
-
-          true ->
-            supported_protocols =
-              Explorer.Chain.TransactionActions.supported_protocols()
-              |> Enum.map(&Atom.to_string(&1))
-
-            protocols =
-              opts
-              |> Keyword.get(:tx_actions_reindex_protocols, "")
-              |> String.trim()
-              |> String.split(",")
-              |> Enum.map(&String.trim(&1))
-              |> Enum.filter(&Enum.member?(supported_protocols, &1))
-
-            Logger.info(
-              "Running #{__MODULE__} for the block range #{first_block}..#{last_block} and " <>
-                if(Enum.empty?(protocols),
-                  do: "all protocols.",
-                  else: "the following protocols: #{Enum.join(protocols, ", ")}."
-                )
-            )
-
-            if :ets.whereis(:tx_actions_last_block_processed) == :undefined do
-              :ets.new(:tx_actions_last_block_processed, [
-                :set,
-                :named_table,
-                :public,
-                read_concurrency: true,
-                write_concurrency: true
-              ])
-            end
-
-            state =
-              %__MODULE__{
-                first_block: first_block,
-                last_block: last_block,
-                protocols: protocols
-              }
-              |> run_fetch()
-
-            {:ok, state}
-        end
+        init_fetching(opts, first_block, last_block)
 
       is_nil(first_block) and !is_nil(last_block) ->
         {:stop, "Please, specify the first block of the block range for #{__MODULE__}."}
@@ -175,7 +122,7 @@ defmodule Indexer.Fetcher.TransactionAction do
           transaction_actions: transaction_actions
         })
 
-      transaction_actions =
+      tx_actions =
         Enum.map(transaction_actions, fn action ->
           Map.put(action, :data, Map.delete(action.data, :block_number))
         end)
@@ -183,7 +130,7 @@ defmodule Indexer.Fetcher.TransactionAction do
       {:ok, _} =
         Chain.import(%{
           addresses: %{params: addresses, on_conflict: :nothing},
-          transaction_actions: %{params: transaction_actions},
+          transaction_actions: %{params: tx_actions},
           timeout: :infinity
         })
 
@@ -205,6 +152,67 @@ defmodule Indexer.Fetcher.TransactionAction do
     end
 
     :ok
+  end
+
+  defp init_fetching(opts, first_block, last_block) do
+    first_block = parse_integer(first_block)
+    last_block = parse_integer(last_block)
+
+    cond do
+      is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block ->
+        {:stop, "Correct block range must be provided to #{__MODULE__}."}
+
+      last_block > (max_block_number = Chain.fetch_max_block_number()) ->
+        {:stop,
+         "The last block number (#{last_block}) provided to #{__MODULE__} is incorrect as it exceeds max block number available in DB (#{max_block_number})."}
+
+      true ->
+        supported_protocols =
+          Explorer.Chain.TransactionActions.supported_protocols()
+          |> Enum.map(&Atom.to_string(&1))
+
+        protocols =
+          opts
+          |> Keyword.get(:tx_actions_reindex_protocols, "")
+          |> String.trim()
+          |> String.split(",")
+          |> Enum.map(&String.trim(&1))
+          |> Enum.filter(&Enum.member?(supported_protocols, &1))
+
+        init_log(first_block, last_block, protocols)
+        init_last_block_processed()
+
+        state =
+          %__MODULE__{
+            first_block: first_block,
+            last_block: last_block,
+            protocols: protocols
+          }
+          |> run_fetch()
+
+        {:ok, state}
+    end
+  end
+
+  defp init_log(first_block, last_block, protocols) do
+    Logger.metadata(fetcher: :transaction_action)
+
+    Logger.info(
+      "Running #{__MODULE__} for the block range #{first_block}..#{last_block} and " <>
+        if(Enum.empty?(protocols), do: "all protocols.", else: "the following protocols: #{Enum.join(protocols, ", ")}.")
+    )
+  end
+
+  defp init_last_block_processed do
+    if :ets.whereis(:tx_actions_last_block_processed) == :undefined do
+      :ets.new(:tx_actions_last_block_processed, [
+        :set,
+        :named_table,
+        :public,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+    end
   end
 
   defp parse_integer(integer_string) do
