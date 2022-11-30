@@ -63,6 +63,7 @@ defmodule BlockScoutWeb.Schema.Types do
 
     connection field(:transactions, node_type: :transaction) do
       arg(:count, :integer)
+      arg(:order, type: :sort_order, default_value: :desc)
       resolve(&Transaction.get_by/3)
 
       complexity(fn

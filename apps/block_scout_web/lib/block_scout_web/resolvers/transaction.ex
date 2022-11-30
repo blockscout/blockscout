@@ -13,9 +13,11 @@ defmodule BlockScoutWeb.Resolvers.Transaction do
   end
 
   def get_by(%Address{hash: address_hash}, args, _) do
+    connection_args = Map.take(args, [:after, :before, :first, :last])
+
     address_hash
-    |> GraphQL.address_to_transactions_query()
-    |> Connection.from_query(&Repo.all/1, args, options(args))
+    |> GraphQL.address_to_transactions_query(args.order)
+    |> Connection.from_query(&Repo.all/1, connection_args, options(args))
   end
 
   defp options(%{before: _}), do: []
