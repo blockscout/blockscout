@@ -97,10 +97,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :blocks
       )
     end)
-    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
+    |> Multi.run(:new_pending_operations, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          new_pending_operations(repo, nonconsensus_hashes, hashes_for_pending_block_operations, insert_options)
+          new_pending_operations(repo, hashes_for_pending_block_operations, insert_options)
         end,
         :address_referencing,
         :blocks,
@@ -423,7 +423,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
   end
 
-  defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{
+  defp new_pending_operations(repo, hashes, %{
          timeout: timeout,
          timestamps: timestamps
        }) do
@@ -431,9 +431,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:ok, []}
     else
       sorted_pending_ops =
-        nonconsensus_hashes
+        hashes
         |> MapSet.new()
-        |> MapSet.union(MapSet.new(hashes))
         |> Enum.sort()
         |> Enum.map(fn hash ->
           %{block_hash: hash, fetch_internal_transactions: true}
