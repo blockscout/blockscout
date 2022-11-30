@@ -18,10 +18,16 @@ config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 config :explorer, Explorer.Market.History.Historian, enabled: false
 
 config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.ContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.NewContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false
+
+config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: false
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender

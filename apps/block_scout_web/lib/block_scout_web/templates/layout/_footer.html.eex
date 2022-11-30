@@ -33,7 +33,6 @@
         </div>
       </div>
 
-
       <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>

@@ -2,6 +2,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   @moduledoc """
     Adapter for contracts verification with https://github.com/blockscout/blockscout-rs/blob/main/smart-contract-verifier
   """
+  alias Explorer.Utility.RustService
   alias HTTPoison.Response
   require Logger
 
@@ -47,7 +48,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HTTPoison.post(url, Jason.encode!(normalize_creation_bytecode(body)), headers, recv_timeout: @post_timeout) do
       {:ok, %Response{body: body, status_code: 200}} ->
         proccess_verifier_response(body)
 
@@ -55,6 +56,9 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
         proccess_verifier_response(body)
 
       {:error, error} ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
         Logger.error(fn ->
           [
             "Error while sending request to verification microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
@@ -62,6 +66,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
           ]
         end)
 
+        Logger.configure(truncate: old_truncate)
         {:error, @request_error_msg}
     end
   end
@@ -75,6 +80,9 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
         {:error, body}
 
       {:error, error} ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
         Logger.error(fn ->
           [
             "Error while sending request to verification microservice url: #{url}: ",
@@ -82,6 +90,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
           ]
         end)
 
+        Logger.configure(truncate: old_truncate)
         {:error, @request_error_msg}
     end
   end
@@ -116,6 +125,10 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
 
   def proccess_verifier_response(other), do: {:error, other}
 
+  def normalize_creation_bytecode(%{"creation_bytecode" => ""} = map), do: Map.replace(map, "creation_bytecode", nil)
+
+  def normalize_creation_bytecode(map), do: map
+
   def multiple_files_verification_url, do: "#{base_api_url()}" <> "/solidity/verify/multiple-files"
 
   def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/vyper/verify/multiple-files"
@@ -129,14 +142,7 @@ defmodule Explorer.SmartContract.RustVerifierInterface do
   def base_api_url, do: "#{base_url()}" <> "/api/v1"
 
   def base_url do
-    url = Application.get_env(:explorer, __MODULE__)[:service_url]
-
-    if String.ends_with?(url, "/") do
-      url
-      |> String.slice(0..(String.length(url) - 2))
-    else
-      url
-    end
+    RustService.base_url(__MODULE__)
   end
 
   def enabled?, do: Application.get_env(:explorer, __MODULE__)[:enabled]
