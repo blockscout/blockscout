@@ -9,7 +9,7 @@ defmodule Indexer.Transform.TransactionActions do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain.Cache.NetVersion
-  alias Explorer.Chain.{Address, Hash, Token, TransactionActions}
+  alias Explorer.Chain.{Address, Data, Hash, Token, TransactionActions}
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
 
@@ -148,7 +148,7 @@ defmodule Indexer.Transform.TransactionActions do
         first_topic
       ) ||
         (first_topic == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" &&
-           String.downcase(log.address_hash) == String.downcase(@uniswap_v3_positions_nft))
+           String.downcase(address_hash_to_string(log.address_hash)) == String.downcase(@uniswap_v3_positions_nft))
     end)
   end
 
@@ -159,7 +159,7 @@ defmodule Indexer.Transform.TransactionActions do
       []
     else
       # check UniswapV3Pool contract is legitimate
-      pool_address = String.downcase(log.address_hash)
+      pool_address = String.downcase(address_hash_to_string(log.address_hash))
 
       if Enum.empty?(legitimate[pool_address]) do
         # this is not legitimate uniswap pool, so skip this event
@@ -330,7 +330,7 @@ defmodule Indexer.Transform.TransactionActions do
           first_topic != "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
         end)
         |> Enum.reduce(addresses_acc, fn log, acc ->
-          pool_address = String.downcase(log.address_hash)
+          pool_address = String.downcase(address_hash_to_string(log.address_hash))
           Map.put_new(acc, pool_address, true)
         end)
       end)
@@ -479,6 +479,12 @@ defmodule Indexer.Transform.TransactionActions do
     encoded_data
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
+  end
+
+  defp decode_data(%Data{} = data, types) do
+    data
+    |> Data.to_string()
+    |> decode_data(types)
   end
 
   defp fractional(%Decimal{} = amount, %Decimal{} = decimals) do
@@ -655,6 +661,14 @@ defmodule Indexer.Transform.TransactionActions do
 
   defp is_address_correct?(address) do
     String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
+  end
+
+  defp address_hash_to_string(hash) do
+    if is_binary(hash) do
+      hash
+    else
+      Hash.to_string(hash)
+    end
   end
 
   defp logs_group_by_txs(logs) do
