@@ -25,25 +25,6 @@
 }
 
 @mixin stats-item($border-color: #fff, $text-color: #fff, $value-color: #fff) {
-  &-item {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: calc(1rem + 4px);
-    padding-right: 1rem;
-    position: relative;
-
-    &::before {
-      background-color: $border-color;
-      border-radius: 2px;
-      content: "";
-      height: 100%;
-      left: 0;
-      position: absolute;
-      top: 0;
-      width: 4px;
-    }
-  }
 
   &-label {
     color: $text-color;
